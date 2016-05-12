@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.tasks.fd;
 
+import com.android.annotations.NonNull;
 import com.android.build.gradle.internal.scope.TaskConfigAction;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.tasks.DefaultAndroidTask;
@@ -104,18 +105,20 @@ public class FastDeployRuntimeExtractorTask extends DefaultAndroidTask {
             this.scope = scope;
         }
 
+        @NonNull
         @Override
         public String getName() {
             return scope.getTaskName("fastDeploy", "Extractor");
         }
 
+        @NonNull
         @Override
         public Class<FastDeployRuntimeExtractorTask> getType() {
             return FastDeployRuntimeExtractorTask.class;
         }
 
         @Override
-        public void execute(FastDeployRuntimeExtractorTask fastDeployRuntimeExtractorTask) {
+        public void execute(@NonNull FastDeployRuntimeExtractorTask fastDeployRuntimeExtractorTask) {
             fastDeployRuntimeExtractorTask.setVariantName(
                     scope.getVariantConfiguration().getFullName());
             fastDeployRuntimeExtractorTask.setOutputFile(

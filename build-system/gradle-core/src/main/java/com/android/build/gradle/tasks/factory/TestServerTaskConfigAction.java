@@ -61,7 +61,7 @@ public class TestServerTaskConfigAction implements TaskConfigAction<TestServerTa
         return TestServerTask.class;
     }
     @Override
-    public void execute(TestServerTask serverTask) {
+    public void execute(@NonNull TestServerTask serverTask) {
         final BaseVariantData<? extends BaseVariantOutputData> baseVariantData =
                 scope.getTestedVariantData();
         final TestVariantData testVariantData = (TestVariantData) scope.getVariantData();

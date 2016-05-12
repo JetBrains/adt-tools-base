@@ -18,6 +18,7 @@ package com.android.build.gradle.internal.tasks;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import com.android.annotations.NonNull;
 import com.android.build.gradle.internal.TaskManager;
 import com.android.build.gradle.internal.scope.ConventionMappingHelper;
 import com.android.build.gradle.internal.scope.GlobalScope;
@@ -107,18 +108,20 @@ public class MockableAndroidJarTask extends DefaultTask {
             this.scope = scope;
         }
 
+        @NonNull
         @Override
         public String getName() {
             return "mockableAndroidJar";
         }
 
+        @NonNull
         @Override
         public Class<MockableAndroidJarTask> getType() {
             return MockableAndroidJarTask.class;
         }
 
         @Override
-        public void execute(final MockableAndroidJarTask task) {
+        public void execute(@NonNull final MockableAndroidJarTask task) {
             task.setGroup(TaskManager.BUILD_GROUP);
             task.setDescription(
                     "Creates a version of android.jar that's suitable for unit tests.");

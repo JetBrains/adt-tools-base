@@ -17,6 +17,7 @@
 package com.android.build.gradle.internal.tasks.databinding;
 
 import com.android.SdkConstants;
+import com.android.annotations.NonNull;
 import com.android.build.gradle.internal.scope.ConventionMappingHelper;
 import com.android.build.gradle.internal.scope.TaskConfigAction;
 import com.android.build.gradle.internal.scope.VariantScope;
@@ -147,18 +148,20 @@ public class DataBindingExportBuildInfoTask extends DefaultTask {
             this.printMachineReadableErrors = printMachineReadableErrors;
         }
 
+        @NonNull
         @Override
         public String getName() {
             return variantScope.getTaskName("dataBindingExportBuildInfo");
         }
 
+        @NonNull
         @Override
         public Class<DataBindingExportBuildInfoTask> getType() {
             return DataBindingExportBuildInfoTask.class;
         }
 
         @Override
-        public void execute(DataBindingExportBuildInfoTask task) {
+        public void execute(@NonNull DataBindingExportBuildInfoTask task) {
             final BaseVariantData<? extends BaseVariantOutputData> variantData = variantScope
                     .getVariantData();
             task.setXmlProcessor(variantData.getLayoutXmlProcessor());

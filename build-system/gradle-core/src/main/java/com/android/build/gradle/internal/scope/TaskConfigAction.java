@@ -17,6 +17,7 @@
 package com.android.build.gradle.internal.scope;
 
 import com.android.annotations.NonNull;
+import com.google.common.base.Preconditions;
 
 import org.gradle.api.Action;
 
@@ -46,27 +47,33 @@ public interface TaskConfigAction<T> extends Action<T> {
     void execute(@NonNull T task);
 
     /**
-     * Returns a new {@link TaskConfigAction} which executes additional steps after this action
+     * Returns a new {@link TaskConfigAction} which executes additional steps after the given action
      * is done.
      */
-    default TaskConfigAction<T> andThen(Consumer<T> additionalActions) {
+    @NonNull
+    static <T> TaskConfigAction<T> amend(
+            @NonNull TaskConfigAction<T> action,
+            @NonNull Consumer<T> additionalSteps) {
+        Preconditions.checkNotNull(action);
+        Preconditions.checkNotNull(additionalSteps);
+
         return new TaskConfigAction<T>() {
             @NonNull
             @Override
             public String getName() {
-                return TaskConfigAction.this.getName();
+                return action.getName();
             }
 
             @NonNull
             @Override
             public Class<T> getType() {
-                return TaskConfigAction.this.getType();
+                return action.getType();
             }
 
             @Override
             public void execute(@NonNull T task) {
-                TaskConfigAction.this.execute(task);
-                additionalActions.accept(task);
+                action.execute(task);
+                additionalSteps.accept(task);
             }
         };
     }
