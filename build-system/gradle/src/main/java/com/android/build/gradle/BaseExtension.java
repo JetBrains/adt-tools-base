@@ -48,18 +48,10 @@ import com.android.builder.sdk.TargetInfo;
 import com.android.builder.testing.api.DeviceProvider;
 import com.android.builder.testing.api.TestServer;
 import com.android.repository.Revision;
-import com.android.repository.api.Channel;
-import com.android.repository.api.Downloader;
-import com.android.repository.api.ProgressIndicator;
-import com.android.repository.api.SettingsController;
-import com.android.repository.io.FileOpUtils;
 import com.android.resources.Density;
-import com.android.sdklib.repository.AndroidSdkHandler;
-import com.android.sdklib.repository.legacy.LegacyDownloader;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
-import com.google.common.io.Files;
 
 import org.gradle.api.Action;
 import org.gradle.api.GradleException;
@@ -74,10 +66,6 @@ import org.gradle.api.tasks.SourceSet;
 import org.gradle.internal.reflect.Instantiator;
 
 import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URL;
-import java.net.URLConnection;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
@@ -93,7 +81,10 @@ import java.util.Set;
  * <li>Plugin <code>com.android.test</code> uses {@link TestExtension}</li>
  * </ul>
  */
-@SuppressWarnings("UnnecessaryInheritDoc")
+// All the public methods are meant to be exposed in the DSL.
+// We can't yet lambdas in this class (yet), because the DSL reference generator doesn't understand
+// them.
+@SuppressWarnings({"UnnecessaryInheritDoc", "WeakerAccess", "unused", "Convert2Lambda"})
 public abstract class BaseExtension implements AndroidConfig {
     /** Secondary dependencies for the custom transform. */
     private final List<List<Object>> transformDependencies = Lists.newArrayList();
@@ -702,7 +693,7 @@ public abstract class BaseExtension implements AndroidConfig {
     }
 
     @NonNull
-    public SourceProvider wrapJavaSourceSet(@NonNull SourceSet sourceSet) {
+    public static SourceProvider wrapJavaSourceSet(@NonNull SourceSet sourceSet) {
         return new SourceSetSourceProviderWrapper(sourceSet);
     }
 
