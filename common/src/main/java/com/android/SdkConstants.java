@@ -644,10 +644,10 @@ public final class SdkConstants {
     public static final String CLASS_PERCENT_FRAME_LAYOUT = "android.support.percent.PercentFrameLayout"; //$NON-NLS-1$
 
     /* Android ConstraintLayout Constants */
-    public static final String CLASS_CONSTRAINT_LAYOUT = "android.constraint.ConstraintLayout";     //$NON-NLS-1$
-    public static final String CLASS_TABLE_CONSTRAINT_LAYOUT = "android.constraint.TableConstraintLayout";     //$NON-NLS-1$
-    public static final String CLASS_CONSTRAINT_LAYOUT_GUIDELINE = "android.constraint.Guideline";     //$NON-NLS-1$
-    public static final String CONSTRAINT_LAYOUT_LIB_ARTIFACT = "com.android.constraint:constraint-layout";
+    public static final String CLASS_CONSTRAINT_LAYOUT = "android.support.constraint.ConstraintLayout";     //$NON-NLS-1$
+    public static final String CLASS_TABLE_CONSTRAINT_LAYOUT = "android.support.constraint.TableConstraintLayout";     //$NON-NLS-1$
+    public static final String CLASS_CONSTRAINT_LAYOUT_GUIDELINE = "android.support.constraint.Guideline";     //$NON-NLS-1$
+    public static final String CONSTRAINT_LAYOUT_LIB_ARTIFACT = "com.android.support.constraint:constraint-layout";
 
     /** Returns the appropriate name for the 'android' command, which is 'android.exe' for
      * Windows and 'android' for all other platforms. */
