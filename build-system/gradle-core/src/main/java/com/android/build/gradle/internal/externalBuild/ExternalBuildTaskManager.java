@@ -18,6 +18,7 @@ package com.android.build.gradle.internal.externalBuild;
 
 import com.android.annotations.NonNull;
 import com.android.build.api.transform.QualifiedContent;
+import com.android.build.gradle.AndroidGradleOptions;
 import com.android.build.gradle.internal.ExtraModelInfo;
 import com.android.build.gradle.internal.InstantRunTaskManager;
 import com.android.build.gradle.internal.TaskContainerAdaptor;
@@ -161,7 +162,9 @@ class ExternalBuildTaskManager {
                         variantScope.getPreDexOutputDir(),
                         externalBuildContext.getAndroidBuilder(),
                         project.getLogger(),
-                        variantScope.getInstantRunBuildContext());
+                        variantScope.getInstantRunBuildContext(),
+                        AndroidGradleOptions.isUserCacheEnabled(
+                                variantScope.getGlobalScope().getProject()));
 
         AndroidTask<TransformTask> dexTask =
                 transformManager.addTransform(tasks, variantScope, dexTransform);

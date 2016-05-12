@@ -18,6 +18,7 @@ package com.android.utils;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
+import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.google.common.base.Charsets;
 import com.google.common.base.Joiner;
@@ -440,6 +441,64 @@ public final class FileUtils {
     public static String joinFilePaths(@NonNull Iterable<File> files) {
         return Joiner.on(File.pathSeparatorChar)
                 .join(Iterables.transform(files, File::getAbsolutePath));
+    }
+
+    /**
+     * Returns a valid file name modified from the requested file name. This method guarantees that
+     * there is a one-to-one mapping between the requested file names and the returned file names
+     * (i.e., if the input file names are different, the returned file names will also be
+     * different). The file name consists of a base name and an extension (which is an empty string
+     * if there is no extension). A directory where the file is located is also provided to check
+     * the length of the file path and keep both the file name and file path's lengths within limit.
+     *
+     * @param baseName the base name of the requested file name
+     * @param extension the extension of the requested file name (empty string if not available)
+     * @param directory the directory where the file will be located
+     */
+    @NonNull
+    public static String getValidFileName(
+            @NonNull String baseName,
+            @NonNull String extension,
+            @NonNull File directory) {
+        String fileName = (extension.isEmpty() ? baseName : (baseName + "." + extension));
+
+        String validBaseName = baseName.replaceAll("[^a-zA-Z0-9]", "_");
+        String validExtension = extension.replaceAll("[^a-zA-Z0-9]", "_");
+        String validExtensionWithDot = (validExtension.isEmpty() ? "" : ("." + validExtension));
+        String validFileName = validBaseName + validExtensionWithDot;
+
+        // Add a hash code to the returned file name to avoid accidental collision (when two
+        // different requested file names produce the same returned file name)
+        String fileHash = Hashing.sha1().hashString(fileName, Charsets.UTF_16LE).toString();
+        if (!validFileName.equals(fileName)) {
+            validFileName = validBaseName + "_" + fileHash + validExtensionWithDot;
+        }
+
+        // If the file name/file path is too long, retain the hash code only and also keep the
+        // extension
+        if (isFilePathTooLong(validFileName, directory)) {
+            validFileName = fileHash + validExtensionWithDot;
+
+            // If the file name/file path is still too long, throw a RuntimeException
+            if (isFilePathTooLong(validFileName, directory)) {
+                throw new RuntimeException("File name or file path is too long: "
+                        + new File(directory, validFileName).getAbsolutePath());
+            }
+        }
+
+        return validFileName;
+    }
+
+    /**
+     * Returns <code>true</code> if the file name or file path is too long.
+     *
+     * @param fileName the file name
+     * @param directory the directory where the file will be located
+     */
+    public static boolean isFilePathTooLong(@NonNull String fileName, @NonNull File directory) {
+        return (fileName.length() > 255
+                || (new File(directory, fileName).getAbsolutePath().length() > 240
+                        && SdkConstants.currentPlatform() == SdkConstants.PLATFORM_WINDOWS));
     }
 
 }

@@ -1856,7 +1856,8 @@ public abstract class TaskManager {
                 variantScope.getPreDexOutputDir(),
                 variantScope.getGlobalScope().getAndroidBuilder(),
                 getLogger(),
-                variantScope.getInstantRunBuildContext());
+                variantScope.getInstantRunBuildContext(),
+                AndroidGradleOptions.isUserCacheEnabled(variantScope.getGlobalScope().getProject()));
         AndroidTask<TransformTask> dexTask = transformManager.addTransform(
                 tasks, variantScope, dexTransform);
         // need to manually make dex task depend on MultiDexTransform since there's no stream

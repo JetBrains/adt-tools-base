@@ -41,6 +41,8 @@ public class AndroidGradleOptions {
 
     private static final boolean DEFAULT_ENABLE_AAPT2 = false;
 
+    private static final boolean DEFAULT_ENABLE_USER_CACHE = false;
+
     private static final String PROPERTY_TEST_RUNNER_ARGS =
             "android.testInstrumentationRunnerArguments.";
 
@@ -73,6 +75,8 @@ public class AndroidGradleOptions {
             "android.androidTest.numShards";
     public static  final String PROPERTY_USE_SDK_DOWNLOAD =
             "android.builder.sdkDownload";
+
+    private static final String PROPERTY_ENABLE_USER_CACHE = "android.enableUserCache";
 
 
     @NonNull
@@ -376,6 +380,10 @@ public class AndroidGradleOptions {
     @Nullable
     public static String getRestrictVariantName(@NonNull Project project) {
         return getString(project, AndroidProject.PROPERTY_RESTRICT_VARIANT_NAME);
+    }
+
+    public static boolean isUserCacheEnabled(@NonNull Project project) {
+        return getBoolean(project, PROPERTY_ENABLE_USER_CACHE, DEFAULT_ENABLE_USER_CACHE);
     }
 
 

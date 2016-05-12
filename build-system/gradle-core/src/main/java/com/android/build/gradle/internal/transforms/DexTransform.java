@@ -16,12 +16,10 @@
 
 package com.android.build.gradle.internal.transforms;
 
-import static com.android.utils.FileUtils.mkdirs;
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.annotations.VisibleForTesting;
 import com.android.build.api.transform.DirectoryInput;
 import com.android.build.api.transform.Format;
 import com.android.build.api.transform.JarInput;
@@ -46,12 +44,15 @@ import com.android.ide.common.blame.ParsingProcessOutputHandler;
 import com.android.ide.common.blame.parser.DexParser;
 import com.android.ide.common.blame.parser.ToolOutputParser;
 import com.android.ide.common.internal.WaitableExecutor;
+import com.android.ide.common.process.ProcessException;
 import com.android.ide.common.process.ProcessOutputHandler;
+import com.android.repository.Revision;
 import com.android.sdklib.BuildToolInfo;
+import com.android.builder.internal.utils.FileCache;
 import com.android.utils.FileUtils;
 import com.android.utils.ILogger;
 import com.google.common.base.Charsets;
-import com.google.common.base.Objects;
+import com.google.common.base.MoreObjects;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
@@ -69,6 +70,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -95,11 +97,11 @@ public class DexTransform extends Transform {
 
     private final boolean multiDex;
 
-    @NonNull
-    private final File intermediateFolder;
-
     @Nullable
     private final File mainDexListFile;
+
+    @NonNull
+    private final File intermediateFolder;
 
     @NonNull
     private final AndroidBuilder androidBuilder;
@@ -109,6 +111,9 @@ public class DexTransform extends Transform {
 
     private final InstantRunBuildContext instantRunBuildContext;
 
+    @NonNull
+    private final FileCache userCache;
+
     public DexTransform(
             @NonNull DexOptions dexOptions,
             boolean debugMode,
@@ -117,7 +122,8 @@ public class DexTransform extends Transform {
             @NonNull File intermediateFolder,
             @NonNull AndroidBuilder androidBuilder,
             @NonNull Logger logger,
-            @NonNull InstantRunBuildContext instantRunBuildContext) {
+            @NonNull InstantRunBuildContext instantRunBuildContext,
+            boolean userCacheEnabled) {
         this.dexOptions = dexOptions;
         this.debugMode = debugMode;
         this.multiDex = multiDex;
@@ -126,6 +132,12 @@ public class DexTransform extends Transform {
         this.androidBuilder = androidBuilder;
         this.logger = new LoggerWrapper(logger);
         this.instantRunBuildContext = instantRunBuildContext;
+        this.userCache = userCacheEnabled
+                ? new FileCache(
+                        FileUtils.join(new File(System.getProperty("user.home")),
+                                ".android-studio", "user-cache"),
+                        true)
+                : FileCache.NO_CACHE;
     }
 
     @NonNull
@@ -216,7 +228,8 @@ public class DexTransform extends Transform {
             throws TransformException, IOException, InterruptedException {
         TransformOutputProvider outputProvider = transformInvocation.getOutputProvider();
         boolean isIncremental = transformInvocation.isIncremental();
-        checkNotNull(outputProvider, "Missing output object for transform " + getName());
+        Preconditions.checkNotNull(outputProvider,
+                "Missing output object for transform " + getName());
 
         // Gather a full list of all inputs.
         List<JarInput> jarInputs = Lists.newArrayList();
@@ -237,7 +250,8 @@ public class DexTransform extends Transform {
         try {
             // if only one scope or no per-scope dexing, just do a single pass that
             // runs dx on everything.
-            if ((jarInputs.size() + directoryInputs.size()) == 1 || !dexOptions.getPreDexLibraries()) {
+            if ((jarInputs.size() + directoryInputs.size()) == 1
+                    || !dexOptions.getPreDexLibraries()) {
                 File outputDir = outputProvider.getContentLocation("main",
                         getOutputTypes(), getScopes(),
                         Format.DIRECTORY);
@@ -272,7 +286,8 @@ public class DexTransform extends Transform {
                 // Figure out if we need to do a dx merge.
                 // The ony case we don't need it is in native multi-dex mode when doing debug
                 // builds. This saves build time at the expense of too many dex files which is fine.
-                // FIXME dx cannot receive dex files to merge inside a folder. They have to be in a jar. Need to fix in dx.
+                // FIXME dx cannot receive dex files to merge inside a folder. They have to be in a
+                // jar. Need to fix in dx.
                 boolean needMerge = !multiDex || mainDexListFile != null;// || !debugMode;
 
                 // where we write the pre-dex depends on whether we do the merge after.
@@ -292,6 +307,8 @@ public class DexTransform extends Transform {
                 final Set<String> hashs = Sets.newHashSet();
                 // input files to output file map
                 final Map<File, File> inputFiles = Maps.newHashMap();
+                // set of input files that are external libraries
+                final Set<File> externalLibs = Sets.newHashSet();
                 // stuff to delete. Might be folders.
                 final List<File> deletedFiles = Lists.newArrayList();
 
@@ -305,17 +322,20 @@ public class DexTransform extends Transform {
                     if (!rootFolder.exists()) {
                         // if the root folder is gone we need to remove the previous
                         // output
-                        File preDexedFile = getPreDexFile(outputProvider, needMerge, perStreamDexFolder,
-                                directoryInput);
+                        File preDexedFile = getPreDexFile(
+                                outputProvider, needMerge, perStreamDexFolder, directoryInput);
                         if (preDexedFile.exists()) {
                             deletedFiles.add(preDexedFile);
                         }
                     } else if (!isIncremental || !directoryInput.getChangedFiles().isEmpty()) {
                         // add the folder for re-dexing only if we're not in incremental
                         // mode or if it contains changed files.
-                        File preDexFile = getPreDexFile(outputProvider, needMerge, perStreamDexFolder,
-                                directoryInput);
+                        File preDexFile = getPreDexFile(
+                                outputProvider, needMerge, perStreamDexFolder, directoryInput);
                         inputFiles.put(rootFolder, preDexFile);
+                        if (isExternalLibrary(directoryInput)) {
+                            externalLibs.add(rootFolder);
+                        }
                     }
                 }
 
@@ -328,14 +348,17 @@ public class DexTransform extends Transform {
                             // intended fall-through
                         case CHANGED:
                         case ADDED: {
-                            File preDexFile = getPreDexFile(outputProvider, needMerge, perStreamDexFolder,
-                                    jarInput);
+                            File preDexFile = getPreDexFile(
+                                    outputProvider, needMerge, perStreamDexFolder, jarInput);
                             inputFiles.put(jarInput.getFile(), preDexFile);
+                            if (isExternalLibrary(jarInput)) {
+                                externalLibs.add(jarInput.getFile());
+                            }
                             break;
                         }
                         case REMOVED: {
-                            File preDexedFile = getPreDexFile(outputProvider, needMerge, perStreamDexFolder,
-                                    jarInput);
+                            File preDexedFile = getPreDexFile(
+                                    outputProvider, needMerge, perStreamDexFolder, jarInput);
                             if (preDexedFile.exists()) {
                                 deletedFiles.add(preDexedFile);
                             }
@@ -351,7 +374,8 @@ public class DexTransform extends Transform {
                             entry.getKey(),
                             entry.getValue(),
                             hashs,
-                            outputHandler);
+                            outputHandler,
+                            externalLibs.contains(entry.getKey()) ? userCache : FileCache.NO_CACHE);
                     executor.execute(action);
                 }
 
@@ -372,7 +396,7 @@ public class DexTransform extends Transform {
 
                     // first delete the output folder where the final dex file(s) will be.
                     FileUtils.cleanOutputDir(outputDir);
-                    mkdirs(outputDir);
+                    FileUtils.mkdirs(outputDir);
 
                     // find the inputs of the dex merge.
                     // they are the content of the intermediate folder.
@@ -419,17 +443,21 @@ public class DexTransform extends Transform {
         @NonNull
         private final Set<String> hashs;
         @NonNull
-        private final ProcessOutputHandler mOutputHandler;
+        private final ProcessOutputHandler outputHandler;
+        @NonNull
+        private final FileCache fileCache;
 
         private PreDexTask(
                 @NonNull File from,
                 @NonNull File to,
                 @NonNull Set<String> hashs,
-                @NonNull ProcessOutputHandler outputHandler) {
+                @NonNull ProcessOutputHandler outputHandler,
+                @NonNull FileCache fileCache) {
             this.from = from;
             this.to = to;
             this.hashs = hashs;
-            this.mOutputHandler = outputHandler;
+            this.outputHandler = outputHandler;
+            this.fileCache = fileCache;
         }
 
         @Override
@@ -445,20 +473,39 @@ public class DexTransform extends Transform {
                 hashs.add(hash);
             }
 
-            if (to.isDirectory()) {
-                FileUtils.cleanOutputDir(to);
-            } else if (to.isFile()) {
-                FileUtils.delete(to);
-            } else {
-                if (multiDex) {
-                    mkdirs(to);
-                } else {
-                    mkdirs(to.getParentFile());
-                }
-            }
+            boolean optimize = getOptimize();
 
-            androidBuilder.preDexLibrary(
-                    from, to, multiDex, dexOptions, getOptimize(), mOutputHandler);
+            // Use the cache for pre-dexing
+            String key = getKey(
+                    from,
+                    androidBuilder.getTargetInfo().getBuildTools().getRevision(),
+                    dexOptions.getJumboMode(),
+                    multiDex,
+                    optimize);
+            fileCache.getOrCreateFile(to, key, (to) -> {
+                if (to.isDirectory()) {
+                    FileUtils.cleanOutputDir(to);
+                } else if (to.isFile()) {
+                    FileUtils.delete(to);
+                } else {
+                    if (multiDex) {
+                        FileUtils.mkdirs(to);
+                    } else {
+                        Files.createParentDirs(to);
+                    }
+                }
+
+                try {
+                    androidBuilder.preDexLibrary(
+                          from, to, multiDex, dexOptions, optimize, outputHandler);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                } catch (ProcessException e) {
+                    throw new RuntimeException(e);
+                }
+
+                return null;
+            });
 
             for (File file : Files.fileTreeTraverser().breadthFirstTraversal(to)) {
                 if (file.isFile()) {
@@ -491,7 +538,6 @@ public class DexTransform extends Transform {
         return hashCode.toString();
     }
 
-
     @NonNull
     private File getPreDexFile(
             @NonNull TransformOutputProvider output,
@@ -499,7 +545,7 @@ public class DexTransform extends Transform {
             @Nullable File outFolder,
             @NonNull QualifiedContent qualifiedContent) {
         if (needMerge) {
-            checkNotNull(outFolder);
+            Preconditions.checkNotNull(outFolder);
             return new File(outFolder, getFilename(qualifiedContent.getFile()));
         } else {
             return getOutputLocation(output, qualifiedContent, qualifiedContent.getFile());
@@ -555,7 +601,47 @@ public class DexTransform extends Transform {
      * debuggable.
      */
     private boolean getOptimize() {
-        return Objects.firstNonNull(dexOptions.getOptimize(), !debugMode);
+        return MoreObjects.firstNonNull(dexOptions.getOptimize(), !debugMode);
+    }
+
+    /**
+     * Determines whether a content is an external library.
+     */
+    private static boolean isExternalLibrary(@NonNull QualifiedContent content) {
+        return content.getScopes().equals(Collections.singleton(Scope.EXTERNAL_LIBRARIES));
+    }
+
+    /**
+     * Returns the key of a transform (which consists of the input file, build tools revision, and
+     * several dex options).
+     */
+    @VisibleForTesting
+    @NonNull
+    static String getKey(
+            @NonNull File inputFile,
+            @NonNull Revision buildToolsRevision,
+            boolean jumboMode,
+            boolean multiDex,
+            boolean optimize)
+            throws IOException {
+        String key;
+        int explodedAarIndex = inputFile.getCanonicalPath().lastIndexOf("exploded-aar");
+        if (explodedAarIndex >= 0) {
+            key = inputFile.getCanonicalPath().substring(
+                    explodedAarIndex + "exploded-aar".length() + 1);
+        } else {
+            String fileHash = Hashing.sha1()
+                    .hashString(inputFile.getCanonicalPath(), Charsets.UTF_16LE).toString();
+            key = inputFile.getName() + "_" + fileHash;
+        }
+
+        key = key
+                + "_build=" + buildToolsRevision.toString()
+                + "_jumbo=" + jumboMode
+                + "_multidex=" + multiDex
+                + "_optimize=" + optimize;
+
+        return key;
     }
 
 }
