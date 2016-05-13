@@ -101,6 +101,14 @@ public class AntennaPodHotSwapPerformanceTest {
         InstantRun instantRunModel = InstantRunTestUtils
                 .getInstantRunModel(project.model().getMulti().get(":app"));
 
+        // Warm the daemon up
+        for (int i=0; i<4; i++) {
+            project.executor()
+                    .withInstantRun(23, coldswapMode, OptionalCompilationStep.RESTART_ONLY)
+                    .run(":app:assembleDebug");
+            project.executor().run("clean");
+        }
+
         project.executor()
                 .recordBenchmark(benchmarkName, BenchmarkMode.INSTANT_RUN_FULL_BUILD)
                 .withInstantRun(23, coldswapMode, OptionalCompilationStep.RESTART_ONLY)
@@ -108,20 +116,13 @@ public class AntennaPodHotSwapPerformanceTest {
 
         // The second build with retrolambda in this case has a spurious new inner class.
         // Ignore it for the purposes of this performance test.
-        TestFileUtils.searchAndReplace(
-                project.file("app/src/main/java/de/danoeh/antennapod/activity/MainActivity.java"),
-                "public void onStart\\(\\) \\{",
-                "public void onStart() {\n"
-                        + "        Log.d(TAG, \"onStart called 1\");");
-        project.executor()
-                .withInstantRun(23, coldswapMode)
-                .run(instantRunModel.getIncrementalAssembleTaskName());
-
-        TestFileUtils.searchAndReplace(
-                project.file("app/src/main/java/de/danoeh/antennapod/activity/MainActivity.java"),
-                "public void onStart\\(\\) \\{",
-                "public void onStart() {\n"
-                        + "        Log.d(TAG, \"onStart called 2\");");
+        for (int i=0; i<3; i++) {
+            makeChange(i);
+            project.executor()
+                    .withInstantRun(23, coldswapMode)
+                    .run(instantRunModel.getIncrementalAssembleTaskName());
+        }
+        makeChange(100);
 
         project.executor()
                 .recordBenchmark(benchmarkName, BenchmarkMode.INSTANT_RUN_HOT_SWAP)
@@ -137,6 +138,14 @@ public class AntennaPodHotSwapPerformanceTest {
                 .that().hasMethod("onStart");
     }
 
+    private void makeChange(int i) throws IOException {
+        TestFileUtils.searchAndReplace(
+                project.file(
+                        "app/src/main/java/de/danoeh/antennapod/activity/MainActivity.java"),
+                "public void onStart\\(\\) \\{",
+                "public void onStart() {\n"
+                        + "        Log.d(TAG, \"onStart called " + i + "\");");
+    }
 
     private enum DexInProcess {
         DEX_IN_PROCESS,
