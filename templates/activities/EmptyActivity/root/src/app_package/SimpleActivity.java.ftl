@@ -12,4 +12,5 @@ public class ${activityClass} extends ${superClass} {
         setContentView(R.layout.${layoutName});
 </#if>
     }
+<#include "../../../../common/jni_code_snippet.java.ftl">
 }

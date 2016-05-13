@@ -45,6 +45,12 @@ android {
         versionName "1.0"
 
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+
+    <#if includeCppSupport!false && cppFlags != "">
+        cmake {
+            cppFlags "${cppFlags}"
+        }
+    </#if>
     }
 <#if javaVersion?? && (javaVersion != "1.6" && buildApi lt 21 || javaVersion != "1.7")>
 
@@ -58,6 +64,13 @@ android {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+</#if>
+<#if includeCppSupport!false>
+    externalNativeBuild {
+        cmake {
+            path "CMakeLists.txt"
         }
     }
 </#if>
