@@ -1595,7 +1595,6 @@ public final class SdkConstants {
         public static final String ATTR_SUMMARY_OFF = "summaryOff";
         public static final String ATTR_SWITCH_TEXT_ON = "switchTextOn";
         public static final String ATTR_SWITCH_TEXT_OFF = "switchTextOff";
-        public static final String ATTR_TITLE = "title";
     }
 
     // Text Alignment values.
