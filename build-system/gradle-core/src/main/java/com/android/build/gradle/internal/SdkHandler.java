@@ -22,6 +22,7 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.annotations.concurrency.GuardedBy;
 import com.android.build.gradle.AndroidGradleOptions;
+import com.android.builder.sdk.SdkLibData;
 import com.android.builder.core.AndroidBuilder;
 import com.android.builder.core.LibraryRequest;
 import com.android.builder.model.OptionalCompilationStep;
@@ -31,10 +32,6 @@ import com.android.builder.sdk.SdkInfo;
 import com.android.builder.sdk.SdkLoader;
 import com.android.builder.sdk.TargetInfo;
 import com.android.repository.Revision;
-import com.android.repository.api.Downloader;
-import com.android.repository.api.SettingsController;
-import com.android.repository.io.FileOpUtils;
-import com.android.sdklib.repository.legacy.LegacyDownloader;
 import com.android.utils.ILogger;
 import com.google.common.base.Charsets;
 import com.google.common.base.Preconditions;
@@ -71,6 +68,7 @@ public class SdkHandler {
     private SdkLoader sdkLoader;
     private File sdkFolder;
     private File ndkFolder;
+    private SdkLibData sdkLibData = SdkLibData.dontDownload();
     private boolean isRegularSdk = true;
 
     public static void setTestSdkFolder(File testSdkFolder) {
@@ -105,10 +103,7 @@ public class SdkHandler {
             @NonNull Revision buildToolRevision,
             @NonNull Collection<LibraryRequest> usedLibraries,
             @NonNull AndroidBuilder androidBuilder,
-            boolean useCachedVersion,
-            boolean useGradleSdkDownload,
-            @Nullable SettingsController settings,
-            @Nullable Downloader downloader) {
+            boolean useCachedVersion) {
         Preconditions.checkNotNull(targetHash, "android.compileSdkVersion is missing!");
         Preconditions.checkNotNull(buildToolRevision, "android.buildToolsVersion is missing!");
 
@@ -131,7 +126,7 @@ public class SdkHandler {
         Stopwatch stopwatch = Stopwatch.createStarted();
         SdkInfo sdkInfo = sdkLoader.getSdkInfo(logger);
         TargetInfo targetInfo = sdkLoader.getTargetInfo(
-                targetHash, buildToolRevision, logger, settings, downloader, useGradleSdkDownload);
+                targetHash, buildToolRevision, logger, sdkLibData);
 
         androidBuilder.setSdkInfo(sdkInfo);
         androidBuilder.setTargetInfo(targetInfo);
@@ -271,5 +266,9 @@ public class SdkHandler {
 
         findSdkLocation(properties, rootDir);
         findNdkLocation(properties);
+    }
+
+    public void setSdkLibData(SdkLibData sdkLibData) {
+        this.sdkLibData = sdkLibData;
     }
 }

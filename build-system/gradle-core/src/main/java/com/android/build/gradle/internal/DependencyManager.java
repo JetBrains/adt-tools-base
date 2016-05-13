@@ -41,6 +41,7 @@ import com.android.builder.model.AndroidLibrary;
 import com.android.builder.model.JavaLibrary;
 import com.android.builder.model.MavenCoordinates;
 import com.android.builder.model.SyncIssue;
+import com.android.builder.sdk.SdkLibData;
 import com.android.utils.ILogger;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ArrayListMultimap;
@@ -58,9 +59,11 @@ import org.gradle.api.UnknownProjectException;
 import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.artifacts.Dependency;
 import org.gradle.api.artifacts.ModuleVersionIdentifier;
+import org.gradle.api.artifacts.ModuleVersionSelector;
 import org.gradle.api.artifacts.ProjectDependency;
 import org.gradle.api.artifacts.ResolvedArtifact;
 import org.gradle.api.artifacts.SelfResolvingDependency;
+import org.gradle.api.artifacts.UnresolvedDependency;
 import org.gradle.api.artifacts.component.ComponentIdentifier;
 import org.gradle.api.artifacts.component.ComponentSelector;
 import org.gradle.api.artifacts.component.ProjectComponentIdentifier;
@@ -81,21 +84,29 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
+
 /**
  * A manager to resolve configuration dependencies.
  */
 public class DependencyManager {
-    private static final boolean DEBUG_DEPENDENCY = false;
 
+    private static final boolean DEBUG_DEPENDENCY = false;
     private final Project project;
     private final ExtraModelInfo extraModelInfo;
     private final ILogger logger;
+    private final SdkHandler sdkHandler;
+    private SdkLibData sdkLibData =  SdkLibData.dontDownload();
+    private boolean repositoriesUpdated = false;
 
     private final Map<String, PrepareLibraryTask> prepareLibTaskMap = Maps.newHashMap();
 
-    public DependencyManager(@NonNull Project project, @NonNull ExtraModelInfo extraModelInfo) {
+    public DependencyManager(
+            @NonNull Project project,
+            @NonNull ExtraModelInfo extraModelInfo,
+            @NonNull SdkHandler sdkHandler) {
         this.project = project;
         this.extraModelInfo = extraModelInfo;
+        this.sdkHandler = sdkHandler;
         logger = new LoggerWrapper(Logging.getLogger(DependencyManager.class));
     }
 
@@ -331,7 +342,7 @@ public class DependencyManager {
 
         // collect the artifacts first.
         Map<ModuleVersionIdentifier, List<ResolvedArtifact>> artifacts = Maps.newHashMap();
-        collectArtifacts(configuration, artifacts);
+        configuration = collectArtifacts(configuration, artifacts);
 
         // keep a map of modules already processed so that we don't go through sections of the
         // graph that have been seen elsewhere.
@@ -437,17 +448,67 @@ public class DependencyManager {
         }
     }
 
-    private void collectArtifacts(
+
+
+    /**
+     * Collects the resolved artifacts and returns a configuration which contains them. If the
+     * configuration has unresolved dependencies we check that we have the latest version of the
+     * Google repository and the Android Support repository and we install them if not. After this,
+     * the resolution is retried with a fresh copy of the configuration, that will contain the newly
+     * updated repositories. If this passes, we return the correct configuration and we fill the
+     * artifacts map.
+     * @param configuration the configuration from which we get the artifacts
+     * @param artifacts the map of artifacts that are being collected
+     * @return a valid configuration that has only resolved dependencies.
+     */
+    private Configuration collectArtifacts(
             Configuration configuration,
             Map<ModuleVersionIdentifier,
-                    List<ResolvedArtifact>> artifacts) {
+            List<ResolvedArtifact>> artifacts) {
 
         Set<ResolvedArtifact> allArtifacts;
-        if (extraModelInfo.getMode() != STANDARD) {
-            allArtifacts = configuration.getResolvedConfiguration().getLenientConfiguration().getArtifacts(
-                    Specs.satisfyAll());
-        } else {
+        // Make a copy because Gradle keeps a per configuration state of resolution that we
+        // need to reset.
+        Configuration configurationCopy = configuration.copyRecursive();
+
+        Set<UnresolvedDependency> unresolvedDependencies =
+                configuration
+                        .getResolvedConfiguration()
+                        .getLenientConfiguration()
+                        .getUnresolvedModuleDependencies();
+
+        if (unresolvedDependencies.isEmpty()) {
             allArtifacts = configuration.getResolvedConfiguration().getResolvedArtifacts();
+        } else {
+            if (!repositoriesUpdated && sdkLibData.useSdkDownload()) {
+                for (UnresolvedDependency dependency : unresolvedDependencies) {
+                    if (isGoogleOwnedDependency(dependency.getSelector())) {
+                        List<File> updatedRepositories = sdkHandler.getSdkLoader()
+                                .updateRepositories(sdkLibData, logger);
+                        // Adding the updated local maven repositories to the project in order to
+                        // bypass the fact that the old repositories contain the unresolved
+                        // resolution result.
+                        for (File updatedRepository : updatedRepositories) {
+                            project.getRepositories().maven(mavenArtifactRepository -> {
+                                mavenArtifactRepository.setUrl(updatedRepository.toURI());
+                            });
+                        }
+                        repositoriesUpdated = true;
+                        break;
+                    }
+                }
+            }
+            if (extraModelInfo.getMode() != STANDARD) {
+                allArtifacts = configurationCopy.getResolvedConfiguration()
+                        .getLenientConfiguration()
+                        .getArtifacts(Specs.satisfyAll());
+            } else {
+                allArtifacts = configurationCopy.getResolvedConfiguration()
+                        .getResolvedArtifacts();
+
+            }
+            // Modify the configuration to the one that passed.
+            configuration = configurationCopy;
         }
 
         for (ResolvedArtifact artifact : allArtifacts) {
@@ -463,6 +524,12 @@ public class DependencyManager {
                 moduleArtifacts.add(artifact);
             }
         }
+        return configuration;
+    }
+
+    private boolean isGoogleOwnedDependency(ModuleVersionSelector selector) {
+        return selector.getGroup().startsWith("com.google.android")
+                ||  selector.getGroup().startsWith("com.android");
     }
 
     private static void printIndent(int indent, @NonNull String message) {
@@ -907,5 +974,9 @@ public class DependencyManager {
                 configurationName);
         task.dependsOn(configuration.getTaskDependencyFromProjectDependency(
                 useDependedOn, otherProjectTaskName));
+    }
+
+    public void setSdkLibData(@NonNull SdkLibData sdkLibData) {
+        this.sdkLibData = sdkLibData;
     }
 }

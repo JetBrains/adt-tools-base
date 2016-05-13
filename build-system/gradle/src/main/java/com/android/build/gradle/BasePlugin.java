@@ -53,6 +53,7 @@ import com.android.build.gradle.internal.process.GradleProcessExecutor;
 import com.android.build.gradle.internal.profile.RecordingBuildListener;
 import com.android.build.gradle.internal.transforms.DexTransform;
 import com.android.build.gradle.internal.variant.BaseVariantData;
+import com.android.builder.sdk.SdkLibData;
 import com.android.build.gradle.internal.variant.VariantFactory;
 import com.android.build.gradle.tasks.ExternalNativeBuildTaskUtils;
 import com.android.build.gradle.tasks.ExternalNativeJsonGenerator;
@@ -170,6 +171,8 @@ public abstract class BasePlugin {
     private ExtraModelInfo extraModelInfo;
 
     private String creator;
+
+    private DependencyManager dependencyManager;
 
     private boolean hasCreatedTasks = false;
 
@@ -303,7 +306,6 @@ public abstract class BasePlugin {
 
     protected void apply(@NonNull Project project) {
         this.project = project;
-
         ExecutionConfigurationUtil.setThreadPoolSize(project);
         checkPathForErrors();
         checkModulesForErrors();
@@ -330,6 +332,7 @@ public abstract class BasePlugin {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+
         project.getGradle().addListener(new RecordingBuildListener(ThreadRecorder.get()));
 
 
@@ -370,6 +373,17 @@ public abstract class BasePlugin {
         extraModelInfo = new ExtraModelInfo(project, isLibrary());
         checkGradleVersion();
         sdkHandler = new SdkHandler(project, getLogger());
+
+        project.afterEvaluate(p -> {
+            // TODO: Read flag from extension.
+            if (AndroidGradleOptions.getUseSdkDownload(p)) {
+                SdkLibData sdkLibData =
+                        SdkLibData.download(getDownloader(), getSettingsController());
+                dependencyManager.setSdkLibData(sdkLibData);
+                sdkHandler.setSdkLibData(sdkLibData);
+            }
+        });
+
         androidBuilder = new AndroidBuilder(
                 project == project.getRootProject() ? project.getName() : project.getPath(),
                 creator,
@@ -484,7 +498,10 @@ public abstract class BasePlugin {
         project.getConfigurations().create("default" + VariantDependencies.CONFIGURATION_METADATA)
                 .setDescription("Metadata for the produced APKs.");
 
-        DependencyManager dependencyManager = new DependencyManager(project, extraModelInfo);
+        dependencyManager = new DependencyManager(
+                project,
+                extraModelInfo,
+                sdkHandler);
 
         ndkHandler = new NdkHandler(
                 project.getRootDir(),
@@ -592,19 +609,16 @@ public abstract class BasePlugin {
                 },
                 new Recorder.Property("project", project.getName()));
 
-        project.afterEvaluate(new Action<Project>() {
-            @Override
-            public void execute(Project project) {
-                ThreadRecorder.get().record(ExecutionType.BASE_PLUGIN_CREATE_ANDROID_TASKS,
-                        new Recorder.Block<Void>() {
-                            @Override
-                            public Void call() throws Exception {
-                                createAndroidTasks(false);
-                                return null;
-                            }
-                        },
-                        new Recorder.Property("project", project.getName()));
-            }
+        project.afterEvaluate(project -> {
+            ThreadRecorder.get().record(ExecutionType.BASE_PLUGIN_CREATE_ANDROID_TASKS,
+                    new Recorder.Block<Void>() {
+                        @Override
+                        public Void call() throws Exception {
+                            createAndroidTasks(false);
+                            return null;
+                        }
+                    },
+                    new Recorder.Property("project", project.getName()));
         });
     }
 
@@ -760,10 +774,7 @@ public abstract class BasePlugin {
                     extension.getBuildToolsRevision(),
                     extension.getLibraryRequests(),
                     androidBuilder,
-                    SdkHandler.useCachedSdk(project),
-                    AndroidGradleOptions.getUseSdkDownload(project),
-                    getSettingsController(),
-                    getDownloader());
+                    SdkHandler.useCachedSdk(project));
         }
     }
 

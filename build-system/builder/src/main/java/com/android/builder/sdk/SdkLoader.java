@@ -25,13 +25,13 @@ import com.android.utils.ILogger;
 import com.google.common.collect.ImmutableList;
 
 import java.io.File;
+import java.util.List;
 
 /**
  * A loader for the SDK. It's able to provide general SDK information
  * ({@link #getSdkInfo(com.android.utils.ILogger)}, or {@link #getRepositories()}), or
  * target-specific information
- * ({@link #getTargetInfo(String, Revision, com.android.utils.ILogger, SettingsController,
- *      com.android.repository.api.Downloader, boolean)}).
+ * ({@link #getTargetInfo(String, Revision, com.android.utils.ILogger, SdkLibData)}).
  */
 public interface SdkLoader {
 
@@ -43,9 +43,7 @@ public interface SdkLoader {
      * @param targetHash the compilation target hash string.
      * @param buildToolRevision the build tools revision.
      * @param logger a logger to output messages.
-     * @param settings the download settings.
-     * @param downloader the downloader used to download the target and build tools.
-     * @param useGradleSdkDownload a boolean to determine if we should download missing components.
+     * @param sdkLibData a wrapper containing all the components for downloading.
      * @return the target info.
      */
     @NonNull
@@ -53,9 +51,7 @@ public interface SdkLoader {
             @NonNull String targetHash,
             @NonNull Revision buildToolRevision,
             @NonNull ILogger logger,
-            @Nullable SettingsController settings,
-            @Nullable Downloader downloader,
-            boolean useGradleSdkDownload);
+            @NonNull SdkLibData sdkLibData);
 
     /**
      * Returns generic SDK information.
@@ -74,4 +70,16 @@ public interface SdkLoader {
      */
     @NonNull
     ImmutableList<File> getRepositories();
+
+    /**
+     * Tries to update (or install) all local maven repositories and returns a list of directories
+     * that were modified.
+     * @param sdkLibData contains the necessary download components.
+     * @param logger a logger to output messages.
+     * @return a non null list of updated repository folders.
+     */
+    @NonNull
+    List<File> updateRepositories(
+            @NonNull SdkLibData sdkLibData,
+            @NonNull ILogger logger);
 }

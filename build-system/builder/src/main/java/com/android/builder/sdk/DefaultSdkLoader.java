@@ -26,14 +26,17 @@ import static com.android.SdkConstants.FN_ANNOTATIONS_JAR;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.ide.common.repository.SdkMavenRepository;
 import com.android.repository.Revision;
 import com.android.repository.api.Downloader;
 import com.android.repository.api.Installer;
 import com.android.repository.api.ProgressIndicator;
 import com.android.repository.api.RemotePackage;
 import com.android.repository.api.RepoManager;
+import com.android.repository.api.RepoPackage;
 import com.android.repository.api.SettingsController;
 import com.android.repository.api.UpdatablePackage;
+import com.android.repository.io.FileOpUtils;
 import com.android.repository.util.InstallerUtil;
 import com.android.sdklib.AndroidTargetHash;
 import com.android.sdklib.AndroidVersion;
@@ -56,6 +59,7 @@ import java.util.List;
  * Singleton-based implementation of SdkLoader for a standard SDK
  */
 public class DefaultSdkLoader implements SdkLoader {
+
     private static DefaultSdkLoader sLoader;
 
     @NonNull
@@ -85,9 +89,7 @@ public class DefaultSdkLoader implements SdkLoader {
             @NonNull String targetHash,
             @NonNull Revision buildToolRevision,
             @NonNull ILogger logger,
-            @Nullable SettingsController settings,
-            @Nullable Downloader downloader,
-            boolean useGradleSdkDownload) {
+            @NonNull SdkLibData sdkLibData) {
         init(logger);
 
         ProgressIndicator progress = new LoggerProgressIndicatorWrapper(
@@ -103,7 +105,9 @@ public class DefaultSdkLoader implements SdkLoader {
 
         BuildToolInfo buildToolInfo = mSdkHandler.getBuildToolInfo(buildToolRevision, progress);
 
-        if (useGradleSdkDownload) {
+        if (sdkLibData.useSdkDownload()) {
+            SettingsController settings = sdkLibData.getSettings();
+            Downloader downloader = sdkLibData.getDownloader();
             Preconditions.checkNotNull(settings);
             Preconditions.checkNotNull(downloader);
 
@@ -319,7 +323,53 @@ public class DefaultSdkLoader implements SdkLoader {
         if (googleRepo.isDirectory()) {
             repositories.add(googleRepo);
         }
-
         return ImmutableList.copyOf(repositories);
+    }
+
+    @Override
+    @NonNull
+    public List<File> updateRepositories(
+            @NonNull SdkLibData sdkLibData,
+            @NonNull ILogger logger) {
+
+        ImmutableList.Builder<File> repositoriesBuilder = ImmutableList.builder();
+        ProgressIndicator progress = new LoggerProgressIndicatorWrapper(logger);
+        RepoManager repoManager = mSdkHandler.getSdkManager(progress);
+        repoManager.loadSynchronously(
+                RepoManager.DEFAULT_EXPIRATION_PERIOD_MS,
+                progress,
+                sdkLibData.getDownloader(),
+                sdkLibData.getSettings());
+        UpdatablePackage googleRepositoryPackage = repoManager.getPackages().getConsolidatedPkgs()
+                .get(SdkMavenRepository.GOOGLE.getPackageId());
+
+        UpdatablePackage androidRepositoryPackage =
+                mSdkHandler.getSdkManager(progress).getPackages().getConsolidatedPkgs()
+                        .get(SdkMavenRepository.ANDROID.getPackageId());
+
+        if (!googleRepositoryPackage.hasLocal() || googleRepositoryPackage.isUpdate()) {
+            installRemotePackage(
+                    googleRepositoryPackage.getRemote(),
+                    repoManager,
+                    sdkLibData.getDownloader(),
+                    progress);
+
+            File googleRepo = SdkMavenRepository.GOOGLE
+                    .getRepositoryLocation(mSdkLocation, true, FileOpUtils.create());
+            repositoriesBuilder.add(googleRepo);
+        }
+
+        if (!androidRepositoryPackage.hasLocal() || androidRepositoryPackage.isUpdate()) {
+            installRemotePackage(
+                    androidRepositoryPackage.getRemote(),
+                    repoManager,
+                    sdkLibData.getDownloader(),
+                    progress);
+            File androidRepo = SdkMavenRepository.ANDROID
+                    .getRepositoryLocation(mSdkLocation, true, FileOpUtils.create());
+            repositoriesBuilder.add(androidRepo);
+        }
+
+        return repositoriesBuilder.build();
     }
 }

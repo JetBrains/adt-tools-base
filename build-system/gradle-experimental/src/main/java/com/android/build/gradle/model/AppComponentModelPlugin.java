@@ -28,6 +28,7 @@ import com.android.build.gradle.internal.ndk.NdkHandler;
 import com.android.build.gradle.internal.variant.ApplicationVariantFactory;
 import com.android.build.gradle.internal.variant.VariantFactory;
 import com.android.builder.core.AndroidBuilder;
+import com.android.builder.sdk.SdkLibData;
 
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
@@ -68,7 +69,10 @@ public class AppComponentModelPlugin implements Plugin<Project> {
                 NdkHandler ndkHandler,
                 ExtraModelInfo extraModelInfo,
                 ToolingModelBuilderRegistry toolingRegistry) {
-            DependencyManager dependencyManager = new DependencyManager(project, extraModelInfo);
+            DependencyManager dependencyManager = new DependencyManager(
+                    project,
+                    extraModelInfo,
+                    sdkHandler);
 
             return new ApplicationComponentTaskManager(
                     project,

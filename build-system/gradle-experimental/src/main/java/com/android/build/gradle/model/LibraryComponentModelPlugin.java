@@ -20,6 +20,7 @@ import static com.android.build.gradle.model.ModelConstants.IS_APPLICATION;
 import static com.android.build.gradle.model.ModelConstants.TASK_MANAGER;
 
 import com.android.build.gradle.AndroidConfig;
+import com.android.build.gradle.AndroidGradleOptions;
 import com.android.build.gradle.internal.DependencyManager;
 import com.android.build.gradle.internal.ExtraModelInfo;
 import com.android.build.gradle.internal.ndk.NdkHandler;
@@ -28,6 +29,7 @@ import com.android.build.gradle.internal.TaskManager;
 import com.android.build.gradle.internal.variant.LibraryVariantFactory;
 import com.android.build.gradle.internal.variant.VariantFactory;
 import com.android.builder.core.AndroidBuilder;
+import com.android.builder.sdk.SdkLibData;
 
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
@@ -68,7 +70,10 @@ public class LibraryComponentModelPlugin implements Plugin<Project> {
                 NdkHandler ndkHandler,
                 ExtraModelInfo extraModelInfo,
                 ToolingModelBuilderRegistry toolingRegistry) {
-            DependencyManager dependencyManager = new DependencyManager(project, extraModelInfo);
+            DependencyManager dependencyManager = new DependencyManager(
+                    project,
+                    extraModelInfo,
+                    sdkHandler);
 
             return new LibraryComponentTaskManager(
                     project,

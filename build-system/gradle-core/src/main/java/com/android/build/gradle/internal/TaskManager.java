@@ -163,6 +163,7 @@ import com.android.builder.internal.aapt.Aapt;
 import com.android.builder.model.DataBindingOptions;
 import com.android.builder.model.OptionalCompilationStep;
 import com.android.builder.model.SyncIssue;
+import com.android.builder.sdk.SdkLibData;
 import com.android.builder.sdk.TargetInfo;
 import com.android.builder.testing.ConnectedDeviceProvider;
 import com.android.builder.testing.api.DeviceProvider;

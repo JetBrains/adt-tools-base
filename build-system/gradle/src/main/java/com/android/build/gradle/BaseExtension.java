@@ -44,6 +44,7 @@ import com.android.builder.core.AndroidBuilder;
 import com.android.builder.core.BuilderConstants;
 import com.android.builder.core.LibraryRequest;
 import com.android.builder.model.SourceProvider;
+import com.android.builder.sdk.SdkLibData;
 import com.android.builder.sdk.TargetInfo;
 import com.android.builder.testing.api.DeviceProvider;
 import com.android.builder.testing.api.TestServer;
@@ -858,10 +859,7 @@ public abstract class BaseExtension implements AndroidConfig {
                     buildToolsRevision,
                     libraryRequests,
                     androidBuilder,
-                    SdkHandler.useCachedSdk(project),
-                    false,
-                    null,
-                    null);
+                    SdkHandler.useCachedSdk(project));
         }
     }
 

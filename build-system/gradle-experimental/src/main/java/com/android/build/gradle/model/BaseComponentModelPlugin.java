@@ -87,6 +87,7 @@ import com.android.builder.internal.compiler.PreDexCache;
 import com.android.builder.profile.ProcessRecorderFactory;
 import com.android.builder.profile.Recorder;
 import com.android.builder.profile.ThreadRecorder;
+import com.android.builder.sdk.SdkLibData;
 import com.android.builder.sdk.TargetInfo;
 import com.android.builder.signing.DefaultSigningConfig;
 import com.android.ide.common.internal.ExecutorSingleton;
@@ -523,10 +524,7 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
                 sdkHandler.initTarget(androidExtension.getCompileSdkVersion(),
                         androidExtension.getBuildToolsRevision(),
                         androidExtension.getLibraryRequests(), androidBuilder,
-                        SdkHandler.useCachedSdk(project),
-                        false,
-                        null,
-                        null);
+                        SdkHandler.useCachedSdk(project));
             }
 
             VariantManager variantManager = new VariantManager(project, androidBuilder,
