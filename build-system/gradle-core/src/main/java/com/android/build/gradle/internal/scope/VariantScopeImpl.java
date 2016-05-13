@@ -500,7 +500,7 @@ public class VariantScopeImpl implements VariantScope {
 
     @Override
     @NonNull
-    public File getManifestKeepListFile() {
+    public File getManifestKeepListProguardFile() {
         return new File(globalScope.getIntermediatesDir(), "multi-dex/" + getVariantConfiguration().getDirName()
                 + "/manifest_keep.txt");
     }

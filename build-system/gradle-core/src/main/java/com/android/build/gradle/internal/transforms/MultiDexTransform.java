@@ -20,21 +20,25 @@ import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.annotations.concurrency.Immutable;
 import com.android.build.api.transform.DirectoryInput;
 import com.android.build.api.transform.JarInput;
 import com.android.build.api.transform.QualifiedContent;
 import com.android.build.api.transform.QualifiedContent.ContentType;
 import com.android.build.api.transform.QualifiedContent.Scope;
+import com.android.build.api.transform.SecondaryFile;
 import com.android.build.api.transform.TransformException;
 import com.android.build.api.transform.TransformInput;
 import com.android.build.api.transform.TransformInvocation;
 import com.android.build.gradle.internal.pipeline.TransformManager;
 import com.android.build.gradle.internal.scope.VariantScope;
+import com.android.builder.sdk.TargetInfo;
 import com.android.ide.common.process.ProcessException;
 import com.google.common.base.Charsets;
 import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
@@ -45,9 +49,14 @@ import org.gradle.api.logging.LoggingManager;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import proguard.ParseException;
 
@@ -59,24 +68,31 @@ import proguard.ParseException;
  */
 public class MultiDexTransform extends BaseProguardAction {
 
+    // Inputs
     @NonNull
-    private final File manifestKeepListFile;
+    private final File manifestKeepListProguardFile;
+    @Nullable
+    private final File userMainDexKeepProguard;
+    @Nullable
+    private final File userMainDexKeepFile;
     @NonNull
     private final VariantScope variantScope;
     @Nullable
     private final File includeInMainDexJarFile;
 
+    // Outputs
     @NonNull
     private final File configFileOut;
     @NonNull
     private final File mainDexListFile;
 
     public MultiDexTransform(
-            @NonNull File manifestKeepListFile,
             @NonNull VariantScope variantScope,
             @Nullable File includeInMainDexJarFile) {
         super(variantScope);
-        this.manifestKeepListFile = manifestKeepListFile;
+        this.manifestKeepListProguardFile = variantScope.getManifestKeepListProguardFile();
+        this.userMainDexKeepProguard = variantScope.getVariantConfiguration().getMultiDexKeepProguard();
+        this.userMainDexKeepFile = variantScope.getVariantConfiguration().getMultiDexKeepFile();
         this.variantScope = variantScope;
         this.includeInMainDexJarFile = includeInMainDexJarFile;
         configFileOut = new File(variantScope.getGlobalScope().getBuildDir() + "/" + FD_INTERMEDIATES
@@ -117,11 +133,27 @@ public class MultiDexTransform extends BaseProguardAction {
 
     @NonNull
     @Override
-    public Collection<File> getSecondaryFileInputs() {
-        if (includeInMainDexJarFile != null) {
-            return ImmutableList.of(includeInMainDexJarFile);
+    public Collection<SecondaryFile> getSecondaryFiles() {
+        return Arrays.asList(
+                        manifestKeepListProguardFile,
+                        userMainDexKeepFile,
+                        userMainDexKeepProguard,
+                        includeInMainDexJarFile)
+                .stream()
+                .filter(file -> file != null)
+                .map(file -> new SecondaryFile(file, false))
+                .collect(Collectors.toList());
+    }
+
+    @NonNull
+    @Override
+    public Map<String, Object> getParameterInputs() {
+        TargetInfo targetInfo = variantScope.getGlobalScope().getAndroidBuilder().getTargetInfo();
+        if (targetInfo == null) {
+            return ImmutableMap.of();
         }
-        return ImmutableList.of();
+        return ImmutableMap.of(
+                "build_tools", targetInfo.getBuildTools().getRevision().toString());
     }
 
     @NonNull
@@ -176,7 +208,15 @@ public class MultiDexTransform extends BaseProguardAction {
         dontwarn();
         dontnote();
         forceprocessing();
-        applyConfigurationFile(manifestKeepListFile);
+        applyConfigurationFile(manifestKeepListProguardFile);
+        if (userMainDexKeepProguard != null) {
+            applyConfigurationFile(userMainDexKeepProguard);
+        }
+
+        // add a couple of rules that cannot be easily parsed from the manifest.
+        keep("public class * extends android.app.backup.BackupAgent { <init>(); }");
+        keep("public class * extends java.lang.annotation.Annotation { *;}");
+        keep("class com.android.tools.fd.** {*;}"); // Instant run.
 
         // handle inputs
         libraryJar(findShrinkedAndroidJar());
@@ -229,13 +269,13 @@ public class MultiDexTransform extends BaseProguardAction {
             // stuff, too; next time we're low on main dex space, revisit this!
             mainDexClasses.addAll(callDx(_allClassesJarFile, includeInMainDexJarFile));
         }
-/*
-        TODO: figure this out this wasn't plugged-in in the previous version.
-        if (manifestKeepListFile != null) {
-            Set<String> mainDexList = new HashSet<String>(
-                    Files.readLines(manifestKeepListFile, Charsets.UTF_8));
-            mainDexClasses.addAll(mainDexList);
-        }*/
+
+        if (userMainDexKeepFile != null) {
+            mainDexClasses = ImmutableSet.<String>builder()
+                    .addAll(mainDexClasses)
+                    .addAll(Files.readLines(userMainDexKeepFile, Charsets.UTF_8))
+                    .build();
+        }
 
         String fileContent = Joiner.on(System.getProperty("line.separator")).join(mainDexClasses);
 

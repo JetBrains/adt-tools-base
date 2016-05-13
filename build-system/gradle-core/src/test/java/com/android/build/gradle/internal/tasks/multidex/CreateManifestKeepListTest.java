@@ -61,17 +61,7 @@ public class CreateManifestKeepListTest {
             + "</manifest>";
 
     private static final String EXPECTED_KEEP_FILTERED =
-            "-keep class com.android.tests.flavored.Main { <init>(); }\n"
-                    + "-keep public class * extends android.app.backup.BackupAgent {\n"
-                    + "    <init>();\n"
-                    + "}\n"
-                    + "-keep public class * extends java.lang.annotation.Annotation {\n"
-                    + "    *;\n"
-                    + "}\n"
-                    + "-keep class com.android.tools.fd.** {\n"
-                    + "    *;\n"
-                    + "}\n"
-                    + "-dontnote com.android.tools.fd.**,android.support.multidex.MultiDexExtractor\n";
+            "-keep class com.android.tests.flavored.Main { <init>(); }\n";
 
     private static final String EXPECTED_KEEP =
             "-keep class com.android.tests.flavored.OtherActivity { <init>(); }\n"
@@ -91,7 +81,6 @@ public class CreateManifestKeepListTest {
         CreateManifestKeepList.generateKeepListFromManifest(
                 manifest,
                 unfilteredOutput,
-                null /*proguardFile*/,
                 null /*filter*/);
 
         assertThat(Files.toString(unfilteredOutput, Charsets.UTF_8)).isEqualTo(EXPECTED_KEEP);
@@ -101,7 +90,6 @@ public class CreateManifestKeepListTest {
         CreateManifestKeepList.generateKeepListFromManifest(
                 manifest,
                 filteredOutput,
-                null /*proguardFile*/,
                 removeActivity("com.android.tests.flavored.OtherActivity"));
 
         assertThat(Files.toString(filteredOutput, Charsets.UTF_8))

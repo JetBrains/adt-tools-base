@@ -170,7 +170,7 @@ public interface VariantScope extends TransformVariantScope, InstantRunVariantSc
     File getJarMergingOutputFile();
 
     @NonNull
-    File getManifestKeepListFile();
+    File getManifestKeepListProguardFile();
 
     @NonNull
     File getMainDexListFile();
