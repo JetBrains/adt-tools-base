@@ -17,31 +17,34 @@
 #define TRAFFIC_DATA_COLLECTOR_H_
 
 #include "network_data_collector.h"
-#include "network_sample_data.h"
 
 #include <string>
 
-namespace network_sampler {
+namespace network {
 
 // Data collector of network traffic information. For example, it provides sent
 // and received bytes of an app.
 class TrafficDataCollector : public NetworkDataCollector {
  public:
-  TrafficDataCollector(const std::string& file) : kFile(file) {}
+  TrafficDataCollector(const std::string &uid, const std::string &file)
+      : kUid(uid), kFile(file) {}
 
-  // Reads traffic bytes sent and received into data.
-  void ReadBytes(const std::string &uid, NetworkSampleData *data);
-
-  NetworkSampleType GetType() const override;
+  // Reads traffic bytes sent and received, and store data in given {@code
+  // NetworkProfilerData}.
+  void GetData(profiler::proto::NetworkProfilerData *data) override;
 
  private:
   static const int kUidTokenIndex = 3;
   static const int kSendBytesTokenIndex = 7;
   static const int kReceiveBytesTokenIndex = 5;
 
+  // App uid for parsing file to get app's traffic information.
+  const std::string kUid;
+
+  // Traffic file path.
   const std::string kFile;
 };
 
-} // namespace network_sampler
+} // namespace network
 
 #endif // TRAFFIC_DATA_COLLECTOR_H_

@@ -13,11 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "../timespec_math.h"
+#include "timespec_math.h"
 
 #include <gtest/gtest.h>
 
-using network_sampler::TimespecMath;
+using utils::TimespecMath;
 
 TEST(Add, PositiveNanoSecondOverload) {
   // sec are random positive integers, sum of nsec is > 2 * 1e9.

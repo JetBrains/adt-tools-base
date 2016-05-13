@@ -13,25 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef NETWORK_SAMPLE_DATA_H_
-#define NETWORK_SAMPLE_DATA_H_
+syntax = "proto3";
 
-#include <cstdint>
+package profiler.proto;
 
-namespace network_sampler {
+message TrafficData {
+  int64 bytes_sent = 1;
+  int64 bytes_received = 2;
+}
 
-enum class NetworkSampleType {
-  TRAFFIC,
-  CONNECTION,
-};
+message ConnectionData { int32 connection_number = 1; }
 
-struct NetworkSampleData {
-  NetworkSampleType type_;
-  int connections_;
-  uint64_t send_bytes_;
-  uint64_t receive_bytes_;
-};
-
-} // namespace network_sampler
-
-#endif // NETWORK_SAMPLE_DATA_H_
+message NetworkProfilerData {
+  oneof data {
+    TrafficData traffic_data = 1;
+    ConnectionData connection_data = 2;
+  }
+}

@@ -19,34 +19,31 @@
 #include <string>
 #include <vector>
 
-namespace network_sampler {
+namespace network {
 
 class NetworkFiles {
- public:
+public:
+  // Path of pid status file to get uid from pid.
   static std::string GetPidStatusFilePath(const int pid) {
     return "/proc/" + std::to_string(pid) + "/status";
   }
 
   // Path of file that contains all apps' sent and received bytes.
-  static const std::string& GetTrafficBytesFilePath() {
+  static const std::string &GetTrafficBytesFilePath() {
     static const std::string file_path("/proc/net/xt_qtaguid/stats");
     return file_path;
   }
 
   // Path of files that contains all apps' open connection numbers.
-  static const std::vector<std::string>& GetConnectionFilePaths() {
+  static const std::vector<std::string> &GetConnectionFilePaths() {
     static const std::vector<std::string> file_paths{{
-      "/proc/net/tcp6",
-      "/proc/net/udp6",
-      "/proc/net/raw6",
-      "/proc/net/tcp",
-      "/proc/net/udp",
-      "/proc/net/raw",
+        "/proc/net/tcp6", "/proc/net/udp6", "/proc/net/raw6", "/proc/net/tcp",
+        "/proc/net/udp", "/proc/net/raw",
     }};
     return file_paths;
   }
 };
 
-} // namespace network_sampler
+} // namespace network
 
 #endif // NETWORK_FILES_H_

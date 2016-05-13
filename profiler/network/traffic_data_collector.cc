@@ -14,43 +14,42 @@
  * limitations under the License.
  */
 #include "traffic_data_collector.h"
+#include "file_reader.h"
 
 #include <cstdlib>
 
-namespace network_sampler {
+namespace network {
 
-void TrafficDataCollector::ReadBytes(const std::string &uid,
-                                     NetworkSampleData *data) {
-  data->type_ = GetType();
-  data->send_bytes_ = 0;
-  data->receive_bytes_ = 0;
+void TrafficDataCollector::GetData(profiler::proto::NetworkProfilerData *data) {
+  int64_t bytes_sent = 0;
+  int64_t bytes_received = 0;
 
   std::vector<std::string> lines;
-  NetworkDataCollector::Read(kFile, &lines);
+  utils::FileReader::Read(kFile, &lines);
 
   for (const std::string &line : lines) {
 
-    if (NetworkDataCollector::CompareToken(line, uid, kUidTokenIndex)) {
+    if (utils::FileReader::CompareToken(line, kUid, kUidTokenIndex)) {
       size_t receive_token_start = 0;
-      if (!NetworkDataCollector::FindTokenPosition(
-              line, kReceiveBytesTokenIndex, &receive_token_start)) {
+      if (!utils::FileReader::FindTokenPosition(line, kReceiveBytesTokenIndex,
+                                                &receive_token_start)) {
         continue;
       }
       size_t send_token_start = receive_token_start;
-      if (!NetworkDataCollector::FindTokenPosition(
+      if (!utils::FileReader::FindTokenPosition(
               line, kSendBytesTokenIndex - kReceiveBytesTokenIndex,
               &send_token_start)) {
         continue;
       }
 
-      data->send_bytes_ += strtoll(&line[send_token_start], nullptr, 10);
-      data->receive_bytes_ += strtoll(&line[receive_token_start], nullptr, 10);
+      bytes_sent += strtoll(&line[send_token_start], nullptr, 10);
+      bytes_received += strtoll(&line[receive_token_start], nullptr, 10);
     }
   }
+
+  profiler::proto::TrafficData *traffic_data = data->mutable_traffic_data();
+  traffic_data->set_bytes_sent(bytes_sent);
+  traffic_data->set_bytes_received(bytes_received);
 }
 
-NetworkSampleType TrafficDataCollector::GetType() const {
-  return NetworkSampleType::TRAFFIC;
-}
-
-} // namespace network_sampler
+} // namespace network
