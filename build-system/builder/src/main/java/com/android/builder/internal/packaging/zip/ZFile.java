@@ -119,6 +119,10 @@ import java.util.concurrent.Future;
  * that files that need to change location will moved to memory and will only be flushed when
  * either {@link #update()} or {@link #close()} are called.
  *
+ * <p>Aligning a file will force it to be not compressed. This is because alignment is used to
+ * allow mapping files in the archive directly into memory and compressing defeats the purpose of
+ * alignment.
+ *
  * <p>In general, alignment is done by changing a file's offset, creating empty areas in the zip
  * file. However, it is possible to tell {@link ZFile} to use the extra field in the local header
  * to do the alignment instead. This is done by setting
@@ -1232,17 +1236,18 @@ public class ZFile implements Closeable {
 
     /**
      * Adds a file to the archive.
-     * <p>
-     * Adding the file will not update the archive immediately. Updating will only happen
+     *
+     * <p>Adding the file will not update the archive immediately. Updating will only happen
      * when the {@link #update()} method is invoked.
-     * <p>
-     * Adding a file with the same name as an existing file will replace that file in the
+     *
+     * <p>Adding a file with the same name as an existing file will replace that file in the
      * archive.
      *
      * @param name the file name (<em>i.e.</em>, path); paths should be defined using slashes
      * and the name should not end in slash
      * @param stream the source for the file's data
-     * @param mayCompress can the file be compressed?
+     * @param mayCompress can the file be compressed? This flag will be ignored if the alignment
+     * rules force the file to be aligned, in which case the file will not be compressed.
      * @throws IOException failed to read the source data
      */
     public void add(@NonNull String name, @NonNull InputStream stream, boolean mayCompress)
@@ -1251,6 +1256,14 @@ public class ZFile implements Closeable {
          * Clean pending background work, if needed.
          */
         processAllReadyEntries();
+
+        /*
+         * We cannot compress if we need to align because it is pointless ot align a compressed
+         * file.
+         */
+        if (mAlignmentRule.alignment(name) != AlignmentRule.NO_ALIGNMENT) {
+            mayCompress = false;
+        }
 
         CloseableByteSource source = mTracker.fromStream(stream);
         long crc32 = source.hash(Hashing.crc32()).padToLong();
