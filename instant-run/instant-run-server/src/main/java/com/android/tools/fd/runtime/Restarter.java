@@ -61,8 +61,8 @@ public class Restarter {
         activity.runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                if (Log.isLoggable(LOG_TAG, Log.INFO)) {
-                    Log.i(LOG_TAG, "Resources updated: notify activities");
+                if (Log.isLoggable(LOG_TAG, Log.VERBOSE)) {
+                    Log.v(LOG_TAG, "Resources updated: notify activities");
                 }
                 updateActivity(activity);
             }
@@ -70,14 +70,14 @@ public class Restarter {
     }
 
     private static void restartActivity(@NonNull Activity activity) {
-        if (Log.isLoggable(LOG_TAG, Log.INFO)) {
-            Log.i(LOG_TAG, "About to restart " + activity.getClass().getSimpleName());
+        if (Log.isLoggable(LOG_TAG, Log.VERBOSE)) {
+            Log.v(LOG_TAG, "About to restart " + activity.getClass().getSimpleName());
         }
 
         // You can't restart activities that have parents: find the top-most activity
         while (activity.getParent() != null) {
-            if (Log.isLoggable(LOG_TAG, Log.INFO)) {
-                Log.i(LOG_TAG, activity.getClass().getSimpleName()
+            if (Log.isLoggable(LOG_TAG, Log.VERBOSE)) {
+                Log.v(LOG_TAG, activity.getClass().getSimpleName()
                         + " is not a top level activity; restarting "
                         + activity.getParent().getClass().getSimpleName() + " instead");
             }
@@ -114,8 +114,8 @@ public class Restarter {
                 if (toast) {
                     showToast(foreground, "Restarting app to apply incompatible changes");
                 }
-                if (Log.isLoggable(LOG_TAG, Log.INFO)) {
-                    Log.i(LOG_TAG, "RESTARTING APP");
+                if (Log.isLoggable(LOG_TAG, Log.VERBOSE)) {
+                    Log.v(LOG_TAG, "RESTARTING APP");
                 }
                 @SuppressWarnings("UnnecessaryLocalVariable") // fore code clarify
                 Context context = foreground;
@@ -125,14 +125,14 @@ public class Restarter {
                         intent, PendingIntent.FLAG_CANCEL_CURRENT);
                 AlarmManager mgr = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
                 mgr.set(AlarmManager.RTC, System.currentTimeMillis() + 100, pendingIntent);
-                if (Log.isLoggable(LOG_TAG, Log.INFO)) {
-                    Log.i(LOG_TAG, "Scheduling activity " + foreground
+                if (Log.isLoggable(LOG_TAG, Log.VERBOSE)) {
+                    Log.v(LOG_TAG, "Scheduling activity " + foreground
                             + " to start after exiting process");
                 }
             } else {
                 showToast(knownActivities.iterator().next(), "Unable to restart app");
-                if (Log.isLoggable(LOG_TAG, Log.INFO)) {
-                    Log.i(LOG_TAG, "Couldn't find any foreground activities to restart " +
+                if (Log.isLoggable(LOG_TAG, Log.VERBOSE)) {
+                    Log.v(LOG_TAG, "Couldn't find any foreground activities to restart " +
                             "for resource refresh");
                 }
             }
@@ -141,8 +141,8 @@ public class Restarter {
     }
 
     static void showToast(@NonNull final Activity activity, @NonNull final String text) {
-        if (Log.isLoggable(LOG_TAG, Log.INFO)) {
-            Log.i(LOG_TAG, "About to show toast for activity " + activity + ": " + text);
+        if (Log.isLoggable(LOG_TAG, Log.VERBOSE)) {
+            Log.v(LOG_TAG, "About to show toast for activity " + activity + ": " + text);
         }
         activity.runOnUiThread(new Runnable() {
             @Override

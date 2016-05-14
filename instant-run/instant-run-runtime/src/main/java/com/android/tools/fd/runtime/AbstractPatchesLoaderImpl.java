@@ -49,8 +49,8 @@ public abstract class AbstractPatchesLoaderImpl implements PatchesLoader {
                 }
                 changeField.set(null, o);
 
-                if (logging != null && logging.isLoggable(Level.INFO)) {
-                    logging.log(Level.INFO, String.format("patched %s", className));
+                if (logging != null && logging.isLoggable(Level.FINE)) {
+                    logging.log(Level.FINE, String.format("patched %s", className));
                 }
             }
         } catch (Exception e) {

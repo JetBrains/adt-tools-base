@@ -52,8 +52,8 @@ public class ApplicationPatch {
     public static List<ApplicationPatch> read(@NonNull DataInputStream input) throws IOException {
         int changeCount = input.readInt();
 
-        if (logging != null && logging.isLoggable(Level.INFO)) {
-            logging.log(Level.INFO, "Receiving " + changeCount + " changes");
+        if (logging != null && logging.isLoggable(Level.FINE)) {
+            logging.log(Level.FINE, "Receiving " + changeCount + " changes");
         }
 
         List<ApplicationPatch> changes = new ArrayList<ApplicationPatch>(changeCount);
