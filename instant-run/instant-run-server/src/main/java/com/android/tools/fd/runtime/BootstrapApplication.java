@@ -19,6 +19,9 @@ package com.android.tools.fd.runtime;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 
+import android.app.ActivityManager;
+import android.os.Process;
+import android.app.ActivityManager.RunningAppProcessInfo;
 import android.app.Application;
 import android.content.Context;
 import android.content.ContextWrapper;
@@ -276,10 +279,56 @@ public class BootstrapApplication extends Application {
                     realApplication, null);
         }
         super.onCreate();
+
+        // Start server, unless we're in a multiprocess scenario and this isn't the
+        // primary process
         if (AppInfo.applicationId != null) {
-            Server.create(AppInfo.applicationId, BootstrapApplication.this);
+            try {
+                boolean foundPackage = false;
+                int pid = Process.myPid();
+                ActivityManager manager = (ActivityManager) getSystemService(
+                        Context.ACTIVITY_SERVICE);
+                List<RunningAppProcessInfo> processes = manager.getRunningAppProcesses();
+
+                boolean startServer;
+                if (processes != null && processes.size() > 1) {
+                    // Multiple processes: look at each, and if the process name matches
+                    // the package name (for the current pid), it's the main process.
+                    startServer = false;
+                    for (RunningAppProcessInfo processInfo : processes) {
+                        if (AppInfo.applicationId.equals(processInfo.processName)) {
+                            foundPackage = true;
+                            if (processInfo.pid == pid) {
+                                startServer = true;
+                                break;
+                            }
+                        }
+                    }
+                    if (!startServer && !foundPackage) {
+                        // Safety check: If for some reason we didn't even find the main package,
+                        // start the server anyway. This safeguards against apps doing strange
+                        // things with the process name.
+                        startServer = true;
+                        if (Log.isLoggable(LOG_TAG, Log.INFO)) {
+                            Log.i(LOG_TAG, "Multiprocess but didn't find process with package: "
+                                    + "starting server anyway");
+                        }
+                    }
+                } else {
+                    // If there is only one process, start the server.
+                    startServer = true;
+                }
+
+                if (startServer) {
+                    Server.create(AppInfo.applicationId, BootstrapApplication.this);
+                }
+            } catch (Throwable t) {
+                if (Log.isLoggable(LOG_TAG, Log.INFO)) {
+                    Log.i(LOG_TAG, "Failed during multi process check", t);
+                }
+                Server.create(AppInfo.applicationId, BootstrapApplication.this);
+            }
         }
-        //CrashHandler.startCrashCatcher(this);
 
         if (realApplication != null) {
             realApplication.onCreate();
