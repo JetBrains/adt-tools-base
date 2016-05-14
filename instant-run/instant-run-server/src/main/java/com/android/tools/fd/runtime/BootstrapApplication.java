@@ -22,6 +22,7 @@ import com.android.annotations.Nullable;
 import android.app.Application;
 import android.content.Context;
 import android.content.ContextWrapper;
+import android.content.pm.PackageManager;
 import android.util.Log;
 
 import java.io.File;
@@ -247,6 +248,13 @@ public class BootstrapApplication extends Application {
                 throw new IllegalStateException(e);
             }
         }
+    }
+
+    @Override
+    public Context createPackageContext(String packageName, int flags)
+            throws PackageManager.NameNotFoundException {
+        Context c = realApplication.createPackageContext(packageName, flags);
+        return c == null ? realApplication : c;
     }
 
     @Override
