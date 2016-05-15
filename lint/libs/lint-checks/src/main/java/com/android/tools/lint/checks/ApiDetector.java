@@ -21,6 +21,7 @@ import static com.android.SdkConstants.ANDROID_THEME_PREFIX;
 import static com.android.SdkConstants.ANDROID_URI;
 import static com.android.SdkConstants.ATTR_CLASS;
 import static com.android.SdkConstants.ATTR_FULL_BACKUP_CONTENT;
+import static com.android.SdkConstants.ATTR_HEIGHT;
 import static com.android.SdkConstants.ATTR_ID;
 import static com.android.SdkConstants.ATTR_LABEL_FOR;
 import static com.android.SdkConstants.ATTR_LAYOUT_HEIGHT;
@@ -31,6 +32,7 @@ import static com.android.SdkConstants.ATTR_PARENT;
 import static com.android.SdkConstants.ATTR_TARGET_API;
 import static com.android.SdkConstants.ATTR_TEXT_IS_SELECTABLE;
 import static com.android.SdkConstants.ATTR_VALUE;
+import static com.android.SdkConstants.ATTR_WIDTH;
 import static com.android.SdkConstants.BUTTON;
 import static com.android.SdkConstants.CHECK_BOX;
 import static com.android.SdkConstants.CLASS_CONSTRUCTOR;
@@ -649,6 +651,7 @@ public class ApiDetector extends ResourceXmlDetector
     public static boolean isBenignUnusedAttribute(@NonNull String name) {
         return ATTR_LABEL_FOR.equals(name)
                || ATTR_TEXT_IS_SELECTABLE.equals(name)
+               || "textAlignment".equals(name)
                || ATTR_FULL_BACKUP_CONTENT.equals(name);
     }
 
@@ -667,6 +670,12 @@ public class ApiDetector extends ResourceXmlDetector
                 checkElement(context, element, TAG_RIPPLE, 21, null, UNSUPPORTED);
                 checkElement(context, element, TAG_ANIMATED_SELECTOR, 21, null, UNSUPPORTED);
                 checkElement(context, element, TAG_ANIMATED_VECTOR, 21, null, UNSUPPORTED);
+                checkElement(context, element, "drawable", 24, null, UNSUPPORTED);
+                if ("layer-list".equals(tag)) {
+                    checkLevelList(context, element);
+                } else if (tag.contains(".")) {
+                    checkElement(context, element, tag, 24, null, UNSUPPORTED);
+                }
             }
             if (element.getParentNode().getNodeType() != Node.ELEMENT_NODE) {
                 // Root node
@@ -737,6 +746,40 @@ public class ApiDetector extends ResourceXmlDetector
 
     /** Checks whether the given element is the given tag, and if so, whether it satisfied
      * the minimum version that the given tag is supported in */
+    private void checkLevelList(@NonNull XmlContext context, @NonNull Element element) {
+        Node curr = element.getFirstChild();
+        while (curr != null) {
+            if (curr.getNodeType() == Node.ELEMENT_NODE
+                    && TAG_ITEM.equals(curr.getNodeName())) {
+                Element e = (Element) curr;
+                if (e.hasAttributeNS(ANDROID_URI, ATTR_WIDTH)
+                        || e.hasAttributeNS(ANDROID_URI, ATTR_HEIGHT)) {
+                    int attributeApiLevel = 23; // Using width and height on layer-list children requires M
+                    int minSdk = getMinSdk(context);
+                    if (attributeApiLevel > minSdk
+                            && attributeApiLevel > context.getFolderVersion()
+                            && attributeApiLevel > getLocalMinSdk(element)) {
+                        for (String attributeName : new String[] { ATTR_WIDTH, ATTR_HEIGHT}) {
+                            Attr attribute = e.getAttributeNodeNS(ANDROID_URI, attributeName);
+                            if (attribute == null) {
+                                continue;
+                            }
+                            Location location = context.getLocation(attribute);
+                            String message = String.format(
+                                    "Attribute `%1$s` is only used in API level %2$d and higher "
+                                            + "(current min is %3$d)",
+                                    attribute.getLocalName(), attributeApiLevel, minSdk);
+                            context.report(UNUSED, attribute, location, message);
+                        }
+                    }
+                }
+            }
+            curr = curr.getNextSibling();
+        }
+    }
+
+    /** Checks whether the given element is the given tag, and if so, whether it satisfied
+     * the minimum version that the given tag is supported in */
     private void checkElement(@NonNull XmlContext context, @NonNull Element element,
             @NonNull String tag, int api, @Nullable String gradleVersion, @NonNull Issue issue) {
         if (tag.equals(element.getTagName())) {
@@ -746,6 +789,17 @@ public class ApiDetector extends ResourceXmlDetector
                     && api > getLocalMinSdk(element)
                     && !featureProvidedByGradle(context, gradleVersion)) {
                 Location location = context.getLocation(element);
+
+                // For the <drawable> tag we report it against the class= attribute
+                if ("drawable".equals(tag)) {
+                    Attr attribute = element.getAttributeNode(ATTR_CLASS);
+                    if (attribute == null) {
+                        return;
+                    }
+                    location = context.getLocation(attribute);
+                    tag = ATTR_CLASS;
+                }
+
                 String message;
                 if (issue == UNSUPPORTED) {
                     message = String.format(
@@ -755,6 +809,10 @@ public class ApiDetector extends ResourceXmlDetector
                         message += String.format(
                                 " or building with Android Gradle plugin %1$s or higher",
                                 gradleVersion);
+                    } else if (tag.contains(".")) {
+                        message = String.format(
+                                "Custom drawables requires API level %1$d (current min is %2$d)",
+                                api, minSdk);
                     }
                 } else {
                     assert issue == UNUSED : issue;
