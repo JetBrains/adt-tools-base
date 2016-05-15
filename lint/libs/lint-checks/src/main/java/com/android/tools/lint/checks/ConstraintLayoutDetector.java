@@ -16,44 +16,23 @@
 
 package com.android.tools.lint.checks;
 
-import static com.android.SdkConstants.ANDROID_NS_NAME;
-import static com.android.SdkConstants.ANDROID_URI;
-import static com.android.SdkConstants.ATTR_COLUMN_COUNT;
-import static com.android.SdkConstants.ATTR_LAYOUT_COLUMN;
-import static com.android.SdkConstants.ATTR_LAYOUT_COLUMN_SPAN;
-import static com.android.SdkConstants.ATTR_LAYOUT_GRAVITY;
-import static com.android.SdkConstants.ATTR_LAYOUT_ROW;
-import static com.android.SdkConstants.ATTR_LAYOUT_ROW_SPAN;
-import static com.android.SdkConstants.ATTR_ORIENTATION;
-import static com.android.SdkConstants.ATTR_ROW_COUNT;
-import static com.android.SdkConstants.ATTR_USE_DEFAULT_MARGINS;
-import static com.android.SdkConstants.AUTO_URI;
+import static com.android.SdkConstants.CLASS_CONSTRAINT_LAYOUT_GUIDELINE;
 import static com.android.SdkConstants.CONSTRAINT_LAYOUT;
-import static com.android.SdkConstants.FQCN_GRID_LAYOUT_V7;
-import static com.android.SdkConstants.GRID_LAYOUT;
 import static com.android.SdkConstants.SHERPA_URI;
-import static com.android.SdkConstants.XMLNS_PREFIX;
 
 import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.LayoutDetector;
-import com.android.tools.lint.detector.api.LintUtils;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
-import com.android.tools.lint.detector.api.Speed;
-import com.android.tools.lint.detector.api.TextFormat;
 import com.android.tools.lint.detector.api.XmlContext;
 
-import org.w3c.dom.Attr;
-import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 
@@ -80,7 +59,6 @@ public class ConstraintLayoutDetector extends LayoutDetector {
                     Scope.RESOURCE_FILE_SCOPE));
 
     private static final String LAYOUT_CONSTRAINT_PREFIX = "layout_constraint";
-    private static final int PREFIX_LENGTH = LAYOUT_CONSTRAINT_PREFIX.length();
 
     /** Constructs a new {@link ConstraintLayoutDetector} check */
     public ConstraintLayoutDetector() {
@@ -99,6 +77,10 @@ public class ConstraintLayoutDetector extends LayoutDetector {
                 continue;
             }
             Element element = (Element)child;
+
+            if (element.getTagName().equals(CLASS_CONSTRAINT_LAYOUT_GUIDELINE)) {
+                continue;
+            }
 
             boolean isConstrainedHorizontally = false;
             boolean isConstrainedVertically = false;

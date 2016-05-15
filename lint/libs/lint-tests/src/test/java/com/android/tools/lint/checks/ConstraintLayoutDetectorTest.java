@@ -93,6 +93,16 @@ public class ConstraintLayoutDetectorTest extends AbstractCheckTest {
                         + "        app:layout_constraintBaseline_toBaselineOf=\"@+id/textView4\"\n"
                         + "        app:layout_editor_absoluteX=\"306dp\"\n"
                         + "        app:layout_editor_absoluteY=\"270dp\" />\n"
+                        + "\n"
+                        + "    <android.support.constraint.Guideline\n"
+                        + "        android:layout_width=\"wrap_content\"\n"
+                        + "        android:layout_height=\"wrap_content\"\n"
+                        + "        android:id=\"@+id/android.support.constraint.Guideline\"\n"
+                        + "        app:orientation=\"vertical\"\n"
+                        + "        app:layout_editor_absoluteX=\"20dp\"\n"
+                        + "        app:layout_editor_absoluteY=\"0dp\"\n"
+                        + "        app:relativeBegin=\"20dp\" />\n"
+                        + "\n"
                         + "</android.support.constraint.ConstraintLayout>\n")));
     }
 
