@@ -16,9 +16,11 @@
 
 package com.android.tools.lint.checks;
 
+import static com.android.SdkConstants.ATTR_LAYOUT_EDITOR_ABSOLUTE_X;
+import static com.android.SdkConstants.ATTR_LAYOUT_EDITOR_ABSOLUTE_Y;
 import static com.android.SdkConstants.CLASS_CONSTRAINT_LAYOUT_GUIDELINE;
 import static com.android.SdkConstants.CONSTRAINT_LAYOUT;
-import static com.android.SdkConstants.SHERPA_URI;
+import static com.android.SdkConstants.TOOLS_URI;
 
 import com.android.annotations.NonNull;
 import com.android.tools.lint.detector.api.Category;
@@ -88,12 +90,12 @@ public class ConstraintLayoutDetector extends LayoutDetector {
             // See if the layout doesn't use absoluteX/Y designtime positions for this
             // child; if it doesn't, no need to complain
 
-            if (!element.hasAttributeNS(SHERPA_URI, "layout_editor_absoluteX")) {
+            if (!element.hasAttributeNS(TOOLS_URI, ATTR_LAYOUT_EDITOR_ABSOLUTE_X)) {
                 // Not technically a constraint, but we'll use this to not complain
                 // about lacking constraints in this dimension
                 isConstrainedHorizontally = true;
             }
-            if (!element.hasAttributeNS(SHERPA_URI, "layout_editor_absoluteY")) {
+            if (!element.hasAttributeNS(TOOLS_URI, ATTR_LAYOUT_EDITOR_ABSOLUTE_Y)) {
                 isConstrainedVertically = true;
                 if (isConstrainedHorizontally) {
                     // Nothing to check
