@@ -33,8 +33,6 @@ import com.google.common.collect.Lists;
 import com.google.common.io.Files;
 
 import org.gradle.api.GradleException;
-import org.gradle.api.tasks.InputFiles;
-import org.gradle.api.tasks.OutputDirectory;
 import org.gradle.api.tasks.TaskAction;
 
 import java.io.File;
@@ -141,7 +139,6 @@ public class ExternalNativeBuildTask extends BaseTask {
                 String.format("External native build " + getName() + ":" + format + "\n", args));
     }
 
-    @OutputDirectory
     public File getSoFolder() {
         return soFolder;
     }
@@ -150,10 +147,8 @@ public class ExternalNativeBuildTask extends BaseTask {
         this.soFolder = soFolder;
     }
 
-
     @NonNull
     @SuppressWarnings("unused")
-    @OutputDirectory
     public File getObjFolder() {
         return objFolder;
     }
@@ -163,7 +158,6 @@ public class ExternalNativeBuildTask extends BaseTask {
     }
 
     @SuppressWarnings("unused")
-    @InputFiles
     public List<File> getNativeBuildConfigurationsJsons() {
         return nativeBuildConfigurationsJsons;
     }
