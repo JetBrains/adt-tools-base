@@ -416,13 +416,28 @@ public class ProcessAndroidResources extends IncrementalTask {
         this.manifestFile = manifestFile;
     }
 
-    // not an input, it's optional and should never changes independently of the main manifest file.
+    /**
+     * Not an input, it's optional and should never change independently of the main manifest file.
+     * <p>
+     * The change is handled by {@link #isInstantRunMode()}.
+     */
     public File getInstantRunManifestFile() {
         return instantRunManifestFile;
     }
 
     public void setInstantRunManifestFile(File manifestFile) {
         this.instantRunManifestFile = manifestFile;
+    }
+
+    /**
+     * To force the task to execute when the manifest file to use changes.
+     * <p>
+     * Fix for <a href="http://b.android.com/209985">b.android.com/209985</a>.
+     */
+    @SuppressWarnings("unused")
+    @Input
+    public boolean isInstantRunMode() {
+        return this.instantRunBuildContext.isInInstantRunMode();
     }
 
     @NonNull
