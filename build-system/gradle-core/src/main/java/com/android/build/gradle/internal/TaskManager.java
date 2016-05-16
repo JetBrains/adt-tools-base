@@ -2233,11 +2233,11 @@ public abstract class TaskManager {
                     new PackageApplication.ConfigAction(variantOutputScope, patchingPolicy);
 
             AndroidTask<PackageApplication> packageApp =
-                    androidTasks.create(
-                            tasks,
-                            TaskConfigAction.amend(
-                                    packageConfigAction,
-                                    t -> variantOutputData.packageAndroidArtifactTask = t));
+                    androidTasks.create(tasks, packageConfigAction);
+
+            packageApp.configure(
+                    tasks,
+                    task -> variantOutputData.packageAndroidArtifactTask = task);
 
             packageApp.dependsOn(tasks, prePackageApp, variantOutputScope.getProcessResourcesTask());
 

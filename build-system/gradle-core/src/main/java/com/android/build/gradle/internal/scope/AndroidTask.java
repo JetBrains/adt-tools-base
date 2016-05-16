@@ -160,8 +160,9 @@ public class AndroidTask<T extends Task> {
      * @param taskFactory TaskFactory used to configure the task.
      * @param configAction An Action to be executed.
      */
-    public void configure(TaskFactory taskFactory, Action<? super Task> configAction) {
-        taskFactory.named(name, configAction);
+    public void configure(TaskFactory taskFactory, Action<? super T> configAction) {
+        //noinspection unchecked
+        taskFactory.named(name, (Action<? super Task>) configAction);
     }
 
     /**
