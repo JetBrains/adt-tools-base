@@ -128,4 +128,23 @@ public class TestUtils {
 
         throw new IllegalStateException("SDK directory not defined with ANDROID_HOME");
     }
+
+    /**
+     * Sleeps the current thread for enough time to ensure that we exceed filesystem timestamp
+     * resolution. This method is usually called in tests when it is necessary to ensure filesystem
+     * writes are detected through timestamp modification.
+     *
+     * @throws InterruptedException waiting interrupted
+     */
+    public static void waitFilesystemTime() throws InterruptedException {
+        /*
+         * How much time to wait until we are sure that the file system will update the last
+         * modified timestamp of a file. This is usually related to the accuracy of last timestamps.
+         * In modern windows systems 100ms be more than enough (NTFS has 100us accuracy --
+         * see https://msdn.microsoft.com/en-us/library/windows/desktop/ms724290(v=vs.85).aspx).
+         * In linux it will depend on the filesystem. ext4 has 1ns accuracy (if inodes are 256 byte
+         * or larger), but ext3 has 1 second.
+         */
+        Thread.sleep(2000);
+    }
 }

@@ -155,4 +155,37 @@ public class ManifestGenerationTest {
             assertTrue(linesSet.contains("Created-By: Myself"));
         }
     }
+
+    @Test
+    public void manifestGenerationOnIncrementalNoChanges() throws Exception {
+        File zip = new File(mTemporaryFolder.getRoot(), "f.zip");
+        try (Closer closer = Closer.create()) {
+            ZFile zf = closer.register(new ZFile(zip));
+
+            ManifestGenerationExtension extension =
+                    new ManifestGenerationExtension("Me, of course", "Myself");
+            extension.register(zf);
+
+            zf.add("wiki",
+                    closer.register(
+                            new FileInputStream(
+                                    new File(
+                                            TestUtils.getRoot(
+                                                    "packaging",
+                                                    "text-files"),
+                                            "wikipedia.html"))));
+
+            zf.close();
+
+            long timeOfWriting = zip.lastModified();
+
+            TestUtils.waitFilesystemTime();
+
+            zf = closer.register(new ZFile(zip));
+            zf.close();
+
+            long secondTimeOfWriting = zip.lastModified();
+            assertEquals(timeOfWriting, secondTimeOfWriting);
+        }
+    }
 }
