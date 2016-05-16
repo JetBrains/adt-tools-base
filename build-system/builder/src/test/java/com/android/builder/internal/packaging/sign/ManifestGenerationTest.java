@@ -23,6 +23,7 @@ import static org.junit.Assert.assertTrue;
 import com.android.builder.internal.packaging.zip.StoredEntry;
 import com.android.builder.internal.packaging.zip.ZFile;
 import com.android.testutils.TestUtils;
+import com.android.utils.FileUtils;
 import com.google.common.base.Charsets;
 import com.google.common.io.Closer;
 

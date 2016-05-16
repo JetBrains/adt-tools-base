@@ -44,154 +44,162 @@ public class JarSigningTest {
     @Test
     public void signEmptyJar() throws Exception {
         File zipFile = new File(mTemporaryFolder.getRoot(), "a.zip");
-        ZFile zf = new ZFile(zipFile);
-        ManifestGenerationExtension manifestExtension = new ManifestGenerationExtension("Me", "Me");
-        manifestExtension.register(zf);
 
-        Pair<PrivateKey, X509Certificate> p = SignatureTestUtils.generateSignaturePre18();
+        try (ZFile zf = new ZFile(zipFile)) {
+            ManifestGenerationExtension manifestExtension =
+                    new ManifestGenerationExtension("Me", "Me");
+            manifestExtension.register(zf);
 
-        SignatureExtension signatureExtension = new SignatureExtension(manifestExtension, 12,
-                p.getSecond(), p.getFirst(), null);
-        signatureExtension.register();
+            Pair<PrivateKey, X509Certificate> p = SignatureTestUtils.generateSignaturePre18();
 
-        zf.close();
+            SignatureExtension signatureExtension = new SignatureExtension(manifestExtension, 12,
+                    p.getSecond(), p.getFirst(), null);
+            signatureExtension.register();
+        }
 
-        ZFile verifyZFile = new ZFile(zipFile);
-        StoredEntry manifestEntry = verifyZFile.get("META-INF/MANIFEST.MF");
-        assertNotNull(manifestEntry);
+        try (ZFile verifyZFile = new ZFile(zipFile)) {
+            StoredEntry manifestEntry = verifyZFile.get("META-INF/MANIFEST.MF");
+            assertNotNull(manifestEntry);
 
-        Manifest manifest = new Manifest(new ByteArrayInputStream(manifestEntry.read()));
-        assertEquals(3, manifest.getMainAttributes().size());
-        assertEquals("1.0", manifest.getMainAttributes().getValue("Manifest-Version"));
-        assertEquals("Me", manifest.getMainAttributes().getValue("Created-By"));
-        assertEquals("Me", manifest.getMainAttributes().getValue("Built-By"));
+            Manifest manifest = new Manifest(new ByteArrayInputStream(manifestEntry.read()));
+            assertEquals(3, manifest.getMainAttributes().size());
+            assertEquals("1.0", manifest.getMainAttributes().getValue("Manifest-Version"));
+            assertEquals("Me", manifest.getMainAttributes().getValue("Created-By"));
+            assertEquals("Me", manifest.getMainAttributes().getValue("Built-By"));
+        }
     }
 
     @Test
     public void signJarWithPrexistingSimpleTextFilePre18() throws Exception {
         File zipFile = new File(mTemporaryFolder.getRoot(), "a.zip");
-        ZFile zf1 = new ZFile(zipFile);
-        zf1.add("directory/file", new ByteArrayInputStream("useless text".getBytes(
-                Charsets.US_ASCII)));
-        zf1.close();
-
         Pair<PrivateKey, X509Certificate> p = SignatureTestUtils.generateSignaturePre18();
 
-        ZFile zf2 = new ZFile(zipFile);
-        ManifestGenerationExtension me = new ManifestGenerationExtension("Merry", "Christmas");
-        me.register(zf2);
-        new SignatureExtension(me, 10, p.getSecond(), p.getFirst(), null).register();
-        zf2.close();
+        try (ZFile zf1 = new ZFile(zipFile)) {
+            zf1.add("directory/file",
+                    new ByteArrayInputStream("useless text".getBytes(Charsets.US_ASCII)));
+        }
 
-        ZFile zf3 = new ZFile(zipFile);
-        StoredEntry manifestEntry = zf3.get("META-INF/MANIFEST.MF");
-        assertNotNull(manifestEntry);
+        try (ZFile zf2 = new ZFile(zipFile)) {
+            ManifestGenerationExtension me = new ManifestGenerationExtension("Merry", "Christmas");
+            me.register(zf2);
+            new SignatureExtension(me, 10, p.getSecond(), p.getFirst(), null).register();
+        }
 
-        Manifest manifest = new Manifest(new ByteArrayInputStream(manifestEntry.read()));
-        assertEquals(3, manifest.getMainAttributes().size());
-        assertEquals("1.0", manifest.getMainAttributes().getValue("Manifest-Version"));
-        assertEquals("Merry", manifest.getMainAttributes().getValue("Built-By"));
-        assertEquals("Christmas", manifest.getMainAttributes().getValue("Created-By"));
 
-        Attributes attrs = manifest.getAttributes("directory/file");
-        assertNotNull(attrs);
-        assertEquals(1, attrs.size());
-        assertEquals("OOQgIEXBissIvva3ydRoaXk29Rk=", attrs.getValue("SHA1-Digest"));
+        try (ZFile zf3 = new ZFile(zipFile)) {
+            StoredEntry manifestEntry = zf3.get("META-INF/MANIFEST.MF");
+            assertNotNull(manifestEntry);
 
-        StoredEntry signatureEntry = zf3.get("META-INF/CERT.SF");
-        assertNotNull(signatureEntry);
+            Manifest manifest = new Manifest(new ByteArrayInputStream(manifestEntry.read()));
+            assertEquals(3, manifest.getMainAttributes().size());
+            assertEquals("1.0", manifest.getMainAttributes().getValue("Manifest-Version"));
+            assertEquals("Merry", manifest.getMainAttributes().getValue("Built-By"));
+            assertEquals("Christmas", manifest.getMainAttributes().getValue("Created-By"));
 
-        Manifest signature = new Manifest(new ByteArrayInputStream(signatureEntry.read()));
-        assertEquals(3, signature.getMainAttributes().size());
-        assertEquals("1.0", signature.getMainAttributes().getValue("Signature-Version"));
-        assertEquals("1.0 (Android)", signature.getMainAttributes().getValue("Created-By"));
+            Attributes attrs = manifest.getAttributes("directory/file");
+            assertNotNull(attrs);
+            assertEquals(1, attrs.size());
+            assertEquals("OOQgIEXBissIvva3ydRoaXk29Rk=", attrs.getValue("SHA1-Digest"));
 
-        byte[] manifestTextBytes = manifestEntry.read();
-        byte[] manifestSha1Bytes = Hashing.sha1().hashBytes(manifestTextBytes).asBytes();
-        String manifestSha1 = new String(Base64.encodeBase64(manifestSha1Bytes), Charsets.US_ASCII);
+            StoredEntry signatureEntry = zf3.get("META-INF/CERT.SF");
+            assertNotNull(signatureEntry);
 
-        assertEquals(manifestSha1, signature.getMainAttributes().getValue("SHA1-Digest-Manifest"));
+            Manifest signature = new Manifest(new ByteArrayInputStream(signatureEntry.read()));
+            assertEquals(3, signature.getMainAttributes().size());
+            assertEquals("1.0", signature.getMainAttributes().getValue("Signature-Version"));
+            assertEquals("1.0 (Android)", signature.getMainAttributes().getValue("Created-By"));
 
-        Attributes signAttrs = signature.getAttributes("directory/file");
-        assertNotNull(signAttrs);
-        assertEquals(1, signAttrs.size());
-        assertEquals("OOQgIEXBissIvva3ydRoaXk29Rk=", signAttrs.getValue("SHA1-Digest"));
+            byte[] manifestTextBytes = manifestEntry.read();
+            byte[] manifestSha1Bytes = Hashing.sha1().hashBytes(manifestTextBytes).asBytes();
+            String manifestSha1 = new String(Base64.encodeBase64(manifestSha1Bytes),
+                    Charsets.US_ASCII);
 
-        StoredEntry rsaEntry = zf3.get("META-INF/CERT.RSA");
-        assertNotNull(rsaEntry);
+            assertEquals(manifestSha1,
+                    signature.getMainAttributes().getValue("SHA1-Digest-Manifest"));
+
+            Attributes signAttrs = signature.getAttributes("directory/file");
+            assertNotNull(signAttrs);
+            assertEquals(1, signAttrs.size());
+            assertEquals("OOQgIEXBissIvva3ydRoaXk29Rk=", signAttrs.getValue("SHA1-Digest"));
+
+            StoredEntry rsaEntry = zf3.get("META-INF/CERT.RSA");
+            assertNotNull(rsaEntry);
+        }
     }
 
     @Test
     public void signJarWithPrexistingSimpleTextFilePos18() throws Exception {
         File zipFile = new File(mTemporaryFolder.getRoot(), "a.zip");
-        ZFile zf1 = new ZFile(zipFile);
-        zf1.add("directory/file", new ByteArrayInputStream("useless text".getBytes(
-                Charsets.US_ASCII)));
-        zf1.close();
+        try (ZFile zf1 = new ZFile(zipFile)) {
+            zf1.add("directory/file", new ByteArrayInputStream("useless text".getBytes(
+                    Charsets.US_ASCII)));
+        }
 
         Pair<PrivateKey, X509Certificate> p = SignatureTestUtils.generateSignaturePos18();
 
-        ZFile zf2 = new ZFile(zipFile);
-        ManifestGenerationExtension me = new ManifestGenerationExtension("Merry", "Christmas");
-        me.register(zf2);
-        new SignatureExtension(me, 21, p.getSecond(), p.getFirst(), null).register();
-        zf2.close();
+        try (ZFile zf2 = new ZFile(zipFile)) {
+            ManifestGenerationExtension me = new ManifestGenerationExtension("Merry", "Christmas");
+            me.register(zf2);
+            new SignatureExtension(me, 21, p.getSecond(), p.getFirst(), null).register();
+        }
 
-        ZFile zf3 = new ZFile(zipFile);
-        StoredEntry manifestEntry = zf3.get("META-INF/MANIFEST.MF");
-        assertNotNull(manifestEntry);
+        try (ZFile zf3 = new ZFile(zipFile)) {
+            StoredEntry manifestEntry = zf3.get("META-INF/MANIFEST.MF");
+            assertNotNull(manifestEntry);
 
-        Manifest manifest = new Manifest(new ByteArrayInputStream(manifestEntry.read()));
-        assertEquals(3, manifest.getMainAttributes().size());
-        assertEquals("1.0", manifest.getMainAttributes().getValue("Manifest-Version"));
-        assertEquals("Merry", manifest.getMainAttributes().getValue("Built-By"));
-        assertEquals("Christmas", manifest.getMainAttributes().getValue("Created-By"));
+            Manifest manifest = new Manifest(new ByteArrayInputStream(manifestEntry.read()));
+            assertEquals(3, manifest.getMainAttributes().size());
+            assertEquals("1.0", manifest.getMainAttributes().getValue("Manifest-Version"));
+            assertEquals("Merry", manifest.getMainAttributes().getValue("Built-By"));
+            assertEquals("Christmas", manifest.getMainAttributes().getValue("Created-By"));
 
-        Attributes attrs = manifest.getAttributes("directory/file");
-        assertNotNull(attrs);
-        assertEquals(1, attrs.size());
-        assertEquals("QjupZsopQM/01O6+sWHqH64ilMmoBEtljg9VEqN6aI4=",
-                attrs.getValue("SHA-256-Digest"));
+            Attributes attrs = manifest.getAttributes("directory/file");
+            assertNotNull(attrs);
+            assertEquals(1, attrs.size());
+            assertEquals("QjupZsopQM/01O6+sWHqH64ilMmoBEtljg9VEqN6aI4=",
+                    attrs.getValue("SHA-256-Digest"));
 
-        StoredEntry signatureEntry = zf3.get("META-INF/CERT.SF");
-        assertNotNull(signatureEntry);
+            StoredEntry signatureEntry = zf3.get("META-INF/CERT.SF");
+            assertNotNull(signatureEntry);
 
-        Manifest signature = new Manifest(new ByteArrayInputStream(signatureEntry.read()));
-        assertEquals(3, signature.getMainAttributes().size());
-        assertEquals("1.0", signature.getMainAttributes().getValue("Signature-Version"));
-        assertEquals("1.0 (Android)", signature.getMainAttributes().getValue("Created-By"));
+            Manifest signature = new Manifest(new ByteArrayInputStream(signatureEntry.read()));
+            assertEquals(3, signature.getMainAttributes().size());
+            assertEquals("1.0", signature.getMainAttributes().getValue("Signature-Version"));
+            assertEquals("1.0 (Android)", signature.getMainAttributes().getValue("Created-By"));
 
-        byte[] manifestTextBytes = manifestEntry.read();
-        byte[] manifestSha256Bytes = Hashing.sha256().hashBytes(manifestTextBytes).asBytes();
-        String manifestSha256 = new String(Base64.encodeBase64(manifestSha256Bytes),
-                Charsets.US_ASCII);
+            byte[] manifestTextBytes = manifestEntry.read();
+            byte[] manifestSha256Bytes = Hashing.sha256().hashBytes(manifestTextBytes).asBytes();
+            String manifestSha256 = new String(Base64.encodeBase64(manifestSha256Bytes),
+                    Charsets.US_ASCII);
 
-        assertEquals(manifestSha256, signature.getMainAttributes().getValue(
-                "SHA-256-Digest-Manifest"));
+            assertEquals(manifestSha256, signature.getMainAttributes().getValue(
+                    "SHA-256-Digest-Manifest"));
 
-        Attributes signAttrs = signature.getAttributes("directory/file");
-        assertNotNull(signAttrs);
-        assertEquals(1, signAttrs.size());
-        assertEquals("QjupZsopQM/01O6+sWHqH64ilMmoBEtljg9VEqN6aI4=",
-                signAttrs.getValue("SHA-256-Digest"));
+            Attributes signAttrs = signature.getAttributes("directory/file");
+            assertNotNull(signAttrs);
+            assertEquals(1, signAttrs.size());
+            assertEquals("QjupZsopQM/01O6+sWHqH64ilMmoBEtljg9VEqN6aI4=",
+                    signAttrs.getValue("SHA-256-Digest"));
 
-        StoredEntry ecdsaEntry = zf3.get("META-INF/CERT.EC");
-        assertNotNull(ecdsaEntry);
+            StoredEntry ecdsaEntry = zf3.get("META-INF/CERT.EC");
+            assertNotNull(ecdsaEntry);
+        }
     }
 
     @Test
     public void v2SignAddsApkSigningBlock() throws Exception {
         File zipFile = new File(mTemporaryFolder.getRoot(), "a.zip");
-        ZFile zf = new ZFile(zipFile);
-        ManifestGenerationExtension manifestExtension = new ManifestGenerationExtension("Me", "Me");
-        manifestExtension.register(zf);
+        try (ZFile zf = new ZFile(zipFile)) {
+            ManifestGenerationExtension manifestExtension =
+                    new ManifestGenerationExtension("Me", "Me");
+            manifestExtension.register(zf);
 
-        Pair<PrivateKey, X509Certificate> p = SignatureTestUtils.generateSignaturePre18();
+            Pair<PrivateKey, X509Certificate> p = SignatureTestUtils.generateSignaturePre18();
 
-        FullApkSignExtension signatureExtension =
-                new FullApkSignExtension(zf, 12, p.getSecond(), p.getFirst());
-        signatureExtension.register();
-        zf.close();
+            FullApkSignExtension signatureExtension =
+                    new FullApkSignExtension(zf, 12, p.getSecond(), p.getFirst());
+            signatureExtension.register();
+        }
 
 
         try (ZFile verifyZFile = new ZFile(zipFile)) {

@@ -23,10 +23,8 @@ import com.android.builder.internal.packaging.zip.ZFile;
 import com.android.builder.internal.packaging.zip.ZFileExtension;
 import com.android.builder.internal.utils.IOExceptionRunnable;
 import com.google.common.base.Charsets;
-import com.google.common.base.Function;
 import com.google.common.base.Objects;
 import com.google.common.base.Preconditions;
-import com.google.common.collect.FluentIterable;
 import com.google.common.collect.Sets;
 
 import org.apache.commons.codec.binary.Base64;
@@ -56,6 +54,7 @@ import java.util.Locale;
 import java.util.Set;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
+import java.util.stream.Collectors;
 
 /**
  * {@link ZFile} extension that signs all files in the APK and generates a signature file and a
@@ -136,12 +135,6 @@ public class SignatureExtension {
     private static final String SIGNATURE_ANDROID_APK_SIGNED_NAME = "X-Android-APK-Signed";
 
     /**
-     * Value of the {@code X-Android-APK-Signer} attribute when the APK is not signed with the v2
-     * scheme.
-     */
-    public static final String SIGNATURE_ANDROID_APK_SIGNER_VALUE_WHEN_NOT_V2_SIGNED = null;
-
-    /**
      * Value of the {@code X-Android-APK-Signer} attribute when the APK is signed with the v2
      * scheme.
      */
@@ -158,13 +151,9 @@ public class SignatureExtension {
      * Same as {@link #IGNORED_FILES} but with all names in lower case.
      */
     private static final Set<String> IGNORED_FILES_LC = Sets.newHashSet(
-        FluentIterable.from(IGNORED_FILES).transform(new Function<String, String>() {
-            @Override
-            public String apply(String input) {
-                return input.toLowerCase(Locale.US);
-            }
-        })
-    );
+            IGNORED_FILES.stream()
+                    .map(i -> i.toLowerCase(Locale.US))
+                    .collect(Collectors.toSet()));
 
 
     /**
@@ -178,13 +167,9 @@ public class SignatureExtension {
      * Same as {@link #IGNORED_PREFIXES} but with all names in lower case.
      */
     private static final Set<String> IGNORED_PREFIXES_LC = Sets.newHashSet(
-            FluentIterable.from(IGNORED_PREFIXES).transform(new Function<String, String>() {
-                @Override
-                public String apply(String input) {
-                    return input.toLowerCase(Locale.US);
-                }
-            })
-    );
+            IGNORED_PREFIXES.stream()
+                    .map(i -> i.toLowerCase(Locale.US))
+                    .collect(Collectors.toSet()));
 
     /**
      * Suffixes of files in META-INF to ignore when signing. See
@@ -197,13 +182,9 @@ public class SignatureExtension {
      * Same as {@link #IGNORED_SUFFIXES} but with all names in lower case.
      */
     private static final Set<String> IGNORED_SUFFIXES_LC = Sets.newHashSet(
-            FluentIterable.from(IGNORED_SUFFIXES).transform(new Function<String, String>() {
-                @Override
-                public String apply(String input) {
-                    return input.toLowerCase(Locale.US);
-                }
-            })
-    );
+            IGNORED_SUFFIXES.stream()
+                    .map(i -> i.toLowerCase(Locale.US))
+                    .collect(Collectors.toSet()));
 
     /**
      * Extension maintaining the manifest.
@@ -309,12 +290,7 @@ public class SignatureExtension {
             @Nullable
             @Override
             public IOExceptionRunnable beforeUpdate() {
-                return new IOExceptionRunnable() {
-                    @Override
-                    public void run() throws IOException {
-                        updateSignatureIfNeeded();
-                    }
-                };
+                return SignatureExtension.this::updateSignatureIfNeeded;
             }
 
             @Nullable
@@ -330,15 +306,12 @@ public class SignatureExtension {
                     return null;
                 }
 
-                return new IOExceptionRunnable() {
-                    @Override
-                    public void run() throws IOException {
-                        if (replaced != null) {
-                            SignatureExtension.this.removed(replaced);
-                        }
-
-                        SignatureExtension.this.added(entry);
+                return () -> {
+                    if (replaced != null) {
+                        SignatureExtension.this.removed(replaced);
                     }
+
+                    SignatureExtension.this.added(entry);
                 };
             }
 
@@ -348,12 +321,8 @@ public class SignatureExtension {
                 if (isIgnoredFile(entry.getCentralDirectoryHeader().getName())) {
                     return null;
                 }
-                return new IOExceptionRunnable() {
-                    @Override
-                    public void run() throws IOException {
-                        SignatureExtension.this.removed(entry);
-                    }
-                };
+
+                return () -> SignatureExtension.this.removed(entry);
             }
         };
 
@@ -492,11 +461,7 @@ public class SignatureExtension {
         try {
             mManifestExtension.zFile().add(digitalSignatureFile, new ByteArrayInputStream(
                             computePkcs7Signature(signatureBytes.toByteArray())));
-        } catch (CertificateEncodingException e) {
-            throw new IOException("Failed to digitally sign signature file.", e);
-        } catch (OperatorCreationException e) {
-            throw new IOException("Failed to digitally sign signature file.", e);
-        } catch (CMSException e) {
+        } catch (CertificateEncodingException | OperatorCreationException | CMSException e) {
             throw new IOException("Failed to digitally sign signature file.", e);
         }
 
@@ -616,7 +581,7 @@ public class SignatureExtension {
             CertificateEncodingException, OperatorCreationException, CMSException {
         CMSProcessableByteArray cmsData = new CMSProcessableByteArray(data);
 
-        ArrayList<X509Certificate> certList = new ArrayList<X509Certificate>();
+        ArrayList<X509Certificate> certList = new ArrayList<>();
         certList.add(mCertificate);
         JcaCertStore certs = new JcaCertStore(certList);
 
@@ -634,16 +599,26 @@ public class SignatureExtension {
         CMSSignedData sigData = gen.generate(cmsData, false);
 
         ByteArrayOutputStream outputBytes = new ByteArrayOutputStream();
-        ASN1InputStream asn1 = new ASN1InputStream(sigData.getEncoded());
-        try {
-            DEROutputStream dos = new DEROutputStream(outputBytes);
-            try {
-                dos.writeObject(asn1.readObject());
-            } finally {
-                dos.close();
+
+        /*
+         * DEROutputStream is not closeable! OMG!
+         */
+        DEROutputStream dos = null;
+        try (ASN1InputStream asn1 = new ASN1InputStream(sigData.getEncoded())) {
+            dos = new DEROutputStream(outputBytes);
+            dos.writeObject(asn1.readObject());
+
+            DEROutputStream toClose = dos;
+            dos = null;
+            toClose.close();
+        } catch (IOException e) {
+            if (dos != null) {
+                try {
+                    dos.close();
+                } catch (IOException ee) {
+                    e.addSuppressed(ee);
+                }
             }
-        } finally {
-            asn1.close();
         }
 
         return outputBytes.toByteArray();
