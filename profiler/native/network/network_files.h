@@ -23,7 +23,7 @@ namespace profiler {
 namespace network {
 
 class NetworkFiles {
-public:
+ public:
   // Path of pid status file to get uid from pid.
   static std::string GetPidStatusFilePath(const int pid) {
     char buffer[64];

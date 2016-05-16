@@ -19,7 +19,7 @@ cd ..
 ```
 ../../../gradlew compileHost
 ```
-## To run the host unit tests:
+## To run the host unit tests (If testdata/ is not updated, clear gen/):
 ```
 ../../../gradlew checkHost
 ```

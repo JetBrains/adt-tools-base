@@ -26,30 +26,44 @@
 namespace profiler {
 namespace network {
 
-int NetworkDataCollector::GetUid(const std::string &data_file, int pid) {
+int NetworkDataCollector::GetUid(const std::string &data_file) {
   std::string uid;
-  if (GetUidString(data_file, pid, &uid)) {
+  if (GetUidString(data_file, &uid)) {
     return atoi(uid.c_str());
   }
   return -1;
 }
 
-bool NetworkDataCollector::GetUidString(const std::string &data_file, int pid,
+bool NetworkDataCollector::GetUidString(const std::string &data_file,
                                         std::string *uid_result) {
   std::string content;
-  utils::FileReader::Read(data_file.c_str(), &content);
+  utils::FileReader::Read(data_file, &content);
 
   const char *uid_prefix = "Uid:";
-  size_t start_pos = content.find(uid_prefix);
-  if (start_pos != std::string::npos) {
-    start_pos += strlen(uid_prefix);
-    start_pos = content.find_first_not_of(' ', start_pos);
-    size_t length = content.find_first_of(' ', start_pos) - start_pos;
-    uid_result->append(content, start_pos, length);
-    return true;
+  // Find the uid value start position. It's supposed to be after the prefix,
+  // also after empty spaces on the same line.
+  size_t start = content.find(uid_prefix);
+  if (start != std::string::npos) {
+    start += strlen(uid_prefix);
+    start = content.find_first_not_of(" \t", start);
+    if (start != std::string::npos)  {
+      // Find the uid end position, which should be empty space or new line,
+      // and check the uid value contains 0-9 only.
+      size_t end = content.find_first_not_of("0123456789", start);
+      if (start != end) {
+        if (end == std::string::npos) {
+          uid_result->assign(content.c_str() + start);
+          return true;
+        }
+        else if (end == content.find_first_of(" \t\n\f", start)) {
+          uid_result->assign(content, start, end - start);
+          return true;
+        }
+      }
+    }
   }
   return false;
 }
 
-}  // namespace network
-}  // namespace profiler
+} // namespace network
+} // namespace profiler

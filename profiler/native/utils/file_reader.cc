@@ -22,7 +22,7 @@
 namespace profiler {
 namespace utils {
 
-bool FileReader::Read(const std::string &file_path,
+bool FileReader::Read(const std::string& file_path,
                       std::vector<std::string> *lines) {
   std::string content;
   if (Read(file_path, &content)) {
@@ -45,6 +45,7 @@ bool FileReader::Read(const std::string &file_path, std::string *content) {
   char buffer[kBufferSize_];
   off_t offset = 0;
   ssize_t read_size;
+  content->erase();
   while ((read_size = pread(file, buffer, kBufferSize_, offset)) > 0) {
     offset += read_size;
     content->append(buffer, read_size);

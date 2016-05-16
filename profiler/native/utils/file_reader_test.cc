@@ -79,3 +79,28 @@ TEST(CompareToken, TokenNotMatch) {
   bool matches = FileReader::CompareToken(kTestLine, token, 2);
   EXPECT_FALSE(matches);
 }
+
+TEST(Read, FileSizeIsSmallerThanPageSize) {
+  std::string content;
+  FileReader::Read("file_reader_small.txt", &content);
+  EXPECT_EQ(37, content.size());
+}
+
+TEST(Read, ReadFileSizeLargerThanBufferSize) {
+  std::string content;
+  FileReader::Read("file_reader_large.txt", &content);
+  EXPECT_EQ(5264, content.size());
+}
+
+TEST(Read, ReadFileAbsent) {
+  std::string content;
+  EXPECT_FALSE(FileReader::Read("file_reader_absent.txt", &content));
+}
+
+TEST(ReadToLines, MultipleLineBreakChars) {
+  std::vector<std::string> lines;
+  FileReader::Read("file_reader_multiple_lines.txt", &lines);
+  EXPECT_EQ(2, lines.size());
+  EXPECT_EQ("It contains two lines.", lines.at(0));
+  EXPECT_EQ("This is the second line.", lines.at(1));
+}

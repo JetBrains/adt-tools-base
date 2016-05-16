@@ -50,8 +50,7 @@ void ProfilerServerNetwork::StopProfile() {
   }
 }
 
-void ProfilerServerNetwork::Profile(ProfilerServerNetwork *network_profiler) {
-  ProfilerServerNetwork *profiler = (ProfilerServerNetwork *)network_profiler;
+void ProfilerServerNetwork::Profile(ProfilerServerNetwork *profiler) {
   uint64_t start_time = GetCurrentTime();
   while (profiler->is_running_.load()) {
     for (const auto &collector : profiler->collectors_) {
@@ -67,7 +66,7 @@ void ProfilerServerNetwork::Profile(ProfilerServerNetwork *network_profiler) {
 void ProfilerServerNetwork::CreateCollectors() {
   std::string uid;
   bool has_uid = NetworkDataCollector::GetUidString(
-      NetworkFiles::GetPidStatusFilePath(pid_), pid_, &uid);
+      NetworkFiles::GetPidStatusFilePath(pid_), &uid);
   if (has_uid) {
     collectors_.emplace_back(
         new TrafficDataCollector(uid, NetworkFiles::GetTrafficBytesFilePath()));

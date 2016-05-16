@@ -49,6 +49,9 @@ else()
   set(GTEST_LINK_LIBRARIES ${GTEST_LINK_LIBRARIES} pthread)
 endif()
 
+# Copy test data files to generated directory.
+file(COPY "testdata/" DESTINATION ".")
+
 # Cretae target to run all unit test
 add_custom_target(check)
 

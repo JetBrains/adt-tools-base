@@ -34,11 +34,12 @@ class NetworkDataCollector {
 
   // Returns the app uid that is read from the given pid_status_file if present,
   // -1 otherwise.
-  static int GetUid(const std::string &pid_status_file, int pid);
+  static int GetUid(const std::string &pid_status_file);
 
-  // Returns true if uid is present in given pid_status_file and appends to the
-  // parameter uid string, false otherwise.
-  static bool GetUidString(const std::string &pid_status_file, int pid,
+  // Returns true if uid is present in given pid_status_file and assigned to the
+  // parameter uid string, false otherwise. The returned string is verified that
+  // it contains zero to nine only.
+  static bool GetUidString(const std::string &pid_status_file,
                            std::string *uid);
 };
 
