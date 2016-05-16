@@ -904,6 +904,10 @@ public final class SdkConstants {
     public static final String CHECKABLE = "Checkable";                //$NON-NLS-1$
     public static final String TEXTURE_VIEW = "TextureView";           //$NON-NLS-1$
     public static final String DIALER_FILTER = "DialerFilter";         //$NON-NLS-1$
+    public static final String ADAPTER_VIEW_FLIPPER = "AdapterViewFlipper"; //$NON-NLS-1$
+    public static final String ADAPTER_VIEW_ANIMATOR = "AdapterViewAnimator"; //$NON-NLS-1$
+    public static final String VIDEO_VIEW = "VideoView"; //$NON-NLS-1$
+    public static final String SEARCH_VIEW = "SearchView"; //$NON-NLS-1$
 
     /* Android Support Tag Constants */
     public static final String COORDINATOR_LAYOUT = CLASS_COORDINATOR_LAYOUT;
