@@ -40,9 +40,9 @@ import java.security.cert.X509Certificate;
 public class ZFiles {
 
     /**
-     * By default, files are aligned at 4-byte boundaries.
+     * Resource table files are aligned on a 4 byte boundary.
      */
-    private static final AlignmentRule DEFAULT_RULE = AlignmentRules.constant(4);
+    private static final AlignmentRule ARSC_RULE = AlignmentRules.constantForSuffix(".arsc", 4);
 
     /**
      * SOs are aligned at 4096-byte boundaries and identified as files ending with {@code .so}.
@@ -73,7 +73,7 @@ public class ZFiles {
     public static ZFile apk(@NonNull File f, @NonNull ZFileOptions options) throws IOException {
         ZFile zfile = new ZFile(f, options);
         options.setAlignmentRule(
-                AlignmentRules.compose(options.getAlignmentRule(), SO_RULE, DEFAULT_RULE));
+                AlignmentRules.compose(options.getAlignmentRule(), SO_RULE, ARSC_RULE));
         return zfile;
     }
 
@@ -104,7 +104,7 @@ public class ZFiles {
             @Nullable String builtBy, @Nullable String createdBy, int minSdkVersion)
             throws IOException {
         options.setAlignmentRule(
-                AlignmentRules.compose(options.getAlignmentRule(), SO_RULE, DEFAULT_RULE));
+                AlignmentRules.compose(options.getAlignmentRule(), SO_RULE, ARSC_RULE));
         ZFile zfile = apk(f, options);
 
         if (builtBy == null) {

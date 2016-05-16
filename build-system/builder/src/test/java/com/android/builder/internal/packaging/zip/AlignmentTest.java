@@ -238,7 +238,7 @@ public class AlignmentTest {
     }
 
     @Test
-    public void alignOnlyAppliedOnlyToUncompressedFiles() throws Exception {
+    public void alignForcesUncompression() throws Exception {
         File zipFile = new File(mTemporaryFolder.getRoot(), "test.zip");
 
         byte[] recognizable1 = new byte[] { 4, 3, 2, 1, 1, 2, 3, 4, 5, 4, 3, 3, 4, 5 };
@@ -265,10 +265,16 @@ public class AlignmentTest {
             }
         }
 
-        for (int i = 0; i < uncompressedFiles; i++) {
+        for (int i = 0; i < compressedFiles; i++) {
             long start = align * (i + 1);
-            byte[] read = FileUtils.readSegment(zipFile, start, recognizable2.length);
-            assertArrayEquals(recognizable2, read);
+            byte[] read = FileUtils.readSegment(zipFile, start, compressibleData1.length);
+            assertArrayEquals(compressibleData1, read);
+        }
+
+        for (int i = 0; i < uncompressedFiles; i++) {
+            long start = align * (compressedFiles + i + 1);
+            byte[] read = FileUtils.readSegment(zipFile, start, compressibleData2.length);
+            assertArrayEquals(compressibleData2, read);
         }
     }
 
