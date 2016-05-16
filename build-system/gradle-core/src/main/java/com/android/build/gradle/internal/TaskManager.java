@@ -1132,7 +1132,6 @@ public abstract class TaskManager {
     }
 
     public void createExternalNativeBuildJsonGenerators(TaskFactory tasks, @NonNull VariantScope scope) {
-        final BaseVariantData<? extends BaseVariantOutputData> variantData = scope.getVariantData();
 
         CoreExternalNativeBuild externalNativeBuild = extension.getExternalNativeBuild();
         ExternalNativeBuildTaskUtils.ExternalNativeBuildProjectPathResolution pathResolution =
@@ -1149,6 +1148,9 @@ public abstract class TaskManager {
             // No project
             return;
         }
+
+        // Disable instant run when external native build is enabled.
+        scope.getVariantConfiguration().setEnableInstantRunOverride(false);
 
         scope.setExternalNativeJsonGenerator(ExternalNativeJsonGenerator.create(
                 pathResolution.buildSystem,
