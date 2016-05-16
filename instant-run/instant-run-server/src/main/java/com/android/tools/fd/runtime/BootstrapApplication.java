@@ -20,6 +20,7 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 
 import android.app.ActivityManager;
+import android.content.ComponentCallbacks;
 import android.os.Process;
 import android.app.ActivityManager.RunningAppProcessInfo;
 import android.app.Application;
@@ -258,6 +259,40 @@ public class BootstrapApplication extends Application {
             throws PackageManager.NameNotFoundException {
         Context c = realApplication.createPackageContext(packageName, flags);
         return c == null ? realApplication : c;
+    }
+
+    @Override
+    public void registerComponentCallbacks(ComponentCallbacks callback) {
+        realApplication.registerComponentCallbacks(callback);
+    }
+
+    @Override
+    public void registerActivityLifecycleCallbacks(
+            ActivityLifecycleCallbacks callback) {
+        realApplication.registerActivityLifecycleCallbacks(callback);
+    }
+
+    @Override
+    public void registerOnProvideAssistDataListener(
+            OnProvideAssistDataListener callback) {
+        realApplication.registerOnProvideAssistDataListener(callback);
+    }
+
+    @Override
+    public void unregisterComponentCallbacks(ComponentCallbacks callback) {
+        realApplication.unregisterComponentCallbacks(callback);
+    }
+
+    @Override
+    public void unregisterActivityLifecycleCallbacks(
+            ActivityLifecycleCallbacks callback) {
+        realApplication.unregisterActivityLifecycleCallbacks(callback);
+    }
+
+    @Override
+    public void unregisterOnProvideAssistDataListener(
+            OnProvideAssistDataListener callback) {
+        realApplication.unregisterOnProvideAssistDataListener(callback);
     }
 
     @Override
