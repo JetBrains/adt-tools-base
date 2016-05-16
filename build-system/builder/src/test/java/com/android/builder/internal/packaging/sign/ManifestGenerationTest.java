@@ -44,102 +44,148 @@ public class ManifestGenerationTest {
     public void elementaryManifestGeneration() throws Exception {
         File zip = new File(mTemporaryFolder.getRoot(), "f.zip");
 
-        ZFile zf = new ZFile(zip);
-        zf.add("abc", new ByteArrayInputStream(new byte[] { 1 }));
-        zf.add("x/", new ByteArrayInputStream(new byte[0]));
-        zf.add("x/abc", new ByteArrayInputStream(new byte[] { 2 }));
+        try (ZFile zf = new ZFile(zip)) {
+            zf.add("abc", new ByteArrayInputStream(new byte[]{1}));
+            zf.add("x/", new ByteArrayInputStream(new byte[0]));
+            zf.add("x/abc", new ByteArrayInputStream(new byte[]{2}));
 
-        ManifestGenerationExtension extension = new ManifestGenerationExtension("Me, of course",
-                "Myself");
-        extension.register(zf);
+            ManifestGenerationExtension extension =
+                    new ManifestGenerationExtension("Me, of course", "Myself");
+            extension.register(zf);
 
-        zf.update();
+            zf.update();
 
-        StoredEntry se = zf.get("META-INF/MANIFEST.MF");
-        assertNotNull(se);
+            StoredEntry se = zf.get("META-INF/MANIFEST.MF");
+            assertNotNull(se);
 
-        String text = new String(se.read(), Charsets.US_ASCII);
-        text = text.trim();
-        String lines[] = text.split(System.getProperty("line.separator"));
-        assertEquals(3, lines.length);
+            String text = new String(se.read(), Charsets.US_ASCII);
+            text = text.trim();
+            String lines[] = text.split(System.getProperty("line.separator"));
+            assertEquals(3, lines.length);
 
-        assertEquals("Manifest-Version: 1.0", lines[0].trim());
+            assertEquals("Manifest-Version: 1.0", lines[0].trim());
 
-        Set<String> linesSet = Sets.newSet();
-        for (String l : lines) {
-            linesSet.add(l.trim());
+            Set<String> linesSet = Sets.newSet();
+            for (String l : lines) {
+                linesSet.add(l.trim());
+            }
+
+            assertTrue(linesSet.contains("Built-By: Me, of course"));
+            assertTrue(linesSet.contains("Created-By: Myself"));
         }
-
-        assertTrue(linesSet.contains("Built-By: Me, of course"));
-        assertTrue(linesSet.contains("Created-By: Myself"));
     }
 
     @Test
     public void manifestGenerationOnHalfWrittenFile() throws Exception {
         File zip = new File(mTemporaryFolder.getRoot(), "f.zip");
-        ZFile zf = new ZFile(zip);
+        try (Closer closer = Closer.create()) {
+            ZFile zf = closer.register(new ZFile(zip));
+            zf.add("wiki",
+                    closer.register(
+                            new FileInputStream(
+                                    new File(
+                                            TestUtils.getRoot(
+                                                    "packaging",
+                                                    "text-files"),
+                                            "wikipedia.html"))));
 
-        Closer closer = Closer.create();
-        zf.add("wiki", closer.register(new FileInputStream(new File(TestUtils.getRoot("packaging",
-                "text-files"), "wikipedia.html"))));
+            ManifestGenerationExtension extension =
+                    new ManifestGenerationExtension("Me, of course", "Myself");
+            extension.register(zf);
 
-        ManifestGenerationExtension extension = new ManifestGenerationExtension("Me, of course",
-                "Myself");
-        extension.register(zf);
+            zf.close();
 
-        zf.close();
+            StoredEntry se = zf.get("META-INF/MANIFEST.MF");
+            assertNotNull(se);
 
-        StoredEntry se = zf.get("META-INF/MANIFEST.MF");
-        assertNotNull(se);
+            String text = new String(se.read(), Charsets.US_ASCII);
+            text = text.trim();
+            String lines[] = text.split(System.getProperty("line.separator"));
+            assertEquals(3, lines.length);
 
-        String text = new String(se.read(), Charsets.US_ASCII);
-        text = text.trim();
-        String lines[] = text.split(System.getProperty("line.separator"));
-        assertEquals(3, lines.length);
+            assertEquals("Manifest-Version: 1.0", lines[0].trim());
 
-        assertEquals("Manifest-Version: 1.0", lines[0].trim());
+            Set<String> linesSet = Sets.newSet();
+            for (String l : lines) {
+                linesSet.add(l.trim());
+            }
 
-        Set<String> linesSet = Sets.newSet();
-        for (String l : lines) {
-            linesSet.add(l.trim());
+            assertTrue(linesSet.contains("Built-By: Me, of course"));
+            assertTrue(linesSet.contains("Created-By: Myself"));
         }
-
-        assertTrue(linesSet.contains("Built-By: Me, of course"));
-        assertTrue(linesSet.contains("Created-By: Myself"));
     }
 
     @Test
     public void manifestGenerationOnExistingFile() throws Exception {
         File zip = new File(mTemporaryFolder.getRoot(), "f.zip");
-        ZFile zf = new ZFile(zip);
+        try (Closer closer = Closer.create()) {
+            ZFile zf = closer.register(new ZFile(zip));
+            zf.add("wiki",
+                    closer.register(
+                            new FileInputStream(
+                                    new File(
+                                            TestUtils.getRoot(
+                                                    "packaging",
+                                                    "text-files"),
+                                            "wikipedia.html"))));
+            zf.close();
 
-        Closer closer = Closer.create();
-        zf.add("wiki", closer.register(new FileInputStream(new File(TestUtils.getRoot("packaging",
-                "text-files"), "wikipedia.html"))));
-        zf.close();
+            ManifestGenerationExtension extension =
+                    new ManifestGenerationExtension("Me, of course", "Myself");
+            extension.register(zf);
 
-        ManifestGenerationExtension extension = new ManifestGenerationExtension("Me, of course",
-                "Myself");
-        extension.register(zf);
+            zf.close();
 
-        zf.close();
+            StoredEntry se = zf.get("META-INF/MANIFEST.MF");
+            assertNotNull(se);
 
-        StoredEntry se = zf.get("META-INF/MANIFEST.MF");
-        assertNotNull(se);
+            String text = new String(se.read(), Charsets.US_ASCII);
+            text = text.trim();
+            String lines[] = text.split(System.getProperty("line.separator"));
+            assertEquals(3, lines.length);
 
-        String text = new String(se.read(), Charsets.US_ASCII);
-        text = text.trim();
-        String lines[] = text.split(System.getProperty("line.separator"));
-        assertEquals(3, lines.length);
+            assertEquals("Manifest-Version: 1.0", lines[0].trim());
 
-        assertEquals("Manifest-Version: 1.0", lines[0].trim());
+            Set<String> linesSet = Sets.newSet();
+            for (String l : lines) {
+                linesSet.add(l.trim());
+            }
 
-        Set<String> linesSet = Sets.newSet();
-        for (String l : lines) {
-            linesSet.add(l.trim());
+            assertTrue(linesSet.contains("Built-By: Me, of course"));
+            assertTrue(linesSet.contains("Created-By: Myself"));
         }
+    }
 
-        assertTrue(linesSet.contains("Built-By: Me, of course"));
-        assertTrue(linesSet.contains("Created-By: Myself"));
+    @Test
+    public void manifestGenerationOnIncrementalNoChanges() throws Exception {
+        File zip = new File(mTemporaryFolder.getRoot(), "f.zip");
+        try (Closer closer = Closer.create()) {
+            ZFile zf = closer.register(new ZFile(zip));
+
+            ManifestGenerationExtension extension =
+                    new ManifestGenerationExtension("Me, of course", "Myself");
+            extension.register(zf);
+
+            zf.add("wiki",
+                    closer.register(
+                            new FileInputStream(
+                                    new File(
+                                            TestUtils.getRoot(
+                                                    "packaging",
+                                                    "text-files"),
+                                            "wikipedia.html"))));
+
+            zf.close();
+
+            long timeOfWriting = zip.lastModified();
+
+            TestUtils.waitFilesystemTime();
+
+            zf = closer.register(new ZFile(zip));
+            zf.close();
+
+            long secondTimeOfWriting = zip.lastModified();
+            assertEquals(timeOfWriting, secondTimeOfWriting);
+        }
     }
 }

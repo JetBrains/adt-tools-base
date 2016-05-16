@@ -21,6 +21,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
+import com.android.testutils.TestUtils;
 import com.google.common.base.Charsets;
 import com.google.common.io.Files;
 
@@ -34,18 +35,6 @@ public class CachedFileContentsTest {
     @Rule
     public TemporaryFolder mTemporaryFolder = new TemporaryFolder();
 
-    private static void waitFilesystemTime() throws Exception {
-        /*
-         * How much time to wait until we are sure that the file system will update the last
-         * modified timestamp of a file. This is usually related to the accuracy of last timestamps.
-         * In modern windows systems 100ms be more than enough (NTFS has 100us accuracy --
-         * see https://msdn.microsoft.com/en-us/library/windows/desktop/ms724290(v=vs.85).aspx).
-         * In linux it will depend on the filesystem. ext4 has 1ns accuracy (if inodes are 256 byte
-         * or larger), but ext3 has 1 second.
-         */
-        Thread.sleep(2000);
-    }
-
     @Test
     public void createFileAndCheckWithNoChanges() throws Exception {
         File f = mTemporaryFolder.newFile("test");
@@ -56,7 +45,7 @@ public class CachedFileContentsTest {
         CachedFileContents<Object> cachedFile = new CachedFileContents<Object>(f);
         cachedFile.closed(cache);
 
-        waitFilesystemTime();
+        TestUtils.waitFilesystemTime();
 
         assertTrue(cachedFile.isValid());
         assertSame(cache, cachedFile.getCache());
@@ -72,7 +61,7 @@ public class CachedFileContentsTest {
         CachedFileContents<Object> cachedFile = new CachedFileContents<Object>(f);
         cachedFile.closed(cache);
 
-        waitFilesystemTime();
+        TestUtils.waitFilesystemTime();
 
         Files.write("def", f, Charsets.US_ASCII);
 
@@ -90,7 +79,7 @@ public class CachedFileContentsTest {
         CachedFileContents<Object> cachedFile = new CachedFileContents<Object>(f);
         cachedFile.closed(cache);
 
-        waitFilesystemTime();
+        TestUtils.waitFilesystemTime();
 
         Files.write("def", f, Charsets.US_ASCII);
         cachedFile.closed(cache);
