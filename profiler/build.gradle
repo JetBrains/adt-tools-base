@@ -4,3 +4,68 @@ subprojects {
     maven { url = "$rootDir/../../../prebuilts/tools/common/m2/repository" }
   }
 }
+
+class CMakeClosureDelegate {
+    String[] abis
+    String name;
+    String projectDir;
+
+    def abis(String[] value) { abis = value; }
+    def name(String value) { name = value; }
+    def projectDir(String value) { projectDir = value; }
+}
+
+
+def cmake(cl) {
+    CMakeClosureDelegate del = new CMakeClosureDelegate();
+    cl.delegate = del;
+    cl.call();
+    def cmakeBuildDir = "$rootDir/../../../out/studio/${cl.owner.name}/${del.name}"
+    def name = del.name;
+
+    def cmakeTask = cl.owner.tasks.create(name: "cmake" + name.capitalize(), type: DefaultTask) {}
+    def ninjaTask = cl.owner.tasks.create(name: "$name", type: DefaultTask) {}
+
+    del.abis.each { abi ->
+        def gen = file("$cmakeBuildDir/gen/$abi");
+        def extra = []
+        if (!abi.equals('host')) {
+            extra = [
+                    "-DCMAKE_TOOLCHAIN_FILE=$rootDir/cmake/Android.cmake",
+                    "-DPREBUILTS=$rootDir/../../../prebuilts",
+                    "-DABI=$abi"
+            ]
+        }
+        // TODO: Define different tasks for debug and release and specify
+        // -DCMAKE_BUILD_TYPE=[Debug|Release]
+        def cmakeAbi = cl.owner.tasks.create(name: "cmake" + name.capitalize() + abi.capitalize(), type: Exec) {
+            doFirst {
+                gen.deleteDir();
+                gen.mkdirs();
+            }
+            workingDir gen
+            executable "$rootDir/../../../prebuilts/cmake/darwin-x86/bin/cmake"
+            args = ["-G", "Ninja", del.projectDir,
+                "-DCMAKE_MAKE_PROGRAM=$rootDir/../../../prebuilts/ninja/darwin-x86/ninja",
+                "-DCMAKE_RUNTIME_OUTPUT_DIRECTORY=$cmakeBuildDir/out/$abi",
+                "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON"] + extra
+            inputs.file "../cmake/Android.cmake"
+            outputs.dir gen
+        }
+        cmakeTask.dependsOn cmakeAbi
+
+        def ninjaAbi = cl.owner.tasks.create(name: "ninja" + name.capitalize() + abi.capitalize(), type: Exec) {
+            workingDir gen
+
+            executable "$rootDir/../../../prebuilts/ninja/darwin-x86/ninja"
+
+            inputs.dir del.projectDir
+            inputs.dir gen
+            outputs.dir "$cmakeBuildDir/out/$abi"
+        }
+        ninjaAbi.dependsOn cmakeAbi
+        ninjaTask.dependsOn ninjaAbi
+    }
+    return ninjaTask
+ }
+
