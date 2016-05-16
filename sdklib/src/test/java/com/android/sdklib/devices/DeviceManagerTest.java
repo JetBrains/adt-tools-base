@@ -84,11 +84,6 @@ public class DeviceManagerTest extends SdkManagerTestCase {
         return names;
     }
 
-    @Override
-    public void tearDown() throws Exception {
-        super.tearDown();
-    }
-
     public final void testGetDevices_Default() {
         // no user devices defined in the test's custom .android home folder
         assertEquals("[]", dm.getDevices(DeviceFilter.USER).toString());

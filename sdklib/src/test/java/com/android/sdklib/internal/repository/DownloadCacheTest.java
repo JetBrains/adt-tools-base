@@ -103,11 +103,6 @@ public class DownloadCacheTest extends AndroidLocationTestCase {
         mMonitor = new MockMonitor();
     }
 
-    @Override
-    public void tearDown() throws Exception {
-        super.tearDown();
-    }
-
     public void testMissingResource() throws Exception {
         // Downloads must fail when using the only-cache strategy and there's nothing in the cache.
         // In that case, it returns null to indicate the resource is simply not found.
