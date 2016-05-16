@@ -39,26 +39,14 @@ dependencies {
     }
 }
 
-def testEnvironment = [
-    OS: System.env.OS,
-    ProgramW6432: System.env.ProgramW6432,
-    PROJECT_BUILD_DIR: project.buildDir,
-    CUSTOM_REPO: rootProject.file("../out/repo"),
-    CUSTOM_PLUGIN_VERSION: System.env.CUSTOM_PLUGIN_VERSION,
-    CUSTOM_EXPERIMENTAL_PLUGIN_VERSION: System.env.CUSTOM_EXPERIMENTAL_PLUGIN_VERSION,
-    CUSTOM_EXPERIMENTAL_GRADLE: System.env.CUSTOM_EXPERIMENTAL_GRADLE,
-    ANDROID_HOME: System.env.ANDROID_HOME,
-    ANDROID_NDK_HOME: System.env.ANDROID_NDK_HOME,
-    CUSTOM_BUILDTOOLS: System.env.CUSTOM_BUILDTOOLS,
-    CUSTOM_JACK: System.env.CUSTOM_JACK,
-    USE_JACK_API: System.env.USE_JACK_API,
-    USE_JACK_LOCATION: System.env.USE_JACK_LOCATION,
-    DEBUG_INNER_TEST: System.env.DEBUG_INNER_TEST,
-    RECORD_SPANS: System.env.RECORD_SPANS,
-    INTEGRATION_TEST: "true",
-    DATA_BINDING_INTERNAL_REPO : rootProject.file("../tools/data-binding/internal-prebuilts"),
-    DATA_BINDING_REPO : rootProject.file("../tools/data-binding/maven-repo"),
-].findAll { it.value != null }
+def testEnvironment = System.getenv().findAll {it.value != null}
+testEnvironment << [
+        PROJECT_BUILD_DIR : project.buildDir,
+        CUSTOM_REPO : rootProject.file("../out/repo"),
+        INTEGRATION_TEST : "true",
+        DATA_BINDING_INTERNAL_REPO : rootProject.file("../tools/data-binding/internal-prebuilts"),
+        DATA_BINDING_REPO : rootProject.file("../tools/data-binding/maven-repo")
+]
 
 // These tasks will not depend on publishLocal, so they will run integration
 // tests against whatever version of the plugin is in ../../../out/repo. This
