@@ -344,7 +344,7 @@ public class ApkSubject extends AbstractAndroidSubject<ApkSubject> {
         };
     }
 
-    private static ZipEntryAction<Boolean> hasClassAction(final String expectedClassName) {
+    private ZipEntryAction<Boolean> hasClassAction(final String expectedClassName) {
         return new ZipEntryAction<Boolean>() {
             @Nullable
             @Override
@@ -454,13 +454,13 @@ public class ApkSubject extends AbstractAndroidSubject<ApkSubject> {
      * @return true if the class was found
      * @throws ProcessException
      */
-    private static boolean checkFileForClassWithDexDump(
+    private boolean checkFileForClassWithDexDump(
             @NonNull final String expectedClassName,
             @NonNull File file,
             @NonNull File dexDumpExe) throws ProcessException {
         // For Windows, we need to extract the classes.dex first due to b/28385192.
         if (SdkConstants.currentPlatform() == SdkConstants.PLATFORM_WINDOWS) {
-            if (!file.getName().endsWith(SdkConstants.DOT_DEX)) {
+            if (file.getName().endsWith(SdkConstants.DOT_ANDROID_PACKAGE)) {
                 file = extractClassesDex(file);
             }
         }
@@ -530,12 +530,14 @@ public class ApkSubject extends AbstractAndroidSubject<ApkSubject> {
         failWithRawMessage("maxSdkVersion not found in badging output for %s", getDisplaySubject());
     }
 
-    private static File extractClassesDex(File file) {
+    private File extractClassesDex(File file) {
+        check().that(file).exists();
         try (ZipFile zipFile = new ZipFile(file)) {
             String path = "classes.dex";
             InputStream classDexStream = zipFile.getInputStream(zipFile.getEntry(path));
             if (classDexStream == null) {
-                throw new RuntimeException(path + " entry not found !");
+                failWithRawMessage(path + " entry not found !");
+                return null;
             }
             byte[] content = ByteStreams.toByteArray(classDexStream);
             // write into tmp file
@@ -544,7 +546,15 @@ public class ApkSubject extends AbstractAndroidSubject<ApkSubject> {
             dexFile.deleteOnExit();
             return dexFile;
         } catch (IOException e) {
-            throw new RuntimeException("Unable to extract classes.dex.", e);
+            failWithRawMessage("Unable to extract classes.dex from apk '%s'\n%s",
+                    file.getAbsolutePath(),
+                    e.toString());
+            return null;
         }
+    }
+
+    @Override
+    public CustomTestVerb check() {
+        return new CustomTestVerb(failureStrategy);
     }
 }

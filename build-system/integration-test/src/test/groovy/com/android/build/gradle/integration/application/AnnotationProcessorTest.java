@@ -16,22 +16,22 @@
 
 package com.android.build.gradle.integration.application;
 
+import static com.google.common.truth.Truth.assertThat;
+
 import com.android.build.gradle.integration.common.category.DeviceTests;
 import com.android.build.gradle.integration.common.fixture.Adb;
 import com.android.build.gradle.integration.common.fixture.BuildScriptGenerator;
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.common.fixture.app.AndroidTestApp;
+import com.android.build.gradle.integration.common.fixture.app.AnnotationProcessorLib;
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp;
 import com.android.build.gradle.integration.common.fixture.app.MultiModuleTestProject;
-import com.android.build.gradle.integration.common.fixture.app.AnnotationProcessorLib;
 import com.android.build.gradle.integration.common.fixture.app.TestSourceFile;
 import com.android.build.gradle.integration.common.runner.FilterableParameterized;
 import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.io.Files;
 
-import org.gradle.api.JavaVersion;
-import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -39,6 +39,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
@@ -76,15 +77,15 @@ public class AnnotationProcessorTest {
         project = GradleTestProject.builder()
                 .fromTestApp(new MultiModuleTestProject(
                         ImmutableMap.of(
-                                ":app", app,
+                                ":app", sApp,
                                 ":lib", new AnnotationProcessorLib())))
                 .useExperimentalGradleVersion(forComponentPlugin)
                 .create();
     }
-    public static AndroidTestApp app = HelloWorldApp.noBuildFile();
+    private static AndroidTestApp sApp = HelloWorldApp.noBuildFile();
     static {
-        app.removeFile(app.getFile("HelloWorld.java"));
-        app.addFile(new TestSourceFile(
+        sApp.removeFile(sApp.getFile("HelloWorld.java"));
+        sApp.addFile(new TestSourceFile(
         "src/main/java/com/example/helloworld", "HelloWorld.java",
                 "package com.example.helloworld;\n"
                         + "\n"
@@ -114,8 +115,8 @@ public class AnnotationProcessorTest {
                         + "}\n"));
 
 
-        app.removeFile(app.getFile("HelloWorldTest.java"));
-        app.addFile(new TestSourceFile(
+        sApp.removeFile(sApp.getFile("HelloWorldTest.java"));
+        sApp.addFile(new TestSourceFile(
                 "src/androidTest/java/com/example/hellojni", "HelloWorldTest.java",
                 "package com.example.helloworld;\n" +
                         "\n" +
@@ -161,12 +162,7 @@ public class AnnotationProcessorTest {
                         + "        }\n"
                         + "    }\n"
                         + "}\n"
-                        + "${model_end}"
-                        + "\n"
-                        + "dependencies {\n"
-                        + "    annotationProcessor project(':lib')\n"
-                        + "    compile project(':lib')\n"
-                        + "}\n" )
+                        + "${model_end}")
                 .addPattern(
                         "argument",
                         "argument \"value\", \"Hello\"",
@@ -177,6 +173,29 @@ public class AnnotationProcessorTest {
 
     @Test
     public void normalBuild() throws Exception {
+        Files.append("\n"
+                + "dependencies {\n"
+                + "    annotationProcessor project(':lib')\n"
+                + "    compile project(':lib')\n"
+                + "}\n", project.getSubproject(":app").getBuildFile(), Charsets.UTF_8 );
+        project.execute("assembleDebug");
+    }
+
+    /**
+     * Test compile classpath is being added to processor path.
+     */
+    @Test
+    public void compileClasspathIncludedInProcessor() throws Exception {
+        File emptyJar = project.getSubproject("app").file("empty.jar");
+        assertThat(emptyJar.createNewFile()).isTrue();
+
+        Files.append(
+                "dependencies {\n"
+                        + "    compile project(':lib')\n"
+                        + "    annotationProcessor files('empty.jar')\n"
+                        + "}\n",
+                project.getSubproject(":app").getBuildFile(),
+                Charsets.UTF_8);
         project.execute("assembleDebug");
     }
 

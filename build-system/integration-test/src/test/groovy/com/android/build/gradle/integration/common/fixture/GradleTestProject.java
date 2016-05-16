@@ -129,13 +129,13 @@ public class GradleTestProject implements TestRule {
         @Nullable
         private TestProject testProject = null;
         @Nullable
-        File sdkDir = SdkHelper.findSdkDir();
+        private File sdkDir = SdkHelper.findSdkDir();
         @Nullable
-        File ndkDir = findNdkDir();
+        private File ndkDir = findNdkDir();
         @Nullable
         private String targetGradleVersion;
-        boolean useJack = USE_JACK;
-        boolean useMinify = false;
+        private boolean useJack = USE_JACK;
+        private boolean useMinify = false;
         @NonNull
         private List<String> gradleProperties = Lists.newArrayList();
         @Nullable
@@ -367,7 +367,7 @@ public class GradleTestProject implements TestRule {
         this.rootProject = rootProject;
     }
 
-    String getTargetGradleVersion() {
+    private String getTargetGradleVersion() {
         return targetGradleVersion;
     }
 
@@ -427,7 +427,7 @@ public class GradleTestProject implements TestRule {
         };
     }
 
-    public void createTestDirectory(Class<?> testClass, String methodName)
+    private void createTestDirectory(Class<?> testClass, String methodName)
             throws IOException, StreamException {
         // On windows, move the temporary copy as close to root to avoid running into path too
         // long exceptions.

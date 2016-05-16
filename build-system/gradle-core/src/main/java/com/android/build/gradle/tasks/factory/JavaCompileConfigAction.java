@@ -2,6 +2,7 @@ package com.android.build.gradle.tasks.factory;
 
 import static com.android.builder.core.VariantType.LIBRARY;
 import static com.android.builder.core.VariantType.UNIT_TEST;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.android.annotations.NonNull;
 import com.android.build.gradle.AndroidGradleOptions;
@@ -18,6 +19,7 @@ import com.android.builder.model.SyncIssue;
 import com.android.utils.FileUtils;
 import com.android.utils.ILogger;
 import com.google.common.base.Joiner;
+import com.google.common.collect.Lists;
 
 import org.gradle.api.JavaVersion;
 import org.gradle.api.Project;
@@ -26,6 +28,7 @@ import org.gradle.api.file.FileCollection;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
@@ -89,7 +92,6 @@ public class JavaCompileConfigAction implements TaskConfigAction<AndroidJavaComp
             public FileCollection call() {
                 FileCollection classpath = scope.getJavaClasspath();
                 Project project = scope.getGlobalScope().getProject();
-
                 if (keepDefaultBootstrap) {
                     classpath = classpath.plus(project.files(
                             scope.getGlobalScope().getAndroidBuilder().getBootClasspath(false)));
@@ -120,7 +122,6 @@ public class JavaCompileConfigAction implements TaskConfigAction<AndroidJavaComp
                         }
                     }
                 }
-
                 return classpath;
             }
         });
@@ -140,15 +141,28 @@ public class JavaCompileConfigAction implements TaskConfigAction<AndroidJavaComp
         javacTask.getOptions().setEncoding(compileOptions.getEncoding());
 
         GlobalScope globalScope = scope.getGlobalScope();
-        Project project = globalScope.getProject();
+        Project project = scope.getGlobalScope().getProject();
 
         boolean incremental;
 
+        CoreAnnotationProcessorOptions annotationProcessorOptions =
+                scope.getVariantConfiguration().getJavaCompileOptions()
+                        .getAnnotationProcessorOptions();
+
+
+        checkNotNull(annotationProcessorOptions.getIncludeClasspath());
+        Collection<File> processorPath =
+                Lists.newArrayList(
+                        scope.getVariantData().getVariantDependency()
+                                .resolveAndGetAnnotationProcessorClassPath(
+                                        annotationProcessorOptions.getIncludeClasspath(),
+                                        scope.getGlobalScope().getAndroidBuilder().getErrorReporter()));
         if (compileOptions.getIncremental() != null) {
             incremental = compileOptions.getIncremental();
             LOG.info("Incremental flag set to %1$b in DSL", incremental);
         } else {
             if (globalScope.getExtension().getDataBinding().isEnabled()
+                    || !processorPath.isEmpty()
                     || project.getPlugins().hasPlugin("com.neenbedankt.android-apt")
                     || project.getPlugins().hasPlugin("me.tatarka.retrolambda")) {
                 incremental = false;
@@ -200,18 +214,14 @@ public class JavaCompileConfigAction implements TaskConfigAction<AndroidJavaComp
             LOG.info("Not using incremental javac compilation.");
         }
 
-        List<File> processorPath =
-                scope.getVariantData().getVariantDependency()
-                        .resolveAndGetAnnotationProcessorClassPath();
         if (!processorPath.isEmpty()) {
+            if (Boolean.TRUE.equals(annotationProcessorOptions.getIncludeClasspath())) {
+                processorPath.addAll(javacTask.getClasspath().getFiles());
+            }
             javacTask.getOptions().getCompilerArgs().add("-processorpath");
-            javacTask.getOptions().getCompilerArgs().add(
-                    FileUtils.joinFilePaths(processorPath));
+            javacTask.getOptions().getCompilerArgs().add(FileUtils.joinFilePaths(processorPath));
         }
 
-        CoreAnnotationProcessorOptions annotationProcessorOptions =
-                scope.getVariantConfiguration().getJavaCompileOptions()
-                        .getAnnotationProcessorOptions();
         if (!annotationProcessorOptions.getClassNames().isEmpty()) {
             javacTask.getOptions().getCompilerArgs().add("-processor");
             javacTask.getOptions().getCompilerArgs().add(

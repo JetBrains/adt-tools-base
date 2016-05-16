@@ -21,6 +21,8 @@ import com.android.builder.model.SyncIssue;
 import com.google.common.truth.FailureStrategy;
 import com.google.common.truth.TestVerb;
 
+import java.io.File;
+
 /**
  * Convenience class to extend the functionality of {@link TestVerb} for custom Subject;
  */
@@ -31,6 +33,10 @@ public class CustomTestVerb extends TestVerb {
 
     public CustomTestVerb(FailureStrategy failureStrategy, String failureMessage) {
         super(failureStrategy, failureMessage);
+    }
+
+    public FileSubject that(@Nullable File target) {
+        return FileSubject.FACTORY.getSubject(getFailureStrategy(), target);
     }
 
     public IssueSubject that(@Nullable SyncIssue target) {

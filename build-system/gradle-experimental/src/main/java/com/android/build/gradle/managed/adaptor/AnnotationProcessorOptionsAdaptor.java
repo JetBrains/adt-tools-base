@@ -17,6 +17,7 @@
 package com.android.build.gradle.managed.adaptor;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.build.gradle.internal.dsl.CoreAnnotationProcessorOptions;
 import com.android.build.gradle.managed.AnnotationProcessorOptions;
 import com.android.build.gradle.managed.KeyValuePair;
@@ -44,6 +45,12 @@ public class AnnotationProcessorOptionsAdaptor implements CoreAnnotationProcesso
     @NonNull
     public List<String> getClassNames() {
         return annotationProcessorOptions.getClassNames();
+    }
+
+    @Override
+    @Nullable
+    public Boolean getIncludeClasspath() {
+        return annotationProcessorOptions.getIncludeClasspath();
     }
 
     @Override

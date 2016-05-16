@@ -70,9 +70,13 @@ public class DaggerTest {
     @Rule
     public final Adb adb = new Adb();
 
-    @Parameterized.Parameters(name = "{0}")
+    @Parameterized.Parameters(name = "{0},useAndroidApt={1}")
     public static Collection<Object[]> data() {
-        return Arrays.asList(new Object[][] {{"daggerOne"}, {"daggerTwo"}});
+        return Arrays.asList(new Object[][] {
+                {"daggerOne", true},
+                {"daggerTwo", true},
+                {"daggerTwo", false}
+        });
     }
 
     @Rule
@@ -81,9 +85,11 @@ public class DaggerTest {
     private File mAppModule;
 
     private final String testProject;
+    private final boolean useAndroidApt;
 
-    public DaggerTest(String testProject) {
+    public DaggerTest(String testProject, boolean useAndroidApt) {
         this.testProject = testProject;
+        this.useAndroidApt = useAndroidApt;
 
         project = GradleTestProject.builder()
                 .fromTestProject(testProject)
@@ -99,6 +105,10 @@ public class DaggerTest {
                     JavaVersion.current().isJava7Compatible());
         }
         mAppModule = project.file("src/main/java/com/android/tests/AppModule.java");
+
+        if (testProject.equals("daggerTwo") && !useAndroidApt) {
+            project.setBuildFile("build.no-apt.gradle");
+        }
     }
 
     @Test

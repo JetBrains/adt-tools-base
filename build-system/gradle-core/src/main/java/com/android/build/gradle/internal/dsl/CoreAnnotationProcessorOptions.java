@@ -17,6 +17,7 @@
 package com.android.build.gradle.internal.dsl;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 
 import java.util.List;
 import java.util.Map;
@@ -36,4 +37,10 @@ public interface CoreAnnotationProcessorOptions {
      */
     @NonNull
     Map<String, String> getArguments();
+
+    /**
+     * Include compile classpath in the processor path.
+     */
+    @Nullable
+    Boolean getIncludeClasspath();
 }
