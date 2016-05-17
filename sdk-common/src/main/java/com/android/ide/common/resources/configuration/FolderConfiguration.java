@@ -1137,7 +1137,8 @@ public final class FolderConfiguration implements Comparable<FolderConfiguration
             ResourceQualifier referenceQualifier = referenceConfig.mQualifiers[i];
 
             // it's only a non match if both qualifiers are non-null, and they don't match.
-            if (testQualifier != null && referenceQualifier != null &&
+            if (testQualifier != null && testQualifier != testQualifier.getNullQualifier() &&
+                referenceQualifier != null && referenceQualifier != referenceQualifier.getNullQualifier() &&
                     !testQualifier.isMatchFor(referenceQualifier)) {
                 return false;
             }
