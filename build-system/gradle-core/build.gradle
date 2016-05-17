@@ -111,7 +111,6 @@ task javadocJar(type: Jar, dependsOn:groovydoc) {
 
 tasks.withType(Javadoc) {
     classpath += configurations.provided
-    options.addStringOption('Xdoclint:none', '-quiet')
 }
 
 // Only package JavaDoc if using --init-script=buildSrc/base/release.gradle
