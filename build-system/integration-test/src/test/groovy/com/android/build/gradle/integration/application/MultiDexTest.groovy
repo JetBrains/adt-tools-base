@@ -23,6 +23,7 @@ import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.runner.FilterableParameterized
 import com.android.build.gradle.integration.common.utils.DexInProcessHelper
 import com.android.build.gradle.integration.common.utils.TestFileUtils
+import com.android.repository.Revision
 import com.android.utils.FileUtils
 import com.google.common.base.Charsets
 import com.google.common.io.Files
@@ -184,6 +185,8 @@ class MultiDexTest {
 
     @Test
     public void checkManifestKeepListFilter() {
+        Assume.assumeTrue(Revision.parseRevision(GradleTestProject.DEFAULT_BUILD_TOOL_VERSION)
+                .compareTo(new Revision(24, 0, 0, 4)) < 0)
         project.execute("collectIcsDebugMultiDexComponents");
         assertThat(
                 Files.toString(

@@ -102,6 +102,12 @@ public class AaptPackageConfig implements Cloneable {
     private File mProguardOutputFile;
 
     /**
+     * Where to write the main dex list proguard output file (see
+     * {@link Builder#setMainDexListProguardOutputFile(File)}).
+     */
+    private File mMainDexListProguardOutputFile;
+
+    /**
      * Collection of splits, if any (see {@link Builder#setSplits(Collection)}).
      */
     @Nullable
@@ -280,6 +286,16 @@ public class AaptPackageConfig implements Cloneable {
     @Nullable
     public File getProguardOutputFile() {
         return mProguardOutputFile;
+    }
+
+    /**
+     * Obtains the currently set main dex list proguard output file.
+     *
+     * @return the file, {@code null} if not set
+     */
+    @Nullable
+    public File getMainDexListProguardOutputFile() {
+        return mMainDexListProguardOutputFile;
     }
 
     /**
@@ -563,6 +579,19 @@ public class AaptPackageConfig implements Cloneable {
         @NonNull
         public Builder setProguardOutputFile(@Nullable File proguardOutputFile) {
             mConfig.mProguardOutputFile = proguardOutputFile;
+            return this;
+        }
+
+        /**
+         * Sets the main dex proguard output file. See
+         * {@link AbstractAapt#validatePackageConfig(AaptPackageConfig)} for details on field rules.
+         *
+         * @param mainDexListProguardOutputFile the proguard output file
+         * @return {@code this}
+         */
+        @NonNull
+        public Builder setMainDexListProguardOutputFile(@Nullable File mainDexListProguardOutputFile) {
+            mConfig.mMainDexListProguardOutputFile = mainDexListProguardOutputFile;
             return this;
         }
 

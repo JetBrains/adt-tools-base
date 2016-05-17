@@ -155,6 +155,7 @@ import com.android.builder.core.DefaultDexOptions;
 import com.android.builder.core.DexOptions;
 import com.android.builder.core.VariantConfiguration;
 import com.android.builder.core.VariantType;
+import com.android.builder.internal.aapt.Aapt;
 import com.android.builder.model.DataBindingOptions;
 import com.android.builder.model.OptionalCompilationStep;
 import com.android.builder.model.SyncIssue;
@@ -824,6 +825,8 @@ public abstract class TaskManager {
         BaseVariantData<? extends BaseVariantOutputData> variantData = scope.getVariantData();
 
         variantData.calculateFilters(scope.getGlobalScope().getExtension().getSplits());
+        boolean useAaptToGenerateLegacyMultidexMainDexProguardRules =
+                useAaptToGenerateLegacyMultidexMainDexProguardRules(scope);
 
         // loop on all outputs. The only difference will be the name of the task, and location
         // of the generated data.
@@ -832,7 +835,8 @@ public abstract class TaskManager {
 
             variantOutputScope.setProcessResourcesTask(androidTasks.create(tasks,
                     new ProcessAndroidResources.ConfigAction(variantOutputScope, symbolLocation,
-                            generateResourcePackage)));
+                            generateResourcePackage,
+                            useAaptToGenerateLegacyMultidexMainDexProguardRules)));
 
             // always depend on merge res,
             variantOutputScope.getProcessResourcesTask().dependsOn(tasks,
@@ -841,7 +845,8 @@ public abstract class TaskManager {
                 variantOutputScope.getProcessResourcesTask().dependsOn(tasks,
                         scope.getDataBindingProcessLayoutsTask().getName());
             }
-            if (getIncrementalMode(scope.getVariantConfiguration()) != IncrementalMode.LOCAL_RES_ONLY) {
+            if (getIncrementalMode(scope.getVariantConfiguration())
+                    != IncrementalMode.LOCAL_RES_ONLY) {
                 variantOutputScope.getProcessResourcesTask().dependsOn(tasks,
                         variantOutputScope.getManifestProcessorTask(),
                         scope.getMergeAssetsTask());
@@ -855,6 +860,13 @@ public abstract class TaskManager {
             }
 
         }
+    }
+
+    private boolean useAaptToGenerateLegacyMultidexMainDexProguardRules(
+            @NonNull VariantScope scope) {
+        return isLegacyMultidexMode(scope) &&
+                androidBuilder.getTargetInfo().getBuildTools().getRevision()
+                        .compareTo(Aapt.VERSION_FOR_MAIN_DEX_LIST) >= 0;
     }
 
     /**
@@ -1682,10 +1694,7 @@ public abstract class TaskManager {
         boolean isMinifyEnabled = config.isMinifyEnabled() || isTestedAppMinified(variantScope);
         boolean isMultiDexEnabled = config.isMultiDexEnabled();
         // Switch to native multidex if possible when using instant run.
-        boolean isLegacyMultiDexMode = config.isLegacyMultiDexMode() &&
-                (getIncrementalMode(variantScope.getVariantConfiguration()) == IncrementalMode.NONE
-                        || variantScope.getInstantRunBuildContext().getPatchingPolicy() ==
-                                InstantRunPatchingPolicy.PRE_LOLLIPOP);
+        boolean isLegacyMultiDexMode = isLegacyMultidexMode(variantScope);
 
         AndroidConfig extension = variantScope.getGlobalScope().getExtension();
 
@@ -1775,12 +1784,16 @@ public abstract class TaskManager {
 
             // ----------
             // Create a task to collect the list of manifest entry points which are
-            // needed in the primary dex
-            AndroidTask<CreateManifestKeepList> manifestKeepListTask = androidTasks.create(tasks,
-                    new CreateManifestKeepList.ConfigAction(variantScope));
-            manifestKeepListTask.dependsOn(tasks,
-                    variantData.getOutputs().get(0).getScope().getManifestProcessorTask());
-
+            // needed in the primary dex.
+            // This is not needed for AAPT >= AaptV1.VERSION_FOR_MAIN_DEX_LIST,
+            // where the '-D manifestKeepListProguardFile' option is used instead.
+            AndroidTask<CreateManifestKeepList> manifestKeepListTask = null;
+            if (!useAaptToGenerateLegacyMultidexMainDexProguardRules(variantScope)) {
+                manifestKeepListTask = androidTasks.create(tasks,
+                        new CreateManifestKeepList.ConfigAction(variantScope));
+                manifestKeepListTask.dependsOn(tasks,
+                        variantData.getOutputs().get(0).getScope().getManifestProcessorTask());
+            }
             // ---------
             // create the transform that's going to take the code and the proguard keep list
             // from above and compute the main class list.
@@ -1789,7 +1802,7 @@ public abstract class TaskManager {
                     null);
             multiDexClassListTask = transformManager.addTransform(
                     tasks, variantScope, multiDexTransform);
-            multiDexClassListTask.dependsOn(tasks, manifestKeepListTask);
+            multiDexClassListTask.optionalDependsOn(tasks, manifestKeepListTask);
         }
         // create dex transform
         DefaultDexOptions dexOptions = DefaultDexOptions.copyOf(extension.getDexOptions());
@@ -1797,7 +1810,7 @@ public abstract class TaskManager {
         if (variantData.getType().isForTesting()) {
             // Don't use custom dx flags when compiling the test APK. They can break the test APK,
             // like --minimal-main-dex.
-             dexOptions.setAdditionalParameters(ImmutableList.of());
+            dexOptions.setAdditionalParameters(ImmutableList.of());
         }
 
         DexTransform dexTransform = new DexTransform(
@@ -1822,6 +1835,14 @@ public abstract class TaskManager {
                     variantScope.getInstantRunBuildContext().getPatchingPolicy()) {
             incrementalBuildWrapperTask.dependsOn(tasks, dexTask);
         }
+    }
+
+    private boolean isLegacyMultidexMode(@NonNull VariantScope variantScope) {
+        return variantScope.getVariantData().getVariantConfiguration().isLegacyMultiDexMode() &&
+                (getIncrementalMode(variantScope.getVariantConfiguration()) == IncrementalMode.NONE
+                        || variantScope.getInstantRunBuildContext().getPatchingPolicy() ==
+                        InstantRunPatchingPolicy.PRE_LOLLIPOP);
+
     }
 
     /**

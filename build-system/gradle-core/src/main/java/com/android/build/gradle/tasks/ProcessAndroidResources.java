@@ -93,6 +93,8 @@ public class ProcessAndroidResources extends IncrementalTask {
 
     private File proguardOutputFile;
 
+    private File mainDexListProguardOutputFile;
+
     private Collection<String> resourceConfigs;
 
     private String preferredDensity;
@@ -159,6 +161,7 @@ public class ProcessAndroidResources extends IncrementalTask {
                 .setSourceOutputDir(srcOut)
                 .setResourceOutputApk(resOutBaseNameFile)
                 .setProguardOutputFile(getProguardOutputFile())
+                .setMainDexListProguardOutputFile(getMainDexListProguardOutputFile())
                 .setVariantType(getType())
                 .setDebuggable(getDebuggable())
                 .setPseudoLocalize(getPseudoLocalesEnabled())
@@ -228,15 +231,20 @@ public class ProcessAndroidResources extends IncrementalTask {
 
     public static class ConfigAction implements TaskConfigAction<ProcessAndroidResources> {
 
-        private VariantOutputScope scope;
-        private File symbolLocation;
-        private boolean generateResourcePackage;
+        private final VariantOutputScope scope;
+        private final File symbolLocation;
+        private final boolean generateResourcePackage;
+        private final boolean generateLegacyMultidexMainDexProguardRules;
 
         public ConfigAction(
-                VariantOutputScope scope, File symbolLocation, boolean generateResourcePackage) {
+                @NonNull VariantOutputScope scope,
+                @NonNull File symbolLocation,
+                boolean generateResourcePackage,
+                boolean generateLegacyMultidexMainDexProguardRules) {
             this.scope = scope;
             this.symbolLocation = symbolLocation;
             this.generateResourcePackage = generateResourcePackage;
+            this.generateLegacyMultidexMainDexProguardRules = generateLegacyMultidexMainDexProguardRules;
         }
 
         @NonNull
@@ -316,6 +324,11 @@ public class ProcessAndroidResources extends IncrementalTask {
                     LoggingUtil.displayWarning(Logging.getLogger(getClass()),
                             scope.getGlobalScope().getProject(),
                             "To shrink resources you must also enable ProGuard");
+                }
+
+                if (generateLegacyMultidexMainDexProguardRules) {
+                    processResources.setAaptMainDexListProguardOutputFile(
+                            scope.getVariantScope().getManifestKeepListProguardFile());
                 }
             }
 
@@ -503,6 +516,17 @@ public class ProcessAndroidResources extends IncrementalTask {
 
     public void setProguardOutputFile(File proguardOutputFile) {
         this.proguardOutputFile = proguardOutputFile;
+    }
+
+    @OutputFile
+    @Optional
+    @Nullable
+    public File getMainDexListProguardOutputFile() {
+        return mainDexListProguardOutputFile;
+    }
+
+    public void setAaptMainDexListProguardOutputFile(File mainDexListProguardOutputFile) {
+        this.mainDexListProguardOutputFile = mainDexListProguardOutputFile;
     }
 
     @Input
