@@ -20,7 +20,7 @@ import org.gradle.api.Named;
 import org.gradle.model.Managed;
 
 /**
- * A Managed type to be used in ModelMap to simulate a Map<String, String> type.
+ * A Managed type to be used in ModelMap to simulate a {@code Map<String, String>} type.
  */
 @Managed
 public interface KeyValuePair extends Named {
