@@ -47,6 +47,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.Callable;
+import java.util.stream.Collectors;
 
 /**
  * A task that processes the manifest
@@ -196,9 +197,16 @@ public class MergeManifests extends ManifestProcessorTask {
         this.reportFile = reportFile;
     }
 
-    @Input
+    /** Not an input, see {@link #getOptionalFeaturesString()}. */
     public List<Feature> getOptionalFeatures() {
         return optionalFeatures;
+    }
+
+    /** Synthetic input for {@link #getOptionalFeatures()} */
+    @SuppressWarnings("unused")
+    @Input
+    public List<String> getOptionalFeaturesString() {
+        return optionalFeatures.stream().map(Enum::toString).collect(Collectors.toList());
     }
 
     public VariantConfiguration getVariantConfiguration() {
