@@ -1301,6 +1301,7 @@ public final class SdkConstants {
     public static final String DOT_GRADLE = ".gradle";                 //$NON-NLS-1$
     public static final String DOT_PROPERTIES = ".properties";         //$NON-NLS-1$
     public static final String DOT_JSON = ".json";                     //$NON-NLS-1$
+    public static final String DOT_PSD = ".psd";                       //$NON-NLS-1$
 
     /** Extension of the Application package Files, i.e. "apk". */
     public static final String EXT_ANDROID_PACKAGE = "apk"; //$NON-NLS-1$
