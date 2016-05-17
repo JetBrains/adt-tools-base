@@ -20,8 +20,9 @@
 #include <vector>
 
 // TODO: Remove relative path for proto files.
-#include "../../proto/network_profiler_data.pb.h"
+#include "../proto/network_profiler_data.pb.h"
 
+namespace profiler {
 namespace network {
 
 // Abstract network data collector.
@@ -42,6 +43,7 @@ class NetworkDataCollector {
                            std::string *uid);
 };
 
-} // namespace network
+}  // namespace network
+}  // namespace profiler
 
 #endif // NETWORK_DATA_COLLECTOR_H_

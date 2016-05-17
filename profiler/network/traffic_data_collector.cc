@@ -18,6 +18,7 @@
 
 #include <cstdlib>
 
+namespace profiler {
 namespace network {
 
 void TrafficDataCollector::GetData(profiler::proto::NetworkProfilerData *data) {
@@ -52,4 +53,5 @@ void TrafficDataCollector::GetData(profiler::proto::NetworkProfilerData *data) {
   traffic_data->set_bytes_received(bytes_received);
 }
 
-} // namespace network
+}  // namespace network
+}  // namespace profiler

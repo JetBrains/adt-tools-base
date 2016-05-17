@@ -19,6 +19,7 @@
 // TODO: Remove relative path of proto header files.
 #include "../proto/profiler_data.pb.h"
 
+namespace profiler {
 namespace profiler_server {
 
 // Class to provide data saving interface, this is an empty definition.
@@ -28,6 +29,7 @@ class ProfilerDataService {
    virtual void save(const profiler::proto::ProfilerData &data) {}
 };
 
-} // namespace profiler_server
+}  // namespace profiler_server
+}  // namespace profiler
 
 #endif // PROFILER_DATA_SERVICE_H_

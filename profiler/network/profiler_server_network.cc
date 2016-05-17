@@ -21,6 +21,7 @@
 
 #include <unistd.h>
 
+namespace profiler {
 namespace network {
 
 ProfilerServerNetwork::~ProfilerServerNetwork() {
@@ -76,4 +77,5 @@ uint64_t ProfilerServerNetwork::GetCurrentTime() {
   return 1e9 * time.tv_sec + time.tv_nsec;
 }
 
-} // namespace network
+}  // namespace network
+}  // namespace profiler

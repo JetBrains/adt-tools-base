@@ -22,6 +22,7 @@
 #include <string>
 #include <vector>
 
+namespace profiler {
 namespace network {
 
 // Data collector of open connection information. For example, it can
@@ -55,6 +56,7 @@ class ConnectionDataCollector : public NetworkDataCollector {
    const std::vector<std::string> kConnectionFiles;
 };
 
-} // namespace network
+}  // namespace network
+}  // namespace profiler
 
 #endif // CONNECTION_DATA_COLLECTOR_H_
