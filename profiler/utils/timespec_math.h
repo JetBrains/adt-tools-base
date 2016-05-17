@@ -18,6 +18,7 @@
 
 #include <time.h>
 
+namespace profiler {
 namespace utils {
 
 // Class of Math operations on timespec objects. The operation result is
@@ -70,6 +71,7 @@ class TimespecMath {
   }
 };
 
-} // namespace network_sampler
+}  // namespace network_sampler
+}  // namespace profiler
 
 #endif // TIMESPEC_MATH_H_

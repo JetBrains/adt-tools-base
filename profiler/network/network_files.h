@@ -19,6 +19,7 @@
 #include <string>
 #include <vector>
 
+namespace profiler {
 namespace network {
 
 class NetworkFiles {
@@ -44,6 +45,7 @@ public:
   }
 };
 
-} // namespace network
+}  // namespace network
+}  // namespace profiler
 
 #endif // NETWORK_FILES_H_

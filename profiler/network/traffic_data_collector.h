@@ -20,6 +20,7 @@
 
 #include <string>
 
+namespace profiler {
 namespace network {
 
 // Data collector of network traffic information. For example, it provides sent
@@ -45,6 +46,7 @@ class TrafficDataCollector : public NetworkDataCollector {
   const std::string kFile;
 };
 
-} // namespace network
+}  // namespace network
+}  // namespace profiler
 
 #endif // TRAFFIC_DATA_COLLECTOR_H_

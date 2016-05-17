@@ -19,6 +19,7 @@
 #include <sstream>
 #include <unistd.h>
 
+namespace profiler {
 namespace utils {
 
 bool FileReader::Read(const std::string &file_path,
@@ -76,4 +77,5 @@ bool FileReader::CompareToken(const std::string &line, const std::string &token,
   return is_found && !line.compare(start_pos, token.length(), token);
 }
 
-} // namespace utils
+}  // namespace utils
+}  // namespace profiler

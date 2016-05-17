@@ -20,6 +20,7 @@
 #include <sstream>
 #include <unistd.h>
 
+namespace profiler {
 namespace network {
 
 int NetworkDataCollector::GetUid(const std::string &data_file, int pid) {
@@ -47,4 +48,5 @@ bool NetworkDataCollector::GetUidString(const std::string &data_file, int pid,
   return false;
 }
 
-} // namespace network
+}  // namespace network
+}  // namespace profiler

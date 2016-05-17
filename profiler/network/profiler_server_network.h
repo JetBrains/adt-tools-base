@@ -25,6 +25,7 @@
 #include <thread>
 #include <vector>
 
+namespace profiler {
 namespace network {
 
 // Profiler that repeatedly collects all network data, and connects with
@@ -67,6 +68,7 @@ class ProfilerServerNetwork {
   std::vector<std::unique_ptr<NetworkDataCollector>> collectors_;
 };
 
-} // namespace network
+}  // namespace network
+}  // namespace profiler
 
 #endif // PROFILER_SERVER_NETWORK_H_

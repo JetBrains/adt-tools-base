@@ -17,8 +17,8 @@
 
 #include <gtest/gtest.h>
 
-using utils::TimeValue;
-using utils::TimeValueBuffer;
+using profiler::utils::TimeValue;
+using profiler::utils::TimeValueBuffer;
 
 const timespec t1 = {1, 0};
 const timespec t2 = {2, 0};

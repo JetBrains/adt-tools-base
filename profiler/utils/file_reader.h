@@ -19,6 +19,7 @@
 #include <string>
 #include <vector>
 
+namespace profiler {
 namespace utils {
 
 // Class to read file and perform related tokenize util functions.
@@ -50,6 +51,7 @@ class FileReader {
   static const short kBufferSize = 4096;
 };
 
-} // namespace utils
+}  // namespace utils
+}  // namespace profiler
 
 #endif // FILE_READER_H_

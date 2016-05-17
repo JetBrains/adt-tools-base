@@ -9,8 +9,8 @@ include $(CLEAR_VARS)
 LOCAL_MODULE := utils
 # TODO: Check header files and move implementation to source file.
 LOCAL_SRC_FILES := $(LOCAL_PATH)/utils/file_reader.cc
-LOCAL_C_INCLUDES := $(LOCAL_PATH)/utils/include
-LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)/utils/include
+LOCAL_C_INCLUDES := $(LOCAL_PATH)/utils
+LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)/utils
 include $(BUILD_STATIC_LIBRARY)
 
 # Compile profiler_server_network static library
@@ -27,8 +27,7 @@ LOCAL_SRC_FILES := \
 # Add header files' paths to be included without path prefix.
 LOCAL_C_INCLUDES := \
     $(NETWORK_PATH) \
-    $(NETWORK_PATH)/include \
-    $(PROFILER_SERVER_PATH)/common_include
+    $(PROFILER_SERVER_PATH)
 
 LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)/include
 LOCAL_STATIC_LIBRARIES := utils
