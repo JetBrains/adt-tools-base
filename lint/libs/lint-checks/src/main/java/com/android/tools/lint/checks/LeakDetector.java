@@ -53,7 +53,7 @@ public class LeakDetector extends Detector implements Detector.JavaPsiScanner {
 
             "A static field will leak contexts.",
 
-            Category.CORRECTNESS,
+            Category.PERFORMANCE,
             6,
             Severity.WARNING,
             new Implementation(
@@ -122,16 +122,16 @@ public class LeakDetector extends Detector implements Detector.JavaPsiScanner {
 
                     PsiType innerType = referenced.getType();
                     if (!(innerType instanceof PsiClassType)) {
-                        return;
+                        continue;
                     }
 
                     fqn = innerType.getCanonicalText();
                     if (fqn.startsWith("java.")) {
-                        return;
+                        continue;
                     }
                     PsiClass innerCls = ((PsiClassType) innerType).resolve();
                     if (innerCls == null) {
-                        return;
+                        continue;
                     }
                     if (fqn.startsWith("android.")) {
                         if (isLeakCandidate(innerCls, mContext.getEvaluator())) {
@@ -143,6 +143,7 @@ public class LeakDetector extends Detector implements Detector.JavaPsiScanner {
                                             + innerCls.getName() + "`); "
                                         + "this is a memory leak (and also breaks Instant Run)";
                             report(field, modifierList, message);
+                            break;
                         }
                     }
                 }
