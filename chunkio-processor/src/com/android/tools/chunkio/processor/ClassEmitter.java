@@ -42,6 +42,7 @@ import javax.tools.JavaFileObject;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.Arrays;
+import java.util.EnumSet;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -89,7 +90,7 @@ public class ClassEmitter {
 
     private ClassDef createClass(List<FieldChunk> chunks, ClassName className) {
         return ClassDef.builder(className.className)
-                .addModifiers(Modifier.FINAL)
+                .modifiers(EnumSet.of(Modifier.FINAL))
                 .addMethod(generateMethod(mTypeElement, chunks, className))
                 .build();
     }
@@ -104,7 +105,7 @@ public class ClassEmitter {
      */
     private static MethodDef.Builder createReadMethod(TypeDef type) {
         return MethodDef.builder("read")
-                .addModifiers(Modifier.STATIC)
+                .modifiers(EnumSet.of(Modifier.STATIC))
                 .addParameter(RangedInputStream.class, "in")
                 .addParameter(StackType.class.getGenericSuperclass(), "stack")
                 .throwsException(IOException.class)

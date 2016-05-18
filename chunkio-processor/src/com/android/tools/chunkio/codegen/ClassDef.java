@@ -16,13 +16,13 @@
 
 package com.android.tools.chunkio.codegen;
 
-import javax.lang.model.element.Modifier;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.LinkedHashSet;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
+
+import javax.lang.model.element.Modifier;
 
 public final class ClassDef {
     private final String mName;
@@ -59,7 +59,7 @@ public final class ClassDef {
     public static final class Builder {
         private final String mName;
         private final List<MethodDef> mMethods = new ArrayList<>();
-        private final Set<Modifier> mModifiers = new LinkedHashSet<>();
+        private Set<Modifier> mModifiers;
 
         private Builder(String name) {
             mName = name;
@@ -70,8 +70,8 @@ public final class ClassDef {
             return this;
         }
 
-        public Builder addModifiers(Modifier... modifiers) {
-            Collections.addAll(mModifiers, modifiers);
+        public Builder modifiers(EnumSet<Modifier> modifiers) {
+            mModifiers = EnumSet.copyOf(modifiers);
             return this;
         }
 
