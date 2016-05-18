@@ -26,8 +26,7 @@ import java.util.List;
 import java.util.WeakHashMap;
 
 public final class ChunkIO {
-    private static final WeakHashMap<Class<?>, Method> sReaders =
-            new WeakHashMap<Class<?>, Method>();
+    private static final WeakHashMap<Class<?>, Method> sReaders = new WeakHashMap<>();
 
     private ChunkIO() {
     }

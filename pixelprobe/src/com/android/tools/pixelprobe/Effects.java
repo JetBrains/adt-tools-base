@@ -115,7 +115,7 @@ public final class Effects {
             Color color, BlendMode blendMode, boolean inner) {
         List<Shadow> list = inner ? mInnerShadows : mOuterShadows;
         if (list.size() == 0) {
-            list = new ArrayList<Shadow>();
+            list = new ArrayList<>();
             if (inner) mInnerShadows = list;
             else mOuterShadows = list;
         }
