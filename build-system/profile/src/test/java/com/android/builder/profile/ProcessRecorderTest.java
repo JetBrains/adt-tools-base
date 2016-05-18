@@ -127,8 +127,9 @@ public class ProcessRecorderTest {
 
         ProcessRecorder.get().finish();
         setExecutionRecords(records);
-        // delete the initial metadata record.
+        // delete the metadata records.
         assertEquals(ExecutionType.INITIAL_METADATA, records.remove(0).type);
+        assertEquals(ExecutionType.FINAL_METADATA, records.remove(records.size() - 1).type);
         assertEquals(2, records.size());
         assertTrue(records.get(1).parentId == records.get(0).id);
     }
@@ -205,8 +206,9 @@ public class ProcessRecorderTest {
         assertNotNull(value);
         assertEquals(16, value.intValue());
         ProcessRecorder.get().finish();
-        // delete the initial metadata record.
+        // delete the metadata records.
         assertEquals(ExecutionType.INITIAL_METADATA, records.remove(0).type);
+        assertEquals(ExecutionType.FINAL_METADATA, records.remove(records.size() - 1).type);
         assertEquals(6, records.size());
         // re-order by event id.
         setExecutionRecords(records);
