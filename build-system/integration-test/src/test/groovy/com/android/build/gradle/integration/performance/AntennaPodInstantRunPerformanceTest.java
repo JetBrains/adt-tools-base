@@ -37,6 +37,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.EnumSet;
@@ -44,19 +45,19 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @RunWith(FilterableParameterized.class)
-public class AntennaPodHotSwapPerformanceTest {
+public class AntennaPodInstantRunPerformanceTest {
 
     @Parameterized.Parameters(name = "{0} {1}")
     public static Collection<Object[]> getParameters() {
         return Sets.cartesianProduct(ImmutableList.of(
-                EnumSet.of(ColdswapMode.MULTIAPK, ColdswapMode.MULTIDEX),
+                EnumSet.of(/*ColdswapMode.MULTIAPK,*/ ColdswapMode.MULTIDEX),
                 EnumSet.of(DexInProcess.DEX_IN_PROCESS, DexInProcess.DEX_OUT_OF_PROCESS)
         )).stream()
                 .map(List::toArray)
                 .collect(Collectors.toList());
     }
 
-    public AntennaPodHotSwapPerformanceTest(
+    public AntennaPodInstantRunPerformanceTest(
             @NonNull ColdswapMode coldswapMode,
             @NonNull DexInProcess dexInProcess) {
         this.coldswapMode = coldswapMode;
@@ -96,7 +97,7 @@ public class AntennaPodHotSwapPerformanceTest {
     }
 
     @Test
-    public void initialBuildThenHotSwap() throws Exception {
+    public void runBenchmarks() throws Exception {
         project.execute("clean");
         InstantRun instantRunModel = InstantRunTestUtils
                 .getInstantRunModel(project.model().getMulti().get(":app"));
@@ -114,15 +115,22 @@ public class AntennaPodHotSwapPerformanceTest {
                 .withInstantRun(23, coldswapMode, OptionalCompilationStep.RESTART_ONLY)
                 .run(":app:assembleDebug");
 
+        // Test the incremental build
+        makeHotSwapChange(50);
+        project.executor()
+                .recordBenchmark(benchmarkName, BenchmarkMode.INSTANT_RUN_BUILD_INC_JAVA)
+                .withInstantRun(23, coldswapMode, OptionalCompilationStep.RESTART_ONLY)
+                .run(":app:assembleDebug");
+
         // The second build with retrolambda in this case has a spurious new inner class.
         // Ignore it for the purposes of this performance test.
         for (int i=0; i<3; i++) {
-            makeChange(i);
+            makeHotSwapChange(i);
             project.executor()
                     .withInstantRun(23, coldswapMode)
                     .run(instantRunModel.getIncrementalAssembleTaskName());
         }
-        makeChange(100);
+        makeHotSwapChange(100);
 
         project.executor()
                 .recordBenchmark(benchmarkName, BenchmarkMode.INSTANT_RUN_HOT_SWAP)
@@ -136,15 +144,49 @@ public class AntennaPodHotSwapPerformanceTest {
                 .that(artifact.file)
                 .hasClass("Lde/danoeh/antennapod/activity/MainActivity$override;")
                 .that().hasMethod("onStart");
+
+
+        // Test cold swap
+        for (int i=0; i<2; i++) {
+            makeColdSwapChange(i);
+            project.executor()
+                    .withInstantRun(23, coldswapMode)
+                    .run(instantRunModel.getIncrementalAssembleTaskName());
+        }
+        makeColdSwapChange(100);
+
+        project.executor()
+                .recordBenchmark(benchmarkName, BenchmarkMode.INSTANT_RUN_COLD_SWAP)
+                .withInstantRun(23, coldswapMode)
+                .run(instantRunModel.getIncrementalAssembleTaskName());
+
+        List<InstantRunArtifact> coldSwapArtifact =
+                InstantRunTestUtils.getCompiledColdSwapChange(instantRunModel, coldswapMode);
     }
 
-    private void makeChange(int i) throws IOException {
+    private void makeHotSwapChange(int i) throws IOException {
         TestFileUtils.searchAndReplace(
                 project.file(
                         "app/src/main/java/de/danoeh/antennapod/activity/MainActivity.java"),
                 "public void onStart\\(\\) \\{",
                 "public void onStart() {\n"
                         + "        Log.d(TAG, \"onStart called " + i + "\");");
+    }
+
+    private void makeColdSwapChange(int i) throws IOException {
+        String newMethodName = "newMethod" + i;
+        File mainActivity =  project.file(
+                "app/src/main/java/de/danoeh/antennapod/activity/MainActivity.java");
+        TestFileUtils.searchAndReplace(
+               mainActivity,
+                "public void onStart\\(\\) \\{",
+                "public void onStart() {\n"
+                        + "        " + newMethodName +  "();");
+        TestFileUtils.addMethod(
+                mainActivity,
+                "private void " + newMethodName + "() {\n"
+                        + "        Log.d(TAG, \"" + newMethodName + " called\");\n"
+                        + "    }\n");
     }
 
     private enum DexInProcess {
