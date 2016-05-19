@@ -16,12 +16,12 @@
 
 package com.android.tools.chunkio.codegen;
 
-import javax.lang.model.element.Modifier;
 import java.io.IOException;
 import java.lang.reflect.Type;
-import java.util.Collections;
-import java.util.LinkedHashSet;
+import java.util.EnumSet;
 import java.util.Set;
+
+import javax.lang.model.element.Modifier;
 
 public final class ParameterDef {
     private final String mName;
@@ -34,12 +34,12 @@ public final class ParameterDef {
         mModifiers = Utils.immutableCopy(builder.mModifiers);
     }
 
-    public static Builder builder(Type type, String name, Modifier... modifiers) {
-        return new Builder(type, name).addModifiers(modifiers);
+    public static Builder builder(Type type, String name, EnumSet<Modifier> modifiers) {
+        return new Builder(type, name).modifiers(modifiers);
     }
 
-    public static Builder builder(TypeDef type, String name, Modifier... modifiers) {
-        return new Builder(type, name).addModifiers(modifiers);
+    public static Builder builder(TypeDef type, String name, EnumSet<Modifier> modifiers) {
+        return new Builder(type, name).modifiers(modifiers);
     }
 
     void emit(CodeGenerator generator) throws IOException {
@@ -50,7 +50,7 @@ public final class ParameterDef {
     public static final class Builder {
         private final String mName;
         private TypeDef mType;
-        private final Set<Modifier> mModifiers = new LinkedHashSet<>();
+        private Set<Modifier> mModifiers;
 
         private Builder(Type type, String name) {
             mName = name;
@@ -62,8 +62,8 @@ public final class ParameterDef {
             mName = name;
         }
 
-        Builder addModifiers(Modifier... modifiers) {
-            Collections.addAll(mModifiers, modifiers);
+        private Builder modifiers(EnumSet<Modifier> modifiers) {
+            mModifiers = EnumSet.copyOf(modifiers);
             return this;
         }
 

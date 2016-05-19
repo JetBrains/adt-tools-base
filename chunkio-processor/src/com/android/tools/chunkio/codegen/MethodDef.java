@@ -16,14 +16,14 @@
 
 package com.android.tools.chunkio.codegen;
 
-import javax.lang.model.element.Modifier;
 import java.io.IOException;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.LinkedHashSet;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
+
+import javax.lang.model.element.Modifier;
 
 public class MethodDef {
     private final String mName;
@@ -89,7 +89,7 @@ public class MethodDef {
     public static final class Builder {
         private final String mName;
         private TypeDef mReturnType;
-        private final Set<Modifier> mModifiers = new LinkedHashSet<>();
+        private Set<Modifier> mModifiers;
         private final List<ParameterDef> mParameters = new ArrayList<>();
         private final List<TypeDef> mExceptions = new ArrayList<>();
 
@@ -99,12 +99,16 @@ public class MethodDef {
             mName = name;
         }
 
-        public Builder addModifiers(Modifier... modifiers) {
-            Collections.addAll(mModifiers, modifiers);
+        public Builder modifiers(EnumSet<Modifier> modifiers) {
+            mModifiers = EnumSet.copyOf(modifiers);
             return this;
         }
 
-        public Builder addParameter(Type type, String name, Modifier... modifiers) {
+        public Builder addParameter(Type type, String name) {
+            return addParameter(type, name, EnumSet.noneOf(Modifier.class));
+        }
+
+        public Builder addParameter(Type type, String name, EnumSet<Modifier> modifiers) {
             mParameters.add(ParameterDef.builder(type, name, modifiers).build());
             return this;
         }

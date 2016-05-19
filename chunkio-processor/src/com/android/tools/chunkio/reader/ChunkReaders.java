@@ -28,6 +28,7 @@ import javax.lang.model.type.TypeMirror;
 import java.io.DataInputStream;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -43,8 +44,8 @@ import java.util.Map;
  * </ul>
  */
 public final class ChunkReaders {
-    private static final Map<TypeKind, ChunkReader> sTypeReaders = new HashMap<>();
-    private static final Map<TypeKind, ChunkReader> sArrayReaders = new HashMap<>();
+    private static final Map<TypeKind, ChunkReader> sTypeReaders = new EnumMap<>(TypeKind.class);
+    private static final Map<TypeKind, ChunkReader> sArrayReaders = new EnumMap<>(TypeKind.class);
     private static final Map<String, ChunkReader> sClassReaders = new HashMap<>();
     private static final Map<String, ChunkReader> sCollectionReaders = new HashMap<>();
 
@@ -140,7 +141,7 @@ public final class ChunkReaders {
         sClassReaders.put(className + '.' + className, reader);
     }
 
-    private static abstract class ClassChunkReader implements ChunkReader {
+    private abstract static class ClassChunkReader implements ChunkReader {
         @Override
         public void emitPrologue(MethodDef.Builder builder, String target, FieldChunk chunk) {
         }
@@ -158,7 +159,7 @@ public final class ChunkReaders {
         }
     }
 
-    private static abstract class CollectionClassChunkReader extends ClassChunkReader
+    private abstract static class CollectionClassChunkReader extends ClassChunkReader
             implements CollectionChunkReader {
         List<TypeElement> mParameters;
 
@@ -393,7 +394,7 @@ public final class ChunkReaders {
         }
     }
 
-    private static abstract class PrimitiveChunkReaderImpl
+    private abstract static class PrimitiveChunkReaderImpl
             implements ChunkReader, PrimitiveChunkReader {
         private String mPrimitive;
 
@@ -636,7 +637,7 @@ public final class ChunkReaders {
     }
 
     private static class ShortChunkReaderImpl extends PrimitiveChunkReaderImpl {
-        ShortChunkReaderImpl() {
+        private ShortChunkReaderImpl() {
             super("Short");
         }
 

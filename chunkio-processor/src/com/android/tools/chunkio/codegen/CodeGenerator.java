@@ -118,7 +118,7 @@ final class CodeGenerator {
         }
     }
 
-    private String escapeString(String s) {
+    private static String escapeString(String s) {
         StringBuilder builder = new StringBuilder(s.length());
         builder.append('"');
         char c;

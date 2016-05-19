@@ -106,7 +106,7 @@ public class Validator {
                 ElementFilter.constructorsIn(typeElement.getEnclosedElements());
 
         for (ExecutableElement constructor : constructors) {
-            if (constructor.getParameters().size() == 0) {
+            if (constructor.getParameters().isEmpty()) {
                 hasEmptyConstructor = true;
             }
         }

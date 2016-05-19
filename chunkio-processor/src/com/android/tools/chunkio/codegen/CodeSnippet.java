@@ -136,12 +136,12 @@ final class CodeSnippet {
             return endBlock();
         }
 
-        Builder indent() {
+        private Builder indent() {
             mParts.add("$>");
             return this;
         }
 
-        Builder unindent() {
+        private Builder unindent() {
             mParts.add("$<");
             return this;
         }

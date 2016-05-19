@@ -99,6 +99,7 @@ class TypeElementVisitor extends SimpleTypeVisitor6<ChunkReader, Void> {
 
     private ChunkReader getChunkedChunkReader(TypeElement element) {
         Chunked chunked = element.getAnnotation(Chunked.class);
+        //noinspection VariableNotUsedInsideIf
         if (chunked != null) {
             ClassName targetName = ClassName.from(element, mElements);
             return ChunkReaders.createReader(targetName.packageName, targetName.className);

@@ -50,7 +50,7 @@ public final class JavaFile {
         }
 
         Set<String> imports = generator.getImports();
-        if (imports.size() > 0) {
+        if (!imports.isEmpty()) {
             for (String imported : imports) {
                 generator.emit("import $L;\n", imported);
             }
