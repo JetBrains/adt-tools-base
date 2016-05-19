@@ -19,10 +19,13 @@ package com.android.build.gradle.tasks;
 import com.android.annotations.NonNull;
 import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
 import com.android.build.gradle.internal.incremental.InstantRunPatchingPolicy;
+import com.android.build.gradle.internal.scope.TaskConfigAction;
 import com.android.build.gradle.internal.scope.VariantScope;
+import com.android.build.gradle.internal.tasks.DefaultAndroidTask;
 import com.android.builder.model.OptionalCompilationStep;
 
-import java.io.File;
+import org.gradle.api.tasks.TaskAction;
+
 import java.io.IOException;
 
 /**
@@ -34,42 +37,55 @@ import java.io.IOException;
  * triggered, the main APK must be rebuilt (even if the resources were changed in a previous
  * build).
  */
-public class PrePackageApplication extends KickerTask {
+public class PrePackageApplication extends DefaultAndroidTask {
 
-    @Override
-    protected void doFullTaskAction() throws IOException {
+    InstantRunBuildContext instantRunContext;
+    VariantScope variantScope;
+
+    @TaskAction
+    public void doFullTaskAction() throws IOException {
 
         // when instantRun is disabled or not targeting 23 and above, we must run the packageApp
         // task.
         if (InstantRunPatchingPolicy.MULTI_APK != instantRunContext.getPatchingPolicy()
                 || variantScope.getGlobalScope().isActive(OptionalCompilationStep.RESTART_ONLY)) {
-            MarkerFile.createMarkerFile(getMarkerFile(), MarkerFile.Command.RUN);
             return;
         }
 
         if (instantRunContext.hasPassedVerification()) {
-            MarkerFile.createMarkerFile(getMarkerFile(), MarkerFile.Command.BLOCK);
+            disablePackageTask();
         } else {
             // now the main apk is only necessary if we produced a RESOURCES file in a previous
             // build, let's check it out.
             if (instantRunContext.getPastBuildsArtifactForType(
                     InstantRunBuildContext.FileType.RESOURCES) == null) {
-                MarkerFile.createMarkerFile(getMarkerFile(), MarkerFile.Command.BLOCK);
-            } else {
-                MarkerFile.createMarkerFile(getMarkerFile(), MarkerFile.Command.RUN);
+                disablePackageTask();
             }
         }
     }
 
-    public static class ConfigAction extends KickerTask.ConfigAction<PrePackageApplication> {
+    private void disablePackageTask() {
+        variantScope.getGlobalScope().getProject().getTasks().getByName(
+                variantScope.getPackageApplicationTask().getName())
+                .setEnabled(false);
+    }
 
-        public ConfigAction(@NonNull String name, @NonNull VariantScope scope) {
-            super(name, scope);
-        }
+    public static class ConfigAction implements TaskConfigAction<PrePackageApplication> {
 
         @NonNull
-        public static File getMarkerFile(@NonNull File instantRunSupportDir) {
-            return new File(instantRunSupportDir, "package.marker");
+        protected final VariantScope scope;
+        @NonNull
+        protected final String name;
+
+        public ConfigAction(@NonNull String name, @NonNull VariantScope scope) {
+            this.scope = scope;
+            this.name = name;
+        }
+
+        @Override
+        @NonNull
+        public String getName() {
+            return scope.getTaskName(name);
         }
 
         @NonNull
@@ -80,8 +96,9 @@ public class PrePackageApplication extends KickerTask {
 
         @Override
         public void execute(@NonNull PrePackageApplication task) {
-            super.execute(task);
-            task.markerFile = getMarkerFile(scope.getInstantRunSupportDir());
+            task.setVariantName(scope.getVariantConfiguration().getFullName());
+            task.variantScope = scope;
+            task.instantRunContext = scope.getInstantRunBuildContext();
         }
     }
 }

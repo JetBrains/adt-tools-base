@@ -37,9 +37,6 @@ import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
 import com.android.build.gradle.internal.incremental.InstantRunPatchingPolicy;
 import com.android.build.gradle.internal.pipeline.TransformInvocationBuilder;
 import com.android.build.gradle.internal.scope.InstantRunVariantScope;
-import com.android.build.gradle.internal.scope.TransformVariantScope;
-import com.android.build.gradle.tasks.ColdswapArtifactsKickerTask;
-import com.android.build.gradle.tasks.MarkerFile;
 import com.android.utils.FileUtils;
 import com.google.common.base.Charsets;
 import com.google.common.base.Optional;
@@ -103,18 +100,11 @@ public class InstantRunSlicerTest {
         MockitoAnnotations.initMocks(this);
         when(variantScope.getInstantRunSupportDir()).thenReturn(instantRunSupportDir.getRoot());
         when(variantScope.getRestartDexOutputFolder()).thenReturn(instantRunSupportDir.getRoot());
-        MarkerFile.createMarkerFile(
-                ColdswapArtifactsKickerTask.ConfigAction.getMarkerFile(variantScope),
-                MarkerFile.Command.RUN);
         when(instantRunBuildContext.getPatchingPolicy()).thenReturn(
                 InstantRunPatchingPolicy.MULTI_DEX);
         when(variantScope.getInstantRunBuildContext()).thenReturn(instantRunBuildContext);
 
         jarOutput = new File(jarOutputDir.getRoot(), "output.jar");
-
-        File incrementalChanges = InstantRunBuildType.RESTART
-                .getIncrementalChangesFile(variantScope);
-        Files.write("SHOULD NOT BE READ", incrementalChanges, Charsets.UTF_8);
     }
 
     @Test
@@ -178,14 +168,9 @@ public class InstantRunSlicerTest {
 
         // incrementally change a few slices.
         File file7 = createFile(getInputDir(), "file7.class", "updated file7.class");
-        changedFiles = ImmutableMap.of();
-
-        File incrementalChanges = InstantRunBuildType.RESTART
-                .getIncrementalChangesFile(variantScope);
-        Files.write(
-                "CHANGED," + file7.getAbsolutePath() + "\n" +
-                "REMOVED," + new File(getInputDir(), "file14.class").getAbsolutePath(),
-                incrementalChanges, Charsets.UTF_8);
+        changedFiles = ImmutableMap.of(
+                file7, Status.CHANGED,
+                new File(getInputDir(), "file14.class"), Status.REMOVED);
 
         slicer.transform(new TransformInvocationBuilder(context)
                 .addInputs(ImmutableList.of(getInput(getInputDir(), changedFiles)))
@@ -258,20 +243,14 @@ public class InstantRunSlicerTest {
 
         // delete the input file.
         assertThat(singleClassFile.delete()).isTrue();
-        changedFiles = ImmutableMap.of();
 
         if (!isIncremental) {
             // delete the output directory and create a new clean one.
             FileUtils.deletePath(getOutputDir());
-            FileUtils.createFile(
-                    InstantRunBuildType.RESTART.getIncrementalChangesFile(variantScope),
-                    "EMPTY");
             outputDir.create();
+            changedFiles = ImmutableMap.of();
         } else {
-            // create the incremental change file.
-            FileUtils.createFile(InstantRunBuildType.RESTART
-                    .getIncrementalChangesFile(variantScope),
-                Status.REMOVED.toString() + "," + singleClassFile.getAbsolutePath());
+            changedFiles = ImmutableMap.of(singleClassFile, Status.REMOVED);
         }
 
         slicer.transform(new TransformInvocationBuilder(context)

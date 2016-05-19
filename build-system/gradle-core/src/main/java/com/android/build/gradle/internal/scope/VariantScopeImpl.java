@@ -51,6 +51,7 @@ import com.android.build.gradle.tasks.GenerateBuildConfig;
 import com.android.build.gradle.tasks.GenerateResValues;
 import com.android.build.gradle.tasks.MergeResources;
 import com.android.build.gradle.tasks.MergeSourceSetFolders;
+import com.android.build.gradle.tasks.PackageApplication;
 import com.android.build.gradle.tasks.ProcessAndroidResources;
 import com.android.build.gradle.tasks.RenderscriptCompile;
 import com.android.build.gradle.tasks.ShaderCompile;
@@ -1078,6 +1079,19 @@ public class VariantScopeImpl implements VariantScope {
         this.coverageReportTask = coverageReportTask;
     }
 
+    private AndroidTask<PackageApplication> packageApplicationTask;
+
+    @Override
+    public AndroidTask<PackageApplication> getPackageApplicationTask() {
+        return packageApplicationTask;
+    }
+
+    @Override
+    public void setPackageApplicationTask(
+            AndroidTask<PackageApplication> packageApplicationTask) {
+        this.packageApplicationTask = packageApplicationTask;
+    }
+
     @NonNull
     private InstantRunBuildContext instantRunBuildContext = new InstantRunBuildContext();
 
@@ -1125,6 +1139,19 @@ public class VariantScopeImpl implements VariantScope {
     @Override
     public void setInstantRunVerifierTask(AndroidTask<TransformTask> verifierTask) {
         instantRunVerifierTask = verifierTask;
+    }
+
+    private AndroidTask<TransformTask> instantRunSlicerTask;
+
+    @Override
+    public AndroidTask<TransformTask> getInstantRunSlicerTask() {
+        return instantRunSlicerTask;
+    }
+
+    @Override
+    public void setInstantRunSlicerTask(
+            AndroidTask<TransformTask> instantRunSlicerTask) {
+        this.instantRunSlicerTask = instantRunSlicerTask;
     }
 
     @NonNull

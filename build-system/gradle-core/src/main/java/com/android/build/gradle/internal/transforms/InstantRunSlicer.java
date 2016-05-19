@@ -27,7 +27,6 @@ import com.android.build.api.transform.Format;
 import com.android.build.api.transform.JarInput;
 import com.android.build.api.transform.QualifiedContent;
 import com.android.build.api.transform.QualifiedContent.Scope;
-import com.android.build.api.transform.SecondaryFile;
 import com.android.build.api.transform.Status;
 import com.android.build.api.transform.Transform;
 import com.android.build.api.transform.TransformException;
@@ -39,15 +38,12 @@ import com.android.build.gradle.internal.incremental.DexPackagingPolicy;
 import com.android.build.gradle.internal.incremental.InstantRunPatchingPolicy;
 import com.android.build.gradle.internal.pipeline.TransformManager;
 import com.android.build.gradle.internal.scope.InstantRunVariantScope;
-import com.android.build.gradle.tasks.ColdswapArtifactsKickerTask;
-import com.android.build.gradle.tasks.MarkerFile;
 import com.android.utils.FileUtils;
 import com.android.utils.ILogger;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Charsets;
 import com.google.common.base.Strings;
 import com.google.common.collect.FluentIterable;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Sets;
 import com.google.common.io.ByteStreams;
@@ -76,7 +72,7 @@ import java.util.jar.JarOutputStream;
  * Transform that slices the project's classes into approximately 10 slices for
  * {@link Scope#PROJECT} and {@link Scope#SUB_PROJECTS}.
  *
- * Dependencies are not processed by the Slicer but will be dex'ed separately.
+ * <p>Dependencies are not processed by the Slicer but will be dex'ed separately.
  */
 public class InstantRunSlicer extends Transform {
 
@@ -164,17 +160,11 @@ public class InstantRunSlicer extends Transform {
             return;
         }
 
-        // if we are blocked, do not proceed with execution.
-        if (MarkerFile.Command.BLOCK == MarkerFile.readMarkerFile(
-                ColdswapArtifactsKickerTask.ConfigAction.getMarkerFile(variantScope))) {
-            return;
-        }
         Slices slices = new Slices();
 
         if (isIncremental) {
             sliceIncrementally(inputs, outputProvider, slices);
         } else {
-            FileUtils.delete(InstantRunBuildType.RESTART.getIncrementalChangesFile(variantScope));
             slice(inputs, outputProvider, slices);
             combineAllJars(inputs, outputProvider);
         }
@@ -322,7 +312,7 @@ public class InstantRunSlicer extends Transform {
             @NonNull Slices slices)
             throws IOException, TransformException, InterruptedException {
 
-        processChangesSinceLastRestart(inputs, outputProvider, slices);
+        processCodeChanges(inputs, outputProvider, slices);
 
         // in any case, we always process jar input changes incrementally.
         for (TransformInput input : inputs) {
@@ -337,85 +327,58 @@ public class InstantRunSlicer extends Transform {
         logger.info("No jar merging necessary, all input jars unchanged");
     }
 
-    @Nullable
-    private DirectoryInput getInputFor(@NonNull Collection<TransformInput> inputs, File file) {
-        for (TransformInput input : inputs) {
-            for (DirectoryInput directoryInput : input.getDirectoryInputs()) {
-                if (file.getAbsolutePath().startsWith(directoryInput.getFile().getAbsolutePath())) {
-                    return directoryInput;
-                }
-            }
-        }
-        return null;
-    }
-
-    @NonNull
-    @Override
-    public Collection<SecondaryFile> getSecondaryFiles() {
-        return ImmutableList.of(new SecondaryFile(
-                ColdswapArtifactsKickerTask.ConfigAction.getMarkerFile(variantScope),
-                true /* supportsIncrementalChange */));
-    }
-
-    private void processChangesSinceLastRestart(
+    private void processCodeChanges(
             @NonNull final Collection<TransformInput> inputs,
             @NonNull final TransformOutputProvider outputProvider,
             @NonNull final Slices slices)
             throws TransformException, InterruptedException, IOException {
 
-        File incrementalChangesFile = InstantRunBuildType.RESTART
-                .getIncrementalChangesFile(variantScope);
-
         // process all files
-        ChangeRecords.process(incrementalChangesFile,
-                new ChangeRecords.RecordHandler() {
-                    @Override
-                    public void handle(String filePath, Status status)
-                            throws IOException, TransformException {
-                        // get the output stream for this file.
-                        File fileToProcess = new File(filePath);
-                        DirectoryInput directoryInput = getInputFor(inputs, fileToProcess);
-                        if (directoryInput == null) {
-                            logger.info("Cannot find input directory for " + filePath);
-                            return;
-                        }
-                        File sliceOutputLocation = getOutputStreamForFile(
-                                outputProvider, directoryInput, fileToProcess, slices);
+        for (TransformInput input : inputs) {
+            for (DirectoryInput directoryInput : input.getDirectoryInputs()) {
+                for (Map.Entry<File, Status> changedFile : directoryInput.getChangedFiles()
+                        .entrySet()) {
+                    // get the output stream for this file.
+                    File fileToProcess = changedFile.getKey();
+                    Status status = changedFile.getValue();
+                    File sliceOutputLocation = getOutputStreamForFile(
+                            outputProvider, directoryInput, fileToProcess, slices);
 
-                        // add the buildID timestamp to the slice out directory so we force the
-                        // dex task to rerun, even if no .class files appear to have changed. This
-                        // can happen when doing a lot of hot swapping with changes undoing
-                        // themselves resulting in a state that was equal to the last restart state.
-                        // In theory, it would not require to rebuild but it will confuse Android
-                        // Studio is there is nothing to push so just be safe and rebuild.
-                        Files.write(
-                                String.valueOf(
-                                        variantScope.getInstantRunBuildContext().getBuildId()),
-                                new File(sliceOutputLocation, "buildId.txt"), Charsets.UTF_8);
+                    // add the buildID timestamp to the slice out directory so we force the
+                    // dex task to rerun, even if no .class files appear to have changed. This
+                    // can happen when doing a lot of hot swapping with changes undoing
+                    // themselves resulting in a state that was equal to the last restart state.
+                    // In theory, it would not require to rebuild but it will confuse Android
+                    // Studio is there is nothing to push so just be safe and rebuild.
+                    Files.write(
+                            String.valueOf(
+                                    variantScope.getInstantRunBuildContext().getBuildId()),
+                            new File(sliceOutputLocation, "buildId.txt"), Charsets.UTF_8);
 
-                        String relativePath = FileUtils.relativePossiblyNonExistingPath(
-                                fileToProcess, directoryInput.getFile());
+                    String relativePath = FileUtils.relativePossiblyNonExistingPath(
+                            fileToProcess, directoryInput.getFile());
 
-                        File outputFile = new File(sliceOutputLocation, relativePath);
-                        switch(status) {
-                            case ADDED:
-                            case CHANGED:
-                                Files.createParentDirs(outputFile);
-                                Files.copy(fileToProcess, outputFile);
-                                break;
-                            case REMOVED:
-                                if (!outputFile.delete()) {
-                                    throw new TransformException(
-                                            String.format("Cannot delete file %1$s",
-                                                    outputFile.getAbsolutePath()));
-                                }
-                                break;
-                            default:
-                                throw new TransformException("Unhandled status " + status);
+                    File outputFile = new File(sliceOutputLocation, relativePath);
+                    switch (status) {
+                        case ADDED:
+                        case CHANGED:
+                            Files.createParentDirs(outputFile);
+                            Files.copy(fileToProcess, outputFile);
+                            break;
+                        case REMOVED:
+                            if (!outputFile.delete()) {
+                                throw new TransformException(
+                                        String.format("Cannot delete file %1$s",
+                                                outputFile.getAbsolutePath()));
+                            }
+                            break;
+                        default:
+                            throw new TransformException("Unhandled status " + status);
 
-                        }
                     }
-                });
+                }
+            }
+        }
     }
 
     private static File getOutputStreamForFile(
@@ -468,7 +431,7 @@ public class InstantRunSlicer extends Transform {
         private final List<Slice> slices = new ArrayList<>();
 
         private Slices() {
-            for (int i=0; i<NUMBER_OF_SLICES_FOR_PROJECT_CLASSES; i++) {
+            for (int i=0; i <NUMBER_OF_SLICES_FOR_PROJECT_CLASSES; i++) {
                 Slice newSlice = new Slice("slice_" + i, i);
                 slices.add(newSlice);
             }
