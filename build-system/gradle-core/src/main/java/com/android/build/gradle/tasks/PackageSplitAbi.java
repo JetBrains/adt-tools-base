@@ -23,6 +23,7 @@ import com.android.build.OutputFile;
 import com.android.build.gradle.api.ApkOutputFile;
 import com.android.build.gradle.internal.dsl.AbiSplitOptions;
 import com.android.build.gradle.internal.model.FilterDataImpl;
+import com.android.build.gradle.internal.pipeline.StreamFilter;
 import com.android.build.gradle.internal.scope.ConventionMappingHelper;
 import com.android.build.gradle.internal.scope.TaskConfigAction;
 import com.android.build.gradle.internal.scope.VariantScope;
@@ -301,7 +302,7 @@ public class PackageSplitAbi extends SplitRelatedTask {
                         @Override
                         public Set<File> call() throws Exception {
                             return scope.getTransformManager().getPipelineOutput(
-                                    PackageAndroidArtifact.JNI_FILTER).keySet();
+                                    StreamFilter.NATIVE_LIBS).keySet();
                         }
                     });
 

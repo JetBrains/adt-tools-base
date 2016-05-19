@@ -18,11 +18,9 @@ package com.android.build.gradle.internal.scope;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.build.api.transform.Transform;
 import com.android.build.gradle.AndroidGradleOptions;
 import com.android.build.gradle.api.ApkOutputFile;
 import com.android.build.gradle.internal.TaskManager;
-import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.variant.ApkVariantData;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.build.gradle.tasks.CompatibleScreensManifest;
@@ -98,9 +96,10 @@ public class VariantOutputScope implements TransformVariantScope {
         throw new UnsupportedOperationException("dir name per output scope not yet supported");
     }
 
+    @NonNull
     @Override
-    public String getFullName() {
-        return variantScope.getFullName();
+    public String getFullVariantName() {
+        return variantScope.getFullVariantName();
     }
 
     @Override
@@ -143,19 +142,6 @@ public class VariantOutputScope implements TransformVariantScope {
     }
 
     @NonNull
-    public File getCompressedResourceFile() {
-        return new File(getGlobalScope().getIntermediatesDir(), "/res/" +
-                "resources-" + variantOutputData.getBaseName() + "-stripped.ap_");
-    }
-
-    @NonNull
-    public File getCompatibleScreensManifestFile() {
-        return new File(getGlobalScope().getIntermediatesDir(),
-                "/manifests/density/" + variantOutputData.getDirName() + "/AndroidManifest.xml");
-
-    }
-
-    @NonNull
     public File getManifestOutputFile() {
         switch(variantScope.getVariantConfiguration().getType()) {
             case DEFAULT:
@@ -178,9 +164,29 @@ public class VariantOutputScope implements TransformVariantScope {
     }
 
     @NonNull
+    public File getCompatibleScreensManifestFile() {
+        return new File(getGlobalScope().getIntermediatesDir(),
+                "/manifests/density/" + variantOutputData.getDirName() + "/AndroidManifest.xml");
+
+    }
+
+    @NonNull
     public File getProcessResourcePackageOutputFile() {
         return new File(getGlobalScope().getIntermediatesDir(),
                 "res/resources-" + variantOutputData.getBaseName() + ".ap_");
+    }
+
+    @NonNull
+    public File getShrinkedResourcesFile() {
+        return new File(getGlobalScope().getIntermediatesDir(), "/res/" +
+                "resources-" + variantOutputData.getBaseName() + "-stripped.ap_");
+    }
+
+    @NonNull
+    public File getFinalResourcesFile() {
+        return variantScope.useResourceShrinker()
+                ? getShrinkedResourcesFile()
+                : getProcessResourcePackageOutputFile();
     }
 
     // Tasks

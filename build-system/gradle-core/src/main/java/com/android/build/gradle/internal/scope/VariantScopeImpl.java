@@ -27,7 +27,7 @@ import com.android.build.gradle.internal.core.Abi;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.coverage.JacocoReportTask;
 import com.android.build.gradle.internal.dsl.AbiSplitOptions;
-import com.android.build.gradle.internal.dsl.CoreSigningConfig;
+import com.android.build.gradle.internal.dsl.CoreBuildType;
 import com.android.build.gradle.internal.incremental.InstantRunAnchorTask;
 import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
 import com.android.build.gradle.internal.incremental.InstantRunWrapperTask;
@@ -41,7 +41,6 @@ import com.android.build.gradle.internal.tasks.databinding.DataBindingProcessLay
 import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.build.gradle.internal.variant.LibraryVariantData;
-import com.android.build.gradle.internal.variant.SplitHandlingPolicy;
 import com.android.build.gradle.internal.variant.TestVariantData;
 import com.android.build.gradle.tasks.AidlCompile;
 import com.android.build.gradle.tasks.BinaryFileProviderTask;
@@ -52,7 +51,6 @@ import com.android.build.gradle.tasks.GenerateResValues;
 import com.android.build.gradle.tasks.MergeResources;
 import com.android.build.gradle.tasks.MergeSourceSetFolders;
 import com.android.build.gradle.tasks.NdkCompile;
-import com.android.build.gradle.tasks.PackageAndroidArtifact;
 import com.android.build.gradle.tasks.ProcessAndroidResources;
 import com.android.build.gradle.tasks.RenderscriptCompile;
 import com.android.build.gradle.tasks.ShaderCompile;
@@ -152,7 +150,7 @@ public class VariantScopeImpl implements VariantScope {
     private ExternalNativeJsonGenerator externalNativeJsonGenerator;
 
     @NonNull
-    List<NativeBuildConfigValue> externalNativeBuildConfigValues = Lists.newArrayList();
+    private List<NativeBuildConfigValue> externalNativeBuildConfigValues = Lists.newArrayList();
 
     /**
      * This is an instance of {@link JacocoReportTask} in android test variants, an umbrella
@@ -195,7 +193,7 @@ public class VariantScopeImpl implements VariantScope {
 
     @NonNull
     @Override
-    public String getFullName() {
+    public String getFullVariantName() {
         return getVariantConfiguration().getFullName();
     }
 
@@ -205,8 +203,11 @@ public class VariantScopeImpl implements VariantScope {
     }
 
     @Override
-    public boolean isShrinkResources() {
-        return getVariantConfiguration().getBuildType().isShrinkResources();
+    public boolean useResourceShrinker() {
+        CoreBuildType buildType = getVariantConfiguration().getBuildType();
+        return buildType.isShrinkResources()
+                && (!buildType.isMinifyEnabled() || buildType.isUseProguard())
+                && !getInstantRunBuildContext().isInInstantRunMode();
     }
 
     @Override
@@ -214,47 +215,10 @@ public class VariantScopeImpl implements VariantScope {
         return getVariantConfiguration().getJackOptions().isEnabled();
     }
 
-    @Override
-    public boolean isJniDebuggable() {
-        return getVariantConfiguration().getBuildType().isJniDebuggable();
-    }
-
-    @Override
-    public Set<File> getDexFolders() {
-        return getTransformManager().getPipelineOutput(PackageAndroidArtifact.DEX_FILTER).keySet();
-    }
-
-    @Override
-    public Set<File> getJavaResources() {
-        return getTransformManager().getPipelineOutput(PackageAndroidArtifact.RES_FILTER).keySet();
-    }
-
-    @Override
-    public Set<File> getJniFolders() {
-        return getTransformManager().getPipelineOutput(PackageAndroidArtifact.JNI_FILTER).keySet();
-    }
-
-    @Override
-    public CoreSigningConfig getSigningConfig() {
-        return (CoreSigningConfig) getVariantConfiguration().getSigningConfig();
-    }
-
-    @Nullable
-    @Override
-    public Set<String> getSupportedAbis() {
-        return getVariantConfiguration().getSupportedAbis();
-    }
-
     @NonNull
     @Override
     public ApiVersion getMinSdkVersion() {
         return getVariantConfiguration().getMinSdkVersion();
-    }
-
-    @NonNull
-    @Override
-    public SplitHandlingPolicy getSplitHandlingPolicy() {
-        return getVariantData().getSplitHandlingPolicy();
     }
 
     @NonNull
@@ -1109,7 +1073,7 @@ public class VariantScopeImpl implements VariantScope {
     }
 
     @NonNull
-    InstantRunBuildContext instantRunBuildContext = new InstantRunBuildContext();
+    private InstantRunBuildContext instantRunBuildContext = new InstantRunBuildContext();
 
     @Override
     @NonNull

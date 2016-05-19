@@ -20,7 +20,6 @@ import com.android.annotations.NonNull;
 import com.android.build.api.transform.DirectoryInput;
 import com.android.build.api.transform.Format;
 import com.android.build.api.transform.JarInput;
-import com.android.build.api.transform.QualifiedContent;
 import com.android.build.api.transform.TransformInput;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -28,18 +27,11 @@ import com.google.common.collect.ImmutableMap;
 import java.io.File;
 import java.util.Collection;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * A collection of {@link TransformStream} that can be queried.
  */
 public abstract class FilterableStreamCollection {
-
-    public interface StreamFilter {
-        boolean accept(
-                @NonNull Set<QualifiedContent.ContentType> types,
-                @NonNull Set<QualifiedContent.Scope> scopes);
-    }
 
     @NonNull
     abstract Collection<TransformStream> getStreams();

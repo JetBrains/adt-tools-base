@@ -75,8 +75,9 @@ import java.util.List;
         return ImmutableList.of("debug");
     }
 
+    @NonNull
     @Override
-    public String getFullName() {
+    public String getFullVariantName() {
         return "debug";
     }
 

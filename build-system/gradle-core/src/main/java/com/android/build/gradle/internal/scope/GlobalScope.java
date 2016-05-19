@@ -57,7 +57,7 @@ public class GlobalScope implements TransformGlobalScope {
     private SdkHandler sdkHandler;
 
     @NonNull
-    private NdkHandler ndkHanlder;
+    private NdkHandler ndkHandler;
 
     @NonNull
     private ToolingModelBuilderRegistry toolingRegistry;
@@ -85,13 +85,13 @@ public class GlobalScope implements TransformGlobalScope {
             @NonNull AndroidBuilder androidBuilder,
             @NonNull AndroidConfig extension,
             @NonNull SdkHandler sdkHandler,
-            @NonNull NdkHandler ndkHanlder,
+            @NonNull NdkHandler ndkHandler,
             @NonNull ToolingModelBuilderRegistry toolingRegistry) {
         this.project = project;
         this.androidBuilder = androidBuilder;
         this.extension = extension;
         this.sdkHandler = sdkHandler;
-        this.ndkHanlder = ndkHanlder;
+        this.ndkHandler = ndkHandler;
         this.toolingRegistry = toolingRegistry;
         intermediatesDir = new File(getBuildDir(), FD_INTERMEDIATES);
         generatedDir = new File(getBuildDir(), FD_GENERATED);
@@ -127,7 +127,7 @@ public class GlobalScope implements TransformGlobalScope {
 
     @NonNull
     public NdkHandler getNdkHandler() {
-        return ndkHanlder;
+        return ndkHandler;
     }
 
     @NonNull

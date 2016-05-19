@@ -17,17 +17,20 @@
 package com.android.build.gradle.internal.scope;
 
 import com.android.annotations.NonNull;
-import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
 
-import java.io.File;
 import java.util.Collection;
-import java.util.List;
 
 /**
  * This is the scope available to
  * {@link com.android.build.api.transform.Transform}
  */
 public interface TransformVariantScope {
+
+    /**
+     * Full name of the variant.
+     */
+    @NonNull
+    String getFullVariantName();
 
     @NonNull
     TransformGlobalScope getGlobalScope();
@@ -57,6 +60,4 @@ public interface TransformVariantScope {
      */
     @NonNull
     Collection<String> getDirectorySegments();
-
-    String getFullName();
 }
