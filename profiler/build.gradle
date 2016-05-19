@@ -6,15 +6,18 @@ subprojects {
 }
 
 class CMakeClosureDelegate {
-    String[] abis
+    String[] abis = [];
     String name;
     String projectDir;
+    String[] targets = [];
+    String[] flags = []
 
     def abis(String[] value) { abis = value; }
     def name(String value) { name = value; }
     def projectDir(String value) { projectDir = value; }
+    def targets(String[] value) { targets = value}
+    def flags(String[] value) { flags = value}
 }
-
 
 def cmake(cl) {
     CMakeClosureDelegate del = new CMakeClosureDelegate();
@@ -25,10 +28,14 @@ def cmake(cl) {
 
     def cmakeTask = cl.owner.tasks.create(name: "cmake" + name.capitalize(), type: DefaultTask) {}
     def ninjaTask = cl.owner.tasks.create(name: "$name", type: DefaultTask) {}
+    def preTask = cl.owner.tasks.create(name: "pre" + name.capitalize(), type: DefaultTask) {}
 
     del.abis.each { abi ->
         def gen = file("$cmakeBuildDir/gen/$abi");
         def extra = []
+        def os = System.getProperty("os.name").toLowerCase();
+        def host = os.startsWith("linux") ? "linux-x86" : "darwin-x86"
+
         if (!abi.equals('host')) {
             extra = [
                     "-DCMAKE_TOOLCHAIN_FILE=$rootDir/cmake/Android.cmake",
@@ -44,21 +51,26 @@ def cmake(cl) {
                 gen.mkdirs();
             }
             workingDir gen
-            executable "$rootDir/../../../prebuilts/cmake/darwin-x86/bin/cmake"
+            executable "$rootDir/../../../prebuilts/cmake/$host/bin/cmake"
             args = ["-G", "Ninja", del.projectDir,
-                "-DCMAKE_MAKE_PROGRAM=$rootDir/../../../prebuilts/ninja/darwin-x86/ninja",
+                "-DCMAKE_MAKE_PROGRAM=$rootDir/../../../prebuilts/ninja/$host/ninja",
                 "-DCMAKE_RUNTIME_OUTPUT_DIRECTORY=$cmakeBuildDir/out/$abi",
-                "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON"] + extra
+                "-Dprotobuf_BUILD_TESTS=OFF",
+                "-DGO_EXECUTABLE=$rootDir/../../../prebuilts/go/$host/bin/go",
+                "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON"] + extra + Arrays.asList(del.flags)
+            environment GOROOT: "$rootDir/../../../prebuilts/go/$host"
             inputs.file "../cmake/Android.cmake"
             outputs.dir gen
         }
         cmakeTask.dependsOn cmakeAbi
+        cmakeAbi.dependsOn preTask;
 
         def ninjaAbi = cl.owner.tasks.create(name: "ninja" + name.capitalize() + abi.capitalize(), type: Exec) {
             workingDir gen
+            args = Arrays.asList(del.targets)
 
-            executable "$rootDir/../../../prebuilts/ninja/darwin-x86/ninja"
-
+            executable "$rootDir/../../../prebuilts/ninja/$host/ninja"
+            environment GOROOT: "$rootDir/../../../prebuilts/go/$host"
             inputs.dir del.projectDir
             inputs.dir gen
             outputs.dir "$cmakeBuildDir/out/$abi"
