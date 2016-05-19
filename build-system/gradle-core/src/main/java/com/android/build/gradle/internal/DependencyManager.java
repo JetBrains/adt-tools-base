@@ -42,6 +42,7 @@ import com.android.builder.model.JavaLibrary;
 import com.android.builder.model.MavenCoordinates;
 import com.android.builder.model.SyncIssue;
 import com.android.builder.sdk.SdkLibData;
+import com.android.repository.api.RepoManager;
 import com.android.utils.ILogger;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ArrayListMultimap;
@@ -482,9 +483,19 @@ public class DependencyManager {
         } else {
             if (!repositoriesUpdated && sdkLibData.useSdkDownload()) {
                 for (UnresolvedDependency dependency : unresolvedDependencies) {
+
                     if (isGoogleOwnedDependency(dependency.getSelector())) {
-                        List<File> updatedRepositories = sdkHandler.getSdkLoader()
-                                .updateRepositories(sdkLibData, logger);
+                        if (sdkHandler.shouldResetCache()) {
+                            sdkLibData.setCacheExpirationPeriod(0);
+                            sdkHandler.setResetCache(false);
+                        } else {
+                            sdkLibData.setCacheExpirationPeriod(
+                                    RepoManager.DEFAULT_EXPIRATION_PERIOD_MS);
+                        }
+
+                        List<File> updatedRepositories =
+                                sdkHandler.getSdkLoader().updateRepositories(sdkLibData, logger);
+
                         // Adding the updated local maven repositories to the project in order to
                         // bypass the fact that the old repositories contain the unresolved
                         // resolution result.

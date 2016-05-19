@@ -293,6 +293,11 @@ public class RepoManagerImpl extends RepoManager {
     }
 
     @Override
+    public void markLocalCacheInvalid() {
+        mLastLocalRefreshMs = 0;
+    }
+
+    @Override
     @Nullable
     public LSResourceResolver getResourceResolver(@NonNull ProgressIndicator progress) {
         Set<SchemaModule> allModules = ImmutableSet.<SchemaModule>builder().addAll(

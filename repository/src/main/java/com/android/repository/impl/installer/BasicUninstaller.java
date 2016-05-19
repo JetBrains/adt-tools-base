@@ -54,7 +54,7 @@ class BasicUninstaller extends AbstractUninstaller {
         File location = new File(getRepoManager().getLocalPath(), path);
 
         mFop.deleteFileOrFolder(location);
-        getRepoManager().markInvalid();
+        getRepoManager().markLocalCacheInvalid();;
 
         boolean successfullyDeleted = !mFop.exists(location);
         if (!successfullyDeleted) {

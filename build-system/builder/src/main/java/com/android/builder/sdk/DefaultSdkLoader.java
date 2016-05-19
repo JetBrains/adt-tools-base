@@ -33,7 +33,6 @@ import com.android.repository.api.Installer;
 import com.android.repository.api.ProgressIndicator;
 import com.android.repository.api.RemotePackage;
 import com.android.repository.api.RepoManager;
-import com.android.repository.api.RepoPackage;
 import com.android.repository.api.SettingsController;
 import com.android.repository.api.UpdatablePackage;
 import com.android.repository.io.FileOpUtils;
@@ -113,9 +112,8 @@ public class DefaultSdkLoader implements SdkLoader {
 
             if (target == null || buildToolInfo == null) {
                 RepoManager repoManager = mSdkHandler.getSdkManager(progress);
-                repoManager.loadSynchronously
-                        (RepoManager.DEFAULT_EXPIRATION_PERIOD_MS, progress, downloader, settings);
-
+                repoManager.loadSynchronously(
+                        sdkLibData.getCacheExpirationPeriod(), progress, downloader, settings);
                 if (buildToolInfo == null) {
                     installBuildTools(buildToolRevision, repoManager, downloader, progress);
                 }
@@ -123,7 +121,6 @@ public class DefaultSdkLoader implements SdkLoader {
                 if (target == null) {
                     installTarget(targetHash, repoManager, downloader, progress);
                 }
-                repoManager.markInvalid();
                 repoManager.loadSynchronously(0, progress, null, null);
 
                 buildToolInfo = mSdkHandler.getBuildToolInfo(buildToolRevision, progress);
@@ -335,16 +332,17 @@ public class DefaultSdkLoader implements SdkLoader {
         ImmutableList.Builder<File> repositoriesBuilder = ImmutableList.builder();
         ProgressIndicator progress = new LoggerProgressIndicatorWrapper(logger);
         RepoManager repoManager = mSdkHandler.getSdkManager(progress);
+
         repoManager.loadSynchronously(
-                RepoManager.DEFAULT_EXPIRATION_PERIOD_MS,
+                sdkLibData.getCacheExpirationPeriod(),
                 progress,
                 sdkLibData.getDownloader(),
                 sdkLibData.getSettings());
+
         UpdatablePackage googleRepositoryPackage = repoManager.getPackages().getConsolidatedPkgs()
                 .get(SdkMavenRepository.GOOGLE.getPackageId());
 
-        UpdatablePackage androidRepositoryPackage =
-                mSdkHandler.getSdkManager(progress).getPackages().getConsolidatedPkgs()
+        UpdatablePackage androidRepositoryPackage = repoManager.getPackages().getConsolidatedPkgs()
                         .get(SdkMavenRepository.ANDROID.getPackageId());
 
         if (!googleRepositoryPackage.hasLocal() || googleRepositoryPackage.isUpdate()) {
