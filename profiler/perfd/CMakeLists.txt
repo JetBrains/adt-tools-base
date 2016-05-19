@@ -36,8 +36,10 @@ add_subdirectory($ENV{GRPC_ROOT_DIR} ./grpc EXCLUDE_FROM_ALL)
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c11")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
-PROTOBUF_GENERATE_CPP(CPP_PROTO_SRCS CPP_PROTO_HDRS ../proto helloworld.proto)
-PROTOBUF_GENERATE_GRPC(GRPC_PROTO_SRCS GRPC_PROTO_HDRS ../proto helloworld.proto)
+set(PROTO_FILES profiler_service.proto)
+
+PROTOBUF_GENERATE_CPP(CPP_PROTO_SRCS CPP_PROTO_HDRS ../proto ${PROTO_FILES})
+PROTOBUF_GENERATE_GRPC(GRPC_PROTO_SRCS GRPC_PROTO_HDRS ../proto ${PROTO_FILES})
 
 set(PROTO_DEPENDENCIES ${CPP_PROTO_SRCS}
                        ${CPP_PROTO_HDRS}
@@ -63,14 +65,8 @@ include_directories(${CMAKE_CURRENT_BINARY_DIR}
 
 add_executable(perfd
                perfd.cc
+               profiler_service.cc
                ${PROTO_DEPENDENCIES})
 
 target_link_libraries(perfd
                       ${LINK_DEPENDENCIES})
-
-# add_executable(greeter_client
-#                greeter_client.cc
-#                ${PROTO_DEPENDENCIES})
-
-# target_link_libraries(greeter_client
-#                       ${LINK_DEPENDENCIES})
