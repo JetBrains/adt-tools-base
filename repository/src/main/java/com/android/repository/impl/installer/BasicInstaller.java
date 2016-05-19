@@ -38,7 +38,7 @@ import java.net.URL;
  *
  * Probably instances should be created by {@link BasicInstallerFactory}
  */
-class BasicInstaller extends AbstractPackageOperation.AbstractInstaller {
+class BasicInstaller extends AbstractInstaller {
     private static final String FN_UNZIP_DIR = "unzip";
 
     BasicInstaller(@NonNull RemotePackage p, @NonNull RepoManager mgr,
@@ -105,7 +105,7 @@ class BasicInstaller extends AbstractPackageOperation.AbstractInstaller {
      */
     @Override
     protected boolean doComplete(@Nullable File installTempPath,
-      @NonNull File destination, @NonNull ProgressIndicator progress) {
+            @NonNull ProgressIndicator progress) {
         if (installTempPath == null) {
             return false;
         }
@@ -129,10 +129,10 @@ class BasicInstaller extends AbstractPackageOperation.AbstractInstaller {
 
             progress
               .logInfo(String.format("Installing %1$s in %2$s", getPackage().getDisplayName(),
-                destination));
+                getLocation(progress)));
 
             // Move the final unzipped archive into place.
-            FileOpUtils.safeRecursiveOverwrite(packageRoot, destination, mFop, progress);
+            FileOpUtils.safeRecursiveOverwrite(packageRoot, getLocation(progress), mFop, progress);
 
             return true;
         } catch (IOException e) {
