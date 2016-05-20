@@ -253,11 +253,10 @@ private arguments returns [String signature]
 private type returns [String signature]
 @init {
   int dim = 0;
-  boolean negator = false;
 }
   :
   (
-    (NEGATOR {negator = true;})? typeName=('%' | NAME) ('[]' {dim++;})* {String sig = $typeName.text; signature = GrammarActions.getSignature(sig == null ? "" : sig, dim, negator);}
+    typeName=('%' | NAME) ('[]' {dim++;})* {String sig = $typeName.text; signature = GrammarActions.getSignature(sig == null ? "" : sig, dim);}
   )
   ;
 
