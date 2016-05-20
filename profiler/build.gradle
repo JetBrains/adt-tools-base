@@ -38,7 +38,7 @@ def cmake(cl) {
 
         if (!abi.equals('host')) {
             extra = [
-                    "-DCMAKE_TOOLCHAIN_FILE=$rootDir/cmake/Android.cmake",
+                    "-DCMAKE_TOOLCHAIN_FILE=$rootDir/native/cmake/Android.cmake",
                     "-DPREBUILTS=$rootDir/../../../prebuilts",
                     "-DABI=$abi"
             ]
@@ -79,5 +79,5 @@ def cmake(cl) {
         ninjaTask.dependsOn ninjaAbi
     }
     return ninjaTask
- }
+}
 
