@@ -1136,7 +1136,6 @@ public final class SdkConstants {
     public static final String ATTR_LAYOUT_HORIZONTAL_BIAS = "layout_constraintHorizontal_bias"; //$NON-NLS-1$
     public static final String ATTR_LAYOUT_VERTICAL_BIAS = "layout_constraintVertical_bias"; //$NON-NLS-1$
     public static final String ATTR_LAYOUT_DIMENSION_RATIO = "layout_constraintDimensionRatio"; //$NON-NLS-1$
-    public static final String ATTR_GUIDELINE_ORIENTATION = "orientation"; //$NON-NLS-1$
     public static final String ATTR_GUIDELINE_ORIENTATION_HORIZONTAL = "horizontal"; //$NON-NLS-1$
     public static final String ATTR_GUIDELINE_ORIENTATION_VERTICAL = "vertical"; //$NON-NLS-1$
     public static final String ATTR_GUIDELINE_RELATIVE_BEGIN = "relativeBegin"; //$NON-NLS-1$
