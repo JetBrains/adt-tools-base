@@ -1,39 +1,39 @@
 cmake_minimum_required(VERSION 2.8)
 
-include(cmake/proto_compile.cmake)
-
+# Check for environment variables required
 if (NOT DEFINED ENV{GRPC_ROOT_DIR})
   message( FATAL_ERROR "Environment variable GRPC_ROOT_DIR not set." )
   return()
 endif()
 
-if(NOT CMAKE_CROSSCOMPILING)
-  if(NOT HOST_BUILD_DIR)
-    set(HOST_BUILD_DIR ${CMAKE_CURRENT_BINARY_DIR})
-  endif()
+# Configure HOST_BUILD_DIR
+if((NOT CMAKE_CROSSCOMPILING) AND (NOT HOST_BUILD_DIR))
+  set(HOST_BUILD_DIR ${CMAKE_CURRENT_BINARY_DIR})
 endif()
 
 if(HOST_BUILD_DIR)
-  if(NOT PROTOBUF_PROTOC_EXECUTABLE)
-    set(PROTOBUF_PROTOC_EXECUTABLE ${HOST_BUILD_DIR}/protoc)
-  endif()
-
-  if(NOT GRPC_CPP_PLUGIN_PATH)
-    set(GRPC_CPP_PLUGIN_PATH ${HOST_BUILD_DIR}/grpc_cpp_plugin)
-  endif()
+  set(PROTOBUF_PROTOC_EXECUTABLE ${HOST_BUILD_DIR}/protoc)
+  set(GRPC_CPP_PLUGIN_PATH ${HOST_BUILD_DIR}/grpc_cpp_plugin)
 endif()
 
-if(NOT GRPC_INCLUDE_DIR)
-  set(GRPC_INCLUDE_DIR $ENV{GRPC_ROOT_DIR}/include)
-endif()
+# Set ROOT dir for every third party dependency
+set(GRPC_ROOT_DIR $ENV{GRPC_ROOT_DIR}) # TODO: Update the relative path when gRPC available in gerrit
+set(GTEST_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../../../external/gtest)
+set(GMOCK_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../../../external/gmock)
 
-if(NOT PROTOBUF_INCLUDE_DIR)
-  set(PROTOBUF_INCLUDE_DIR $ENV{GRPC_ROOT_DIR}/third_party/protobuf/src)
-endif()
+# Include additional cmake modules after setting global variables
+include(cmake/proto_compile.cmake)
+include(cmake/test.cmake)
 
-add_subdirectory($ENV{GRPC_ROOT_DIR} ./grpc EXCLUDE_FROM_ALL)
+# Include gRPC
+set(GRPC_INCLUDE_DIR ${GRPC_ROOT_DIR}/include)
+set(PROTOBUF_INCLUDE_DIR ${GRPC_ROOT_DIR}/third_party/protobuf/src)
+add_subdirectory(${GRPC_ROOT_DIR} ./grpc EXCLUDE_FROM_ALL)
 
+# Set command line flags for profiler code
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c11")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
+# Add profiler components
 add_subdirectory(perfd)
+add_subdirectory(utils)
