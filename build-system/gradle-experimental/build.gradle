@@ -75,3 +75,5 @@ if (project.has("release")) {
     archives javadocJar
   }
 }
+
+check.dependsOn javadocJar, javadoc
