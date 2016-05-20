@@ -24,6 +24,7 @@ import static com.android.builder.core.BuilderConstants.EXT_LIB_ARCHIVE;
 import static com.android.builder.core.ErrorReporter.EvaluationMode.STANDARD;
 import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES;
 
+import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.internal.scope.AndroidTask;
@@ -43,6 +44,7 @@ import com.android.builder.model.MavenCoordinates;
 import com.android.builder.model.SyncIssue;
 import com.android.builder.sdk.SdkLibData;
 import com.android.repository.api.RepoManager;
+import com.android.repository.api.RepoPackage;
 import com.android.utils.ILogger;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ArrayListMultimap;
@@ -78,6 +80,7 @@ import org.gradle.api.specs.Specs;
 import org.gradle.util.GUtil;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -482,32 +485,33 @@ public class DependencyManager {
             allArtifacts = configuration.getResolvedConfiguration().getResolvedArtifacts();
         } else {
             if (!repositoriesUpdated && sdkLibData.useSdkDownload()) {
+                List<String> repositoryPaths = new ArrayList<>();
+
                 for (UnresolvedDependency dependency : unresolvedDependencies) {
-
                     if (isGoogleOwnedDependency(dependency.getSelector())) {
-                        if (sdkHandler.shouldResetCache()) {
-                            sdkLibData.setCacheExpirationPeriod(0);
-                            sdkHandler.setResetCache(false);
-                        } else {
-                            sdkLibData.setCacheExpirationPeriod(
-                                    RepoManager.DEFAULT_EXPIRATION_PERIOD_MS);
-                        }
-
-                        List<File> updatedRepositories =
-                                sdkHandler.getSdkLoader().updateRepositories(sdkLibData, logger);
-
-                        // Adding the updated local maven repositories to the project in order to
-                        // bypass the fact that the old repositories contain the unresolved
-                        // resolution result.
-                        for (File updatedRepository : updatedRepositories) {
-                            project.getRepositories().maven(mavenArtifactRepository -> {
-                                mavenArtifactRepository.setUrl(updatedRepository.toURI());
-                            });
-                        }
-                        repositoriesUpdated = true;
-                        break;
+                        repositoryPaths.add(getRepositoryPath(dependency.getSelector()));
                     }
                 }
+
+                if (sdkHandler.shouldResetCache()) {
+                    sdkLibData.setCacheExpirationPeriod(0);
+                    sdkHandler.setResetCache(false);
+                } else {
+                    sdkLibData.setCacheExpirationPeriod(
+                            RepoManager.DEFAULT_EXPIRATION_PERIOD_MS);
+                }
+                List<File> updatedRepositories = sdkHandler.getSdkLoader()
+                        .updateRepositories(repositoryPaths, sdkLibData, logger);
+
+                // Adding the updated local maven repositories to the project in order to
+                // bypass the fact that the old repositories contain the unresolved
+                // resolution result.
+                for (File updatedRepository : updatedRepositories) {
+                    project.getRepositories().maven(mavenArtifactRepository -> {
+                        mavenArtifactRepository.setUrl(updatedRepository.toURI());
+                    });
+                }
+                repositoriesUpdated = true;
             }
             if (extraModelInfo.getMode() != STANDARD) {
                 allArtifacts = configurationCopy.getResolvedConfiguration()
@@ -536,6 +540,21 @@ public class DependencyManager {
             }
         }
         return configuration;
+    }
+
+    /**
+     * Returns the path of an artifact SDK repository.
+     * @param selector the selector of an artifact.
+     * @return a {@code String} containing the path.
+     */
+    private String getRepositoryPath(ModuleVersionSelector selector) {
+        return String.join(
+                String.valueOf(RepoPackage.PATH_SEPARATOR),
+                SdkConstants.FD_EXTRAS,
+                SdkConstants.FD_M2_REPOSITORY,
+                selector.getGroup(),
+                selector.getName(),
+                selector.getVersion());
     }
 
     private boolean isGoogleOwnedDependency(ModuleVersionSelector selector) {

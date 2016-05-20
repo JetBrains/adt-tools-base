@@ -123,6 +123,7 @@ public class PlatformLoader implements SdkLoader {
     @NonNull
     @Override
     public List<File> updateRepositories(
+            @NonNull List<String> repositoryPaths,
             @NonNull SdkLibData sdkLibData,
             @NonNull ILogger logger) {
         return Collections.EMPTY_LIST;

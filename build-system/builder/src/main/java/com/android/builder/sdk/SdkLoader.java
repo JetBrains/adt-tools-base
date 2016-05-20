@@ -74,12 +74,16 @@ public interface SdkLoader {
     /**
      * Tries to update (or install) all local maven repositories and returns a list of directories
      * that were modified.
-     * @param sdkLibData contains the necessary download components.
-     * @param logger a logger to output messages.
-     * @return a non null list of updated repository folders.
+     * @param repositoryPaths a list of all install paths as described in {@code RepoPackage}
+     *                        of the remote packages for the maven repositories.
+     *                        Eg.: extras;google;m2repository
+     * @param sdkLibData contains all the components for downloading.
+     * @param logger a logger for messages.
+     * @return a {@code List} of locations to the directories that contain the maven repositories.
      */
     @NonNull
     List<File> updateRepositories(
+            @NonNull List<String> repositoryPaths,
             @NonNull SdkLibData sdkLibData,
             @NonNull ILogger logger);
 }

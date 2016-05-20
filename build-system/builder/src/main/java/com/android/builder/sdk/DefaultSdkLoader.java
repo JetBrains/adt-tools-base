@@ -24,6 +24,7 @@ import static com.android.SdkConstants.FD_TOOLS;
 import static com.android.SdkConstants.FN_ADB;
 import static com.android.SdkConstants.FN_ANNOTATIONS_JAR;
 
+import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.ide.common.repository.SdkMavenRepository;
@@ -53,6 +54,9 @@ import com.google.common.collect.Lists;
 
 import java.io.File;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * Singleton-based implementation of SdkLoader for a standard SDK
@@ -171,8 +175,8 @@ public class DefaultSdkLoader implements SdkLoader {
 
         // Install platform sdk if it's not there.
         if (!platformPkg.hasLocal()) {
-            if (!installRemotePackage(
-                    platformPkg.getRemote(), repoManager, downloader, progress)) {
+            if (!installRemotePackages(
+                    ImmutableList.of(platformPkg.getRemote()), repoManager, downloader, progress)) {
                 throw new IllegalStateException(
                         "Couldn't install Platform SDK with path: "
                                 + platformPath);
@@ -204,8 +208,8 @@ public class DefaultSdkLoader implements SdkLoader {
                         "Failed to find target with hash string " + targetHash);
             }
 
-            if (!installRemotePackage(
-                    addonPackage, repoManager, downloader, progress)) {
+            if (!installRemotePackages(
+                    ImmutableList.of(addonPackage), repoManager, downloader, progress)) {
                 throw new IllegalStateException(
                         "Couldn't install target with target "
                                 + "hash " + targetHash);
@@ -238,8 +242,8 @@ public class DefaultSdkLoader implements SdkLoader {
                     buildToolsPackage.getVersion() + ", which will be installed.");
         }
 
-        if (!installRemotePackage(
-                buildToolsPackage, repoManager, downloader, progress)) {
+        if (!installRemotePackages(
+                ImmutableList.of(buildToolsPackage), repoManager, downloader, progress)) {
             throw new IllegalStateException("Couldn't install Build Tools revision "
                     + buildToolRevision);
         }
@@ -249,15 +253,15 @@ public class DefaultSdkLoader implements SdkLoader {
      * Installs a {@code RemotePackage} and its dependent packages.
      * @return true if all the packages have been installed properly.
      */
-    private boolean installRemotePackage(
-            @NonNull RemotePackage requestPackage,
+    private boolean installRemotePackages(
+            @NonNull List<RemotePackage> requestPackages,
             @NonNull RepoManager repoManager,
             @NonNull Downloader downloader,
             @NonNull ProgressIndicator progress) {
 
         List<RemotePackage> remotePackages =
                 InstallerUtil.computeRequiredPackages(
-                        ImmutableList.of(requestPackage), repoManager.getPackages(), progress);
+                        requestPackages, repoManager.getPackages(), progress);
 
         if (remotePackages == null) {
             return false;
@@ -342,6 +346,7 @@ public class DefaultSdkLoader implements SdkLoader {
     @Override
     @NonNull
     public List<File> updateRepositories(
+            @NonNull List<String> repositoryPaths,
             @NonNull SdkLibData sdkLibData,
             @NonNull ILogger logger) {
 
@@ -355,35 +360,60 @@ public class DefaultSdkLoader implements SdkLoader {
                 sdkLibData.getDownloader(),
                 sdkLibData.getSettings());
 
-        UpdatablePackage googleRepositoryPackage = repoManager.getPackages().getConsolidatedPkgs()
-                .get(SdkMavenRepository.GOOGLE.getPackageId());
+        Map<String, RemotePackage> remotePackages = repoManager.getPackages().getRemotePackages();
+        List<RemotePackage> artifactPackages = repositoryPaths
+                .stream()
+                .map(remotePackages::get)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
 
-        UpdatablePackage androidRepositoryPackage = repoManager.getPackages().getConsolidatedPkgs()
-                        .get(SdkMavenRepository.ANDROID.getPackageId());
+        boolean installResult = true;
 
-        if (!googleRepositoryPackage.hasLocal() || googleRepositoryPackage.isUpdate()) {
-            installRemotePackage(
-                    googleRepositoryPackage.getRemote(),
-                    repoManager,
-                    sdkLibData.getDownloader(),
-                    progress);
-
-            File googleRepo = SdkMavenRepository.GOOGLE
-                    .getRepositoryLocation(mSdkLocation, true, FileOpUtils.create());
-            repositoriesBuilder.add(googleRepo);
+        if (!artifactPackages.isEmpty()) {
+            installResult = installRemotePackages(
+                    artifactPackages, repoManager, sdkLibData.getDownloader(), progress);
+            repositoriesBuilder.add(new File(
+                    mSdkLocation +
+                    File.separator +
+                    SdkConstants.FD_EXTRAS +
+                    File.separator +
+                    SdkConstants.FD_M2_REPOSITORY));
         }
 
-        if (!androidRepositoryPackage.hasLocal() || androidRepositoryPackage.isUpdate()) {
-            installRemotePackage(
-                    androidRepositoryPackage.getRemote(),
-                    repoManager,
-                    sdkLibData.getDownloader(),
-                    progress);
-            File androidRepo = SdkMavenRepository.ANDROID
-                    .getRepositoryLocation(mSdkLocation, true, FileOpUtils.create());
-            repositoriesBuilder.add(androidRepo);
-        }
+        // If we can't find some of the remote packages or some install failed
+        // we resort to installing/updating the old big repositories.
+        if (artifactPackages.size() != repositoryPaths.size() || !installResult) {
+            UpdatablePackage googleRepositoryPackage = repoManager.getPackages()
+                    .getConsolidatedPkgs()
+                    .get(SdkMavenRepository.GOOGLE.getPackageId());
 
+            UpdatablePackage androidRepositoryPackage =
+                    mSdkHandler.getSdkManager(progress).getPackages().getConsolidatedPkgs()
+                            .get(SdkMavenRepository.ANDROID.getPackageId());
+
+            if (!googleRepositoryPackage.hasLocal() || googleRepositoryPackage.isUpdate()) {
+                installRemotePackages(
+                        ImmutableList.of(googleRepositoryPackage.getRemote()),
+                        repoManager,
+                        sdkLibData.getDownloader(),
+                        progress);
+
+                File googleRepo = SdkMavenRepository.GOOGLE
+                        .getRepositoryLocation(mSdkLocation, true, FileOpUtils.create());
+                repositoriesBuilder.add(googleRepo);
+            }
+
+            if (!androidRepositoryPackage.hasLocal() || androidRepositoryPackage.isUpdate()) {
+                installRemotePackages(
+                        ImmutableList.of(androidRepositoryPackage.getRemote()),
+                        repoManager,
+                        sdkLibData.getDownloader(),
+                        progress);
+                File androidRepo = SdkMavenRepository.ANDROID
+                        .getRepositoryLocation(mSdkLocation, true, FileOpUtils.create());
+                repositoriesBuilder.add(androidRepo);
+            }
+        }
         return repositoriesBuilder.build();
     }
 }
