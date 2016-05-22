@@ -147,7 +147,8 @@ public class MergeResources extends IncrementalTask {
                     getPublicFile(),
                     getBlameLogFolder(),
                     preprocessor,
-                    aapt::compile);
+                    aapt::compile,
+                    getIncrementalFolder());
 
             merger.mergeData(writer, false /*doCleanUp*/);
 
@@ -223,7 +224,8 @@ public class MergeResources extends IncrementalTask {
                     getPublicFile(),
                     getBlameLogFolder(),
                     preprocessor,
-                    aapt::compile);
+                    aapt::compile,
+                    getIncrementalFolder());
             merger.mergeData(writer, false /*doCleanUp*/);
             // No exception? Write the known state.
             merger.writeBlobTo(getIncrementalFolder(), writer, false);

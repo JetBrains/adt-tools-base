@@ -16,6 +16,12 @@
 
 package com.android.ide.common.res2;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import com.android.ide.common.rendering.api.AttrResourceValue;
 import com.android.ide.common.rendering.api.ItemResourceValue;
 import com.android.ide.common.rendering.api.ResourceValue;
@@ -25,6 +31,8 @@ import com.android.resources.ResourceType;
 import com.android.testutils.TestUtils;
 import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Multimap;
+
+import org.junit.Test;
 
 import java.io.File;
 import java.io.IOException;
@@ -37,6 +45,7 @@ import java.util.Map;
 
 public class ResourceRepositoryTest extends BaseTestCase {
 
+    @Test
     public void testMergeByCount() throws Exception {
         ResourceRepository repo = getResourceRepository();
 
@@ -57,6 +66,7 @@ public class ResourceRepositoryTest extends BaseTestCase {
         assertEquals(2, items.get(ResourceType.PLURALS).size());
     }
 
+    @Test
     public void testMergedResourcesByName() throws Exception {
         ResourceRepository repo = getResourceRepository();
 
@@ -100,6 +110,7 @@ public class ResourceRepositoryTest extends BaseTestCase {
         );
     }
 
+    @Test
     public void testBaseStringValue() throws Exception {
         ResourceRepository repo = getResourceRepository();
 
@@ -113,6 +124,7 @@ public class ResourceRepositoryTest extends BaseTestCase {
         assertEquals("overlay_string", value.getValue());
     }
 
+    @Test
     public void testBaseStyledStringValue() throws Exception {
         ResourceRepository repo = getResourceRepository();
 
@@ -127,6 +139,7 @@ public class ResourceRepositoryTest extends BaseTestCase {
                 value.getValue());
     }
 
+    @Test
     public void testBaseColorValue() throws Exception {
         ResourceRepository repo = getResourceRepository();
 
@@ -140,6 +153,7 @@ public class ResourceRepositoryTest extends BaseTestCase {
         assertEquals("#FFFFFFFF", value.getValue());
     }
 
+    @Test
     public void testBaseLayoutAliasValue() throws Exception {
         ResourceRepository repo = getResourceRepository();
 
@@ -153,6 +167,7 @@ public class ResourceRepositoryTest extends BaseTestCase {
         assertEquals("@layout/ref", value.getValue());
     }
 
+    @Test
     public void testBaseAttrValue() throws Exception {
         ResourceRepository repo = getResourceRepository();
 
@@ -182,6 +197,7 @@ public class ResourceRepositoryTest extends BaseTestCase {
         assertEquals(Integer.valueOf(2), i);
     }
 
+    @Test
     public void testBaseStyleValue() throws Exception {
         ResourceRepository repo = getResourceRepository();
 
@@ -217,6 +233,7 @@ public class ResourceRepositoryTest extends BaseTestCase {
         assertEquals("foo", styleValue.getValue());
     }
 
+    @Test
     public void testUpdateWithBasicFiles() throws Exception {
         File root = getIncMergeRoot("basicFiles");
         File fakeRoot = getMergedBlobFolder(root);
@@ -306,6 +323,7 @@ public class ResourceRepositoryTest extends BaseTestCase {
         checkRemovedItems(resourceMerger);
     }
 
+    @Test
     public void testUpdateWithBasicValues() throws Exception {
         File root = getIncMergeRoot("basicValues");
         File fakeRoot = getMergedBlobFolder(root);
@@ -385,6 +403,7 @@ public class ResourceRepositoryTest extends BaseTestCase {
         checkRemovedItems(resourceMerger);
     }
 
+    @Test
     public void testUpdateWithBasicValues2() throws Exception {
         File root = getIncMergeRoot("basicValues2");
         File fakeRoot = getMergedBlobFolder(root);
@@ -440,6 +459,7 @@ public class ResourceRepositoryTest extends BaseTestCase {
         checkRemovedItems(resourceMerger);
     }
 
+    @Test
     public void testUpdateWithFilesVsValues() throws Exception {
         File root = getIncMergeRoot("filesVsValues");
         File fakeRoot = getMergedBlobFolder(root);
@@ -505,6 +525,7 @@ public class ResourceRepositoryTest extends BaseTestCase {
         checkRemovedItems(resourceMerger);
     }
 
+    @Test
     public void testUpdateFromOldFile() throws Exception {
         File root = getIncMergeRoot("oldMerge");
         File fakeRoot = getMergedBlobFolder(root);

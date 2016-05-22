@@ -149,27 +149,27 @@ public class ProcessAndroidResources extends IncrementalTask {
                 new ToolOutputParser(new AaptOutputParser(), getILogger()),
                 new MergingLogRewriter(mergingLog, builder.getErrorReporter()));
 
-        Aapt aapt = AaptGradleFactory.make(getBuilder(), processOutputHandler, variantScope);
-        AaptPackageConfig.Builder config = new AaptPackageConfig.Builder()
-                .setManifestFile(manifestFileToPackage)
-                .setOptions(getAaptOptions())
-                .setAssetsDir(getAssetsDir())
-                .setResourceDir(getResDir())
-                .setLibraries(getLibraries())
-                .setCustomPackageForR(getPackageForR())
-                .setSymbolOutputDir(getTextSymbolOutputDir())
-                .setSourceOutputDir(srcOut)
-                .setResourceOutputApk(resOutBaseNameFile)
-                .setProguardOutputFile(getProguardOutputFile())
-                .setMainDexListProguardOutputFile(getMainDexListProguardOutputFile())
-                .setVariantType(getType())
-                .setDebuggable(getDebuggable())
-                .setPseudoLocalize(getPseudoLocalesEnabled())
-                .setResourceConfigs(getResourceConfigs())
-                .setSplits(getSplits())
-                .setPreferredDensity(getPreferredDensity());
-
         try {
+            Aapt aapt = AaptGradleFactory.make(getBuilder(), processOutputHandler, variantScope);
+            AaptPackageConfig.Builder config = new AaptPackageConfig.Builder()
+                    .setManifestFile(manifestFileToPackage)
+                    .setOptions(getAaptOptions())
+                    .setAssetsDir(getAssetsDir())
+                    .setResourceDir(getResDir())
+                    .setLibraries(getLibraries())
+                    .setCustomPackageForR(getPackageForR())
+                    .setSymbolOutputDir(getTextSymbolOutputDir())
+                    .setSourceOutputDir(srcOut)
+                    .setResourceOutputApk(resOutBaseNameFile)
+                    .setProguardOutputFile(getProguardOutputFile())
+                    .setMainDexListProguardOutputFile(getMainDexListProguardOutputFile())
+                    .setVariantType(getType())
+                    .setDebuggable(getDebuggable())
+                    .setPseudoLocalize(getPseudoLocalesEnabled())
+                    .setResourceConfigs(getResourceConfigs())
+                    .setSplits(getSplits())
+                    .setPreferredDensity(getPreferredDensity());
+
             builder.processResources(aapt, config, getEnforceUniquePackageName());
 
             if (resOutBaseNameFile != null) {

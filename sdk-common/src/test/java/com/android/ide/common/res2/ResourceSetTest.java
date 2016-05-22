@@ -17,11 +17,17 @@
 package com.android.ide.common.res2;
 
 import static java.io.File.separator;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 import com.android.ide.common.blame.SourceFilePosition;
 import com.android.ide.common.blame.SourcePosition;
 import com.android.testutils.TestUtils;
 import com.android.utils.XmlUtils;
+
+import org.junit.Test;
 
 import java.io.File;
 import java.io.IOException;
@@ -29,11 +35,13 @@ import java.util.List;
 
 public class ResourceSetTest extends BaseTestCase {
 
+    @Test
     public void testBaseResourceSetByCount() throws Exception {
         ResourceSet resourceSet = getBaseResourceSet();
         assertEquals(34, resourceSet.size());
     }
 
+    @Test
     public void testBaseResourceSetWithNormalizationByName() throws Exception {
         ResourceSet resourceSet = getBaseResourceSet();
 
@@ -74,6 +82,7 @@ public class ResourceSetTest extends BaseTestCase {
         );
     }
 
+    @Test
     public void testDupResourceSet() throws Exception {
         File root = TestUtils.getRoot("resources", "dupSet");
 
@@ -104,6 +113,7 @@ public class ResourceSetTest extends BaseTestCase {
         assertTrue(gotException);
     }
 
+    @Test
     public void testBrokenSet() throws Exception {
         File root = TestUtils.getRoot("resources", "brokenSet");
 
@@ -125,6 +135,7 @@ public class ResourceSetTest extends BaseTestCase {
         assertFalse(logger.getErrorMsgs().isEmpty());
     }
 
+    @Test
     public void testBrokenSet2() throws Exception {
         File root = TestUtils.getRoot("resources", "brokenSet2");
 
@@ -146,6 +157,7 @@ public class ResourceSetTest extends BaseTestCase {
         assertFalse(logger.getErrorMsgs().isEmpty());
     }
 
+    @Test
     public void testBrokenSet3() throws Exception {
         File root = TestUtils.getRoot("resources", "brokenSet3");
 
@@ -167,6 +179,7 @@ public class ResourceSetTest extends BaseTestCase {
         assertFalse(logger.getErrorMsgs().isEmpty());
     }
 
+    @Test
     public void testBrokenSet4() throws Exception {
         File root = TestUtils.getRoot("resources", "brokenSet4");
 
@@ -189,6 +202,7 @@ public class ResourceSetTest extends BaseTestCase {
         assertFalse(logger.getErrorMsgs().isEmpty());
     }
 
+    @Test
     public void testBrokenSetBadType() throws Exception {
         File root = TestUtils.getRoot("resources", "brokenSetBadType");
 
@@ -210,6 +224,7 @@ public class ResourceSetTest extends BaseTestCase {
         assertFalse(logger.getErrorMsgs().isEmpty());
     }
 
+    @Test
     public void testBrokenSetBadType2() throws Exception {
         File root = TestUtils.getRoot("resources", "brokenSetBadType2");
 
@@ -231,6 +246,7 @@ public class ResourceSetTest extends BaseTestCase {
         assertFalse(logger.getErrorMsgs().isEmpty());
     }
 
+    @Test
     public void testTrackSourcePositions() throws IOException, MergingException {
         File root = TestUtils.getRoot("resources", "baseSet");
 

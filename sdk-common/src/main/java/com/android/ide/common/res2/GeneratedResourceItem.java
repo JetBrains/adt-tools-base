@@ -27,7 +27,7 @@ import org.w3c.dom.Node;
 import java.io.File;
 
 /**
- * A {@link ResourceItem} that is generated, it knows its generate file path, which is not the same
+ * A {@link ResourceItem} that is generated, it knows its generated file path, which is not the same
  * as as the owner ResourceFile.
  */
 public class GeneratedResourceItem extends ResourceItem {

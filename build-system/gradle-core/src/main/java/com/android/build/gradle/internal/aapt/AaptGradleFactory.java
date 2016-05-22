@@ -21,7 +21,9 @@ import com.android.annotations.Nullable;
 import com.android.build.gradle.AndroidGradleOptions;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.builder.core.AndroidBuilder;
+import com.android.builder.core.VariantType;
 import com.android.builder.internal.aapt.Aapt;
+import com.android.builder.internal.aapt.EmptyAapt;
 import com.android.builder.internal.aapt.v1.AaptV1;
 import com.android.builder.internal.aapt.v2.OutOfProcessAaptV2;
 import com.android.builder.sdk.TargetInfo;
@@ -121,6 +123,13 @@ public final class AaptGradleFactory {
 
         if (AndroidGradleOptions.isAapt2Enabled(project) &&
                 BuildToolInfo.PathId.AAPT2.isPresentIn(buildTools.getRevision())) {
+            if (scope.getVariantConfiguration().getType() == VariantType.LIBRARY) {
+                /*
+                 * Do not process resources in a library.
+                 */
+                return new EmptyAapt();
+            }
+
             return new OutOfProcessAaptV2(
                     builder.getProcessExecutor(),
                     outputHandler,

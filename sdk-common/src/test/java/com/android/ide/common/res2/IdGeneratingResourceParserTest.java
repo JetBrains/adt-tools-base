@@ -15,10 +15,16 @@
  */
 package com.android.ide.common.res2;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
 import com.android.resources.ResourceType;
 import com.android.testutils.TestUtils;
 import com.google.common.base.Function;
 import com.google.common.collect.Collections2;
+
+import org.junit.Test;
 
 import java.io.File;
 import java.util.Arrays;
@@ -31,6 +37,7 @@ import java.util.TreeSet;
  */
 public class IdGeneratingResourceParserTest extends BaseTestCase {
 
+    @Test
     public void testParseLayoutDocument() throws Exception {
         File root = TestUtils.getRoot("resources", "idGenerating");
         File layout = new File(root, "layout");
@@ -47,6 +54,7 @@ public class IdGeneratingResourceParserTest extends BaseTestCase {
                                  "imageView2", "imageButton", "noteArea", "text2", "nonExistent");
     }
 
+    @Test
     public void testParseMenuDocument() throws Exception {
         File root = TestUtils.getRoot("resources", "idGenerating");
         File menu = new File(root, "menu");
@@ -62,6 +70,7 @@ public class IdGeneratingResourceParserTest extends BaseTestCase {
         assertResourceItemsNames(idItems, "item1", "group", "group_item1", "group_item2", "submenu", "submenu_item2");
     }
 
+    @Test
     public void testParseDataBindingDocument() throws Exception {
         File root = TestUtils.getRoot("resources", "idGenerating");
         File layout = new File(root, "layout");

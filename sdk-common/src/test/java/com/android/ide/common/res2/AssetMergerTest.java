@@ -16,10 +16,16 @@
 
 package com.android.ide.common.res2;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
 import com.android.SdkConstants;
 import com.android.testutils.TestUtils;
 import com.google.common.collect.ListMultimap;
 import com.google.common.io.Files;
+
+import org.junit.Test;
 
 import java.io.File;
 import java.io.IOException;
@@ -29,12 +35,14 @@ public class AssetMergerTest extends BaseTestCase {
 
     private static AssetMerger sAssetMerger = null;
 
+    @Test
     public void testMergeByCount() throws Exception {
         AssetMerger merger = getAssetMerger();
 
         assertEquals(5, merger.size());
     }
 
+    @Test
     public void testMergedAssetsByName() throws Exception {
         AssetMerger merger = getAssetMerger();
 
@@ -47,6 +55,7 @@ public class AssetMergerTest extends BaseTestCase {
         );
     }
 
+    @Test
     public void testMergeWrite() throws Exception {
         AssetMerger merger = getAssetMerger();
 
@@ -65,6 +74,7 @@ public class AssetMergerTest extends BaseTestCase {
         compareResourceMaps(merger, writtenSet, false /*full compare*/);
     }
 
+    @Test
     public void testMergeBlob() throws Exception {
         AssetMerger merger = getAssetMerger();
 
@@ -82,6 +92,7 @@ public class AssetMergerTest extends BaseTestCase {
      * Tests the path replacement in the merger.xml file loaded from testData/
      * @throws Exception
      */
+    @Test
     public void testLoadingTestPathReplacement() throws Exception {
         File root = TestUtils.getRoot("assets", "baseMerge");
         File fakeRoot = getMergedBlobFolder(root);
@@ -103,6 +114,7 @@ public class AssetMergerTest extends BaseTestCase {
         }
     }
 
+    @Test
     public void testUpdate() throws Exception {
         File root = getIncMergeRoot("basicFiles");
         File fakeRoot = getMergedBlobFolder(root);
@@ -214,6 +226,7 @@ public class AssetMergerTest extends BaseTestCase {
         assertFalse(new File(resFolder, "removed.png").isFile());
     }
 
+    @Test
     public void testCheckValidUpdate() throws Exception {
         // first merger
         AssetMerger merger1 = createMerger(new String[][] {
@@ -252,7 +265,7 @@ public class AssetMergerTest extends BaseTestCase {
         }
     }
 
-
+    @Test
     public void testUpdateWithRemovedOverlay() throws Exception {
         // Test with removed overlay
         AssetMerger merger1 = createMerger(new String[][] {
@@ -268,6 +281,7 @@ public class AssetMergerTest extends BaseTestCase {
         assertFalse(merger1.checkValidUpdate(merger2.getDataSets()));
     }
 
+    @Test
     public void testUpdateWithReplacedOverlays() throws Exception {
         // Test with different overlays
         AssetMerger merger1 = createMerger(new String[][] {
@@ -284,6 +298,7 @@ public class AssetMergerTest extends BaseTestCase {
         assertFalse(merger1.checkValidUpdate(merger2.getDataSets()));
     }
 
+    @Test
     public void testUpdateWithReorderedOverlays() throws Exception {
         // Test with different overlays
         AssetMerger merger1 = createMerger(new String[][] {
@@ -302,6 +317,7 @@ public class AssetMergerTest extends BaseTestCase {
         assertFalse(merger1.checkValidUpdate(merger2.getDataSets()));
     }
 
+    @Test
     public void testUpdateWithRemovedSourceFile() throws Exception {
         // Test with different source files
         AssetMerger merger1 = createMerger(new String[][] {
@@ -316,6 +332,7 @@ public class AssetMergerTest extends BaseTestCase {
         assertFalse(merger1.checkValidUpdate(merger2.getDataSets()));
     }
 
+    @Test
     public void testChangedIgnoredFile() throws Exception {
         AssetSet assetSet = AssetSetTest.getBaseAssetSet();
 

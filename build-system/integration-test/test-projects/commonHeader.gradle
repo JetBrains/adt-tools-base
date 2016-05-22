@@ -29,6 +29,9 @@ Boolean getBooleanValue(String environmentVariable, String projectProperty) {
 ext {
     buildToolsVersion = [System.env.CUSTOM_BUILDTOOLS, project.properties["CUSTOM_BUILDTOOLS"], '23.0.2'].find()
     latestCompileSdk = [System.env.COMPILE_SDK, project.properties["CUSTOM_COMPILE_SDK"], 23].find() as int
+    // Uncomment to build with N preview
+    //buildToolsVersion = [System.env.CUSTOM_BUILDTOOLS, project.properties["CUSTOM_BUILDTOOLS"], '24.0.0 rc3'].find()
+    //latestCompileSdk = [System.env.COMPILE_SDK, project.properties["CUSTOM_COMPILE_SDK"], 'android-N'].find()
 
     // Last SDK that contained java 6 bytecode.
     java6BasedSdk = 19

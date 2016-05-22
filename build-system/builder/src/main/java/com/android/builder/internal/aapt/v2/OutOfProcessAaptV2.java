@@ -38,6 +38,8 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -121,12 +123,30 @@ public class OutOfProcessAaptV2 extends AbstractProcessExecutionAapt {
         builder.addArgs("--manifest", manifestFile.getAbsolutePath());
 
         if (config.getResourceDir() != null) {
-            builder.addArgs("-R", config.getResourceDir().getAbsolutePath());
+            // TODO: Fix when aapt 2 supports -R directories (http://b.android.com/209331)
+            // builder.addArgs("-R", config.getResourceDir().getAbsolutePath());
+            try {
+                Files.walk(config.getResourceDir().toPath())
+                        .filter(Files::isRegularFile)
+                        .forEach((p) -> builder.addArgs("-R", p.toString()));
+            } catch (IOException e) {
+                throw new AaptException("Failed to walk path " + config.getResourceDir());
+            }
         }
 
         if (config.getAssetsDir() != null) {
-            builder.addArgs("-R", config.getAssetsDir().getAbsolutePath());
+            // TODO: Fix when aapt 2 supports -R directories (http://b.android.com/209331)
+//            builder.addArgs("-R", config.getAssetsDir().getAbsolutePath());
+            try {
+                Files.walk(config.getAssetsDir().toPath())
+                        .filter(Files::isRegularFile)
+                        .forEach((p) -> builder.addArgs("-R", p.toString()));
+            } catch (IOException e) {
+                throw new AaptException("Failed to walk path " + config.getResourceDir());
+            }
         }
+
+        builder.addArgs("--auto-add-overlay");
 
         // outputs
         if (config.getSourceOutputDir() != null) {
