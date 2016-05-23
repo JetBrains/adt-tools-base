@@ -10,11 +10,12 @@ git submodule update --init --recursive
 cd grpc
 git am ../../patches/grpc-android.patch
 ```
-## To compile all the android binaries:
+## To compile all the android and host binaries:
 ```
+cd ..
 ../../../gradlew compileAndroid
 ```
-## To compile all the host binaries:
+## To compile only the host binaries:
 ```
 ../../../gradlew compileHost
 ```

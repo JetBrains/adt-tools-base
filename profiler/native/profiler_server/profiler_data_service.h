@@ -16,7 +16,7 @@
 #ifndef PROFILER_DATA_SERVICE_H_
 #define PROFILER_DATA_SERVICE_H_
 
-#include "proto/profiler_data.pb.h"
+#include "proto/profiler.pb.h"
 
 namespace profiler {
 namespace profiler_server {
@@ -25,7 +25,7 @@ namespace profiler_server {
 class ProfilerDataService {
  public:
    virtual ~ProfilerDataService() = default;
-   virtual void save(const profiler::proto::ProfilerData &data) {}
+   virtual void save(const profiler::proto::ProfilerData &response) {}
 };
 
 }  // namespace profiler_server

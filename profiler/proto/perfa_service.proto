@@ -15,7 +15,7 @@
  */
 syntax = "proto3";
 
-import "profiler_data.proto";
+import "profiler.proto";
 
 package profiler.proto;
 

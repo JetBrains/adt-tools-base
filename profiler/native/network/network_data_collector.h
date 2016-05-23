@@ -16,7 +16,7 @@
 #ifndef NETWORK_DATA_COLLECTOR_H_
 #define NETWORK_DATA_COLLECTOR_H_
 
-#include "proto/network_profiler_data.pb.h"
+#include "proto/network_profiler.pb.h"
 
 #include <string>
 #include <vector>

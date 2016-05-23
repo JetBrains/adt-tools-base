@@ -17,7 +17,7 @@
 
 #include "network/connection_data_collector.h"
 #include "network/traffic_data_collector.h"
-#include "proto/profiler_data.pb.h"
+#include "proto/profiler.pb.h"
 
 #include <unistd.h>
 
@@ -55,10 +55,10 @@ void ProfilerServerNetwork::Profile(ProfilerServerNetwork *network_profiler) {
   uint64_t start_time = GetCurrentTime();
   while (profiler->is_running_.load()) {
     for (const auto &collector : profiler->collectors_) {
-      profiler::proto::ProfilerData data;
-      collector->GetData(data.mutable_network_data());
-      data.set_timestamp(GetCurrentTime() - start_time);
-      profiler->service_->save(data);
+      profiler::proto::ProfilerData response;
+      collector->GetData(response.mutable_network_data());
+      response.set_end_timestamp(GetCurrentTime());
+      profiler->service_->save(response);
     }
     usleep(kSleepMicroseconds);
   }
