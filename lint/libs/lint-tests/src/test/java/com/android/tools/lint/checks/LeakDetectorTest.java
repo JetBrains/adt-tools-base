@@ -70,6 +70,7 @@ public class LeakDetectorTest extends AbstractCheckTest {
                         + "    private static Activity sField12;\n"
                         + "\n"
                         + "    private static class MyObject {\n"
+                        + "        private int mKey;\n"
                         + "        private Activity mActivity;\n"
                         + "    }\n"
                         + "}\n")));
