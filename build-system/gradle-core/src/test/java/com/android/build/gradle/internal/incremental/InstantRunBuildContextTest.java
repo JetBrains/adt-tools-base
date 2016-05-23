@@ -21,7 +21,6 @@ import static org.junit.Assert.assertNotNull;
 
 import com.android.build.gradle.internal.incremental.InstantRunBuildContext.Build;
 import com.android.sdklib.AndroidVersion;
-import com.android.utils.FileUtils;
 import com.android.utils.XmlUtils;
 import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableList;
@@ -127,6 +126,7 @@ public class InstantRunBuildContextTest {
         InstantRunBuildContext instantRunBuildContext = new InstantRunBuildContext();
         instantRunBuildContext.setApiLevel(new AndroidVersion(23, null /* codeName */),
                 ColdswapMode.MULTIAPK.name(), null /* targetArchitecture */);
+        instantRunBuildContext.setSecretToken(12345L);
         File buildInfo = createBuildInfo(instantRunBuildContext);
         instantRunBuildContext = new InstantRunBuildContext();
         instantRunBuildContext.setApiLevel(new AndroidVersion(23, null /* codeName */),
@@ -139,6 +139,7 @@ public class InstantRunBuildContextTest {
         instantRunBuildContext.setApiLevel(new AndroidVersion(23, null /* codeName */),
                 ColdswapMode.MULTIAPK.name(), null /* targetArchitecture */);
         instantRunBuildContext.loadFromXmlFile(buildInfo);
+        assertThat(instantRunBuildContext.getSecretToken()).isEqualTo(12345L);
         assertThat(instantRunBuildContext.getPreviousBuilds()).hasSize(2);
     }
 

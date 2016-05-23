@@ -26,6 +26,7 @@ import com.google.common.base.CaseFormat;
 import com.google.common.base.Charsets;
 import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
+import com.google.common.base.Strings;
 import com.google.common.io.Files;
 
 import org.gradle.api.logging.Logging;
@@ -45,6 +46,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.concurrent.atomic.AtomicLong;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -68,6 +70,7 @@ public class InstantRunBuildContext {
     static final String ATTR_DENSITY = "density";
     static final String ATTR_FORMAT = "format";
     static final String ATTR_ABI = "abi";
+    static final String ATTR_TOKEN = "token";
 
     // Keep roughly in sync with InstantRunBuildInfo#isCompatibleFormat:
     //
@@ -277,6 +280,7 @@ public class InstantRunBuildContext {
     private File tmpBuildInfo = null;
     private boolean isInstantRunMode = false;
     private volatile boolean isAborted = false;
+    private final AtomicLong token = new AtomicLong(0);
 
     public void setInstantRunMode(boolean instantRunMode) {
         isInstantRunMode = instantRunMode;
@@ -455,6 +459,14 @@ public class InstantRunBuildContext {
         return null;
     }
 
+    public long getSecretToken() {
+        return token.get();
+    }
+
+    public void setSecretToken(long token) {
+        this.token.set(token);
+    }
+
     @VisibleForTesting
     Collection<Build> getPreviousBuilds() {
         return previousBuilds.values();
@@ -558,6 +570,11 @@ public class InstantRunBuildContext {
             Logging.getLogger(InstantRunBuildContext.class)
                     .quiet("Instant Run: Target device API level has changed.");
             return;
+        }
+
+        String tokenString = instantRun.getAttribute(ATTR_TOKEN);
+        if (!Strings.isNullOrEmpty(tokenString)) {
+            token.set(Long.parseLong(tokenString));
         }
 
         Build lastBuild = Build.fromXml(instantRun);
@@ -719,6 +736,9 @@ public class InstantRunBuildContext {
         }
         if (abi != null) {
             instantRun.setAttribute(ATTR_ABI, abi);
+        }
+        if (token != null) {
+            instantRun.setAttribute(ATTR_TOKEN, token.toString());
         }
         instantRun.setAttribute(ATTR_FORMAT, CURRENT_FORMAT);
 
