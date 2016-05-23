@@ -25,7 +25,9 @@ import com.google.common.base.Verify;
 import com.google.common.io.ByteSource;
 import com.google.common.io.ByteStreams;
 import com.google.common.io.Closeables;
+import com.google.common.io.Closer;
 import com.google.common.primitives.Ints;
+import com.google.common.util.concurrent.Futures;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -148,7 +150,7 @@ public class StoredEntry {
     /**
      * Local header size (fixed part, not counting file name or extra field).
      */
-    private static final int FIXED_LOCAL_FILE_HEADER_SIZE = F_EXTRA_LENGTH.endOffset();
+    static final int FIXED_LOCAL_FILE_HEADER_SIZE = F_EXTRA_LENGTH.endOffset();
 
     /**
      * Type of entry.

@@ -34,6 +34,7 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.util.Random;
+import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -468,8 +469,8 @@ public class AlignmentTest {
     public void extraFieldSpaceUsedForAlignmentCanBeReclaimedAfterUpdate() throws Exception {
         File zipFile = new File(mTemporaryFolder.getRoot(), "test.zip");
 
-        byte[] recognizable1 = new byte[] { 1, 2, 3, 4, 4, 3, 2, 1 };
-        byte[] recognizable2 = new byte[] { 9, 9, 8, 8, 7, 7, 6, 6, 5, 5, 4, 4 };
+        byte[] recognizable1 = new byte[]{1, 2, 3, 4, 4, 3, 2, 1};
+        byte[] recognizable2 = new byte[]{9, 9, 8, 8, 7, 7, 6, 6, 5, 5, 4, 4};
 
         ZFileOptions options = new ZFileOptions();
         options.setCoverEmptySpaceUsingExtraField(true);
@@ -491,5 +492,75 @@ public class AlignmentTest {
                         zipFile,
                         ZFileTestConstants.LOCAL_HEADER_SIZE + "f.b".length(),
                         recognizable2.length));
+    }
+
+    @Test
+    public void fillEmptySpaceWithExtraFieldAfterDelete() throws Exception {
+        File zipFile = new File(mTemporaryFolder.getRoot(), "large.zip");
+
+        byte[] recognizable1 = new byte[] { 1, 2, 3, 4, 4, 3, 2, 1 };
+        byte[] recognizable2 = new byte[] { 9, 8, 7, 6, 5, 4, 3, 2 };
+
+        ZFileOptions options = new ZFileOptions();
+        options.setCoverEmptySpaceUsingExtraField(true);
+        try (ZFile zf = new ZFile(zipFile, options)) {
+            zf.add("first", new ByteArrayInputStream(recognizable1), false);
+            zf.add("second", new ByteArrayInputStream(recognizable2), false);
+
+            zf.update();
+
+            StoredEntry firstEntry = zf.get("first");
+            assertNotNull(firstEntry);
+            firstEntry.delete();
+        }
+
+        try (ZFile zf = new ZFile(zipFile)) {
+            Set<StoredEntry> entries = zf.entries();
+            assertEquals(1, entries.size());
+
+            StoredEntry entry = entries.iterator().next();
+            assertEquals("second", entry.getCentralDirectoryHeader().getName());
+            assertEquals(0, entry.getCentralDirectoryHeader().getOffset());
+            assertEquals(
+                    ZFileTestConstants.LOCAL_HEADER_SIZE + "first".length() + recognizable1.length,
+                    entry.getLocalExtra().length);
+        }
+    }
+
+    @Test
+    public void fillInLargeGapsWithExtraField() throws Exception {
+        File zipFile = new File(mTemporaryFolder.getRoot(), "large.zip");
+
+        byte[] recognizable1 = new byte[] { 1, 2, 3, 4, 4, 3, 2, 1 };
+        byte[] recognizable2 = new byte[] { 9, 8, 7, 6, 5, 4, 3, 2 };
+        byte[] bigEmpty = new byte[128 * 1024];
+
+        ZFileOptions options = new ZFileOptions();
+        options.setCoverEmptySpaceUsingExtraField(true);
+        try (ZFile zf = new ZFile(zipFile, options)) {
+            zf.add("begin", new ByteArrayInputStream(recognizable1), false);
+            zf.add("middle", new ByteArrayInputStream(bigEmpty), false);
+            zf.add("end", new ByteArrayInputStream(recognizable2), false);
+
+            zf.update();
+
+            StoredEntry middleEntry = zf.get("middle");
+            assertNotNull(middleEntry);
+            middleEntry.delete();
+        }
+
+        /*
+         * Find the two recognizable files.
+         */
+        int recognizable1Start = ZFileTestConstants.LOCAL_HEADER_SIZE + "begin".length();
+        assertArrayEquals(
+                recognizable1,
+                FileUtils.readSegment(zipFile, recognizable1Start, recognizable1.length));
+
+        int recognizable2Start = 3 * ZFileTestConstants.LOCAL_HEADER_SIZE + "begin".length()
+                + "middle".length() + "end".length() + recognizable1.length + bigEmpty.length;
+        assertArrayEquals(
+                recognizable2,
+                FileUtils.readSegment(zipFile, recognizable2Start, recognizable2.length));
     }
 }

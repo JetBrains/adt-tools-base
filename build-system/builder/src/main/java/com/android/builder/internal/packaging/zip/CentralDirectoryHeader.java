@@ -127,7 +127,9 @@ public class CentralDirectoryHeader implements Cloneable {
      * @param compressInfo computation that defines the compression information
      * @param flags flags used in the entry
      */
-    CentralDirectoryHeader(@NonNull String name, long uncompressedSize,
+    CentralDirectoryHeader(
+            @NonNull String name,
+            long uncompressedSize,
             @NonNull Future<CentralDirectoryHeaderCompressInfo> compressInfo,
             @NonNull GPFlags flags) {
         mName = name;
@@ -386,7 +388,6 @@ public class CentralDirectoryHeader implements Cloneable {
     public Future<CentralDirectoryHeaderCompressInfo> getCompressionInfo() {
         return mCompressInfo;
     }
-
 
     /**
      * Equivalent to {@code getCompressionInfo().get()} but masking the possible exceptions and

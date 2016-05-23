@@ -40,7 +40,8 @@ public class EncodeUtils {
     /**
      * Decodes a file name.
      *
-     * @param data the raw data
+     * @param bytes the raw data buffer to read from
+     * @param length the number of bytes in the raw data buffer containing the string to decode
      * @param flags the zip entry flags
      * @return the decode file name
      */
