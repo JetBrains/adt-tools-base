@@ -569,6 +569,25 @@ public class AndroidBuilder {
         return null;
     }
 
+    /**
+     * Returns the BLAS lib folder for renderscript support mode.
+     *
+     * This may return null if the SDK has not been loaded yet.
+     *
+     * @return the folder, or null.
+     *
+     * @see #setTargetInfo(TargetInfo)
+     */
+    @Nullable
+    public File getSupportBlasLibFolder() {
+        if (mTargetInfo != null) {
+            return RenderScriptProcessor.getSupportBlasLibFolder(
+                    mTargetInfo.getBuildTools().getLocation().getAbsolutePath());
+        }
+
+        return null;
+    }
+
     @NonNull
     public ProcessExecutor getProcessExecutor() {
         return mProcessExecutor;

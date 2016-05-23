@@ -13,6 +13,7 @@ android {
         minSdkVersion 17
         renderscriptTargetApi = 17
         renderscriptSupportModeEnabled true
+        renderscriptSupportModeBlasEnabled false
         renderscriptNdkModeEnabled true
         ndk {
             moduleName "renderscript"

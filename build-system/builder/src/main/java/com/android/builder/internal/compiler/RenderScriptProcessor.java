@@ -183,6 +183,12 @@ public class RenderScriptProcessor {
         return new File(lib, "packaged");
     }
 
+    public static File getSupportBlasLibFolder(String buildToolsFolder) {
+        File rs = new File(buildToolsFolder, "renderscript");
+        File lib = new File(rs, "lib");
+        return new File(lib, "blas");
+    }
+
     public void build(
             @NonNull ProcessExecutor processExecutor,
             @NonNull ProcessOutputHandler processOutputHandler)

@@ -45,6 +45,7 @@ class ProductFlavorImpl extends BaseConfigImpl implements ProductFlavor, Seriali
     private Integer mMaxSdkVersion = null;
     private Integer mRenderscriptTargetApi = null;
     private Boolean mRenderscriptSupportMode = null;
+    private Boolean mRenderscriptSupportModeBlas = null;
     private Boolean mRenderscriptNdkMode = null;
     private Integer mVersionCode = null;
     private String mVersionName = null;
@@ -76,6 +77,7 @@ class ProductFlavorImpl extends BaseConfigImpl implements ProductFlavor, Seriali
                 : productFlavor.getMaxSdkVersion();
         clonedFlavor.mRenderscriptTargetApi = productFlavor.getRenderscriptTargetApi();
         clonedFlavor.mRenderscriptSupportMode = productFlavor.getRenderscriptSupportModeEnabled();
+        clonedFlavor.mRenderscriptSupportModeBlas = productFlavor.getRenderscriptSupportModeBlasEnabled();
         clonedFlavor.mRenderscriptNdkMode = productFlavor.getRenderscriptNdkModeEnabled();
 
         clonedFlavor.mVersionCode = productFlavor.getVersionCode();
@@ -158,6 +160,12 @@ class ProductFlavorImpl extends BaseConfigImpl implements ProductFlavor, Seriali
 
     @Override
     @Nullable
+    public Boolean getRenderscriptSupportModeBlasEnabled() {
+        return mRenderscriptSupportModeBlas;
+    }
+
+    @Override
+    @Nullable
     public Boolean getRenderscriptNdkModeEnabled() {
         return mRenderscriptNdkMode;
     }
@@ -226,6 +234,7 @@ class ProductFlavorImpl extends BaseConfigImpl implements ProductFlavor, Seriali
                 ", mMaxSdkVersion=" + mMaxSdkVersion +
                 ", mRenderscriptTargetApi=" + mRenderscriptTargetApi +
                 ", mRenderscriptSupportMode=" + mRenderscriptSupportMode +
+                ", mRenderscriptSupportModeBlas=" + mRenderscriptSupportModeBlas +
                 ", mRenderscriptNdkMode=" + mRenderscriptNdkMode +
                 ", mVersionCode=" + mVersionCode +
                 ", mVersionName='" + mVersionName + '\'' +

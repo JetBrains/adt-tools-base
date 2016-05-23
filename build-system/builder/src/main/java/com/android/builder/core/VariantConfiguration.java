@@ -2249,6 +2249,19 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
     }
 
     /**
+     * Returns the renderscript BLAS support mode.
+     */
+    public boolean getRenderscriptSupportModeBlasEnabled() {
+        Boolean value = mMergedFlavor.getRenderscriptSupportModeBlasEnabled();
+        if (value != null) {
+            return value;
+        }
+
+        // default is false.
+        return false;
+    }
+
+    /**
      * Returns the renderscript NDK mode.
      */
     public boolean getRenderscriptNdkModeEnabled() {

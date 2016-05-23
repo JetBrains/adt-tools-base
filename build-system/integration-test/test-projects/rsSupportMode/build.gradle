@@ -14,6 +14,7 @@ android {
         targetSdkVersion 16
         renderscriptTargetApi 18
         renderscriptSupportModeEnabled true
+        renderscriptSupportModeBlasEnabled false
     }
 
     productFlavors {

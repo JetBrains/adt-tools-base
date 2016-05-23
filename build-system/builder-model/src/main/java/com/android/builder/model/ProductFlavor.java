@@ -114,6 +114,15 @@ public interface ProductFlavor extends BaseConfig, DimensionAware {
     Boolean getRenderscriptSupportModeEnabled();
 
     /**
+     * Returns whether the renderscript BLAS support lib should be used to
+     * make it compatible with older versions of Android.
+     *
+     * @return true if BLAS support lib is enabled, false if not, and null if not specified.
+     */
+    @Nullable
+    Boolean getRenderscriptSupportModeBlasEnabled();
+
+    /**
      * Returns whether the renderscript code should be compiled to generate C/C++ bindings.
      * @return true for C/C++ generation, false for Java, null if not specified.
      */

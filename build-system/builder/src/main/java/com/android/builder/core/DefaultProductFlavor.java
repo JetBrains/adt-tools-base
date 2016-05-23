@@ -60,6 +60,8 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
     @Nullable
     private Boolean mRenderscriptSupportModeEnabled;
     @Nullable
+    private Boolean mRenderscriptSupportModeBlasEnabled;
+    @Nullable
     private Boolean mRenderscriptNdkModeEnabled;
     @Nullable
     private Integer mVersionCode;
@@ -250,12 +252,27 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
         return mRenderscriptSupportModeEnabled;
     }
 
+    @Override
+    @Nullable
+    public Boolean getRenderscriptSupportModeBlasEnabled() {
+        return mRenderscriptSupportModeBlasEnabled;
+    }
+
     /**
      * Sets whether the renderscript code should be compiled in support mode to make it compatible
      * with older versions of Android.
      */
     public ProductFlavor setRenderscriptSupportModeEnabled(Boolean renderscriptSupportMode) {
         mRenderscriptSupportModeEnabled = renderscriptSupportMode;
+        return this;
+    }
+
+    /**
+     * Sets whether RenderScript BLAS support lib should be used to make it compatible
+     * with older versions of Android.
+     */
+    public ProductFlavor setRenderscriptSupportModeBlasEnabled(Boolean renderscriptSupportModeBlas) {
+        mRenderscriptSupportModeBlasEnabled = renderscriptSupportModeBlas;
         return this;
     }
 
@@ -500,6 +517,9 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
         flavor.mRenderscriptSupportModeEnabled = chooseNotNull(
                 overlay.getRenderscriptSupportModeEnabled(),
                 base.getRenderscriptSupportModeEnabled());
+        flavor.mRenderscriptSupportModeBlasEnabled = chooseNotNull(
+                overlay.getRenderscriptSupportModeBlasEnabled(),
+                base.getRenderscriptSupportModeBlasEnabled());
         flavor.mRenderscriptNdkModeEnabled = chooseNotNull(
                 overlay.getRenderscriptNdkModeEnabled(),
                 base.getRenderscriptNdkModeEnabled());
@@ -609,6 +629,7 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
         flavor.mMaxSdkVersion = productFlavor.getMaxSdkVersion();
         flavor.mRenderscriptTargetApi = productFlavor.getRenderscriptTargetApi();
         flavor.mRenderscriptSupportModeEnabled = productFlavor.getRenderscriptSupportModeEnabled();
+        flavor.mRenderscriptSupportModeBlasEnabled = productFlavor.getRenderscriptSupportModeBlasEnabled();
         flavor.mRenderscriptNdkModeEnabled = productFlavor.getRenderscriptNdkModeEnabled();
 
         flavor.mVersionCode = productFlavor.getVersionCode();
@@ -693,6 +714,8 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
                 Objects.equal(mRenderscriptNdkModeEnabled, that.mRenderscriptNdkModeEnabled) &&
                 Objects.equal(mRenderscriptSupportModeEnabled,
                         that.mRenderscriptSupportModeEnabled) &&
+                Objects.equal(mRenderscriptSupportModeBlasEnabled,
+                        that.mRenderscriptSupportModeBlasEnabled) &&
                 Objects.equal(mRenderscriptTargetApi, that.mRenderscriptTargetApi) &&
                 Objects.equal(mResourceConfiguration, that.mResourceConfiguration) &&
                 Objects.equal(mSigningConfig, that.mSigningConfig) &&
@@ -718,6 +741,7 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
                 mMaxSdkVersion,
                 mRenderscriptTargetApi,
                 mRenderscriptSupportModeEnabled,
+                mRenderscriptSupportModeBlasEnabled,
                 mRenderscriptNdkModeEnabled,
                 mVersionCode,
                 mVersionName,
@@ -741,6 +765,7 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
                 .add("targetSdkVersion", mTargetSdkVersion)
                 .add("renderscriptTargetApi", mRenderscriptTargetApi)
                 .add("renderscriptSupportModeEnabled", mRenderscriptSupportModeEnabled)
+                .add("renderscriptSupportModeBlasEnabled", mRenderscriptSupportModeBlasEnabled)
                 .add("renderscriptNdkModeEnabled", mRenderscriptNdkModeEnabled)
                 .add("versionCode", mVersionCode)
                 .add("versionName", mVersionName)

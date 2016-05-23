@@ -768,7 +768,25 @@ public abstract class TaskManager {
                         if (rsLibs != null && rsLibs.isDirectory()) {
                             builder.add(rsLibs);
                         }
-
+                        if (variantScope.getVariantConfiguration()
+                                .getRenderscriptSupportModeBlasEnabled()) {
+                            File rsBlasLib = variantScope.getGlobalScope().getAndroidBuilder()
+                                    .getSupportBlasLibFolder();
+                            if (rsBlasLib != null && rsBlasLib.isDirectory()) {
+                                builder.add(rsBlasLib);
+                            } else {
+                                Revision rev =  androidBuilder.getTargetInfo()
+                                        .getBuildTools().getRevision();
+                                androidBuilder.getErrorReporter().handleSyncError(
+                                        rev.toString(),
+                                        SyncIssue.TYPE_BUILD_TOOLS_TOO_LOW,
+                                        "Renderscript BLAS support mode is not supported in BuildTools "
+                                                + rev.toString()
+                                                + '\n'
+                                                + "Please update to BuildTools 24.0.0"
+                                                + " or above.");
+                            }
+                        }
                         return builder.build();
                     })
                     .setDependency(variantScope.getRenderscriptCompileTask().getName())
