@@ -9,75 +9,91 @@ class CMakeClosureDelegate {
     String[] abis = [];
     String name;
     String projectDir;
-    String[] targets = [];
     String[] flags = []
 
     def abis(String[] value) { abis = value; }
     def name(String value) { name = value; }
     def projectDir(String value) { projectDir = value; }
-    def targets(String[] value) { targets = value}
     def flags(String[] value) { flags = value}
 }
 
 def cmake(cl) {
-    CMakeClosureDelegate del = new CMakeClosureDelegate();
-    cl.delegate = del;
+    CMakeClosureDelegate data = new CMakeClosureDelegate();
+    cl.delegate = data;
     cl.call();
-    def cmakeBuildDir = "$rootDir/../../../out/studio/${cl.owner.name}/${del.name}"
-    def name = del.name;
 
-    def cmakeTask = cl.owner.tasks.create(name: "cmake" + name.capitalize(), type: DefaultTask) {}
-    def ninjaTask = cl.owner.tasks.create(name: "$name", type: DefaultTask) {}
-    def preTask = cl.owner.tasks.create(name: "pre" + name.capitalize(), type: DefaultTask) {}
+    if (data.abis.size() == 0) {
+        // Building for the host
+        createTasks(data, "Host", "host", cl.owner, []);
+    } else {
+        // Building multiple abis for android
+        def configure = cl.owner.tasks.create(name: "configure" + data.name.capitalize(), group: "Native build", type: DefaultTask) {}
+        def precompile = cl.owner.tasks.create(name: "precompile" + data.name.capitalize(), group: "Native build", type: DefaultTask) {}
+        def compile = cl.owner.tasks.create(name: "compile" + data.name.capitalize(), group: "Native build", type: DefaultTask) {}
+        def check = cl.owner.tasks.create(name: "check" + data.name.capitalize(), group: "Native build", type: DefaultTask) {}
 
-    del.abis.each { abi ->
-        def gen = file("$cmakeBuildDir/gen/$abi");
-        def extra = []
-        def os = System.getProperty("os.name").toLowerCase();
-        def host = os.startsWith("linux") ? "linux-x86" : "darwin-x86"
-
-        if (!abi.equals('host')) {
-            extra = [
-                    "-DCMAKE_TOOLCHAIN_FILE=$rootDir/native/cmake/Android.cmake",
-                    "-DPREBUILTS=$rootDir/../../../prebuilts",
-                    "-DABI=$abi"
+        data.abis.each { abi -> 
+            def name = data.name.capitalize() + abi.capitalize();
+            def flags = [
+                "-DCMAKE_TOOLCHAIN_FILE=$rootDir/native/cmake/Android.cmake",
+                "-DPREBUILTS=$rootDir/../../../prebuilts",
+                "-DABI=$abi"
             ]
-        }
-        // TODO: Define different tasks for debug and release and specify
-        // -DCMAKE_BUILD_TYPE=[Debug|Release]
-        def cmakeAbi = cl.owner.tasks.create(name: "cmake" + name.capitalize() + abi.capitalize(), type: Exec) {
-            doFirst {
-                gen.deleteDir();
-                gen.mkdirs();
-            }
-            workingDir gen
-            executable "$rootDir/../../../prebuilts/cmake/$host/bin/cmake"
-            args = ["-G", "Ninja", del.projectDir,
-                "-DCMAKE_MAKE_PROGRAM=$rootDir/../../../prebuilts/ninja/$host/ninja",
-                "-DCMAKE_RUNTIME_OUTPUT_DIRECTORY=$cmakeBuildDir/out/$abi",
-                "-Dprotobuf_BUILD_TESTS=OFF",
-                "-DGO_EXECUTABLE=$rootDir/../../../prebuilts/go/$host/bin/go",
-                "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON"] + extra + Arrays.asList(del.flags)
-            environment GOROOT: "$rootDir/../../../prebuilts/go/$host"
-            inputs.file "../cmake/Android.cmake"
-            outputs.dir gen
-        }
-        cmakeTask.dependsOn cmakeAbi
-        cmakeAbi.dependsOn preTask;
+            createTasks(data, name, abi, cl.owner, flags); 
+            configure.dependsOn cl.owner.tasks.("configure" + name)
+            compile.dependsOn cl.owner.tasks.("compile" + name)
+            check.dependsOn cl.owner.tasks.("check" + name)
 
-        def ninjaAbi = cl.owner.tasks.create(name: "ninja" + name.capitalize() + abi.capitalize(), type: Exec) {
-            workingDir gen
-            args = Arrays.asList(del.targets)
-
-            executable "$rootDir/../../../prebuilts/ninja/$host/ninja"
-            environment GOROOT: "$rootDir/../../../prebuilts/go/$host"
-            inputs.dir del.projectDir
-            inputs.dir gen
-            outputs.dir "$cmakeBuildDir/out/$abi"
+            cl.owner.tasks.("compile" + name).dependsOn precompile
         }
-        ninjaAbi.dependsOn cmakeAbi
-        ninjaTask.dependsOn ninjaAbi
     }
-    return ninjaTask
 }
 
+def createTasks(data, name, dir, project, flags) {
+  def cmakeBuildDir = "$rootDir/../../../out/studio/${project.name}"
+  def gen = "$cmakeBuildDir/gen/$dir";
+  def out = "$cmakeBuildDir/out/$dir";
+  def os = System.getProperty("os.name").toLowerCase();
+  def host = os.startsWith("linux") ? "linux-x86" : "darwin-x86"
+
+  // TODO: Define different tasks for debug and release and specify
+  // -DCMAKE_BUILD_TYPE=[Debug|Release|MinSizeRel]
+  def configureAbi = project.tasks.create(name: "configure" + name, type: Exec) {
+      doFirst {
+          file(gen).deleteDir();
+          file(gen).mkdirs();
+      }
+      workingDir gen
+      executable "$rootDir/../../../prebuilts/cmake/$host/bin/cmake"
+      args = ["-G", "Ninja", data.projectDir,
+          "-DCMAKE_MAKE_PROGRAM=$rootDir/../../../prebuilts/ninja/$host/ninja",
+          "-DCMAKE_RUNTIME_OUTPUT_DIRECTORY=$out",
+          "-Dprotobuf_BUILD_TESTS=OFF",
+          "-DGO_EXECUTABLE=$rootDir/../../../prebuilts/go/$host/bin/go",
+          "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON"] + flags + Arrays.asList(data.flags)
+      environment GOROOT: "$rootDir/../../../prebuilts/go/$host"
+      inputs.file "../cmake/Android.cmake"
+      outputs.dir gen
+  }
+
+  def compileAbi = project.tasks.create(name: "compile" + name, group: "Native build", type: Exec) {
+      workingDir gen
+      args = ["--build", "$gen"]
+      executable "$rootDir/../../../prebuilts/cmake/$host/bin/cmake"
+      environment GOROOT: "$rootDir/../../../prebuilts/go/$host"
+      inputs.dir data.projectDir
+      inputs.dir gen
+      outputs.dir out
+  }
+  compileAbi.dependsOn configureAbi
+
+  def checkAbi = project.tasks.create(name: "check" + name, group: "Native build", type: Exec) {
+      workingDir gen
+      args = ["--build", "$gen", "--target", "check"]
+      executable "$rootDir/../../../prebuilts/cmake/$host/bin/cmake"
+      environment GOROOT: "$rootDir/../../../prebuilts/go/$host"
+      inputs.dir data.projectDir
+      inputs.dir gen
+  }
+  checkAbi.dependsOn configureAbi
+}

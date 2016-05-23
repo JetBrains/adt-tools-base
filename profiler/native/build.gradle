@@ -1,19 +1,17 @@
 task build {}
 
 cmake {
-    name 'tools'
-    abis 'host'
+    name 'host'
     projectDir "$rootDir/native"
-    targets 'protoc', 'grpc_cpp_plugin'
 }
 
 cmake {
-    name 'perfd'
-    abis 'armeabi-v7a', 'arm64-v8a', 'host'
+    name 'android'
+    abis 'armeabi-v7a', 'arm64-v8a'
     projectDir "$rootDir/native"
-    flags "-DHOST_BUILD_DIR=$buildDir/tools/out/host"
+    flags "-DHOST_BUILD_DIR=$buildDir/out/host"
 }
-prePerfd.dependsOn tools
+precompileAndroid.dependsOn compileHost
 
-// Linking "perfd" to "build" will trigger it's build from IntelliJ, we don't want to do that just yet
-// build.dependsOn perfd
+// Linking "compileAndroid" to "build" will trigger it's build from IntelliJ, we don't want to do that just yet
+// build.dependsOn compileAndroid
