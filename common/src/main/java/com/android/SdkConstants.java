@@ -1112,6 +1112,8 @@ public final class SdkConstants {
     // ConstraintLayout layout params
     public static final String ATTR_LAYOUT_EDITOR_ABSOLUTE_X = "layout_editor_absoluteX"; //$NON-NLS-1$
     public static final String ATTR_LAYOUT_EDITOR_ABSOLUTE_Y = "layout_editor_absoluteY"; //$NON-NLS-1$
+    public static final String ATTR_LAYOUT_EDITOR_ABSOLUTE_WIDTH = "layout_editor_absoluteWidth"; //$NON-NLS-1$
+    public static final String ATTR_LAYOUT_EDITOR_ABSOLUTE_HEIGHT = "layout_editor_absoluteHeight"; //$NON-NLS-1$
     public static final String ATTR_LAYOUT_LEFT_CREATOR = "layout_constraintLeft_creator"; //$NON-NLS-1$
     public static final String ATTR_LAYOUT_RIGHT_CREATOR = "layout_constraintRight_creator"; //$NON-NLS-1$
     public static final String ATTR_LAYOUT_TOP_CREATOR = "layout_constraintTop_creator"; //$NON-NLS-1$
