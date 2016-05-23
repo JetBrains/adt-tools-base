@@ -42,6 +42,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Makes the final app package. The packager allows build an APK from:
@@ -247,6 +248,23 @@ public class IncrementalPackager implements Closeable {
                                 Predicates.compose(
                                         isNotClassFile,
                                         RelativeFile.EXTRACT_PATH))));
+    }
+
+    /**
+     * Updates assets in the archive.
+     *
+     * @param files the assets to update
+     * @throws IOException failed to update the archive
+     */
+    public void updateAssets(@NonNull ImmutableMap<RelativeFile, FileStatus> files)
+            throws IOException {
+        updateFiles(
+                PackagedFileUpdates.fromIncrementalRelativeFileSet(files).stream()
+                        .map(pfu -> new PackagedFileUpdate(
+                                pfu.getSource(),
+                                "assets/" + pfu.getName(),
+                                pfu.getStatus()))
+                        .collect(Collectors.toSet()));
     }
 
     /**

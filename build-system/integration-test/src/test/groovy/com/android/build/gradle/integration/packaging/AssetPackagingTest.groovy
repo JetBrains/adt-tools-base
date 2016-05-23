@@ -15,6 +15,7 @@
  */
 
 package com.android.build.gradle.integration.packaging
+
 import com.android.annotations.NonNull
 import com.android.annotations.Nullable
 import com.android.build.gradle.integration.common.fixture.GradleTestProject

@@ -134,18 +134,6 @@ public class OutOfProcessAaptV2 extends AbstractProcessExecutionAapt {
             }
         }
 
-        if (config.getAssetsDir() != null) {
-            // TODO: Fix when aapt 2 supports -R directories (http://b.android.com/209331)
-//            builder.addArgs("-R", config.getAssetsDir().getAbsolutePath());
-            try {
-                Files.walk(config.getAssetsDir().toPath())
-                        .filter(Files::isRegularFile)
-                        .forEach((p) -> builder.addArgs("-R", p.toString()));
-            } catch (IOException e) {
-                throw new AaptException("Failed to walk path " + config.getResourceDir());
-            }
-        }
-
         builder.addArgs("--auto-add-overlay");
 
         // outputs

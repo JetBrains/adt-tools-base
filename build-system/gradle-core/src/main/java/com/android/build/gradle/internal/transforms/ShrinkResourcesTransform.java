@@ -229,7 +229,6 @@ public class ShrinkResourcesTransform extends Transform {
                 AaptPackageConfig.Builder aaptPackageConfig = new AaptPackageConfig.Builder()
                         .setManifestFile(mergedManifest)
                         .setOptions(processResourcesTask.getAaptOptions())
-                        .setAssetsDir(processResourcesTask.getAssetsDir())
                         .setResourceOutputApk(destination)
                         .setLibraries(processResourcesTask.getLibraries())
                         .setCustomPackageForR(processResourcesTask.getPackageForR())

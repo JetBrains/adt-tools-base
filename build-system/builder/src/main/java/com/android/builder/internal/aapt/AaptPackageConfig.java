@@ -92,11 +92,6 @@ public class AaptPackageConfig implements Cloneable {
     private File mResourceDir;
 
     /**
-     * The assets directory (see {@link Builder#setAssetsDir(File)}).
-     */
-    private File mAssetsDir;
-
-    /**
      * Where to write proguard output (see {@link Builder#setProguardOutputFile(File)}).
      */
     private File mProguardOutputFile;
@@ -266,16 +261,6 @@ public class AaptPackageConfig implements Cloneable {
     @Nullable
     public File getResourceDir() {
         return mResourceDir;
-    }
-
-    /**
-     * Obtains the currently set assets directory.
-     *
-     * @return the assets directory, {@code null} if not set
-     */
-    @Nullable
-    public File getAssetsDir() {
-        return mAssetsDir;
     }
 
     /**
@@ -535,24 +520,6 @@ public class AaptPackageConfig implements Cloneable {
             }
 
             mConfig.mResourceDir = resourceDir;
-            return this;
-        }
-
-        /**
-         * Sets the assets folder. See
-         * {@link AbstractAapt#validatePackageConfig(AaptPackageConfig)} for details on field rules.
-         *
-         * @param assetsDir the assets folder; if not {@code null}, it must be a valid directory
-         * @return {@code this}
-         */
-        @NonNull
-        public Builder setAssetsDir(@Nullable File assetsDir) {
-            if (assetsDir != null && !assetsDir.isDirectory()) {
-                throw new IllegalArgumentException("Path '" + assetsDir.getAbsolutePath()
-                        + "' is not a readable directory.");
-            }
-
-            mConfig.mAssetsDir = assetsDir;
             return this;
         }
 
