@@ -1045,6 +1045,9 @@ public class ResourceUsageModel {
                 // Purely here to prevent potential bugs in the state machine from looping
                 // infinitely
                 offset++;
+                if (offset == length) {
+                    break;
+                }
             }
             prev = offset;
 
@@ -1276,6 +1279,9 @@ public class ResourceUsageModel {
                 // Purely here to prevent potential bugs in the state machine from looping
                 // infinitely
                 offset++;
+                if (offset == length) {
+                    break;
+                }
             }
             prev = offset;
 
@@ -1372,6 +1378,9 @@ public class ResourceUsageModel {
                 // Purely here to prevent potential bugs in the state machine from looping
                 // infinitely
                 offset++;
+                if (offset == length) {
+                    break;
+                }
             }
             prev = offset;
 
