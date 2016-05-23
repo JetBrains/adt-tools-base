@@ -3,14 +3,14 @@ task build {}
 cmake {
     name 'tools'
     abis 'host'
-    projectDir "$rootDir/perfd"
+    projectDir "$rootDir/native"
     targets 'protoc', 'grpc_cpp_plugin'
 }
 
 cmake {
     name 'perfd'
     abis 'armeabi-v7a', 'arm64-v8a', 'host'
-    projectDir "$rootDir/perfd"
+    projectDir "$rootDir/native"
     flags "-DHOST_BUILD_DIR=$buildDir/tools/out/host"
 }
 prePerfd.dependsOn tools
