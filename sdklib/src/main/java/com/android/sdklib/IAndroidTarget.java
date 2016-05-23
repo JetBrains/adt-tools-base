@@ -200,8 +200,10 @@ public interface IAndroidTarget extends Comparable<IAndroidTarget> {
     /**
      * Returns a list of optional libraries for this target.
      *
-     * These libraries are not automatically added to the classpath.
-     * Using them requires adding a <code>uses-library</code> entry in the manifest.
+     * <p>These libraries are not automatically added to the classpath. Using them requires adding a
+     * <code>uses-library</code> entry in the manifest and calling {@code useLibrary} in the Gradle
+     * build script. Example of such library is {@code org.apache.http.legacy} which is not on the
+     * classpath by default since 6.0.
      *
      * @return a list of libraries.
      *
@@ -213,8 +215,9 @@ public interface IAndroidTarget extends Comparable<IAndroidTarget> {
     /**
      * Returns the additional libraries for this target.
      *
-     * These libraries are automatically added to the classpath, but using them requires
-     * adding a <code>uses-library</code> entry in the manifest.
+     * <p>These libraries are automatically added to the classpath, but using them requires
+     * adding a <code>uses-library</code> entry in the manifest. Example of such library is
+     * {@code com.google.android.maps}, which is part of the Google APIs add-on.
      *
      * @return a list of libraries.
      *
