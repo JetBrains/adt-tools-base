@@ -21,8 +21,8 @@
 namespace profiler {
 
 // Class of Math operations on timespec objects. The operation result is
-// formalized, its nanosecond value should be non-negative and no larger
-// than 1e9. See also code in
+// formalized, its nanosecond value should be non-negative and less than
+// 1e9. See also spec in
 // http://www.gnu.org/software/libc/manual/html_node/Elapsed-Time.html
 class TimespecMath {
  public:

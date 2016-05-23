@@ -1,7 +1,7 @@
 set(PROTO_FILES cpu_profiler_data.proto
                 cpu_profiler_service.proto
                 network_profiler.proto
-                memory_profiler_service.proto
+                memory.proto
                 perfa_service.proto
                 profiler.proto
                 profiler_service.proto)
