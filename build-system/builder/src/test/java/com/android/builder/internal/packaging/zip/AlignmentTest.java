@@ -285,7 +285,7 @@ public class AlignmentTest {
         byte[] recognizable = new byte[] { 1, 2, 3, 4, 4, 3, 2, 1 };
 
         ZFileOptions options = new ZFileOptions();
-        options.setUseExtraFieldForAlignment(true);
+        options.setCoverEmptySpaceUsingExtraField(true);
         options.setAlignmentRule(AlignmentRules.constant(1024));
         try (ZFile zf = new ZFile(zipFile, options)) {
             zf.add("foo", new ByteArrayInputStream(recognizable), false);
@@ -313,7 +313,7 @@ public class AlignmentTest {
         byte[] recognizable = new byte[] { 1, 2, 3, 4, 4, 3, 2, 1 };
 
         ZFileOptions options = new ZFileOptions();
-        options.setUseExtraFieldForAlignment(false);
+        options.setCoverEmptySpaceUsingExtraField(false);
         options.setAlignmentRule(AlignmentRules.constant(1024));
         try (ZFile zf = new ZFile(zipFile, options)) {
             zf.add("foo", new ByteArrayInputStream(recognizable), false);
@@ -341,7 +341,7 @@ public class AlignmentTest {
         byte[] recognizable = new byte[] { 1, 2, 3, 4, 4, 3, 2, 1 };
 
         ZFileOptions options = new ZFileOptions();
-        options.setUseExtraFieldForAlignment(true);
+        options.setCoverEmptySpaceUsingExtraField(true);
         options.setAlignmentRule(AlignmentRules.constantForSuffix(".a", 1024));
         try (ZFile zf = new ZFile(zipFile, options)) {
             zf.add("bar1", new ByteArrayInputStream(new byte[1024]), false);
@@ -373,7 +373,7 @@ public class AlignmentTest {
         byte[] recognizable = new byte[] { 1, 2, 3, 4, 4, 3, 2, 1 };
 
         ZFileOptions options = new ZFileOptions();
-        options.setUseExtraFieldForAlignment(false);
+        options.setCoverEmptySpaceUsingExtraField(false);
         options.setAlignmentRule(AlignmentRules.constantForSuffix(".a", 1024));
         try (ZFile zf = new ZFile(zipFile, options)) {
             zf.add("bar1", new ByteArrayInputStream(new byte[1024]), false);

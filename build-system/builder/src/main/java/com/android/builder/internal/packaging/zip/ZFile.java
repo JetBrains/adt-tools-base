@@ -123,12 +123,19 @@ import java.util.concurrent.Future;
  * allow mapping files in the archive directly into memory and compressing defeats the purpose of
  * alignment.
  *
- * <p>In general, alignment is done by changing a file's offset, creating empty areas in the zip
- * file. However, it is possible to tell {@link ZFile} to use the extra field in the local header
- * to do the alignment instead. This is done by setting
- * {@link ZFileOptions#setUseExtraFieldForAlignment(boolean)} to {@code true}. This has the
+ * <p>Manipulating zip files with {@link ZFile} may yield zip files with empty spaces between files.
+ * This happens in two situations: (1) if alignment is required, files may be shifted to conform to
+ * the request alignment leaving an empty space before the previous file, and (2) if a file is
+ * removed or replaced with a file that does not fit the space it was in. By default, {@link ZFile}
+ * does not do any special processing in these situations. Files are indexed by their offsets from
+ * the central directory and empty spaces can exist in the zip file.
+ *
+ * <p>However, it is possible to tell {@link ZFile} to use the extra field in the local header
+ * to do cover the empty spaces. This is done by setting
+ * {@link ZFileOptions#setCoverEmptySpaceUsingExtraField(boolean)} to {@code true}. This has the
  * advantage of leaving no gaps between entries in the zip, as required by some tools like Oracle's
- * jar tool. However, setting this option will destroy the contents of the file's extra field.
+ * {code jar} tool. However, setting this option will destroy the contents of the file's extra
+ * field.
  *
  * <p>{@code ZFile} support sorting zip files. Sorting (done through the {@link #sortZipContents()}
  * method) is a process by which all files are re-read into memory, if not already in memory,
@@ -329,9 +336,9 @@ public class ZFile implements Closeable {
     private final ByteTracker mTracker;
 
     /**
-     * Should the extra field be used for alignment?
+     * Use the zip entry's "extra field" field to cover empty space in the zip file?
      */
-    private boolean mUseExtraFieldForAlignment;
+    private boolean mCoverEmptySpaceUsingExtraField;
 
     /**
      * Should files be automatically sorted when updating?
@@ -373,7 +380,7 @@ public class ZFile implements Closeable {
         mNoTimestamps = options.getNoTimestamps();
         mTracker = options.getTracker();
         mCompressor = options.getCompressor();
-        mUseExtraFieldForAlignment = options.getUseExtraFieldForAlignment();
+        mCoverEmptySpaceUsingExtraField = options.getCoverEmptySpaceUsingExtraField();
         mAutoSortFiles = options.getAutoSortFiles();
 
         /*
@@ -789,10 +796,9 @@ public class ZFile implements Closeable {
         mMap.truncate();
 
         /*
-         * If we need to use the extra field for alignment instead of offsets, we do the processing
-         * here.
+         * If we need to use the extra field to cover empty spaces, we do the processing here.
          */
-        if (mUseExtraFieldForAlignment) {
+        if (mCoverEmptySpaceUsingExtraField) {
 
             /* We will go over all files in the zip and check whether there is empty space before
              * them. If there is, then we will move the entry to the beginning of the empty space
