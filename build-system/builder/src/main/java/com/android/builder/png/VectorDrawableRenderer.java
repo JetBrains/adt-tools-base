@@ -30,13 +30,10 @@ import com.android.ide.common.vectordrawable.VdPreview;
 import com.android.resources.Density;
 import com.android.resources.ResourceFolderType;
 import com.android.utils.ILogger;
+import com.android.utils.XmlUtils;
 import com.google.common.base.Charsets;
-import com.google.common.base.Throwables;
 import com.google.common.collect.Lists;
 import com.google.common.io.Files;
-
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
 
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -44,8 +41,6 @@ import java.io.IOException;
 import java.util.Collection;
 
 import javax.imageio.ImageIO;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
 
 /**
  * Generates PNG images (and XML copies) from VectorDrawable files.
@@ -181,23 +176,9 @@ public class VectorDrawableRenderer implements ResourcePreprocessor {
 
     /**
      * Parse the root element of the file, return true if it is a vector.
-     * TODO: Use SAX parser to only look at the root tag.
      */
     private static boolean isRootVector(File resourceFile) {
-        DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
-        boolean result = false;
-        try {
-            DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
-            Document doc = dBuilder.parse(resourceFile);
-            Element root = doc.getDocumentElement();
-            if (root != null && root.getNodeName().equalsIgnoreCase(TAG_VECTOR)) {
-                result = true;
-            }
-        } catch (Exception e) {
-            Throwables.propagate(e);
-        }
-
-        return result;
+        return TAG_VECTOR.equals(XmlUtils.getRootTagName(resourceFile));
     }
 
     private static boolean isXml(File resourceFile) {

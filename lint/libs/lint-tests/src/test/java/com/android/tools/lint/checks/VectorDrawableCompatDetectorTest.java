@@ -21,7 +21,9 @@ import static org.mockito.Mockito.when;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.builder.model.AndroidArtifact;
 import com.android.builder.model.AndroidProject;
+import com.android.builder.model.Dependencies;
 import com.android.builder.model.ProductFlavor;
 import com.android.builder.model.Variant;
 import com.android.builder.model.VectorDrawablesOptions;
@@ -31,6 +33,7 @@ import com.android.tools.lint.detector.api.Project;
 import org.intellij.lang.annotations.Language;
 
 import java.io.File;
+import java.util.Collections;
 
 /**
  * Tests for {@link VectorDrawableCompatDetector}.
@@ -92,6 +95,12 @@ public class VectorDrawableCompatDetectorTest extends AbstractCheckTest {
                         ProductFlavor productFlavor = mock(ProductFlavor.class);
                         VectorDrawablesOptions vectorDrawables = mock(VectorDrawablesOptions.class);
 
+                        Dependencies dependencies = mock(Dependencies.class);
+                        when(dependencies.getLibraries()).thenReturn(Collections.emptyList());
+                        AndroidArtifact artifact = mock(AndroidArtifact.class);
+                        when(artifact.getDependencies()).thenReturn(dependencies);
+                        when(onlyVariant.getMainArtifact()).thenReturn(artifact);
+
                         when(onlyVariant.getMergedFlavor()).thenReturn(productFlavor);
                         when(productFlavor.getVectorDrawables()).thenReturn(vectorDrawables);
 
@@ -128,6 +137,19 @@ public class VectorDrawableCompatDetectorTest extends AbstractCheckTest {
                 ));
     }
 
+    public void testSrcCompat_incremental() throws Exception {
+        assertEquals(""
+                        + "res/layout/main_activity.xml:3: Error: To use VectorDrawableCompat, you need to set android.defaultConfig.vectorDrawables.useSupportLibrary = true. [VectorDrawableCompat]\n"
+                        + "    <ImageView app:srcCompat=\"@drawable/foo\" />\n"
+                        + "               ~~~~~~~~~~~~~\n"
+                        + "1 errors, 0 warnings\n",
+                lintProjectIncrementally(
+                        "res/layout/main_activity.xml",
+                        xml("res/drawable/foo.xml", VECTOR),
+                        xml("res/layout/main_activity.xml", LAYOUT_SRC_COMPAT)
+                ));
+    }
+
     public void testSrc() throws Exception {
         assertEquals(""
                 + "res/layout/main_activity.xml:3: Error: When using VectorDrawableCompat, you need to use app:srcCompat. [VectorDrawableCompat]\n"
@@ -135,6 +157,19 @@ public class VectorDrawableCompatDetectorTest extends AbstractCheckTest {
                 + "               ~~~~~~~~~~~\n"
                 + "1 errors, 0 warnings\n",
                 lintProject(
+                        xml("res/drawable/foo.xml", VECTOR),
+                        xml("res/layout/main_activity.xml", LAYOUT_SRC)
+                ));
+    }
+
+    public void testSrc_incremental() throws Exception {
+        assertEquals(""
+                + "res/layout/main_activity.xml:3: Error: When using VectorDrawableCompat, you need to use app:srcCompat. [VectorDrawableCompat]\n"
+                + "    <ImageView android:src=\"@drawable/foo\" />\n"
+                + "               ~~~~~~~~~~~\n"
+                + "1 errors, 0 warnings\n",
+                lintProjectIncrementally(
+                        "res/layout/main_activity.xml",
                         xml("res/drawable/foo.xml", VECTOR),
                         xml("res/layout/main_activity.xml", LAYOUT_SRC)
                 ));
