@@ -36,4 +36,8 @@ public class Main extends Activity {
             throw new RuntimeException(e);
         }
     }
+
+    public void handleOnClick(android.view.View view) {
+        // This method should be kept by the default ProGuard rules.
+    }
 }

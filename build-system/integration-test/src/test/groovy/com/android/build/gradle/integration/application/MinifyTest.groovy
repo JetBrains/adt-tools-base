@@ -18,6 +18,7 @@ package com.android.build.gradle.integration.application
 
 import com.android.build.gradle.integration.common.category.DeviceTests
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
+import com.android.build.gradle.integration.common.truth.AbstractAndroidSubject.ClassFileScope
 import com.android.build.gradle.integration.common.truth.TruthHelper
 import com.android.build.gradle.integration.common.truth.ZipFileSubject
 import com.android.build.gradle.integration.common.utils.ZipHelper
@@ -32,7 +33,9 @@ import org.objectweb.asm.Type
 import org.objectweb.asm.tree.FieldNode
 
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk
 import static com.google.common.truth.TruthJUnit.assume
+
 /**
  * Assemble tests for minify.
  */
@@ -78,6 +81,12 @@ class MinifyTest {
                 "com/android/tests/basic/IndirectlyReferencedClass.class", // Kept by ProGuard rules.
                 // No entry for UnusedClass, it gets removed.
         )
+
+        assertThatApk(project.getApk("minified"))
+                .hasClass("Lcom/android/tests/basic/Main;", ClassFileScope.MAIN)
+                .that()
+                // Make sure default ProGuard rules were applied.
+                .hasMethod("handleOnClick");
     }
 
     @Test
