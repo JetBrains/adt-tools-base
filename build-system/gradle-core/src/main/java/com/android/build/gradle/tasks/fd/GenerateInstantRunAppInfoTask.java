@@ -34,6 +34,7 @@ import static org.objectweb.asm.Opcodes.V1_6;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
 import com.android.build.gradle.internal.incremental.InstantRunPatchingPolicy;
 import com.android.build.gradle.internal.scope.ConventionMappingHelper;
 import com.android.build.gradle.internal.scope.TaskConfigAction;
@@ -94,6 +95,7 @@ public class GenerateInstantRunAppInfoTask extends BaseTask {
     }
 
     boolean usingMultiApks;
+    InstantRunBuildContext instantRunBuildcontext;
 
     @TaskAction
     public void generateInfoTask() throws IOException {
@@ -139,7 +141,11 @@ public class GenerateInstantRunAppInfoTask extends BaseTask {
 
                     if (!applicationId.isEmpty()) {
                         File buildDir = getProject().getBuildDir();
-                        long token = PackagingUtils.computeApplicationHash(buildDir);
+                        long token = instantRunBuildcontext.getSecretToken();
+                        if (token == 0) {
+                            token = PackagingUtils.computeApplicationHash(buildDir);
+                            instantRunBuildcontext.setSecretToken(token);
+                        }
 
                         // Must be *after* extractLibrary() to replace dummy version
                         writeAppInfoClass(applicationId, applicationClass, token);
@@ -243,6 +249,7 @@ public class GenerateInstantRunAppInfoTask extends BaseTask {
         @Override
         public void execute(@NonNull GenerateInstantRunAppInfoTask task) {
             task.setVariantName(variantScope.getVariantConfiguration().getFullName());
+            task.instantRunBuildcontext = variantScope.getInstantRunBuildContext();
             task.outputFile =
                     new File(variantScope.getIncrementalApplicationSupportDir(),
                             PackageAndroidArtifact.INSTANT_RUN_PACKAGES_PREFIX + "-bootstrap.jar");
