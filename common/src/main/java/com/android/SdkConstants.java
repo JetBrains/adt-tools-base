@@ -1785,6 +1785,7 @@ public final class SdkConstants {
         TAG_IMPORT, TAG_LAYOUT, TAG_DATA};
     public static final String[] ATTRS_DATA_BINDING = new String[]{ATTR_NAME,
         ATTR_TYPE, ATTR_CLASS, ATTR_ALIAS};
+    public static final String DATA_BINDING_VIEW_STUB_PROXY = "android.databinding.ViewStubProxy";
 
     /** Name of keep attribute in XML */
     public static final String ATTR_KEEP = "keep";
