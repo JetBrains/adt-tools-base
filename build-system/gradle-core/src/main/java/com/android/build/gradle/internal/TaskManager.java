@@ -544,11 +544,18 @@ public abstract class TaskManager {
                     ? ImmutableList.of(ManifestMerger2.Invoker.Feature.INSTANT_RUN_REPLACEMENT)
                     : ImmutableList.of();
 
-            scope.setManifestProcessorTask(
-                    androidTasks.create(tasks, getMergeManifestConfig(scope, optionalFeatures)));
+            AndroidTask<? extends ManifestProcessorTask> processManifestTask =
+                    androidTasks.create(tasks, getMergeManifestConfig(scope, optionalFeatures));
+            scope.setManifestProcessorTask(processManifestTask);
+
+            processManifestTask.dependsOn(tasks, variantScope.getPrepareDependenciesTask());
+
+            if (variantScope.getMicroApkTask() != null) {
+                processManifestTask.dependsOn(tasks, variantScope.getMicroApkTask());
+            }
 
             if (csmTask != null) {
-                scope.getManifestProcessorTask().dependsOn(tasks, csmTask);
+                processManifestTask.dependsOn(tasks, csmTask);
             }
 
             addManifestArtifact(tasks, scope.getVariantScope().getVariantData());
@@ -1159,6 +1166,7 @@ public abstract class TaskManager {
             @NonNull Configuration config) {
         AndroidTask<GenerateApkDataTask> generateMicroApkTask = androidTasks.create(tasks,
                 new GenerateApkDataTask.ConfigAction(scope, config));
+        scope.setMicroApkTask(generateMicroApkTask);
         generateMicroApkTask.dependsOn(tasks, config);
 
         // the merge res task will need to run after this one.

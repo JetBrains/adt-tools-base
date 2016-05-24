@@ -18,7 +18,6 @@ package com.android.build.gradle.internal.tasks;
 
 import static com.android.SdkConstants.DOT_ANDROID_PACKAGE;
 import static com.android.SdkConstants.FD_RES_RAW;
-import static com.android.SdkConstants.FN_ANDROID_MANIFEST_XML;
 import static com.android.builder.core.BuilderConstants.ANDROID_WEAR_MICRO_APK;
 
 import com.android.annotations.NonNull;
@@ -177,15 +176,8 @@ public class GenerateApkDataTask extends BaseTask {
 
             task.setAndroidBuilder(scope.getGlobalScope().getAndroidBuilder());
             task.setVariantName(scope.getVariantConfiguration().getFullName());
-            ConventionMappingHelper.map(task, "resOutputDir", new Callable<File>() {
-                @Override
-                public File call() throws Exception {
-                    return new File(
-                            scope.getGlobalScope().getGeneratedDir(),
-                            "/res/microapk/"
-                                    + variantData.getVariantConfiguration().getDirName());
-                }
-            });
+
+            task.setResOutputDir(scope.getMicroApkResDirectory());
             ConventionMappingHelper.map(task, "apkFile", new Callable<File>() {
                 @Override
                 public File call() throws Exception {
@@ -193,16 +185,7 @@ public class GenerateApkDataTask extends BaseTask {
                     return config.getFiles().iterator().next();
                 }
             });
-            ConventionMappingHelper.map(task, "manifestFile", new Callable<File>() {
-                @Override
-                public File call() throws Exception {
-                    return new File(
-                            scope.getGlobalScope().getGeneratedDir(),
-                            "/manifests/microapk/"
-                                    + scope.getVariantData().getVariantConfiguration().getDirName()
-                                    + "/" + FN_ANDROID_MANIFEST_XML);
-                }
-            });
+            task.setManifestFile(scope.getMicroApkManifestFile());
             ConventionMappingHelper.map(task, "mainPkgName", new Callable<String>() {
                 @Override
                 public String call() throws Exception {

@@ -26,6 +26,7 @@ import com.android.build.gradle.internal.incremental.InstantRunWrapperTask;
 import com.android.build.gradle.internal.pipeline.TransformManager;
 import com.android.build.gradle.internal.pipeline.TransformTask;
 import com.android.build.gradle.internal.tasks.CheckManifest;
+import com.android.build.gradle.internal.tasks.GenerateApkDataTask;
 import com.android.build.gradle.internal.tasks.PrepareDependenciesTask;
 import com.android.build.gradle.internal.tasks.databinding.DataBindingExportBuildInfoTask;
 import com.android.build.gradle.internal.tasks.databinding.DataBindingProcessLayoutsTask;
@@ -283,6 +284,12 @@ public interface VariantScope extends TransformVariantScope, InstantRunVariantSc
     @NonNull
     File  getManifestReportFile();
 
+    @NonNull
+    File getMicroApkManifestFile();
+
+    @NonNull
+    File getMicroApkResDirectory();
+
     AndroidTask<DefaultTask> getAssembleTask();
 
     void setAssembleTask(@NonNull AndroidTask<DefaultTask> assembleTask);
@@ -382,6 +389,9 @@ public interface VariantScope extends TransformVariantScope, InstantRunVariantSc
 
     AndroidTask<Task> getCompileTask();
     void setCompileTask(AndroidTask<Task> compileTask);
+
+    AndroidTask<GenerateApkDataTask> getMicroApkTask();
+    void setMicroApkTask(AndroidTask<GenerateApkDataTask> microApkTask);
 
     AndroidTask<?> getCoverageReportTask();
 
