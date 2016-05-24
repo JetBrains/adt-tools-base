@@ -311,12 +311,15 @@ class EcjPsiBinaryMethod extends EcjPsiBinaryElement implements PsiMethod, PsiPa
 
         MethodBinding binding = this.mMethodBinding;
         while (binding != null) {
-            AnnotationBinding[] annotations = binding.getAnnotations();
-            int count = annotations.length;
-            if (count > 0) {
-                for (AnnotationBinding annotation : annotations) {
-                    if (annotation != null) {
-                        all.add(new EcjPsiBinaryAnnotation(mManager, this, annotation));
+            //noinspection VariableNotUsedInsideIf
+            if (binding.declaringClass != null) { // prevent NPE in binding.getAnnotations()
+                AnnotationBinding[] annotations = binding.getAnnotations();
+                int count = annotations.length;
+                if (count > 0) {
+                    for (AnnotationBinding annotation : annotations) {
+                        if (annotation != null) {
+                            all.add(new EcjPsiBinaryAnnotation(mManager, this, annotation));
+                        }
                     }
                 }
             }
