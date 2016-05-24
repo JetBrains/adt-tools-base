@@ -160,7 +160,7 @@ public abstract class AbstractPackageOperation implements PackageOperation {
                 mFop.deleteFileOrFolder(installTemp);
             }
             getRepoManager().installEnded(getPackage());
-            getRepoManager().markInvalid();
+            getRepoManager().markLocalCacheInvalid();
         }
 
         progress.setFraction(1);

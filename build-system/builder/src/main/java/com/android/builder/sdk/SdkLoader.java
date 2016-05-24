@@ -37,7 +37,7 @@ public interface SdkLoader {
 
     /**
      * Returns information about a build target.
-     *
+     * Potentially downloads SDK components if {@code sdkLibData.useSdlDownload()} is true.
      * This requires loading/parsing the SDK.
      *
      * @param targetHash the compilation target hash string.

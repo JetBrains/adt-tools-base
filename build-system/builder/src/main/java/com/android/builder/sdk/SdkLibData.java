@@ -18,6 +18,7 @@ package com.android.builder.sdk;
 
 import com.android.annotations.NonNull;
 import com.android.repository.api.Downloader;
+import com.android.repository.api.RepoManager;
 import com.android.repository.api.SettingsController;
 import com.google.common.base.Preconditions;
 
@@ -28,6 +29,9 @@ public class SdkLibData {
     private Downloader mDownloader;
     private SettingsController mSettings;
     private boolean mUseSdkDownload = false;
+
+    //the expiration period in milliseconds for the cached remote and local repositories.
+    private long cacheExpirationPeriod = RepoManager.DEFAULT_EXPIRATION_PERIOD_MS;
 
     private SdkLibData() {};
 
@@ -69,5 +73,13 @@ public class SdkLibData {
     public SettingsController getSettings() {
         Preconditions.checkState(mUseSdkDownload, "The settings should not be used in this build.");
         return mSettings;
+    }
+
+    public void setCacheExpirationPeriod(long cacheExpirationPeriod) {
+        this.cacheExpirationPeriod = cacheExpirationPeriod;
+    }
+
+    public long getCacheExpirationPeriod() {
+        return cacheExpirationPeriod;
     }
 }

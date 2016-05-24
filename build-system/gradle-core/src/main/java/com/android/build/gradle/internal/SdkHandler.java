@@ -32,6 +32,7 @@ import com.android.builder.sdk.SdkInfo;
 import com.android.builder.sdk.SdkLoader;
 import com.android.builder.sdk.TargetInfo;
 import com.android.repository.Revision;
+import com.android.repository.api.RepoManager;
 import com.android.utils.ILogger;
 import com.google.common.base.Charsets;
 import com.google.common.base.Preconditions;
@@ -70,6 +71,14 @@ public class SdkHandler {
     private File ndkFolder;
     private SdkLibData sdkLibData = SdkLibData.dontDownload();
     private boolean isRegularSdk = true;
+
+    /**
+     * This boolean starts at true to ensure that if the build fails to find some SDK components
+     * and we want to download these components, we reset the cache for local and remote
+     * repositories at least once, by having the expiration time set to 0 milliseconds. Once we have
+     * reset it once, we can go back to the default cache expiration period.
+     */
+    private boolean resetCache = true;
 
     public static void setTestSdkFolder(File testSdkFolder) {
         sTestSdkFolder = testSdkFolder;
@@ -125,8 +134,19 @@ public class SdkHandler {
 
         Stopwatch stopwatch = Stopwatch.createStarted();
         SdkInfo sdkInfo = sdkLoader.getSdkInfo(logger);
-        TargetInfo targetInfo = sdkLoader.getTargetInfo(
-                targetHash, buildToolRevision, logger, sdkLibData);
+
+        TargetInfo targetInfo;
+        if (resetCache) {
+            sdkLibData.setCacheExpirationPeriod(0);
+            resetCache = false;
+        } else {
+            sdkLibData.setCacheExpirationPeriod(RepoManager.DEFAULT_EXPIRATION_PERIOD_MS);
+        }
+        targetInfo = sdkLoader.getTargetInfo(
+                targetHash,
+                buildToolRevision,
+                logger,
+                sdkLibData);
 
         androidBuilder.setSdkInfo(sdkInfo);
         androidBuilder.setTargetInfo(targetInfo);
@@ -270,5 +290,13 @@ public class SdkHandler {
 
     public void setSdkLibData(SdkLibData sdkLibData) {
         this.sdkLibData = sdkLibData;
+    }
+
+    public boolean shouldResetCache() {
+        return resetCache;
+    }
+
+    public void setResetCache(boolean resetCache) {
+        this.resetCache = resetCache;
     }
 }

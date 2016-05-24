@@ -319,6 +319,14 @@ public abstract class RepoManager {
     public abstract void markInvalid();
 
     /**
+     * Causes the cached results of the local repositories to be considered expired. The next time
+     * {@link #load(long, List, List, List, ProgressRunner, Downloader, SettingsController, boolean)}
+     * is called, the load will be done only for the local repositories, the remotes being loaded
+     * from the cache if possible.
+     */
+    public abstract void markLocalCacheInvalid();
+
+    /**
      * Check to see if there have been any changes to the local repo since the last load.
      * This includes scanning the local repo for packages, but does not involve any reading or
      * parsing of package metadata files.
