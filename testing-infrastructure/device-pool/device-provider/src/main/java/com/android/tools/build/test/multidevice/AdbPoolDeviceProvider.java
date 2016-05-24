@@ -100,7 +100,10 @@ public class AdbPoolDeviceProvider extends DeviceProvider {
         } else {
             List<String> candidateSerials = new ArrayList<>();
             for (DeviceConnector connector : allDevices) {
-                candidateSerials.add(connector.getSerialNumber());
+                // Only use an L MR1 or M device by default.
+                if (connector.getApiLevel() >= 22 && connector.getApiCodeName() == null) {
+                    candidateSerials.add(connector.getSerialNumber());
+                }
             }
             try {
                 serial = DevicePoolClient.reserveDevice(candidateSerials, projectPath);
