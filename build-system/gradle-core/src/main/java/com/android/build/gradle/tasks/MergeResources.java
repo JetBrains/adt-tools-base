@@ -467,11 +467,10 @@ public class MergeResources extends IncrementalTask {
                                 generatedResFolders.addAll(
                                         variantData.getExtraGeneratedResFolders());
                             }
-                            if (variantData.generateApkDataTask != null &&
+                            if (scope.getMicroApkTask() != null &&
                                     variantData.getVariantConfiguration().getBuildType()
                                             .isEmbedMicroApp()) {
-                                generatedResFolders.add(
-                                        variantData.generateApkDataTask.getResOutputDir());
+                                generatedResFolders.add(scope.getMicroApkResDirectory());
                             }
 
                             return variantData.getVariantConfiguration().getResourceSets(

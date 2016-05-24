@@ -262,14 +262,6 @@ public class MergeManifests extends ManifestProcessorTask {
             processManifestTask.setAndroidBuilder(scope.getGlobalScope().getAndroidBuilder());
             processManifestTask.setVariantName(config.getFullName());
 
-            processManifestTask.dependsOn(scope.getVariantScope().getPrepareDependenciesTask().getName());
-            if (variantData.generateApkDataTask != null) {
-                processManifestTask.dependsOn(variantData.generateApkDataTask);
-            }
-            if (scope.getCompatibleScreensManifestTask() != null) {
-                processManifestTask.dependsOn(scope.getCompatibleScreensManifestTask().getName());
-            }
-
             processManifestTask.setVariantConfiguration(config);
             if (variantOutputData instanceof ApkVariantOutputData) {
                 processManifestTask.variantOutputData =
@@ -283,11 +275,11 @@ public class MergeManifests extends ManifestProcessorTask {
                             List<AndroidLibrary> manifests = Lists.newArrayList(
                                     config.getCompileAndroidLibraries());
 
-                            if (variantData.generateApkDataTask != null &&
+                            if (scope.getVariantScope().getMicroApkTask() != null &&
                                     variantData.getVariantConfiguration().getBuildType().
                                             isEmbedMicroApp()) {
                                 manifests.add(new ManifestOnlyLibrary(
-                                        variantData.generateApkDataTask.getManifestFile(),
+                                        scope.getVariantScope().getMicroApkManifestFile(),
                                         "Wear App sub-manifest"));
                             }
 

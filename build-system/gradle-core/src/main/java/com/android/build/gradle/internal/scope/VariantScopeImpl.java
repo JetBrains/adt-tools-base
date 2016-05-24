@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.internal.scope;
 
+import static com.android.SdkConstants.FN_ANDROID_MANIFEST_XML;
 import static com.android.build.gradle.internal.TaskManager.DIR_BUNDLES;
 import static com.android.builder.model.AndroidProject.FD_GENERATED;
 import static com.android.builder.model.AndroidProject.FD_OUTPUTS;
@@ -37,6 +38,7 @@ import com.android.build.gradle.internal.incremental.InstantRunWrapperTask;
 import com.android.build.gradle.internal.pipeline.TransformManager;
 import com.android.build.gradle.internal.pipeline.TransformTask;
 import com.android.build.gradle.internal.tasks.CheckManifest;
+import com.android.build.gradle.internal.tasks.GenerateApkDataTask;
 import com.android.build.gradle.internal.tasks.PrepareDependenciesTask;
 import com.android.build.gradle.internal.tasks.databinding.DataBindingExportBuildInfoTask;
 import com.android.build.gradle.internal.tasks.databinding.DataBindingProcessLayoutsTask;
@@ -153,6 +155,8 @@ public class VariantScopeImpl implements VariantScope {
 
     // empty anchor compile task to set all compilations tasks as dependents.
     private AndroidTask<Task> compileTask;
+
+    private AndroidTask<GenerateApkDataTask> microApkTask;
 
     @Nullable
     private AndroidTask<ExternalNativeBuildTask> externalNativeBuild;
@@ -829,6 +833,27 @@ public class VariantScopeImpl implements VariantScope {
                         + "-report.txt");
     }
 
+    @NonNull
+    @Override
+    public File getMicroApkManifestFile() {
+        return FileUtils.join(
+                globalScope.getGeneratedDir(),
+                "manifests",
+                "microapk",
+                getVariantConfiguration().getDirName(),
+                FN_ANDROID_MANIFEST_XML);
+    }
+
+    @NonNull
+    @Override
+    public File getMicroApkResDirectory() {
+        return FileUtils.join(
+                globalScope.getGeneratedDir(),
+                "res",
+                "microapk",
+                getVariantConfiguration().getDirName());
+    }
+
     // Tasks getters/setters.
 
     @Override
@@ -1067,6 +1092,17 @@ public class VariantScopeImpl implements VariantScope {
     public void setCompileTask(
             AndroidTask<Task> compileTask) {
         this.compileTask = compileTask;
+    }
+
+    @Override
+    public AndroidTask<GenerateApkDataTask> getMicroApkTask() {
+        return microApkTask;
+    }
+
+    @Override
+    public void setMicroApkTask(
+            AndroidTask<GenerateApkDataTask> microApkTask) {
+        this.microApkTask = microApkTask;
     }
 
     @Override
