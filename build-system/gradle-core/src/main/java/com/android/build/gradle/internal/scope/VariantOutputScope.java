@@ -129,16 +129,7 @@ public class VariantOutputScope implements TransformVariantScope {
                 getGlobalScope().getProjectBaseName() + "-" + variantOutputData.getBaseName()
                         + "-unsigned.apk";
 
-        // if this is the final task then the location is
-        // the potentially overridden one.
-        if (!signedApk || !apkVariantData.getZipAlignEnabled()) {
-            return getGlobalScope().getProject().file(
-                    getGlobalScope().getApkLocation() + "/" + apkName);
-        } else {
-            // otherwise default one.
-            return getGlobalScope().getProject().file(getGlobalScope().getDefaultApkLocation()
-                    + "/" + apkName);
-        }
+        return new File(getGlobalScope().getApkLocation(), apkName);
     }
 
     @NonNull

@@ -30,6 +30,7 @@ import com.android.build.gradle.internal.ndk.NdkHandler;
 import com.android.builder.core.AndroidBuilder;
 import com.android.builder.model.AndroidProject;
 import com.android.builder.model.OptionalCompilationStep;
+import com.android.utils.FileUtils;
 import com.google.common.base.CharMatcher;
 import com.google.common.base.Objects;
 
@@ -202,13 +203,23 @@ public class GlobalScope implements TransformGlobalScope {
         return outputsDir;
     }
 
+    /**
+     * Obtains the default location for APKs.
+     *
+     * @return the default location for APKs
+     */
     @NonNull
-    public String getDefaultApkLocation() {
-        return getBuildDir() + "/" + FD_OUTPUTS + "/apk";
+    private File getDefaultApkLocation() {
+        return FileUtils.join(getBuildDir(), FD_OUTPUTS, "apk");
     }
 
+    /**
+     * Obtains the location where APKs should be placed.
+     *
+     * @return the location for APKs
+     */
     @NonNull
-    public String getApkLocation() {
+    public File getApkLocation() {
         return Objects.firstNonNull(
                 AndroidGradleOptions.getApkLocation(project),
                 getDefaultApkLocation());
