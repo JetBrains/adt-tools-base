@@ -327,7 +327,7 @@ public class DefaultSdkLoader implements SdkLoader {
 
     @NonNull
     public ImmutableList<File> computeRepositories() {
-        List<File> repositories = Lists.newArrayListWithExpectedSize(2);
+        List<File> repositories = Lists.newArrayListWithExpectedSize(3);
 
         File androidRepo = new File(mSdkLocation, FD_EXTRAS + File.separator + "android"
                 + File.separator + FD_M2_REPOSITORY);
@@ -340,6 +340,12 @@ public class DefaultSdkLoader implements SdkLoader {
         if (googleRepo.isDirectory()) {
             repositories.add(googleRepo);
         }
+
+        File m2Repo = new File(mSdkLocation, FD_EXTRAS + File.separator + FD_M2_REPOSITORY);
+        if (m2Repo.isDirectory()) {
+            repositories.add(m2Repo);
+        }
+
         return ImmutableList.copyOf(repositories);
     }
 
