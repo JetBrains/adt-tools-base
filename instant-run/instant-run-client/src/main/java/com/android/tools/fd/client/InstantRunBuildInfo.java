@@ -64,6 +64,8 @@ public class InstantRunBuildInfo {
 
     private static final String ATTR_ARTIFACT_TYPE = "type";
 
+    private static final String ATTR_TOKEN = "token";
+
     @NonNull
     private final Element mRoot;
 
@@ -74,10 +76,14 @@ public class InstantRunBuildInfo {
         mRoot = root;
     }
 
-
     @NonNull
     public String getTimeStamp() {
         return mRoot.getAttribute(ATTR_TIMESTAMP);
+    }
+
+    public long getSecretToken() {
+        String tokenString = mRoot.getAttribute(ATTR_TOKEN);
+        return Strings.isNullOrEmpty(tokenString) ? 0 : Long.parseLong(tokenString);
     }
 
     @NonNull
