@@ -25,6 +25,7 @@ import com.android.build.gradle.internal.dsl.DexOptions;
 import com.android.build.gradle.internal.incremental.BuildInfoLoaderTask;
 import com.android.build.gradle.internal.incremental.InstantRunPatchingPolicy;
 import com.android.build.gradle.internal.incremental.InstantRunWrapperTask;
+import com.android.build.gradle.internal.model.AaptOptionsImpl;
 import com.android.build.gradle.internal.pipeline.ExtendedContentType;
 import com.android.build.gradle.internal.pipeline.OriginalStream;
 import com.android.build.gradle.internal.pipeline.StreamFilter;
@@ -37,9 +38,11 @@ import com.android.build.gradle.internal.scope.PackagingScope;
 import com.android.build.gradle.internal.scope.TaskConfigAction;
 import com.android.build.gradle.internal.transforms.DexTransform;
 import com.android.build.gradle.internal.transforms.ExtractJarsTransform;
+import com.android.build.gradle.internal.transforms.InstantRunSplitApkBuilder;
 import com.android.build.gradle.tasks.PackageApplication;
 import com.android.build.gradle.tasks.PrePackageApplication;
 import com.android.builder.core.DefaultDexOptions;
+import com.android.builder.core.DefaultManifestParser;
 import com.android.utils.FileUtils;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.io.Files;
@@ -101,9 +104,18 @@ class ExternalBuildTaskManager {
                 .build());
 
         ExternalBuildGlobalScope globalScope = new ExternalBuildGlobalScope(project);
+        File androidManifestFile =
+                project.file(
+                        externalBuildContext
+                                .getBuildManifest()
+                                .getAndroidManifest()
+                                .getExecRootPath());
+
         ExternalBuildVariantScope variantScope = new ExternalBuildVariantScope(globalScope,
                 project.getBuildDir(),
-                externalBuildContext);
+                externalBuildContext,
+                new AaptOptionsImpl(null, null, false, null),
+                new DefaultManifestParser(androidManifestFile));
 
         // massage the manifest file.
 
@@ -125,11 +137,7 @@ class ExternalBuildTaskManager {
                         extractJarsTask,
                         externalBuildAnchorTask,
                         EnumSet.of(QualifiedContent.Scope.PROJECT),
-                        () -> project.file(
-                                externalBuildContext
-                                        .getBuildManifest()
-                                        .getAndroidManifest()
-                                        .getExecRootPath()),
+                        () -> androidManifestFile,
                         false /* addResourceVerifier */);
 
         extractJarsTask.dependsOn(tasks, buildInfoLoaderTask);
@@ -198,6 +206,17 @@ class ExternalBuildTaskManager {
                                 });
                             }
                         });
+
+        // TODO: create a buildInfoGeneratorTask that will only be invoked if a assembleVARIANT is called.
+        // TODO: dependencies
+
+        AndroidTask<InstantRunSplitApkBuilder> splitApk =
+                androidTasks.create(tasks,
+                        new InstantRunSplitApkBuilder.ConfigAction(packagingScope));
+
+        for (TransformStream stream : transformManager.getStreams(StreamFilter.DEX)) {
+            splitApk.dependsOn(tasks, stream.getDependencies());
+        }
 
         AndroidTask<PackageApplication> packageApp =
                 androidTasks.create(

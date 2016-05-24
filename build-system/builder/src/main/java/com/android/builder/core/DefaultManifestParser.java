@@ -44,7 +44,7 @@ import javax.xml.xpath.XPathExpressionException;
  * Implementation of the {@link ManifestAttributeSupplier}. The parser is build per manifest file,
  * and all values are extracted when the instance of this class is built.
  */
-class DefaultManifestParser implements ManifestAttributeSupplier {
+public class DefaultManifestParser implements ManifestAttributeSupplier {
 
     @NonNull
     private final Map<String, String> attributeValues;

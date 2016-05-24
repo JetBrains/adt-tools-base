@@ -49,28 +49,29 @@ public class AaptOptionsImpl implements AaptOptions, Serializable {
                 aaptOptions.getIgnoreAssets(),
                 aaptOptions.getNoCompress(),
                 aaptOptions.getFailOnMissingConfigEntry(),
-                aaptOptions.getAdditionalParameters()
-        );
+                aaptOptions.getAdditionalParameters());
     }
 
-    private AaptOptionsImpl(String ignoreAssets, Collection<String> noCompress,
-            boolean failOnMissingConfigEntry, List<String> additionalParameters) {
+    public AaptOptionsImpl(
+            @Nullable String ignoreAssets,
+            @Nullable Collection<String> noCompress,
+            boolean failOnMissingConfigEntry,
+            @Nullable List<String> additionalParameters) {
         this.ignoreAssets = ignoreAssets;
-        if (noCompress == null) {
-            this.noCompress = null;
-        } else {
-            this.noCompress = ImmutableList.copyOf(noCompress);
-        }
         this.failOnMissingConfigEntry = failOnMissingConfigEntry;
-        this.additionalParameters = additionalParameters;
+        this.noCompress =
+                noCompress == null ? null : ImmutableList.copyOf(noCompress);
+        this.additionalParameters =
+                additionalParameters == null ? ImmutableList.of() : additionalParameters;
     }
 
+    @Nullable
     @Override
-
     public String getIgnoreAssets() {
         return ignoreAssets;
     }
 
+    @Nullable
     @Override
     public Collection<String> getNoCompress() {
         return noCompress;
@@ -81,6 +82,7 @@ public class AaptOptionsImpl implements AaptOptions, Serializable {
         return failOnMissingConfigEntry;
     }
 
+    @NonNull
     @Override
     public List<String> getAdditionalParameters() {
         return additionalParameters;

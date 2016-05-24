@@ -29,6 +29,8 @@ import com.android.build.gradle.internal.pipeline.TransformManager;
 import com.android.build.gradle.internal.pipeline.TransformStream;
 import com.android.build.gradle.internal.pipeline.TransformTask;
 import com.android.build.gradle.internal.scope.AndroidTask;
+import com.android.build.gradle.internal.scope.DefaultGradlePackagingScope;
+import com.android.build.gradle.internal.scope.PackagingScope;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.transforms.InstantRunSplitApkBuilder;
 import com.android.build.gradle.internal.variant.ApplicationVariantData;
@@ -316,11 +318,13 @@ public class ApplicationTaskManager extends TaskManager {
                 variantScope.getInstantRunBuildContext().getPatchingPolicy();
 
         if (patchingPolicy == InstantRunPatchingPolicy.MULTI_APK) {
+            BaseVariantOutputData outputData =
+                    variantScope.getVariantData().getOutputs().get(0);
+            PackagingScope packagingScope = new DefaultGradlePackagingScope(outputData.getScope());
 
             AndroidTask<InstantRunSplitApkBuilder> splitApk =
                     getAndroidTasks().create(tasks,
-                            new InstantRunSplitApkBuilder.ConfigAction(
-                                    variantScope));
+                            new InstantRunSplitApkBuilder.ConfigAction(packagingScope));
 
             TransformManager transformManager = variantScope.getTransformManager();
             for (TransformStream stream : transformManager.getStreams(StreamFilter.DEX)) {

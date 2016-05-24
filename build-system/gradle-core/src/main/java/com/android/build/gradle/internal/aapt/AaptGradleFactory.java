@@ -77,26 +77,36 @@ public final class AaptGradleFactory {
             @NonNull VariantScope scope) {
         return make(
                 builder,
-                new LoggedProcessOutputHandler(new FilteringLogger(builder.getLogger())),
                 crunchPng,
                 process9Patch,
-                scope);
+                scope.getGlobalScope().getProject(),
+                scope.getVariantConfiguration().getType());
     }
 
     /**
      * Creates a new {@link Aapt} instance based on project configuration.
      *
      * @param builder the android builder project model
-     * @param outputHandler the output handler to use
-     * @param scope the scope of the variant to use {@code aapt2} with
+     * @param crunchPng should PNGs be crunched?
+     * @param process9Patch should 9-patch be processed even if PNGs are not crunched?
+     * @param project the Gradle project
+     * @param variantType type of the variant to process
      * @return the newly-created instance
      */
     @NonNull
     public static Aapt make(
             @NonNull AndroidBuilder builder,
-            @NonNull ProcessOutputHandler outputHandler,
-            @NonNull VariantScope scope) {
-        return make(builder, outputHandler, true, true, scope);
+            boolean crunchPng,
+            boolean process9Patch,
+            @NonNull Project project,
+            @NonNull VariantType variantType) {
+        return make(
+                builder,
+                new LoggedProcessOutputHandler(new FilteringLogger(builder.getLogger())),
+                crunchPng,
+                process9Patch,
+                project,
+                variantType);
     }
 
     /**
@@ -106,7 +116,8 @@ public final class AaptGradleFactory {
      * @param outputHandler the output handler to use
      * @param crunchPng should PNGs be crunched?
      * @param process9Patch should 9-patch be processed even if PNGs are not crunched?
-     * @param scope the scope of the variant to use {@code aapt2} with
+     * @param project the Gradle project
+     * @param variantType type of the variant to process
      * @return the newly-created instance
      */
     @NonNull
@@ -115,15 +126,15 @@ public final class AaptGradleFactory {
             @NonNull ProcessOutputHandler outputHandler,
             boolean crunchPng,
             boolean process9Patch,
-            @NonNull VariantScope scope) {
+            @NonNull Project project,
+            @NonNull VariantType variantType) {
         TargetInfo target = builder.getTargetInfo();
         Preconditions.checkNotNull(target, "target == null");
         BuildToolInfo buildTools = target.getBuildTools();
-        Project project = scope.getGlobalScope().getProject();
 
         if (AndroidGradleOptions.isAapt2Enabled(project) &&
                 BuildToolInfo.PathId.AAPT2.isPresentIn(buildTools.getRevision())) {
-            if (scope.getVariantConfiguration().getType() == VariantType.LIBRARY) {
+            if (variantType == VariantType.LIBRARY) {
                 /*
                  * Do not process resources in a library.
                  */
@@ -178,7 +189,7 @@ public final class AaptGradleFactory {
          *
          * @param delegate the logger ot delegate messages to
          */
-        FilteringLogger(@NonNull ILogger delegate) {
+        private FilteringLogger(@NonNull ILogger delegate) {
             mDelegate = delegate;
         }
 

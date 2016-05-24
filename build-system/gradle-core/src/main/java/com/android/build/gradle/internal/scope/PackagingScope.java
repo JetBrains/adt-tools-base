@@ -24,6 +24,8 @@ import com.android.build.gradle.internal.dsl.PackagingOptions;
 import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
 import com.android.build.gradle.internal.variant.SplitHandlingPolicy;
 import com.android.builder.core.AndroidBuilder;
+import com.android.builder.core.VariantType;
+import com.android.builder.model.AaptOptions;
 import com.android.builder.model.ApiVersion;
 
 import org.gradle.api.Project;
@@ -117,4 +119,22 @@ public interface PackagingScope {
 
     @NonNull
     File getPackageApk();
+
+    @NonNull
+    File getInstantRunSplitApkOutputFolder();
+
+    @NonNull
+    String getApplicationId();
+
+    int getVersionCode();
+
+    @Nullable
+    String getVersionName();
+
+    @NonNull
+    AaptOptions getAaptOptions();
+
+    @NonNull
+    VariantType getVariantType();
+
 }
