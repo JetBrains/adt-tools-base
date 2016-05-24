@@ -17,9 +17,8 @@
 
 #include <grpc++/grpc++.h>
 
-// TODO: Make header file paths relatvie to "tools/base/profiler".
-#include "../utils/android_studio_version.h"
-#include "profiler_service.grpc.pb.h"
+#include "proto/profiler_service.grpc.pb.h"
+#include "utils/android_studio_version.h"
 
 using grpc::ServerContext;
 using grpc::Status;

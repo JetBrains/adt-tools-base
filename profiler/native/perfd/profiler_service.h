@@ -18,7 +18,7 @@
 
 #include <grpc++/grpc++.h>
 
-#include "profiler_service.grpc.pb.h"
+#include "proto/profiler_service.grpc.pb.h"
 
 namespace profiler {
 

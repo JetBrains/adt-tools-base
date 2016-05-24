@@ -31,9 +31,15 @@ set(PROTOBUF_INCLUDE_DIR ${GRPC_ROOT_DIR}/third_party/protobuf/src)
 add_subdirectory(${GRPC_ROOT_DIR} ./grpc EXCLUDE_FROM_ALL)
 
 # Set command line flags for profiler code
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}
+                    ${CMAKE_CURRENT_BINARY_DIR}
+                    ${PROTOBUF_INCLUDE_DIR}
+                    ${GRPC_INCLUDE_DIR})
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c11")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
 # Add profiler components
+add_subdirectory(network)
 add_subdirectory(perfd)
+add_subdirectory(proto)
 add_subdirectory(utils)

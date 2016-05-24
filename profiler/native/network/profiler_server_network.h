@@ -16,9 +16,9 @@
 #ifndef PROFILER_SERVER_NETWORK_H_
 #define PROFILER_SERVER_NETWORK_H_
 
-#include "network_data_collector.h"
-#include "network_files.h"
-#include "profiler_data_service.h"
+#include "network/network_data_collector.h"
+#include "network/network_files.h"
+#include "profiler_server/profiler_data_service.h"
 
 #include <atomic>
 #include <memory>

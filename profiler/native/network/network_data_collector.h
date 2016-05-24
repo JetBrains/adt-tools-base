@@ -16,11 +16,10 @@
 #ifndef NETWORK_DATA_COLLECTOR_H_
 #define NETWORK_DATA_COLLECTOR_H_
 
+#include "proto/network_profiler_data.pb.h"
+
 #include <string>
 #include <vector>
-
-// TODO: Remove relative path for proto files.
-#include "../proto/network_profiler_data.pb.h"
 
 namespace profiler {
 namespace network {

@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 #include "profiler_server_network.h"
-// TODO: Remove relative path for proto header files.
-#include "../proto/profiler_data.pb.h"
-#include "connection_data_collector.h"
-#include "traffic_data_collector.h"
+
+#include "network/connection_data_collector.h"
+#include "network/traffic_data_collector.h"
+#include "proto/profiler_data.pb.h"
 
 #include <unistd.h>
 

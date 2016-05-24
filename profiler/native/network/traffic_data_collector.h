@@ -16,7 +16,7 @@
 #ifndef TRAFFIC_DATA_COLLECTOR_H_
 #define TRAFFIC_DATA_COLLECTOR_H_
 
-#include "network_data_collector.h"
+#include "network/network_data_collector.h"
 
 #include <string>
 
