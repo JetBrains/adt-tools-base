@@ -997,12 +997,29 @@ public class ResourceUsageAnalyzerTest {
         assertEquals(NO_MATCH, convertFormatStringToRegexp("%s%s%s%s"));
         assertEquals(NO_MATCH, convertFormatStringToRegexp("%s_%s_%s"));
         assertEquals(NO_MATCH, convertFormatStringToRegexp("%.0f%s"));
+
         assertEquals(".*\\Qabc\\E", convertFormatStringToRegexp("%sabc"));
-        assertEquals("\\Qa\\E.*", convertFormatStringToRegexp("a%d%s"));
+        assertTrue("abc".matches(convertFormatStringToRegexp("%sabc")));
+        assertTrue("somethingabc".matches(convertFormatStringToRegexp("%sabc")));
+
+        assertEquals("\\Qa\\E\\p{Digit}+.*", convertFormatStringToRegexp("a%d%s"));
+        assertTrue("a52hello".matches(convertFormatStringToRegexp("a%d%s")));
+
+        assertEquals("\\Qprefix\\E0*\\p{Digit}+\\Qsuffix\\E", convertFormatStringToRegexp("prefix%05dsuffix"));
+        assertTrue("prefix012345suffix".matches(convertFormatStringToRegexp("prefix%05dsuffix")));
+
+        assertEquals("\\p{Digit}+\\Qk\\E", convertFormatStringToRegexp("%dk"));
+        assertTrue("1234k".matches(convertFormatStringToRegexp("%dk")));
+        assertFalse("ic_shield_dark".matches(convertFormatStringToRegexp("%dk")));
 
         assertTrue("foo_".matches(convertFormatStringToRegexp("foo_")));
         assertTrue("fooA_BBend".matches(convertFormatStringToRegexp("foo%s_%1$send")));
         assertFalse("A_BBend".matches(convertFormatStringToRegexp("foo%s_%1$send")));
+
+        // Comprehensive test
+        String p = "prefix%s%%%n%c%x%d%o%b%h%f%e%a%g%C%X%5B%E%A%G";
+        String s = String.format(p, "", 'c', 1, 1, 1, true, 1, 1f, 1f, 1f, 1f, 'c', 1, 1, 1f, 1f, 1f);
+        assertTrue(s.matches(convertFormatStringToRegexp(p)));
     }
 
     /** Utility method to generate byte array literal dump (used by classesJarBytecode above) */

@@ -1039,13 +1039,78 @@ public class ResourceUsageAnalyzer {
             if (start > from) {
                 hasEscapedLetters |= appendEscapedPattern(formatString, regexp, from, start);
             }
-            // If the wildcard follows a previous wildcard, just skip it
-            // (e.g. don't convert %s%s into .*.*; .* is enough.
-            int regexLength = regexp.length();
-            if (regexLength < 2
-                    || regexp.charAt(regexLength - 1) != '*'
-                    || regexp.charAt(regexLength - 2) != '.') {
-                regexp.append(".*");
+            String pattern = ".*";
+            String conversion = matcher.group(6);
+            String timePrefix = matcher.group(5);
+            if (timePrefix != null) {
+                // date notation; just use .* to match these
+            } else if (conversion != null && conversion.length() == 1) {
+                char type = conversion.charAt(0);
+                switch (type) {
+                    case 's':
+                    case 'S':
+                    case 't':
+                    case 'T':
+                        // Match everything
+                        break;
+                    case '%':
+                        pattern = "%"; break;
+                    case 'n':
+                        pattern = "\n"; break;
+                    case 'c':
+                    case 'C':
+                        pattern = "."; break;
+                    case 'x':
+                    case 'X':
+                        pattern = "\\p{XDigit}+"; break;
+                    case 'd':
+                    case 'o':
+                        pattern = "\\p{Digit}+"; break;
+                    case 'b':
+                        pattern = "(true|false)"; break;
+                    case 'B':
+                        pattern = "(TRUE|FALSE)"; break;
+                    case 'h':
+                    case 'H':
+                        pattern = "(null|\\p{XDigit}+)"; break;
+                    case 'f':
+                        pattern = "-?[\\p{XDigit},.]+"; break;
+                    case 'e':
+                        pattern = "-?\\p{Digit}+[,.]\\p{Digit}+e\\+?\\p{Digit}+"; break;
+                    case 'E':
+                        pattern = "-?\\p{Digit}+[,.]\\p{Digit}+E\\+?\\p{Digit}+"; break;
+                    case 'a':
+                        pattern = "0x[\\p{XDigit},.+p]+"; break;
+                    case 'A':
+                        pattern = "0X[\\p{XDigit},.+P]+"; break;
+                    case 'g':
+                    case 'G':
+                        pattern = "-?[\\p{XDigit},.+eE]+"; break;
+                }
+
+                // Allow space or 0 prefix
+                if (!".*".equals(pattern)) {
+                    String width = matcher.group(3);
+                    //noinspection VariableNotUsedInsideIf
+                    if (width != null) {
+                        String flags = matcher.group(2);
+                        if ("0".equals(flags)) {
+                            pattern = "0*" + pattern;
+                        } else {
+                            pattern = " " + pattern;
+                        }
+                    }
+                }
+
+                // If it's a general .* wildcard which follows a previous .* wildcard,
+                // just skip it (e.g. don't convert %s%s into .*.*; .* is enough.)
+                int regexLength = regexp.length();
+                if (!".*".equals(pattern)
+                        || regexLength < 2
+                        || regexp.charAt(regexLength - 1) != '*'
+                        || regexp.charAt(regexLength - 2) != '.') {
+                    regexp.append(pattern);
+                }
             }
             from = end;
         }
