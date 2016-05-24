@@ -61,6 +61,10 @@ public interface AndroidProject {
     String PROPERTY_RESTRICT_VARIANT_PROJECT = "android.restrict.variant.project";
     String PROPERTY_RESTRICT_VARIANT_NAME = "android.restrict.variant.name";
 
+    /**
+     * Location for APKs. If defined as a relative path, then it is resolved against the
+     * project's path.
+     */
     String PROPERTY_APK_LOCATION = "android.injected.apk.location";
 
     String ARTIFACT_MAIN = "_main_";
