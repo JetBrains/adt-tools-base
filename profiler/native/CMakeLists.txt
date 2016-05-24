@@ -16,8 +16,10 @@ endif()
 
 # Set ROOT dir for every third party dependency
 set(GRPC_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/grpc)
-set(GTEST_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../../../external/gtest)
+set(BORINGSSL_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../../../external/boringssl/src)
 set(GMOCK_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../../../external/gmock)
+set(GTEST_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../../../external/gtest)
+set(ZLIB_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../../../external/zlib/src)
 
 # Include additional cmake modules after setting global variables
 include(cmake/proto_compile.cmake)
