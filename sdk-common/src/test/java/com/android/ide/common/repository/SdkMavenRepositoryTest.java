@@ -24,8 +24,8 @@ import junit.framework.TestCase;
 import java.io.File;
 
 public class SdkMavenRepositoryTest extends TestCase {
+    private static final File SDK_HOME = new File("/sdk");
 
-    public static final File SDK_HOME = new File("/sdk");
     private MockFileOp mFileOp;
     private AndroidSdkHandler mSdkHandler;
 
@@ -146,21 +146,20 @@ public class SdkMavenRepositoryTest extends TestCase {
         assertEquals("google", SdkMavenRepository.GOOGLE.getDirName());
     }
 
-    @SuppressWarnings("ConstantConditions")
     public void testGetByGroupId() {
-        assertSame(SdkMavenRepository.ANDROID, SdkMavenRepository.getByGroupId(
-                GradleCoordinate.parseCoordinateString(
-                        "com.android.support:appcompat-v7:13.0.0").getGroupId()));
-        assertSame(SdkMavenRepository.ANDROID, SdkMavenRepository.getByGroupId(
-                GradleCoordinate.parseCoordinateString(
-                        "com.android.support.test:espresso:0.2").getGroupId()));
-        assertSame(SdkMavenRepository.GOOGLE, SdkMavenRepository.getByGroupId(
-                GradleCoordinate.parseCoordinateString(
-                        "com.google.android.gms:play-services:5.2.08").getGroupId()));
-        assertSame(SdkMavenRepository.GOOGLE, SdkMavenRepository.getByGroupId(
-                GradleCoordinate.parseCoordinateString(
-                        "com.google.android.gms:play-services-wearable:5.0.77").getGroupId()));
-        assertNull(SdkMavenRepository.getByGroupId(GradleCoordinate.parseCoordinateString(
-                "com.google.guava:guava:11.0.2").getGroupId()));
+        mFileOp.recordExistingFolder(
+                "/sdk/extras/android/m2repository/com/android/support/appcompat-v7/19.0.0");
+        mFileOp.recordExistingFolder(
+                "/sdk/extras/google/m2repository/com/google/android/gms/play-services/5.2.08");
+
+        assertSame(
+                SdkMavenRepository.ANDROID,
+                SdkMavenRepository.find(SDK_HOME, "com.android.support", "appcompat-v7", mFileOp));
+        assertSame(
+                SdkMavenRepository.GOOGLE,
+                SdkMavenRepository.find(
+                        SDK_HOME, "com.google.android.gms", "play-services", mFileOp));
+        assertNull(
+                SdkMavenRepository.find(SDK_HOME, "com.google.guava", "guava", mFileOp));
     }
 }
