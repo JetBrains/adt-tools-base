@@ -175,6 +175,12 @@ public class HelloWorldJniApp extends AbstractAndroidTestApp implements AndroidT
                         + "include $(BUILD_SHARED_LIBRARY)");
     }
 
+    public static final TestSourceFile applicationMk(String folder) {
+        return new TestSourceFile(
+                folder, "Application.mk",
+                "NDK_TOOLCHAIN_VERSION:=clang\n");
+    }
+
     public static final TestSourceFile cmakeLists(String folder) {
         return new TestSourceFile(
                 folder, "CMakeLists.txt",

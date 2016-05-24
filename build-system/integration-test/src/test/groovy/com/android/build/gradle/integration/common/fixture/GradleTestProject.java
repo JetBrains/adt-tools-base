@@ -230,11 +230,20 @@ public class GradleTestProject implements TestRule {
          * Add a new file to the project.
          */
         public Builder addFile(@NonNull TestSourceFile file) {
+            return addFiles(Lists.newArrayList(file));
+        }
+
+        /**
+         * Add a new file to the project.
+         */
+        public Builder addFiles(@NonNull List<TestSourceFile> files) {
             if (!(this.testProject instanceof AndroidTestApp)) {
                 throw new IllegalStateException("addFile is only for AndroidTestApp");
             }
             AndroidTestApp app = (AndroidTestApp) this.testProject;
-            app.addFile(file);
+            for (TestSourceFile file : files) {
+                app.addFile(file);
+            }
             return this;
         }
 
