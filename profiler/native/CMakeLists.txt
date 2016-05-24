@@ -1,11 +1,5 @@
 cmake_minimum_required(VERSION 2.8)
 
-# Check for environment variables required
-if (NOT DEFINED ENV{GRPC_ROOT_DIR})
-  message( FATAL_ERROR "Environment variable GRPC_ROOT_DIR not set." )
-  return()
-endif()
-
 # Configure HOST_BUILD_DIR
 if((NOT CMAKE_CROSSCOMPILING) AND (NOT HOST_BUILD_DIR))
   if (CMAKE_RUNTIME_OUTPUT_DIRECTORY)
@@ -21,7 +15,7 @@ if(HOST_BUILD_DIR)
 endif()
 
 # Set ROOT dir for every third party dependency
-set(GRPC_ROOT_DIR $ENV{GRPC_ROOT_DIR}) # TODO: Update the relative path when gRPC available in gerrit
+set(GRPC_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/grpc)
 set(GTEST_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../../../external/gtest)
 set(GMOCK_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../../../external/gmock)
 
