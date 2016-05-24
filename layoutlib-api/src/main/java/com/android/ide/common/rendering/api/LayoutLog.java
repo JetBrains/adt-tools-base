@@ -134,6 +134,16 @@ public class LayoutLog {
     public static final String TAG_TEXT_RENDERING = "textRendering";
 
     /**
+     * Tag for reporting RTL being used with API < 17.
+     */
+    public static final String TAG_RTL_NOT_SUPPORTED = "rtl-not-supported";
+
+    /**
+     * Tag for reporting RTL being used with android:supportsRtl="false".
+     */
+    public static final String TAG_RTL_NOT_ENABLED = "rtl-not-enabled";
+
+    /**
      * Tag for reporting messages that should not be logged in the render error panel,
      * but silently logged to a more detailed log file.
      */
