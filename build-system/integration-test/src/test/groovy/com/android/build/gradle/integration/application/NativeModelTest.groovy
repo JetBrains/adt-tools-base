@@ -18,6 +18,7 @@ package com.android.build.gradle.integration.application
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldJniApp
+
 import com.android.build.gradle.integration.common.fixture.app.TestSourceFile
 import com.android.builder.model.AndroidProject
 import com.android.builder.model.NativeAndroidProject
@@ -31,7 +32,12 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 
+import static com.android.build.gradle.integration.common.fixture.app.HelloWorldJniApp.androidMkC
+import static com.android.build.gradle.integration.common.fixture.app.HelloWorldJniApp.androidMkCpp
+import static com.android.build.gradle.integration.common.fixture.app.HelloWorldJniApp.applicationMk
+import static com.android.build.gradle.integration.common.fixture.app.HelloWorldJniApp.cmakeLists
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
+
 /**
  * General Model tests
  */
@@ -59,7 +65,7 @@ class NativeModelTest {
                       }
                 }
             }
-            """, HelloWorldJniApp.androidMkC("src/main/cpp"), false, 2, 7, Compiler.GCC),
+            """, [androidMkC("src/main/cpp")], false, 2, 7, Compiler.GCC),
         ANDROID_MK_FILE_CPP("""
             apply plugin: 'com.android.application'
 
@@ -78,7 +84,7 @@ class NativeModelTest {
                       }
                 }
             }
-            """, HelloWorldJniApp.androidMkCpp("src/main/cpp"), true, 2, 7, Compiler.GCC),
+            """, [androidMkCpp("src/main/cpp")], true, 2, 7, Compiler.GCC),
         ANDROID_MK_FOLDER_C("""
             apply plugin: 'com.android.application'
 
@@ -97,7 +103,7 @@ class NativeModelTest {
                       }
                 }
             }
-            """, HelloWorldJniApp.androidMkC("src/main/cpp"), false, 2, 7, Compiler.GCC),
+            """, [androidMkC("src/main/cpp")], false, 2, 7, Compiler.GCC),
         ANDROID_MK_FOLDER_CPP("""
             apply plugin: 'com.android.application'
 
@@ -116,7 +122,7 @@ class NativeModelTest {
                       }
                 }
             }
-            """, HelloWorldJniApp.androidMkCpp("src/main/cpp"), true, 2, 7, Compiler.GCC),
+            """, [androidMkCpp("src/main/cpp")], true, 2, 7, Compiler.GCC),
         ANDROID_MK_FILE_CPP_CLANG("""
             apply plugin: 'com.android.application'
 
@@ -136,7 +142,27 @@ class NativeModelTest {
                       }
                 }
             }
-            """, HelloWorldJniApp.androidMkCpp("src/main/cpp"), true, 2, 7, Compiler.CLANG),
+            """, [androidMkCpp("src/main/cpp")], true, 2, 7, Compiler.CLANG),
+        ANDROID_MK_FILE_CPP_CLANG_VIA_APPLICATION_MK("""
+            apply plugin: 'com.android.application'
+
+            android {
+                compileSdkVersion $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
+                buildToolsVersion "$GradleTestProject.DEFAULT_BUILD_TOOL_VERSION"
+                externalNativeBuild {
+                    ndkBuild {
+                        path file("src/main/cpp/Android.mk")
+                    }
+                }
+                defaultConfig {
+                      ndkBuild {
+                        cFlags "-DTEST_C_FLAG"
+                        cppFlags "-DTEST_CPP_FLAG"
+                      }
+                }
+            }
+            """, [androidMkCpp("src/main/cpp"), applicationMk("src/main/cpp")],
+                true, 2, 7, Compiler.CLANG),
         ANDROID_MK_FOLDER_CPP_CLANG("""
             apply plugin: 'com.android.application'
 
@@ -156,7 +182,27 @@ class NativeModelTest {
                       }
                 }
             }
-            """, HelloWorldJniApp.androidMkCpp("src/main/cpp"), true, 2, 7, Compiler.CLANG),
+            """, [androidMkCpp("src/main/cpp")], true, 2, 7, Compiler.CLANG),
+        ANDROID_MK_FOLDER_CPP_CLANG_VIA_APPLICATION_MK("""
+            apply plugin: 'com.android.application'
+
+            android {
+                compileSdkVersion $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
+                buildToolsVersion "$GradleTestProject.DEFAULT_BUILD_TOOL_VERSION"
+                externalNativeBuild {
+                    ndkBuild {
+                        path file("src/main/cpp")
+                    }
+                }
+                defaultConfig {
+                      ndkBuild {
+                        cFlags "-DTEST_C_FLAG"
+                        cppFlags "-DTEST_CPP_FLAG"
+                      }
+                }
+            }
+            """, [androidMkCpp("src/main/cpp"), applicationMk("src/main/cpp")],
+                true, 2, 7, Compiler.CLANG),
         ANDROID_MK_CUSTOM_BUILD_TYPE("""
             apply plugin: 'com.android.application'
 
@@ -183,7 +229,7 @@ class NativeModelTest {
                       }
                 }
             }
-            """, HelloWorldJniApp.androidMkCpp("src/main/cpp"), true, 3, 7, Compiler.GCC),
+            """, [androidMkCpp("src/main/cpp")], true, 3, 7, Compiler.GCC),
         CMAKELISTS_FILE_CPP("""
             apply plugin: 'com.android.application'
 
@@ -202,7 +248,7 @@ class NativeModelTest {
                       }
                 }
             }
-            """, HelloWorldJniApp.cmakeLists("."), true, 2, 7, Compiler.GCC),
+            """, [HelloWorldJniApp.cmakeLists(".")], true, 2, 7, Compiler.GCC),
         CMAKELISTS_FILE_CPP_CLANG("""
             apply plugin: 'com.android.application'
 
@@ -224,7 +270,7 @@ class NativeModelTest {
                       }
                 }
             }
-            """, HelloWorldJniApp.cmakeLists("."), true, 2, 5, Compiler.CLANG),
+            """, [cmakeLists(".")], true, 2, 5, Compiler.CLANG),
         CMAKELISTS_FILE_C("""
             apply plugin: 'com.android.application'
 
@@ -243,7 +289,7 @@ class NativeModelTest {
                       }
                 }
             }
-            """, HelloWorldJniApp.cmakeLists("."), false, 2, 7, Compiler.GCC),
+            """, [HelloWorldJniApp.cmakeLists(".")], false, 2, 7, Compiler.GCC),
         CMAKELISTS_FOLDER_CPP("""
             apply plugin: 'com.android.application'
 
@@ -262,7 +308,7 @@ class NativeModelTest {
                       }
                 }
             }
-            """, HelloWorldJniApp.cmakeLists("."), true, 2, 7, Compiler.GCC),
+            """, [HelloWorldJniApp.cmakeLists(".")], true, 2, 7, Compiler.GCC),
         CMAKELISTS_FOLDER_C("""
             apply plugin: 'com.android.application'
 
@@ -281,19 +327,19 @@ class NativeModelTest {
                       }
                 }
             }
-            """, HelloWorldJniApp.cmakeLists("."), false, 2, 7, Compiler.GCC);
+            """, [HelloWorldJniApp.cmakeLists(".")], false, 2, 7, Compiler.GCC);
 
         public final String buildGradle;
-        private final TestSourceFile nativeBuildFile;
+        private final List<TestSourceFile> extraFiles;
         public final boolean isCpp;
         public final int variantCount;
         public final int abiCount;
         public final Compiler compiler;
 
-        Config(String buildGradle, TestSourceFile nativeBuildFile, boolean isCpp, int variantCount,
+        Config(String buildGradle, List<TestSourceFile> extraFiles, boolean isCpp, int variantCount,
                 int abiCount, Compiler compiler) {
             this.buildGradle = buildGradle;
-            this.nativeBuildFile = nativeBuildFile;
+            this.extraFiles = extraFiles;
             this.isCpp = isCpp;
             this.variantCount = variantCount;
             this.abiCount = abiCount;
@@ -306,7 +352,7 @@ class NativeModelTest {
                         .withNativeDir("cpp")
                         .useCppSource(isCpp)
                         .build())
-                    .addFile(nativeBuildFile)
+                    .addFiles(extraFiles)
                     .create();
 
             return project;
@@ -325,6 +371,8 @@ class NativeModelTest {
                 [Config.ANDROID_MK_FOLDER_CPP].toArray(),
                 [Config.ANDROID_MK_FILE_CPP_CLANG].toArray(),
                 [Config.ANDROID_MK_FOLDER_CPP_CLANG].toArray(),
+                [Config.ANDROID_MK_FILE_CPP_CLANG_VIA_APPLICATION_MK].toArray(),
+                [Config.ANDROID_MK_FOLDER_CPP_CLANG_VIA_APPLICATION_MK].toArray(),
                 [Config.ANDROID_MK_CUSTOM_BUILD_TYPE].toArray(),
                 [Config.CMAKELISTS_FILE_C].toArray(),
                 [Config.CMAKELISTS_FILE_CPP].toArray(),

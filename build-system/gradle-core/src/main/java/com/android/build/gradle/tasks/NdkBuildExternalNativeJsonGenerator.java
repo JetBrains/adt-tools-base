@@ -27,6 +27,7 @@ import com.android.ide.common.process.ProcessInfoBuilder;
 import com.android.sdklib.IAndroidTarget;
 import com.google.common.base.Charsets;
 import com.google.common.base.Joiner;
+import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.io.Files;
 import com.google.gson.GsonBuilder;
@@ -68,14 +69,18 @@ class NdkBuildExternalNativeJsonGenerator extends ExternalNativeJsonGenerator {
             @NonNull File outputJson) throws ProcessException, IOException {
         checkConfiguration();
 
-        ProcessInfoBuilder builder = getProcessBuilder(abi);
+        // Discover Application.mk if one exists next to Android.mk
+        // If there is an Application.mk file next to Android.mk then pick it up.
+        File applicationMk = new File(getMakeFile().getParent(), "Application.mk");
+
+        ProcessInfoBuilder builder = getProcessBuilder(abi, applicationMk);
 
         // Invoke ndk-build -n and capture resulting info-level logger output to be parsed.
         diagnostic("executing ndk-build %s\n", builder);
         String info = ExternalNativeBuildTaskUtils.executeBuildProcessAndLogError(
                 androidBuilder,
                 builder.createProcess());
-        
+
         // Write the captured ndk-build output to a file for diagnostic purposes.
         diagnostic("write the raw output from ndk-build to a file");
         File outputTextFile = new File(getJsonFolder(), "ndk-build-output.txt");
@@ -85,11 +90,17 @@ class NdkBuildExternalNativeJsonGenerator extends ExternalNativeJsonGenerator {
         diagnostic("parse and convert ndk-build output to build configuration JSON");
         NativeBuildConfigValue buildConfig = new NativeBuildConfigValueBuilder(getMakeFile())
                 .addCommands(
-                        getBuildCommand(abi),
+                        getBuildCommand(abi, applicationMk),
                         variantName,
                         info,
                         isWindows())
                 .build();
+
+        if (applicationMk.exists()) {
+            diagnostic("found application make file %s", applicationMk.getAbsolutePath());
+            Preconditions.checkNotNull(buildConfig.buildFiles);
+            buildConfig.buildFiles.add(applicationMk);
+        }
 
         String actualResult = new GsonBuilder()
                 .registerTypeAdapter(File.class, new PlainFileGsonTypeAdaptor())
@@ -134,10 +145,11 @@ class NdkBuildExternalNativeJsonGenerator extends ExternalNativeJsonGenerator {
      * would do to execute the build.
      */
     @NonNull
-    private ProcessInfoBuilder getProcessBuilder(String abi) {
+    private ProcessInfoBuilder getProcessBuilder(
+            @NonNull String abi, @NonNull File applicationMk) {
         ProcessInfoBuilder builder = new ProcessInfoBuilder();
         builder.setExecutable(getNdkBuild())
-                .addArgs(getBaseArgs(abi))
+                .addArgs(getBaseArgs(abi, applicationMk))
                 .addArgs("-n");
         return builder;
     }
@@ -157,10 +169,15 @@ class NdkBuildExternalNativeJsonGenerator extends ExternalNativeJsonGenerator {
      * Get the base list of arguments for invoking ndk-build.
      */
     @NonNull
-    private List<String> getBaseArgs(String abi) {
+    private List<String> getBaseArgs(@NonNull String abi, @NonNull File applicationMk) {
         List<String> result = Lists.newArrayList();
-        result.add("NDK_PROJECT_PATH=" + getMakeFile());
+        result.add("NDK_PROJECT_PATH=null");
         result.add("APP_BUILD_SCRIPT=" + getMakeFile());
+
+        if (applicationMk.exists()) {
+            // NDK_APPLICATION_MK specifies the Appication.mk file.
+            result.add("NDK_APPLICATION_MK=" + applicationMk.getAbsolutePath());
+        }
 
         // APP_ABI and NDK_ALL_ABIS work together. APP_ABI is the specific ABI for this build.
         // NDK_ALL_ABIS is the universe of all ABIs for this build. NDK_ALL_ABIS is set to just the
@@ -206,8 +223,8 @@ class NdkBuildExternalNativeJsonGenerator extends ExternalNativeJsonGenerator {
      * Get the build command
      */
     @NonNull
-    private String getBuildCommand(String abi) {
-        return getNdkBuild() + " " + Joiner.on(" ").join(getBaseArgs(abi));
+    private String getBuildCommand(@NonNull String abi, @NonNull File applicationMk) {
+        return getNdkBuild() + " " + Joiner.on(" ").join(getBaseArgs(abi, applicationMk));
     }
 
     /**

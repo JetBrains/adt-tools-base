@@ -91,7 +91,7 @@ public abstract class ExternalNativeJsonGenerator {
             @Nullable List<String> buildArguments,
             @Nullable List<String> cFlags,
             @Nullable List<String> cppFlags) {
-        Preconditions.checkArgument(!abis.isEmpty(), "No abis specified");
+        Preconditions.checkArgument(!abis.isEmpty(), "No ABIs specified");
         this.variantName = variantName;
         this.abis = abis;
         this.androidBuilder = androidBuilder;
@@ -130,10 +130,10 @@ public abstract class ExternalNativeJsonGenerator {
             if (forceJsonGeneration || ExternalNativeBuildTaskUtils
                     .shouldRebuildJson(expectedJson, variantName)) {
                 if (forceJsonGeneration) {
-                    diagnostic("force rebuilding json '%s'", expectedJson);
+                    diagnostic("force rebuilding JSON '%s'", expectedJson);
 
                 } else {
-                    diagnostic("rebuilding json '%s'", expectedJson);
+                    diagnostic("rebuilding JSON '%s'", expectedJson);
                 }
                 if (expectedJson.getParentFile().mkdirs()) {
                     diagnostic("created folder '%s'", expectedJson.getParentFile());
@@ -148,7 +148,7 @@ public abstract class ExternalNativeJsonGenerator {
                             expectedJson));
                 }
             } else {
-                diagnostic("json '%s' was up-to-date", expectedJson);
+                diagnostic("JSON '%s' was up-to-date", expectedJson);
             }
         }
         diagnostic("build complete");
