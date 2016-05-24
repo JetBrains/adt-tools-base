@@ -230,13 +230,6 @@ public abstract class PackageAndroidArtifact extends IncrementalTask implements 
         this.minSdkVersion = version;
     }
 
-    @InputFile
-    public File getMarkerFile() {
-        return markerFile;
-    }
-
-    protected File markerFile;
-
     protected DexPackagingPolicy dexPackagingPolicy;
 
     @Input
@@ -306,16 +299,6 @@ public abstract class PackageAndroidArtifact extends IncrementalTask implements 
             @NonNull ImmutableMap<RelativeFile, FileStatus> changedAndroidResources,
             @NonNull ImmutableMap<RelativeFile, FileStatus> changedNLibs)
             throws IOException {
-        // if the blocker file is there, do not run.
-        if (getMarkerFile().exists()) {
-            try {
-                if (MarkerFile.readMarkerFile(getMarkerFile()) == MarkerFile.Command.BLOCK) {
-                    return;
-                }
-            } catch (IOException e) {
-                getLogger().warn("Cannot read marker file, proceed with execution.", e);
-            }
-        }
 
         ImmutableMap.Builder<RelativeFile, FileStatus> javaResourcesForApk =
                 ImmutableMap.builder();

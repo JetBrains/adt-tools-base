@@ -20,14 +20,11 @@ import com.android.annotations.NonNull;
 import com.android.build.gradle.internal.scope.TaskConfigAction;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.tasks.BaseTask;
-import com.android.build.gradle.internal.transforms.InstantRunBuildType;
 import com.google.common.base.Charsets;
 import com.google.common.io.Files;
 
 import org.gradle.api.logging.LogLevel;
 import org.gradle.api.logging.Logger;
-import org.gradle.api.tasks.Input;
-import org.gradle.api.tasks.OutputFile;
 import org.gradle.api.tasks.TaskAction;
 
 import java.io.File;
@@ -44,15 +41,16 @@ import java.util.Locale;
  */
 public class InstantRunWrapperTask extends BaseTask {
 
-    @OutputFile
+    /**
+     * Output File
+     */
     File buildInfoFile;
 
-    @Input
+    /** Input */
     String buildId;
 
     TaskType taskType;
 
-    File incrementChangesFile;
     File tmpBuildInfoFile;
 
     Logger logger;
@@ -84,13 +82,6 @@ public class InstantRunWrapperTask extends BaseTask {
                     String.format("Exception while saving build-info.xml : %s", e.getMessage()));
         }
 
-        // if this is a full build, delete the incremental files recorders.
-        if (taskType == TaskType.FULL && incrementChangesFile.exists()) {
-            if (!incrementChangesFile.delete()) {
-                logger.warn(String.format("Cannot delete %1$s", incrementChangesFile));
-            }
-        }
-
         // since we closed and produce the build-info.xml, delete any temporary one.
         if (tmpBuildInfoFile.exists()) {
             if (!tmpBuildInfoFile.delete()) {
@@ -117,7 +108,6 @@ public class InstantRunWrapperTask extends BaseTask {
 
         private final String taskName;
         private final TaskType taskType;
-        private final File incrementalChangesFile;
         private final VariantScope variantScope;
         private final Logger logger;
 
@@ -129,8 +119,6 @@ public class InstantRunWrapperTask extends BaseTask {
             this.variantScope = scope;
             this.logger = logger;
             this.taskType = taskType;
-            this.incrementalChangesFile =
-                    InstantRunBuildType.RESTART.getIncrementalChangesFile(variantScope);
         }
 
         @NonNull
@@ -154,7 +142,6 @@ public class InstantRunWrapperTask extends BaseTask {
             task.instantRunBuildContext = variantScope.getInstantRunBuildContext();
             task.logger = logger;
             task.taskType = taskType;
-            task.incrementChangesFile = incrementalChangesFile;
             task.buildId = String.valueOf(task.instantRunBuildContext.getBuildId());
         }
     }

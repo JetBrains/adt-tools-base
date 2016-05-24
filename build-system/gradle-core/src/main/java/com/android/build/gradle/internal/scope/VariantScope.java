@@ -38,6 +38,7 @@ import com.android.build.gradle.tasks.GenerateBuildConfig;
 import com.android.build.gradle.tasks.GenerateResValues;
 import com.android.build.gradle.tasks.MergeResources;
 import com.android.build.gradle.tasks.MergeSourceSetFolders;
+import com.android.build.gradle.tasks.PackageApplication;
 import com.android.build.gradle.tasks.ProcessAndroidResources;
 import com.android.build.gradle.tasks.RenderscriptCompile;
 import com.android.build.gradle.tasks.ShaderCompile;
@@ -386,6 +387,9 @@ public interface VariantScope extends TransformVariantScope, InstantRunVariantSc
 
     void setCoverageReportTask(AndroidTask<?> coverageReportTask);
 
+    AndroidTask<PackageApplication> getPackageApplicationTask();
+    void setPackageApplicationTask(AndroidTask<PackageApplication> packageApplicationTask);
+
     @NonNull
     AndroidTask<InstantRunAnchorTask> getInstantRunAnchorTask();
     void setInstantRunAnchorTask(@NonNull AndroidTask<InstantRunAnchorTask> instantRunTask);
@@ -396,6 +400,9 @@ public interface VariantScope extends TransformVariantScope, InstantRunVariantSc
 
     AndroidTask<TransformTask> getInstantRunVerifierTask();
     void setInstantRunVerifierTask(AndroidTask<TransformTask> verifierTask);
+
+    AndroidTask<TransformTask> getInstantRunSlicerTask();
+    void setInstantRunSlicerTask(AndroidTask<TransformTask> slicerTask);
 
     @Nullable
     AndroidTask<ExternalNativeBuildTask> getExternalNativeBuildTask();

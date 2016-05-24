@@ -50,9 +50,4 @@ public enum InstantRunBuildType {
     @NonNull
     abstract File getOutputFolder(InstantRunVariantScope variantScope);
 
-    @NonNull
-    public File getIncrementalChangesFile(InstantRunVariantScope variantScope) {
-        return new File(variantScope.getInstantRunSupportDir(),
-                name().toLowerCase() + "-changes.txt");
-    }
 }

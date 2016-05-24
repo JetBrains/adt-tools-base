@@ -91,17 +91,6 @@ public class PackageApplication extends PackageAndroidArtifact {
      * Old packaging code.
      */
     private void doOldTask() {
-        // if the blocker file is there, do not run.
-        if (getMarkerFile().exists()) {
-            try {
-                if (MarkerFile.readMarkerFile(getMarkerFile()) == MarkerFile.Command.BLOCK) {
-                    return;
-                }
-            } catch (IOException e) {
-                getLogger().warn("Cannot read marker file, proceed with execution", e);
-            }
-        }
-
         try {
 
             ImmutableSet.Builder<File> dexFoldersForApk = ImmutableSet.builder();
@@ -289,9 +278,6 @@ public class PackageApplication extends PackageAndroidArtifact {
         public void execute(@NonNull final PackageApplication packageApplication) {
             ConventionMappingHelper.map(
                     packageApplication, "outputFile", packagingScope::getPackageApk);
-
-            packageApplication.markerFile = PrePackageApplication.ConfigAction.getMarkerFile(
-                    packagingScope.getInstantRunSupportDir());
 
             packageApplication.inOldMode = AndroidGradleOptions.useOldPackaging(
                     packagingScope.getProject());

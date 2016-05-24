@@ -17,21 +17,30 @@
 package com.android.build.gradle.tasks;
 
 import com.android.annotations.NonNull;
-import com.android.build.gradle.internal.scope.InstantRunVariantScope;
+import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
+import com.android.build.gradle.internal.incremental.InstantRunPatchingPolicy;
+import com.android.build.gradle.internal.scope.AndroidTask;
+import com.android.build.gradle.internal.scope.TaskConfigAction;
+import com.android.build.gradle.internal.tasks.DefaultAndroidTask;
 import com.android.builder.model.OptionalCompilationStep;
 import com.android.build.gradle.internal.scope.VariantScope;
 
-import java.io.File;
+import org.gradle.api.Task;
+import org.gradle.api.tasks.TaskAction;
+
 import java.io.IOException;
 
 /**
  * Kicker task to force execution of the InstantRun slicer and dexer even if the files have not
  * changed (since we delay and batch restart artifacts creation).
  */
-public class ColdswapArtifactsKickerTask extends KickerTask {
+public class ColdswapArtifactsKickerTask extends DefaultAndroidTask {
 
-    @Override
-    protected void doFullTaskAction() throws IOException {
+    private VariantScope variantScope;
+    private InstantRunBuildContext instantRunContext;
+
+    @TaskAction
+    public void doFullTaskAction() throws IOException {
         // if the restart flag is set, we should allow for downstream tasks to execute.
         boolean restartDexRequested =
                 variantScope.getGlobalScope().isActive(OptionalCompilationStep.RESTART_ONLY);
@@ -40,20 +49,42 @@ public class ColdswapArtifactsKickerTask extends KickerTask {
 
         // so if the restart artifacts are requested or the changes are incompatible
         // we should always run, otherwise it can wait.
-        MarkerFile.createMarkerFile(getMarkerFile(),
-                restartDexRequested || !changesAreCompatible
-                        ? MarkerFile.Command.RUN
-                        : MarkerFile.Command.BLOCK);
+        if (!restartDexRequested && changesAreCompatible) {
+            // We can hot swap, don't produce the apk
+            if (instantRunContext.getPatchingPolicy() == InstantRunPatchingPolicy.PRE_LOLLIPOP) {
+                // TODO: disable multidex too
+                disableTask(variantScope.getPackageApplicationTask());
+            } else {
+                disableTask(variantScope.getInstantRunSlicerTask());
+            }
+        } else { //Cold swap
+            if (instantRunContext.getPatchingPolicy() == InstantRunPatchingPolicy.PRE_LOLLIPOP) {
+                instantRunContext.abort();
+            }
+        }
     }
 
-    public static class ConfigAction extends KickerTask.ConfigAction<ColdswapArtifactsKickerTask> {
+    private <T extends Task> void disableTask(AndroidTask<T> task) {
+        variantScope.getGlobalScope().getProject().getTasks().getByName(task.getName())
+                .setEnabled(false);
+    }
+
+    public static class ConfigAction implements TaskConfigAction<ColdswapArtifactsKickerTask> {
+
+        @NonNull
+        protected final VariantScope scope;
+        @NonNull
+        protected final String name;
 
         public ConfigAction(@NonNull String name, @NonNull VariantScope scope) {
-            super(name, scope);
+            this.scope = scope;
+            this.name = name;
         }
 
-        public static File getMarkerFile(InstantRunVariantScope scope) {
-            return new File(scope.getInstantRunSupportDir(), "coldswap.marker");
+        @Override
+        @NonNull
+        public String getName() {
+            return scope.getTaskName(name);
         }
 
         @NonNull
@@ -64,9 +95,9 @@ public class ColdswapArtifactsKickerTask extends KickerTask {
 
         @Override
         public void execute(@NonNull ColdswapArtifactsKickerTask task) {
-            super.execute(task);
-            task.markerFile = getMarkerFile(scope);
+            task.setVariantName(scope.getVariantConfiguration().getFullName());
+            task.variantScope = scope;
+            task.instantRunContext = scope.getInstantRunBuildContext();
         }
     }
-
 }

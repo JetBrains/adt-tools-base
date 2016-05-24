@@ -1988,11 +1988,9 @@ public abstract class TaskManager {
         // and if we are not in incremental mode, we need to still need to clean our output state.
         InstantRunDex reloadDexTransform = new InstantRunDex(
                 variantScope,
-                InstantRunBuildType.RELOAD,
                 androidBuilder::getDexByteCodeConverter,
                 dexOptions,
-                getLogger(),
-                ImmutableSet.of(ExtendedContentType.CLASSES_ENHANCED));
+                getLogger());
 
         AndroidTask<TransformTask> reloadDexing = variantScope.getTransformManager()
                 .addTransform(tasks, variantScope, reloadDexTransform);
@@ -2050,19 +2048,8 @@ public abstract class TaskManager {
         coldswapKickerTask.dependsOn(tasks, scope.getInstantRunVerifierTask());
 
         if (patchingPolicy == InstantRunPatchingPolicy.PRE_LOLLIPOP) {
-            // for Dalvik, we generate a restart.dex.
-            InstantRunDex classesTwoTransform = new InstantRunDex(
-                    scope,
-                    InstantRunBuildType.RESTART,
-                    androidBuilder::getDexByteCodeConverter,
-                    dexOptions,
-                    getLogger(),
-                    ImmutableSet.of(DefaultContentType.CLASSES));
-            AndroidTask<TransformTask> classesTwoDexing = scope.getTransformManager()
-                    .addTransform(tasks, scope, classesTwoTransform);
-            // restart task depends on the kicker result
-            classesTwoDexing.dependsOn(tasks, coldswapKickerTask);
-            incrementalWrapperTask.dependsOn(tasks, classesTwoDexing);
+            // for Dalvik, we cannot cold swap.
+            incrementalWrapperTask.dependsOn(tasks, coldswapKickerTask);
         } else {
             // if we are at API 21 or above, we generate multi-dexes.
             // this transform and all its dependencies will also run in full build mode as
@@ -2073,6 +2060,7 @@ public abstract class TaskManager {
 
             // slicing should only happen if we need to produce the restart dexes.
             slicing.dependsOn(tasks, coldswapKickerTask);
+            scope.setInstantRunSlicerTask(slicing);
 
             incrementalWrapperTask.dependsOn(tasks, slicing);
 
@@ -2329,6 +2317,8 @@ public abstract class TaskManager {
                 // TODO Optimize to avoid creating too many actions
                 packageApp.dependsOn(tasks, stream.getDependencies());
             }
+
+            variantScope.setPackageApplicationTask(packageApp);
 
             AndroidTask<?> appTask = packageApp;
 

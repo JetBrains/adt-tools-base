@@ -45,6 +45,7 @@ import com.android.build.gradle.internal.scope.InstantRunVariantScope;
 import com.android.ide.common.util.UrlClassLoaderUtil;
 import com.android.utils.FileUtils;
 import com.android.utils.ILogger;
+import com.google.common.base.Joiner;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -76,8 +77,6 @@ public class InstantRunTransform extends Transform {
 
     protected static final ILogger LOGGER =
             new LoggerWrapper(Logging.getLogger(InstantRunTransform.class));
-    private final ChangeRecords generatedClasses2Files = new ChangeRecords();
-    private final ChangeRecords generatedClasses3Files = new ChangeRecords();
     private final ImmutableList.Builder<String> generatedClasses3Names = ImmutableList.builder();
     private final InstantRunVariantScope transformScope;
 
@@ -194,18 +193,12 @@ public class InstantRunTransform extends Transform {
                                             inputDir,
                                             inputFile,
                                             classesTwoOutput,
-                                            Status.ADDED,
-                                            RecordingPolicy.RECORD);
+                                            Status.ADDED);
                                     break;
                                 case REMOVED:
                                     // remove the classes.2 and classes.3 files.
-                                    File outputFile = deleteOutputFile(
-                                            IncrementalSupportVisitor.VISITOR_BUILDER,
+                                    deleteOutputFile(IncrementalSupportVisitor.VISITOR_BUILDER,
                                             inputDir, inputFile, classesTwoOutput);
-                                    if (outputFile != null) {
-                                        generatedClasses2Files.add(
-                                                Status.REMOVED, outputFile.getAbsolutePath());
-                                    }
                                     deleteOutputFile(IncrementalChangeVisitor.VISITOR_BUILDER,
                                             inputDir, inputFile, classesThreeOutput);
                                     break;
@@ -217,8 +210,7 @@ public class InstantRunTransform extends Transform {
                                             inputDir,
                                             inputFile,
                                             classesTwoOutput,
-                                            Status.CHANGED,
-                                            RecordingPolicy.RECORD);
+                                            Status.CHANGED);
                                     transformToClasses3Format(
                                             inputDir,
                                             inputFile,
@@ -244,21 +236,13 @@ public class InstantRunTransform extends Transform {
                                         inputDir,
                                         file,
                                         classesTwoOutput,
-                                        Status.ADDED,
-                                        RecordingPolicy.RECORD);
+                                        Status.ADDED);
                             } catch (IOException e) {
                                 throw new RuntimeException("Exception while preparing "
                                         + file.getAbsolutePath());
                             }
                         }
-                        File incremental =
-                                InstantRunBuildType.RESTART.getIncrementalChangesFile(
-                                        transformScope);
-                        if (incremental.exists() && !incremental.delete()) {
-                            LOGGER.warning("Cannot delete " + incremental);
-                        }
                     }
-
                 }
             }
 
@@ -277,56 +261,11 @@ public class InstantRunTransform extends Transform {
         // generate the patch file and add to the list of files to process next.
         ImmutableList<String> generatedClassNames = generatedClasses3Names.build();
         if (!generatedClassNames.isEmpty()) {
-            File patchFile = writePatchFileContents(generatedClassNames, classes3Folder);
-            generatedClasses3Files.add(Status.CHANGED, patchFile.getAbsolutePath());
+            writePatchFileContents(generatedClassNames, classes3Folder,
+                    transformScope.getInstantRunBuildContext().getBuildId());
         }
-
-        // read the previous iterations output and append it to this iteration changes.
-        File incremental = InstantRunBuildType.RESTART.getIncrementalChangesFile(transformScope);
-        if (incremental.exists()) {
-            ChangeRecords previousIterationChanges = ChangeRecords.load(incremental);
-            merge(generatedClasses2Files, previousIterationChanges);
-        }
-
-        generatedClasses2Files.write(
-                InstantRunBuildType.RESTART.getIncrementalChangesFile(transformScope));
-
-        generatedClasses3Files.write(
-                InstantRunBuildType.RELOAD.getIncrementalChangesFile(transformScope));
     }
 
-    /**
-     * Merges a past iteration set of change records into this iteration following simple merging
-     * rules :
-     *    - if the file has been deleted during this iteration, do not merge past records.
-     *    - if the file had been deleted previously but re-added in this iteration, remove the
-     *      delete event.
-     * @param changeRecords this iteration change records
-     * @param pastIterationRecords past iteration change records.
-     */
-    @VisibleForTesting
-    static void merge(@NonNull ChangeRecords changeRecords,
-            @NonNull ChangeRecords pastIterationRecords) {
-
-        Set<String> deletedFiles = changeRecords.getFilesForStatus(Status.REMOVED);
-        for (Map.Entry<String, Status> record : pastIterationRecords.records.entrySet()) {
-            // if a previous iteration removed a class, only keep that remove event if it
-            // was not re-added during this iteration.
-            if (record.getValue() == Status.REMOVED) {
-                if (changeRecords.getChangeFor(record.getKey()) == null) {
-                    changeRecords.add(record.getValue(), record.getKey());
-                }
-            } else {
-                // do not keep previous iteration ADD/CHANGED records for files that got deleted
-                // during this iteration.
-                if (!deletedFiles.contains(record.getKey())) {
-                    changeRecords.add(record.getValue(), record.getKey());
-                }
-            }
-        }
-
-        // remove all the previous iteration REMOVED records if the class is re-added.
-    }
 
     /**
      * Calculate a list of {@link URL} that represent all the directories containing classes
@@ -379,28 +318,21 @@ public class InstantRunTransform extends Transform {
      * @param inputFile the input file within the input directory to transform.
      * @param outputDir the output directory where to place the transformed file.
      * @param change the nature of the change that triggered the transformation.
-     * @param recordingPolicy whether or not, we should record the event.
      * @throws IOException if the transformation failed.
      */
     protected void transformToClasses2Format(
             @NonNull final File inputDir,
             @NonNull final File inputFile,
             @NonNull final File outputDir,
-            @NonNull final Status change,
-            @NonNull final RecordingPolicy recordingPolicy)
+            @NonNull final Status change)
             throws IOException {
         if (inputFile.getPath().endsWith(SdkConstants.DOT_CLASS)) {
             File outputFile = IncrementalVisitor.instrumentClass(
                     inputDir, inputFile, outputDir, IncrementalSupportVisitor.VISITOR_BUILDER);
-
-            if (outputFile != null && recordingPolicy == RecordingPolicy.RECORD) {
-                generatedClasses2Files.add(change, outputFile.getAbsolutePath());
-            }
         }
     }
 
-    @Nullable
-    private static File deleteOutputFile(
+    private static void deleteOutputFile(
             @NonNull IncrementalVisitor.VisitorBuilder visitorBuilder,
             @NonNull File inputDir, @NonNull File inputFile, @NonNull File outputDir) {
         String inputPath = FileUtils.relativePossiblyNonExistingPath(inputFile, inputDir);
@@ -416,9 +348,7 @@ public class InstantRunTransform extends Transform {
                 LOGGER.warning("Cannot delete %1$s file.\nCause: %2$s",
                         outputFile, Throwables.getStackTraceAsString(e));
             }
-            return outputFile;
         }
-        return null;
     }
 
     /**
@@ -446,7 +376,6 @@ public class InstantRunTransform extends Transform {
                     inputDir.getAbsolutePath().length() + 1,
                     inputFile.getAbsolutePath().length() - ".class".length())
                         .replace(File.separatorChar, '.'));
-        generatedClasses3Files.add(Status.CHANGED, outputFile.getAbsolutePath());
     }
 
     /**
@@ -460,10 +389,9 @@ public class InstantRunTransform extends Transform {
      *
      * @param patchFileContents list of patched class names.
      * @param outputDir output directory where to generate the .class file in.
-     * @return the generated .class files
      */
-    private static File writePatchFileContents(
-            ImmutableList<String> patchFileContents, File outputDir) {
+    private static void writePatchFileContents(
+            @NonNull ImmutableList<String> patchFileContents, @NonNull File outputDir, long buildId) {
 
         ClassWriter cw = new ClassWriter(0);
         MethodVisitor mv;
@@ -471,6 +399,10 @@ public class InstantRunTransform extends Transform {
         cw.visit(Opcodes.V1_6, Opcodes.ACC_PUBLIC + Opcodes.ACC_SUPER,
                 IncrementalVisitor.APP_PATCHES_LOADER_IMPL, null,
                 IncrementalVisitor.ABSTRACT_PATCHES_LOADER_IMPL, null);
+
+        // Add the build ID to force the patch file to be repackaged.
+        cw.visitField(Opcodes.ACC_PUBLIC + Opcodes.ACC_STATIC + Opcodes.ACC_FINAL,
+                "BUILD_ID", "J", null, buildId);
 
         {
             mv = cw.visitMethod(Opcodes.ACC_PUBLIC, "<init>", "()V", null, null);
@@ -506,10 +438,7 @@ public class InstantRunTransform extends Transform {
         try {
             Files.createParentDirs(outputFile);
             Files.write(classBytes, outputFile);
-            // add the files to the list of files to be processed by subsequent tasks.
-            return outputFile;
         } catch (IOException e) {
-            e.printStackTrace();
             throw new RuntimeException(e);
         }
     }

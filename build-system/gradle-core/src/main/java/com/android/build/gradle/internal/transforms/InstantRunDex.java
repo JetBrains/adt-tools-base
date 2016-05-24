@@ -18,7 +18,6 @@ package com.android.build.gradle.internal.transforms;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.VisibleForTesting;
-import com.android.build.api.transform.SecondaryFile;
 import com.android.build.api.transform.DirectoryInput;
 import com.android.build.api.transform.QualifiedContent;
 import com.android.build.api.transform.Status;
@@ -26,40 +25,47 @@ import com.android.build.api.transform.Transform;
 import com.android.build.api.transform.TransformException;
 import com.android.build.api.transform.TransformInput;
 import com.android.build.api.transform.TransformInvocation;
-import com.android.build.gradle.internal.scope.InstantRunVariantScope;
-import com.android.builder.core.DexByteCodeConverter;
-import com.android.builder.model.OptionalCompilationStep;
 import com.android.build.gradle.internal.LoggerWrapper;
 import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
-import com.android.build.gradle.tasks.ColdswapArtifactsKickerTask;
+import com.android.build.gradle.internal.pipeline.ExtendedContentType;
+import com.android.build.gradle.internal.scope.InstantRunVariantScope;
+import com.android.builder.core.DexByteCodeConverter;
 import com.android.builder.core.DexOptions;
+import com.android.builder.model.OptionalCompilationStep;
 import com.android.ide.common.process.LoggedProcessOutputHandler;
 import com.android.ide.common.process.ProcessException;
 import com.android.utils.FileUtils;
 import com.android.utils.ILogger;
-import com.google.common.base.CaseFormat;
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.google.common.io.Files;
 
 import org.gradle.api.logging.Logger;
 
+import java.io.Closeable;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
 
 /**
- * Non incremental transform that looks for a file named "incrementalChanges.txt" in its input
- * and will use the file's content to get a list of .class files to dex in order to produce an
- * incremental dex file that can contains the delta changes from the last invocation.
+ * Non incremental transform that takes the hot (or warm) swap classes and dexes them.
+ *
+ * <p>The instant run transform outputs all of the hot swap files in the
+ * {@link ExtendedContentType#CLASSES_ENHANCED} stream. This transform runs incrementally to re-dex
+ * and redeliver only the classes changed since the last build, even in a series of hot swaps.
+ *
+ * <p>Note that a non-incremental run is still correct, it will just dex all of the hot swap changes
+ * since the last cold swap or full build.
  */
 public class InstantRunDex extends Transform {
 
@@ -73,111 +79,67 @@ public class InstantRunDex extends Transform {
     private final ILogger logger;
 
     @NonNull
-    private final Set<QualifiedContent.ContentType> inputTypes;
-
-    @NonNull
-    private final InstantRunBuildType buildType;
-
-    @NonNull
     private final InstantRunVariantScope variantScope;
-
-    @NonNull
-    private final InstantRunBuildContext instantRunBuildContext;
 
     public InstantRunDex(
             @NonNull InstantRunVariantScope transformVariantScope,
-            @NonNull InstantRunBuildType buildType,
             @NonNull Supplier<DexByteCodeConverter> dexByteCodeConverter,
             @NonNull DexOptions dexOptions,
-            @NonNull Logger logger,
-            @NonNull Set<QualifiedContent.ContentType> inputTypes) {
+            @NonNull Logger logger) {
         this.variantScope = transformVariantScope;
-        this.buildType = buildType;
         this.dexByteCodeConverter = dexByteCodeConverter;
         this.dexOptions = dexOptions;
         this.logger = new LoggerWrapper(logger);
-        this.inputTypes = inputTypes;
-        this.instantRunBuildContext = variantScope.getInstantRunBuildContext();
     }
 
     @Override
     public void transform(@NonNull TransformInvocation invocation)
             throws IOException, TransformException, InterruptedException {
 
-        File outputFolder = buildType.getOutputFolder(variantScope);
+        File outputFolder = InstantRunBuildType.RELOAD.getOutputFolder(variantScope);
 
         boolean changesAreCompatible =
                 variantScope.getInstantRunBuildContext().hasPassedVerification();
         boolean restartDexRequested =
                 variantScope.getGlobalScope().isActive(OptionalCompilationStep.RESTART_ONLY);
 
-        switch(buildType) {
-            case RELOAD:
-                if (!changesAreCompatible || restartDexRequested) {
-                    FileUtils.cleanOutputDir(outputFolder);
-                    return;
-                }
-                break;
-            case RESTART:
-                if (changesAreCompatible && !restartDexRequested) {
-                    // do nothing, let the incrementalChanges.txt accumulate all changes until
-                    // we are asked to produce a restart.dex or the verifier flagged the changes.
-                    if (outputFolder.exists()) {
-                        for (File file : outputFolder.listFiles()) {
-                            if (!file.getName().equals("build-info.xml") &&
-                                    !file.delete()) {
-                                logger.warning("Cannot delete " + file);
-                            }
-                        }
-                    }
-                    return;
-                } else {
-                    logger.warning("InstantRun incompatible change detected for API 20 or below,"
-                            + " full APK rebuild necessary, aborting");
-
-                    // abort the build.
-                    instantRunBuildContext.abort();
-
-                    File incremental = buildType.getIncrementalChangesFile(variantScope);
-                    if (incremental.exists()) {
-                        incremental.delete();
-                    }
-                    return;
-                }
-            default:
-                throw new RuntimeException("Unhandled build type " + buildType);
+        if (!changesAreCompatible || restartDexRequested) {
+            FileUtils.cleanOutputDir(outputFolder);
+            return;
         }
 
         // create a tmp jar file.
         File classesJar = new File(outputFolder, "classes.jar");
         if (classesJar.exists()) {
-            classesJar.delete();
+            FileUtils.delete(classesJar);
         }
         Files.createParentDirs(classesJar);
         final JarClassesBuilder jarClassesBuilder = getJarClassBuilder(classesJar);
 
         try {
-
             for (TransformInput input : invocation.getReferencedInputs()) {
                 for (DirectoryInput directoryInput : input.getDirectoryInputs()) {
-                    if (!directoryInput.getContentTypes().containsAll(inputTypes)) {
+                    if (!directoryInput.getContentTypes()
+                            .contains(ExtendedContentType.CLASSES_ENHANCED)) {
                         continue;
                     }
                     final File folder = directoryInput.getFile();
-                    File incremental = buildType.getIncrementalChangesFile(variantScope);
-                    if (!incremental.exists()) {
-                        // done
-                        continue;
-                    }
-                    ChangeRecords.process(incremental,
-                            new ChangeRecords.RecordHandler() {
-                                @Override
-                                public void handle(String filePath, Status status)
-                                        throws IOException {
-                                    // todo: check that file to process belongs to folder.
-                                    jarClassesBuilder.add(folder, new File(filePath));
+                    if (invocation.isIncremental()) {
+                        for (Map.Entry<File, Status> entry :
+                                directoryInput.getChangedFiles().entrySet()) {
+                            if (entry.getValue() != Status.REMOVED) {
+                                File file = entry.getKey();
+                                if (file.isFile()) {
+                                    jarClassesBuilder.add(folder, file);
                                 }
-                            });
+                            }
+                        }
+                    } else {
+                        Iterable<File> files = FileUtils.getAllFiles(folder);
+                        for (File inputFile : files) {
+                            jarClassesBuilder.add(folder, inputFile);
+                        }
+                    }
                 }
             }
         } finally {
@@ -200,9 +162,7 @@ public class InstantRunDex extends Transform {
                     InstantRunBuildContext.TaskType.INSTANT_RUN_DEX);
             convertByteCode(inputFiles.build(), outputFolder);
             variantScope.getInstantRunBuildContext().addChangedFile(
-                    buildType == InstantRunBuildType.RELOAD
-                            ? InstantRunBuildContext.FileType.RELOAD_DEX
-                            : InstantRunBuildContext.FileType.RESTART_DEX,
+                    InstantRunBuildContext.FileType.RELOAD_DEX,
                     new File(outputFolder, "classes.dex"));
         } catch (ProcessException e) {
             throw new TransformException(e);
@@ -213,12 +173,12 @@ public class InstantRunDex extends Transform {
     }
 
     @VisibleForTesting
-    static class JarClassesBuilder {
+    static class JarClassesBuilder implements Closeable{
         final File outputFile;
-        JarOutputStream jarOutputStream;
+        private JarOutputStream jarOutputStream;
         boolean empty = true;
 
-        JarClassesBuilder(File outputFile) {
+        private JarClassesBuilder(@NonNull File outputFile) {
             this.outputFile = outputFile;
         }
 
@@ -230,7 +190,8 @@ public class InstantRunDex extends Transform {
             copyFileInJar(inputDir, file, jarOutputStream);
         }
 
-        void close() throws IOException {
+        @Override
+        public void close() throws IOException {
             if (jarOutputStream != null) {
                 jarOutputStream.close();
             }
@@ -271,14 +232,13 @@ public class InstantRunDex extends Transform {
     @NonNull
     @Override
     public String getName() {
-        return "instant+" + CaseFormat.UPPER_UNDERSCORE.to(
-                CaseFormat.LOWER_CAMEL, buildType.name()) + "Dex";
+        return "instantReloadDex";
     }
 
     @NonNull
     @Override
     public Set<QualifiedContent.ContentType> getInputTypes() {
-        return inputTypes;
+        return ImmutableSet.of(ExtendedContentType.CLASSES_ENHANCED);
     }
 
     @NonNull
@@ -295,17 +255,23 @@ public class InstantRunDex extends Transform {
 
     @NonNull
     @Override
-    public Collection<SecondaryFile> getSecondaryFiles() {
-        return buildType == InstantRunBuildType.RESTART
-            ? ImmutableList.of(new SecondaryFile(
-                ColdswapArtifactsKickerTask.ConfigAction.getMarkerFile(variantScope),
-                true /* supportsIncrementalChange */))
-            : ImmutableList.<SecondaryFile>of();
+    public Map<String, Object> getParameterInputs() {
+        return ImmutableMap.of(
+                "changesAreCompatible",
+                variantScope.getInstantRunBuildContext().hasPassedVerification(),
+                "restartDexRequested",
+                variantScope.getGlobalScope().isActive(OptionalCompilationStep.RESTART_ONLY));
+    }
+
+    @NonNull
+    @Override
+    public Collection<File> getSecondaryDirectoryOutputs() {
+        return ImmutableList.of(InstantRunBuildType.RELOAD.getOutputFolder(variantScope));
     }
 
     @Override
     public boolean isIncremental() {
-        return false;
+        return true;
     }
 
 }
