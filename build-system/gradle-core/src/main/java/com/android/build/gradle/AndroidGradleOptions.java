@@ -25,6 +25,7 @@ import com.google.common.collect.Maps;
 
 import org.gradle.api.Project;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
@@ -177,9 +178,20 @@ public class AndroidGradleOptions {
         return null;
     }
 
+    /**
+     * Obtains the location for APKs as defined in the project.
+     *
+     * @param project the project
+     * @return the location for APKs or {@code null} if not defined
+     */
     @Nullable
-    public static String getApkLocation(@NonNull Project project) {
-        return getString(project, AndroidProject.PROPERTY_APK_LOCATION);
+    public static File getApkLocation(@NonNull Project project) {
+        String locString = getString(project, AndroidProject.PROPERTY_APK_LOCATION);
+        if (locString == null) {
+            return null;
+        }
+
+        return project.file(locString);
     }
 
     @Nullable

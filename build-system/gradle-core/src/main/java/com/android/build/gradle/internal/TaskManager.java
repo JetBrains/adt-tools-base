@@ -2202,8 +2202,6 @@ public abstract class TaskManager {
         final ApkVariantData variantData = (ApkVariantData) variantScope.getVariantData();
 
         boolean signedApk = variantData.isSigned();
-        final File apkLocation = new File(variantScope.getGlobalScope().getApkLocation());
-
         boolean multiOutput = variantData.getOutputs().size() > 1;
 
         GradleVariantConfiguration variantConfiguration = variantScope.getVariantConfiguration();
@@ -2333,8 +2331,11 @@ public abstract class TaskManager {
                         variantOutputScope.getTaskName("copySplit"),
                         Copy.class,
                         copyTask -> {
-                            copyTask.setDestinationDir(apkLocation);
-                            copyTask.from(variantOutputData.packageSplitResourcesTask.getOutputDirectory());
+                            copyTask.setDestinationDir(getGlobalScope().getApkLocation());
+                            copyTask.from(
+                                    variantOutputData
+                                            .packageSplitResourcesTask
+                                            .getOutputDirectory());
                             copyTask.mustRunAfter(appTaskName);
                         });
                 variantOutputScope.getAssembleTask().dependsOn(tasks, copySplitTask);
