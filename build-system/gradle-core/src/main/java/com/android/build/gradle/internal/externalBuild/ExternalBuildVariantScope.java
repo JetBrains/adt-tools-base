@@ -25,7 +25,6 @@ import com.google.common.collect.ImmutableList;
 
 import java.io.File;
 import java.util.Collection;
-import java.util.List;
 
 /**
  * Implementation of the {@link TransformVariantScope} for external build system integration.
@@ -83,7 +82,8 @@ import java.util.List;
 
     @NonNull
     @Override
-    public List<File> getBootClasspath(boolean includeOptionalLibraries) {
+    public ImmutableList<File> getInstantRunBootClasspath() {
+        // TODO: Use target device platform jar instead.
         return ImmutableList.of(
                 new File(externalBuildContext.getBuildManifest().getAndroidSdk().getAndroidJar()));
     }

@@ -22,7 +22,10 @@ import static com.android.builder.model.AndroidProject.FD_OUTPUTS;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.build.gradle.AndroidGradleOptions;
 import com.android.build.gradle.external.gson.NativeBuildConfigValue;
+import com.android.build.gradle.internal.LoggerWrapper;
+import com.android.build.gradle.internal.SdkHandler;
 import com.android.build.gradle.internal.core.Abi;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.coverage.JacocoReportTask;
@@ -34,7 +37,6 @@ import com.android.build.gradle.internal.incremental.InstantRunWrapperTask;
 import com.android.build.gradle.internal.pipeline.TransformManager;
 import com.android.build.gradle.internal.pipeline.TransformTask;
 import com.android.build.gradle.internal.tasks.CheckManifest;
-import com.android.build.gradle.internal.tasks.FileSupplier;
 import com.android.build.gradle.internal.tasks.PrepareDependenciesTask;
 import com.android.build.gradle.internal.tasks.databinding.DataBindingExportBuildInfoTask;
 import com.android.build.gradle.internal.tasks.databinding.DataBindingProcessLayoutsTask;
@@ -43,20 +45,28 @@ import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.build.gradle.internal.variant.LibraryVariantData;
 import com.android.build.gradle.internal.variant.TestVariantData;
 import com.android.build.gradle.tasks.AidlCompile;
-import com.android.build.gradle.tasks.BinaryFileProviderTask;
 import com.android.build.gradle.tasks.ExternalNativeBuildTask;
 import com.android.build.gradle.tasks.ExternalNativeJsonGenerator;
 import com.android.build.gradle.tasks.GenerateBuildConfig;
 import com.android.build.gradle.tasks.GenerateResValues;
 import com.android.build.gradle.tasks.MergeResources;
 import com.android.build.gradle.tasks.MergeSourceSetFolders;
-import com.android.build.gradle.tasks.NdkCompile;
 import com.android.build.gradle.tasks.ProcessAndroidResources;
 import com.android.build.gradle.tasks.RenderscriptCompile;
 import com.android.build.gradle.tasks.ShaderCompile;
+import com.android.builder.core.AndroidBuilder;
+import com.android.builder.core.BootClasspathBuilder;
 import com.android.builder.core.VariantType;
 import com.android.builder.model.ApiVersion;
+import com.android.repository.api.ProgressIndicator;
+import com.android.sdklib.AndroidTargetHash;
+import com.android.sdklib.AndroidVersion;
+import com.android.sdklib.IAndroidTarget;
+import com.android.sdklib.SdkVersionInfo;
+import com.android.sdklib.repository.AndroidSdkHandler;
+import com.android.sdklib.repository.LoggerProgressIndicatorWrapper;
 import com.android.utils.FileUtils;
+import com.android.utils.ILogger;
 import com.android.utils.StringHelper;
 import com.google.common.base.Objects;
 import com.google.common.base.Preconditions;
@@ -82,6 +92,8 @@ import java.util.stream.Collectors;
  * A scope containing data for a specific variant.
  */
 public class VariantScopeImpl implements VariantScope {
+
+    private static final ILogger LOGGER = LoggerWrapper.getLogger(VariantScopeImpl.class);
 
     @NonNull
     private GlobalScope globalScope;
@@ -127,8 +139,6 @@ public class VariantScopeImpl implements VariantScope {
 
     private AndroidTask<MergeSourceSetFolders> mergeJniLibsFolderTask;
 
-    private AndroidTask<NdkCompile> ndkCompileTask;
-
     @Nullable
     private AndroidTask<DataBindingExportBuildInfoTask> dataBindingExportInfoTask;
     @Nullable
@@ -158,11 +168,7 @@ public class VariantScopeImpl implements VariantScope {
      */
     private AndroidTask<?> coverageReportTask;
 
-    private FileSupplier mappingFileProviderTask;
-    private AndroidTask<BinaryFileProviderTask> binayFileProviderTask;
-
     private File resourceOutputDir;
-
 
     public VariantScopeImpl(
             @NonNull GlobalScope globalScope,
@@ -1123,8 +1129,69 @@ public class VariantScopeImpl implements VariantScope {
 
     @NonNull
     @Override
-    public List<File> getBootClasspath(boolean includeOptionalLibraries) {
-        return getGlobalScope().getAndroidBuilder().getBootClasspath(includeOptionalLibraries);
+    public ImmutableList<File> getInstantRunBootClasspath() {
+        SdkHandler sdkHandler = getGlobalScope().getSdkHandler();
+        AndroidBuilder androidBuilder = globalScope.getAndroidBuilder();
+        IAndroidTarget androidBuilderTarget = androidBuilder.getTarget();
+
+        Preconditions.checkState(
+                androidBuilderTarget != null,
+                "AndroidBuilder target not initialized.");
+
+        File annotationsJar = sdkHandler.getSdkLoader().getSdkInfo(LOGGER).getAnnotationsJar();
+
+        AndroidVersion targetDeviceApiLevel =
+                AndroidGradleOptions.getTargetApiLevel(getGlobalScope().getProject());
+
+        if (androidBuilderTarget.getVersion().equals(targetDeviceApiLevel)) {
+            // Compile SDK and the target device match, re-use the target that we have already
+            // found earlier.
+            return BootClasspathBuilder.computeFullBootClasspath(
+                    androidBuilderTarget, annotationsJar);
+        }
+
+        IAndroidTarget targetToUse = getAndroidTarget(
+                sdkHandler,
+                AndroidTargetHash.getPlatformHashString(targetDeviceApiLevel));
+
+        if (targetToUse == null) {
+            // Currently AS always sets the injected api level to a number, so the target hash above
+            // is something like "android-24". We failed to find it, so let's try "android-N".
+            String buildCode = SdkVersionInfo.getBuildCode(targetDeviceApiLevel.getApiLevel());
+            if (buildCode != null) {
+                AndroidVersion versionFromBuildCode =
+                        new AndroidVersion(targetDeviceApiLevel.getApiLevel(), buildCode);
+
+                targetToUse = getAndroidTarget(
+                        sdkHandler,
+                        AndroidTargetHash.getPlatformHashString(versionFromBuildCode));
+            }
+        }
+
+        if (targetToUse == null) {
+            // The device platform is not installed, let's carry on with the compile SDK.
+            // TODO: What to do here? fail? log a warning? download the missing package?
+            targetToUse = androidBuilderTarget;
+        }
+
+        return BootClasspathBuilder.computeFullBootClasspath(targetToUse, annotationsJar);
+    }
+
+    /**
+     * Calls the sdklib machinery to construct the {@link IAndroidTarget} for the given hash string.
+     *
+     * @return appropriate {@link IAndroidTarget} or null if the matching platform package is not
+     *         installed.
+     */
+    @Nullable
+    private static IAndroidTarget getAndroidTarget(
+            @NonNull SdkHandler sdkHandler,
+            @NonNull String targetHash) {
+        File sdkLocation = sdkHandler.getSdkFolder();
+        ProgressIndicator progressIndicator = new LoggerProgressIndicatorWrapper(LOGGER);
+        return AndroidSdkHandler.getInstance(sdkLocation)
+                .getAndroidTargetManager(progressIndicator)
+                .getTargetFromHashString(targetHash, progressIndicator);
     }
 
     @Override
