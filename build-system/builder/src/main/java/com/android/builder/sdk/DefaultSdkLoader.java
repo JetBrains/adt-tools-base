@@ -33,7 +33,6 @@ import com.android.repository.api.Installer;
 import com.android.repository.api.ProgressIndicator;
 import com.android.repository.api.RemotePackage;
 import com.android.repository.api.RepoManager;
-import com.android.repository.api.RepoPackage;
 import com.android.repository.api.SettingsController;
 import com.android.repository.api.UpdatablePackage;
 import com.android.repository.io.FileOpUtils;
@@ -110,6 +109,14 @@ public class DefaultSdkLoader implements SdkLoader {
             Downloader downloader = sdkLibData.getDownloader();
             Preconditions.checkNotNull(settings);
             Preconditions.checkNotNull(downloader);
+
+            // Check if Build Tools is preview that the user is requesting the latest revision.
+            if (buildToolInfo != null && !buildToolInfo.getRevision().equals(buildToolRevision)) {
+                progress.logWarning("Build Tools revision " +
+                        buildToolRevision +
+                        " requested, but the latest available preview is " +
+                        buildToolInfo.getRevision()+ ", which will be used to build.");
+            }
 
             if (target == null || buildToolInfo == null) {
                 RepoManager repoManager = mSdkHandler.getSdkManager(progress);
@@ -223,6 +230,14 @@ public class DefaultSdkLoader implements SdkLoader {
         if (buildToolsPackage == null) {
             throw new IllegalStateException("Failed to find Build Tools revision "
                     + buildToolRevision.toString());
+        }
+
+        if (!buildToolsPackage.getVersion().equals(buildToolRevision)) {
+            progress.logWarning(
+                    "Build Tools revision " +
+                    buildToolRevision +
+                    " requested, but the latest available preview is " +
+                    buildToolsPackage.getVersion() + ", which will be installed.");
         }
 
         if (!installRemotePackage(
