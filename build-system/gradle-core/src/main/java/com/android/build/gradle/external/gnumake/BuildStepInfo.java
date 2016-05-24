@@ -16,6 +16,7 @@
 package com.android.build.gradle.external.gnumake;
 
 
+import com.android.annotations.NonNull;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 
@@ -26,18 +27,21 @@ import java.util.List;
  * files.
  */
 class BuildStepInfo {
+    @NonNull
     private final CommandLine command;
+    @NonNull
     private final List<String> inputs;
+    @NonNull
     private final List<String> outputs;
     // true only if this command can supply terminal input files.
     // For example, .c files specified by gcc with -c flag.
     private final boolean inputsAreSourceFiles;
 
-    BuildStepInfo(CommandLine command, List<String> inputs, List<String> outputs) {
+    BuildStepInfo(@NonNull CommandLine command, @NonNull List<String> inputs, @NonNull List<String> outputs) {
         this(command, inputs, outputs, false);
     }
 
-    BuildStepInfo(CommandLine command, List<String> inputs, List<String> outputs,
+    BuildStepInfo(@NonNull CommandLine command, @NonNull List<String> inputs, @NonNull List<String> outputs,
             boolean inputsAreSourceFiles) {
         this.command = command;
         this.inputs = Lists.newArrayList(inputs);
@@ -54,9 +58,10 @@ class BuildStepInfo {
                 throw new RuntimeException(
                         String.format(
                                 "GNUMAKE: Expected exactly one source file in compile step:"
-                                        + " %s\nbut received: \n%s",
+                                        + " %s\nbut received: \n%s\nin command:\n%s\n",
                                 this,
-                                Joiner.on("\n").join(getInputs())));
+                                Joiner.on("\n").join(getInputs()),
+                                command));
             }
         }
     }
@@ -70,6 +75,9 @@ class BuildStepInfo {
 
     @Override
     public boolean equals(Object obj) {
+        if (!(obj instanceof  BuildStepInfo)) {
+            return false;
+        }
         BuildStepInfo that = (BuildStepInfo) obj;
         return this.command.command.equals(that.command.command)
                 && this.inputs.equals(that.getInputs())
@@ -77,6 +85,7 @@ class BuildStepInfo {
                 && this.inputsAreSourceFiles == that.inputsAreSourceFiles;
     }
 
+    @NonNull
     @Override
     public String toString() {
         return command.command
@@ -85,14 +94,17 @@ class BuildStepInfo {
                 + (inputsAreSourceFiles ? "SOURCE" : "INTERMEDIATE");
     }
 
+    @NonNull
     CommandLine getCommand() {
         return command;
     }
 
+    @NonNull
     List<String> getInputs() {
         return inputs;
     }
 
+    @NonNull
     List<String> getOutputs() {
         return outputs;
     }

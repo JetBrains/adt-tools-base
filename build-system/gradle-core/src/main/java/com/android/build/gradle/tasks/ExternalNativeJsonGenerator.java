@@ -69,9 +69,11 @@ public abstract class ExternalNativeJsonGenerator {
     private final File jsonFolder;
     private final boolean debuggable;
     @NonNull
-    private final String cFlags;
+    private final List<String> buildArguments;
     @NonNull
-    private final String cppFlags;
+    private final List<String> cFlags;
+    @NonNull
+    private final List<String> cppFlags;
     @NonNull
     private final List<File> nativeBuildConfigurationsJsons;
 
@@ -86,8 +88,9 @@ public abstract class ExternalNativeJsonGenerator {
             @NonNull File jsonFolder,
             @NonNull File makeFileOrFolder,
             boolean debuggable,
-            @Nullable String cFlags,
-            @Nullable String cppFlags) {
+            @Nullable List<String> buildArguments,
+            @Nullable List<String> cFlags,
+            @Nullable List<String> cppFlags) {
         Preconditions.checkArgument(!abis.isEmpty(), "No abis specified");
         this.variantName = variantName;
         this.abis = abis;
@@ -99,8 +102,9 @@ public abstract class ExternalNativeJsonGenerator {
         this.jsonFolder = jsonFolder;
         this.makeFileOrFolder = makeFileOrFolder;
         this.debuggable = debuggable;
-        this.cFlags = cFlags == null ? "" : cFlags;
-        this.cppFlags = cppFlags == null ? "" : cppFlags;
+        this.buildArguments = buildArguments == null ? Lists.newArrayList() : buildArguments;
+        this.cFlags = cFlags == null ? Lists.newArrayList() : cFlags;
+        this.cppFlags = cppFlags == null ? Lists.newArrayList() : cppFlags;
         this.nativeBuildConfigurationsJsons = ExternalNativeBuildTaskUtils.getOutputJsons(
                 jsonFolder,
                 abis);
@@ -162,6 +166,7 @@ public abstract class ExternalNativeJsonGenerator {
     /**
      * @return the native build system that is used to generate the JSON.
      */
+    @NonNull
     public abstract NativeBuildSystem getNativeBuildSystem();
 
     /**
@@ -241,6 +246,7 @@ public abstract class ExternalNativeJsonGenerator {
                         jsonFolder,
                         projectPath,
                         variantConfig.getBuildType().isDebuggable(),
+                        variantConfig.getExternalNativeNdkBuildOptions().getArguments(),
                         variantConfig.getExternalNativeNdkBuildOptions().getcFlags(),
                         variantConfig.getExternalNativeNdkBuildOptions().getCppFlags());
             }
@@ -257,6 +263,7 @@ public abstract class ExternalNativeJsonGenerator {
                         jsonFolder,
                         projectPath,
                         variantConfig.getBuildType().isDebuggable(),
+                        variantConfig.getExternalNativeCmakeOptions().getArguments(),
                         variantConfig.getExternalNativeCmakeOptions().getcFlags(),
                         variantConfig.getExternalNativeCmakeOptions().getCppFlags());
 
@@ -302,7 +309,15 @@ public abstract class ExternalNativeJsonGenerator {
     @SuppressWarnings("unused")
     @Optional
     @Input
-    public String getcFlags() {
+    public List<String> getBuildArguments() {
+        return buildArguments;
+    }
+
+    @NonNull
+    @SuppressWarnings("unused")
+    @Optional
+    @Input
+    public List<String> getcFlags() {
         return cFlags;
     }
 
@@ -310,7 +325,7 @@ public abstract class ExternalNativeJsonGenerator {
     @SuppressWarnings("unused")
     @Optional
     @Input
-    public String getCppFlags() {
+    public List<String> getCppFlags() {
         return cppFlags;
     }
 

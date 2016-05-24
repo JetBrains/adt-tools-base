@@ -32,6 +32,8 @@ package com.android.build.gradle.external.gnumake;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import com.android.annotations.NonNull;
+
 import org.junit.Test;
 
 import java.io.FileNotFoundException;
@@ -60,7 +62,7 @@ public class CommandClassifierTest {
                 .replace("  ", " ");
     }
 
-    private static void assertClassifyContains(String string, String expect) {
+    private static void assertClassifyContains(String string, @NonNull String expect) {
         assertThat(classify(string)).contains(expect);
     }
 
@@ -248,4 +250,19 @@ public class CommandClassifierTest {
         assertClassifyContains("g++ -D BOB test.cpp", "[ in:test.cpp ]");
     }
 
+    @Test
+    public void testFlagWithDash() {
+        assertClassifyContains("/usr/linux-x86_64/bin/clang++ -MMD -MP "
+                + "-MF /usr/hello-jni.o.d "
+                + "-gcc-toolchain /usr/prebuilt/linux-x86_64 -target mips64el-none-linux-android "
+                + "-fpic -fno-strict-aliasing -finline-functions -ffunction-sections "
+                + "-funwind-tables -fmessage-length=0 -Wno-invalid-command-line-argument "
+                + "-Wno-unused-command-line-argument -no-canonical-prefixes -fno-exceptions "
+                + "-fno-rtti -O2 -g -DNDEBUG -fomit-frame-pointer -I/usr/cxx-stl/system/include "
+                + "-I/usr/project/src/main/cxx -DANDROID -Wa,--noexecstack -Wformat "
+                + "-Werror=format-security -DTEST_C_FLAG -DTEST_CPP_FLAG -DTEST_CUSTOM_VARIANT_FLAG "
+                + "-I/usr/android-21/arch-mips64/usr/include "
+                + "-c /usr/project/src/main/cxx/hello-jni.cpp "
+                + "-o /usr/project/build/hello-jni.o", "/usr/project/src/main/cxx/hello-jni.cpp");
+    }
 }

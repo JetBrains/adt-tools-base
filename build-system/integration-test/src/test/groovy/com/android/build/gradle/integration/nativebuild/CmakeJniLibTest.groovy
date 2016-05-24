@@ -58,12 +58,10 @@ android {
     compileSdkVersion rootProject.latestCompileSdk
     buildToolsVersion = rootProject.buildToolsVersion
 
-    defaultConfig {
-        externalNativeBuild {
-          cmake {
-            path "."
-          }
-        }
+    externalNativeBuild {
+      cmake {
+        path "."
+      }
     }
 }
 """

@@ -24,7 +24,6 @@ import com.android.ide.common.process.ProcessInfoBuilder;
 import com.android.sdklib.IAndroidTarget;
 import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
-import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 
 import org.gradle.api.GradleException;
@@ -51,10 +50,11 @@ class CmakeExternalNativeJsonGenerator extends ExternalNativeJsonGenerator {
             @NonNull File jsonFolder,
             @NonNull File makeFileOrFolder,
             boolean debuggable,
-            @Nullable String cFlags,
-            @Nullable String cppFlags) {
+            @Nullable List<String> buildArguments,
+            @Nullable List<String> cFlags,
+            @Nullable List<String> cppFlags) {
         super(variantName, abis, androidBuilder, sdkFolder, ndkFolder, soFolder, objFolder,
-                jsonFolder, makeFileOrFolder, debuggable, cFlags, cppFlags);
+                jsonFolder, makeFileOrFolder, debuggable, buildArguments, cFlags, cppFlags);
         Preconditions.checkNotNull(sdkDirectory);
     }
 
@@ -97,12 +97,17 @@ class CmakeExternalNativeJsonGenerator extends ExternalNativeJsonGenerator {
                     String.format("-DANDROID_NATIVE_API_LEVEL=%s", target.hashString()));
         }
 
-        if (!Strings.isNullOrEmpty(getcFlags())) {
-            builder.addArgs(String.format("-DCMAKE_C_FLAGS=%s", getcFlags()));
+        if (!getcFlags().isEmpty()) {
+            builder.addArgs(String.format("-DCMAKE_C_FLAGS=%s", Joiner.on(" ").join(getcFlags())));
         }
 
-        if (!Strings.isNullOrEmpty(getCppFlags())) {
-            builder.addArgs(String.format("-DCMAKE_CXX_FLAGS=%s", getCppFlags()));
+        if (!getCppFlags().isEmpty()) {
+            builder.addArgs(String.format("-DCMAKE_CXX_FLAGS=%s",
+                    Joiner.on(" ").join(getCppFlags())));
+        }
+
+        for (String argument : getBuildArguments()) {
+            builder.addArgs(argument);
         }
 
         diagnostic("executing CMake %s", builder);
@@ -114,6 +119,7 @@ class CmakeExternalNativeJsonGenerator extends ExternalNativeJsonGenerator {
         diagnostic("done executing CMake");
     }
 
+    @NonNull
     @Override
     public NativeBuildSystem getNativeBuildSystem() {
         return NativeBuildSystem.CMAKE;

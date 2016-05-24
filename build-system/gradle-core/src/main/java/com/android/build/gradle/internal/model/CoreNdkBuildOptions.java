@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.internal.model;
 
+import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 
 import org.gradle.model.Managed;
@@ -38,13 +39,5 @@ import java.io.File;
 public interface CoreNdkBuildOptions {
     @Nullable
     File getPath();
-    void setPath(File path);
-
-    @Nullable
-    String getcFlags();
-    void setcFlags(String cflags);
-
-    @Nullable
-    String getCppFlags();
-    void setCppFlags(String cppflags);
+    void setPath(@NonNull File path);
 }

@@ -20,6 +20,7 @@ import com.android.annotations.NonNull;
 
 import org.gradle.model.Managed;
 
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -27,6 +28,12 @@ import java.util.Set;
  */
 @Managed
 public interface ExternalNativeCmakeOptions {
+    /**
+     * The CMake build system flags
+     */
+    @NonNull
+    List<String> getArguments();
+
     /**
      * The ABI Filters.  Leave empty to include all supported ABI.
      */
@@ -36,12 +43,12 @@ public interface ExternalNativeCmakeOptions {
     /**
      * The C Flags
      */
-    String getcFlags();
-    void setcFlags(String flags);
+    @NonNull
+    List<String> getcFlags();
 
     /**
      * The CPP Flags
      */
-    String getCppFlags();
-    void setCppFlags(String flags);
+    @NonNull
+    List<String>  getCppFlags();
 }

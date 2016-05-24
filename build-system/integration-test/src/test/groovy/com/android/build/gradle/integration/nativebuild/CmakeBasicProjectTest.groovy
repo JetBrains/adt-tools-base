@@ -76,13 +76,18 @@ $modelBefore
         compileSdkVersion $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
         buildToolsVersion "$GradleTestProject.DEFAULT_BUILD_TOOL_VERSION"
         defaultConfig {
-            externalNativeBuild {
-              cmake {
-                path "."
-                cFlags = "-DTEST_C_FLAG"
-                cppFlags = "-DTEST_CPP_FLAG"
-              }
-            }
+          cmake {
+            arguments.addAll("-DANDROID_TOOLCHAIN_NAME=arm-linux-androideabi-clang3.5")
+            cFlags.addAll("-DTEST_C_FLAG", "-DTEST_C_FLAG_2")
+            cppFlags.addAll("-DTEST_CPP_FLAG")
+            abiFilters.addAll("armeabi-v7a", "armeabi", "armeabi-v7a with NEON",
+                "armeabi-v7a with VFPV3", "armeabi-v6 with VFP")
+          }
+        }
+        externalNativeBuild {
+          cmake {
+            path "."
+          }
         }
     }
 $modelAfter
@@ -93,13 +98,11 @@ $modelAfter
     @Test
     void "check apk content"() {
         assertThatApk(project.getApk("debug")).hasVersionCode(1)
-        assertThatApk(project.getApk("debug")).contains("lib/x86/libhello-jni.so");
-        assertThatApk(project.getApk("debug")).contains("lib/x86_64/libhello-jni.so");
-        assertThatApk(project.getApk("debug")).contains("lib/arm64-v8a/libhello-jni.so");
-        assertThatApk(project.getApk("debug")).contains("lib/armeabi/libhello-jni.so");
         assertThatApk(project.getApk("debug")).contains("lib/armeabi-v7a/libhello-jni.so");
-        assertThatApk(project.getApk("debug")).contains("lib/mips/libhello-jni.so");
-        assertThatApk(project.getApk("debug")).contains("lib/mips64/libhello-jni.so");
+        assertThatApk(project.getApk("debug")).contains("lib/armeabi/libhello-jni.so");
+        assertThatApk(project.getApk("debug")).contains("lib/armeabi-v7a with NEON/libhello-jni.so");
+        assertThatApk(project.getApk("debug")).contains("lib/armeabi-v7a with VFPV3/libhello-jni.so");
+        assertThatApk(project.getApk("debug")).contains("lib/armeabi-v6 with VFP/libhello-jni.so");
     }
 
     @Test
@@ -110,7 +113,8 @@ $modelAfter
         assertThat(model.getBuildSystems()).containsExactly(NativeBuildSystem.CMAKE.getName());
         assertThat(model.buildFiles).hasSize(1);
         assertThat(model.name).isEqualTo("project");
-        assertThat(model.artifacts).hasSize(14);
+        int abiCount = 5;
+        assertThat(model.artifacts).hasSize(abiCount * /* variantCount */ 2);
         assertThat(model.fileExtensions).hasSize(1);
 
         for (File file : model.buildFiles) {
@@ -126,7 +130,7 @@ $modelAfter
             groupToArtifacts.put(artifact.getGroupName(), artifact);
         }
 
-        assertThat(groupToArtifacts.keySet()).containsExactly("debug", "release");
-        assertThat(groupToArtifacts.get("debug")).hasSize(groupToArtifacts.get("release").size());
+        assertThat(model).hasArtifactGroupsNamed("debug", "release");
+        assertThat(model).hasArtifactGroupsOfSize(abiCount);
     }
 }

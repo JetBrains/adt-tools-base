@@ -17,10 +17,11 @@
 package com.android.build.gradle.internal.dsl;
 
 import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
 import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -28,31 +29,55 @@ import java.util.Set;
  */
 public class ExternalNativeCmakeOptions implements CoreExternalNativeCmakeOptions {
 
-    @Nullable
-    private String cFlags;
-    @Nullable
-    private String cppFlags;
     @NonNull
-    private Set<String> abiFilters = Sets.newHashSet();
+    private final List<String> arguments = Lists.newArrayList();
+    @NonNull
+    private final List<String> cFlags = Lists.newArrayList();
+    @NonNull
+    private final List<String> cppFlags = Lists.newArrayList();
+    @NonNull
+    private final Set<String> abiFilters = Sets.newHashSet();
 
-    @Nullable
+    @NonNull
     @Override
-    public String getcFlags() {
+    public List<String> getArguments() {
+        return arguments;
+    }
+
+    public void setArguments(@NonNull List<String> arguments) {
+        this.arguments.addAll(arguments);
+    }
+
+    public void arguments(@NonNull String ...arguments) {
+        Collections.addAll(this.arguments, arguments);
+    }
+
+    @NonNull
+    @Override
+    public List<String> getcFlags() {
         return cFlags;
     }
 
-    public void setcFlags(@Nullable String cFlags) {
-        this.cFlags = cFlags;
+    public void setcFlags(@NonNull List<String> flags) {
+        this.cFlags.addAll(flags);
     }
 
-    @Nullable
+    public void cFlags(@NonNull String ...flags) {
+        Collections.addAll(this.cFlags, flags);
+    }
+
+    @NonNull
     @Override
-    public String getCppFlags() {
+    public List<String> getCppFlags() {
         return cppFlags;
     }
 
-    public void setCppFlags(@Nullable String cppFlags) {
-        this.cppFlags = cppFlags;
+    public void setCppFlags(@NonNull List<String> flags) {
+        this.cppFlags.addAll(flags);
+    }
+
+    public void cppFlags(@NonNull String ...flags) {
+        Collections.addAll(this.cppFlags, flags);
     }
 
     @NonNull
@@ -61,16 +86,12 @@ public class ExternalNativeCmakeOptions implements CoreExternalNativeCmakeOption
         return abiFilters;
     }
 
-    @NonNull
-    public ExternalNativeCmakeOptions abiFilter(String filter) {
-        abiFilters.add(filter);
-        return this;
+    public void setAbiFilters(@NonNull Set<String> abiFilters) {
+        this.abiFilters.addAll(abiFilters);
     }
 
-    @NonNull
-    public ExternalNativeCmakeOptions abiFilters(String... filters) {
-        Collections.addAll(abiFilters, filters);
-        return this;
+    public void abiFilters(@NonNull String ...abiFilters) {
+        Collections.addAll(this.abiFilters, abiFilters);
     }
 }
 
