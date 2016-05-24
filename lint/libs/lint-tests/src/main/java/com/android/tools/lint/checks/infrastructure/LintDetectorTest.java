@@ -1170,7 +1170,7 @@ public abstract class LintDetectorTest extends SdkTestCase {
             ILogger logger = new StdLogger(StdLogger.Level.INFO);
             ResourceMerger merger = new ResourceMerger(0);
 
-            ResourceSet resourceSet = new ResourceSet(getName()) {
+            ResourceSet resourceSet = new ResourceSet(getName(), null) {
                 @Override
                 protected void checkItems() throws DuplicateDataException {
                     // No checking in ProjectResources; duplicates can happen, but
@@ -1254,7 +1254,7 @@ public abstract class LintDetectorTest extends SdkTestCase {
                                 }
                                 for (String id : ids) {
                                     ResourceItem idItem = new ResourceItem(id, ResourceType.ID,
-                                            null);
+                                            null, null);
                                     String qualifiers = file.getParentFile().getName();
                                     if (qualifiers.startsWith("layout-")) {
                                         qualifiers = qualifiers.substring("layout-".length());

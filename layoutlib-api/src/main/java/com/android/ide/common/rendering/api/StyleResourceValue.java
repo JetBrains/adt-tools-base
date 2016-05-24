@@ -38,12 +38,20 @@ public final class StyleResourceValue extends ResourceValue implements IStyleRes
             = new HashMap<Attribute, ItemResourceValue>();
 
     public StyleResourceValue(ResourceType type, String name, boolean isFramework) {
-        super(type, name, isFramework);
+        this(type, name, isFramework, null);
+    }
+
+    public StyleResourceValue(ResourceType type, String name, boolean isFramework, String libraryName) {
+        super(type, name, isFramework, libraryName);
+    }
+
+    public StyleResourceValue(ResourceType type, String name, String parentStyle, boolean isFramework) {
+        this(type, name, parentStyle, isFramework, null);
     }
 
     public StyleResourceValue(ResourceType type, String name, String parentStyle,
-            boolean isFramework) {
-        super(type, name, isFramework);
+            boolean isFramework, String libraryName) {
+        super(type, name, isFramework, libraryName);
         mParentStyle = parentStyle;
     }
 
@@ -90,8 +98,8 @@ public final class StyleResourceValue extends ResourceValue implements IStyleRes
      * @deprecated use {@link #addItem(ItemResourceValue)}
      */
     @Deprecated
-    public void addValue(ResourceValue value, boolean isFrameworkAttr) {
-        addItem(ItemResourceValue.fromResourceValue(value, isFrameworkAttr));
+    public void addValue(ResourceValue value, boolean isFrameworkAttr, String libraryName) {
+        addItem(ItemResourceValue.fromResourceValue(value, isFrameworkAttr, libraryName));
     }
 
     public void addItem(ItemResourceValue value) {

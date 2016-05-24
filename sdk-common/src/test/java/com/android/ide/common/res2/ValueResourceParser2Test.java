@@ -139,7 +139,7 @@ public class ValueResourceParser2Test extends BaseTestCase {
             File values = new File(root, "values");
             File valuesXml = new File(values, "values.xml");
 
-            ValueResourceParser2 parser = new ValueResourceParser2(valuesXml);
+            ValueResourceParser2 parser = new ValueResourceParser2(valuesXml, null);
             sResources = parser.parseFile();
 
             // create a fake resource file to allow calling ResourceItem.getKey()
@@ -209,7 +209,7 @@ public class ValueResourceParser2Test extends BaseTestCase {
         writer.write(xml);
         writer.close();
 
-        ValueResourceParser2 parser = new ValueResourceParser2(file);
+        ValueResourceParser2 parser = new ValueResourceParser2(file, null);
         List<ResourceItem> items = parser.parseFile();
         assertEquals(3, items.size());
         assertEquals(ResourceType.BOOL, items.get(0).getType());

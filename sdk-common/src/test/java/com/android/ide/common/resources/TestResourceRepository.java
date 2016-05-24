@@ -132,7 +132,7 @@ public class TestResourceRepository extends ResourceRepository {
         File resFolder = new File(dir, FD_RES);
 
         ResourceMerger merger = new ResourceMerger(0);
-        ResourceSet resourceSet = new ResourceSet("main");
+        ResourceSet resourceSet = new ResourceSet("main", null);
         resourceSet.addSource(resFolder);
         resourceSet.loadFromFiles(new RecordingLogger());
         merger.addDataSet(resourceSet);

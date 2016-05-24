@@ -447,7 +447,7 @@ public class FolderConfigurationTest extends TestCase {
     }
 
     public void testFindMatchingConfigurables() {
-        ResourceItem itemBlank = new ResourceItem("foo", ResourceType.STRING, null) {
+        ResourceItem itemBlank = new ResourceItem("foo", ResourceType.STRING, null, null) {
             @Override
             public String toString() {
                 return "itemBlank";
@@ -457,7 +457,7 @@ public class FolderConfigurationTest extends TestCase {
         itemBlank.setSource(sourceBlank);
         FolderConfiguration configBlank = itemBlank.getConfiguration();
 
-        ResourceItem itemEn = new ResourceItem("foo", ResourceType.STRING, null) {
+        ResourceItem itemEn = new ResourceItem("foo", ResourceType.STRING, null, null) {
             @Override
             public String toString() {
                 return "itemEn";
@@ -467,7 +467,7 @@ public class FolderConfigurationTest extends TestCase {
         itemEn.setSource(sourceEn);
         FolderConfiguration configEn = itemEn.getConfiguration();
 
-        ResourceItem itemBcpEn = new ResourceItem("foo", ResourceType.STRING, null) {
+        ResourceItem itemBcpEn = new ResourceItem("foo", ResourceType.STRING, null, null) {
             @Override
             public String toString() {
                 return "itemBcpEn";
@@ -477,7 +477,7 @@ public class FolderConfigurationTest extends TestCase {
         itemBcpEn.setSource(sourceBcpEn);
         FolderConfiguration configBcpEn = itemBcpEn.getConfiguration();
 
-        ResourceItem itemDe = new ResourceItem("foo", ResourceType.STRING, null) {
+        ResourceItem itemDe = new ResourceItem("foo", ResourceType.STRING, null, null) {
             @Override
             public String toString() {
                 return "itemDe";

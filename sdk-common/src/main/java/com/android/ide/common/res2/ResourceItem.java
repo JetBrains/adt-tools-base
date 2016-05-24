@@ -77,6 +77,9 @@ public class ResourceItem extends DataItem<ResourceFile>
     private Node mValue;
 
     @Nullable
+    private String mLibraryName;
+
+    @Nullable
     protected ResourceValue mResourceValue;
 
     /**
@@ -88,10 +91,11 @@ public class ResourceItem extends DataItem<ResourceFile>
      * @param type  the type of the resource
      * @param value an optional Node that represents the resource value.
      */
-    public ResourceItem(@NonNull String name, @NonNull ResourceType type, @Nullable Node value) {
+    public ResourceItem(@NonNull String name, @NonNull ResourceType type, @Nullable Node value, @Nullable String libraryName) {
         super(name);
         mType = type;
         mValue = value;
+        mLibraryName = libraryName;
     }
 
     /**
@@ -122,6 +126,16 @@ public class ResourceItem extends DataItem<ResourceFile>
     @Nullable
     public String getValueText() {
         return mValue != null ? mValue.getTextContent() : null;
+    }
+
+    /**
+     * Returns the library that the resource was found. This will be null for application resources.
+     *
+     * @return the library name or null.
+     */
+    @Nullable
+    public String getLibraryName() {
+        return mLibraryName;
     }
 
     /**
@@ -216,10 +230,10 @@ public class ResourceItem extends DataItem<ResourceFile>
                         ? getFolderDensity() : null;
                 if (density != null) {
                     mResourceValue = new DensityBasedResourceValue(mType, getName(),
-                            getSource().getFile().getAbsolutePath(), density, isFrameworks);
+                            getSource().getFile().getAbsolutePath(), density, isFrameworks, mLibraryName);
                 } else {
                     mResourceValue = new ResourceValue(mType, getName(),
-                            getSource().getFile().getAbsolutePath(), isFrameworks);
+                            getSource().getFile().getAbsolutePath(), isFrameworks, mLibraryName);
                 }
             } else {
                 mResourceValue = parseXmlToResourceValue(isFrameworks);
@@ -328,7 +342,7 @@ public class ResourceItem extends DataItem<ResourceFile>
                 String parent = getAttributeValue(attributes, ATTR_PARENT);
                 try {
                     value = parseStyleValue(
-                            new StyleResourceValue(type, name, parent, isFrameworks));
+                            new StyleResourceValue(type, name, parent, isFrameworks, mLibraryName));
                 } catch (Throwable t) {
                     //noinspection UseOfSystemOutOrSystemErr
                     System.err.println("Problem parsing attribute " + name + " of type " + type
@@ -338,10 +352,10 @@ public class ResourceItem extends DataItem<ResourceFile>
                 break;
             case DECLARE_STYLEABLE:
                 value = parseDeclareStyleable(new DeclareStyleableResourceValue(type, name,
-                        isFrameworks));
+                        isFrameworks, mLibraryName));
                 break;
             case ARRAY:
-                value = parseArrayValue(new ArrayResourceValue(name, isFrameworks) {
+                value = parseArrayValue(new ArrayResourceValue(name, isFrameworks, mLibraryName) {
                     @Override
                     protected int getDefaultIndex() {
                         // Allow the user to specify a specific element to use via tools:index
@@ -359,7 +373,7 @@ public class ResourceItem extends DataItem<ResourceFile>
                 });
                 break;
             case PLURALS:
-                value = parsePluralsValue(new PluralsResourceValue(name, isFrameworks) {
+                value = parsePluralsValue(new PluralsResourceValue(name, isFrameworks, mLibraryName) {
                     @Override
                     public String getValue() {
                         // Allow the user to specify tools:quantity.
@@ -375,13 +389,13 @@ public class ResourceItem extends DataItem<ResourceFile>
                 });
                 break;
             case ATTR:
-                value = parseAttrValue(new AttrResourceValue(type, name, isFrameworks));
+                value = parseAttrValue(new AttrResourceValue(type, name, isFrameworks, mLibraryName));
                 break;
             case STRING:
-                value = parseTextValue(new TextResourceValue(type, name, isFrameworks));
+                value = parseTextValue(new TextResourceValue(type, name, isFrameworks, mLibraryName));
                 break;
             default:
-                value = parseValue(new ResourceValue(type, name, isFrameworks));
+                value = parseValue(new ResourceValue(type, name, isFrameworks, mLibraryName));
                 break;
         }
 
@@ -442,7 +456,7 @@ public class ResourceItem extends DataItem<ResourceFile>
                     }
 
                     ItemResourceValue resValue = new ItemResourceValue(name, isFrameworkAttr,
-                            styleValue.isFramework());
+                            styleValue.isFramework(), styleValue.getLibraryName());
                     String text = getTextNode(child.getChildNodes());
                     resValue.setValue(ValueXmlHelper.unescapeResourceString(text, false, true));
                     styleValue.addItem(resValue);
@@ -539,7 +553,7 @@ public class ResourceItem extends DataItem<ResourceFile>
                     }
 
                     AttrResourceValue attr = parseAttrValue(child,
-                            new AttrResourceValue(ResourceType.ATTR, name, isFrameworkAttr));
+                            new AttrResourceValue(ResourceType.ATTR, name, isFrameworkAttr, mLibraryName));
                     declareStyleable.addValue(attr);
                 }
             }

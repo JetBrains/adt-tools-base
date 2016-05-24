@@ -60,14 +60,18 @@ class ValueResourceParser2 {
     @NonNull
     private final File mFile;
 
+    @Nullable
+    private final String mLibraryName;
+
     private boolean mTrackSourcePositions = true;
 
     /**
      * Creates the parser for a given file.
      * @param file the file to parse.
      */
-    ValueResourceParser2(@NonNull File file) {
+    ValueResourceParser2(@NonNull File file, @Nullable String libraryName) {
         mFile = file;
+        mLibraryName = libraryName;
     }
 
     /**
@@ -107,7 +111,7 @@ class ValueResourceParser2 {
                 continue;
             }
 
-            ResourceItem resource = getResource(node, mFile);
+            ResourceItem resource = getResource(node, mFile, mLibraryName);
             if (resource != null) {
                 // check this is not a dup
                 checkDuplicate(resource, map, mFile);
@@ -116,7 +120,7 @@ class ValueResourceParser2 {
 
                 if (resource.getType() == ResourceType.DECLARE_STYLEABLE) {
                     // Need to also create ATTR items for its children
-                    addStyleableItems(node, resources, map, mFile);
+                    addStyleableItems(node, resources, map, mFile, mLibraryName);
                 }
             }
         }
@@ -129,7 +133,7 @@ class ValueResourceParser2 {
      * @param node the node representing the resource.
      * @return a ResourceItem object or null.
      */
-    static ResourceItem getResource(@NonNull Node node, @Nullable File from)
+    static ResourceItem getResource(@NonNull Node node, @Nullable File from, @Nullable String libraryName)
             throws MergingException {
         ResourceType type = getType(node, from);
         String name = getName(node);
@@ -137,11 +141,11 @@ class ValueResourceParser2 {
         if (name != null) {
             if (type != null) {
                 ValueResourceNameValidator.validate(name, type, from);
-                return new ResourceItem(name, type, node);
+                return new ResourceItem(name, type, node, libraryName);
             }
         } else if (type == ResourceType.PUBLIC) {
             // Allow a <public /> node with no name: this means all resources are private
-            return new ResourceItem("", type, node);
+            return new ResourceItem("", type, node, libraryName);
         }
 
         return null;
@@ -231,7 +235,8 @@ class ValueResourceParser2 {
     static void addStyleableItems(@NonNull Node styleableNode,
                                   @NonNull List<ResourceItem> list,
                                   @Nullable Map<ResourceType, Set<String>> map,
-                                  @Nullable File from)
+                                  @Nullable File from,
+                                  @Nullable String libraryName)
             throws MergingException {
         assert styleableNode.getNodeName().equals(ResourceType.DECLARE_STYLEABLE.getName());
         NodeList nodes = styleableNode.getChildNodes();
@@ -243,7 +248,7 @@ class ValueResourceParser2 {
                 continue;
             }
 
-            ResourceItem resource = getResource(node, from);
+            ResourceItem resource = getResource(node, from, libraryName);
             if (resource != null) {
                 assert resource.getType() == ResourceType.ATTR;
 

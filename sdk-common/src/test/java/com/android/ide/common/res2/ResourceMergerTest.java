@@ -186,7 +186,7 @@ public class ResourceMergerTest extends BaseTestCase {
 
         File folder = getWrittenResources();
 
-        ResourceSet writtenSet = new ResourceSet("unused");
+        ResourceSet writtenSet = new ResourceSet("unused", null);
         writtenSet.addSource(folder);
         writtenSet.loadFromFiles(logger);
 
@@ -217,7 +217,7 @@ public class ResourceMergerTest extends BaseTestCase {
         File folder = getWrittenResources();
 
         RecordingLogger logger =  new RecordingLogger();
-        ResourceSet writtenSet = new ResourceSet("unused");
+        ResourceSet writtenSet = new ResourceSet("unused", null);
         writtenSet.addSource(folder);
         writtenSet.loadFromFiles(logger);
 
@@ -256,7 +256,7 @@ public class ResourceMergerTest extends BaseTestCase {
         File folder = getWrittenResources();
 
         RecordingLogger logger =  new RecordingLogger();
-        ResourceSet writtenSet = new ResourceSet("unused");
+        ResourceSet writtenSet = new ResourceSet("unused", null);
         writtenSet.addSource(folder);
         writtenSet.loadFromFiles(logger);
 
@@ -280,7 +280,7 @@ public class ResourceMergerTest extends BaseTestCase {
 
         File folder = getWrittenResources();
 
-        ResourceSet writtenSet = new ResourceSet("unused");
+        ResourceSet writtenSet = new ResourceSet("unused", null);
         writtenSet.addSource(folder);
         writtenSet.loadFromFiles(logger);
 
@@ -297,7 +297,7 @@ public class ResourceMergerTest extends BaseTestCase {
 
         File folder = getWrittenResources();
 
-        ResourceSet writtenSet = new ResourceSet("unused");
+        ResourceSet writtenSet = new ResourceSet("unused", null);
         writtenSet.addSource(folder);
         writtenSet.loadFromFiles(logger);
 
@@ -360,7 +360,7 @@ public class ResourceMergerTest extends BaseTestCase {
 
         File folder = getWrittenResources();
 
-        ResourceSet writtenSet = new ResourceSet("unused");
+        ResourceSet writtenSet = new ResourceSet("unused", null);
         writtenSet.addSource(folder);
         writtenSet.loadFromFiles(logger);
 
@@ -441,7 +441,7 @@ public class ResourceMergerTest extends BaseTestCase {
     public void testMergeIdGeneratingResources() throws Exception {
         // Test loading and writing Id resources.  Test loading a single file instead of all.
         File root = TestUtils.getRoot("resources", "idGenerating");
-        ResourceSet resourceSet = new ResourceSet("idResources");
+        ResourceSet resourceSet = new ResourceSet("idResources", null);
         resourceSet.addSource(root);
         ResourceMerger merger = new ResourceMerger(0);
         merger.addDataSet(resourceSet);
@@ -526,7 +526,7 @@ public class ResourceMergerTest extends BaseTestCase {
         FileUtils.copy(srcPng, copiedDrawables);
         assertTrue(FileUtils.join(copiedDrawables, "drawable_for_id_scan.xml").exists());
 
-        ResourceSet resourceSet = new ResourceSet("idResources");
+        ResourceSet resourceSet = new ResourceSet("idResources", null);
         resourceSet.addSource(copiedRoot);
         resourceSet.setShouldParseResourceIds(true);
 
@@ -552,7 +552,7 @@ public class ResourceMergerTest extends BaseTestCase {
         FileUtils.renameTo(new File(copiedRoot, "layout"), layoutDirWithQualifiers);
         File layoutFile = new File(layoutDirWithQualifiers, "layout_for_id_scan.xml");
 
-        ResourceSet resourceSet = new ResourceSet("idResources");
+        ResourceSet resourceSet = new ResourceSet("idResources", null);
         resourceSet.addSource(copiedRoot);
         RecordingLogger logger = new RecordingLogger();
 
@@ -1332,14 +1332,14 @@ public class ResourceMergerTest extends BaseTestCase {
 
         // load both base and overlay set
         File baseRoot = new File(root, "base");
-        ResourceSet baseSet = new ResourceSet("main");
+        ResourceSet baseSet = new ResourceSet("main", null);
         baseSet.addSource(baseRoot);
         RecordingLogger logger = new RecordingLogger();
         baseSet.loadFromFiles(logger);
         checkLogger(logger);
 
         File overlayRoot = new File(root, "overlay");
-        ResourceSet overlaySet = new ResourceSet("overlay");
+        ResourceSet overlaySet = new ResourceSet("overlay", null);
         overlaySet.addSource(overlayRoot);
         logger = new RecordingLogger();
         overlaySet.loadFromFiles(logger);
@@ -1358,7 +1358,7 @@ public class ResourceMergerTest extends BaseTestCase {
         resourceMerger.mergeData(writer, false /*doCleanUp*/);
 
         // load the result as a set.
-        ResourceSet mergedSet = new ResourceSet("merged");
+        ResourceSet mergedSet = new ResourceSet("merged", null);
         mergedSet.addSource(folder);
         logger = new RecordingLogger();
         mergedSet.loadFromFiles(logger);
@@ -1620,7 +1620,7 @@ public class ResourceMergerTest extends BaseTestCase {
         File root = TestUtils.getRoot("resources", "stringWhiteSpaces");
 
         // load res folder
-        ResourceSet baseSet = new ResourceSet("main");
+        ResourceSet baseSet = new ResourceSet("main", null);
         baseSet.addSource(root);
         RecordingLogger logger = new RecordingLogger();
         baseSet.loadFromFiles(logger);
@@ -1638,7 +1638,7 @@ public class ResourceMergerTest extends BaseTestCase {
         resourceMerger.mergeData(writer, false /*doCleanUp*/);
 
         // load the result as a set.
-        ResourceSet mergedSet = new ResourceSet("merged");
+        ResourceSet mergedSet = new ResourceSet("merged", null);
         mergedSet.addSource(folder);
         logger = new RecordingLogger();
         mergedSet.loadFromFiles(logger);
@@ -1675,7 +1675,7 @@ public class ResourceMergerTest extends BaseTestCase {
     private static ResourceMerger createMerger(String[][] data) {
         ResourceMerger merger = new ResourceMerger(0);
         for (String[] setData : data) {
-            ResourceSet set = new ResourceSet(setData[0]);
+            ResourceSet set = new ResourceSet(setData[0], null);
             merger.addDataSet(set);
             for (int i = 1, n = setData.length; i < n; i++) {
                 set.addSource(new File(setData[i]));
@@ -1693,7 +1693,7 @@ public class ResourceMergerTest extends BaseTestCase {
 
         RecordingLogger logger = new RecordingLogger();
 
-        ResourceSet overlay = new ResourceSet("overlay");
+        ResourceSet overlay = new ResourceSet("overlay", null);
         overlay.addSource(new File(root, "overlay"));
         overlay.loadFromFiles(logger);
 
@@ -1714,7 +1714,7 @@ public class ResourceMergerTest extends BaseTestCase {
         File testFolder = getFolderCopy(srcOverlay);
         testFolder.deleteOnExit();
 
-        ResourceSet overlay = new ResourceSet("overlay");
+        ResourceSet overlay = new ResourceSet("overlay", null);
         overlay.addSource(testFolder);
         overlay.loadFromFiles(logger);
 
@@ -1842,7 +1842,7 @@ public class ResourceMergerTest extends BaseTestCase {
     @Test
     public void testInvalidFileNames() throws Exception {
         File root = TestUtils.getRoot("resources", "brokenSet5");
-        ResourceSet resourceSet = new ResourceSet("brokenSet5");
+        ResourceSet resourceSet = new ResourceSet("brokenSet5", null);
         resourceSet.addSource(root);
         RecordingLogger logger =  new RecordingLogger();
 
@@ -1865,7 +1865,7 @@ public class ResourceMergerTest extends BaseTestCase {
     @Test
     public void testStricterInvalidFileNames() throws Exception {
         File root = TestUtils.getRoot("resources", "brokenSetDrawableFileName");
-        ResourceSet resourceSet = new ResourceSet("brokenSetDrawableFileName");
+        ResourceSet resourceSet = new ResourceSet("brokenSetDrawableFileName", null);
         resourceSet.addSource(root);
         RecordingLogger logger =  new RecordingLogger();
 
@@ -1887,7 +1887,7 @@ public class ResourceMergerTest extends BaseTestCase {
     public void testXmlParseError1() throws Exception {
         File root = TestUtils.getRoot("resources", "brokenSet6");
         try {
-            ResourceSet resourceSet = new ResourceSet("brokenSet6");
+            ResourceSet resourceSet = new ResourceSet("brokenSet6", null);
             resourceSet.addSource(root);
             RecordingLogger logger =  new RecordingLogger();
             resourceSet.loadFromFiles(logger);
@@ -1913,7 +1913,7 @@ public class ResourceMergerTest extends BaseTestCase {
     public void testXmlParseError7() throws Exception {
         File root = TestUtils.getRoot("resources", "brokenSet7");
         try {
-            ResourceSet resourceSet = new ResourceSet("brokenSet7");
+            ResourceSet resourceSet = new ResourceSet("brokenSet7", null);
             resourceSet.addSource(root);
             RecordingLogger logger =  new RecordingLogger();
             resourceSet.loadFromFiles(logger);
@@ -1935,7 +1935,7 @@ public class ResourceMergerTest extends BaseTestCase {
 
     @Test
     public void testSdkFiltering() throws Exception {
-        ResourceSet resourceSet = new ResourceSet("filterableSet");
+        ResourceSet resourceSet = new ResourceSet("filterableSet", null);
         resourceSet.addSource(TestUtils.getRoot("resources", "filterableSet"));
         resourceSet.loadFromFiles(new RecordingLogger());
 

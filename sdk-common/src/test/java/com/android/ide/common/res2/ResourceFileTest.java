@@ -26,7 +26,7 @@ import java.util.Map;
 public class ResourceFileTest extends TestCase {
 
     public void testKeyWithQualifier() {
-        ResourceItem item = new ResourceItem("foo", ResourceType.LAYOUT, null);
+        ResourceItem item = new ResourceItem("foo", ResourceType.LAYOUT, null, null);
         ResourceFile file = new ResourceFile(new File("res/layout-land/foo.xml"), item, "land");
 
         Map<String, ResourceItem> itemMap = file.getItemMap();

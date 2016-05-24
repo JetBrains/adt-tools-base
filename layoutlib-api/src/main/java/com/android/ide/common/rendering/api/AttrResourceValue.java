@@ -34,7 +34,11 @@ public class AttrResourceValue extends ResourceValue {
 
 
     public AttrResourceValue(ResourceType type, String name, boolean isFramework) {
-        super(type, name, isFramework);
+        this(type, name, isFramework, null);
+    }
+
+    public AttrResourceValue(ResourceType type, String name, boolean isFramework, String libraryName) {
+        super(type, name, isFramework, libraryName);
     }
 
     /**

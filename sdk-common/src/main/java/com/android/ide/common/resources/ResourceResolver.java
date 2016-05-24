@@ -157,7 +157,7 @@ public class ResourceResolver extends RenderResources {
 
             if (from != null && to != null) {
                 StyleResourceValue newStyle = new StyleResourceValue(ResourceType.STYLE,
-                        from.getName(), parentName, from.isFramework());
+                        from.getName(), parentName, from.isFramework(), from.getLibraryName());
                 newStyle.replaceWith(from);
                 mStyleInheritanceMap.put(newStyle, to);
             }
@@ -897,7 +897,7 @@ public class ResourceResolver extends RenderResources {
                 ResourceValue prev = mLookupChain.get(mLookupChain.size() - 1);
                 if (!reference.equals(prev.getValue())) {
                     ResourceValue next = new ResourceValue(prev.getResourceType(), prev.getName(),
-                            prev.isFramework());
+                            prev.isFramework(), prev.getLibraryName());
                     next.setValue(reference);
                     mLookupChain.add(next);
                 }
