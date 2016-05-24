@@ -14,7 +14,11 @@ final class PSDDecoder$ImageData$$ChunkIO {
         int size = 0;
         long byteCount = 0;
 
-        imageData.compression = PSDDecoder.CompressionMethod.values()[in.readUnsignedShort()];
+        {
+            int index = in.readUnsignedShort();
+            if (index > PSDDecoder.CompressionMethod.values().length) index = 0;
+            imageData.compression = PSDDecoder.CompressionMethod.values()[index];
+        }
         imageData.data = ChunkUtils.readUnboundedByteArray(in, 131072);
 
         stack.removeFirst();

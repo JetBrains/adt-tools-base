@@ -36,7 +36,7 @@ import java.util.Set;
  * a new Java file for each annotated class it finds. The generated file
  * can be used to read an instance of that class from a {@link DataInputStream}.
  */
-@SupportedAnnotationTypes({ "Chunked" })
+@SupportedAnnotationTypes({ "com.android.tools.chunkio.Chunked" })
 public class ChunkProcessor extends AbstractProcessor {
     private Validator mValidator;
     private Environment mEnvironment;
