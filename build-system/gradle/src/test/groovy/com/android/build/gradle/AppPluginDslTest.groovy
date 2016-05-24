@@ -16,7 +16,6 @@
 
 package com.android.build.gradle
 
-import android.databinding.tool.util.StringUtils
 import com.android.SdkConstants
 import com.android.annotations.NonNull
 import com.android.build.gradle.api.ApkVariant
@@ -36,7 +35,6 @@ import org.gradle.testfixtures.ProjectBuilder
 import static com.android.build.gradle.DslTestUtil.DEFAULT_VARIANTS
 import static com.android.build.gradle.DslTestUtil.countVariants
 import static com.google.common.truth.Truth.assertThat
-
 /**
  * Tests for the public DSL of the App plugin ("android")
  */
@@ -775,6 +773,29 @@ public class AppPluginDslTest extends BaseTest {
         assert project.android.buildTypes.debug.useProguard == false
         assert project.android.buildTypes.debug.shrinkResources == true
         assert project.android.buildTypes.debug.useJack == true
+    }
+
+    public void testAdbExe() throws Exception {
+        Project project = ProjectBuilder.builder().withProjectDir(
+                new File(testDir, "${FOLDER_TEST_PROJECTS}/basic")).build()
+
+        project.apply plugin: 'com.android.application'
+
+        def valueOne = null
+        def valueTwo = null
+
+        project.android {
+            compileSdkVersion COMPILE_SDK_VERSION
+            buildToolsVersion BUILD_TOOL_VERSION
+
+            valueOne = adbExe
+            valueTwo = adbExecutable
+        }
+
+        AppPlugin plugin = project.plugins.getPlugin(AppPlugin)
+        plugin.createAndroidTasks(false)
+
+        assert valueOne != null && valueTwo != null && valueOne.equals(valueTwo)
     }
 
     private static void checkTestedVariant(@NonNull String variantName,
