@@ -28,6 +28,7 @@ import com.android.repository.io.FileOp;
 import com.android.repository.io.FileOpUtils;
 import com.android.sdklib.repository.AndroidSdkHandler;
 import com.android.utils.Pair;
+import com.google.common.io.Closer;
 
 import org.apache.http.Header;
 import org.apache.http.HttpHeaders;
@@ -37,6 +38,7 @@ import org.apache.http.message.BasicHeader;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -143,6 +145,10 @@ public class DownloadCache {
     private final File mCacheRoot;
     private final Strategy mStrategy;
 
+    public File getCacheRoot() {
+        return mCacheRoot;
+    }
+
     public enum Strategy {
         /**
          * Exclusively serves data from the cache. If files are available in the
@@ -191,23 +197,6 @@ public class DownloadCache {
     @NonNull
     public Strategy getStrategy() {
         return mStrategy;
-    }
-
-    /**
-     * Removes all cached files from the cache directory.
-     */
-    public void clearCache() {
-        if (mCacheRoot != null) {
-            File[] files = mFileOp.listFiles(mCacheRoot);
-            for (File f : files) {
-                if (mFileOp.isFile(f)) {
-                    String name = f.getName();
-                    if (name.startsWith(BIN_FILE_PREFIX) || name.startsWith(INFO_FILE_PREFIX)) {
-                        mFileOp.delete(f);
-                    }
-                }
-            }
-        }
     }
 
     /**
@@ -308,48 +297,6 @@ public class DownloadCache {
         }
 
         return new ByteArrayInputStream(result, 0, curr);
-    }
-
-
-    /**
-     * Does a direct download of the given URL using {@link HttpConfigurable#openHttpConnection(String)}.
-     * This does not check the download cache and does not attempt to cache the file.
-     * Instead the HttpClient library returns a progressive download stream.
-     * <p>
-     * For details on realm authentication and user/password handling,
-     * see {@link HttpConfigurable#openHttpConnection(String)}.
-     * <p>
-     * The resulting input stream may not support mark/reset.
-     *
-     * @param urlString the URL string to be opened.
-     * @param headers An optional set of headers to pass when requesting the resource. Can be null.
-     * @param monitor {@link ITaskMonitor} which is related to this URL
-     *                 fetching.
-     * @return Returns a pair with a {@link InputStream} and an {@link HttpResponse}.
-     *              The pair is never null.
-     *              The input stream can be null in case of error, although in general the
-     *              method will probably throw an exception instead.
-     *              The caller should look at the response code's status and only accept the
-     *              input stream if it's the desired code (e.g. 200 or 206).
-     * @throws IOException Exception thrown when there are problems retrieving
-     *                 the URL or its content.
-     * @throws ProcessCanceledException Exception thrown if the user cancels the
-     *              authentication dialog.
-     */
-    @NonNull
-    public Pair<InputStream, URLConnection> openDirectUrl(
-            @NonNull  String urlString,
-            @Nullable Header[] headers,
-            @NonNull  ITaskMonitor monitor)
-                throws IOException {
-        if (DEBUG) {
-            System.out.println(String.format("%s : Direct download", urlString)); //$NON-NLS-1$
-        }
-        return openUrl(
-                urlString,
-                false /*needsMarkResetSupport*/,
-                monitor,
-                headers);
     }
 
     /**
@@ -808,7 +755,7 @@ public class DownloadCache {
             }
         }
 
-        mFileOp.saveProperties(info, props, "## Meta data for SDK Manager cache. Do not modify."); //$NON-NLS-1$
+        saveProperties(info, props, "## Meta data for SDK Manager cache. Do not modify.", mFileOp);
     }
 
     /**
@@ -818,7 +765,7 @@ public class DownloadCache {
     @Nullable
     private Properties readInfo(@NonNull File info) {
         if (mFileOp.exists(info)) {
-            return mFileOp.loadProperties(info);
+            return loadProperties(info, mFileOp);
         }
         return null;
     }
@@ -863,5 +810,26 @@ public class DownloadCache {
     @NonNull
     private String getInfoFilename(@NonNull String cacheFilename) {
         return cacheFilename.replaceFirst(BIN_FILE_PREFIX, INFO_FILE_PREFIX);
+    }
+
+    @NonNull
+    private static Properties loadProperties(@NonNull File file, @NonNull FileOp fop) {
+        Properties props = new Properties();
+        try (InputStream is = fop.newFileInputStream(file)) {
+
+            props.load(is);
+        } catch (IOException ignore) {
+        }
+        return props;
+    }
+
+    private static void saveProperties(
+            @NonNull File file,
+            @NonNull Properties props,
+            @NonNull String comments,
+            @NonNull FileOp fop) throws IOException {
+        try (OutputStream fos = fop.newFileOutputStream(file)) {
+            props.store(fos, comments);
+        }
     }
 }
