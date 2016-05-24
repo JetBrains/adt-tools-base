@@ -27,7 +27,11 @@ final class PSDDecoder$FileHeader$$ChunkIO {
         fileHeader.height = in.readInt();
         fileHeader.width = in.readInt();
         fileHeader.depth = in.readShort();
-        fileHeader.colorMode = ColorMode.values()[in.readUnsignedShort()];
+        {
+            int index = in.readUnsignedShort();
+            if (index > ColorMode.values().length) index = 0;
+            fileHeader.colorMode = ColorMode.values()[index];
+        }
         ChunkUtils.checkState(fileHeader.colorMode == (ColorMode.RGB),
                 "Value read in colorMode does not match expected value");
 

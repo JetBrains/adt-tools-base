@@ -15,7 +15,11 @@ final class PSDDecoder$LayerSection$$ChunkIO {
         int size = 0;
         long byteCount = 0;
 
-        layerSection.type = PSDDecoder.LayerSection.Type.values()[in.readInt()];
+        {
+            int index = in.readInt();
+            if (index > PSDDecoder.LayerSection.Type.values().length) index = 0;
+            layerSection.type = PSDDecoder.LayerSection.Type.values()[index];
+        }
         if (((PSDDecoder.LayerProperty) stack.get(1)).length >= 12) {
             layerSection.signature = ChunkUtils.readString(in, 4, Charset.forName("ISO-8859-1"));
         }

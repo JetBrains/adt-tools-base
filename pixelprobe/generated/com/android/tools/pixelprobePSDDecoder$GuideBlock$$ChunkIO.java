@@ -14,7 +14,11 @@ final class PSDDecoder$GuideBlock$$ChunkIO {
         long byteCount = 0;
 
         guideBlock.location = in.readInt();
-        guideBlock.orientation = Guide.Orientation.values()[in.readUnsignedByte()];
+        {
+            int index = in.readUnsignedByte();
+            if (index > Guide.Orientation.values().length) index = 0;
+            guideBlock.orientation = Guide.Orientation.values()[index];
+        }
 
         stack.removeFirst();
         return guideBlock;

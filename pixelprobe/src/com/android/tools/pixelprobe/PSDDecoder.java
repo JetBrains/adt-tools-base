@@ -31,14 +31,7 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Deque;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -206,6 +199,9 @@ final class PSDDecoder extends Decoder {
         List<RawLayer> rawLayers = layersList.layers;
         Deque<Layer> stack = new LinkedList<>();
 
+        int[] unnamedCounts = new int[Layer.Type.values().length];
+        Arrays.fill(unnamedCounts, 1);
+
         // The layers count can be negative according to the Photoshop file specification
         // A negative count indicates that the first alpha channel contains the transparency
         // data for the merged (composited) result
@@ -215,16 +211,6 @@ final class PSDDecoder extends Decoder {
             Map<String, LayerProperty> properties = rawLayer.extras.properties;
             LayerProperty nameProperty = properties.get(LayerProperty.KEY_NAME);
             LayerProperty sectionProperty = properties.get(LayerProperty.KEY_SECTION);
-
-            // The layer's name appears twice in PSD files: first as a legacy
-            // Pascal string, then as a Unicode string. We care a lot more about
-            // the second one
-            String name;
-            if (nameProperty != null) {
-                name = ((UnicodeString) nameProperty.data).value;
-            } else {
-                name = rawLayer.extras.name;
-            }
 
             // Assume we are decoding a bitmap (raster) layer by default
             Layer.Type type = Layer.Type.BITMAP;
@@ -268,6 +254,21 @@ final class PSDDecoder extends Decoder {
                 }
             }
 
+            // The layer's name appears twice in PSD files: first as a legacy
+            // Pascal string, then as a Unicode string. We care a lot more about
+            // the second one
+            String name;
+            if (nameProperty != null) {
+                name = ((UnicodeString) nameProperty.data).value;
+            } else {
+                name = rawLayer.extras.name;
+            }
+
+            // Generate a name if the layer doesn't have one
+            if (name.trim().isEmpty()) {
+                name = "<" + getNameForType(type) + " " + unnamedCounts[type.ordinal()]++ + ">";
+            }
+
             // Create the actual layer we return to the user
             Layer layer = new Layer(name, type);
             layer.setBounds(rawLayer.left, rawLayer.top, rawLayer.right, rawLayer.bottom);
@@ -303,6 +304,22 @@ final class PSDDecoder extends Decoder {
 
             extractLayerEffects(image, layer, rawLayer);
         }
+    }
+
+    private static String getNameForType(Layer.Type type) {
+        switch (type) {
+            case ADJUSTMENT:
+                return "Adjustment";
+            case BITMAP:
+                return "Raster";
+            case GROUP:
+                return "Group";
+            case PATH:
+                return "Shape";
+            case TEXT:
+                return "Text";
+        }
+        return "Unnamed";
     }
 
     private enum Shadow {
@@ -778,12 +795,16 @@ final class PSDDecoder extends Decoder {
      */
     private static void extractResolution(ResolutionInfoBlock resolutionBlock, Image image) {
         float hRes = Bytes.fixed16_16ToFloat(resolutionBlock.horizontalResolution);
-        if (resolutionBlock.horizontalUnit == ResolutionUnit.PIXEL_PER_CM) {
+        ResolutionUnit unit = resolutionBlock.horizontalUnit;
+        if (unit == ResolutionUnit.UNKNOWN) unit = ResolutionUnit.PIXEL_PER_INCH;
+        if (unit == ResolutionUnit.PIXEL_PER_CM) {
             hRes *= CENTIMETER_TO_INCH;
         }
 
         float vRes = Bytes.fixed16_16ToFloat(resolutionBlock.verticalResolution);
-        if (resolutionBlock.verticalUnit == ResolutionUnit.PIXEL_PER_CM) {
+        unit = resolutionBlock.verticalUnit;
+        if (unit == ResolutionUnit.UNKNOWN) unit = ResolutionUnit.PIXEL_PER_INCH;
+        if (unit == ResolutionUnit.PIXEL_PER_CM) {
             vRes *= CENTIMETER_TO_INCH;
         }
 

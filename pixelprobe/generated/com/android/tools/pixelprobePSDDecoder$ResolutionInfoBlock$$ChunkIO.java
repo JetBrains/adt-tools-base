@@ -14,11 +14,27 @@ final class PSDDecoder$ResolutionInfoBlock$$ChunkIO {
         long byteCount = 0;
 
         resolutionInfoBlock.horizontalResolution = in.readInt();
-        resolutionInfoBlock.horizontalUnit = PSDDecoder.ResolutionUnit.values()[in.readUnsignedShort()];
-        resolutionInfoBlock.widthUnit = PSDDecoder.DisplayUnit.values()[in.readUnsignedShort()];
+        {
+            int index = in.readUnsignedShort();
+            if (index > PSDDecoder.ResolutionUnit.values().length) index = 0;
+            resolutionInfoBlock.horizontalUnit = PSDDecoder.ResolutionUnit.values()[index];
+        }
+        {
+            int index = in.readUnsignedShort();
+            if (index > PSDDecoder.DisplayUnit.values().length) index = 0;
+            resolutionInfoBlock.widthUnit = PSDDecoder.DisplayUnit.values()[index];
+        }
         resolutionInfoBlock.verticalResolution = in.readInt();
-        resolutionInfoBlock.verticalUnit = PSDDecoder.ResolutionUnit.values()[in.readUnsignedShort()];
-        resolutionInfoBlock.heightUnit = PSDDecoder.DisplayUnit.values()[in.readUnsignedShort()];
+        {
+            int index = in.readUnsignedShort();
+            if (index > PSDDecoder.ResolutionUnit.values().length) index = 0;
+            resolutionInfoBlock.verticalUnit = PSDDecoder.ResolutionUnit.values()[index];
+        }
+        {
+            int index = in.readUnsignedShort();
+            if (index > PSDDecoder.DisplayUnit.values().length) index = 0;
+            resolutionInfoBlock.heightUnit = PSDDecoder.DisplayUnit.values()[index];
+        }
 
         stack.removeFirst();
         return resolutionInfoBlock;

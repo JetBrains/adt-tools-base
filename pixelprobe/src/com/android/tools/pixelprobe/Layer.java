@@ -162,7 +162,7 @@ public final class Layer {
     }
 
     void addLayer(Layer layer) {
-        if (mChildren.size() == 0) mChildren = new ArrayList<Layer>();
+        if (mChildren.size() == 0) mChildren = new ArrayList<>();
         mChildren.add(layer);
     }
 
@@ -196,9 +196,6 @@ public final class Layer {
 
     @Override
     public String toString() {
-        return "RawLayer{" +
-                "name='" + mName + '\'' +
-                ", type=" + mType +
-                ", bounds=" + mBounds + '}';
+        return mName;
     }
 }

@@ -14,7 +14,11 @@ final class PSDDecoder$ChannelImageData$$ChunkIO {
         int size = 0;
         long byteCount = 0;
 
-        channelImageData.compression = PSDDecoder.CompressionMethod.values()[in.readUnsignedShort()];
+        {
+            int index = in.readUnsignedShort();
+            if (index > PSDDecoder.CompressionMethod.values().length) index = 0;
+            channelImageData.compression = PSDDecoder.CompressionMethod.values()[index];
+        }
         {
             PSDDecoder.LayersList list = (PSDDecoder.LayersList) stack.get(2);
             PSDDecoder.RawLayer layer = list.layers.get(list.channels.size());

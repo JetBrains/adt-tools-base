@@ -292,7 +292,11 @@ public final class ChunkReaders {
                     expression = "in.readInt()";
                     mSkip = true;
             }
-            builder.addStatement("$L$L = $T.values()[$L]", target, chunk.name, mType, expression);
+            builder.beginBlock();
+            builder.addStatement("int index = $L", expression);
+            builder.addStatement("if (index > $T.values().length) index = 0", mType);
+            builder.addStatement("$L$L = $T.values()[index]", target, chunk.name, mType);
+            builder.endBlock();
         }
 
         @Override
