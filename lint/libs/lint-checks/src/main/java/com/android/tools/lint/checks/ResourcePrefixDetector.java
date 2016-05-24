@@ -173,9 +173,15 @@ public class ResourcePrefixDetector extends ResourceXmlDetector implements
             if (nameAttribute != null) {
                 String name = nameAttribute.getValue();
                 if (!name.startsWith(mPrefix)) {
-                    if (SdkUtils.startsWithIgnoreCase(name, mPrefix) &&
-                            (item.getTagName().equals(TAG_DECLARE_STYLEABLE) ||
-                            item.getTagName().equals(TAG_STYLE))) {
+                    // For styleables, allow case insensitive prefix match, and if the
+                    // prefix ends with a "_" it's not required, e.g. prefix "foo_"
+                    // should accept FooView as a styleable, and shouldn't require
+                    // foo_View or Foo_View.
+                    String tagName = item.getTagName();
+                    if ((tagName.equals(TAG_DECLARE_STYLEABLE) || tagName.equals(TAG_STYLE)) &&
+                        (SdkUtils.startsWithIgnoreCase(name, mPrefix) ||
+                            mPrefix.endsWith("_") && name.regionMatches(true, 0, mPrefix, 0,
+                                    mPrefix.length() - 1))) {
                         continue;
                     }
                     if (name.indexOf(':') != -1) {

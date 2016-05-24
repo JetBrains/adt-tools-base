@@ -133,6 +133,15 @@ public class ResourcePrefixDetectorTest extends AbstractCheckTest {
                 ));
     }
 
+    public void testStyleableName() throws Exception {
+        assertEquals("No warnings.",
+                lintProject(xml("res/values/values.xml", ""
+                        + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                        + "<resources xmlns:tools=\"http://schemas.android.com/tools\">\n"
+                        + "  <declare-styleable name=\"Unit_test_prefixMyView\"/>\n"
+                        + "</resources>\n")
+                ));
+    }
     // TODO: Test suppressing root level tag
 
     @Override
