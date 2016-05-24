@@ -52,9 +52,9 @@ public class ZFileOptions {
     private AlignmentRule mAlignmentRule;
 
     /**
-     * Should the extra field be used for alignment instead of the offsets?
+     * Should the extra field be used to cover empty space?
      */
-    private boolean mUseExtraFieldForAlignment;
+    private boolean mCoverEmptySpaceUsingExtraField;
 
     /**
      * Should files be automatically sorted before update?
@@ -148,23 +148,23 @@ public class ZFileOptions {
     }
 
     /**
-     * Obtains whether the extra field should be used for alignment. See {@link ZFile} for an
-     * explanation on using the extra field for alignment.
+     * Obtains whether the extra field should be used to cover empty spaces. See {@link ZFile} for
+     * an explanation on using the extra field for covering empty spaces.
      *
-     * @return should the extra field be used for alignment?
+     * @return should the extra field be used to cover empty spaces?
      */
-    public boolean getUseExtraFieldForAlignment() {
-        return mUseExtraFieldForAlignment;
+    public boolean getCoverEmptySpaceUsingExtraField() {
+        return mCoverEmptySpaceUsingExtraField;
     }
 
     /**
-     * Sets whether the extra field should be used for alignment. See {@link ZFile} for an
-     * explanation on using the extra field for alignment.
+     * Sets whether the extra field should be used to cover empty spaces. See {@link ZFile} for an
+     * explanation on using the extra field for covering empty spaces.
      *
-     * @param useExtraFieldForAlignment should the extra field be used for alignment?
+     * @param coverEmptySpaceUsingExtraField should the extra field be used to cover empty spaces?
      */
-    public void setUseExtraFieldForAlignment(boolean useExtraFieldForAlignment) {
-        mUseExtraFieldForAlignment = useExtraFieldForAlignment;
+    public void setCoverEmptySpaceUsingExtraField(boolean coverEmptySpaceUsingExtraField) {
+        mCoverEmptySpaceUsingExtraField = coverEmptySpaceUsingExtraField;
     }
 
     /**
