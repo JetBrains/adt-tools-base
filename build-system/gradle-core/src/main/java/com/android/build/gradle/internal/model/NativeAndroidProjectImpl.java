@@ -34,23 +34,23 @@ public class NativeAndroidProjectImpl implements NativeAndroidProject, Serializa
 
     private static final long serialVersionUID = 1L;
 
-    private int apiVersion;
+    private final int apiVersion;
     @NonNull
-    private String modelVersion;
+    private final String modelVersion;
     @NonNull
-    private String name;
+    private final String name;
     @NonNull
-    private Collection<File> buildFiles;
+    private final Collection<File> buildFiles;
     @NonNull
-    private Collection<NativeArtifact> artifacts;
+    private final Collection<NativeArtifact> artifacts;
     @NonNull
-    private Collection<NativeToolchain> toolChains;
+    private final Collection<NativeToolchain> toolChains;
     @NonNull
-    private Collection<NativeSettings> settings;
+    private final Collection<NativeSettings> settings;
     @NonNull
-    private Map<String, String> fileExtensions;
+    private final Map<String, String> fileExtensions;
     @NonNull
-    private Collection<String> buildSystems;
+    private final Collection<String> buildSystems;
 
     public NativeAndroidProjectImpl(
             @NonNull String modelVersion,
@@ -124,5 +124,11 @@ public class NativeAndroidProjectImpl implements NativeAndroidProject, Serializa
     @NonNull
     public Collection<String> getBuildSystems() {
         return buildSystems;
+    }
+
+    @NonNull
+    @Override
+    public String toString() {
+        return "NativeAndroidProjectImpl{name='" + name + "'}";
     }
 }

@@ -23,9 +23,7 @@ import com.android.builder.model.AndroidProject
 import com.android.builder.model.NativeAndroidProject
 import com.android.builder.model.NativeArtifact
 import com.android.builder.model.NativeSettings
-import com.google.common.collect.ArrayListMultimap
 import com.google.common.collect.Lists
-import com.google.common.collect.Multimap
 import groovy.transform.CompileStatic
 import org.junit.Before
 import org.junit.Rule
@@ -34,13 +32,14 @@ import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
-
 /**
  * General Model tests
  */
 @CompileStatic
 @RunWith(Parameterized.class)
 class NativeModelTest {
+    private static enum Compiler {GCC, CLANG}
+
     private static enum Config {
         ANDROID_MK_FILE_C("""
             apply plugin: 'com.android.application'
@@ -50,17 +49,17 @@ class NativeModelTest {
                 buildToolsVersion "$GradleTestProject.DEFAULT_BUILD_TOOL_VERSION"
                 externalNativeBuild {
                     ndkBuild {
-                        path file("src/main/cxx/Android.mk")
+                        path "src/main/cpp/Android.mk"
                     }
                 }
                 defaultConfig {
                       ndkBuild {
-                        cFlags = "-DTEST_C_FLAG"
-                        cppFlags = "-DTEST_CPP_FLAG"
+                        cFlags "-DTEST_C_FLAG"
+                        cppFlags "-DTEST_CPP_FLAG"
                       }
                 }
             }
-            """, HelloWorldJniApp.androidMkC("src/main/cxx"), false),
+            """, HelloWorldJniApp.androidMkC("src/main/cpp"), false, 2, 7, Compiler.GCC),
         ANDROID_MK_FILE_CPP("""
             apply plugin: 'com.android.application'
 
@@ -69,17 +68,17 @@ class NativeModelTest {
                 buildToolsVersion "$GradleTestProject.DEFAULT_BUILD_TOOL_VERSION"
                 externalNativeBuild {
                     ndkBuild {
-                        path file("src/main/cxx/Android.mk")
+                        path file("src/main/cpp/Android.mk")
                     }
                 }
                 defaultConfig {
                       ndkBuild {
-                        cFlags = "-DTEST_C_FLAG"
-                        cppFlags = "-DTEST_CPP_FLAG"
+                        cFlags "-DTEST_C_FLAG"
+                        cppFlags "-DTEST_CPP_FLAG"
                       }
                 }
             }
-            """, HelloWorldJniApp.androidMkCpp("src/main/cxx"), true),
+            """, HelloWorldJniApp.androidMkCpp("src/main/cpp"), true, 2, 7, Compiler.GCC),
         ANDROID_MK_FOLDER_C("""
             apply plugin: 'com.android.application'
 
@@ -88,17 +87,17 @@ class NativeModelTest {
                 buildToolsVersion "$GradleTestProject.DEFAULT_BUILD_TOOL_VERSION"
                 externalNativeBuild {
                     ndkBuild {
-                        path file("src/main/cxx")
+                        path file("src/main/cpp")
                     }
                 }
                 defaultConfig {
                       ndkBuild {
-                        cFlags = "-DTEST_C_FLAG"
-                        cppFlags = "-DTEST_CPP_FLAG"
+                        cFlags "-DTEST_C_FLAG"
+                        cppFlags "-DTEST_CPP_FLAG"
                       }
                 }
             }
-            """, HelloWorldJniApp.androidMkC("src/main/cxx"), false),
+            """, HelloWorldJniApp.androidMkC("src/main/cpp"), false, 2, 7, Compiler.GCC),
         ANDROID_MK_FOLDER_CPP("""
             apply plugin: 'com.android.application'
 
@@ -107,17 +106,84 @@ class NativeModelTest {
                 buildToolsVersion "$GradleTestProject.DEFAULT_BUILD_TOOL_VERSION"
                 externalNativeBuild {
                     ndkBuild {
-                        path file("src/main/cxx")
+                        path file("src/main/cpp")
                     }
                 }
                 defaultConfig {
                       ndkBuild {
-                        cFlags = "-DTEST_C_FLAG"
-                        cppFlags = "-DTEST_CPP_FLAG"
+                        cFlags "-DTEST_C_FLAG"
+                        cppFlags "-DTEST_CPP_FLAG"
                       }
                 }
             }
-            """, HelloWorldJniApp.androidMkCpp("src/main/cxx"), true),
+            """, HelloWorldJniApp.androidMkCpp("src/main/cpp"), true, 2, 7, Compiler.GCC),
+        ANDROID_MK_FILE_CPP_CLANG("""
+            apply plugin: 'com.android.application'
+
+            android {
+                compileSdkVersion $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
+                buildToolsVersion "$GradleTestProject.DEFAULT_BUILD_TOOL_VERSION"
+                externalNativeBuild {
+                    ndkBuild {
+                        path file("src/main/cpp/Android.mk")
+                    }
+                }
+                defaultConfig {
+                      ndkBuild {
+                        arguments "NDK_TOOLCHAIN_VERSION:=clang"
+                        cFlags "-DTEST_C_FLAG"
+                        cppFlags "-DTEST_CPP_FLAG"
+                      }
+                }
+            }
+            """, HelloWorldJniApp.androidMkCpp("src/main/cpp"), true, 2, 7, Compiler.CLANG),
+        ANDROID_MK_FOLDER_CPP_CLANG("""
+            apply plugin: 'com.android.application'
+
+            android {
+                compileSdkVersion $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
+                buildToolsVersion "$GradleTestProject.DEFAULT_BUILD_TOOL_VERSION"
+                externalNativeBuild {
+                    ndkBuild {
+                        path file("src/main/cpp")
+                    }
+                }
+                defaultConfig {
+                      ndkBuild {
+                        arguments "NDK_TOOLCHAIN_VERSION:=clang"
+                        cFlags "-DTEST_C_FLAG"
+                        cppFlags "-DTEST_CPP_FLAG"
+                      }
+                }
+            }
+            """, HelloWorldJniApp.androidMkCpp("src/main/cpp"), true, 2, 7, Compiler.CLANG),
+        ANDROID_MK_CUSTOM_BUILD_TYPE("""
+            apply plugin: 'com.android.application'
+
+            android {
+                compileSdkVersion $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
+                buildToolsVersion "$GradleTestProject.DEFAULT_BUILD_TOOL_VERSION"
+                externalNativeBuild {
+                    ndkBuild {
+                        path "src/main/cpp"
+                    }
+                }
+                defaultConfig {
+                      ndkBuild {
+                        cFlags "-DTEST_C_FLAG"
+                        cppFlags "-DTEST_CPP_FLAG"
+                      }
+                }
+
+                buildTypes {
+                      myCustomBuildType {
+                          ndkBuild {
+                            cppFlags "-DCUSTOM_BUILD_TYPE"
+                          }
+                      }
+                }
+            }
+            """, HelloWorldJniApp.androidMkCpp("src/main/cpp"), true, 3, 7, Compiler.GCC),
         CMAKELISTS_FILE_CPP("""
             apply plugin: 'com.android.application'
 
@@ -131,12 +197,34 @@ class NativeModelTest {
                 }
                 defaultConfig {
                       cmake {
-                        cFlags = "-DTEST_C_FLAG"
-                        cppFlags = "-DTEST_CPP_FLAG"
+                        cFlags "-DTEST_C_FLAG"
+                        cppFlags "-DTEST_CPP_FLAG"
                       }
                 }
             }
-            """, HelloWorldJniApp.cmakeLists("."), true),
+            """, HelloWorldJniApp.cmakeLists("."), true, 2, 7, Compiler.GCC),
+        CMAKELISTS_FILE_CPP_CLANG("""
+            apply plugin: 'com.android.application'
+
+            android {
+                compileSdkVersion $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
+                buildToolsVersion "$GradleTestProject.DEFAULT_BUILD_TOOL_VERSION"
+                externalNativeBuild {
+                    cmake {
+                        path "."
+                    }
+                }
+                defaultConfig {
+                      cmake {
+                        arguments "-DANDROID_TOOLCHAIN_NAME=arm-linux-androideabi-clang3.5"
+                        cFlags "-DTEST_C_FLAG"
+                        cppFlags "-DTEST_CPP_FLAG"
+                        abiFilters "armeabi-v7a", "armeabi", "armeabi-v7a with NEON",
+                            "armeabi-v7a with VFPV3", "armeabi-v6 with VFP"
+                      }
+                }
+            }
+            """, HelloWorldJniApp.cmakeLists("."), true, 2, 5, Compiler.CLANG),
         CMAKELISTS_FILE_C("""
             apply plugin: 'com.android.application'
 
@@ -150,12 +238,12 @@ class NativeModelTest {
                 }
                 defaultConfig {
                       cmake {
-                        cFlags = "-DTEST_C_FLAG"
-                        cppFlags = "-DTEST_CPP_FLAG"
+                        cFlags "-DTEST_C_FLAG"
+                        cppFlags "-DTEST_CPP_FLAG"
                       }
                 }
             }
-            """, HelloWorldJniApp.cmakeLists("."), false),
+            """, HelloWorldJniApp.cmakeLists("."), false, 2, 7, Compiler.GCC),
         CMAKELISTS_FOLDER_CPP("""
             apply plugin: 'com.android.application'
 
@@ -169,12 +257,12 @@ class NativeModelTest {
                 }
                 defaultConfig {
                       cmake {
-                        cFlags = "-DTEST_C_FLAG"
-                        cppFlags = "-DTEST_CPP_FLAG"
+                        cFlags "-DTEST_C_FLAG"
+                        cppFlags "-DTEST_CPP_FLAG"
                       }
                 }
             }
-            """, HelloWorldJniApp.cmakeLists("."), true),
+            """, HelloWorldJniApp.cmakeLists("."), true, 2, 7, Compiler.GCC),
         CMAKELISTS_FOLDER_C("""
             apply plugin: 'com.android.application'
 
@@ -188,27 +276,34 @@ class NativeModelTest {
                 }
                 defaultConfig {
                       cmake {
-                        cFlags = "-DTEST_C_FLAG"
-                        cppFlags = "-DTEST_CPP_FLAG"
+                        cFlags "-DTEST_C_FLAG"
+                        cppFlags "-DTEST_CPP_FLAG"
                       }
                 }
             }
-            """, HelloWorldJniApp.cmakeLists("."), false);
+            """, HelloWorldJniApp.cmakeLists("."), false, 2, 7, Compiler.GCC);
 
         public final String buildGradle;
         private final TestSourceFile nativeBuildFile;
         public final boolean isCpp;
+        public final int variantCount;
+        public final int abiCount;
+        public final Compiler compiler;
 
-        Config(String buildGradle, TestSourceFile nativeBuildFile, boolean isCpp) {
+        Config(String buildGradle, TestSourceFile nativeBuildFile, boolean isCpp, int variantCount,
+                int abiCount, Compiler compiler) {
             this.buildGradle = buildGradle;
             this.nativeBuildFile = nativeBuildFile;
             this.isCpp = isCpp;
+            this.variantCount = variantCount;
+            this.abiCount = abiCount;
+            this.compiler = compiler;
         }
 
         public GradleTestProject create() {
             GradleTestProject project = GradleTestProject.builder()
                     .fromTestApp(HelloWorldJniApp.builder()
-                        .withNativeDir("cxx")
+                        .withNativeDir("cpp")
                         .useCppSource(isCpp)
                         .build())
                     .addFile(nativeBuildFile)
@@ -221,7 +316,6 @@ class NativeModelTest {
     @Rule
     public GradleTestProject project = config.create();
 
-
     @Parameterized.Parameters(name = "model = {0}")
     public static Collection<Object[]> data() {
         return [
@@ -229,8 +323,12 @@ class NativeModelTest {
                 [Config.ANDROID_MK_FILE_CPP].toArray(),
                 [Config.ANDROID_MK_FOLDER_C].toArray(),
                 [Config.ANDROID_MK_FOLDER_CPP].toArray(),
+                [Config.ANDROID_MK_FILE_CPP_CLANG].toArray(),
+                [Config.ANDROID_MK_FOLDER_CPP_CLANG].toArray(),
+                [Config.ANDROID_MK_CUSTOM_BUILD_TYPE].toArray(),
                 [Config.CMAKELISTS_FILE_C].toArray(),
                 [Config.CMAKELISTS_FILE_CPP].toArray(),
+                [Config.CMAKELISTS_FILE_CPP_CLANG].toArray(),
                 [Config.CMAKELISTS_FOLDER_C].toArray(),
                 [Config.CMAKELISTS_FOLDER_CPP].toArray()
         ];
@@ -254,19 +352,18 @@ class NativeModelTest {
         NativeAndroidProject model = project.model().getSingle(NativeAndroidProject.class);
         assertThat(model).isNotNull();
         assertThat(model.name).isEqualTo("project");
-        assertThat(model.artifacts).hasSize(14);
+        assertThat(model.artifacts).hasSize(config.variantCount * config.abiCount);
         assertThat(model.fileExtensions).hasSize(1);
 
         // Settings should be non-empty but the count depends on flags and build system because
         // settings are the distinct set of flags.
         assertThat(model.settings).isNotEmpty();
-        assertThat(model.toolChains).hasSize(14);
+        assertThat(model.toolChains).hasSize(config.variantCount * config.abiCount);
+        assertThat(model).hasArtifactGroupsOfSize(config.abiCount);
 
         for (File file : model.buildFiles) {
             assertThat(file).isFile();
         }
-
-        Multimap<String, NativeArtifact> groupToArtifacts = ArrayListMultimap.create();
 
         for (NativeArtifact artifact : model.artifacts) {
             File parent = artifact.getOutputFile().getParentFile();
@@ -277,32 +374,73 @@ class NativeModelTest {
             }
             assertThat(parents).contains("obj");
             assertThat(parents).doesNotContain("lib");
-
-            groupToArtifacts.put(artifact.getGroupName(), artifact);
         }
 
-        assertThat(groupToArtifacts.keySet()).containsExactly("debug", "release");
-        assertThat(groupToArtifacts.get("debug")).hasSize(groupToArtifacts.get("release").size());
+        if (config.variantCount == 2) {
+            checkDefaultVariants(model);
+        } else {
+            checkCustomVariants(model);
+        }
 
         if (config.isCpp) {
             checkIsCpp(model);
         } else {
             checkIsC(model);
         }
-    }
 
-    private void checkIsC(NativeAndroidProject model) {
-        assertThat(model.fileExtensions).containsEntry("c", "c");
-        for (NativeSettings settings : model.settings) {
-            assertThat(settings.compilerFlags).contains("-DTEST_C_FLAG");
-            assertThat(settings.compilerFlags).doesNotContain("-DTEST_CPP_FLAG");
+        if (config.compiler == Compiler.GCC) {
+            checkGcc(model);
+        } else {
+            checkClang(model);
         }
     }
 
-    private void checkIsCpp(NativeAndroidProject model) {
+    private static void checkDefaultVariants(NativeAndroidProject model) {
+        assertThat(model).hasArtifactGroupsNamed("debug", "release");
+
+        for (NativeSettings settings : model.settings) {
+            assertThat(settings).doesntHaveExactCompilerFlag("-DCUSTOM_BUILD_TYPE");
+        }
+    }
+
+    private static void checkCustomVariants(NativeAndroidProject model) {
+        assertThat(model).hasArtifactGroupsNamed("debug", "release", "myCustomBuildType");
+
+        boolean sawCustomVariantFLag = false;
+        for (NativeSettings settings : model.settings) {
+            List<String> flags = settings.compilerFlags;
+            if (flags.contains("-DCUSTOM_BUILD_TYPE")) {
+                assertThat(settings).hasExactCompilerFlag("-DCUSTOM_BUILD_TYPE");
+                sawCustomVariantFLag = true;
+            }
+        }
+        assertThat(sawCustomVariantFLag).isTrue();
+    }
+
+    private static void checkGcc(NativeAndroidProject model) {
+        for (NativeSettings settings : model.settings) {
+            assertThat(settings).doesntHaveCompilerFlagStartingWith("-gcc-toolchain");
+        }
+    }
+
+    private static void checkClang(NativeAndroidProject model) {
+        for (NativeSettings settings : model.settings) {
+            assertThat(settings).hasCompilerFlagStartingWith("-gcc-toolchain");
+        }
+    }
+
+    private static void checkIsC(NativeAndroidProject model) {
+        assertThat(model.fileExtensions).containsEntry("c", "c");
+        for (NativeSettings settings : model.settings) {
+            assertThat(settings).hasExactCompilerFlag("-DTEST_C_FLAG");
+            assertThat(settings).doesntHaveExactCompilerFlag("-DTEST_CPP_FLAG");
+        }
+    }
+
+    private static void checkIsCpp(NativeAndroidProject model) {
         assertThat(model.fileExtensions).containsEntry("cpp", "c++");
         for (NativeSettings settings : model.settings) {
-            assertThat(settings.compilerFlags).contains("-DTEST_CPP_FLAG");
+            assertThat(settings).hasExactCompilerFlag("-DTEST_CPP_FLAG");
         }
     }
 }

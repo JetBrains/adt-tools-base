@@ -17,10 +17,10 @@
 package com.android.build.gradle.managed.adaptor;
 
 import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
 import com.android.build.gradle.internal.dsl.CoreExternalNativeCmakeOptions;
 import com.android.build.gradle.managed.ExternalNativeCmakeOptions;
 
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -28,21 +28,28 @@ import java.util.Set;
  */
 public class ExternalNativeCmakeOptionsAdaptor implements CoreExternalNativeCmakeOptions {
 
+    @NonNull
     private final ExternalNativeCmakeOptions options;
 
     public ExternalNativeCmakeOptionsAdaptor(@NonNull ExternalNativeCmakeOptions options) {
         this.options = options;
     }
 
-    @Nullable
+    @NonNull
     @Override
-    public String getcFlags() {
+    public List<String> getArguments() {
+        return options.getArguments();
+    }
+
+    @NonNull
+    @Override
+    public List<String>  getcFlags() {
         return options.getcFlags();
     }
 
-    @Nullable
+    @NonNull
     @Override
-    public String getCppFlags() {
+    public List<String>  getCppFlags() {
         return options.getCppFlags();
     }
 

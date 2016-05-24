@@ -62,7 +62,6 @@ android {
         externalNativeBuild {
           ndkBuild {
             path file("src/main/cxx/Android.mk")
-            cFlags = "-DTEST_FLAG"
           }
         }
     }

@@ -27,7 +27,6 @@ import com.android.ide.common.process.ProcessInfoBuilder;
 import com.android.sdklib.IAndroidTarget;
 import com.google.common.base.Charsets;
 import com.google.common.base.Joiner;
-import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 import com.google.common.io.Files;
 import com.google.gson.GsonBuilder;
@@ -56,10 +55,11 @@ class NdkBuildExternalNativeJsonGenerator extends ExternalNativeJsonGenerator {
             @NonNull File jsonFolder,
             @NonNull File makeFileOrFolder,
             boolean debuggable,
-            @Nullable String cFlags,
-            @Nullable String cppFlags) {
+            @Nullable List<String> buildArguments,
+            @Nullable List<String> cFlags,
+            @Nullable List<String> cppFlags) {
         super(variantName, abis, androidBuilder, sdkFolder, ndkFolder, soFolder, objFolder,
-                jsonFolder, makeFileOrFolder, debuggable, cFlags, cppFlags);
+                jsonFolder, makeFileOrFolder, debuggable, buildArguments, cFlags, cppFlags);
     }
 
     @Override
@@ -101,6 +101,7 @@ class NdkBuildExternalNativeJsonGenerator extends ExternalNativeJsonGenerator {
         Files.write(actualResult, outputJson, Charsets.UTF_8);
     }
 
+    @NonNull
     @Override
     public NativeBuildSystem getNativeBuildSystem() {
         return NativeBuildSystem.NDK_BUILD;
@@ -186,12 +187,16 @@ class NdkBuildExternalNativeJsonGenerator extends ExternalNativeJsonGenerator {
         result.add("NDK_OUT=" + getObjFolder().getAbsolutePath());
         result.add("NDK_LIBS_OUT=" + getSoFolder().getAbsolutePath());
 
-        if (!Strings.isNullOrEmpty(getcFlags())) {
-            result.add(String.format("APP_CFLAGS+=\"%s\"", getcFlags()));
+        for (String flag : getcFlags()) {
+            result.add(String.format("APP_CFLAGS+=\"%s\"", flag));
         }
 
-        if (!Strings.isNullOrEmpty(getCppFlags())) {
-            result.add(String.format("APP_CPPFLAGS+=\"%s\"", getCppFlags()));
+        for (String flag : getCppFlags()) {
+            result.add(String.format("APP_CPPFLAGS+=\"%s\"", flag));
+        }
+
+        for (String argument : getBuildArguments()) {
+            result.add(argument);
         }
 
         return result;

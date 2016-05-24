@@ -17,55 +17,55 @@
 package com.android.build.gradle.internal.core;
 
 import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
 import com.android.build.gradle.internal.dsl.CoreExternalNativeCmakeOptions;
-import com.google.common.base.Strings;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
+import java.util.List;
 import java.util.Set;
 
 /**
  * Implementation of CoreExternalNativeCmakeOptions used to merge multiple configs together.
  */
 public class MergedExternalNativeCmakeOptions implements CoreExternalNativeCmakeOptions {
-
-    @Nullable
-    private String cFlags = null;
-    @Nullable
-    private String cppFlags = null;
     @NonNull
-    private Set<String> abiFilters = Sets.newHashSet();
+    private final List<String> arguments = Lists.newArrayList();
+    @NonNull
+    private final List<String> cFlags = Lists.newArrayList();
+    @NonNull
+    private final List<String> cppFlags = Lists.newArrayList();
+    @NonNull
+    private final Set<String> abiFilters = Sets.newHashSet();
 
     public void reset() {
-        cFlags = null;
-        cppFlags = null;
+        arguments.clear();
+        cFlags.clear();
+        cppFlags.clear();
         abiFilters.clear();
     }
 
     public void append(@NonNull CoreExternalNativeCmakeOptions options) {
-        if (cFlags == null) {
-            cFlags = options.getcFlags();
-        } else if (!Strings.isNullOrEmpty(options.getcFlags())) {
-            cFlags = cFlags + " " + options.getcFlags();
-        }
-
-        if (cppFlags == null) {
-            cppFlags = options.getCppFlags();
-        } else if (!Strings.isNullOrEmpty(options.getCppFlags())) {
-            cppFlags = cppFlags + " " + options.getCppFlags();
-        }
+        arguments.addAll(options.getArguments());
+        cFlags.addAll(options.getcFlags());
+        cppFlags.addAll(options.getCppFlags());
         abiFilters.addAll(options.getAbiFilters());
     }
 
-    @Nullable
+    @NonNull
     @Override
-    public String getcFlags() {
+    public List<String> getArguments() {
+        return arguments;
+    }
+
+    @NonNull
+    @Override
+    public List<String> getcFlags() {
         return cFlags;
     }
 
-    @Nullable
+    @NonNull
     @Override
-    public String getCppFlags() {
+    public List<String> getCppFlags() {
         return cppFlags;
     }
 

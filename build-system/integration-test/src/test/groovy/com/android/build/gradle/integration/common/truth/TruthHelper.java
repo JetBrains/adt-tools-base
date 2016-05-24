@@ -25,6 +25,8 @@ import com.android.builder.model.AndroidArtifact;
 import com.android.builder.model.AndroidProject;
 import com.android.builder.model.Dependencies;
 import com.android.builder.model.MavenCoordinates;
+import com.android.builder.model.NativeAndroidProject;
+import com.android.builder.model.NativeSettings;
 import com.android.builder.model.SyncIssue;
 import com.android.builder.model.Variant;
 import com.google.common.annotations.GwtIncompatible;
@@ -40,6 +42,7 @@ import com.google.common.truth.ClassSubject;
 import com.google.common.truth.ComparableSubject;
 import com.google.common.truth.DefaultSubject;
 import com.google.common.truth.DoubleSubject;
+import com.google.common.truth.GuavaOptionalSubject;
 import com.google.common.truth.IntegerSubject;
 import com.google.common.truth.IterableSubject;
 import com.google.common.truth.ListMultimapSubject;
@@ -48,7 +51,6 @@ import com.google.common.truth.MapSubject;
 import com.google.common.truth.MultimapSubject;
 import com.google.common.truth.MultisetSubject;
 import com.google.common.truth.ObjectArraySubject;
-import com.google.common.truth.GuavaOptionalSubject;
 import com.google.common.truth.PrimitiveBooleanArraySubject;
 import com.google.common.truth.PrimitiveByteArraySubject;
 import com.google.common.truth.PrimitiveCharArraySubject;
@@ -136,6 +138,16 @@ public class TruthHelper {
     @NonNull
     public static MavenCoordinatesSubject assertThat(@Nullable MavenCoordinates coordinates) {
         return assert_().about(MavenCoordinatesSubject.Factory.get()).that(coordinates);
+    }
+
+    @NonNull
+    public static NativeSettingsSubject assertThat(@Nullable NativeSettings settings) {
+        return assert_().about(NativeSettingsSubject.Factory.get()).that(settings);
+    }
+
+    @NonNull
+    public static NativeAndroidProjectSubject assertThat(@Nullable NativeAndroidProject project) {
+        return assert_().about(NativeAndroidProjectSubject.Factory.get()).that(project);
     }
 
     // ---- helper method from com.google.common.truth.Truth

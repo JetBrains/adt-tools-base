@@ -37,16 +37,10 @@ import java.io.File;
  */
 public class CmakeOptions implements CoreCmakeOptions {
     @NonNull
-    final Project project;
+    private final Project project;
 
     @Nullable
     private File path;
-
-    @Nullable
-    private String cflags;
-
-    @Nullable
-    private String cppflags;
 
     public CmakeOptions(@NonNull Project project) {
         this.project = project;
@@ -58,34 +52,12 @@ public class CmakeOptions implements CoreCmakeOptions {
         return this.path;
     }
 
-    public void setPath(Object path) {
+    public void setPath(@Nullable Object path) {
         this.path = project.file(path);
     }
 
     @Override
-    public void setPath(File path) {
+    public void setPath(@NonNull File path) {
         this.path = path;
-    }
-
-    @Nullable
-    @Override
-    public String getcFlags() {
-        return this.cflags;
-    }
-
-    @Override
-    public void setcFlags(String cflags) {
-        this.cflags = cflags;
-    }
-
-    @Nullable
-    @Override
-    public String getCppFlags() {
-        return this.cppflags;
-    }
-
-    @Override
-    public void setCppFlags(String cppflags) {
-        this.cppflags = cppflags;
     }
 }

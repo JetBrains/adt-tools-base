@@ -66,14 +66,10 @@ android {
     compileSdkVersion rootProject.latestCompileSdk
     buildToolsVersion = rootProject.buildToolsVersion
 
-    defaultConfig {
-        externalNativeBuild {
-          ndkBuild {
-            path "src/main/cxx/Android.mk"
-            cFlags = "-DTEST_C_FLAG"
-            cppFlags = "-DTEST_CPP_FLAG"
-          }
-        }
+    externalNativeBuild {
+      ndkBuild {
+        path "src/main/cxx/Android.mk"
+      }
     }
 }
 """

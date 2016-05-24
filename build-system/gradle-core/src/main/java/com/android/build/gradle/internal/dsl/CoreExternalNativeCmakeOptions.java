@@ -17,8 +17,8 @@
 package com.android.build.gradle.internal.dsl;
 
 import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
 
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -26,16 +26,22 @@ import java.util.Set;
  */
 public interface CoreExternalNativeCmakeOptions {
     /**
+     * The ndk-build build system Flags
+     */
+    @NonNull
+    List<String> getArguments();
+
+    /**
      * The C Flags
      */
-    @Nullable
-    String getcFlags();
+    @NonNull
+    List<String> getcFlags();
 
     /**
      * The CPP Flags
      */
-    @Nullable
-    String getCppFlags();
+    @NonNull
+    List<String> getCppFlags();
 
     /**
      * The ABI Filters

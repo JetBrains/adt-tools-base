@@ -16,6 +16,9 @@
 package com.android.build.gradle.external.gnumake;
 
 
+import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -31,6 +34,7 @@ import joptsimple.OptionSet;
  */
 class CommandClassifier {
 
+    @NonNull
     private static final BuildTool[] classifiers = {
             new NativeCompilerBuildTool(),
             new GccArBuildTool()
@@ -40,6 +44,7 @@ class CommandClassifier {
      * Give a string that contains a list of commands recognize the interesting calls and record
      * information about inputs and outputs.
      */
+    @NonNull
     static List<BuildStepInfo> classify(String commands, boolean isWin32) {
         List<CommandLine> commandLines = CommandLineParser.parse(commands, isWin32);
 
@@ -59,9 +64,10 @@ class CommandClassifier {
     }
 
     private interface BuildTool {
-        BuildStepInfo createCommand(CommandLine command);
+        @Nullable
+        BuildStepInfo createCommand(@NonNull CommandLine command);
 
-        boolean isMatch(CommandLine command);
+        boolean isMatch(@NonNull CommandLine command);
     }
 
     /**
@@ -70,6 +76,7 @@ class CommandClassifier {
      * In this case, we pull out the inputs (typically .o) and output (.a).
      */
     static class GccArBuildTool implements BuildTool {
+        @NonNull
         private static final OptionParser PARSER = new OptionParser("cSE");
 
         static {
@@ -80,22 +87,24 @@ class CommandClassifier {
         }
 
 
-        private static void checkValidInput(String arg) {
+        private static void checkValidInput(@NonNull String arg) {
             if (!arg.endsWith(".o")) {
                 throw new RuntimeException(arg);
             }
         }
 
-        private static void checkValidOutput(String arg) {
+        private static void checkValidOutput(@NonNull String arg) {
             if (!arg.endsWith(".a")) {
                 throw new RuntimeException(arg);
             }
         }
 
+        @Nullable
         @Override
-        public BuildStepInfo createCommand(CommandLine command) {
+        public BuildStepInfo createCommand(@NonNull CommandLine command) {
             String[] arr = new String[command.args.size()];
             arr = command.args.toArray(arr);
+            @SuppressWarnings("unchecked")
             List<String> options = (List<String>) PARSER.parse(arr).nonOptionArguments();
             if (options.size() < 3) {
                 // Not enough space for <command> <archive> <input>
@@ -122,7 +131,7 @@ class CommandClassifier {
         }
 
         @Override
-        public boolean isMatch(CommandLine command) {
+        public boolean isMatch(@NonNull CommandLine command) {
             return command.command.endsWith("gcc-ar");
         }
     }
@@ -133,48 +142,50 @@ class CommandClassifier {
      * is used as a linker. Output may be like .o or .so respectively.
      */
     static class NativeCompilerBuildTool implements BuildTool {
+        @NonNull
         private static final OptionParser PARSER = new OptionParser("cSE");
 
         // These are the gcc/clang flags that take a following parameter. This list is gleaned
         // from the clang sources.
+        @NonNull
         private static final List<String> ignoreOneFlags = Arrays.asList(
-                "--assert",
-                "--define-macro",
-                "--dump",
-                "--imacros",
-                "--include",
-                "--include-directory",
-                "--include-directory-after",
-                "--include-prefix",
-                "--include-with-prefix",
-                "--include-with-prefix-after",
-                "--include-with-prefix-before",
-                "--output",
-                "--output-pch",
-                "--undefine-macro",
-                "--write-dependencies",
-                "--write-user-dependencies",
-                "-A",
-                "-D",
-                "-F",
-                "-I",
-                "-MD",
-                "-MF",
-                "-MMD",
-                "-MQ",
-                "-MT",
-                "-U",
-                "-idirafter",
-                "-imacros",
-                "-imultilib",
-                "-include",
-                "-iprefix",
-                "-isysroot",
-                "-isystem",
-                "-iquote",
-                "-iwithprefix",
-                "-iwithprefixbefore",
-                "-o");
+                "assert",
+                "define-macro",
+                "dump",
+                "gcc-toolchain",
+                "idirafter",
+                "imacros",
+                "imultilib",
+                "include",
+                "include-directory",
+                "include-directory-after",
+                "include-prefix",
+                "include-with-prefix",
+                "include-with-prefix-after",
+                "include-with-prefix-before",
+                "iprefix",
+                "isysroot",
+                "isystem",
+                "iquote",
+                "iwithprefix",
+                "iwithprefixbefore",
+                "o",
+                "output",
+                "output-pch",
+                "undefine-macro",
+                "write-dependencies",
+                "write-user-dependencies",
+                "A",
+                "D",
+                "F",
+                "I",
+                "MD",
+                "MF",
+                "MMD",
+                "MQ",
+                "MT",
+                "U",
+                "target");
 
         static {
             // Also allow flags that we don't recognize for a limited amount of future-proofing.
@@ -182,18 +193,20 @@ class CommandClassifier {
 
             // These are the flags that require an argument.
             for (String flag :ignoreOneFlags) {
-                PARSER.accepts(flag.substring(flag.lastIndexOf('-')+1)).withRequiredArg();
+                PARSER.accepts(flag).withRequiredArg();
             }
+
         }
 
+        @NonNull
         @Override
-        public BuildStepInfo createCommand(CommandLine command) {
+        public BuildStepInfo createCommand(@NonNull CommandLine command) {
             String[] arr = new String[command.args.size()];
             arr = command.args.toArray(arr);
             OptionSet options = PARSER.parse(arr);
 
             List<String> outputs = new ArrayList<>();
-
+            @SuppressWarnings("unchecked")
             List<String> nonOptions = (List<String>) options.nonOptionArguments();
             // Inputs are whatever is left over that doesn't look like a flag.
             List<String> inputs = nonOptions.stream()
@@ -215,11 +228,12 @@ class CommandClassifier {
         }
 
         @Override
-        public boolean isMatch(CommandLine command) {
+        public boolean isMatch(@NonNull CommandLine command) {
             String executable = new File(command.command).getName();
             return executable.endsWith("gcc")
                     || executable.endsWith("g++")
                     || executable.endsWith("clang")
+                    || executable.endsWith("clang++")
                     || executable.contains("-gcc-")
                     || executable.contains("-g++-")
                     || executable.contains("-clang-");
