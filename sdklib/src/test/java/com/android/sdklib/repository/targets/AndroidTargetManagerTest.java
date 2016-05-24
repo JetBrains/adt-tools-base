@@ -31,6 +31,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Tests for {@link AndroidTargetManager}.
@@ -58,12 +59,12 @@ public class AndroidTargetManagerTest extends TestCase {
 
         IAndroidTarget addon13 = iter.next();
         IAndroidTarget platform13 = iter.next();
-        verifyPlatform13(platform13);
-        verifyAddon13(addon13, platform13);
+        verifyPlatform13(platform13, fop);
+        verifyAddon13(addon13, platform13, fop);
         IAndroidTarget addon23 = iter.next();
         IAndroidTarget platform23 = iter.next();
-        verifyPlatform23(platform23);
-        verifyAddon23(addon23, platform23);
+        verifyPlatform23(platform23, fop);
+        verifyAddon23(addon23, platform23, fop);
     }
 
     public void testLegacyAddon() throws Exception {
@@ -83,8 +84,8 @@ public class AndroidTargetManagerTest extends TestCase {
 
         IAndroidTarget addon23 = iter.next();
         IAndroidTarget platform23 = iter.next();
-        verifyPlatform23(platform23);
-        verifyAddon23(addon23, platform23);
+        verifyPlatform23(platform23, fop);
+        verifyAddon23(addon23, platform23, fop);
     }
 
     public void testInstalledLegacyAddon() throws Exception {
@@ -104,8 +105,8 @@ public class AndroidTargetManagerTest extends TestCase {
 
         IAndroidTarget addon23 = iter.next();
         IAndroidTarget platform23 = iter.next();
-        verifyAddon23(addon23, platform23);
-        verifyPlatform23(platform23);
+        verifyAddon23(addon23, platform23, fop);
+        verifyPlatform23(platform23, fop);
     }
 
     public void testSources() throws Exception {
@@ -118,7 +119,7 @@ public class AndroidTargetManagerTest extends TestCase {
         IAndroidTarget target = mgr.getTargets(progress).iterator().next();
         progress.assertNoErrorsOrWarnings();
         String sourcesPath = target.getPath(IAndroidTarget.SOURCES);
-        assertEquals("/sdk/platforms/android-23/sources", sourcesPath);
+        assertEquals("/sdk/platforms/android-23/sources", fop.getAgnosticAbsPath(sourcesPath));
 
         recordSources23(fop);
         handler.getSdkManager(progress).loadSynchronously(0, progress, null, null);
@@ -126,42 +127,46 @@ public class AndroidTargetManagerTest extends TestCase {
         target = mgr.getTargets(progress).iterator().next();
         progress.assertNoErrorsOrWarnings();
         sourcesPath = target.getPath(IAndroidTarget.SOURCES);
-        assertEquals("/sdk/sources/android-23", sourcesPath);
+        assertEquals("/sdk/sources/android-23", fop.getAgnosticAbsPath(sourcesPath));
     }
 
-    private static void verifyPlatform13(IAndroidTarget target) {
+    private static void verifyPlatform13(IAndroidTarget target, MockFileOp fop) {
         assertEquals(new AndroidVersion(13, null), target.getVersion());
         assertEquals("Android Open Source Project", target.getVendor());
-        assertEquals("/sdk/platforms/android-13/", target.getLocation());
+        assertEquals("/sdk/platforms/android-13/", fop.getAgnosticAbsPath(target.getLocation()));
         assertNull(target.getParent());
 
         assertEquals(ImmutableSet.of(new File("/sdk/platforms/android-13/skins/HVGA"),
                 new File("/sdk/platforms/android-13/skins/WVGA800")),
                 ImmutableSet.copyOf(target.getSkins()));
         assertEquals(ImmutableList.of("/sdk/platforms/android-13/android.jar"),
-                target.getBootClasspath());
+                target.getBootClasspath().stream().map(fop::getAgnosticAbsPath)
+                        .collect(Collectors.toList()));
         assertEquals(new File("/sdk/build-tools/23.0.2"), target.getBuildToolInfo().getLocation());
         assertEquals(new File("/sdk/platforms/android-13/skins/WXGA"), target.getDefaultSkin());
     }
 
-    private static void verifyPlatform23(IAndroidTarget target) {
+    private static void verifyPlatform23(IAndroidTarget target, MockFileOp fop) {
         assertEquals(new AndroidVersion(23, null), target.getVersion());
         assertEquals("Android Open Source Project", target.getVendor());
-        assertEquals("/sdk/platforms/android-23/", target.getLocation());
+        assertEquals("/sdk/platforms/android-23/", fop.getAgnosticAbsPath(target.getLocation()));
         assertNull(target.getParent());
         assertTrue(Arrays.deepEquals(new File[]{new File("/sdk/platforms/android-23/skins/HVGA"),
                         new File("/sdk/platforms/android-23/skins/WVGA800")},
                 target.getSkins()));
         assertEquals(ImmutableList.of("/sdk/platforms/android-23/android.jar"),
-                target.getBootClasspath());
+                target.getBootClasspath().stream().map(fop::getAgnosticAbsPath)
+                        .collect(Collectors.toList()));
         assertEquals(new File("/sdk/build-tools/23.0.2"), target.getBuildToolInfo().getLocation());
         assertEquals(new File("/sdk/platforms/android-23/skins/WVGA800"), target.getDefaultSkin());
     }
 
-    private static void verifyAddon13(IAndroidTarget target, IAndroidTarget platform13) {
+    private static void verifyAddon13(IAndroidTarget target, IAndroidTarget platform13,
+            MockFileOp fop) {
         assertEquals(new AndroidVersion(13, null), target.getVersion());
         assertEquals("Google Inc.", target.getVendor());
-        assertEquals("/sdk/add-ons/addon-google_tv_addon-google-13/", target.getLocation());
+        assertEquals("/sdk/add-ons/addon-google_tv_addon-google-13/",
+                fop.getAgnosticAbsPath(target.getLocation()));
         assertEquals(platform13, target.getParent());
         assertEquals(ImmutableSet.of(
                 new File("/sdk/platforms/android-13/skins/HVGA"),
@@ -170,22 +175,26 @@ public class AndroidTargetManagerTest extends TestCase {
                 new File("/sdk/platforms/android-13/skins/WVGA800")),
                 ImmutableSet.copyOf(target.getSkins()));
         assertEquals(ImmutableList.of("/sdk/platforms/android-13/android.jar"),
-                target.getBootClasspath());
+                target.getBootClasspath().stream().map(fop::getAgnosticAbsPath)
+                        .collect(Collectors.toList()));
         assertEquals(new File("/sdk/build-tools/23.0.2"), target.getBuildToolInfo().getLocation());
         assertEquals(new File("/sdk/add-ons/addon-google_tv_addon-google-13/skins/720p"),
                 target.getDefaultSkin());
     }
 
-    private static void verifyAddon23(IAndroidTarget target, IAndroidTarget platform23) {
+    private static void verifyAddon23(IAndroidTarget target, IAndroidTarget platform23,
+            MockFileOp fop) {
         assertEquals(new AndroidVersion(23, null), target.getVersion());
         assertEquals("Google Inc.", target.getVendor());
-        assertEquals("/sdk/add-ons/addon-google_apis-google-23/", target.getLocation());
+        assertEquals("/sdk/add-ons/addon-google_apis-google-23/",
+                fop.getAgnosticAbsPath(target.getLocation()));
         assertEquals(platform23, target.getParent());
         assertEquals(ImmutableSet.of(new File("/sdk/platforms/android-23/skins/HVGA"),
                 new File("/sdk/platforms/android-23/skins/WVGA800")),
                 ImmutableSet.copyOf(target.getSkins()));
         assertEquals(ImmutableList.of("/sdk/platforms/android-23/android.jar"),
-                target.getBootClasspath());
+                target.getBootClasspath().stream().map(fop::getAgnosticAbsPath).collect(
+                        Collectors.toList()));
         assertEquals(new File("/sdk/build-tools/23.0.2"), target.getBuildToolInfo().getLocation());
         assertEquals(new File("/sdk/platforms/android-23/skins/WVGA800"), target.getDefaultSkin());
 

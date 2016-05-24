@@ -43,6 +43,7 @@ import com.google.gson.reflect.TypeToken;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.lang.reflect.Type;
 import java.util.Collection;
 import java.util.Collections;
@@ -135,7 +136,7 @@ public class PlatformTarget implements IAndroidTarget {
         try {
             mBuildProps = ProjectProperties.parsePropertyStream(fop.newFileInputStream(buildProp),
                     buildProp.getPath(), null);
-        } catch (FileNotFoundException ignore) {
+        } catch (IOException ignore) {
         }
         if (mBuildProps == null) {
             mBuildProps = Maps.newHashMap();
