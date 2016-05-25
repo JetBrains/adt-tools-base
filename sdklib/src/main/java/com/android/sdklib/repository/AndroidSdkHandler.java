@@ -24,6 +24,7 @@ import com.android.repository.api.ConstantSourceProvider;
 import com.android.repository.api.LocalPackage;
 import com.android.repository.api.ProgressIndicator;
 import com.android.repository.api.RemoteListSourceProvider;
+import com.android.repository.api.RemotePackage;
 import com.android.repository.api.RepoManager;
 import com.android.repository.api.RepoPackage;
 import com.android.repository.api.Repository;
@@ -53,7 +54,9 @@ import com.google.common.collect.Maps;
 import java.io.File;
 import java.net.URISyntaxException;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.Map;
+import java.util.function.Function;
 
 
 /**
@@ -289,6 +292,120 @@ public final class AndroidSdkHandler {
     }
 
     /**
+     * @param packages a {@link Collection} of packages which share a common {@code prefix},
+     *                 from which we wish to extract the "Latest" package,
+     *                 as sorted with {@code mapper} and {@code comparator} on the suffixes.
+     * @param allowPreview whether we allow returning a preview package.
+     * @param mapper maps from path suffix to a {@link Comparable},
+     *               so that we can sort the packages by suffix.
+     * @param comparator how to sort suffixes after mapping them.
+     * @param <P> {@link LocalPackage} or {@link RemotePackage}
+     * @param <T> {@link Comparable} that we map the suffix to.
+     * @return the "Latest" package from the {@link Collection},
+     *         as sorted with {@code mapper} and {@code comparator} on the last path component.
+     */
+    @Nullable
+    @VisibleForTesting
+    static <P extends RepoPackage, T> P getLatestPackageFromPrefixCollection(
+            @NonNull Collection<P> packages,
+            boolean allowPreview,
+            @NonNull Function<String, T> mapper,
+            @NonNull Comparator<T> comparator) {
+        Function<P, T> keyGen = p -> mapper.apply(p.getPath().substring(
+                p.getPath().lastIndexOf(RepoPackage.PATH_SEPARATOR) + 1));
+        return packages.stream()
+                .filter(p -> allowPreview || !p.getVersion().isPreview())
+                .max((p1, p2) -> comparator.compare(keyGen.apply(p1), keyGen.apply(p2)))
+                .orElse(null);
+    }
+
+    /**
+     * Suppose that {@code prefix} is {@code p}, and we have these local packages:
+     * {@code p;1.1}, {@code p;1.2}, {@code p;2.1}
+     * What this should return is the package {@code p;2.1}.
+     * We operate on the path suffix since we have no guarantee that the package revision is the
+     * same as used in the path. We also have no guarantee that the format of the path even matches,
+     * so we ignore the packages that don't fit the format.
+     *
+     * @see #getLatestLocalPackageForPrefix(String, boolean, Function, ProgressIndicator), where
+     * {@link Function} is just converting path suffix to {@link Revision}. Suffixes that are not
+     * valid {@link Revision}s are assumed to be {@link Revision#NOT_SPECIFIED},
+     * and would be the lowest.
+     * @see Revision#safeParseRevision(String) for how the conversion is done.
+     */
+    @Nullable
+    public LocalPackage getLatestLocalPackageForPrefix(@NonNull String prefix, boolean allowPreview,
+            @NonNull ProgressIndicator progress) {
+        return getLatestLocalPackageForPrefix(prefix, allowPreview, Revision::safeParseRevision,
+                progress);
+    }
+
+    /**
+     * @see #getLatestLocalPackageForPrefix(String, boolean, Function, Comparator,
+     * ProgressIndicator), where {@link Comparator} is just the default order. Highest is latest.
+     */
+    @Nullable
+    public LocalPackage getLatestLocalPackageForPrefix(
+            @NonNull String prefix, boolean allowPreview, @NonNull Function<String, ? extends Comparable> mapper,
+            @NonNull ProgressIndicator progress) {
+        return getLatestLocalPackageForPrefix(prefix, allowPreview, mapper,
+                Comparator.naturalOrder(), progress);
+    }
+
+    /**
+     * This grabs the {@link Collection} of {@link LocalPackage}s from {@link RepoManager} with the
+     * same prefix using
+     * {@link RepositoryPackages#getLocalPackagesForPrefix(String)}
+     * and forwards it to
+     * {@link #getLatestPackageFromPrefixCollection(Collection, boolean, Function, Comparator)}
+     */
+    @Nullable
+    public <T> LocalPackage getLatestLocalPackageForPrefix(@NonNull String prefix,
+            boolean allowPreview,
+            @NonNull Function<String, T> mapper, @NonNull Comparator<T> comparator,
+            @NonNull ProgressIndicator progress) {
+        return getLatestPackageFromPrefixCollection(
+                getSdkManager(progress).getPackages().getLocalPackagesForPrefix(prefix),
+                allowPreview, mapper, comparator);
+    }
+
+    /**
+     * @see #getLatestLocalPackageForPrefix(String, boolean, ProgressIndicator),
+     * but for {@link RemotePackage}s instead.
+     */
+    @Nullable
+    public RemotePackage getLatestRemotePackageForPrefix(@NonNull String prefix,
+            boolean allowPreview, @NonNull ProgressIndicator progress) {
+        return getLatestRemotePackageForPrefix(prefix, allowPreview, Revision::safeParseRevision,
+                progress);
+    }
+
+    /**
+     * @see #getLatestLocalPackageForPrefix(String, boolean, Function, ProgressIndicator),
+     * but for {@link RemotePackage}s instead.
+     */
+    @Nullable
+    public RemotePackage getLatestRemotePackageForPrefix(
+            @NonNull String prefix, boolean allowPreview, @NonNull Function<String, ? extends Comparable> mapper,
+            @NonNull ProgressIndicator progress) {
+        return getLatestRemotePackageForPrefix(prefix, allowPreview, mapper,
+                Comparator.naturalOrder(), progress);
+    }
+
+    /**
+     * @see #getLatestLocalPackageForPrefix(String, boolean, Function, Comparator,
+     * ProgressIndicator), but for {@link RemotePackage}s instead.
+     */
+    @Nullable
+    public <T> RemotePackage getLatestRemotePackageForPrefix(@NonNull String prefix,
+            boolean allowPreview, @NonNull Function<String, T> mapper,
+            @NonNull Comparator<T> comparator, @NonNull ProgressIndicator progress) {
+        return getLatestPackageFromPrefixCollection(
+                getSdkManager(progress).getPackages().getRemotePackagesForPrefix(prefix),
+                allowPreview, mapper, comparator);
+    }
+
+    /**
      * Resets the {@link RepoManager}s of all cached {@link AndroidSdkHandler}s.
      */
     private static void invalidateAll() {
@@ -517,34 +634,27 @@ public final class AndroidSdkHandler {
     @Nullable
     public BuildToolInfo getLatestBuildTool(@NonNull ProgressIndicator progress,
                                             boolean allowPreview) {
-        if (allowPreview) {
-            // Not cached
-            return findBuildTool(progress, true);
+        if (!allowPreview && mLatestBuildTool != null) {
+            return mLatestBuildTool;
         }
 
-        // Usual path: don't include previews, e.g. get latest stable
-        if (mLatestBuildTool == null) {
-            mLatestBuildTool = findBuildTool(progress, false);
-        }
-        return mLatestBuildTool;
-    }
+        LocalPackage latestBuildToolPackage = getLatestLocalPackageForPrefix(
+                SdkConstants.FD_BUILD_TOOLS, allowPreview, progress);
 
-    @Nullable
-    private BuildToolInfo findBuildTool(@NonNull ProgressIndicator progress,
-            boolean allowPreview) {
-        RepoManager manager = getSdkManager(progress);
-        BuildToolInfo info = null;
-        for (LocalPackage p : manager.getPackages()
-                .getLocalPackagesForPrefix(SdkConstants.FD_BUILD_TOOLS)) {
-            if (!allowPreview && p.getVersion().isPreview()) {
-                continue;
-            }
-            if (info == null || info.getRevision().compareTo(p.getVersion()) < 0) {
-                 info = BuildToolInfo.fromStandardDirectoryLayout(p.getVersion(), p.getLocation());
-            }
+        if (latestBuildToolPackage == null) {
+            return null;
         }
 
-        return info;
+        BuildToolInfo latestBuildTool = BuildToolInfo.fromStandardDirectoryLayout(
+                latestBuildToolPackage.getVersion(),
+                latestBuildToolPackage.getLocation());
+
+        // Don't cache if preview.
+        if (!latestBuildToolPackage.getVersion().isPreview()) {
+            mLatestBuildTool = latestBuildTool;
+        }
+
+        return latestBuildTool;
     }
 
     /**
