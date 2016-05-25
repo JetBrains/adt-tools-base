@@ -27,6 +27,8 @@ import com.android.build.api.transform.TransformException;
 import com.android.build.api.transform.TransformInput;
 import com.android.build.api.transform.TransformInvocation;
 import com.android.build.gradle.internal.incremental.InstantRunVerifierStatus;
+import com.android.build.gradle.internal.scope.InstantRunVariantScope;
+import com.android.build.gradle.internal.scope.TransformVariantScope;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.google.common.collect.ImmutableSet;
 
@@ -40,7 +42,7 @@ import java.util.Set;
 public class NoChangesVerifierTransform extends Transform {
 
     @NonNull
-    private final VariantScope variantScope;
+    private final InstantRunVariantScope variantScope;
     @NonNull
     private final Set<ContentType> inputTypes;
     @NonNull
@@ -50,7 +52,7 @@ public class NoChangesVerifierTransform extends Transform {
     private final boolean abortBuild;
 
     public NoChangesVerifierTransform(
-            @NonNull VariantScope variantScope,
+            @NonNull InstantRunVariantScope variantScope,
             @NonNull Set<ContentType> inputTypes,
             @NonNull Set<Scope> mergeScopes,
             @NonNull InstantRunVerifierStatus failureStatus,

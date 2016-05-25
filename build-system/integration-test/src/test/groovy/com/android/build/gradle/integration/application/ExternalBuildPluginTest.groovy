@@ -14,24 +14,27 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.integration.application;
+package com.android.build.gradle.integration.application
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.utils.SdkHelper
-import com.android.sdklib.IAndroidTarget;
+import com.android.build.gradle.internal.incremental.ColdswapMode
+import com.android.sdklib.IAndroidTarget
+import com.google.common.io.Files
 import com.google.devtools.build.lib.rules.android.apkmanifest.ExternalBuildApkManifest
 import com.google.devtools.build.lib.rules.android.apkmanifest.ExternalBuildApkManifest.ApkManifest
 import com.google.protobuf.ByteString
 import com.google.protobuf.CodedOutputStream
-import org.junit.After;
+import org.junit.After
 import org.junit.Before
 import org.junit.ClassRule
 import org.junit.Test
 
-import java.nio.file.Path
+import java.util.zip.ZipEntry
+import java.util.zip.ZipFile
+import java.util.zip.ZipOutputStream
 
-import static com.google.common.truth.Truth.assertThat;
-
+import static com.google.common.truth.Truth.assertThat
 /**
  * Integration test for the ExternalBuildPlugin.
  */
@@ -50,9 +53,29 @@ public class ExternalBuildPluginTest {
         IAndroidTarget target = SdkHelper.getTarget(23);
         assertThat(target).isNotNull();
 
-        ApkManifest.Builder apkManifest = ApkManifest.newBuilder()
-                .setAndroidSdk(ExternalBuildApkManifest.AndroidSdk.newBuilder()
-                        .setAndroidJar(target.getFile(IAndroidTarget.ANDROID_JAR).absolutePath));
+
+        def resourceFile = project.file("resources.ap_")
+        def manifest = project.file("AndroidManifest.xml")
+
+        ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(resourceFile));
+        zos.putNextEntry(new ZipEntry("AndroidManifest.xml"));
+        Files.copy(manifest, zos);
+        zos.closeEntry();
+        zos.flush();
+        zos.close();
+
+        ApkManifest.Builder apkManifest =
+                ApkManifest.newBuilder()
+                        .setAndroidSdk(ExternalBuildApkManifest.AndroidSdk.newBuilder()
+                                .setAndroidJar(
+                                    target.getFile(IAndroidTarget.ANDROID_JAR).absolutePath)
+                                // TODO: Start putting dx.jar in the proto
+                                .setDx(SdkHelper.getDxJar().absolutePath))
+                        .setResourceApk(ExternalBuildApkManifest.Artifact.newBuilder()
+                                .setExecRootPath(resourceFile.absolutePath))
+                        .setAndroidManifest(ExternalBuildApkManifest.Artifact.newBuilder()
+                                .setExecRootPath(manifest.absolutePath))
+
         List<String> jarFiles = new FileNameFinder().getFileNames(
                 project.getTestDir().getAbsolutePath(), "**/*.jar");
         for (String jarFile : jarFiles) {
@@ -61,7 +84,7 @@ public class ExternalBuildPluginTest {
                     .setHash(ByteString.copyFromUtf8(String.valueOf(jarFile.hashCode()))))
         }
 
-        manifestFile = File.createTempFile("apk_manifest", ".tmp");
+        manifestFile = project.file("apk_manifest.tmp")
         OutputStream os = new BufferedOutputStream(new FileOutputStream(manifestFile));
         try {
             CodedOutputStream cos =
@@ -71,11 +94,6 @@ public class ExternalBuildPluginTest {
         } finally {
             os.close();
         }
-    }
-
-    @After
-    public void tearDown() {
-        manifestFile.delete();
     }
 
     @Test
@@ -91,6 +109,8 @@ externalBuild {
   buildManifestPath = \$/""" + manifestFile.getAbsolutePath() + """/\$
 }
 """
-        project.execute("clean", "process")
+        project.executor()
+            .withInstantRun(23, ColdswapMode.AUTO)
+            .run("clean", "process")
     }
 }

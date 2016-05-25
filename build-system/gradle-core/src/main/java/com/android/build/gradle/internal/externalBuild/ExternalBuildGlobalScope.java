@@ -41,6 +41,11 @@ public class ExternalBuildGlobalScope implements TransformGlobalScope {
         optionalCompilationSteps = AndroidGradleOptions.getOptionalCompilationSteps(project);
     }
 
+    @Override
+    public Project getProject() {
+        return project;
+    }
+
     @NonNull
     @Override
     public File getBuildDir() {

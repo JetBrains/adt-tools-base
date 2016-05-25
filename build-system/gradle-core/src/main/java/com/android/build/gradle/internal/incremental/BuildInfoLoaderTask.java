@@ -17,19 +17,14 @@
 package com.android.build.gradle.internal.incremental;
 
 import com.android.annotations.NonNull;
+import com.android.build.gradle.internal.scope.InstantRunVariantScope;
 import com.android.build.gradle.internal.scope.TaskConfigAction;
-import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.tasks.BaseTask;
 import com.android.utils.FileUtils;
 import com.google.common.io.Files;
 
-import org.apache.log4j.Level;
 import org.gradle.api.logging.LogLevel;
 import org.gradle.api.logging.Logger;
-import org.gradle.api.tasks.Input;
-import org.gradle.api.tasks.InputFile;
-import org.gradle.api.tasks.Optional;
-import org.gradle.api.tasks.OutputDirectory;
 import org.gradle.api.tasks.TaskAction;
 
 import java.io.File;
@@ -110,12 +105,12 @@ public class BuildInfoLoaderTask extends BaseTask {
 
         private final String taskName;
 
-        private final VariantScope variantScope;
+        private final InstantRunVariantScope variantScope;
 
         private final Logger logger;
 
-        public ConfigAction(@NonNull VariantScope scope,@NonNull Logger logger) {
-            this.taskName = scope.getTaskName("buildInfo", "Loader");
+        public ConfigAction(@NonNull InstantRunVariantScope scope, @NonNull Logger logger) {
+            this.taskName = scope.getTransformVariantScope().getTaskName("buildInfo", "Loader");
             this.variantScope = scope;
             this.logger = logger;
         }
@@ -135,7 +130,7 @@ public class BuildInfoLoaderTask extends BaseTask {
         @Override
         public void execute(@NonNull BuildInfoLoaderTask task) {
             task.setDescription("InstantRun task to load and backup previous iterations artifacts");
-            task.setVariantName(variantScope.getVariantConfiguration().getFullName());
+            task.setVariantName(variantScope.getFullVariantName());
             variantScope.getInstantRunBuildContext().setTmpBuildInfo(
                     InstantRunWrapperTask.ConfigAction.getTmpBuildInfoFile(variantScope));
             task.buildInfoFile = InstantRunWrapperTask.ConfigAction.getBuildInfoFile(variantScope);

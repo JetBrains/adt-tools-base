@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.internal.externalBuild;
 
+import com.android.builder.core.AndroidBuilder;
 import com.google.devtools.build.lib.rules.android.apkmanifest.ExternalBuildApkManifest;
 
 import java.io.File;
@@ -30,6 +31,7 @@ public class ExternalBuildContext {
     private final ExternalBuildExtension externalBuildExtension;
     private List<File> inputJarFiles = new ArrayList<>();
     private ExternalBuildApkManifest.ApkManifest buildManifest;
+    private AndroidBuilder androidBuilder;
 
     public ExternalBuildContext(ExternalBuildExtension externalBuildExtension) {
         this.externalBuildExtension = externalBuildExtension;
@@ -53,5 +55,13 @@ public class ExternalBuildContext {
 
     public ExternalBuildApkManifest.ApkManifest getBuildManifest() {
         return buildManifest;
+    }
+
+    public void setAndroidBuilder(AndroidBuilder androidBuilder) {
+        this.androidBuilder = androidBuilder;
+    }
+
+    public AndroidBuilder getAndroidBuilder() {
+        return androidBuilder;
     }
 }

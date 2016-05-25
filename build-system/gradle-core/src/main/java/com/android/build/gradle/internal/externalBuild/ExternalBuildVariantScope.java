@@ -17,28 +17,39 @@
 package com.android.build.gradle.internal.externalBuild;
 
 import com.android.annotations.NonNull;
+import com.android.build.OutputFile;
+import com.android.build.gradle.api.ApkOutputFile;
 import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
+import com.android.build.gradle.internal.pipeline.TransformTask;
+import com.android.build.gradle.internal.scope.AndroidTask;
+import com.android.build.gradle.internal.scope.GenericVariantScopeImpl;
 import com.android.build.gradle.internal.scope.InstantRunVariantScope;
 import com.android.build.gradle.internal.scope.TransformGlobalScope;
 import com.android.build.gradle.internal.scope.TransformVariantScope;
+import com.android.build.gradle.tasks.PackageApplication;
+import com.android.utils.FileUtils;
+import com.android.utils.StringHelper;
 import com.google.common.collect.ImmutableList;
 
 import java.io.File;
 import java.util.Collection;
+import java.util.Collections;
 
 /**
  * Implementation of the {@link TransformVariantScope} for external build system integration.
  */
- class ExternalBuildVariantScope implements TransformVariantScope, InstantRunVariantScope {
+ class ExternalBuildVariantScope extends GenericVariantScopeImpl
+        implements TransformVariantScope, InstantRunVariantScope {
 
     private final TransformGlobalScope globalScope;
     private final File outputRootFolder;
     private final ExternalBuildContext externalBuildContext;
     private final InstantRunBuildContext mInstantRunBuildContext = new InstantRunBuildContext();
 
-    ExternalBuildVariantScope(TransformGlobalScope globalScope,
-            File outputRootFolder,
-            ExternalBuildContext externalBuildContext) {
+    ExternalBuildVariantScope(
+            @NonNull TransformGlobalScope globalScope,
+            @NonNull File outputRootFolder,
+            @NonNull ExternalBuildContext externalBuildContext) {
         this.globalScope = globalScope;
         this.outputRootFolder = outputRootFolder;
         this.externalBuildContext = externalBuildContext;
@@ -53,13 +64,13 @@ import java.util.Collection;
     @NonNull
     @Override
     public String getTaskName(@NonNull String prefix) {
-        return prefix;
+        return prefix + StringHelper.capitalize(getFullVariantName());
     }
 
     @NonNull
     @Override
     public String getTaskName(@NonNull String prefix, @NonNull String suffix) {
-        return prefix + suffix;
+        return prefix + StringHelper.capitalize(getFullVariantName()) + suffix;
     }
 
     @NonNull
@@ -116,5 +127,52 @@ import java.util.Collection;
     @Override
     public InstantRunBuildContext getInstantRunBuildContext() {
         return mInstantRunBuildContext;
+    }
+
+    @Override
+    @NonNull
+    public File getIncrementalApplicationSupportDir() {
+        return new File(outputRootFolder, "/incremental-classes/app-support");
+    }
+
+    @NonNull
+    @Override
+    public File getIncrementalRuntimeSupportJar() {
+        return new File(outputRootFolder, "/incremental-runtime-classes/instant-run.jar");
+    }
+
+    @NonNull
+    @Override
+    public File getInstantRunPastIterationsFolder() {
+        return FileUtils.join(outputRootFolder, "intermediates", "builds", getFullVariantName());
+    }
+
+    @NonNull
+    @Override
+    public File getInstantRunSliceSupportDir() {
+        return FileUtils.join(
+                outputRootFolder, "intermediates", "instant-run-slices", getFullVariantName());
+    }
+
+    @NonNull
+    @Override
+    public TransformVariantScope getTransformVariantScope() {
+        return this;
+    }
+
+    @NonNull
+    public ApkOutputFile getMainOutputFile() {
+        return new ApkOutputFile(
+                OutputFile.OutputType.MAIN,
+                Collections.emptySet(),
+                () -> new File(outputRootFolder, "/outputs/apk/debug.apk"));
+    }
+
+    public File getPreDexOutputDir() {
+        return FileUtils.join(outputRootFolder, "intermediates", "pre-dexed");
+    }
+
+    public File getIncrementalDir(String name) {
+        return FileUtils.join(outputRootFolder, "incremental", name);
     }
 }

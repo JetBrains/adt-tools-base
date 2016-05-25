@@ -19,12 +19,19 @@ package com.android.build.gradle.internal.scope;
 import com.android.annotations.NonNull;
 import com.android.builder.model.OptionalCompilationStep;
 
+import org.gradle.api.Project;
+
 import java.io.File;
 
 /**
  * Global scope for TransformManager and Transform implementations.
  */
 public interface TransformGlobalScope {
+
+    /**
+     * Returns the {@link Project}
+     */
+    Project getProject();
 
     /**
      * Returns the {@link org.gradle.api.Project} output folder.

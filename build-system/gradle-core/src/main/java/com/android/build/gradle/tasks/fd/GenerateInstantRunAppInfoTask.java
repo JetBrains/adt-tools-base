@@ -37,10 +37,10 @@ import com.android.annotations.Nullable;
 import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
 import com.android.build.gradle.internal.incremental.InstantRunPatchingPolicy;
 import com.android.build.gradle.internal.scope.ConventionMappingHelper;
+import com.android.build.gradle.internal.scope.InstantRunVariantScope;
 import com.android.build.gradle.internal.scope.TaskConfigAction;
-import com.android.build.gradle.internal.scope.VariantScope;
+import com.android.build.gradle.internal.scope.TransformVariantScope;
 import com.android.build.gradle.internal.tasks.BaseTask;
-import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.build.gradle.tasks.PackageAndroidArtifact;
 import com.android.ide.common.packaging.PackagingUtils;
 import com.android.utils.XmlUtils;
@@ -64,7 +64,7 @@ import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.concurrent.Callable;
+import java.util.function.Supplier;
 import java.util.jar.JarOutputStream;
 import java.util.zip.ZipEntry;
 
@@ -228,16 +228,26 @@ public class GenerateInstantRunAppInfoTask extends BaseTask {
     }
 
     public static class ConfigAction implements TaskConfigAction<GenerateInstantRunAppInfoTask> {
-        private final VariantScope variantScope;
+        @NonNull
+        private final InstantRunVariantScope variantScope;
+        @NonNull
+        private final TransformVariantScope transformVariantScope;
+        @NonNull
+        private final Supplier<File> instantRunManifestOutputFile;
 
-        public ConfigAction(VariantScope variantScope) {
+        public ConfigAction(
+                @NonNull TransformVariantScope transformVariantScope,
+                @NonNull InstantRunVariantScope variantScope,
+                @NonNull Supplier<File> instantRunManifestOutputFile) {
+            this.transformVariantScope = transformVariantScope;
             this.variantScope = variantScope;
+            this.instantRunManifestOutputFile = instantRunManifestOutputFile;
         }
 
         @NonNull
         @Override
         public String getName() {
-            return variantScope.getTaskName("generate", "InstantRunAppInfo");
+            return transformVariantScope.getTaskName("generate", "InstantRunAppInfo");
         }
 
         @NonNull
@@ -248,25 +258,16 @@ public class GenerateInstantRunAppInfoTask extends BaseTask {
 
         @Override
         public void execute(@NonNull GenerateInstantRunAppInfoTask task) {
-            task.setVariantName(variantScope.getVariantConfiguration().getFullName());
+            task.setVariantName(variantScope.getFullVariantName());
             task.instantRunBuildcontext = variantScope.getInstantRunBuildContext();
             task.outputFile =
                     new File(variantScope.getIncrementalApplicationSupportDir(),
                             PackageAndroidArtifact.INSTANT_RUN_PACKAGES_PREFIX + "-bootstrap.jar");
 
-            BaseVariantOutputData variantOutput = variantScope.getVariantData()
-                    .getOutputs().get(0);
-
-            task.mergedManifest =
-                    variantOutput.getScope().getVariantScope().getInstantRunManifestOutputFile();
+            task.mergedManifest = instantRunManifestOutputFile.get();
             ConventionMappingHelper.map(task, "usingMultiApks",
-                    new Callable<Boolean>() {
-                        @Override
-                        public Boolean call() throws Exception {
-                            return variantScope.getInstantRunBuildContext().getPatchingPolicy()
-                                    == InstantRunPatchingPolicy.MULTI_APK;
-                        }
-                    });
+                    () -> variantScope.getInstantRunBuildContext().getPatchingPolicy()
+                                    == InstantRunPatchingPolicy.MULTI_APK);
 
         }
     }

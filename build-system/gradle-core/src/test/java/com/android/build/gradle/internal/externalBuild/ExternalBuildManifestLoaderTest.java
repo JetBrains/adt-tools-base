@@ -17,12 +17,14 @@
 package com.android.build.gradle.internal.externalBuild;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.when;
 
+import com.android.utils.FileUtils;
 import com.google.devtools.build.lib.rules.android.apkmanifest.ExternalBuildApkManifest;
 
 import org.gradle.api.Project;
-import org.gradle.testfixtures.ProjectBuilder;
+import org.gradle.util.Path;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -35,7 +37,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.List;
+import java.nio.file.Files;
 
 /**
  * Tests for the {@link ExternalBuildManifestLoader}
@@ -43,23 +45,40 @@ import java.util.List;
 public class ExternalBuildManifestLoaderTest {
 
     @Rule
-    public TemporaryFolder tmpFolder = new TemporaryFolder();
+    public TemporaryFolder mTemporaryFolder = new TemporaryFolder();
 
     @Mock
     ExternalBuildExtension mExternalBuildExtension;
 
+    @Mock
+    Project mProject;
+
     @Before
     public void setUp() {
         MockitoAnnotations.initMocks(this);
+        // TODO: set up mProject
     }
 
 
     @Test
     public void manifestReadingTest() throws IOException {
-        File apk_manifest_test = new File(tmpFolder.getRoot(), "apk_manifest_test");
+        File apk_manifest_test = new File(mTemporaryFolder.getRoot(), "apk_manifest_test");
+        when(mProject.getPath()).thenReturn(mTemporaryFolder.getRoot().getPath());
+
+        File dx = new File(mTemporaryFolder.getRoot(), "dx.jar");
+        when(mProject.file("dx.jar")).thenReturn(dx);
+
+        File jarOne = new File(mTemporaryFolder.getRoot(), "tmp/one");
+        when(mProject.file("tmp/one")).thenReturn(jarOne);
+
+        File jarTwo = new File(mTemporaryFolder.getRoot(), "tmp/two");
+        when(mProject.file("tmp/two")).thenReturn(jarTwo);
+
+        FileUtils.createFile(dx, "dx.jar content");
         try (OutputStream os = new BufferedOutputStream( new FileOutputStream(apk_manifest_test))) {
             ExternalBuildApkManifest.ApkManifest.newBuilder()
                     .setAndroidSdk(ExternalBuildApkManifest.AndroidSdk.newBuilder()
+                            .setDx("dx.jar")
                             .setAapt("/path/to/aapt"))
                     .addJars(ExternalBuildApkManifest.Artifact.newBuilder()
                             .setExecRootPath("tmp/one"))
@@ -71,7 +90,7 @@ public class ExternalBuildManifestLoaderTest {
         ExternalBuildContext externalBuildContext =
                 new ExternalBuildContext(mExternalBuildExtension);
         ExternalBuildManifestLoader.loadAndPopulateContext(apk_manifest_test,
-                tmpFolder.getRoot(), externalBuildContext);
+                mProject, externalBuildContext);
 
         // assert build context population.
         assertThat(externalBuildContext.getBuildManifest()).isNotNull();
@@ -81,7 +100,7 @@ public class ExternalBuildManifestLoaderTest {
         assertThat(buildManifest.getJarsCount()).isEqualTo(2);
         assertThat(buildManifest.getAndroidSdk().getAapt()).isEqualTo("/path/to/aapt");
         assertThat(externalBuildContext.getInputJarFiles()).containsAllOf(
-                new File(tmpFolder.getRoot(), "tmp/one"),
-                new File(tmpFolder.getRoot(), "tmp/two"));
+                new File(mTemporaryFolder.getRoot(), "tmp/one"),
+                new File(mTemporaryFolder.getRoot(), "tmp/two"));
     }
 }

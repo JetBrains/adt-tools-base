@@ -17,7 +17,18 @@
 package com.android.build.gradle.internal.externalBuild;
 
 import com.android.annotations.NonNull;
+import com.android.build.gradle.internal.ExtraModelInfo;
+import com.android.build.gradle.internal.LoggerWrapper;
+import com.android.build.gradle.internal.process.GradleJavaProcessExecutor;
+import com.android.build.gradle.internal.process.GradleProcessExecutor;
+import com.android.builder.core.AndroidBuilder;
+import com.android.builder.sdk.TargetInfo;
+import com.android.sdklib.BuildToolInfo;
+import com.android.sdklib.IAndroidTarget;
+import com.google.common.collect.ImmutableMap;
 import com.google.devtools.build.lib.rules.android.apkmanifest.ExternalBuildApkManifest;
+
+import org.gradle.api.Project;
 
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -35,35 +46,64 @@ public class ExternalBuildManifestLoader {
 
     /**
      * Loads the passed manifest file and populates its information in the passed context object.
-     * @param file the manifest file
-     * @param projectDir the porject directory in case the manifest contains relative paths.
+     * @param manifestProtoFile the manifest file, in binary proto format
+     * @param project the porject directory in case the manifest contains relative paths.
      * @param externalBuildContext the context to populate.
      * @throws IOException if the file cannot be read correctly
      */
     public static void loadAndPopulateContext(
-            @NonNull File file,
-            @NonNull File projectDir,
+            @NonNull File manifestProtoFile,
+            @NonNull Project project,
             @NonNull ExternalBuildContext externalBuildContext) throws IOException {
-
-        if (!file.exists()) {
-            throw new FileNotFoundException(file.getAbsolutePath());
+        if (!manifestProtoFile.exists()) {
+            throw new FileNotFoundException(manifestProtoFile.getAbsolutePath());
         }
+
         ExternalBuildApkManifest.ApkManifest manifest;
         // read the manifest file
-        try (InputStream is = new BufferedInputStream(new FileInputStream(file))) {
+        try (InputStream is = new BufferedInputStream(new FileInputStream(manifestProtoFile))) {
             manifest = ExternalBuildApkManifest.ApkManifest.parseFrom(is);
         }
+        externalBuildContext.setBuildManifest(manifest);
 
         List<File> jarFiles = manifest.getJarsList().stream()
-                .map(artifact -> {
-                    File artifactFile = new File(artifact.getExecRootPath());
-                    return artifactFile.isAbsolute()
-                            ? artifactFile
-                            : new File(projectDir, artifact.getExecRootPath()) ;
-                })
+                .map(artifact -> project.file(artifact.getExecRootPath()))
                 .collect(Collectors.toList());
-
         externalBuildContext.setInputJarFiles(jarFiles);
-        externalBuildContext.setBuildManifest(manifest);
+
+        externalBuildContext.setAndroidBuilder(createAndroidBuilder(project, manifest));
+    }
+
+    @NonNull
+    private static AndroidBuilder createAndroidBuilder(
+            @NonNull Project project,
+            @NonNull ExternalBuildApkManifest.ApkManifest manifest) {
+        ExternalBuildApkManifest.AndroidSdk sdk = manifest.getAndroidSdk();
+
+        BuildToolInfo buildToolInfo = BuildToolInfo.partial(
+                // Just make AndroidBuilder happy.
+                AndroidBuilder.MIN_BUILD_TOOLS_REV,
+                project.getProjectDir(),
+                ImmutableMap.of(
+                        // TODO: Put dx.jar in the proto
+                        BuildToolInfo.PathId.DX_JAR,
+                        project.file(sdk.getDx())));
+
+        IAndroidTarget androidTarget =
+                new ExternalBuildAndroidTarget(project.file(sdk.getAndroidJar()));
+
+        TargetInfo targetInfo = new TargetInfo(androidTarget, buildToolInfo);
+
+        AndroidBuilder androidBuilder = new AndroidBuilder(
+                project.getPath(),
+                "Android Studio + external build system",
+                new GradleProcessExecutor(project),
+                new GradleJavaProcessExecutor(project),
+                new ExtraModelInfo(project, false),
+                new LoggerWrapper(project.getLogger()),
+                false);
+
+        androidBuilder.setTargetInfo(targetInfo);
+        return androidBuilder;
     }
 }

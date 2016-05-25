@@ -17,8 +17,8 @@
 package com.android.build.gradle.tasks.fd;
 
 import com.android.annotations.NonNull;
+import com.android.build.gradle.internal.scope.InstantRunVariantScope;
 import com.android.build.gradle.internal.scope.TaskConfigAction;
-import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.tasks.DefaultAndroidTask;
 import com.google.common.io.ByteStreams;
 import com.google.common.io.Files;
@@ -99,16 +99,18 @@ public class FastDeployRuntimeExtractorTask extends DefaultAndroidTask {
 
     public static class ConfigAction implements TaskConfigAction<FastDeployRuntimeExtractorTask> {
 
-        private VariantScope scope;
+        @NonNull
+        private final InstantRunVariantScope instantRunVariantScope;
 
-        public ConfigAction(VariantScope scope) {
-            this.scope = scope;
+        public ConfigAction(InstantRunVariantScope instantRunVariantScope) {
+            this.instantRunVariantScope = instantRunVariantScope;
         }
 
         @NonNull
         @Override
         public String getName() {
-            return scope.getTaskName("fastDeploy", "Extractor");
+            return instantRunVariantScope.getTransformVariantScope().getTaskName(
+                    "fastDeploy", "Extractor");
         }
 
         @NonNull
@@ -120,9 +122,9 @@ public class FastDeployRuntimeExtractorTask extends DefaultAndroidTask {
         @Override
         public void execute(@NonNull FastDeployRuntimeExtractorTask fastDeployRuntimeExtractorTask) {
             fastDeployRuntimeExtractorTask.setVariantName(
-                    scope.getVariantConfiguration().getFullName());
+                    instantRunVariantScope.getFullVariantName());
             fastDeployRuntimeExtractorTask.setOutputFile(
-                    scope.getIncrementalRuntimeSupportJar());
+                    instantRunVariantScope.getIncrementalRuntimeSupportJar());
         }
     }
 }

@@ -17,8 +17,8 @@
 package com.android.build.gradle.internal.incremental;
 
 import com.android.annotations.NonNull;
+import com.android.build.gradle.internal.scope.InstantRunVariantScope;
 import com.android.build.gradle.internal.scope.TaskConfigAction;
-import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.tasks.BaseTask;
 import com.google.common.base.Charsets;
 import com.google.common.io.Files;
@@ -97,24 +97,25 @@ public class InstantRunWrapperTask extends BaseTask {
 
     public static class ConfigAction implements TaskConfigAction<InstantRunWrapperTask> {
 
-        public static File getBuildInfoFile(VariantScope scope) {
+        public static File getBuildInfoFile(InstantRunVariantScope scope) {
             return new File(scope.getRestartDexOutputFolder(), "build-info.xml");
         }
 
-        public static File getTmpBuildInfoFile(VariantScope scope) {
+        public static File getTmpBuildInfoFile(InstantRunVariantScope scope) {
             return new File(scope.getRestartDexOutputFolder(), "tmp-build-info.xml");
         }
 
 
         private final String taskName;
         private final TaskType taskType;
-        private final VariantScope variantScope;
+        private final InstantRunVariantScope variantScope;
         private final Logger logger;
 
-        public ConfigAction(@NonNull VariantScope scope,
+        public ConfigAction(@NonNull InstantRunVariantScope scope,
                 @NonNull TaskType taskType,
                 @NonNull Logger logger) {
-            this.taskName = scope.getTaskName(taskType.name().toLowerCase(Locale.getDefault()),
+            this.taskName = scope.getTransformVariantScope().getTaskName(
+                    taskType.name().toLowerCase(Locale.getDefault()),
                     "BuildInfoGenerator");
             this.variantScope = scope;
             this.logger = logger;
@@ -136,7 +137,7 @@ public class InstantRunWrapperTask extends BaseTask {
         @Override
         public void execute(@NonNull InstantRunWrapperTask task) {
             task.setDescription("InstantRun task to build incremental artifacts");
-            task.setVariantName(variantScope.getVariantConfiguration().getFullName());
+            task.setVariantName(variantScope.getFullVariantName());
             task.buildInfoFile = getBuildInfoFile(variantScope);
             task.tmpBuildInfoFile = getTmpBuildInfoFile(variantScope);
             task.instantRunBuildContext = variantScope.getInstantRunBuildContext();

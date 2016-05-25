@@ -19,6 +19,7 @@ package com.android.build.gradle.internal.scope;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.external.gson.NativeBuildConfigValue;
+import com.android.build.gradle.internal.InstantRunTaskManager;
 import com.android.build.gradle.internal.core.Abi;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.incremental.InstantRunAnchorTask;
@@ -113,22 +114,10 @@ public interface VariantScope extends TransformVariantScope, InstantRunVariantSc
     File getInstantRunSplitApkOutputFolder();
 
     @NonNull
-    File getInstantRunPastIterationsFolder();
-
-    @NonNull
     FileCollection getJavaClasspath();
 
     @NonNull
     File getJavaOutputDir();
-
-    @NonNull
-    File getInstantRunSliceSupportDir();
-
-    @NonNull
-    File getIncrementalRuntimeSupportJar();
-
-    @NonNull
-    File getIncrementalApplicationSupportDir();
 
     @NonNull
     Iterable<File> getJavaOutputs();
@@ -397,9 +386,6 @@ public interface VariantScope extends TransformVariantScope, InstantRunVariantSc
 
     void setCoverageReportTask(AndroidTask<?> coverageReportTask);
 
-    AndroidTask<PackageApplication> getPackageApplicationTask();
-    void setPackageApplicationTask(AndroidTask<PackageApplication> packageApplicationTask);
-
     @NonNull
     AndroidTask<InstantRunAnchorTask> getInstantRunAnchorTask();
     void setInstantRunAnchorTask(@NonNull AndroidTask<InstantRunAnchorTask> instantRunTask);
@@ -407,12 +393,6 @@ public interface VariantScope extends TransformVariantScope, InstantRunVariantSc
     @NonNull
     AndroidTask<InstantRunWrapperTask> getInstantRunIncrementalTask();
     void setInstantRunIncrementalTask(@NonNull AndroidTask<InstantRunWrapperTask> instantRunTask);
-
-    AndroidTask<TransformTask> getInstantRunVerifierTask();
-    void setInstantRunVerifierTask(AndroidTask<TransformTask> verifierTask);
-
-    AndroidTask<TransformTask> getInstantRunSlicerTask();
-    void setInstantRunSlicerTask(AndroidTask<TransformTask> slicerTask);
 
     @Nullable
     AndroidTask<ExternalNativeBuildTask> getExternalNativeBuildTask();
@@ -425,4 +405,8 @@ public interface VariantScope extends TransformVariantScope, InstantRunVariantSc
     @NonNull
     Collection<NativeBuildConfigValue> getExternalNativeBuildConfigValues();
     void addExternalNativeBuildConfigValues(@NonNull Collection<NativeBuildConfigValue> values);
+
+    @Nullable
+    InstantRunTaskManager getInstantRunTaskManager();
+    void setInstantRunTaskManager(InstantRunTaskManager taskManager);
 }

@@ -102,6 +102,7 @@ public class GlobalScope implements TransformGlobalScope {
     }
 
     @NonNull
+    @Override
     public Project getProject() {
         return project;
     }
