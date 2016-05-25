@@ -23,12 +23,17 @@ import static org.junit.Assert.fail;
 import com.android.annotations.NonNull;
 import com.android.repository.testframework.FakeProgressIndicator;
 import com.android.repository.testframework.MockFileOp;
+import com.google.common.collect.Sets;
 
 import org.junit.Test;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
 
 /**
  * Tests for FileOpUtils
@@ -561,4 +566,31 @@ public class FileOpUtilsTest {
         assertEquals("content4", new String(fop.getContent(new File(backupPath, "foo/b"))));
     }
 
+    @Test
+    public void retainTempDirs() throws Exception {
+        MockFileOp fop = new MockFileOp();
+        Set<File> retain = new HashSet<>();
+        for (int i = 0; i < 10; i++) {
+            File f = FileOpUtils.getNewTempDir("Test", fop);
+            if (i % 2 == 0) {
+                retain.add(f);
+            }
+        }
+        Set<String> desiredResult = retain.stream()
+                .map(File::getPath)
+                .collect(Collectors.toSet());
+        for (int i = 0; i < 10; i++) {
+            desiredResult.add(FileOpUtils.getNewTempDir("OtherTest", fop).getPath());
+        }
+
+        File root = new File(System.getProperty("java.io.tmpdir"));
+        while (root != null) {
+            desiredResult.add(root.getPath());
+            root = root.getParentFile();
+        }
+        FileOpUtils.retainTempDirs(retain, "Test", fop);
+        desiredResult = desiredResult.stream().map(fop::getAgnosticAbsPath).collect(Collectors.toSet());
+
+        assertEquals(desiredResult, Sets.newHashSet(fop.getExistingFolders()));
+    }
 }

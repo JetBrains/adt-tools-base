@@ -196,5 +196,10 @@ public interface FileOp {
      */
     boolean setLastModified(@NonNull File file, long time) throws IOException;
 
+    /**
+     * Convert the given {@code File} into a {@code Path}, using some means appropriate to this
+     * {@code FileOp}.
+     */
+    @NonNull
     Path toPath(@NonNull File file);
 }

@@ -277,6 +277,7 @@ public abstract class FileSystemFileOp implements FileOp {
     }
 
     // TODO: make final once tests can work on windows without special-casing.
+    @NonNull
     @Override
     public Path toPath(@NonNull File file) {
         return getFileSystem().getPath(file.getPath());

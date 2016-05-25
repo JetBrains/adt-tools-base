@@ -24,6 +24,7 @@ import com.google.common.annotations.VisibleForTesting;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 /**
@@ -219,19 +220,24 @@ public final class FileOpUtils {
      */
     @Nullable
     public static File getNewTempDir(@NonNull String base, @NonNull FileOp fileOp) {
-        File tempDir = new File(System.getProperty("java.io.tmpdir"));
-        if (!fileOp.exists(tempDir)) {
-            fileOp.mkdirs(tempDir);
-        }
         for (int i = 1; i < 100; i++) {
-            File folder = new File(tempDir,
-                    String.format("%1$s%2$02d", base, i));  //$NON-NLS-1$
+            File folder = getTempDir(base, i);
             if (!fileOp.exists(folder)) {
                 fileOp.mkdirs(folder);
                 return folder;
             }
         }
         return null;
+    }
+
+    /**
+     * Gets the temp dir corresponding to the given base and index.
+     */
+    @NonNull
+    @VisibleForTesting
+    public static File getTempDir(@NonNull String base, int i) {
+        File rootTempDir = new File(System.getProperty("java.io.tmpdir"));
+        return new File(rootTempDir, String.format("%1$s%2$02d", base, i));
     }
 
     /**
@@ -339,6 +345,18 @@ public final class FileOpUtils {
         }
 
         return result.toString();
+    }
+
+    /**
+     * Delete all temp dirs with the given base except for those in {@code retain}.
+     */
+    public static void retainTempDirs(Set<File> retain, String base, FileOp mFop) {
+        for (int i = 0; i < 100; i++) {
+            File dir = getTempDir(base, i);
+            if (mFop.exists(dir) && !retain.contains(dir)) {
+                mFop.deleteFileOrFolder(dir);
+            }
+        }
     }
 
     private FileOpUtils() {
