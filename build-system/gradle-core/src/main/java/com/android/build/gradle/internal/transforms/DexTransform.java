@@ -156,7 +156,7 @@ public class DexTransform extends Transform {
     @Override
     public Collection<SecondaryFile> getSecondaryFiles() {
         if (mainDexListFile != null) {
-            return ImmutableList.of(new SecondaryFile(mainDexListFile, false));
+            return ImmutableList.of(SecondaryFile.nonIncremental(mainDexListFile));
         }
 
         return ImmutableList.of();
