@@ -19,17 +19,24 @@ package com.android.build.gradle.integration.application;
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat;
 
 import com.android.SdkConstants;
+import com.android.annotations.NonNull;
 import com.android.build.gradle.AndroidGradleOptions;
+import com.android.build.gradle.integration.common.category.OnlineTests;
+import com.android.build.gradle.integration.common.fixture.GradleBuildResult;
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp;
 import com.android.build.gradle.integration.common.utils.TestFileUtils;
 import com.android.utils.FileUtils;
+import com.google.common.base.Joiner;
+import com.google.common.base.Throwables;
+import com.google.common.collect.ImmutableList;
 import com.google.common.io.Files;
 
+import org.junit.Assert;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
@@ -38,17 +45,17 @@ import java.nio.charset.Charset;
 /**
  * Tests for automatic SDK download from Gradle.
  */
-@Ignore("TODO: make test work offline")
+@Category(OnlineTests.class)
 public class SdkDownloadGradleTest {
 
     @Rule
-    public GradleTestProject project = GradleTestProject.builder()
-            .fromTestApp(HelloWorldApp.forPlugin("com.android.application"))
-            .addGradleProperties(AndroidGradleOptions.PROPERTY_USE_SDK_DOWNLOAD + "=true")
-            .create();
+    public GradleTestProject project =
+            GradleTestProject.builder()
+                    .fromTestApp(HelloWorldApp.forPlugin("com.android.application"))
+                    .addGradleProperties(AndroidGradleOptions.PROPERTY_USE_SDK_DOWNLOAD + "=true")
+                    .create();
 
-    @Rule
-    public TemporaryFolder mTemporarySdkFolder = new TemporaryFolder(project.getTestDir());
+    @Rule public TemporaryFolder mTemporarySdkFolder = new TemporaryFolder(project.getTestDir());
 
     @Before
     public void setUp() throws Exception {
@@ -56,16 +63,17 @@ public class SdkDownloadGradleTest {
         File licenseFile = new File(licensesFolder, "android-sdk-license");
 
         String licensesHash =
-                "e6b7c2ab7fa2298c15165e9583d0acf0b04a2232" +
-                System.lineSeparator() +
-                "8933bad161af4178b1185d1a37fbf41ea5269c55";
+                "e6b7c2ab7fa2298c15165e9583d0acf0b04a2232"
+                        + System.lineSeparator()
+                        + "8933bad161af4178b1185d1a37fbf41ea5269c55";
 
         Files.write(licensesHash, licenseFile, Charset.defaultCharset());
-        TestFileUtils.appendToFile(project.getLocalProp(),
-                System.lineSeparator() +
-                SdkConstants.SDK_DIR_PROPERTY +
-                " = " +
-                mTemporarySdkFolder.getRoot().getAbsolutePath());
+        TestFileUtils.appendToFile(
+                project.getLocalProp(),
+                System.lineSeparator()
+                        + SdkConstants.SDK_DIR_PROPERTY
+                        + " = "
+                        + mTemporarySdkFolder.getRoot().getAbsolutePath());
     }
 
     /**
@@ -74,22 +82,24 @@ public class SdkDownloadGradleTest {
      */
     @Test
     public void checkCompileSdkPlatformDownloading() throws Exception {
-        TestFileUtils.appendToFile(project.getBuildFile(),
-                System.lineSeparator() +
-                "android.compileSdkVersion 23" +
-                System.lineSeparator() +
-                "android.buildToolsVersion \"19.1.0\"");
+        TestFileUtils.appendToFile(
+                project.getBuildFile(),
+                System.lineSeparator()
+                        + "android.compileSdkVersion 23"
+                        + System.lineSeparator()
+                        + "android.buildToolsVersion \"19.1.0\"");
 
         project.executor().run("assembleDebug");
 
         File platformTarget = getPlatformFolder();
         assertThat(platformTarget).isDirectory();
 
-        File androidJarFile = FileUtils.join(
-                mTemporarySdkFolder.getRoot(),
-                SdkConstants.FD_PLATFORMS,
-                "android-23",
-                "android.jar");
+        File androidJarFile =
+                FileUtils.join(
+                        mTemporarySdkFolder.getRoot(),
+                        SdkConstants.FD_PLATFORMS,
+                        "android-23",
+                        "android.jar");
         assertThat(androidJarFile).exists();
     }
 
@@ -98,25 +108,23 @@ public class SdkDownloadGradleTest {
      */
     @Test
     public void checkBuildToolsDownloading() throws Exception {
-        TestFileUtils.appendToFile(project.getBuildFile(),
-                System.lineSeparator() +
-                        "android.compileSdkVersion 23" +
-                        System.lineSeparator() +
-                        "android.buildToolsVersion \"19.1.0\"");
+        TestFileUtils.appendToFile(
+                project.getBuildFile(),
+                System.lineSeparator()
+                        + "android.compileSdkVersion 23"
+                        + System.lineSeparator()
+                        + "android.buildToolsVersion \"19.1.0\"");
 
         project.executor().run("assembleDebug");
 
-        File buildTools = FileUtils.join(
-                mTemporarySdkFolder.getRoot(),
-                SdkConstants.FD_BUILD_TOOLS,
-                "19.1.0");
+        File buildTools =
+                FileUtils.join(
+                        mTemporarySdkFolder.getRoot(), SdkConstants.FD_BUILD_TOOLS, "19.1.0");
         assertThat(buildTools).isDirectory();
 
-        File dxFile = FileUtils.join(
-                mTemporarySdkFolder.getRoot(),
-                SdkConstants.FD_BUILD_TOOLS,
-                "19.1.0",
-                "dx");
+        File dxFile =
+                FileUtils.join(
+                        mTemporarySdkFolder.getRoot(), SdkConstants.FD_BUILD_TOOLS, "19.1.0", "dx");
         assertThat(dxFile).exists();
     }
 
@@ -127,28 +135,111 @@ public class SdkDownloadGradleTest {
      */
     @Test
     public void checkCompileSdkAddonDownloading() throws Exception {
-        TestFileUtils.appendToFile(project.getBuildFile(),
-                System.lineSeparator() +
-                        "android.compileSdkVersion \"Google Inc.:Google APIs:23\"" +
-                        System.lineSeparator() +
-                        "android.buildToolsVersion \"19.1.0\"");
+        TestFileUtils.appendToFile(
+                project.getBuildFile(),
+                System.lineSeparator()
+                        + "android.compileSdkVersion \"Google Inc.:Google APIs:23\""
+                        + System.lineSeparator()
+                        + "android.buildToolsVersion \"19.1.0\"");
 
         project.executor().run("assembleDebug");
 
         File platformBase = getPlatformFolder();
         assertThat(platformBase).isDirectory();
 
-        File addonTarget = FileUtils.join(
-                mTemporarySdkFolder.getRoot(),
-                SdkConstants.FD_ADDONS,
-                "addon-google-google_apis-23");
+        File addonTarget =
+                FileUtils.join(
+                        mTemporarySdkFolder.getRoot(),
+                        SdkConstants.FD_ADDONS,
+                        "addon-google_apis-google-23");
         assertThat(addonTarget).isDirectory();
+    }
+
+    @Test
+    public void checkDependencies_androidRepository() throws Exception {
+        TestFileUtils.appendToFile(
+                project.getBuildFile(),
+                System.lineSeparator()
+                        + "android.defaultConfig.minSdkVersion = 21"
+                        + System.lineSeparator()
+                        + "dependencies { compile 'com.android.support:support-v4:23.0.0' }");
+
+        project.executor().run("assembleDebug");
+
+        checkForLibrary(
+                "android",
+                "com",
+                "android",
+                "support",
+                "support-v4",
+                "23.0.0",
+                "support-v4-23.0.0.aar");
+    }
+
+    @Test
+    public void checkDependencies_googleRepository() throws Exception {
+        TestFileUtils.appendToFile(
+                project.getBuildFile(),
+                System.lineSeparator()
+                        + "android.defaultConfig.minSdkVersion = 21"
+                        + System.lineSeparator()
+                        + "dependencies { compile 'com.google.android.support:wearable:1.4.0' }");
+
+        project.executor().run("assembleDebug");
+
+        checkForLibrary(
+                "google",
+                "com",
+                "google",
+                "android",
+                "support",
+                "wearable",
+                "1.4.0",
+                "wearable-1.4.0.aar");
+    }
+
+    private void checkForLibrary(@NonNull String repoName, @NonNull String... segments) {
+        File newRepo =
+                FileUtils.join(
+                        mTemporarySdkFolder.getRoot(),
+                        SdkConstants.FD_EXTRAS,
+                        SdkConstants.FD_M2_REPOSITORY);
+
+        File oldRepo =
+                FileUtils.join(
+                        mTemporarySdkFolder.getRoot(),
+                        SdkConstants.FD_EXTRAS,
+                        repoName,
+                        SdkConstants.FD_M2_REPOSITORY);
+
+        for (File repo : ImmutableList.of(newRepo, oldRepo)) {
+            File artifact = FileUtils.join(repo, segments);
+            if (artifact.isFile()) {
+                return;
+            }
+        }
+
+        Assert.fail(
+                String.format(
+                        "File %s not found in known locations.", Joiner.on("/").join(segments)));
+    }
+
+    @Test
+    @SuppressWarnings({"ConstantConditions", "ThrowableResultOfMethodCallIgnored"})
+    public void checkDependencies_invalidDependency() throws Exception {
+        TestFileUtils.appendToFile(
+                project.getBuildFile(),
+                System.lineSeparator() + "dependencies { compile 'foo:bar:baz' }");
+
+        GradleBuildResult result = project.executor().expectFailure().run("assembleDebug");
+
+        // Make sure the standard gradle error message is what the user sees.
+        assertThat(Throwables.getRootCause(result.getException()).getMessage())
+                .startsWith("Could not find foo:bar:baz.");
     }
 
     private File getPlatformFolder() {
         return FileUtils.join(
-                mTemporarySdkFolder.getRoot(),
-                SdkConstants.FD_PLATFORMS,
-                "android-23");
+                mTemporarySdkFolder.getRoot(), SdkConstants.FD_PLATFORMS, "android-23");
     }
 }

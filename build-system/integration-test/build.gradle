@@ -80,6 +80,7 @@ configure([test, testPrebuilts]) {
             includeCategories categories as String[]
         }
         excludeCategories "com.android.build.gradle.integration.common.category.DeviceTests"
+        excludeCategories "com.android.build.gradle.integration.common.category.OnlineTests"
     }
     exclude "com/android/build/gradle/integration/performance/**"
     exclude "com/android/build/gradle/integration/automatic/**"
@@ -93,6 +94,16 @@ task automaticTest(type: Test) {
     // Always run the task, when requested.
     outputs.upToDateWhen { false }
     environment = testEnvironment
+}
+
+task onlineTest(type: Test) {
+    // Always run the task, when requested.
+    outputs.upToDateWhen { false }
+    environment = testEnvironment
+
+    useJUnit {
+        includeCategories "com.android.build.gradle.integration.common.category.OnlineTests"
+    }
 }
 
 check.dependsOn automaticTest
