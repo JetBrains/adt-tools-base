@@ -47,6 +47,8 @@ public final class Layer {
 
     private TextInfo mTextInfo;
 
+    private boolean mOpened = true;
+
     private final Effects mEffects = new Effects();
 
     /**
@@ -134,31 +136,38 @@ public final class Layer {
     }
 
     /**
-     * Returns this layer's bitmap representation for BITMAP layers.
+     * Returns this layer's bitmap representation for {@link Type#BITMAP} layers.
      */
     public BufferedImage getBitmap() {
         return mBitmap;
     }
 
     /**
-     * Returns this layer's vector data for PATH layers.
+     * Returns this layer's vector data for {@link Type#PATH} layers.
      */
     public Shape getPath() {
         return mPath;
     }
 
     /**
-     * Returns this layer's vector color for PATH layers.
+     * Returns this layer's vector color for {@link Type#PATH} layers.
      */
     public Color getPathColor() {
         return mPathColor;
     }
 
     /**
-     * Returns this layer's text information for TEXT layers.
+     * Returns this layer's text information for {@link Type#TEXT} layers.
      */
     public TextInfo getTextInfo() {
         return mTextInfo;
+    }
+
+    /**
+     * Indicates whether this layer is opened or closed, only for {@link Type#GROUP} layers.
+     */
+    public boolean isOpened() {
+        return mOpened;
     }
 
     void addLayer(Layer layer) {
@@ -192,6 +201,10 @@ public final class Layer {
 
     void setTextInfo(TextInfo textInfo) {
         mTextInfo = textInfo;
+    }
+
+    void setOpened(boolean opened) {
+        mOpened = opened;
     }
 
     @Override
