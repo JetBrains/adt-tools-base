@@ -25,11 +25,15 @@ import com.android.annotations.Nullable;
 import com.android.repository.api.ConsoleProgressIndicator;
 import com.android.repository.api.ProgressIndicator;
 import com.android.repository.api.RepoManager;
+import com.android.repository.api.RepoPackage;
 import com.android.repository.io.FileOp;
 import com.android.repository.io.FileOpUtils;
 import com.android.sdklib.repository.AndroidSdkHandler;
+import com.google.common.collect.Lists;
 
 import java.io.File;
+import java.util.Collection;
+import java.util.List;
 
 /**
  * A {@linkplain com.android.ide.common.repository.SdkMavenRepository} represents a Maven
@@ -185,5 +189,67 @@ public enum SdkMavenRepository {
     @NonNull
     public String getDirName() {
         return mDir;
+    }
+
+    /**
+     * Given a GradleCoordinate, return the {@link RepoPackage}-style
+     * {@link RepoPackage#getPath() path} for the corresponding package. Note that there may not
+     * actually be such a package installed or available.
+     */
+    @NonNull
+    public static String getSdkPath(@NonNull GradleCoordinate coordinate) {
+        return String.join(Character.toString(RepoPackage.PATH_SEPARATOR),
+                FD_EXTRAS,
+                FD_M2_REPOSITORY,
+                coordinate.getGroupId().replace('.', RepoPackage.PATH_SEPARATOR),
+                coordinate.getArtifactId(),
+                coordinate.getRevision());
+    }
+
+    /**
+     * Given {@link RepoPackage}-style {@link RepoPackage#getPath() path}, get the
+     * {@link GradleCoordinate} for the package (assuming it is a maven-style package).
+
+     * @return The {@link GradleCoordinate}, or null if the package is not a maven-style package.
+     */
+    @Nullable
+    public static GradleCoordinate getCoordinateFromSdkPath(@NonNull String path) {
+        String prefix = String
+          .join(Character.toString(RepoPackage.PATH_SEPARATOR), FD_EXTRAS, FD_M2_REPOSITORY, "");
+        if (!path.startsWith(prefix)) {
+            return null;
+        }
+        List<String> components = Lists
+          .newArrayList(path.split(Character.toString(RepoPackage.PATH_SEPARATOR)));
+        String version = components.remove(components.size() - 1);
+        String artifact = components.remove(components.size() - 1);
+        String group = String.join(".", components.subList(2, components.size()));
+        List<GradleCoordinate.RevisionComponent> revisionComponents = GradleCoordinate
+          .parseRevisionNumber(version);
+        return new GradleCoordinate(group, artifact, revisionComponents
+          .toArray(new GradleCoordinate.RevisionComponent[revisionComponents.size()]));
+    }
+
+    /**
+     * Given a collection of {@link RepoPackage}s, find the one that best matches the given
+     * {@link GradleCoordinate} (that is, the one that corresponds to the maven artifact with the
+     * same version, or the highest package matching a coordinate with +).
+     *
+     * @return The best package, or {@code null} if none was found.
+     */
+    @Nullable
+    public static RepoPackage findBestPackageMatching(@NonNull GradleCoordinate coordinate,
+      @NonNull Collection<? extends RepoPackage> packages) {
+        RepoPackage result = null;
+        GradleCoordinate resultCoordinate = null;
+        for (RepoPackage p : packages) {
+            GradleCoordinate test = getCoordinateFromSdkPath(p.getPath());
+            if (test != null && test.matches(coordinate) && (resultCoordinate == null
+              || GradleCoordinate.COMPARE_PLUS_LOWER.compare(test, resultCoordinate) > 0)) {
+                result = p;
+                resultCoordinate = test;
+            }
+        }
+        return result;
     }
 }

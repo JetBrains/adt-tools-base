@@ -19,11 +19,8 @@ package com.android.sdklib.repository.installer;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.repository.Revision;
-import com.android.repository.api.LocalPackage;
 import com.android.repository.api.PackageOperation;
 import com.android.repository.api.ProgressIndicator;
-import com.android.repository.api.RemotePackage;
-import com.android.repository.api.RepoPackage;
 import com.android.repository.io.FileOp;
 import com.android.sdklib.repository.AndroidSdkHandler;
 import com.google.common.annotations.VisibleForTesting;
@@ -70,21 +67,13 @@ class MavenInstallListener implements PackageOperation.StatusChangeListener {
     public void statusChanged(@NonNull PackageOperation installer,
             @NonNull ProgressIndicator progress)
             throws PackageOperation.StatusChangeListenerException {
-        switch (installer.getInstallStatus()) {
-            case PREPARING:
-                if (!installer.getPackage().getPath().startsWith(MAVEN_DIR_NAME)) {
-                    progress.logError("Maven package paths must start with " + MAVEN_DIR_NAME);
-                    throw new IllegalArgumentException();
-                }
-                break;
-            case COMPLETE:
-                File dir = installer.getLocation(progress);
-                if (!updateMetadata(dir.getParentFile(), progress)) {
-                    throw new PackageOperation.StatusChangeListenerException(
-                            "Failed to update maven metadata for " +
-                                    installer.getPackage().getDisplayName());
-                }
-                break;
+        if (installer.getInstallStatus() == PackageOperation.InstallStatus.COMPLETE) {
+            File dir = installer.getLocation(progress);
+            if (!updateMetadata(dir.getParentFile(), progress)) {
+                throw new PackageOperation.StatusChangeListenerException(
+                        "Failed to update maven metadata for " +
+                                installer.getPackage().getDisplayName());
+            }
         }
     }
 
