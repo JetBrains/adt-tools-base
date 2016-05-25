@@ -57,6 +57,8 @@ public class BuildInfoLoaderTask extends BaseTask {
             // load the persisted state, this will give us previous build-ids in case we need them.
             if (buildInfoFile.exists()) {
                 instantRunBuildContext.loadFromXmlFile(buildInfoFile);
+            } else {
+                instantRunBuildContext.setVerifierResult(InstantRunVerifierStatus.INITIAL_BUILD);
             }
             // check for the presence of a temporary buildInfoFile and if it exists, merge its
             // artifacts into the current build.

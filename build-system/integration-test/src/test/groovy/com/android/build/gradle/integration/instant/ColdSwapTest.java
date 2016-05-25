@@ -28,6 +28,7 @@ import com.android.build.gradle.integration.common.truth.DexClassSubject;
 import com.android.build.gradle.integration.common.truth.DexFileSubject;
 import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
 import com.android.build.gradle.internal.incremental.InstantRunVerifierStatus;
+import com.android.ide.common.process.ProcessException;
 import com.android.tools.fd.client.InstantRunArtifact;
 import com.android.tools.fd.client.InstantRunArtifactType;
 import com.google.common.base.Charsets;
@@ -64,20 +65,11 @@ public class ColdSwapTest {
     }
 
     @Test
-    @SuppressWarnings("deprecation") // Here we want to test the dalvik behavior.
     public void withDalvik() throws Exception {
         ColdSwapTester.testDalvik(project, new ColdSwapTester.Steps() {
             @Override
-            public void checkApk(File apk) throws Exception {
-                ApkSubject apkSubject = expect.about(ApkSubject.FACTORY).that(apk);
-
-                apkSubject.hasClass("Lcom/example/helloworld/HelloWorld;",
-                        AbstractAndroidSubject.ClassFileScope.MAIN)
-                        .that().hasMethod("onCreate");
-                apkSubject.hasClass("Lcom/android/tools/fd/runtime/BootstrapApplication;",
-                        AbstractAndroidSubject.ClassFileScope.MAIN);
-                apkSubject.hasClass("Lcom/android/tools/fd/runtime/AppInfo;",
-                        AbstractAndroidSubject.ClassFileScope.MAIN);
+            public void checkApk(@NonNull File apk) throws Exception {
+                checkDalvikApk(apk);
             }
 
             @Override
@@ -86,22 +78,36 @@ public class ColdSwapTest {
             }
 
             @Override
-            public void checkVerifierStatus(InstantRunVerifierStatus status) throws Exception {
+            public void checkVerifierStatus(@NonNull InstantRunVerifierStatus status) throws Exception {
                 assertThat(status).isEqualTo(InstantRunVerifierStatus.METHOD_ADDED);
             }
 
             @Override
-            public void checkArtifacts(List<InstantRunBuildContext.Artifact> artifacts) {
-                assertThat(artifacts).isEmpty();
+            public void checkArtifacts(@NonNull List<InstantRunBuildContext.Artifact> artifacts)
+                    throws Exception {
+                assertThat(artifacts).hasSize(1);
+                checkDalvikApk(artifacts.get(0).getLocation());
             }
         });
     }
 
+    private void checkDalvikApk(@NonNull File apk) throws IOException, ProcessException {
+        ApkSubject apkSubject = expect.about(ApkSubject.FACTORY).that(apk);
+
+        apkSubject.hasClass("Lcom/example/helloworld/HelloWorld;",
+                AbstractAndroidSubject.ClassFileScope.MAIN)
+                .that().hasMethod("onCreate");
+        apkSubject.hasClass("Lcom/android/tools/fd/runtime/BootstrapApplication;",
+                AbstractAndroidSubject.ClassFileScope.MAIN);
+        apkSubject.hasClass("Lcom/android/tools/fd/runtime/AppInfo;",
+                AbstractAndroidSubject.ClassFileScope.MAIN);
+    }
+
     @Test
-    public void withLollipop() throws Exception {
+    public void withMultiDex() throws Exception {
         ColdSwapTester.testMultiDex(project, new ColdSwapTester.Steps() {
             @Override
-            public void checkApk(File apk) throws Exception {
+            public void checkApk(@NonNull File apk) throws Exception {
                 ApkSubject apkSubject = expect.about(ApkSubject.FACTORY).that(apk);
 
                 apkSubject.hasClass("Lcom/example/helloworld/HelloWorld;",
@@ -119,12 +125,12 @@ public class ColdSwapTest {
             }
 
             @Override
-            public void checkVerifierStatus(InstantRunVerifierStatus status) throws Exception {
+            public void checkVerifierStatus(@NonNull InstantRunVerifierStatus status) throws Exception {
                 assertThat(status).isEqualTo(InstantRunVerifierStatus.METHOD_ADDED);
             }
 
             @Override
-            public void checkArtifacts(List<InstantRunBuildContext.Artifact> artifacts) throws Exception {
+            public void checkArtifacts(@NonNull List<InstantRunBuildContext.Artifact> artifacts) throws Exception {
                 assertThat(artifacts).hasSize(1);
                 InstantRunBuildContext.Artifact artifact = Iterables.getOnlyElement(artifacts);
 
@@ -139,7 +145,7 @@ public class ColdSwapTest {
     public void withMultiApk() throws Exception {
         ColdSwapTester.testMultiApk(project, new ColdSwapTester.Steps() {
             @Override
-            public void checkApk(File apk) throws Exception {
+            public void checkApk(@NonNull File apk) throws Exception {
             }
 
             @Override
@@ -148,12 +154,12 @@ public class ColdSwapTest {
             }
 
             @Override
-            public void checkVerifierStatus(InstantRunVerifierStatus status) throws Exception {
+            public void checkVerifierStatus(@NonNull InstantRunVerifierStatus status) throws Exception {
                 assertThat(status).isEqualTo(InstantRunVerifierStatus.METHOD_ADDED);
             }
 
             @Override
-            public void checkArtifacts(List<InstantRunBuildContext.Artifact> artifacts) throws Exception {
+            public void checkArtifacts(@NonNull List<InstantRunBuildContext.Artifact> artifacts) throws Exception {
                 assertThat(artifacts).hasSize(2);
                 for (InstantRunBuildContext.Artifact artifact : artifacts) {
                     expect.that(artifact.getType()).isAnyOf(

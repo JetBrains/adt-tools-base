@@ -26,13 +26,6 @@ import java.io.File;
 public interface InstantRun {
 
     /**
-     * Returns the name of the task used to generate the incremental .dex files from the last
-     * build.
-     */
-    @NonNull
-    String getIncrementalAssembleTaskName();
-
-    /**
      * Returns the last incremental build information, including success or failure, verifier
      * reason for requesting a restart, etc...
      * @return a file location, possibly not existing.

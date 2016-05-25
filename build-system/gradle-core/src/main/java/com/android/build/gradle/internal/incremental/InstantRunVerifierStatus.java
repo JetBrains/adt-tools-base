@@ -16,13 +16,20 @@
 
 package com.android.build.gradle.internal.incremental;
 
+import com.android.annotations.NonNull;
+import com.google.common.collect.ImmutableMap;
+
+import java.util.EnumMap;
+import java.util.Map;
+
 /**
  * Changes to a class that cannot be hot swapped with the current InstantRun runtime
  */
 public enum InstantRunVerifierStatus {
 
     // changes are compatible with current InstantRun features.
-    COMPATIBLE,
+    COMPATIBLE(
+            InstantRunBuildMode.HOT_WARM, InstantRunBuildMode.HOT_WARM, InstantRunBuildMode.HOT_WARM),
 
     // the verifier did not run successfully.
     NOT_RUN,
@@ -64,11 +71,42 @@ public enum InstantRunVerifierStatus {
     // reflection use
     REFLECTION_USED,
 
-    JAVA_RESOURCES_CHANGED,
+    JAVA_RESOURCES_CHANGED(
+            InstantRunBuildMode.FULL, InstantRunBuildMode.FULL, InstantRunBuildMode.COLD),
 
     DEPENDENCY_CHANGED,
 
     // the binary manifest file changed, probably due to references to resources which ID changed
     // since last build.
-    BINARY_MANIFEST_FILE_CHANGE
+    BINARY_MANIFEST_FILE_CHANGE(
+            InstantRunBuildMode.FULL, InstantRunBuildMode.FULL, InstantRunBuildMode.COLD),
+
+    COLD_SWAP_REQUESTED(
+            InstantRunBuildMode.FULL, InstantRunBuildMode.COLD, InstantRunBuildMode.COLD),
+
+    FULL_BUILD_REQUESTED(
+            InstantRunBuildMode.FULL, InstantRunBuildMode.FULL, InstantRunBuildMode.FULL),
+    
+    INITIAL_BUILD(InstantRunBuildMode.FULL, InstantRunBuildMode.FULL, InstantRunBuildMode.FULL);
+
+    private final ImmutableMap<InstantRunPatchingPolicy, InstantRunBuildMode> buildMode;
+
+    InstantRunVerifierStatus() {
+        this(InstantRunBuildMode.FULL, InstantRunBuildMode.COLD, InstantRunBuildMode.COLD);
+    }
+
+    InstantRunVerifierStatus(
+            @NonNull InstantRunBuildMode preLollipopBuildMode,
+            @NonNull InstantRunBuildMode multiDexBuildMode,
+            @NonNull InstantRunBuildMode multiApkBuildMode) {
+        buildMode = ImmutableMap.of(
+                InstantRunPatchingPolicy.PRE_LOLLIPOP, preLollipopBuildMode,
+                InstantRunPatchingPolicy.MULTI_DEX, multiDexBuildMode,
+                InstantRunPatchingPolicy.MULTI_APK, multiApkBuildMode);
+    }
+
+    public InstantRunBuildMode getInstantRunBuildModeForPatchingPolicy(
+            @NonNull InstantRunPatchingPolicy patchingPolicy) {
+        return buildMode.get(patchingPolicy);
+    }
 }

@@ -111,7 +111,7 @@ public class LibDependencyTest {
                 .run("clean", ":app:assembleDebug");
         createJavaLibraryClass("changed");
         project.executor().withInstantRun(23, ColdswapMode.MULTIDEX)
-                .run(instantRunModel.getIncrementalAssembleTaskName());
+                .run("assembleDebug");
         InstantRunBuildInfo context = InstantRunTestUtils.loadContext(instantRunModel);
         assertThat(context.getVerifierStatus()).isEqualTo(
                 InstantRunVerifierStatus.COMPATIBLE.toString());
@@ -139,11 +139,15 @@ public class LibDependencyTest {
 
         Files.write("changed java resource", resource, Charsets.UTF_8);
 
-        project.execute(getInstantRunArgs(), instantRunModel.getIncrementalAssembleTaskName());
+        project.execute(getInstantRunArgs(), "assembleDebug");
         InstantRunBuildInfo context = InstantRunTestUtils.loadContext(instantRunModel);
         assertThat(context.getVerifierStatus()).isEqualTo(
                 InstantRunVerifierStatus.JAVA_RESOURCES_CHANGED.toString());
-        assertThat(context.getArtifacts()).hasSize(0);
+        assertThat(context.getArtifacts()).hasSize(1);
+        assertThat(context.getArtifacts().get(0).type).isEqualTo(InstantRunArtifactType.MAIN);
+        expect.about(ApkSubject.FACTORY)
+                .that(context.getArtifacts().get(0).file)
+                .containsFileWithContent("properties.txt", "changed java resource");
     }
 
     /**
@@ -153,7 +157,7 @@ public class LibDependencyTest {
             throws Exception {
         createLibraryClass("Hot swap change");
 
-        project.execute(getInstantRunArgs(), instantRunModel.getIncrementalAssembleTaskName());
+        project.execute(getInstantRunArgs(), "assembleDebug");
 
         InstantRunBuildInfo context = InstantRunTestUtils.loadContext(instantRunModel);
 

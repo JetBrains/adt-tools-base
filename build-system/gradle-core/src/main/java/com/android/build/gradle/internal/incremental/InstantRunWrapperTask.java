@@ -28,7 +28,6 @@ import org.gradle.api.logging.Logger;
 import org.gradle.api.tasks.TaskAction;
 
 import java.io.File;
-import java.util.Locale;
 
 /**
  * InstantRun related tasks wrapping code, this task is added twice to the task trees, once
@@ -49,8 +48,6 @@ public class InstantRunWrapperTask extends BaseTask {
     /** Input */
     String buildId;
 
-    TaskType taskType;
-
     File tmpBuildInfoFile;
 
     Logger logger;
@@ -60,17 +57,13 @@ public class InstantRunWrapperTask extends BaseTask {
     @TaskAction
     public void executeAction() {
 
-        InstantRunBuildContext.PersistenceMode persistenceMode = taskType == TaskType.FULL
-                ? InstantRunBuildContext.PersistenceMode.FULL_BUILD
-                : InstantRunBuildContext.PersistenceMode.INCREMENTAL_BUILD;
-
         // done with the instant run context.
-        instantRunBuildContext.close(persistenceMode);
+        instantRunBuildContext.close();
 
         // saves the build information xml file.
         try {
             // only write past builds in incremental mode.
-            String xml = instantRunBuildContext.toXml(persistenceMode);
+            String xml = instantRunBuildContext.toXml();
             if (logger.isEnabled(LogLevel.DEBUG)) {
                 logger.debug("build-id $1$l, build-info.xml : %2$s",
                         instantRunBuildContext.getBuildId(), xml);
@@ -90,11 +83,6 @@ public class InstantRunWrapperTask extends BaseTask {
         }
     }
 
-    public enum TaskType {
-        INCREMENTAL,
-        FULL
-    }
-
     public static class ConfigAction implements TaskConfigAction<InstantRunWrapperTask> {
 
         public static File getBuildInfoFile(InstantRunVariantScope scope) {
@@ -107,19 +95,14 @@ public class InstantRunWrapperTask extends BaseTask {
 
 
         private final String taskName;
-        private final TaskType taskType;
         private final InstantRunVariantScope variantScope;
         private final Logger logger;
 
         public ConfigAction(@NonNull InstantRunVariantScope scope,
-                @NonNull TaskType taskType,
                 @NonNull Logger logger) {
-            this.taskName = scope.getTransformVariantScope().getTaskName(
-                    taskType.name().toLowerCase(Locale.getDefault()),
-                    "BuildInfoGenerator");
+            this.taskName = scope.getTransformVariantScope().getTaskName("buildInfoGenerator");
             this.variantScope = scope;
             this.logger = logger;
-            this.taskType = taskType;
         }
 
         @NonNull
@@ -142,7 +125,6 @@ public class InstantRunWrapperTask extends BaseTask {
             task.tmpBuildInfoFile = getTmpBuildInfoFile(variantScope);
             task.instantRunBuildContext = variantScope.getInstantRunBuildContext();
             task.logger = logger;
-            task.taskType = taskType;
             task.buildId = String.valueOf(task.instantRunBuildContext.getBuildId());
         }
     }

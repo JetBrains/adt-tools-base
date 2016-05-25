@@ -79,7 +79,7 @@ public class ButterKnifeTest {
     public void coldSwapBuild() throws Exception {
         ColdSwapTester.testMultiDex(project, new ColdSwapTester.Steps() {
             @Override
-            public void checkApk(File apk) throws Exception {
+            public void checkApk(@NonNull File apk) throws Exception {
                 assertThatApk(apk).hasClass(ACTIVITY_DESC, INSTANT_RUN);
             }
 
@@ -93,12 +93,12 @@ public class ButterKnifeTest {
             }
 
             @Override
-            public void checkVerifierStatus(InstantRunVerifierStatus status) throws Exception {
+            public void checkVerifierStatus(@NonNull InstantRunVerifierStatus status) throws Exception {
                 assertThat(status).isEqualTo(InstantRunVerifierStatus.METHOD_ADDED);
             }
 
             @Override
-            public void checkArtifacts(List<InstantRunBuildContext.Artifact> artifacts) throws Exception {
+            public void checkArtifacts(@NonNull List<InstantRunBuildContext.Artifact> artifacts) throws Exception {
                 InstantRunBuildContext.Artifact artifact = Iterables.getOnlyElement(artifacts);
                 assertThatDex(artifact.getLocation())
                         .hasClass(ACTIVITY_DESC)
@@ -115,7 +115,7 @@ public class ButterKnifeTest {
 
         project.executor()
                 .withInstantRun(23, COLDSWAP_MODE)
-                .run(instantRunModel.getIncrementalAssembleTaskName());
+                .run("assembleDebug");
 
         InstantRunArtifact artifact =
                 InstantRunTestUtils.getCompiledHotSwapCompatibleChange(instantRunModel);

@@ -98,7 +98,7 @@ public class InstantRunAddLibraryTest {
         writeClass("com.google.common.base.Strings.nullToEmpty(null);");
 
         project.executor().withInstantRun(23, ColdswapMode.MULTIDEX)
-                .run(instantRunModel.getIncrementalAssembleTaskName());
+                .run("assembleDebug");
 
         InstantRunBuildInfo context = InstantRunTestUtils.loadContext(instantRunModel);
 

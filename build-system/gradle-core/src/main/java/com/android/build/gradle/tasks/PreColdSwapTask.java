@@ -19,70 +19,67 @@ package com.android.build.gradle.tasks;
 import com.android.annotations.NonNull;
 import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
 import com.android.build.gradle.internal.incremental.InstantRunPatchingPolicy;
+import com.android.build.gradle.internal.scope.AndroidTask;
 import com.android.build.gradle.internal.scope.InstantRunVariantScope;
 import com.android.build.gradle.internal.scope.TaskConfigAction;
 import com.android.build.gradle.internal.scope.TransformVariantScope;
-import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.tasks.DefaultAndroidTask;
 import com.android.builder.model.OptionalCompilationStep;
 
+import org.gradle.api.Task;
 import org.gradle.api.tasks.TaskAction;
 
 import java.io.IOException;
 
 /**
- * PrePackaging step class that will look if the packaging of the main APK split is necessary
- * when running in InstantRun mode. In InstantRun mode targeting an api 23 or above device,
- * resources are packaged in the main split APK. However when a warm swap is possible, it is
+ * Task to disable execution of the InstantRun slicer, dexer and packager when they are not needed.
+ *
+ * <p>The next time they run they will pick up all intermediate changes.
+ *
+ * <p>With multi apk (N or above device) resources are packaged in the main split APK. However when a warm swap is possible, it is
  * not necessary to produce immediately the new main SPLIT since the runtime use directly the
  * resources.ap_ file. However, as soon as an incompatible change forcing a cold swap is
  * triggered, the main APK must be rebuilt (even if the resources were changed in a previous
  * build).
  */
-public class PrePackageApplication extends DefaultAndroidTask {
+public class PreColdSwapTask extends DefaultAndroidTask {
 
-    InstantRunBuildContext instantRunContext;
-    InstantRunVariantScope variantScope;
+    private TransformVariantScope transformVariantScope;
+    private InstantRunVariantScope instantRunVariantScope;
+    private InstantRunBuildContext instantRunContext;
 
     @TaskAction
-    public void doFullTaskAction() throws IOException {
-
-        // when instantRun is disabled or not targeting 23 and above, we must run the packageApp
-        // task.
-        if (InstantRunPatchingPolicy.MULTI_APK != instantRunContext.getPatchingPolicy()
-                || variantScope.getGlobalScope().isActive(OptionalCompilationStep.RESTART_ONLY)) {
-            return;
-        }
-
-        if (instantRunContext.hasPassedVerification()) {
-            disablePackageTask();
-        } else {
-            // now the main apk is only necessary if we produced a RESOURCES file in a previous
-            // build, let's check it out.
-            if (instantRunContext.getPastBuildsArtifactForType(
-                    InstantRunBuildContext.FileType.RESOURCES) == null) {
-                disablePackageTask();
-            }
+    public void disableBuildTasksAsNeeded() throws IOException {
+        switch (instantRunContext.getBuildMode()) {
+            case HOT_WARM:
+                // We can hot swap, don't produce the apk
+                instantRunVariantScope.getColdSwapBuildTasks().forEach(this::disableTask);
+                disableTask(instantRunVariantScope.getPackageApplicationTask());
+                break;
+            case COLD:
+                if (instantRunContext.getPatchingPolicy() == InstantRunPatchingPolicy.MULTI_DEX) {
+                    disableTask(instantRunVariantScope.getPackageApplicationTask());
+                }
+                break;
+            case FULL:
+                // Leave everything enabled.
+                break;
         }
     }
 
-    private void disablePackageTask() {
-        variantScope.getGlobalScope().getProject().getTasks().getByName(
-                variantScope.getPackageApplicationTask().getName()).setEnabled(false);
+    private <T extends Task> void disableTask(AndroidTask<T> task) {
+        transformVariantScope.getGlobalScope().getProject().getTasks().getByName(task.getName())
+                .setEnabled(false);
     }
 
-    public static class ConfigAction implements TaskConfigAction<PrePackageApplication> {
+    public static class ConfigAction implements TaskConfigAction<PreColdSwapTask> {
 
-        @NonNull
-        protected final InstantRunVariantScope instantRunVariantScope;
         @NonNull
         protected final TransformVariantScope transformVariantScope;
         @NonNull
+        protected final InstantRunVariantScope instantRunVariantScope;
+        @NonNull
         protected final String name;
-
-        public ConfigAction(@NonNull String name, @NonNull VariantScope variantScope) {
-            this(name, variantScope, variantScope);
-        }
 
         public ConfigAction(@NonNull String name,
                 @NonNull TransformVariantScope transformVariantScope,
@@ -100,15 +97,16 @@ public class PrePackageApplication extends DefaultAndroidTask {
 
         @NonNull
         @Override
-        public Class<PrePackageApplication> getType() {
-            return PrePackageApplication.class;
+        public Class<PreColdSwapTask> getType() {
+            return PreColdSwapTask.class;
         }
 
         @Override
-        public void execute(@NonNull PrePackageApplication task) {
-            task.setVariantName(transformVariantScope.getFullVariantName());
+        public void execute(@NonNull PreColdSwapTask task) {
+            task.setVariantName(instantRunVariantScope.getFullVariantName());
+            task.transformVariantScope = transformVariantScope;
+            task.instantRunVariantScope = instantRunVariantScope;
             task.instantRunContext = instantRunVariantScope.getInstantRunBuildContext();
-            task.variantScope = instantRunVariantScope;
         }
     }
 }

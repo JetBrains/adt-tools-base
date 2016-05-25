@@ -22,7 +22,10 @@ import com.android.build.gradle.internal.pipeline.TransformTask;
 import com.android.build.gradle.tasks.PackageApplication;
 import com.google.common.collect.ImmutableList;
 
+import org.gradle.api.DefaultTask;
+
 import java.io.File;
+import java.util.List;
 
 /**
  * Scope for all variant scoped information related to supporting the Instant Run features.
@@ -76,6 +79,9 @@ public interface InstantRunVariantScope {
 
     AndroidTask<TransformTask> getInstantRunSlicerTask();
     void setInstantRunSlicerTask(AndroidTask<TransformTask> slicerTask);
+
+    List<AndroidTask<? extends DefaultTask>> getColdSwapBuildTasks();
+    void addColdSwapBuildTask(@NonNull AndroidTask<? extends DefaultTask> task);
 
     AndroidTask<PackageApplication> getPackageApplicationTask();
     void setPackageApplicationTask(AndroidTask<PackageApplication> packageApplicationTask);

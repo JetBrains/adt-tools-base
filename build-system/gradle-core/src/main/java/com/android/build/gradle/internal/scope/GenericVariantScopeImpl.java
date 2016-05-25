@@ -16,8 +16,14 @@
 
 package com.android.build.gradle.internal.scope;
 
+import com.android.annotations.NonNull;
 import com.android.build.gradle.internal.pipeline.TransformTask;
 import com.android.build.gradle.tasks.PackageApplication;
+import com.google.common.collect.Lists;
+
+import org.gradle.api.DefaultTask;
+
+import java.util.List;
 
 /**
  * Partial implementation of the {@link InstantRunVariantScope} that contains generic implementation
@@ -48,6 +54,18 @@ public abstract class GenericVariantScopeImpl implements InstantRunVariantScope 
     public void setInstantRunSlicerTask(
             AndroidTask<TransformTask> instantRunSlicerTask) {
         this.instantRunSlicerTask = instantRunSlicerTask;
+    }
+
+    private List<AndroidTask<? extends DefaultTask>> coldSwapBuildTasks = Lists.newArrayList();
+
+    @Override
+    public List<AndroidTask<? extends DefaultTask>> getColdSwapBuildTasks() {
+        return coldSwapBuildTasks;
+    }
+
+    @Override
+    public void addColdSwapBuildTask(@NonNull AndroidTask<? extends DefaultTask> task) {
+        this.coldSwapBuildTasks.add(task);
     }
 
     private AndroidTask<PackageApplication> packageApplicationTask;

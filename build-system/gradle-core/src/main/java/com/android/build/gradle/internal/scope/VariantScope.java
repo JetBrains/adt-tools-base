@@ -22,8 +22,6 @@ import com.android.build.gradle.external.gson.NativeBuildConfigValue;
 import com.android.build.gradle.internal.InstantRunTaskManager;
 import com.android.build.gradle.internal.core.Abi;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
-import com.android.build.gradle.internal.incremental.InstantRunAnchorTask;
-import com.android.build.gradle.internal.incremental.InstantRunWrapperTask;
 import com.android.build.gradle.internal.pipeline.TransformManager;
 import com.android.build.gradle.internal.pipeline.TransformTask;
 import com.android.build.gradle.internal.tasks.CheckManifest;
@@ -40,7 +38,6 @@ import com.android.build.gradle.tasks.GenerateBuildConfig;
 import com.android.build.gradle.tasks.GenerateResValues;
 import com.android.build.gradle.tasks.MergeResources;
 import com.android.build.gradle.tasks.MergeSourceSetFolders;
-import com.android.build.gradle.tasks.PackageApplication;
 import com.android.build.gradle.tasks.ProcessAndroidResources;
 import com.android.build.gradle.tasks.RenderscriptCompile;
 import com.android.build.gradle.tasks.ShaderCompile;
@@ -385,14 +382,6 @@ public interface VariantScope extends TransformVariantScope, InstantRunVariantSc
     AndroidTask<?> getCoverageReportTask();
 
     void setCoverageReportTask(AndroidTask<?> coverageReportTask);
-
-    @NonNull
-    AndroidTask<InstantRunAnchorTask> getInstantRunAnchorTask();
-    void setInstantRunAnchorTask(@NonNull AndroidTask<InstantRunAnchorTask> instantRunTask);
-
-    @NonNull
-    AndroidTask<InstantRunWrapperTask> getInstantRunIncrementalTask();
-    void setInstantRunIncrementalTask(@NonNull AndroidTask<InstantRunWrapperTask> instantRunTask);
 
     @Nullable
     AndroidTask<ExternalNativeBuildTask> getExternalNativeBuildTask();

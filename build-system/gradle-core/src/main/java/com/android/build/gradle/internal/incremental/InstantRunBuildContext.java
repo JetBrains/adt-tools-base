@@ -24,11 +24,14 @@ import com.android.utils.XmlUtils;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.CaseFormat;
 import com.google.common.base.Charsets;
+import com.google.common.base.Objects;
 import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
+import com.google.common.collect.Sets;
 import com.google.common.io.Files;
 
+import org.gradle.api.logging.Logger;
 import org.gradle.api.logging.Logging;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -55,6 +58,8 @@ import javax.xml.parsers.ParserConfigurationException;
  * Context object for all InstantRun related information.
  */
 public class InstantRunBuildContext {
+
+    private static final Logger LOG = Logging.getLogger(InstantRunBuildContext.class);
 
     static final String TAG_INSTANT_RUN = "instant-run";
     static final String TAG_BUILD = "build";
@@ -264,6 +269,14 @@ public class InstantRunBuildContext {
         public FileType getType() {
             return fileType;
         }
+
+        @Override
+        public String toString() {
+            return Objects.toStringHelper(this)
+                    .add("fileType", fileType)
+                    .add("location", location)
+                    .toString();
+        }
     }
 
     private final long[] taskStartTime = new long[TaskType.values().length];
@@ -279,8 +292,8 @@ public class InstantRunBuildContext {
     private final TreeMap<Long, Build> previousBuilds = new TreeMap<>();
     private File tmpBuildInfo = null;
     private boolean isInstantRunMode = false;
-    private volatile boolean isAborted = false;
     private final AtomicLong token = new AtomicLong(0);
+    private InstantRunBuildMode buildMode = InstantRunBuildMode.HOT_WARM;
 
     public void setInstantRunMode(boolean instantRunMode) {
         isInstantRunMode = instantRunMode;
@@ -317,6 +330,9 @@ public class InstantRunBuildContext {
                 currentBuild.getVerifierStatus().get() == InstantRunVerifierStatus.COMPATIBLE) {
             currentBuild.verifierStatus = Optional.of(verifierStatus);
         }
+        buildMode = buildMode.combine(
+                verifierStatus.getInstantRunBuildModeForPatchingPolicy(patchingPolicy));
+        LOG.info("Got verifier result: {}. Build mode is now {}.", verifierStatus, buildMode);
     }
 
     /**
@@ -357,6 +373,11 @@ public class InstantRunBuildContext {
     @Nullable
     public InstantRunPatchingPolicy getPatchingPolicy() {
         return patchingPolicy;
+    }
+
+
+    public InstantRunBuildMode getBuildMode() {
+        return buildMode;
     }
 
     public synchronized void addChangedFile(@NonNull FileType fileType, @NonNull File file)
@@ -439,9 +460,6 @@ public class InstantRunBuildContext {
         }
     }
 
-    public void abort() {
-        isAborted = true;
-    }
 
     @Nullable
     public Build getLastBuild() {
@@ -536,6 +554,68 @@ public class InstantRunBuildContext {
             if (aBuild.artifacts.isEmpty() && aBuild.buildId != currentBuild.buildId) {
                 previousBuilds.remove(aBuildId);
             }
+        }
+        if (buildMode == InstantRunBuildMode.FULL) {
+            collapseMainArtifactsIntoCurrentBuild();
+        }
+    }
+
+    private void collapseMainArtifactsIntoCurrentBuild() {
+        if (patchingPolicy == InstantRunPatchingPolicy.MULTI_APK) {
+            // Add all of the older splits to the current build,
+            // as the older builds will be thrown away.
+            Set<String> splitLocations = Sets.newHashSet();
+            Artifact main = null;
+
+            for (Build build : previousBuilds.values()) {
+                for (Artifact artifact : build.artifacts) {
+                    if (artifact.fileType == FileType.SPLIT) {
+                        splitLocations.add(artifact.location.getAbsolutePath());
+                    } else if (artifact.fileType == FileType.SPLIT_MAIN) {
+                        main = artifact;
+                    }
+                }
+            }
+
+            // Don't re-add existing splits.
+            for (Artifact artifact : currentBuild.artifacts) {
+                if (artifact.fileType == FileType.SPLIT) {
+                    splitLocations.remove(artifact.location.getAbsolutePath());
+                } else if (artifact.fileType == FileType.SPLIT_MAIN) {
+                    main = null;
+                }
+            }
+
+            for (String splitLocation : splitLocations) {
+                currentBuild.artifacts
+                        .add(new Artifact(FileType.SPLIT, new File(splitLocation)));
+            }
+
+            if (main != null) {
+                currentBuild.artifacts.add(main);
+            }
+        } else {
+            if (currentBuild.artifacts.isEmpty()) {
+
+                Artifact main = null;
+
+                for (Build build : previousBuilds.values()) {
+                    for (Artifact artifact : build.artifacts) {
+                        if (artifact.fileType == FileType.MAIN) {
+                            main = artifact;
+                        }
+                    }
+                }
+                if (main == null) {
+                    throw new IllegalStateException("No current or previous main artifacts. "
+                            + "This should not happen.");
+                }
+                currentBuild.artifacts.add(main);
+            }
+        }
+        if (currentBuild.artifacts.isEmpty()) {
+            throw new IllegalStateException("Full build with no artifacts. "
+                    + "This should not happen.");
         }
     }
 
@@ -646,17 +726,7 @@ public class InstantRunBuildContext {
     /**
      * Close all activities related to InstantRun.
      */
-    public void close(PersistenceMode persistenceMode) {
-        if (isAborted) {
-            // check if the failure is a BINARY_MANIFEST_CHANGE and we are in full build mode.
-            if (!(currentBuild.getVerifierStatus().isPresent()
-                    && currentBuild.getVerifierStatus().get()
-                            == InstantRunVerifierStatus.BINARY_MANIFEST_FILE_CHANGE
-                    && persistenceMode == PersistenceMode.FULL_BUILD)) {
-                currentBuild.artifacts.clear();
-            }
-        }
-
+    public void close() {
         // add the current build to the list of builds to be persisted.
         previousBuilds.put(currentBuild.buildId, currentBuild);
 
@@ -664,14 +734,11 @@ public class InstantRunBuildContext {
         purge();
     }
 
-    public void close() {
-        close(PersistenceMode.FULL_BUILD);
-    }
-
     /**
      * Define the pesistence mode for this context (which results in the build-info.xml).
      */
-    public enum PersistenceMode {
+    @VisibleForTesting
+    enum PersistenceMode {
         /**
          * Persist this build as a final full build (and do not include any previous builds).
          */
@@ -685,14 +752,16 @@ public class InstantRunBuildContext {
          */
         TEMP_BUILD
     }
+
     /**
      * Serialize this context into an xml format.
      * @return the xml persisted information as a {@link String}
      * @throws ParserConfigurationException
      */
-    @NonNull
     public String toXml() throws ParserConfigurationException {
-        return toXml(PersistenceMode.INCREMENTAL_BUILD);
+        return toXml(buildMode == InstantRunBuildMode.FULL
+                ? PersistenceMode.FULL_BUILD
+                : PersistenceMode.INCREMENTAL_BUILD);
     }
 
     /**
@@ -702,7 +771,8 @@ public class InstantRunBuildContext {
      * @throws ParserConfigurationException
      */
     @NonNull
-    public String toXml(PersistenceMode persistenceMode) throws ParserConfigurationException {
+    @VisibleForTesting
+    String toXml(@NonNull PersistenceMode persistenceMode) throws ParserConfigurationException {
 
         Document document = DocumentBuilderFactory.newInstance().newDocumentBuilder().newDocument();
         toXml(document, persistenceMode);
@@ -721,12 +791,6 @@ public class InstantRunBuildContext {
             taskTypeNode.setAttribute(ATTR_DURATION,
                     String.valueOf(taskDurationInMs[taskType.ordinal()]));
             instantRun.appendChild(taskTypeNode);
-        }
-
-        // if we are doing a full APK build which may be incremental, we do not need to worry
-        // about what the incremental change might be since we produced the APK.
-        if (persistenceMode == PersistenceMode.FULL_BUILD) {
-            currentBuild.verifierStatus = Optional.absent();
         }
 
         currentBuild.toXml(document, instantRun);

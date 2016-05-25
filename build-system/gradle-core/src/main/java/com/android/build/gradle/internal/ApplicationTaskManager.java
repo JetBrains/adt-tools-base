@@ -309,10 +309,8 @@ public class ApplicationTaskManager extends TaskManager {
             return null;
         }
 
-        // create a buildInfoGeneratorTask that will only be invoked if a assembleVARIANT is called.
-        AndroidTask<InstantRunWrapperTask> fullBuildInfoGeneratorTask = getAndroidTasks()
-                .create(tasks, new InstantRunWrapperTask.ConfigAction(
-                    variantScope, InstantRunWrapperTask.TaskType.FULL, getLogger()));
+        AndroidTask<InstantRunWrapperTask> buildInfoGeneratorTask = getAndroidTasks()
+                .create(tasks, new InstantRunWrapperTask.ConfigAction(variantScope, getLogger()));
 
         InstantRunPatchingPolicy patchingPolicy =
                 variantScope.getInstantRunBuildContext().getPatchingPolicy();
@@ -331,19 +329,14 @@ public class ApplicationTaskManager extends TaskManager {
                 // TODO Optimize to avoid creating too many actions
                 splitApk.dependsOn(tasks, stream.getDependencies());
             }
-            variantScope.getAssembleTask().dependsOn(tasks, splitApk.get(tasks));
+            variantScope.getAssembleTask().dependsOn(tasks, splitApk);
+            buildInfoGeneratorTask.dependsOn(tasks, splitApk);
 
             // if the assembleVariant task run, make sure it also runs the task to generate
             // the build-info.xml.
-            variantScope.getAssembleTask().dependsOn(
-                    tasks,
-                    fullBuildInfoGeneratorTask.get(tasks));
-
-            // make sure the split APK task is run before we generate the build-info.xml
-            variantScope.getInstantRunAnchorTask().dependsOn(tasks, splitApk);
-            variantScope.getInstantRunIncrementalTask().dependsOn(tasks, splitApk);
+            variantScope.getAssembleTask().dependsOn(tasks, buildInfoGeneratorTask);
         }
-        return fullBuildInfoGeneratorTask;
+        return buildInfoGeneratorTask;
     }
 
     @NonNull

@@ -144,7 +144,7 @@ public class ConnectedColdSwapTest {
         makeColdSwapChange();
         project.executor()
                 .withInstantRun(device, coldswapMode)
-                .run(instantRunModel.getIncrementalAssembleTaskName());
+                .run("assembleDebug");
 
         InstantRunBuildInfo coldSwapContext = InstantRunTestUtils.loadContext(instantRunModel);
 

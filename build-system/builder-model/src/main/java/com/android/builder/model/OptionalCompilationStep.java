@@ -39,4 +39,10 @@ public enum OptionalCompilationStep {
      * presence will force production of all the necessary artifacts to do an application restart.
      */
     RESTART_ONLY,
+    /**
+     * Force rebuild of the apk.
+     *
+     * If targeting N or above this is the same as RESTART_ONLY due to APK splits.
+     */
+    FULL_APK,
 }

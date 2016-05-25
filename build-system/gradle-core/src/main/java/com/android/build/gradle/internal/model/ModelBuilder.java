@@ -35,7 +35,6 @@ import com.android.build.gradle.internal.core.Abi;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.dependency.VariantDependencies;
 import com.android.build.gradle.internal.dsl.CoreNdkOptions;
-import com.android.build.gradle.internal.incremental.InstantRunAnchorTask;
 import com.android.build.gradle.internal.incremental.InstantRunWrapperTask;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.variant.ApkVariantOutputData;
@@ -456,7 +455,6 @@ public class ModelBuilder implements ToolingModelBuilder {
         }
 
         InstantRunImpl instantRun = new InstantRunImpl(
-                InstantRunAnchorTask.ConfigAction.getName(scope),
                 // todo : move this to a shared location.
                 InstantRunWrapperTask.ConfigAction.getBuildInfoFile(scope),
                 variantConfiguration.isInstantRunSupported());

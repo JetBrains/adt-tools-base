@@ -47,11 +47,9 @@ import com.android.build.gradle.internal.dsl.CoreNdkOptions;
 import com.android.build.gradle.internal.dsl.CoreSigningConfig;
 import com.android.build.gradle.internal.dsl.PackagingOptions;
 import com.android.build.gradle.internal.incremental.BuildInfoLoaderTask;
-import com.android.build.gradle.internal.incremental.DexPackagingPolicy;
-import com.android.build.gradle.internal.incremental.InstantRunAnchorTask;
+import com.android.build.gradle.internal.incremental.InstantRunAnchorTaskConfigAction;
 import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
 import com.android.build.gradle.internal.incremental.InstantRunPatchingPolicy;
-import com.android.build.gradle.internal.incremental.InstantRunVerifierStatus;
 import com.android.build.gradle.internal.incremental.InstantRunWrapperTask;
 import com.android.build.gradle.internal.model.CoreExternalNativeBuild;
 import com.android.build.gradle.internal.ndk.NdkHandler;
@@ -96,18 +94,12 @@ import com.android.build.gradle.internal.tasks.multidex.CreateManifestKeepList;
 import com.android.build.gradle.internal.test.TestDataImpl;
 import com.android.build.gradle.internal.transforms.DexTransform;
 import com.android.build.gradle.internal.transforms.ExtractJarsTransform;
-import com.android.build.gradle.internal.transforms.InstantRunBuildType;
-import com.android.build.gradle.internal.transforms.InstantRunDex;
-import com.android.build.gradle.internal.transforms.InstantRunSlicer;
-import com.android.build.gradle.internal.transforms.InstantRunTransform;
-import com.android.build.gradle.internal.transforms.InstantRunVerifierTransform;
 import com.android.build.gradle.internal.transforms.JackTransform;
 import com.android.build.gradle.internal.transforms.JacocoTransform;
 import com.android.build.gradle.internal.transforms.JarMergingTransform;
 import com.android.build.gradle.internal.transforms.MergeJavaResourcesTransform;
 import com.android.build.gradle.internal.transforms.MultiDexTransform;
 import com.android.build.gradle.internal.transforms.NewShrinkerTransform;
-import com.android.build.gradle.internal.transforms.NoChangesVerifierTransform;
 import com.android.build.gradle.internal.transforms.ProGuardTransform;
 import com.android.build.gradle.internal.transforms.ProguardConfigurable;
 import com.android.build.gradle.internal.transforms.ShrinkResourcesTransform;
@@ -119,7 +111,6 @@ import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.build.gradle.internal.variant.SplitHandlingPolicy;
 import com.android.build.gradle.internal.variant.TestVariantData;
 import com.android.build.gradle.tasks.AidlCompile;
-import com.android.build.gradle.tasks.ColdswapArtifactsKickerTask;
 import com.android.build.gradle.tasks.CompatibleScreensManifest;
 import com.android.build.gradle.tasks.ExternalNativeBuildJsonTask;
 import com.android.build.gradle.tasks.ExternalNativeBuildTask;
@@ -138,7 +129,7 @@ import com.android.build.gradle.tasks.NdkCompile;
 import com.android.build.gradle.tasks.PackageApplication;
 import com.android.build.gradle.tasks.PackageSplitAbi;
 import com.android.build.gradle.tasks.PackageSplitRes;
-import com.android.build.gradle.tasks.PrePackageApplication;
+import com.android.build.gradle.tasks.PreColdSwapTask;
 import com.android.build.gradle.tasks.ProcessAndroidResources;
 import com.android.build.gradle.tasks.ProcessManifest;
 import com.android.build.gradle.tasks.ProcessTestManifest;
@@ -153,11 +144,8 @@ import com.android.build.gradle.tasks.factory.PackageJarArtifactConfigAction;
 import com.android.build.gradle.tasks.factory.ProcessJavaResConfigAction;
 import com.android.build.gradle.tasks.factory.TestServerTaskConfigAction;
 import com.android.build.gradle.tasks.factory.UnitTestConfigAction;
-import com.android.build.gradle.tasks.fd.FastDeployRuntimeExtractorTask;
-import com.android.build.gradle.tasks.fd.GenerateInstantRunAppInfoTask;
 import com.android.builder.core.AndroidBuilder;
 import com.android.builder.core.DefaultDexOptions;
-import com.android.builder.core.DexOptions;
 import com.android.builder.core.VariantConfiguration;
 import com.android.builder.core.VariantType;
 import com.android.builder.internal.aapt.Aapt;
@@ -178,7 +166,6 @@ import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
 
 import org.gradle.api.Action;
 import org.gradle.api.DefaultTask;
@@ -1774,26 +1761,17 @@ public abstract class TaskManager {
 
         // ----- 10x support
 
-        AndroidTask<InstantRunWrapperTask> incrementalBuildWrapperTask = null;
+        AndroidTask<PreColdSwapTask> preColdSwapTask = null;
         if (variantScope.getInstantRunBuildContext().isInInstantRunMode()) {
 
             variantScope.getInstantRunBuildContext().setInstantRunMode(true);
 
-            // we are creating two anchor tasks
-            // 1. allActionAnchorTask to anchor tasks that should be executed whether a full build or
-            //    incremental build is invoked.
-            // 2. incrementalAnchorTask to anchor tasks that should only be executed when an
-            //    incremental build is requested.
-            // the incrementalAnchorTask will therefore depend on the allActionAnchorTask.
-
-            AndroidTask<InstantRunAnchorTask> allActionsAnchorTask =
+            AndroidTask<DefaultTask> allActionsAnchorTask =
                     createInstantRunAllActionsTasks(tasks, variantScope);
-            variantScope.setInstantRunAnchorTask(allActionsAnchorTask);
             assert variantScope.getInstantRunTaskManager() != null;
-            incrementalBuildWrapperTask = variantScope.getInstantRunTaskManager()
-                    .createInstantRunIncrementalTasks(project);
-            variantScope.setInstantRunIncrementalTask(incrementalBuildWrapperTask);
-            incrementalBuildWrapperTask.dependsOn(tasks, allActionsAnchorTask);
+            preColdSwapTask = variantScope.getInstantRunTaskManager()
+                    .createPreColdswapTask(project);
+            preColdSwapTask.dependsOn(tasks, allActionsAnchorTask);
 
             // when dealing with platforms that can handle multi dexes natively, automatically
             // turn on multi dexing so shards are packaged as individual dex files.
@@ -1803,6 +1781,7 @@ public abstract class TaskManager {
                 // force pre-dexing to be true as we rely on individual slices to be packaged
                 // separately.
                 extension.getDexOptions().setPreDexLibraries(true);
+                variantScope.getInstantRunTaskManager().createSlicerTask();
             }
 
             extension.getDexOptions().setJumboMode(true);
@@ -1824,7 +1803,8 @@ public abstract class TaskManager {
                 // not used during the computation.
                 JarMergingTransform jarMergingTransform = new JarMergingTransform(
                         TransformManager.SCOPE_FULL_PROJECT);
-                transformManager.addTransform(tasks, variantScope, jarMergingTransform);
+                variantScope.addColdSwapBuildTask(
+                        transformManager.addTransform(tasks, variantScope, jarMergingTransform));
             }
 
             // ----------
@@ -1838,6 +1818,7 @@ public abstract class TaskManager {
                         new CreateManifestKeepList.ConfigAction(variantScope));
                 manifestKeepListTask.dependsOn(tasks,
                         variantData.getOutputs().get(0).getScope().getManifestProcessorTask());
+                variantScope.addColdSwapBuildTask(manifestKeepListTask);
             }
             // ---------
             // create the transform that's going to take the code and the proguard keep list
@@ -1848,6 +1829,7 @@ public abstract class TaskManager {
             multiDexClassListTask = transformManager.addTransform(
                     tasks, variantScope, multiDexTransform);
             multiDexClassListTask.optionalDependsOn(tasks, manifestKeepListTask);
+            variantScope.addColdSwapBuildTask(multiDexClassListTask);
         }
         // create dex transform
         DefaultDexOptions dexOptions = DefaultDexOptions.copyOf(extension.getDexOptions());
@@ -1872,13 +1854,12 @@ public abstract class TaskManager {
         // need to manually make dex task depend on MultiDexTransform since there's no stream
         // consumption making this automatic
         dexTask.optionalDependsOn(tasks, multiDexClassListTask);
+        variantScope.addColdSwapBuildTask(dexTask);
 
-        // if we are in instant-run mode and the patching policy is relying on mult-dex shards,
-        // we should run the dexing as part of the incremental build.
-        if (incrementalBuildWrapperTask != null &&
-                InstantRunPatchingPolicy.PRE_LOLLIPOP !=
-                    variantScope.getInstantRunBuildContext().getPatchingPolicy()) {
-            incrementalBuildWrapperTask.dependsOn(tasks, dexTask);
+        if (preColdSwapTask != null) {
+            for (AndroidTask<? extends DefaultTask> task : variantScope.getColdSwapBuildTasks()) {
+                task.dependsOn(tasks, preColdSwapTask);
+            }
         }
     }
 
@@ -1908,11 +1889,11 @@ public abstract class TaskManager {
      * Create InstantRun related tasks that should be ran right after the java compilation task.
      */
     @NonNull
-    private AndroidTask<InstantRunAnchorTask> createInstantRunAllActionsTasks(
+    private AndroidTask<DefaultTask> createInstantRunAllActionsTasks(
             @NonNull TaskFactory tasks, @NonNull VariantScope variantScope) {
 
-        AndroidTask<InstantRunAnchorTask> allActionAnchorTask = getAndroidTasks().create(tasks,
-                new InstantRunAnchorTask.ConfigAction(variantScope, "Tasks"));
+        AndroidTask<DefaultTask> allActionAnchorTask = getAndroidTasks().create(tasks,
+                new InstantRunAnchorTaskConfigAction(variantScope));
 
         TransformManager transformManager = variantScope.getTransformManager();
 
@@ -2130,12 +2111,7 @@ public abstract class TaskManager {
          * cold swap is triggered, the main APK must be rebuilt (even if the resources were changed
          * in a previous build).
          */
-        AndroidTask<PrePackageApplication> prePackageApp = androidTasks.create(tasks,
-                new PrePackageApplication.ConfigAction("prePackageMarkerFor", variantScope));
         IncrementalMode incrementalMode = getIncrementalMode(variantConfiguration);
-        if (incrementalMode != IncrementalMode.NONE) {
-            prePackageApp.dependsOn(tasks, variantScope.getInstantRunAnchorTask());
-        }
 
         // loop on all outputs. The only difference will be the name of the task, and location
         // of the generated data.
@@ -2172,7 +2148,7 @@ public abstract class TaskManager {
                 packageApp.dependsOn(tasks, validateSigningTask);
             }
 
-            packageApp.dependsOn(tasks, prePackageApp, variantOutputScope.getProcessResourcesTask());
+            packageApp.dependsOn(tasks, variantOutputScope.getProcessResourcesTask());
 
             packageApp.optionalDependsOn(
                     tasks,
@@ -2229,14 +2205,6 @@ public abstract class TaskManager {
             if (fullBuildInfoGeneratorTask != null) {
                 fullBuildInfoGeneratorTask.dependsOn(tasks, appTask);
                 variantScope.getAssembleTask().dependsOn(tasks, fullBuildInfoGeneratorTask.getName());
-            }
-
-            // when dealing with MULTI_APK, we should make sure the packaging task is running
-            // as part of the incremental build in case resources have changed and need to be
-            // repackaged in the main APK.
-            if (patchingPolicy != null && patchingPolicy.getDexPatchingPolicy() ==
-                            DexPackagingPolicy.INSTANT_RUN_MULTI_APK) {
-                variantScope.getInstantRunIncrementalTask().dependsOn(tasks, appTask);
             }
 
             // Add an assemble task
