@@ -134,7 +134,7 @@ public class LayoutLog {
     public static final String TAG_TEXT_RENDERING = "textRendering";
 
     /**
-     * Tag for reporting RTL being used with API < 17.
+     * Tag for reporting RTL being used with API lower than 17.
      */
     public static final String TAG_RTL_NOT_SUPPORTED = "rtl-not-supported";
 
