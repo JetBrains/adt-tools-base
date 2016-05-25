@@ -279,7 +279,7 @@ final class BitmapDecoder {
             case  2: return 0;  // B
             case  3: return 24; // A
         }
-        throw new IllegalArgumentException("The channel index must be <= 3");
+        throw new IllegalArgumentException("The channel index must be <= 3, not " + channel);
     }
 
     /**
@@ -296,7 +296,7 @@ final class BitmapDecoder {
             case  2: return 2; // B
             case  3: return 3; // A
         }
-        throw new IllegalArgumentException("The channel index must be <= 3");
+        throw new IllegalArgumentException("The channel index must be <= 3, not " + channel);
     }
 
     /**

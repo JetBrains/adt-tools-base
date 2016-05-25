@@ -214,6 +214,7 @@ final class PSDDecoder extends Decoder {
 
             // Assume we are decoding a bitmap (raster) layer by default
             Layer.Type type = Layer.Type.BITMAP;
+            boolean isOpen = true;
 
             // If the section property is set, the layer is either the beginning
             // or the end of a group of layers
@@ -223,8 +224,10 @@ final class PSDDecoder extends Decoder {
                     // We don't care about recording the open state of groups
                     case OTHER:
                         continue;
-                    case GROUP_OPENED:
                     case GROUP_CLOSED:
+                        isOpen = false;
+                        // fall through
+                    case GROUP_OPENED:
                         type = Layer.Type.GROUP;
                         break;
                     // A bounding layer is a hidden layer in Photoshop that marks
@@ -275,6 +278,7 @@ final class PSDDecoder extends Decoder {
             // Photoshop defines opacity in the 0..255 range
             layer.setOpacity(rawLayer.opacity / 255.0f);
             layer.setBlendMode(getBlendModeFromKey(rawLayer.blendMode));
+            layer.setOpened(isOpen);
 
             // Put the layer either in the image or in its parent group
             Layer parent = stack.peekFirst();
@@ -503,9 +507,12 @@ final class PSDDecoder extends Decoder {
         DescriptorItem.UnitDouble top = get(typeTool.text, "boundingBox.Top ");
         DescriptorItem.UnitDouble right = get(typeTool.text, "boundingBox.Rght");
         DescriptorItem.UnitDouble bottom = get(typeTool.text, "boundingBox.Btom");
-        info.setBounds(
-                unitToPx(left, resolutionScale), unitToPx(top, resolutionScale),
-                unitToPx(right, resolutionScale), unitToPx(bottom, resolutionScale));
+
+        if (left != null && top != null && right != null && bottom != null) {
+            info.setBounds(
+                    unitToPx(left, resolutionScale), unitToPx(top, resolutionScale),
+                    unitToPx(right, resolutionScale), unitToPx(bottom, resolutionScale));
+        }
 
         // Retrieves styles from the structured text data
         byte[] data = get(typeTool.text, TypeToolObject.KEY_ENGINE_DATA);
@@ -832,17 +839,18 @@ final class PSDDecoder extends Decoder {
      * the same for all channels. The ZIP formats are not supported.
      */
     private static void decodeImageData(Image image, PSD psd) {
+        int channels = Math.min(psd.header.channels, 4);
+
         BufferedImage bitmap = null;
         switch (psd.imageData.compression) {
             case RAW:
                 bitmap = BitmapDecoder.decodeRaw(psd.imageData.data, 0,
-                        image.getWidth(), image.getHeight(), psd.header.channels, psd.header.depth);
+                        image.getWidth(), image.getHeight(), channels, psd.header.depth);
                 break;
             case RLE:
                 int offset = image.getHeight() * psd.header.channels * 2;
                 bitmap = BitmapDecoder.decodeRLE(
-                        psd.imageData.data, offset,
-                        image.getWidth(), image.getHeight(), psd.header.channels);
+                        psd.imageData.data, offset, image.getWidth(), image.getHeight(), channels);
                 break;
             case ZIP:
                 break;
