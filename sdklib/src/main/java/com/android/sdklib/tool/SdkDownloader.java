@@ -21,10 +21,12 @@ import com.android.repository.api.Channel;
 import com.android.repository.api.ConsoleProgressIndicator;
 import com.android.repository.api.Installer;
 import com.android.repository.api.License;
+import com.android.repository.api.LocalPackage;
+import com.android.repository.api.PackageOperation;
 import com.android.repository.api.RemotePackage;
 import com.android.repository.api.RepoManager;
 import com.android.repository.api.SettingsController;
-import com.android.repository.impl.meta.RepositoryPackages;
+import com.android.repository.api.Uninstaller;
 import com.android.repository.util.InstallerUtil;
 import com.android.sdklib.repository.AndroidSdkHandler;
 import com.android.sdklib.repository.installer.SdkInstallerUtil;
@@ -52,50 +54,91 @@ public class SdkDownloader {
             usageAndExit();
         }
 
-        File localPath = settings.getLocalPath();
         ConsoleProgressIndicator progress = new ConsoleProgressIndicator();
-        AndroidSdkHandler handler = AndroidSdkHandler.getInstance(localPath);
+        AndroidSdkHandler handler = AndroidSdkHandler.getInstance(settings.getLocalPath());
         RepoManager mgr = handler.getSdkManager(progress);
+
+        if (settings.isInstallAction()) {
+            installPackages(settings, progress, handler, mgr);
+        } else {
+            uninstallPackages(settings, progress, handler, mgr);
+        }
+        progress.logInfo("done");
+    }
+
+    private static void installPackages(
+            @NonNull Settings settings,
+            @NonNull ConsoleProgressIndicator progress,
+            @NonNull AndroidSdkHandler handler,
+            @NonNull RepoManager mgr) {
         LegacyDownloader downloader = new LegacyDownloader(handler.getFileOp());
         mgr.loadSynchronously(0, progress, downloader, settings);
-        RepositoryPackages packages = mgr.getPackages();
+
         List<RemotePackage> remotes = Lists.newArrayList();
-        for (String path : settings.mPackages) {
-            RemotePackage p = packages.getRemotePackages().get(path);
+        for (String path : settings.getPaths()) {
+            RemotePackage p = mgr.getPackages().getRemotePackages().get(path);
             if (p == null) {
                 progress.logError("Failed to find package " + path);
                 usageAndExit();
             }
             remotes.add(p);
         }
-        remotes = InstallerUtil.computeRequiredPackages(remotes, packages, progress);
-        for (RemotePackage p : remotes) {
-            License l = p.getLicense();
-            if (l != null) {
-                if (!l.checkAccepted(localPath, handler.getFileOp())) {
-                    progress.logError(String.format(
-                      "License for %1$s (%2$s) is not accepted. Please install using "
-                      + "studio, then copy <studio sdk path>/licenses/* to "
-                      + "%3$s/licenses/",
-                      p.getDisplayName(), p.getPath(), localPath));
-                    System.exit(1);
+        remotes = InstallerUtil.computeRequiredPackages(remotes, mgr.getPackages(), progress);
+        if (remotes != null) {
+            for (RemotePackage p : remotes) {
+                License l = p.getLicense();
+                if (l != null) {
+                    if (!l.checkAccepted(handler.getLocation(), handler.getFileOp())) {
+                        progress.logError(String.format(
+                                "License for %1$s (%2$s) is not accepted. Please install using "
+                                        + "studio, then copy <studio sdk path>/licenses/* to "
+                                        + "%3$s/licenses/",
+                                p.getDisplayName(), p.getPath(), handler.getLocation()));
+                        System.exit(1);
+                    }
                 }
+                Installer installer = SdkInstallerUtil.findBestInstallerFactory(p, handler)
+                        .createInstaller(p, mgr, downloader, handler.getFileOp());
+                applyPackageOperation(installer, progress);
             }
-            Installer installer = SdkInstallerUtil.findBestInstallerFactory(p, handler)
-                    .createInstaller(p, mgr, downloader, handler.getFileOp());
-            if (!installer.prepare(progress)) {
-                System.exit(1);
-            }
-            if (!installer.complete(progress)) {
-                System.exit(1);
+        } else {
+            progress.logError("Unable to compute a complete list of dependencies.");
+        }
+    }
+
+    private static void uninstallPackages(
+            @NonNull Settings settings,
+            @NonNull ConsoleProgressIndicator progress,
+            @NonNull AndroidSdkHandler handler,
+            @NonNull RepoManager mgr) {
+        mgr.loadSynchronously(0, progress, null, settings);
+
+        for (String path : settings.getPaths()) {
+            LocalPackage p = mgr.getPackages().getLocalPackages().get(path);
+            if (p == null) {
+                progress.logWarning("Unable to find package " + path);
+            } else {
+                Uninstaller uninstaller = SdkInstallerUtil.findBestInstallerFactory(p, handler)
+                        .createUninstaller(p, mgr, handler.getFileOp());
+                applyPackageOperation(uninstaller, progress);
             }
         }
-        progress.logInfo("done");
+    }
+
+    private static void applyPackageOperation(
+            @NonNull PackageOperation operation,
+            @NonNull ConsoleProgressIndicator progress) {
+        if (!operation.prepare(progress)) {
+            System.exit(1);
+        }
+        if (!operation.complete(progress)) {
+            System.exit(1);
+        }
     }
 
     private static void usageAndExit() {
         System.out.println("Usage: java com.android.sdklib.tool.SdkDownloader "
-          + "[--channel=channelId] <sdk path> "
+          + "[--uninstall] [--channel=channelId] <sdk path> "
           + "<package path> <package path>...\n"
           + "    <package path> is a sdk-style path (e.g. build-tools;23.0.0 or "
           + "platforms;android-23)\n"
@@ -106,16 +149,20 @@ public class SdkDownloader {
     private static class Settings implements SettingsController {
 
         private static final String CHANNEL_ARG = "--channel=";
+        private static final String UNINSTALL_ARG = "--uninstall";
 
         private File mLocalPath;
         private List<String> mPackages = new ArrayList<>();
         private int mChannel = 0;
+        private boolean mIsInstall = true;
 
         @Nullable
         public static Settings createSettings(@NonNull String[] args) {
             Settings result = new Settings();
             for (String arg : args) {
-                if (arg.startsWith(CHANNEL_ARG)) {
+                if (arg.equals(UNINSTALL_ARG)) {
+                    result.mIsInstall = false;
+                } else if (arg.startsWith(CHANNEL_ARG)) {
                     try {
                         result.mChannel = Integer.parseInt(arg.substring(CHANNEL_ARG.length()));
                     }
@@ -168,6 +215,10 @@ public class SdkDownloader {
         @NonNull
         public File getLocalPath() {
             return mLocalPath;
+        }
+
+        public boolean isInstallAction() {
+            return mIsInstall;
         }
 
         private Settings() {}
