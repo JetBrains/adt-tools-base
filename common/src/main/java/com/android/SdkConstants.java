@@ -647,7 +647,9 @@ public final class SdkConstants {
     public static final String CLASS_CONSTRAINT_LAYOUT = "android.support.constraint.ConstraintLayout";     //$NON-NLS-1$
     public static final String CLASS_TABLE_CONSTRAINT_LAYOUT = "android.support.constraint.TableConstraintLayout";     //$NON-NLS-1$
     public static final String CLASS_CONSTRAINT_LAYOUT_GUIDELINE = "android.support.constraint.Guideline";     //$NON-NLS-1$
-    public static final String CONSTRAINT_LAYOUT_LIB_ARTIFACT = "com.android.support.constraint:constraint-layout";
+    public static final String CONSTRAINT_LAYOUT_LIB_GROUP_ID = "com.android.support.constraint";
+    public static final String CONSTRAINT_LAYOUT_LIB_ARTIFACT_ID = "constraint-layout";
+    public static final String CONSTRAINT_LAYOUT_LIB_ARTIFACT = CONSTRAINT_LAYOUT_LIB_GROUP_ID + ":" + CONSTRAINT_LAYOUT_LIB_ARTIFACT_ID;
 
     /** Returns the appropriate name for the 'android' command, which is 'android.exe' for
      * Windows and 'android' for all other platforms. */
