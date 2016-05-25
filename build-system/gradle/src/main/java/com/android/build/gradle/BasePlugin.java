@@ -376,7 +376,8 @@ public abstract class BasePlugin {
 
         project.afterEvaluate(p -> {
             // TODO: Read flag from extension.
-            if (AndroidGradleOptions.getUseSdkDownload(p)) {
+            if (AndroidGradleOptions.getUseSdkDownload(p)
+                    && !p.getGradle().getStartParameter().isOffline()) {
                 SdkLibData sdkLibData =
                         SdkLibData.download(getDownloader(), getSettingsController());
                 dependencyManager.setSdkLibData(sdkLibData);
