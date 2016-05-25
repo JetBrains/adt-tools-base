@@ -21,8 +21,6 @@ import static com.android.build.api.transform.QualifiedContent.Scope;
 
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
-import com.android.annotations.VisibleForTesting;
 import com.android.build.api.transform.DirectoryInput;
 import com.android.build.api.transform.Format;
 import com.android.build.api.transform.JarInput;
@@ -42,10 +40,8 @@ import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
 import com.android.build.gradle.internal.pipeline.ExtendedContentType;
 import com.android.build.gradle.internal.pipeline.TransformManager;
 import com.android.build.gradle.internal.scope.InstantRunVariantScope;
-import com.android.ide.common.util.UrlClassLoaderUtil;
 import com.android.utils.FileUtils;
 import com.android.utils.ILogger;
-import com.google.common.base.Joiner;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -150,21 +146,12 @@ public class InstantRunTransform extends Transform {
         List<URL> referencedInputUrls = getAllClassesLocations(
                 invocation.getInputs(), invocation.getReferencedInputs());
 
+        ClassLoader currentClassLoader = Thread.currentThread().getContextClassLoader();
         // This class loader could be optimized a bit, first we could create a parent class loader
         // with the android.jar only that could be stored in the GlobalScope for reuse. This
         // class loader could also be store in the VariantScope for potential reuse if some
         // other transform need to load project's classes.
-        URLClassLoader urlClassLoader = new URLClassLoader(
-                referencedInputUrls.toArray(new URL[referencedInputUrls.size()]), null) {
-            @Override
-            public URL getResource(String name) {
-                // Never delegate to bootstrap classes.
-                return findResource(name);
-            }
-        };
-
-        ClassLoader currentClassLoader = Thread.currentThread().getContextClassLoader();
-        try {
+        try (URLClassLoader urlClassLoader = new NonDelegatingUrlClassloader(referencedInputUrls)) {
             transformScope.getInstantRunBuildContext().startRecording(
                     InstantRunBuildContext.TaskType.INSTANT_RUN_TRANSFORM);
             Thread.currentThread().setContextClassLoader(urlClassLoader);
@@ -249,7 +236,6 @@ public class InstantRunTransform extends Transform {
             wrapUpOutputs(classesTwoOutput, classesThreeOutput);
         } finally {
             Thread.currentThread().setContextClassLoader(currentClassLoader);
-            UrlClassLoaderUtil.attemptToClose(urlClassLoader);
             transformScope.getInstantRunBuildContext().stopRecording(
                     InstantRunBuildContext.TaskType.INSTANT_RUN_TRANSFORM);
         }
@@ -440,6 +426,19 @@ public class InstantRunTransform extends Transform {
             Files.write(classBytes, outputFile);
         } catch (IOException e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    private static class NonDelegatingUrlClassloader extends URLClassLoader {
+
+        public NonDelegatingUrlClassloader(@NonNull List<URL> urls) {
+            super(urls.toArray(new URL[urls.size()]), null);
+        }
+
+        @Override
+        public URL getResource(String name) {
+            // Never delegate to bootstrap classes.
+            return findResource(name);
         }
     }
 }
