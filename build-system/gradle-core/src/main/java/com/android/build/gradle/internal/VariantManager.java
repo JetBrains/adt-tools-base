@@ -768,15 +768,15 @@ public class VariantManager implements VariantModel {
         Action<com.android.build.api.variant.VariantFilter> variantFilterAction =
                 extension.getVariantFilter();
 
-        final boolean restrictVariants = taskManager.getGlobalScope().isActive(
-                OptionalCompilationStep.RESTRICT_VARIANTS);
+        final String restrictedProject = AndroidGradleOptions.getRestrictVariantProject(project);
+        final boolean restrictVariants = restrictedProject != null;
 
         // compare the project name if the type is not a lib.
         final boolean projectMatch;
         final String restrictedVariantName;
         if (restrictVariants) {
             projectMatch = variantFactory.getVariantConfigurationType() != VariantType.LIBRARY &&
-                    project.getPath().equals(AndroidGradleOptions.getRestrictVariantProject(project));
+                    project.getPath().equals(restrictedProject);
             restrictedVariantName = AndroidGradleOptions.getRestrictVariantName(project);
         } else {
             projectMatch = false;

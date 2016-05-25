@@ -47,6 +47,9 @@ public interface AndroidProject {
     String PROPERTY_INVOKED_FROM_IDE = "android.injected.invoked.from.ide";
     String PROPERTY_GENERATE_SOURCES_ONLY = "android.injected.generateSourcesOnly";
 
+    String PROPERTY_RESTRICT_VARIANT_PROJECT = "android.injected.restrict.variant.project";
+    String PROPERTY_RESTRICT_VARIANT_NAME = "android.injected.restrict.variant.name";
+
     String PROPERTY_SIGNING_STORE_FILE = "android.injected.signing.store.file";
     String PROPERTY_SIGNING_STORE_PASSWORD = "android.injected.signing.store.password";
     String PROPERTY_SIGNING_KEY_ALIAS = "android.injected.signing.key.alias";
@@ -57,9 +60,6 @@ public interface AndroidProject {
 
     // InstantDev related properties, must be ',' separated list of OptionalCompilationStep values.
     String OPTIONAL_COMPILATION_STEPS = "android.optional.compilation";
-
-    String PROPERTY_RESTRICT_VARIANT_PROJECT = "android.restrict.variant.project";
-    String PROPERTY_RESTRICT_VARIANT_NAME = "android.restrict.variant.name";
 
     /**
      * Location for APKs. If defined as a relative path, then it is resolved against the
