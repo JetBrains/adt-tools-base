@@ -43,7 +43,9 @@ add_dependencies(gmock gtest)
 set(GTEST_LINK_LIBRARIES gtest
                          gmock)
 
-if(NOT ANDROID)
+if(ANDROID)
+  set(GTEST_LINK_LIBRARIES ${GTEST_LINK_LIBRARIES} gnustl_static)
+else()
   set(GTEST_LINK_LIBRARIES ${GTEST_LINK_LIBRARIES} pthread)
 endif()
 
@@ -56,11 +58,6 @@ function(add_unit_test name)
   add_executable(${name} ${ARGN})
   target_include_directories(${name} PUBLIC ${GTEST_ROOT_DIR}/include
                                             ${GMOCK_ROOT_DIR}/include)
-  target_link_libraries(${name} ${GTEST_LINK_LIBRARIES})
-
-  if (ANDROID)
-    target_link_libraries(${name} gnustl_static)
-  endif()
 
   # Create custome target for running the test and set it as a dependency of
   # check so it is included in it
