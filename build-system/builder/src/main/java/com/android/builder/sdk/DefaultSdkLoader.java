@@ -54,6 +54,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 
 import java.io.File;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -63,6 +64,12 @@ import java.util.stream.Collectors;
  * Singleton-based implementation of SdkLoader for a standard SDK
  */
 public class DefaultSdkLoader implements SdkLoader {
+
+    private enum InstallResultType {
+        SUCCESS,
+        LICENSE_FAIL,
+        INSTALL_FAIL,
+    }
 
     private static DefaultSdkLoader sLoader;
 
@@ -124,16 +131,24 @@ public class DefaultSdkLoader implements SdkLoader {
             }
 
             if (target == null || buildToolInfo == null) {
+                Map<RemotePackage, InstallResultType> installResults = new HashMap<>();
                 RepoManager repoManager = mSdkHandler.getSdkManager(progress);
                 repoManager.loadSynchronously(
                         sdkLibData.getCacheExpirationPeriod(), progress, downloader, settings);
+
                 if (buildToolInfo == null) {
-                    installBuildTools(buildToolRevision, repoManager, downloader, progress);
+                    installResults.putAll(
+                            installBuildTools(
+                                    buildToolRevision, repoManager, downloader, progress));
                 }
 
                 if (target == null) {
-                    installTarget(targetHash, repoManager, downloader, progress);
+                    installResults.putAll(
+                            installTarget(targetHash, repoManager, downloader, progress));
                 }
+
+                checkUnlicensed(installResults);
+
                 repoManager.loadSynchronously(0, progress, null, null);
 
                 buildToolInfo = mSdkHandler.getBuildToolInfo(buildToolRevision, progress);
@@ -143,24 +158,37 @@ public class DefaultSdkLoader implements SdkLoader {
         }
         if (target == null) {
             throw new IllegalStateException(
-                    "Failed to find target with hash string '" + targetHash + "' in: "
+                    "Failed to find target with hash string '"
+                            + targetHash
+                            + "' in: "
                             + mSdkLocation);
         }
 
         if (buildToolInfo == null) {
-            throw new IllegalStateException("Failed to find Build Tools revision "
-                    + buildToolRevision.toString());
+            throw new IllegalStateException(
+                    "Failed to find Build Tools revision " + buildToolRevision.toString());
         }
 
         return new TargetInfo(target, buildToolInfo);
     }
 
-    private void installTarget(
+    /**
+     * Installs a compile target and its dependencies.
+     *
+     * @param targetHash hash of the target that needs to be installed.
+     * @param repoManager used for interacting with repository packages.
+     * @param downloader used to download packages.
+     * @param progress a logger for messages.
+     * @return a {@code Map<RemotePackages, InstallResultType>} of the compile target and its
+     *         dependencies and their installation results.
+     */
+    @NonNull
+    private Map<RemotePackage, InstallResultType> installTarget(
             @NonNull String targetHash,
             @NonNull RepoManager repoManager,
             @NonNull Downloader downloader,
             @NonNull ProgressIndicator progress) {
-
+        Map<RemotePackage, InstallResultType> installResults = new HashMap<>();
         AndroidVersion targetVersion = AndroidTargetHash.getVersionFromHash(targetHash);
         String platformPath = DetailsTypes.getPlatformPath(targetVersion);
 
@@ -176,12 +204,12 @@ public class DefaultSdkLoader implements SdkLoader {
 
         // Install platform sdk if it's not there.
         if (!platformPkg.hasLocal()) {
-            if (!installRemotePackages(
-                    ImmutableList.of(platformPkg.getRemote()), repoManager, downloader, progress)) {
-                throw new IllegalStateException(
-                        "Couldn't install Platform SDK with path: "
-                                + platformPath);
-            }
+            installResults.putAll(
+                    installRemotePackages(
+                            ImmutableList.of(platformPkg.getRemote()),
+                            repoManager,
+                            downloader,
+                            progress));
         }
 
         // Addon case
@@ -209,17 +237,25 @@ public class DefaultSdkLoader implements SdkLoader {
                         "Failed to find target with hash string " + targetHash);
             }
 
-            if (!installRemotePackages(
-                    ImmutableList.of(addonPackage), repoManager, downloader, progress)) {
-                throw new IllegalStateException(
-                        "Couldn't install target with target "
-                                + "hash " + targetHash);
-            }
-
+            installResults.putAll(
+                    installRemotePackages(
+                            ImmutableList.of(addonPackage), repoManager, downloader, progress));
         }
+
+        return installResults;
     }
 
-    private void installBuildTools(
+    /**
+     * Installs a Build Tools revision.
+     *
+     * @param buildToolRevision the {@code Revision} of the build tools that need installation.
+     * @param repoManager used for interacting with repository packages.
+     * @param downloader used to download packages.
+     * @param progress a logger for messages.
+     * @return a {@code Map<RemotePackage, InstallResultType>} between the Build Tools packages and
+     * its dependencies and their installation results.
+     */
+    private Map<RemotePackage, InstallResultType> installBuildTools(
             @NonNull Revision buildToolRevision,
             @NonNull RepoManager repoManager,
             @NonNull Downloader downloader,
@@ -243,18 +279,21 @@ public class DefaultSdkLoader implements SdkLoader {
                     buildToolsPackage.getVersion() + ", which will be installed.");
         }
 
-        if (!installRemotePackages(
-                ImmutableList.of(buildToolsPackage), repoManager, downloader, progress)) {
-            throw new IllegalStateException("Couldn't install Build Tools revision "
-                    + buildToolRevision);
-        }
+        return installRemotePackages(
+                ImmutableList.of(buildToolsPackage), repoManager, downloader, progress);
     }
 
     /**
-     * Installs a {@code RemotePackage} and its dependent packages.
-     * @return true if all the packages have been installed properly.
+     * Installs a list of {@code RemotePackage} and their dependent packages. Collects the install
+     * results for each packages it tries to install.
+     *
+     * @param requestPackages the packages we want to install.
+     *  @param repoManager used for interacting with repository packages.
+     * @param downloader used to download packages.
+     * @param progress a progress logger for messages.
+     * @return a {@code Map} of all the packages we tried to install and the install result.
      */
-    private boolean installRemotePackages(
+    private Map<RemotePackage, InstallResultType> installRemotePackages(
             @NonNull List<RemotePackage> requestPackages,
             @NonNull RepoManager repoManager,
             @NonNull Downloader downloader,
@@ -263,33 +302,33 @@ public class DefaultSdkLoader implements SdkLoader {
         List<RemotePackage> remotePackages =
                 InstallerUtil.computeRequiredPackages(
                         requestPackages, repoManager.getPackages(), progress);
+        Map<RemotePackage, InstallResultType> installResults = new HashMap<>();
 
         if (remotePackages == null) {
-            return false;
-        }
+            requestPackages.forEach(p -> installResults.put(p, InstallResultType.INSTALL_FAIL));
 
-        for (RemotePackage p : remotePackages) {
-            if (p.getLicense() != null && !p.getLicense().checkAccepted(
-                    repoManager.getLocalPath(), mSdkHandler.getFileOp())) {
-                progress.setText(
-                        "The license for package " + p.getDisplayName() + " was not accepted. "
-                                + "Please install this package through Android Studio SDK "
-                                + "Manager.");
-                return false;
+        } else {
+            for (RemotePackage p : remotePackages) {
+                if (p.getLicense() != null && !p.getLicense()
+                        .checkAccepted(repoManager.getLocalPath(), mSdkHandler.getFileOp())) {
+                    progress.setText(
+                            "The license for package " + p.getDisplayName() + " was not accepted. "
+                                    + "Please install this package through Android Studio SDK "
+                                    + "Manager.");
+                    installResults.put(p, InstallResultType.LICENSE_FAIL);
+                } else {
+                    Installer installer = SdkInstallerUtil
+                            .findBestInstallerFactory(p, mSdkHandler)
+                            .createInstaller(p, repoManager, downloader, mSdkHandler.getFileOp());
+                    if (installer.prepare(progress) && installer.complete(progress)) {
+                        installResults.put(p, InstallResultType.SUCCESS);
+                    } else {
+                        installResults.put(p, InstallResultType.INSTALL_FAIL);
+                    }
+                }
             }
-
-            Installer installer = SdkInstallerUtil
-                    .findBestInstallerFactory(p, mSdkHandler)
-                    .createInstaller(p, repoManager, downloader, mSdkHandler.getFileOp());
-            boolean result = installer.prepare(progress)
-                    && installer.complete(progress);
-
-            if (!result) {
-                return false;
-            }
         }
-
-        return true;
+        return installResults;
     }
 
     @Override
@@ -358,6 +397,7 @@ public class DefaultSdkLoader implements SdkLoader {
             @NonNull ILogger logger) {
 
         ImmutableList.Builder<File> repositoriesBuilder = ImmutableList.builder();
+        Map<RemotePackage, InstallResultType> installResults = new HashMap<>();
         ProgressIndicator progress = new LoggerProgressIndicatorWrapper(logger);
         RepoManager repoManager = mSdkHandler.getSdkManager(progress);
 
@@ -375,25 +415,24 @@ public class DefaultSdkLoader implements SdkLoader {
                         .filter(Objects::nonNull)
                         .collect(Collectors.toList());
 
-        boolean installResult = true;
-
         if (!artifactPackages.isEmpty()) {
-            installResult =
-                    installRemotePackages(
-                            artifactPackages, repoManager, sdkLibData.getDownloader(), progress);
-            repositoriesBuilder.add(
-                    new File(
-                            mSdkLocation
-                                    + File.separator
-                                    + SdkConstants.FD_EXTRAS
-                                    + File.separator
-                                    + SdkConstants.FD_M2_REPOSITORY));
+            installResults.putAll(installRemotePackages(
+                    artifactPackages, repoManager, sdkLibData.getDownloader(), progress));
+            repositoriesBuilder.add(new File(
+                    mSdkLocation +
+                            File.separator +
+                            SdkConstants.FD_EXTRAS +
+                            File.separator +
+                            SdkConstants.FD_M2_REPOSITORY));
         }
+
+        // Check to see if we failed because of some license not being accepted.
+        checkUnlicensed(installResults);
 
         // If we can't find some of the remote packages or some install failed
         // we resort to installing/updating the old big repositories.
-        if (artifactPackages.size() != repositoryPaths.size() || !installResult) {
-
+        if (artifactPackages.size() != repositoryPaths.size()
+                || installResults.values().contains(InstallResultType.INSTALL_FAIL)) {
             // Check if there is a Google Repository dependency. If not, we don't install/update
             // the Google repository. If there is one, we update both repositories, since
             // the (maven) packages in the Google repo have dependencies (declared in *.pom files)
@@ -424,33 +463,69 @@ public class DefaultSdkLoader implements SdkLoader {
                             .getConsolidatedPkgs()
                             .get(SdkMavenRepository.ANDROID.getPackageId());
 
-            if (googleRepositoryRequired
-                    && (!googleRepositoryPackage.hasLocal()
-                            || googleRepositoryPackage.isUpdate())) {
-                installRemotePackages(
-                        ImmutableList.of(googleRepositoryPackage.getRemote()),
-                        repoManager,
-                        sdkLibData.getDownloader(),
-                        progress);
+            if (googleRepositoryRequired && (!googleRepositoryPackage.hasLocal()
+                    || googleRepositoryPackage.isUpdate())) {
+                installResults.putAll(
+                        installRemotePackages(
+                                ImmutableList.of(googleRepositoryPackage.getRemote()),
+                                repoManager,
+                                sdkLibData.getDownloader(),
+                                progress));
 
-                File googleRepo =
-                        SdkMavenRepository.GOOGLE.getRepositoryLocation(
-                                mSdkLocation, true, FileOpUtils.create());
-                repositoriesBuilder.add(googleRepo);
+                if (installResults.get(googleRepositoryPackage.getRemote())
+                        .equals(InstallResultType.SUCCESS)) {
+                    File googleRepo = SdkMavenRepository.GOOGLE
+                            .getRepositoryLocation(mSdkLocation, true, FileOpUtils.create());
+                    repositoriesBuilder.add(googleRepo);
+                }
             }
 
-            if (!androidRepositoryPackage.hasLocal() || androidRepositoryPackage.isUpdate()) {
-                installRemotePackages(
-                        ImmutableList.of(androidRepositoryPackage.getRemote()),
-                        repoManager,
-                        sdkLibData.getDownloader(),
-                        progress);
-                File androidRepo =
-                        SdkMavenRepository.ANDROID.getRepositoryLocation(
-                                mSdkLocation, true, FileOpUtils.create());
-                repositoriesBuilder.add(androidRepo);
+            if (!androidRepositoryPackage.hasLocal()
+                    || androidRepositoryPackage.isUpdate()) {
+                installResults.putAll(
+                        installRemotePackages(
+                                ImmutableList.of(androidRepositoryPackage.getRemote()),
+                                repoManager,
+                                sdkLibData.getDownloader(),
+                                progress));
+
+                if (installResults
+                        .get(androidRepositoryPackage.getRemote())
+                        .equals(InstallResultType.SUCCESS)) {
+                    File androidRepo =
+                            SdkMavenRepository.ANDROID.getRepositoryLocation(
+                                    mSdkLocation, true, FileOpUtils.create());
+                    repositoriesBuilder.add(androidRepo);
+                }
             }
+            checkUnlicensed(installResults);
         }
+
         return repositoriesBuilder.build();
+    }
+
+    /**
+     * Checks if any of the installation attempts failed due to the license file missing.
+     *
+     * @throws IllegalArgumentException if some packages could not have been installed
+     */
+    private static void checkUnlicensed(Map<RemotePackage, InstallResultType> installResults) {
+        List<String> unlicensedPackages =
+                installResults.entrySet()
+                        .stream()
+                        .filter(p -> p.getValue() == InstallResultType.LICENSE_FAIL)
+                        .map(p -> p.getKey().getDisplayName())
+                        .collect(Collectors.toList());
+        if (!unlicensedPackages.isEmpty()) {
+            throw new IllegalStateException(
+                      "Your SDK installation is missing the following SDK components required to "
+                    + "build this project: \n"
+                    + unlicensedPackages.toString()
+                    + ".\nNormally these can be installed automatically by the build system if\n"
+                    + "you've already agreed to the license terms while running Android Studio.\n"
+                    + "However, one or more licenses required by these components has not yet\n"
+                    + "been reviewed and accepted, so to build this project, open Android Studio,\n"
+                    + "go to the SDK Manager and install these components.");
+        }
     }
 }

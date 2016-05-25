@@ -47,6 +47,7 @@ import java.nio.charset.Charset;
 /**
  * Tests for automatic SDK download from Gradle.
  */
+@SuppressWarnings("ThrowableResultOfMethodCallIgnored")
 @Category(OnlineTests.class)
 public class SdkDownloadGradleTest {
 
@@ -59,6 +60,8 @@ public class SdkDownloadGradleTest {
 
     private File mSdkHome;
 
+    private File licenseFile;
+
     @Before
     public void setUp() throws Exception {
         mSdkHome = project.file("local-sdk-for-test");
@@ -66,7 +69,7 @@ public class SdkDownloadGradleTest {
 
         File licensesFolder = new File(mSdkHome, "licenses");
         FileUtils.mkdirs(licensesFolder);
-        File licenseFile = new File(licensesFolder, "android-sdk-license");
+        licenseFile = new File(licensesFolder, "android-sdk-license");
 
         String licensesHash =
                 "e6b7c2ab7fa2298c15165e9583d0acf0b04a2232"
@@ -211,17 +214,93 @@ public class SdkDownloadGradleTest {
     }
 
     @Test
-    @SuppressWarnings({"ConstantConditions", "ThrowableResultOfMethodCallIgnored"})
     public void checkDependencies_invalidDependency() throws Exception {
         TestFileUtils.appendToFile(
                 project.getBuildFile(),
                 System.lineSeparator() + "dependencies { compile 'foo:bar:baz' }");
 
         GradleBuildResult result = project.executor().expectFailure().run("assembleDebug");
+        assertNotNull(result.getException());
 
         // Make sure the standard gradle error message is what the user sees.
         assertThat(Throwables.getRootCause(result.getException()).getMessage())
                 .startsWith("Could not find foo:bar:baz.");
+    }
+
+    @Test
+    public void checkNoLicenseError_PlatformTarget() throws Exception {
+        FileUtils.delete(licenseFile);
+        TestFileUtils.appendToFile(
+                project.getBuildFile(),
+                System.lineSeparator()
+                        + "android.compileSdkVersion 23"
+                        + System.lineSeparator()
+                        + "android.buildToolsVersion \"19.1.0\"");
+
+        GradleBuildResult result = project.executor().expectFailure().run("assembleDebug");
+        assertNotNull(result.getException());
+
+        assertThat(Throwables.getRootCause(result.getException()).getMessage())
+                .contains("Android SDK Platform 23");
+        assertThat(Throwables.getRootCause(result.getException()).getMessage())
+                .contains("missing the following");
+    }
+
+    @Test
+    public void checkNoLicenseError_AddonTarget() throws Exception {
+        FileUtils.delete(licenseFile);
+        TestFileUtils.appendToFile(
+                project.getBuildFile(),
+                System.lineSeparator()
+                        + "android.compileSdkVersion \"Google Inc.:Google APIs:23\""
+                        + System.lineSeparator()
+                        + "android.buildToolsVersion \"19.1.0\"");
+
+        GradleBuildResult result = project.executor().expectFailure().run("assembleDebug");
+        assertNotNull(result.getException());
+
+        assertThat(Throwables.getRootCause(result.getException()).getMessage())
+                .contains("Google APIs");
+        assertThat(Throwables.getRootCause(result.getException()).getMessage())
+                .contains("missing the following");
+    }
+
+    @Test
+    public void checkNoLicenseError_BuildTools() throws Exception {
+        FileUtils.delete(licenseFile);
+        TestFileUtils.appendToFile(
+                project.getBuildFile(),
+                System.lineSeparator()
+                        + "android.compileSdkVersion 23"
+                        + System.lineSeparator()
+                        + "android.buildToolsVersion \"19.1.0\"");
+
+        GradleBuildResult result = project.executor().expectFailure().run("assembleDebug");
+        assertNotNull(result.getException());
+
+        assertThat(Throwables.getRootCause(result.getException()).getMessage())
+                .contains("Android SDK Build-Tools 19.1");
+        assertThat(Throwables.getRootCause(result.getException()).getMessage())
+                .contains("missing the following");
+    }
+
+    @Test
+    public void checkNoLicenseError_MultiplePackages() throws Exception {
+        FileUtils.delete(licenseFile);
+        TestFileUtils.appendToFile(
+                project.getBuildFile(),
+                System.lineSeparator()
+                        + "android.compileSdkVersion \"Google Inc.:Google APIs:23\""
+                        + System.lineSeparator()
+                        + "android.buildToolsVersion \"23.0.3\"");
+
+        GradleBuildResult result = project.executor().expectFailure().run("assembleDebug");
+        assertNotNull(result.getException());
+
+        assertThat(Throwables.getRootCause(result.getException()).getMessage())
+                .contains("[Android SDK Build-Tools 23.0.3, Android SDK Platform 23, Google APIs]");
+        assertThat(Throwables.getRootCause(result.getException()).getMessage())
+                .contains("missing the following");
     }
 
     private File getPlatformFolder() {
