@@ -68,7 +68,6 @@ def createTasks(data, name, dir, project, flags) {
       args = ["-G", "Ninja", data.projectDir,
           "-DCMAKE_MAKE_PROGRAM=$rootDir/../../../prebuilts/ninja/$host/ninja",
           "-DCMAKE_RUNTIME_OUTPUT_DIRECTORY=$out",
-          "-Dprotobuf_BUILD_TESTS=OFF",
           "-DGO_EXECUTABLE=$rootDir/../../../prebuilts/go/$host/bin/go",
           "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON"] + flags + Arrays.asList(data.flags)
       environment GOROOT: "$rootDir/../../../prebuilts/go/$host"

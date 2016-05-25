@@ -21,6 +21,10 @@ set(GMOCK_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../../../external/gmock)
 set(GTEST_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../../../external/gtest)
 set(ZLIB_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../../../external/zlib/src)
 
+set(protobuf_BUILD_TESTS OFF CACHE BOOL "Build tests")
+set(protobuf_WITH_ZLIB OFF CACHE BOOL "Build with zlib support") # Tell protobuf to not try to find zlib
+set(HAVE_ZLIB 1) # But still tell it to use it.
+
 # Include additional cmake modules after setting global variables
 include(cmake/proto_compile.cmake)
 include(cmake/test.cmake)
