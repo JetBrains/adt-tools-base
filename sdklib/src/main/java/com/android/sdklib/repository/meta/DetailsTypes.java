@@ -315,5 +315,4 @@ public final class DetailsTypes {
                              (revision.isPreview() ? "-preview" : "");
         return SdkConstants.FD_BUILD_TOOLS + RepoPackage.PATH_SEPARATOR + revisionStr;
     }
-
 }

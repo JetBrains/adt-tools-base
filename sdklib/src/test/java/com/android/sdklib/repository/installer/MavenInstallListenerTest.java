@@ -86,7 +86,7 @@ public class MavenInstallListenerTest extends TestCase {
 
         // The repo we're going to download
         downloader.registerUrl(repoUrl,
-                getClass().getResourceAsStream("../testdata/remote_maven_repo.xml"));
+                getClass().getResourceAsStream("testdata/remote_maven_repo.xml"));
 
         // Create the archive and register the URL
         URL archiveUrl = new URL("http://example.com/2/arch1");
@@ -190,7 +190,7 @@ public class MavenInstallListenerTest extends TestCase {
 
         // The repo we're going to download
         downloader.registerUrl(repoUrl,
-                getClass().getResourceAsStream("../testdata/remote_maven_repo.xml"));
+                getClass().getResourceAsStream("testdata/remote_maven_repo.xml"));
 
         // Create the archive and register the URL
         URL archiveUrl = new URL("http://example.com/2/arch1");

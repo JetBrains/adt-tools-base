@@ -22,6 +22,7 @@ import com.google.common.base.Joiner;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.regex.Matcher;
@@ -560,6 +561,34 @@ public class GradleCoordinate {
      */
     public boolean isSameArtifact(@NonNull GradleCoordinate o) {
         return o.mGroupId.equals(mGroupId) && o.mArtifactId.equals(mArtifactId);
+    }
+
+    /**
+     * Returns true if this fully-specified coordinate matches the given (optionally including +)
+     * coordinate.
+     */
+    public boolean matches(@NonNull GradleCoordinate pattern) {
+        if (!isSameArtifact(pattern)) {
+            return false;
+        }
+        Iterator<RevisionComponent> thisRev = mRevisions.iterator();
+        for (RevisionComponent thatRev : pattern.mRevisions) {
+            if (thatRev instanceof PlusComponent) {
+                return true;
+            }
+            if (!thisRev.hasNext() && thatRev.asInteger() != 0) {
+                return false;
+            }
+            if (thisRev.hasNext() && !thatRev.equals(thisRev.next())) {
+                return false;
+            }
+        }
+        while (thisRev.hasNext()) {
+            if (thisRev.next().asInteger() != 0) {
+                return false;
+            }
+        }
+        return true;
     }
 
     @Override

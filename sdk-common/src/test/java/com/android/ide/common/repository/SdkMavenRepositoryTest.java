@@ -16,12 +16,18 @@
 
 package com.android.ide.common.repository;
 
+import com.android.repository.Revision;
+import com.android.repository.api.RepoPackage;
+import com.android.repository.testframework.FakePackage;
 import com.android.repository.testframework.FakeProgressIndicator;
 import com.android.repository.testframework.MockFileOp;
 import com.android.sdklib.repository.AndroidSdkHandler;
+import com.google.common.collect.ImmutableList;
+
 import junit.framework.TestCase;
 
 import java.io.File;
+import java.util.List;
 
 public class SdkMavenRepositoryTest extends TestCase {
     private static final File SDK_HOME = new File("/sdk");
@@ -161,5 +167,63 @@ public class SdkMavenRepositoryTest extends TestCase {
                         SDK_HOME, "com.google.android.gms", "play-services", mFileOp));
         assertNull(
                 SdkMavenRepository.find(SDK_HOME, "com.google.guava", "guava", mFileOp));
+    }
+
+    public void testGetSdkPath() throws Exception {
+        GradleCoordinate coord = new GradleCoordinate("foo.bar.baz", "artifact1",
+                GradleCoordinate.parseRevisionNumber("1.2.3-alpha1"), null);
+        String result = SdkMavenRepository.getSdkPath(coord);
+        assertEquals("extras;m2repository;foo;bar;baz;artifact1;1.2.3-alpha1", result);
+
+        coord = new GradleCoordinate("foo.bar.baz", "artifact1", 1);
+        result = SdkMavenRepository.getSdkPath(coord);
+        assertEquals("extras;m2repository;foo;bar;baz;artifact1;1", result);
+    }
+
+    public void testGetCoordinateFromSdkPath() throws Exception {
+        GradleCoordinate result = SdkMavenRepository
+                .getCoordinateFromSdkPath("extras;m2repository;foo;bar;baz;artifact1;1.2.3-alpha1");
+        assertEquals(new GradleCoordinate("foo.bar.baz", "artifact1",
+                GradleCoordinate.parseRevisionNumber("1.2.3-alpha1"), null), result);
+
+        result = SdkMavenRepository
+                .getCoordinateFromSdkPath("extras;m2repository;foo;bar;baz;artifact1;1");
+        assertEquals(new GradleCoordinate("foo.bar.baz", "artifact1", 1), result);
+
+        result = SdkMavenRepository.getCoordinateFromSdkPath("bogus;foo;bar;baz;artifact1;1");
+        assertNull(result);
+    }
+
+    public void testFindBestPackage() {
+        FakePackage r1 = new FakePackage("extras;m2repository;group;artifact;1", new Revision(1),
+                null);
+        FakePackage r123 = new FakePackage("extras;m2repository;group;artifact;1.2.3",
+                new Revision(1), null);
+        FakePackage r2 = new FakePackage("extras;m2repository;group;artifact;2", new Revision(1),
+                null);
+        FakePackage r211 = new FakePackage("extras;m2repository;group;artifact;2.1.1",
+                new Revision(1), null);
+        FakePackage bogus = new FakePackage("foo;group;artifact;2.1.2", new Revision(1), null);
+        FakePackage other = new FakePackage("extras;m2repository;group2;artifact;2.1.3",
+                new Revision(1), null);
+        List<RepoPackage> packages = ImmutableList.of(r1, r123, r2, r211, bogus, other);
+
+        GradleCoordinate pattern = new GradleCoordinate("group", "artifact", 1);
+        assertEquals(r1, SdkMavenRepository.findBestPackageMatching(pattern, packages));
+
+        pattern = new GradleCoordinate("group", "artifact", 1, 2, 3);
+        assertEquals(r123, SdkMavenRepository.findBestPackageMatching(pattern, packages));
+
+        pattern = new GradleCoordinate("group", "artifact", 1, GradleCoordinate.PLUS_REV_VALUE);
+        assertEquals(r123, SdkMavenRepository.findBestPackageMatching(pattern, packages));
+
+        pattern = new GradleCoordinate("group", "artifact", 1, 0);
+        assertEquals(r1, SdkMavenRepository.findBestPackageMatching(pattern, packages));
+
+        pattern = new GradleCoordinate("group", "artifact", 2, 1, 2);
+        assertNull(SdkMavenRepository.findBestPackageMatching(pattern, packages));
+
+        pattern = new GradleCoordinate("group", "artifact", 2, 1, 3);
+        assertNull(SdkMavenRepository.findBestPackageMatching(pattern, packages));
     }
 }
