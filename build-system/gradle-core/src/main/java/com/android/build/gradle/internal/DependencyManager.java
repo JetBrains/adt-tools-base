@@ -43,6 +43,7 @@ import com.android.builder.model.JavaLibrary;
 import com.android.builder.model.MavenCoordinates;
 import com.android.builder.model.SyncIssue;
 import com.android.builder.sdk.SdkLibData;
+import com.android.ide.common.repository.GradleCoordinate;
 import com.android.repository.api.RepoManager;
 import com.android.repository.api.RepoPackage;
 import com.android.utils.ILogger;
@@ -547,19 +548,19 @@ public class DependencyManager {
      * @param selector the selector of an artifact.
      * @return a {@code String} containing the path.
      */
-    private String getRepositoryPath(ModuleVersionSelector selector) {
+    private static String getRepositoryPath(ModuleVersionSelector selector) {
         return String.join(
                 String.valueOf(RepoPackage.PATH_SEPARATOR),
                 SdkConstants.FD_EXTRAS,
                 SdkConstants.FD_M2_REPOSITORY,
-                selector.getGroup(),
+                selector.getGroup().replace('.', RepoPackage.PATH_SEPARATOR),
                 selector.getName(),
                 selector.getVersion());
     }
 
     private boolean isGoogleOwnedDependency(ModuleVersionSelector selector) {
-        return selector.getGroup().startsWith("com.google.android")
-                ||  selector.getGroup().startsWith("com.android");
+        return selector.getGroup().startsWith(SdkConstants.ANDROID_SUPPORT_ARTIFACT_PREFIX)
+                ||  selector.getGroup().startsWith(SdkConstants.GOOGLE_SUPPORT_ARTIFACT_PREFIX);
     }
 
     private static void printIndent(int indent, @NonNull String message) {

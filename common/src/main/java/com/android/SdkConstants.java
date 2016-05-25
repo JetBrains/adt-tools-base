@@ -1799,4 +1799,9 @@ public final class SdkConstants {
     public static final String VALUE_STRICT = "strict";
     /** {@linkplain #ATTR_SHRINK_MODE} value to keep possibly referenced resources */
     public static final String VALUE_SAFE = "safe";
+
+    /** Prefix of the Android Support Repository path */
+    public static final String ANDROID_SUPPORT_ARTIFACT_PREFIX = "com.android.";
+    /** Prefix of the Google Repository path */
+    public static final String GOOGLE_SUPPORT_ARTIFACT_PREFIX = "com.google.android.";
 }

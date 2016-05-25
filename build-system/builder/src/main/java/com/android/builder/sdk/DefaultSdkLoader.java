@@ -34,6 +34,7 @@ import com.android.repository.api.Installer;
 import com.android.repository.api.ProgressIndicator;
 import com.android.repository.api.RemotePackage;
 import com.android.repository.api.RepoManager;
+import com.android.repository.api.RepoPackage;
 import com.android.repository.api.SettingsController;
 import com.android.repository.api.UpdatablePackage;
 import com.android.repository.io.FileOpUtils;
@@ -389,6 +390,22 @@ public class DefaultSdkLoader implements SdkLoader {
         // If we can't find some of the remote packages or some install failed
         // we resort to installing/updating the old big repositories.
         if (artifactPackages.size() != repositoryPaths.size() || !installResult) {
+
+            // Check if there is a Google Repository dependency or an Android Support Repository
+            // dependency in order to download only the necessary repositories.
+            boolean googleRepositoryCheck = false;
+            boolean androidRepositoryCheck = false;
+            for (String repoPath : repositoryPaths) {
+                if (SdkMavenRepository.getCoordinateFromSdkPath(repoPath).getGroupId()
+                        .startsWith(SdkConstants.GOOGLE_SUPPORT_ARTIFACT_PREFIX)) {
+                    googleRepositoryCheck = true;
+                }
+
+                if (SdkMavenRepository.getCoordinateFromSdkPath(repoPath).getGroupId()
+                        .startsWith(SdkConstants.ANDROID_SUPPORT_ARTIFACT_PREFIX)) {
+                    androidRepositoryCheck = true;
+                }
+            }
             UpdatablePackage googleRepositoryPackage = repoManager.getPackages()
                     .getConsolidatedPkgs()
                     .get(SdkMavenRepository.GOOGLE.getPackageId());
@@ -397,7 +414,8 @@ public class DefaultSdkLoader implements SdkLoader {
                     mSdkHandler.getSdkManager(progress).getPackages().getConsolidatedPkgs()
                             .get(SdkMavenRepository.ANDROID.getPackageId());
 
-            if (!googleRepositoryPackage.hasLocal() || googleRepositoryPackage.isUpdate()) {
+            if (googleRepositoryCheck && (!googleRepositoryPackage.hasLocal()
+                    || googleRepositoryPackage.isUpdate())) {
                 installRemotePackages(
                         ImmutableList.of(googleRepositoryPackage.getRemote()),
                         repoManager,
@@ -409,7 +427,8 @@ public class DefaultSdkLoader implements SdkLoader {
                 repositoriesBuilder.add(googleRepo);
             }
 
-            if (!androidRepositoryPackage.hasLocal() || androidRepositoryPackage.isUpdate()) {
+            if (androidRepositoryCheck && (!androidRepositoryPackage.hasLocal()
+                    || androidRepositoryPackage.isUpdate())) {
                 installRemotePackages(
                         ImmutableList.of(androidRepositoryPackage.getRemote()),
                         repoManager,
