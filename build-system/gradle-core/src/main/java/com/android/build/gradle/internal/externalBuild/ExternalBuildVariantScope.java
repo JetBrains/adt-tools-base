@@ -20,13 +20,10 @@ import com.android.annotations.NonNull;
 import com.android.build.OutputFile;
 import com.android.build.gradle.api.ApkOutputFile;
 import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
-import com.android.build.gradle.internal.pipeline.TransformTask;
-import com.android.build.gradle.internal.scope.AndroidTask;
 import com.android.build.gradle.internal.scope.GenericVariantScopeImpl;
 import com.android.build.gradle.internal.scope.InstantRunVariantScope;
 import com.android.build.gradle.internal.scope.TransformGlobalScope;
 import com.android.build.gradle.internal.scope.TransformVariantScope;
-import com.android.build.gradle.tasks.PackageApplication;
 import com.android.utils.FileUtils;
 import com.android.utils.StringHelper;
 import com.google.common.collect.ImmutableList;
@@ -174,5 +171,9 @@ import java.util.Collections;
 
     public File getIncrementalDir(String name) {
         return FileUtils.join(outputRootFolder, "incremental", name);
+    }
+
+    public File getAssetsDir() {
+        return new File(outputRootFolder, "assets");
     }
 }
