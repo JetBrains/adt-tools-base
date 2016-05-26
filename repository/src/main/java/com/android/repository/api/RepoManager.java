@@ -292,7 +292,22 @@ public abstract class RepoManager {
               public void run() {
                 result.set(false);
               }
-          }), new DummyProgressRunner(progress), downloader, settings, true);
+          }), new ProgressRunner() {
+              @Override
+              public void runAsyncWithProgress(@NonNull ProgressRunnable r) {
+                  r.run(progress, this);
+              }
+
+              @Override
+              public void runSyncWithProgress(@NonNull ProgressRunnable r) {
+                  r.run(progress, this);
+              }
+
+              @Override
+              public void runSyncWithoutProgress(@NonNull Runnable r) {
+                  r.run();
+              }
+          }, downloader, settings, true);
 
         return result.get();
     }
@@ -371,28 +386,5 @@ public abstract class RepoManager {
          *                 {@code packages} will only include local packages.
          */
         void doRun(@NonNull RepositoryPackages packages);
-    }
-
-    protected static class DummyProgressRunner implements ProgressRunner {
-        private final ProgressIndicator mProgress;
-
-        public DummyProgressRunner(@NonNull ProgressIndicator progress) {
-            mProgress = progress;
-        }
-
-        @Override
-        public void runAsyncWithProgress(@NonNull ProgressRunnable r) {
-            r.run(mProgress, this);
-        }
-
-        @Override
-        public void runSyncWithProgress(@NonNull ProgressRunnable r) {
-            r.run(mProgress, this);
-        }
-
-        @Override
-        public void runSyncWithoutProgress(@NonNull Runnable r) {
-            r.run();
-        }
     }
 }
