@@ -40,6 +40,7 @@ import com.google.common.base.Stopwatch;
 import com.google.common.io.Closeables;
 
 import org.gradle.api.Project;
+import org.gradle.api.artifacts.repositories.MavenArtifactRepository;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -301,11 +302,18 @@ public class SdkHandler {
     }
 
     public void addLocalRepositories(Project project) {
-        for (File repository : getSdkLoader().getRepositories()) {
-            project.getRepositories().maven(newRepo -> {
-                newRepo.setName(repository.getPath());
-                newRepo.setUrl(repository);
-            });
+        for (final File repository : getSdkLoader().getRepositories()) {
+            MavenArtifactRepository mavenRepository = project.getRepositories()
+                    .maven(newRepository -> {
+                        newRepository.setName(repository.getPath());
+                        newRepository.setUrl(repository);
+                    });
+
+            // move SDK repositories to top so they are looked up first before checking external
+            // repositories like jcenter or maven which are guaranteed to not have the android
+            // support libraries and associated.
+            project.getRepositories().remove(mavenRepository);
+            project.getRepositories().addFirst(mavenRepository);
         }
     }
 }

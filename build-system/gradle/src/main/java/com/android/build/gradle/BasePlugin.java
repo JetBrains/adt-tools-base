@@ -114,6 +114,7 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
@@ -646,7 +647,8 @@ public abstract class BasePlugin {
     @VisibleForTesting
     final void createAndroidTasks(boolean force) {
         // Make sure unit tests set the required fields.
-        checkState(extension.getBuildToolsRevision() != null, "buildToolsVersion is not specified.");
+        checkState(extension.getBuildToolsRevision() != null,
+                "buildToolsVersion is not specified.");
         checkState(extension.getCompileSdkVersion() != null, "compileSdkVersion is not specified.");
 
         ndkHandler.setCompileSdkVersion(extension.getCompileSdkVersion());
@@ -664,7 +666,7 @@ public abstract class BasePlugin {
         // This is because project don't get evaluated in the unit test setup.
         // See AppPluginDslTest
         if (!force
-                && (!project.getState().getExecuted() ||  project.getState().getFailure()!= null)
+                && (!project.getState().getExecuted() || project.getState().getFailure() != null)
                 && SdkHandler.sTestSdkFolder == null) {
             return;
         }
