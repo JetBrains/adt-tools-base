@@ -1220,8 +1220,8 @@ public final class SdkConstants {
     public static final String ATTR_CARD_CORNER_RADIUS = "cardCornerRadius";        //$NON-NLS-1$
     public static final String ATTR_CONTENT_PADDING = "contentPadding";             //$NON-NLS-1$
     public static final String ATTR_CARD_ELEVATION = "cardElevation";               //$NON-NLS-1$
-    public static final String ATTR_PREVENT_CORNER_OVERLAP = "preventCornerOverlap";//$NON-NLS-1$
-    public static final String ATTR_USE_COMPAT_PADDING = "useCompatPadding";        //$NON-NLS-1$
+    public static final String ATTR_CARD_PREVENT_CORNER_OVERLAP = "cardPreventCornerOverlap";//$NON-NLS-1$
+    public static final String ATTR_CARD_USE_COMPAT_PADDING = "cardUseCompatPadding";        //$NON-NLS-1$
     public static final String ATTR_SPINNER_MODE = "spinnerMode";                   //$NON-NLS-1$
     public static final String ATTR_ENTRIES = "entries";                            //$NON-NLS-1$
     public static final String ATTR_POPUP_BACKGROUND = "popupBackground";           //$NON-NLS-1$
