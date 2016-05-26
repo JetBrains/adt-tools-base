@@ -91,7 +91,13 @@ class MavenInstallListener implements PackageOperation.StatusChangeListener {
                     fileOp);
         }
         // We didn't find anything. Delete the metadata file as well.
-        return fileOp.delete(metadataFile);
+        return deleteMetadataFiles(metadataFile, fileOp);
+    }
+
+    private static boolean deleteMetadataFiles(@NonNull File metadataFile, @NonNull FileOp fop) {
+        File md5File = getMetadataHashFile(metadataFile, "MD5");
+        File sha1File = getMetadataHashFile(metadataFile, "SHA1");
+        return fop.delete(metadataFile) && fop.delete(md5File) && fop.delete(sha1File);
     }
 
     /**
@@ -237,8 +243,7 @@ class MavenInstallListener implements PackageOperation.StatusChangeListener {
     private static boolean writeHashFile(@NonNull File file, @NonNull String algorithm,
             @NonNull ProgressIndicator progress, @NonNull ByteArrayOutputStream metadataOutBytes,
             @NonNull FileOp fop) {
-        File md5File = new File(file.getParent(),
-                MAVEN_METADATA_FILE_NAME + "." + algorithm.toLowerCase());
+        File hashFile = getMetadataHashFile(file, algorithm);
         MessageDigest digest;
         try {
             digest = MessageDigest.getInstance(algorithm);
@@ -247,15 +252,15 @@ class MavenInstallListener implements PackageOperation.StatusChangeListener {
             progress.logError(algorithm + " algorithm not found", e);
             return false;
         }
-        OutputStream md5OutFile;
+        OutputStream hashOutputStream;
         try {
-            md5OutFile = fop.newFileOutputStream(md5File);
+            hashOutputStream = fop.newFileOutputStream(hashFile);
         } catch (FileNotFoundException e) {
             progress.logWarning("Failed to open " + algorithm + " file");
             return false;
         }
         try {
-            md5OutFile.write(
+            hashOutputStream.write(
                     DatatypeConverter.printHexBinary(digest.digest(metadataOutBytes.toByteArray()))
                             .getBytes());
         } catch (IOException e) {
@@ -263,12 +268,18 @@ class MavenInstallListener implements PackageOperation.StatusChangeListener {
             return false;
         } finally {
             try {
-                md5OutFile.close();
+                hashOutputStream.close();
             } catch (IOException e) {
                 // ignore
             }
         }
         return true;
+    }
+
+    @NonNull
+    private static File getMetadataHashFile(@NonNull File file, @NonNull String algorithm) {
+        return new File(file.getParent(),
+                MAVEN_METADATA_FILE_NAME + "." + algorithm.toLowerCase());
     }
 
     /**
