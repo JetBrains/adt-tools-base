@@ -25,6 +25,7 @@ import com.android.builder.core.DefaultBuildType;
 import com.android.builder.internal.ClassFieldImpl;
 import com.android.builder.model.BaseConfig;
 import com.android.builder.model.ClassField;
+import com.google.common.collect.Iterables;
 
 import org.gradle.api.Action;
 import org.gradle.api.Project;
@@ -36,7 +37,7 @@ import java.io.Serializable;
 /**
  * DSL object to configure build types.
  */
-@SuppressWarnings("unused") // Exposed in the DSL.
+@SuppressWarnings({"unused", "WeakerAccess"}) // Exposed in the DSL.
 public class BuildType extends DefaultBuildType implements CoreBuildType, Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -252,8 +253,8 @@ public class BuildType extends DefaultBuildType implements CoreBuildType, Serial
      *     <li>proguard-android.txt
      *     <li>proguard-android-optimize.txt
      * </ul>
-     * <p>They are located in the SDK. Using <code>getDefaultProguardFile(String filename)</code>
-     * will return the full path to the files. They are identical except for enabling optimizations.
+     * <p>They are located in the SDK. Using <code>getDefaultProguardFile(String filename)</code> will return the
+     * full path to the files. They are identical except for enabling optimizations.
      */
     @NonNull
     public BuildType proguardFile(@NonNull Object proguardFile) {
@@ -273,8 +274,10 @@ public class BuildType extends DefaultBuildType implements CoreBuildType, Serial
      * full path to the files. They are identical except for enabling optimizations.
      */
     @NonNull
-    public BuildType proguardFiles(@NonNull Object... proguardFiles) {
-        getProguardFiles().addAll(project.files(proguardFiles).getFiles());
+    public BuildType proguardFiles(@NonNull Object... files) {
+        for (Object file : files) {
+            proguardFile(file);
+        }
         return this;
     }
 
@@ -292,9 +295,7 @@ public class BuildType extends DefaultBuildType implements CoreBuildType, Serial
     @NonNull
     public BuildType setProguardFiles(@NonNull Iterable<?> proguardFileIterable) {
         getProguardFiles().clear();
-        for (Object proguardFile : proguardFileIterable) {
-            getProguardFiles().add(project.file(proguardFile));
-        }
+        proguardFiles(Iterables.toArray(proguardFileIterable, Object.class));
         return this;
     }
 
@@ -316,7 +317,9 @@ public class BuildType extends DefaultBuildType implements CoreBuildType, Serial
      */
     @NonNull
     public BuildType testProguardFiles(@NonNull Object... proguardFiles) {
-        getTestProguardFiles().addAll(project.files(proguardFiles).getFiles());
+        for (Object proguardFile : proguardFiles) {
+            testProguardFile(proguardFile);
+        }
         return this;
     }
 
@@ -325,11 +328,27 @@ public class BuildType extends DefaultBuildType implements CoreBuildType, Serial
      *
      * <p>Test code needs to be processed to apply the same obfuscation as was done to main code.
      */
-    public void setTestProguardFiles(@NonNull Iterable<?> files) {
+    @NonNull
+    public BuildType setTestProguardFiles(@NonNull Iterable<?> files) {
         getTestProguardFiles().clear();
-        for (Object proguardFile : files) {
-            getTestProguardFiles().add(project.file(proguardFile));
-        }
+        testProguardFiles(Iterables.toArray(files, Object.class));
+        return this;
+    }
+
+    /**
+     * Adds a proguard rule file to be included in the published AAR.
+     *
+     * <p>This proguard rule file will then be used by any application project that consume the AAR
+     * (if proguard is enabled).
+     *
+     * <p>This allows AAR to specify shrinking or obfuscation exclude rules.
+     *
+     * <p>This is only valid for Library project. This is ignored in Application project.
+     */
+    @NonNull
+    public BuildType consumerProguardFile(@NonNull Object proguardFile) {
+        getConsumerProguardFiles().add(project.file(proguardFile));
+        return this;
     }
 
     /**
@@ -344,12 +363,15 @@ public class BuildType extends DefaultBuildType implements CoreBuildType, Serial
      */
     @NonNull
     public BuildType consumerProguardFiles(@NonNull Object... proguardFiles) {
-        getConsumerProguardFiles().addAll(project.files(proguardFiles).getFiles());
+        for (Object proguardFile : proguardFiles) {
+            consumerProguardFile(proguardFile);
+        }
+
         return this;
     }
 
     /**
-     * Adds a proguard rule file to be included in the published AAR.
+     * Specifies a proguard rule file to be included in the published AAR.
      *
      * <p>This proguard rule file will then be used by any application project that consume the AAR
      * (if proguard is enabled).
@@ -358,28 +380,13 @@ public class BuildType extends DefaultBuildType implements CoreBuildType, Serial
      *
      * <p>This is only valid for Library project. This is ignored in Application project.
      */
-    public void consumerProguardFile(@NonNull Object proguardFile) {
-        getConsumerProguardFiles().add(project.file(proguardFile));
-    }
-
-    /**
-     * Specifies a proguard rule file to be included in the published AAR.
-     *
-     * This proguard rule file will then be used by any application project that consume the AAR
-     * (if proguard is enabled).
-     *
-     * This allows AAR to specify shrinking or obfuscation exclude rules.
-     *
-     * This is only valid for Library project. This is ignored in Application project.
-     */
     @NonNull
     public BuildType setConsumerProguardFiles(@NonNull Iterable<?> proguardFileIterable) {
         getConsumerProguardFiles().clear();
-        for (Object proguardFile : proguardFileIterable) {
-            getConsumerProguardFiles().add(project.file(proguardFile));
-        }
+        consumerProguardFiles(Iterables.toArray(proguardFileIterable, Object.class));
         return this;
     }
+
 
     public void ndk(@NonNull Action<NdkOptions> action) {
         action.execute(ndkConfig);

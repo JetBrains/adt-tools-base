@@ -30,6 +30,7 @@ import com.android.builder.model.ApiVersion;
 import com.android.builder.model.ClassField;
 import com.android.builder.model.SyncIssue;
 import com.google.common.base.Strings;
+import com.google.common.collect.Iterables;
 
 import org.gradle.api.Action;
 import org.gradle.api.Project;
@@ -330,8 +331,10 @@ public class ProductFlavor extends DefaultProductFlavor implements CoreProductFl
      * <p>They are located in the SDK. Using <code>getDefaultProguardFile(String filename)</code> will return the
      * full path to the files. They are identical except for enabling optimizations.
      */
-    public void proguardFiles(@NonNull Object... proguardFiles) {
-        getProguardFiles().addAll(project.files(proguardFiles).getFiles());
+    public void proguardFiles(@NonNull Object... files) {
+        for (Object file : files) {
+            proguardFile(file);
+        }
     }
 
     /**
@@ -347,9 +350,7 @@ public class ProductFlavor extends DefaultProductFlavor implements CoreProductFl
      */
     public void setProguardFiles(@NonNull Iterable<?> proguardFileIterable) {
         getProguardFiles().clear();
-        for (Object proguardFile : proguardFileIterable) {
-            getProguardFiles().add(project.file(proguardFile));
-        }
+        proguardFiles(Iterables.toArray(proguardFileIterable, Object.class));
     }
 
     /**
@@ -367,7 +368,9 @@ public class ProductFlavor extends DefaultProductFlavor implements CoreProductFl
      * <p>Test code needs to be processed to apply the same obfuscation as was done to main code.
      */
     public void testProguardFiles(@NonNull Object... proguardFiles) {
-        getTestProguardFiles().addAll(project.files(proguardFiles).getFiles());
+        for (Object proguardFile : proguardFiles) {
+            testProguardFile(proguardFile);
+        }
     }
 
     /**
@@ -377,9 +380,7 @@ public class ProductFlavor extends DefaultProductFlavor implements CoreProductFl
      */
     public void setTestProguardFiles(@NonNull Iterable<?> files) {
         getTestProguardFiles().clear();
-        for (Object proguardFile : files) {
-            getTestProguardFiles().add(project.file(proguardFile));
-        }
+        testProguardFiles(Iterables.toArray(files, Object.class));
     }
 
     /**
@@ -407,7 +408,9 @@ public class ProductFlavor extends DefaultProductFlavor implements CoreProductFl
      * <p>This is only valid for Library project. This is ignored in Application project.
      */
     public void consumerProguardFiles(@NonNull Object... proguardFiles) {
-        getConsumerProguardFiles().addAll(project.files(proguardFiles).getFiles());
+        for (Object proguardFile : proguardFiles) {
+            consumerProguardFile(proguardFile);
+        }
     }
 
     /**
@@ -422,9 +425,7 @@ public class ProductFlavor extends DefaultProductFlavor implements CoreProductFl
      */
     public void setConsumerProguardFiles(@NonNull Iterable<?> proguardFileIterable) {
         getConsumerProguardFiles().clear();
-        for (Object proguardFile : proguardFileIterable) {
-            getConsumerProguardFiles().add(project.file(proguardFile));
-        }
+        consumerProguardFiles(Iterables.toArray(proguardFileIterable, Object.class));
     }
 
     public void ndk(Action<NdkOptions> action) {
