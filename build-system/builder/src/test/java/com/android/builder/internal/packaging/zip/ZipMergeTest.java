@@ -52,7 +52,7 @@ public class ZipMergeTest {
         CachedFileContents<Object> changeDetector;
         File merged = new File(mTemporaryFolder.getRoot(), "r.zip");
         try (ZFile mergedZf = new ZFile(merged)) {
-            mergedZf.mergeFrom(new ZFile(aZip), Predicates.<String>alwaysFalse());
+            mergedZf.mergeFrom(new ZFile(aZip), f -> false);
             mergedZf.close();
 
             assertEquals(3, mergedZf.entries().size());
@@ -87,7 +87,7 @@ public class ZipMergeTest {
              */
             File bZip = ZipTestUtils.cloneRsrc("simple-zip.zip", mTemporaryFolder, "b.zip");
 
-            mergedZf.mergeFrom(new ZFile(bZip), Predicates.<String>alwaysFalse());
+            mergedZf.mergeFrom(new ZFile(bZip), f -> false);
         }
 
         assertTrue(changeDetector.isValid());
@@ -113,7 +113,7 @@ public class ZipMergeTest {
                     wStored.getCentralDirectoryHeader().getCompressionInfoWithWait().getMethod());
 
             ZFile merged = closer.register(new ZFile(new File(mTemporaryFolder.getRoot(), "bar")));
-            merged.mergeFrom(fooZf, Predicates.<String>alwaysFalse());
+            merged.mergeFrom(fooZf, f -> false);
             merged.update();
 
             StoredEntry wmStored = merged.get("w");
@@ -154,7 +154,7 @@ public class ZipMergeTest {
                     lStored.getCentralDirectoryHeader().getCompressionInfoWithWait().getMethod());
 
             ZFile merged = closer.register(new ZFile(new File(mTemporaryFolder.getRoot(), "bar")));
-            merged.mergeFrom(fooZf, Predicates.<String>alwaysFalse());
+            merged.mergeFrom(fooZf, f -> false);
             merged.update();
 
             StoredEntry wmStored = merged.get("w");
@@ -193,7 +193,7 @@ public class ZipMergeTest {
         try (
                 ZFile fooZf = new ZFile(foo);
                 ZFile merged = new ZFile(new File(mTemporaryFolder.getRoot(), "bar"))) {
-            merged.mergeFrom(fooZf, Predicates.<String>alwaysFalse());
+            merged.mergeFrom(fooZf, f -> false);
             merged.sortZipContents();
             merged.update();
 

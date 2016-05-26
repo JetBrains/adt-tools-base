@@ -25,6 +25,7 @@ import static org.junit.Assert.assertTrue;
 import com.android.utils.FileUtils;
 import com.google.common.base.Charsets;
 
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -394,5 +395,101 @@ public class AlignmentTest {
             assertNotNull(entry);
             assertEquals(2013, entry.getCentralDirectoryHeader().getOffset());
         }
+    }
+
+    @Test
+    public void alignUsingOffsetAllowsSmallSpaces() throws Exception {
+        File zipFile = new File(mTemporaryFolder.getRoot(), "test.zip");
+
+        int fixedLh = ZFileTestConstants.LOCAL_HEADER_SIZE + 3;
+
+        byte[] recognizable = new byte[] { 1, 2, 3, 4, 4, 3, 2, 1 };
+
+        ZFileOptions options = new ZFileOptions();
+        options.setCoverEmptySpaceUsingExtraField(false);
+        options.setAlignmentRule(AlignmentRules.constant(fixedLh));
+        try (ZFile zf = new ZFile(zipFile, options)) {
+            zf.add("f", new ByteArrayInputStream(recognizable), false);
+        }
+
+        assertArrayEquals(
+                recognizable,
+                FileUtils.readSegment(zipFile, fixedLh, recognizable.length));
+    }
+
+    @Test
+    public void alignUsingExtraFieldDoesNotAllowSmallSpaces() throws Exception {
+        File zipFile = new File(mTemporaryFolder.getRoot(), "test.zip");
+
+        int fixedLh = ZFileTestConstants.LOCAL_HEADER_SIZE + 3;
+
+        byte[] recognizable = new byte[] { 1, 2, 3, 4, 4, 3, 2, 1 };
+
+        ZFileOptions options = new ZFileOptions();
+        options.setCoverEmptySpaceUsingExtraField(true);
+        options.setAlignmentRule(AlignmentRules.constant(fixedLh));
+        try (ZFile zf = new ZFile(zipFile, options)) {
+            zf.add("f", new ByteArrayInputStream(recognizable), false);
+        }
+
+        assertArrayEquals(
+                recognizable,
+                FileUtils.readSegment(zipFile, fixedLh * 2, recognizable.length));
+    }
+
+    @Test
+    public void extraFieldSpaceUsedForAlignmentCanBeReclaimedBeforeUpdate() throws Exception {
+        File zipFile = new File(mTemporaryFolder.getRoot(), "test.zip");
+
+        byte[] recognizable1 = new byte[] { 1, 2, 3, 4, 4, 3, 2, 1 };
+        byte[] recognizable2 = new byte[] { 9, 9, 8, 8, 7, 7, 6, 6, 5, 5, 4, 4 };
+
+        ZFileOptions options = new ZFileOptions();
+        options.setCoverEmptySpaceUsingExtraField(true);
+        options.setAlignmentRule(AlignmentRules.constantForSuffix(".a", 1024));
+        try (ZFile zf = new ZFile(zipFile, options)) {
+            zf.add("f.a", new ByteArrayInputStream(recognizable1), false);
+            zf.add("f.b", new ByteArrayInputStream(recognizable2), false);
+        }
+
+        assertArrayEquals(
+                recognizable1,
+                FileUtils.readSegment(zipFile, 1024, recognizable1.length));
+        assertArrayEquals(
+                recognizable2,
+                FileUtils.readSegment(
+                        zipFile,
+                        ZFileTestConstants.LOCAL_HEADER_SIZE + "f.b".length(),
+                        recognizable2.length));
+    }
+
+    @Test
+    @Ignore("See ZFile.readData() why this is ignored")
+    public void extraFieldSpaceUsedForAlignmentCanBeReclaimedAfterUpdate() throws Exception {
+        File zipFile = new File(mTemporaryFolder.getRoot(), "test.zip");
+
+        byte[] recognizable1 = new byte[] { 1, 2, 3, 4, 4, 3, 2, 1 };
+        byte[] recognizable2 = new byte[] { 9, 9, 8, 8, 7, 7, 6, 6, 5, 5, 4, 4 };
+
+        ZFileOptions options = new ZFileOptions();
+        options.setCoverEmptySpaceUsingExtraField(true);
+        options.setAlignmentRule(AlignmentRules.constantForSuffix(".a", 1024));
+        try (ZFile zf = new ZFile(zipFile, options)) {
+            zf.add("f.a", new ByteArrayInputStream(recognizable1), false);
+        }
+
+        try (ZFile zf = new ZFile(zipFile, options)) {
+            zf.add("f.b", new ByteArrayInputStream(recognizable2), false);
+        }
+
+        assertArrayEquals(
+                recognizable1,
+                FileUtils.readSegment(zipFile, 1024, recognizable1.length));
+        assertArrayEquals(
+                recognizable2,
+                FileUtils.readSegment(
+                        zipFile,
+                        ZFileTestConstants.LOCAL_HEADER_SIZE + "f.b".length(),
+                        recognizable2.length));
     }
 }
