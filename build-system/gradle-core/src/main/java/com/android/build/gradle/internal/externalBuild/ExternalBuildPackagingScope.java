@@ -189,4 +189,11 @@ public class ExternalBuildPackagingScope implements PackagingScope {
     public File getPackageApk() {
         return getMainOutputFile().getOutputFile();
     }
+
+    @NonNull
+    @Override
+    public File getAssetsDir() {
+        // FIXME: Have no idea where these come from in an external build.
+        return getJavaResources().iterator().next();
+    }
 }
