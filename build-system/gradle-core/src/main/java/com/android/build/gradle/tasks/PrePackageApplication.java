@@ -108,6 +108,7 @@ public class PrePackageApplication extends DefaultAndroidTask {
         public void execute(@NonNull PrePackageApplication task) {
             task.setVariantName(transformVariantScope.getFullVariantName());
             task.instantRunContext = instantRunVariantScope.getInstantRunBuildContext();
+            task.variantScope = instantRunVariantScope;
         }
     }
 }
