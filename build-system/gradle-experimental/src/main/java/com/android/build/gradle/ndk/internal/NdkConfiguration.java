@@ -195,7 +195,6 @@ public class NdkConfiguration {
                 abi);
         applyNativeToolSpecification(stlConfig, binary);
 
-
         applyNativeToolSpecification(
                 NativeToolSpecificationFactory.create(
                         ndkHandler,

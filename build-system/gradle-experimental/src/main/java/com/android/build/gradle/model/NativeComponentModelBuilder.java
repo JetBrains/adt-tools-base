@@ -20,15 +20,16 @@ import static com.android.build.gradle.model.ModelConstants.EXTERNAL_BUILD_CONFI
 import static com.android.build.gradle.model.ModelConstants.NATIVE_BUILD_SYSTEMS;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.build.gradle.internal.model.NativeAndroidProjectImpl;
 import com.android.build.gradle.internal.model.NativeArtifactImpl;
 import com.android.build.gradle.internal.model.NativeFileImpl;
 import com.android.build.gradle.internal.model.NativeFolderImpl;
 import com.android.build.gradle.internal.model.NativeSettingsImpl;
 import com.android.build.gradle.internal.model.NativeToolchainImpl;
-import com.android.build.gradle.ndk.internal.NativeCompilerArgsUtil;
 import com.android.build.gradle.managed.NativeBuildConfig;
 import com.android.build.gradle.managed.NativeLibrary;
+import com.android.build.gradle.ndk.internal.NativeCompilerArgsUtil;
 import com.android.builder.Version;
 import com.android.builder.model.NativeAndroidProject;
 import com.android.builder.model.NativeArtifact;
@@ -116,17 +117,23 @@ public class NativeComponentModelBuilder implements ToolingModelBuilder {
         List<NativeArtifact> artifacts = Lists.newArrayList();
 
         for (NativeLibrary lib : config.getLibraries()) {
-            List<NativeFolder> folders = lib.getFolders().stream().map(src -> new NativeFolderImpl(
-                    src.getSrc(),
-                    ImmutableMap.of(
-                            "c", getSettingsName(convertFlagFormat(src.getcFlags())),
-                            "c++", getSettingsName(convertFlagFormat(src.getCppFlags()))),
-                    src.getWorkingDirectory()))
+            List<NativeFolder> folders = lib.getFolders().stream()
+                    .map(src -> {
+                        Preconditions.checkNotNull(src.getSrc());
+                        return new NativeFolderImpl(
+                                src.getSrc(),
+                                ImmutableMap.of(
+                                        "c", getSettingsName(convertFlagFormat(src.getcFlags())),
+                                        "c++", getSettingsName(convertFlagFormat(src.getCppFlags()))),
+                                src.getWorkingDirectory());})
                     .collect(Collectors.toList());
-            List<NativeFile> files = lib.getFiles().stream().map(src -> new NativeFileImpl(
-                    src.getSrc(),
-                    getSettingsName(convertFlagFormat(src.getFlags())),
-                    src.getWorkingDirectory()))
+            List<NativeFile> files = lib.getFiles().stream()
+                    .map(src -> {
+                        Preconditions.checkNotNull(src.getSrc());
+                        return new NativeFileImpl(
+                                src.getSrc(),
+                                getSettingsName(convertFlagFormat(src.getFlags())),
+                                src.getWorkingDirectory());})
                     .collect(Collectors.toList());
             Preconditions.checkNotNull(lib.getToolchain());
             Preconditions.checkNotNull(lib.getAssembleTaskName());
@@ -148,11 +155,14 @@ public class NativeComponentModelBuilder implements ToolingModelBuilder {
     }
 
     @NonNull
-    private static List<String> convertFlagFormat(@NonNull String flags) {
+    private static List<String> convertFlagFormat(@Nullable String flags) {
+        if (flags == null) {
+            return Lists.newArrayList();
+        }
         return NativeCompilerArgsUtil.transform(StringHelper.tokenizeString(flags));
     }
 
-    private String getSettingsName(List<String> flags) {
+    private String getSettingsName(@NonNull List<String> flags) {
         // Copy flags to ensure it is serializable.
         List<String> flagsCopy = ImmutableList.copyOf(flags);
         NativeSettings setting = settingsMap.get(flags);
