@@ -210,10 +210,6 @@ public class AaptV1 extends AbstractProcessExecutionAapt {
             builder.addArgs("-S", config.getResourceDir().getAbsolutePath());
         }
 
-        if (config.getAssetsDir() != null) {
-            builder.addArgs("-A", config.getAssetsDir().getAbsolutePath());
-        }
-
         // outputs
         if (config.getSourceOutputDir() != null) {
             builder.addArgs("-m");

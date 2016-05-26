@@ -61,6 +61,7 @@ import com.google.common.io.Files;
 
 import org.gradle.api.Task;
 import org.gradle.api.tasks.Input;
+import org.gradle.api.tasks.InputDirectory;
 import org.gradle.api.tasks.InputFile;
 import org.gradle.api.tasks.InputFiles;
 import org.gradle.api.tasks.Nested;
@@ -80,11 +81,13 @@ import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
@@ -143,6 +146,8 @@ public abstract class PackageAndroidArtifact extends IncrementalTask implements 
 
     private Set<File> dexFolders;
 
+    private File assets;
+
     @InputFiles
     public Set<File> getDexFolders() {
         return dexFolders;
@@ -150,6 +155,15 @@ public abstract class PackageAndroidArtifact extends IncrementalTask implements 
 
     public void setDexFolders(Set<File> dexFolders) {
         this.dexFolders = dexFolders;
+    }
+
+    @InputDirectory
+    public File getAssets() {
+        return assets;
+    }
+
+    public void setAssets(File assets) {
+        this.assets = assets;
     }
 
     /** list of folders and/or jars that contain the merged java resources. */
@@ -264,13 +278,21 @@ public abstract class PackageAndroidArtifact extends IncrementalTask implements 
         ImmutableMap<RelativeFile, FileStatus> updatedDex =
                 IncrementalRelativeFileSets.fromZipsAndDirectories(getDexFolders());
         ImmutableMap<RelativeFile, FileStatus> updatedJavaResources =
-                IncrementalRelativeFileSets.fromZipsAndDirectories(getJavaResourceFiles());
+                    IncrementalRelativeFileSets.fromZipsAndDirectories(getJavaResourceFiles());
+        ImmutableMap<RelativeFile, FileStatus> updatedAssets =
+                    IncrementalRelativeFileSets.fromZipsAndDirectories(
+                            Collections.singleton(getAssets()));
         ImmutableMap<RelativeFile, FileStatus> updatedAndroidResources =
                 IncrementalRelativeFileSets.fromZipsAndDirectories(androidResources);
         ImmutableMap<RelativeFile, FileStatus> updatedJniResources=
                 IncrementalRelativeFileSets.fromZipsAndDirectories(getJniFolders());
 
-        doTask(updatedDex, updatedJavaResources, updatedAndroidResources, updatedJniResources);
+        doTask(
+                updatedDex,
+                updatedJavaResources,
+                updatedAssets,
+                updatedAndroidResources,
+                updatedJniResources);
 
         /*
          * Update the known files.
@@ -278,6 +300,7 @@ public abstract class PackageAndroidArtifact extends IncrementalTask implements 
         KnownFilesSaveData saveData = KnownFilesSaveData.make(getIncrementalFolder());
         saveData.setInputSet(updatedDex.keySet(), InputSet.DEX);
         saveData.setInputSet(updatedJavaResources.keySet(), InputSet.JAVA_RESOURCE);
+        saveData.setInputSet(updatedAssets.keySet(), InputSet.ASSET);
         saveData.setInputSet(updatedAndroidResources.keySet(), InputSet.ANDROID_RESOURCE);
         saveData.setInputSet(updatedJniResources.keySet(), InputSet.NATIVE_RESOURCE);
         saveData.saveCurrentData();
@@ -290,12 +313,15 @@ public abstract class PackageAndroidArtifact extends IncrementalTask implements 
      *
      * @param changedDex incremental dex packaging data
      * @param changedJavaResources incremental java resources
+     * @param changedAssets incremental assets
      * @param changedAndroidResources incremental Android resource
      * @param changedNLibs incremental native libraries changed
      * @throws IOException failed to package the APK
      */
-    private void doTask(@NonNull ImmutableMap<RelativeFile, FileStatus> changedDex,
+    private void doTask(
+            @NonNull ImmutableMap<RelativeFile, FileStatus> changedDex,
             @NonNull ImmutableMap<RelativeFile, FileStatus> changedJavaResources,
+            @NonNull ImmutableMap<RelativeFile, FileStatus> changedAssets,
             @NonNull ImmutableMap<RelativeFile, FileStatus> changedAndroidResources,
             @NonNull ImmutableMap<RelativeFile, FileStatus> changedNLibs)
             throws IOException {
@@ -402,6 +428,7 @@ public abstract class PackageAndroidArtifact extends IncrementalTask implements 
             try (IncrementalPackager packager = createPackager(creationData)) {
                 packager.updateDex(changedDex);
                 packager.updateJavaResources(changedJavaResources);
+                packager.updateAssets(changedAssets);
                 packager.updateAndroidResources(changedAndroidResources);
                 packager.updateNativeLibraries(changedNLibs);
             }
@@ -466,88 +493,55 @@ public abstract class PackageAndroidArtifact extends IncrementalTask implements 
             androidResources.add(androidResourceFile);
         }
 
-        /*
-         * Gradle tells us that files have changed, but it doesn't tell us which inputs the files
-         * are associated with. This means there are files in changedInputs that are dex files,
-         * some are java resources, etc. This is only relevant in the case of deleted files,
-         * because those no longer show up in the original input collections.
-         *
-         * What we do is remove the deleted changed inputs from the map and split them in the
-         * various inputs according to save data.
-         *
-         * We can split the non-deleted inputs based on the input sets and create the relative
-         * files based on the input sets. For the deleted inputs, we have to resort to a
-         * KnownFilesSaveData to build the RelativeFiles and split the deleted inputs in the
-         * various sets (dex, java resources, etc.)
-         */
-        Map<File, FileStatus> nonDeletedChangedInputs =
-                Maps.filterValues(
-                        changedInputs,
-                        Predicates.not(Predicates.equalTo(FileStatus.REMOVED)));
-        Set<File> deletedChangedFiles =
-                Maps.filterValues(changedInputs, Predicates.equalTo(FileStatus.REMOVED)).keySet();
-
         KnownFilesSaveData saveData = KnownFilesSaveData.make(getIncrementalFolder());
-        ImmutableMap<RelativeFile, FileStatus> dexDeletedInputs =
-                ImmutableMap.copyOf(
-                        Maps.asMap(
-                                saveData.find(deletedChangedFiles, InputSet.DEX),
-                                Functions.constant(FileStatus.REMOVED)));
-        ImmutableMap<RelativeFile, FileStatus> javaResourcesDeletedInputs =
-                ImmutableMap.copyOf(
-                        Maps.asMap(
-                                saveData.find(deletedChangedFiles, InputSet.JAVA_RESOURCE),
-                                Functions.constant(FileStatus.REMOVED)));
-        ImmutableMap<RelativeFile, FileStatus> androidResourcesDeletedInputs =
-                ImmutableMap.copyOf(
-                        Maps.asMap(
-                                saveData.find(deletedChangedFiles, InputSet.ANDROID_RESOURCE),
-                                Functions.constant(FileStatus.REMOVED)));
-        ImmutableMap<RelativeFile, FileStatus> nativeResourcesDeletedInputs =
-                ImmutableMap.copyOf(
-                        Maps.asMap(
-                                saveData.find(deletedChangedFiles, InputSet.NATIVE_RESOURCE),
-                                Functions.constant(FileStatus.REMOVED)));
 
         ImmutableMap<RelativeFile, FileStatus> changedDexFiles =
-                ImmutableMap.<RelativeFile, FileStatus>builder()
-                        .putAll(
-                                IncrementalRelativeFileSets.makeFromBaseFiles(
-                                        getDexFolders(),
-                                        nonDeletedChangedInputs,
-                                        cacheByPath))
-                        .putAll(dexDeletedInputs)
-                        .build();
+                getChangedInputs(
+                        changedInputs,
+                        saveData,
+                        InputSet.DEX,
+                        getDexFolders(),
+                        cacheByPath);
 
         ImmutableMap<RelativeFile, FileStatus> changedJavaResources =
-                ImmutableMap.<RelativeFile, FileStatus>builder()
-                        .putAll(
-                                IncrementalRelativeFileSets.makeFromBaseFiles(
-                                        getJavaResourceFiles(),
-                                        nonDeletedChangedInputs,
-                                        cacheByPath))
-                        .putAll(javaResourcesDeletedInputs)
-                        .build();
-        ImmutableMap<RelativeFile, FileStatus> changedNLibs =
-                ImmutableMap.<RelativeFile, FileStatus>builder()
-                        .putAll(
-                                IncrementalRelativeFileSets.makeFromBaseFiles(
-                                        getJniFolders(),
-                                        nonDeletedChangedInputs,
-                                        cacheByPath))
-                        .putAll(nativeResourcesDeletedInputs)
-                        .build();
-        ImmutableMap<RelativeFile, FileStatus> changedAndroidResources =
-                ImmutableMap.<RelativeFile, FileStatus>builder()
-                        .putAll(
-                                IncrementalRelativeFileSets.makeFromBaseFiles(
-                                        androidResources,
-                                        nonDeletedChangedInputs,
-                                        cacheByPath))
-                        .putAll(androidResourcesDeletedInputs)
-                        .build();
+                getChangedInputs(
+                        changedInputs,
+                        saveData,
+                        InputSet.JAVA_RESOURCE,
+                        getJavaResourceFiles(),
+                        cacheByPath);
 
-        doTask(changedDexFiles, changedJavaResources, changedAndroidResources, changedNLibs);
+        ImmutableMap<RelativeFile, FileStatus> changedAssets =
+                getChangedInputs(
+                        changedInputs,
+                        saveData,
+                        InputSet.ASSET,
+                        Collections.singleton(getAssets()),
+                        cacheByPath);
+
+        ImmutableMap<RelativeFile, FileStatus> changedAndroidResources =
+                getChangedInputs(
+                        changedInputs,
+                        saveData,
+                        InputSet.ANDROID_RESOURCE,
+                        androidResources,
+                        cacheByPath);
+
+        ImmutableMap<RelativeFile, FileStatus> changedNLibs =
+                getChangedInputs(
+                        changedInputs,
+                        saveData,
+                        InputSet.NATIVE_RESOURCE,
+                        getJniFolders(),
+                        cacheByPath);
+
+
+        doTask(
+                changedDexFiles,
+                changedJavaResources,
+                changedAssets,
+                changedAndroidResources,
+                changedNLibs);
 
         /*
          * Removed cached versions of deleted zip files because we no longer need to compute diffs.
@@ -579,6 +573,67 @@ public abstract class PackageAndroidArtifact extends IncrementalTask implements 
         saveData.setInputSet(allAndroidResources.keySet(), InputSet.ANDROID_RESOURCE);
         saveData.setInputSet(allJniResources.keySet(), InputSet.NATIVE_RESOURCE);
         saveData.saveCurrentData();
+    }
+
+    /**
+     * Obtains all changed inputs of a given input set. Given a set of files mapped to their
+     * changed status, this method returns a list of changes computed as follows:
+     *
+     * <ol>
+     *     <li>Changed inputs are split into deleted and non-deleted inputs. This separation is
+     *     needed because deleted inputs may no longer be mappable to any {@link InputSet} just
+     *     by looking at the file path, without using {@link KnownFilesSaveData}.
+     *     <li>Deleted inputs are filtered through {@link KnownFilesSaveData} to get only those
+     *     whose input set matches {@code inputSet}.
+     *     <li>Non-deleted inputs are processed through
+     *     {@link IncrementalRelativeFileSets#makeFromBaseFiles(Collection, Map, FileCacheByPath)}
+     *     to obtain the incremental file changes.
+     *     <li>The results of processed deleted and non-deleted are merged and returned.
+     * </ol>
+     *
+     * @param changedInputs all changed inputs
+     * @param saveData the save data with all input sets from last run
+     * @param inputSet the input set to filter
+     * @param baseFiles the base files of the input set
+     * @param cacheByPath where to cache files
+     * @return the status of all relative files in the input set
+     */
+    @NonNull
+    private ImmutableMap<RelativeFile, FileStatus> getChangedInputs(
+            @NonNull Map<File, FileStatus> changedInputs,
+            @NonNull KnownFilesSaveData saveData,
+            @NonNull InputSet inputSet,
+            @NonNull Collection<File> baseFiles,
+            @NonNull FileCacheByPath cacheByPath)
+            throws IOException {
+
+        /*
+         * Figure out changes to deleted files.
+         */
+        Set<File> deletedFiles =
+                Maps.filterValues(changedInputs, Predicates.equalTo(FileStatus.REMOVED)).keySet();
+        Set<RelativeFile> deletedRelativeFiles = saveData.find(deletedFiles, inputSet);
+
+        /*
+         * Figure out changes to non-deleted files.
+         */
+        Map<File, FileStatus> nonDeletedFiles =
+                Maps.filterValues(
+                        changedInputs,
+                        Predicates.not(Predicates.equalTo(FileStatus.REMOVED)));
+        Map<RelativeFile, FileStatus> nonDeletedRelativeFiles =
+                IncrementalRelativeFileSets.makeFromBaseFiles(
+                        baseFiles,
+                        nonDeletedFiles,
+                        cacheByPath);
+
+        /*
+         * Merge everything.
+         */
+        return new ImmutableMap.Builder<RelativeFile, FileStatus>()
+                .putAll(Maps.asMap(deletedRelativeFiles, Functions.constant(FileStatus.REMOVED)))
+                .putAll(nonDeletedRelativeFiles)
+                .build();
     }
 
     /**
@@ -902,6 +957,25 @@ public abstract class PackageAndroidArtifact extends IncrementalTask implements 
         }
 
         /**
+         * Obtains a predicate that checks if a file is in an input set.
+         *
+         * @param inputSet the input set
+         * @return the predicate
+         */
+        @NonNull
+        private Function<File, RelativeFile> inInputSet(@NonNull InputSet inputSet) {
+            Map<File, RelativeFile> inverseFiltered = mFiles.entrySet().stream()
+                    .filter(e -> e.getValue() == inputSet)
+                    .map(Map.Entry::getKey)
+                    .collect(
+                            HashMap::new,
+                            (m, rf) -> m.put(rf.getFile(), rf),
+                            Map::putAll);
+
+            return inverseFiltered::get;
+        }
+
+        /**
          * Sets all files in an input set, replacing whatever existed previously.
          *
          * @param files the files
@@ -948,7 +1022,12 @@ public abstract class PackageAndroidArtifact extends IncrementalTask implements 
         /**
          * File belongs to the android resources file set.
          */
-        ANDROID_RESOURCE
+        ANDROID_RESOURCE,
+
+        /**
+         * File belongs to the assets file set.
+         */
+        ASSET
     }
 
     // ----- ConfigAction -----
@@ -995,6 +1074,8 @@ public abstract class PackageAndroidArtifact extends IncrementalTask implements 
                     packageAndroidArtifact,
                     "javaResourceFiles",
                     packagingScope::getJavaResources);
+
+            packageAndroidArtifact.setAssets(packagingScope.getAssetsDir());
 
             ConventionMappingHelper.map(packageAndroidArtifact, "jniFolders", () -> {
                 if (packagingScope.getSplitHandlingPolicy() ==

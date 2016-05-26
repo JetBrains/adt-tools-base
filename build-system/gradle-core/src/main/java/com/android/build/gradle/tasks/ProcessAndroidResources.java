@@ -154,7 +154,6 @@ public class ProcessAndroidResources extends IncrementalTask {
             AaptPackageConfig.Builder config = new AaptPackageConfig.Builder()
                     .setManifestFile(manifestFileToPackage)
                     .setOptions(getAaptOptions())
-                    .setAssetsDir(getAssetsDir())
                     .setResourceDir(getResDir())
                     .setLibraries(getLibraries())
                     .setCustomPackageForR(getPackageForR())

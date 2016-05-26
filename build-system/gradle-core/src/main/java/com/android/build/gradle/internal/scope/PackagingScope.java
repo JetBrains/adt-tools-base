@@ -82,6 +82,9 @@ public interface PackagingScope {
     Set<File> getJavaResources();
 
     @NonNull
+    File getAssetsDir();
+
+    @NonNull
     Set<File> getJniFolders();
 
     @NonNull

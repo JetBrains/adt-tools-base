@@ -281,8 +281,10 @@ public final class IncrementalRelativeFileSets {
      */
     @NonNull
     public static ImmutableMap<RelativeFile, FileStatus> makeFromBaseFiles(
-            @NonNull Collection<File> baseFiles, @NonNull Map<File, FileStatus> updates,
-            @NonNull FileCacheByPath cache) throws IOException {
+            @NonNull Collection<File> baseFiles,
+            @NonNull Map<File, FileStatus> updates,
+            @NonNull FileCacheByPath cache)
+            throws IOException {
         for (File f : baseFiles) {
             Preconditions.checkArgument(f.exists(), "!f.exists()");
         }
