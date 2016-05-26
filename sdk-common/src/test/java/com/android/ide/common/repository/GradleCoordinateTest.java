@@ -17,6 +17,7 @@ package com.android.ide.common.repository;
 
 import com.android.ide.common.res2.BaseTestCase;
 import com.google.common.collect.Lists;
+import org.junit.Test;
 
 import java.util.List;
 
