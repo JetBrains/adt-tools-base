@@ -47,6 +47,7 @@ import com.android.repository.Revision;
 import com.android.sdklib.BuildToolInfo;
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -110,23 +111,22 @@ public class JackTransform extends Transform {
     @Override
     public Collection<SecondaryFile> getSecondaryFiles() {
         ImmutableList.Builder<SecondaryFile> builder = ImmutableList.builder();
-        for (File file : options.getProguardFiles()) {
-            builder.add(new SecondaryFile(file, false));
-        }
-        for (File file : options.getJarJarRuleFiles()) {
-            builder.add(new SecondaryFile(file, false));
-        }
-        for (File file : options.getAnnotationProcessorClassPath()) {
-            builder.add(new SecondaryFile(file, false));
-        }
-        checkNotNull(androidBuilder.getTargetInfo());
-        builder.add(new SecondaryFile(
-                new File(androidBuilder.getTargetInfo().getBuildTools().getPath(
-                        BuildToolInfo.PathId.JACK)),
-                false));
-        for (File file : getSourceFiles()) {
-            builder.add(new SecondaryFile(file, true));
-        }
+        builder.addAll(
+                Iterables.transform(options.getProguardFiles(), SecondaryFile::nonIncremental));
+        builder.addAll(
+                Iterables.transform(options.getJarJarRuleFiles(), SecondaryFile::nonIncremental));
+        builder.addAll(
+                Iterables.transform(
+                        options.getAnnotationProcessorClassPath(), SecondaryFile::nonIncremental));
+        builder.addAll(Iterables.transform(getSourceFiles(), SecondaryFile::incremental));
+
+        builder.add(
+                SecondaryFile.nonIncremental(
+                        new File(androidBuilder
+                                .getTargetInfo()
+                                .getBuildTools()
+                                .getPath(BuildToolInfo.PathId.JACK))));
+
         return builder.build();
     }
 

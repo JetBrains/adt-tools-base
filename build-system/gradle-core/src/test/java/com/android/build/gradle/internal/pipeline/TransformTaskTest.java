@@ -1695,7 +1695,7 @@ public class TransformTaskTest extends TaskTestUtils {
                 .setIncremental(true)
                 .setInputTypes(DefaultContentType.CLASSES)
                 .setScopes(Scope.PROJECT)
-                .setSecondaryInput(new SecondaryFile(secondaryFile, true /* supportsIncrementalBuild */))
+                .setSecondaryInput(SecondaryFile.incremental(secondaryFile))
                 .build();
 
         // add the transform to the manager

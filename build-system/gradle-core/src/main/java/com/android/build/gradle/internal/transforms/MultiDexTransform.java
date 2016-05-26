@@ -20,7 +20,6 @@ import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.annotations.concurrency.Immutable;
 import com.android.build.api.transform.DirectoryInput;
 import com.android.build.api.transform.JarInput;
 import com.android.build.api.transform.QualifiedContent;
@@ -37,7 +36,6 @@ import com.android.ide.common.process.ProcessException;
 import com.google.common.base.Charsets;
 import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
@@ -49,10 +47,8 @@ import org.gradle.api.logging.LoggingManager;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -141,7 +137,7 @@ public class MultiDexTransform extends BaseProguardAction {
                         includeInMainDexJarFile)
                 .stream()
                 .filter(file -> file != null)
-                .map(file -> new SecondaryFile(file, false))
+                .map(SecondaryFile::nonIncremental)
                 .collect(Collectors.toList());
     }
 

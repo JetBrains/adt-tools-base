@@ -26,6 +26,7 @@ import com.android.build.api.transform.Format;
 import com.android.build.api.transform.JarInput;
 import com.android.build.api.transform.QualifiedContent;
 import com.android.build.api.transform.QualifiedContent.ContentType;
+import com.android.build.api.transform.SecondaryFile;
 import com.android.build.api.transform.Status;
 import com.android.build.api.transform.Transform;
 import com.android.build.api.transform.TransformException;
@@ -46,6 +47,7 @@ import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.common.io.Files;
 
@@ -130,6 +132,13 @@ public class InstantRunTransform extends Transform {
         return ImmutableMap.of("dex patching policy",
                 transformScope.getInstantRunBuildContext().getPatchingPolicy()
                         .getDexPatchingPolicy().toString());
+    }
+
+    @NonNull
+    @Override
+    public Collection<SecondaryFile> getSecondaryFiles() {
+        return Lists.transform(
+                transformScope.getInstantRunBootClasspath(), SecondaryFile::nonIncremental);
     }
 
     @Override

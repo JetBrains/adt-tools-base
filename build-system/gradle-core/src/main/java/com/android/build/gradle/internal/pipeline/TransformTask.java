@@ -18,22 +18,19 @@ package com.android.build.gradle.internal.pipeline;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.build.api.transform.SecondaryInput;
 import com.android.build.api.transform.Context;
 import com.android.build.api.transform.SecondaryFile;
+import com.android.build.api.transform.SecondaryInput;
 import com.android.build.api.transform.Status;
 import com.android.build.api.transform.Transform;
 import com.android.build.api.transform.TransformException;
 import com.android.build.api.transform.TransformInput;
-import com.android.build.api.transform.TransformInvocation;
 import com.android.build.gradle.internal.scope.TaskConfigAction;
 import com.android.builder.profile.ExecutionType;
 import com.android.builder.profile.Recorder;
 import com.android.builder.profile.ThreadRecorder;
 import com.android.ide.common.util.ReferenceHolder;
-import com.google.common.base.Function;
 import com.google.common.base.Splitter;
-import com.google.common.collect.Collections2;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Iterators;
@@ -48,7 +45,6 @@ import org.gradle.api.tasks.OutputFiles;
 import org.gradle.api.tasks.ParallelizableTask;
 import org.gradle.api.tasks.TaskAction;
 import org.gradle.api.tasks.incremental.IncrementalTaskInputs;
-import org.gradle.api.tasks.incremental.InputFileDetails;
 
 import java.io.File;
 import java.io.IOException;
@@ -243,13 +239,9 @@ public class TransformTask extends StreamBasedTask implements Context {
         if (secondaryFiles == null) {
             ImmutableList.Builder<SecondaryFile> builder = ImmutableList.builder();
             builder.addAll(transform.getSecondaryFiles());
-            builder.addAll(Collections2.transform(transform.getSecondaryFileInputs(),
-                    new Function<File, SecondaryFile>() {
-                        @Override
-                        public SecondaryFile apply(File input) {
-                            return new SecondaryFile(input, false /* supportsIncrementalChanges */);
-                        }
-                    }));
+            builder.addAll(
+                    Iterables.transform(
+                            transform.getSecondaryFileInputs(), SecondaryFile::nonIncremental));
             secondaryFiles = builder.build();
         }
         return secondaryFiles;
@@ -259,23 +251,16 @@ public class TransformTask extends StreamBasedTask implements Context {
             @NonNull IncrementalTaskInputs incrementalTaskInputs,
             @NonNull final Map<File, Status> changedFileMap,
             @NonNull final Set<File> removedFiles) {
-        incrementalTaskInputs.outOfDate(new org.gradle.api.Action<InputFileDetails>() {
-            @Override
-            public void execute(InputFileDetails inputFileDetails) {
-                if (inputFileDetails.isAdded()) {
-                    changedFileMap.put(inputFileDetails.getFile(), Status.ADDED);
-                } else if (inputFileDetails.isModified()) {
-                    changedFileMap.put(inputFileDetails.getFile(), Status.CHANGED);
-                }
+        incrementalTaskInputs.outOfDate(inputFileDetails -> {
+            if (inputFileDetails.isAdded()) {
+                changedFileMap.put(inputFileDetails.getFile(), Status.ADDED);
+            } else if (inputFileDetails.isModified()) {
+                changedFileMap.put(inputFileDetails.getFile(), Status.CHANGED);
             }
         });
 
-        incrementalTaskInputs.removed(new org.gradle.api.Action<InputFileDetails>() {
-            @Override
-            public void execute(InputFileDetails inputFileDetails) {
-                removedFiles.add(inputFileDetails.getFile());
-            }
-        });
+        incrementalTaskInputs.removed(
+                inputFileDetails -> removedFiles.add(inputFileDetails.getFile()));
     }
 
     private boolean checkSecondaryFiles(
