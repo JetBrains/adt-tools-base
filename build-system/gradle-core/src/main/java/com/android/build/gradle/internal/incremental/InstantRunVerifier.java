@@ -56,6 +56,9 @@ import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
@@ -75,6 +78,15 @@ public class InstantRunVerifier {
             new AnnotationNodeComparator();
     private static final Comparator<Object> OBJECT_COMPARATOR = Objects::equal;
     private static final Comparator<String> STRING_COMPARATOR = Objects::equal;
+
+    private static final Comparator<Object> OBJECT_OR_ANNOTATION_NODE_COMPARATOR =
+            (first, second) -> {
+                if (first instanceof AnnotationNode && second instanceof AnnotationNode) {
+                    return ANNOTATION_COMPARATOR
+                            .areEqual((AnnotationNode) first, (AnnotationNode) second);
+                }
+                return OBJECT_COMPARATOR.areEqual(first, second);
+    };
 
     public interface ClassBytesProvider {
         byte[] load() throws IOException;
@@ -411,9 +423,18 @@ public class InstantRunVerifier {
         public boolean areEqual(@Nullable AnnotationNode first, @Nullable  AnnotationNode second) {
             // probably deep compare for values...
             //noinspection unchecked
-            return (first == null && second == null) || (first != null && second != null)
-                    && (OBJECT_COMPARATOR.areEqual(first.desc, second.desc) &&
-                    diffList(first.values, second.values, OBJECT_COMPARATOR) == Diff.NONE);
+            if (first == null || second == null) {
+                return first == second;
+            }
+
+            if (!STRING_COMPARATOR.areEqual(first.desc, second.desc)) {
+                return false;
+            }
+
+            List firstEntries = splitToEntries(first.values);
+            List secondEntries = splitToEntries(second.values);
+
+            return diffList(firstEntries, secondEntries, OBJECT_COMPARATOR) == Diff.NONE;
         }
     }
 
@@ -475,5 +496,92 @@ public class InstantRunVerifier {
         org.objectweb.asm.tree.ClassNode classNode = new org.objectweb.asm.tree.ClassNode();
         classReader.accept(classNode, ClassReader.EXPAND_FRAMES);
         return classNode;
+    }
+
+    static class AnnotationEntryAndValue  {
+
+        private final String name;
+
+        private final Object value;
+
+        AnnotationEntryAndValue(@NonNull String name, @Nullable Object value) {
+            this.name = name;
+            this.value = value;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (!(obj instanceof  AnnotationEntryAndValue)) {
+                return false;
+            }
+
+            AnnotationEntryAndValue other = (AnnotationEntryAndValue) obj;
+            if (!STRING_COMPARATOR.areEqual(name, other.name)) {
+                return false;
+            }
+
+            //Asm incorrectly populates data into AnnotationNode so all array types processing is required:
+            //http://forge.ow2.org/tracker/?func=detail&aid=317626&group_id=23&atid=100023
+            //https://code.google.com/p/android/issues/detail?id=209051
+            Object otherValue = other.value;
+            if (value instanceof byte[] && otherValue instanceof byte[]) {
+                return Arrays.equals((byte[]) value, (byte[]) otherValue);
+            } else if (value instanceof boolean[] && otherValue instanceof boolean[]) {
+                return Arrays.equals((boolean[]) value,  (boolean[]) otherValue);
+            } else if (value instanceof short[] && otherValue instanceof short[]) {
+                return Arrays.equals((short[]) value, (short[]) otherValue);
+            } else if (value instanceof char[] && otherValue instanceof char[]) {
+                return Arrays.equals((char[]) value, (char[]) otherValue);
+            } else if (value instanceof int[] && otherValue instanceof int[]) {
+                return Arrays.equals((int[]) value, (int[]) otherValue);
+            } else if (value instanceof long[] && otherValue instanceof long[]) {
+                return Arrays.equals((long[]) value, (long[]) otherValue);
+            } else if (value instanceof float[] && otherValue instanceof float[]) {
+                return Arrays.equals((float[]) value, (float[]) otherValue);
+            } else if (value instanceof double[] && otherValue instanceof double[]) {
+                return Arrays.equals((double[]) value, (double[]) otherValue);
+            } else if (value instanceof String[] && otherValue instanceof String[]) {
+                //Enum entry values are stored in String []
+                //https://code.google.com/p/android/issues/detail?id=209047
+                return Arrays.equals((String[]) value, (String[]) otherValue);
+            }
+
+            if (value instanceof List && otherValue instanceof List) {
+                //properly compare arrays of annotations (OBJECT_OR_ANNOTATION_NODE_COMPARATOR)
+                List list = (List) value;
+                List otherList = (List) otherValue;
+                if (list.size() != otherList.size()) {
+                    return false;
+                }
+
+                Iterator iterator = list.iterator();
+                Iterator otherIterator = otherList.iterator();
+                while (iterator.hasNext() && otherIterator.hasNext()) {
+                    if (!OBJECT_OR_ANNOTATION_NODE_COMPARATOR.areEqual(iterator.next(), otherIterator.next())) {
+                        return false;
+                    }
+                }
+                return true;
+            }
+
+            return OBJECT_OR_ANNOTATION_NODE_COMPARATOR.areEqual(value, otherValue);
+        }
+
+        @Override
+        public int hashCode() {
+            return name.hashCode();
+        }
+    }
+
+    @NonNull
+    private static List<AnnotationEntryAndValue> splitToEntries(@Nullable List values) {
+        if (values == null) return Collections.emptyList();
+        List<AnnotationEntryAndValue> result = new ArrayList<AnnotationEntryAndValue>();
+        for (int i = 0; i < values.size(); i += 2) {
+            String name = (String) values.get(i);
+            Object value = values.get(i + 1);
+            result.add(new AnnotationEntryAndValue(name, value));
+        }
+        return result;
     }
 }
