@@ -19,7 +19,7 @@
 
 #include <grpc++/grpc++.h>
 
-#include "profiler_service.h"
+#include "perfd/profiler_service.h"
 
 namespace {
 

@@ -14,7 +14,8 @@
  * limitations under the License.
  */
 #include "connection_data_collector.h"
-#include "file_reader.h"
+
+#include "utils/file_reader.h"
 
 namespace profiler {
 namespace network {

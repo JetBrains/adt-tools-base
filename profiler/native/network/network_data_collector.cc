@@ -14,10 +14,13 @@
  * limitations under the License.
  */
 #include "network_data_collector.h"
-#include "file_reader.h"
+
+#include "utils/file_reader.h"
 
 #include <fcntl.h>
 #include <sstream>
+#include <string.h>
+#include <string>
 #include <unistd.h>
 
 namespace profiler {
@@ -26,7 +29,7 @@ namespace network {
 int NetworkDataCollector::GetUid(const std::string &data_file, int pid) {
   std::string uid;
   if (GetUidString(data_file, pid, &uid)) {
-    return std::stoi(uid);
+    return atoi(uid.c_str());
   }
   return -1;
 }
@@ -39,7 +42,7 @@ bool NetworkDataCollector::GetUidString(const std::string &data_file, int pid,
   const char *uid_prefix = "Uid:";
   size_t start_pos = content.find(uid_prefix);
   if (start_pos != std::string::npos) {
-    start_pos += std::strlen(uid_prefix);
+    start_pos += strlen(uid_prefix);
     start_pos = content.find_first_not_of(' ', start_pos);
     size_t length = content.find_first_of(' ', start_pos) - start_pos;
     uid_result->append(content, start_pos, length);

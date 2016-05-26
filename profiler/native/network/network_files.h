@@ -26,7 +26,9 @@ class NetworkFiles {
 public:
   // Path of pid status file to get uid from pid.
   static std::string GetPidStatusFilePath(const int pid) {
-    return "/proc/" + std::to_string(pid) + "/status";
+    char buffer[64];
+    snprintf(buffer, sizeof(buffer), "/proc/%d/status", pid);
+    return buffer;
   }
 
   // Path of file that contains all apps' sent and received bytes.

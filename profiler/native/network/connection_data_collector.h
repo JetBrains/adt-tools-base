@@ -16,7 +16,7 @@
 #ifndef CONNECTION_DATA_COLLECTOR_H_
 #define CONNECTION_DATA_COLLECTOR_H_
 
-#include "network_data_collector.h"
+#include "network/network_data_collector.h"
 
 #include <regex>
 #include <string>

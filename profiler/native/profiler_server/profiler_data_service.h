@@ -16,8 +16,7 @@
 #ifndef PROFILER_DATA_SERVICE_H_
 #define PROFILER_DATA_SERVICE_H_
 
-// TODO: Remove relative path of proto header files.
-#include "../proto/profiler_data.pb.h"
+#include "proto/profiler_data.pb.h"
 
 namespace profiler {
 namespace profiler_server {
