@@ -193,7 +193,6 @@ public class ExternalBuildPackagingScope implements PackagingScope {
     @NonNull
     @Override
     public File getAssetsDir() {
-        // FIXME: Have no idea where these come from in an external build.
-        return getJavaResources().iterator().next();
+        return mVariantScope.getAssetsDir();
     }
 }

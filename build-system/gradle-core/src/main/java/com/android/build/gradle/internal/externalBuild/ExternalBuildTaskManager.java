@@ -34,15 +34,18 @@ import com.android.build.gradle.internal.pipeline.TransformTask;
 import com.android.build.gradle.internal.scope.AndroidTask;
 import com.android.build.gradle.internal.scope.AndroidTaskRegistry;
 import com.android.build.gradle.internal.scope.PackagingScope;
+import com.android.build.gradle.internal.scope.TaskConfigAction;
 import com.android.build.gradle.internal.transforms.DexTransform;
 import com.android.build.gradle.internal.transforms.ExtractJarsTransform;
 import com.android.build.gradle.tasks.PackageApplication;
 import com.android.build.gradle.tasks.PrePackageApplication;
 import com.android.builder.core.DefaultDexOptions;
+import com.android.utils.FileUtils;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.io.Files;
 
 import org.gradle.api.Project;
+import org.gradle.api.Task;
 
 import java.io.File;
 import java.util.EnumSet;
@@ -103,7 +106,6 @@ class ExternalBuildTaskManager {
                 externalBuildContext);
 
         // massage the manifest file.
-
 
         // Extract the passed jars into folders as the InstantRun transforms can only handle folders.
         ExtractJarsTransform extractJarsTransform = new ExtractJarsTransform(
@@ -172,12 +174,39 @@ class ExternalBuildTaskManager {
                 new ExternalBuildPackagingScope(
                         project, externalBuildContext, variantScope, transformManager);
 
+        // TODO: Where should assets come from?
+        AndroidTask<Task> createAssetsDirectory =
+                androidTasks.create(
+                        tasks,
+                        new TaskConfigAction<Task>() {
+                            @NonNull
+                            @Override
+                            public String getName() {
+                                return "createAssetsDirectory";
+                            }
+
+                            @NonNull
+                            @Override
+                            public Class<Task> getType() {
+                                return Task.class;
+                            }
+
+                            @Override
+                            public void execute(@NonNull Task task) {
+                                task.doLast(t -> {
+                                    FileUtils.mkdirs(variantScope.getAssetsDir());
+                                });
+                            }
+                        });
+
         AndroidTask<PackageApplication> packageApp =
                 androidTasks.create(
                         tasks,
                         new PackageApplication.ConfigAction(
                                 packagingScope,
                                 variantScope.getInstantRunBuildContext().getPatchingPolicy()));
+
+        packageApp.dependsOn(tasks, createAssetsDirectory);
 
         for (TransformStream stream : transformManager.getStreams(StreamFilter.DEX)) {
             packageApp.dependsOn(tasks, stream.getDependencies());

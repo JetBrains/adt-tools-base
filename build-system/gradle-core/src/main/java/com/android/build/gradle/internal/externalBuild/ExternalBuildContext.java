@@ -24,7 +24,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Contains all contextual and intermediaries build artfacts.
+ * Contains all contextual and intermediaries build artifacts.
  */
 public class ExternalBuildContext {
 

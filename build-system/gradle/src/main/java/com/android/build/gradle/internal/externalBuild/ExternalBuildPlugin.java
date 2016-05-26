@@ -16,10 +16,6 @@
 
 package com.android.build.gradle.internal.externalBuild;
 
-import com.android.build.gradle.internal.TaskContainerAdaptor;
-import com.android.build.gradle.internal.scope.AndroidTaskRegistry;
-
-import org.gradle.api.Action;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 
