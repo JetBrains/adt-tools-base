@@ -19,23 +19,29 @@
 
 #include <grpc++/grpc++.h>
 
+#include "perfd/perfa_service.h"
 #include "perfd/profiler_service.h"
+#include "utils/config.h"
+
+using namespace profiler;
+using namespace profiler::utils;
 
 namespace {
-
-const char* const server_address = "127.0.0.1:12389";
 
 void RunServer() {
   grpc::ServerBuilder builder;
   // Listen on the given address without any authentication mechanism.
-  builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
+  builder.AddListeningPort(kServerAddress, grpc::InsecureServerCredentials());
 
   profiler::ProfilerServiceImpl generic_public_service;
   builder.RegisterService(&generic_public_service);
 
+  profiler::PerfaServiceImpl perfa_service;
+  builder.RegisterService(&perfa_service);
+
   // Finally assemble the server.
   std::unique_ptr<grpc::Server> server(builder.BuildAndStart());
-  std::cout << "Server listening on " << server_address << std::endl;
+  std::cout << "Server listening on " << kServerAddress << std::endl;
 
   // Wait for the server to shutdown. Note that some other thread must be
   // responsible for shutting down the server for this call to ever return.
