@@ -30,7 +30,6 @@ import com.google.common.truth.FailureStrategy;
 import com.google.common.truth.IterableSubject;
 import com.google.common.truth.Subject;
 
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -41,7 +40,6 @@ import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
-import java.util.zip.ZipInputStream;
 
 /**
  * Truth support for zip files.
@@ -107,7 +105,8 @@ public abstract class AbstractZipSubject<T extends Subject<T, File>> extends Sub
      * @return a {@link IterableSubject} propositions for matching entries.
      * @throws IOException of the zip file cannot be opened.
      */
-    public IterableSubject<? extends IterableSubject<?, String, List<String>>, String, List<String>> entries(
+    public IterableSubject<? extends IterableSubject<?, String, List<String>>, String,
+            List<String>> entries(
             @NonNull String conformingTo) throws IOException {
 
         ImmutableList.Builder<String> entries = ImmutableList.builder();
@@ -121,7 +120,7 @@ public abstract class AbstractZipSubject<T extends Subject<T, File>> extends Sub
                 }
             }
         }
-        return check().that(entries.build());
+        return check().<String, List<String>>that(entries.build());
     }
 
     /**

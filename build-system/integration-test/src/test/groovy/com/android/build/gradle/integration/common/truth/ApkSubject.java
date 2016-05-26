@@ -31,7 +31,6 @@ import com.android.ide.common.process.ProcessExecutor;
 import com.android.ide.common.process.ProcessInfoBuilder;
 import com.android.utils.StdLogger;
 import com.google.common.collect.ImmutableList;
-import com.google.common.io.ByteSource;
 import com.google.common.io.ByteStreams;
 import com.google.common.io.Files;
 import com.google.common.io.LineProcessor;
@@ -110,7 +109,8 @@ public class ApkSubject extends AbstractAndroidSubject<ApkSubject> {
     }
 
     @NonNull
-    public IterableSubject<? extends IterableSubject<?, String, List<String>>, String, List<String>> locales() throws ProcessException {
+    public IterableSubject<? extends IterableSubject<?, String, List<String>>,
+            String, List<String>> locales() throws ProcessException {
         File apk = getSubject();
         List<String> locales = ApkHelper.getLocales(apk);
 
@@ -118,7 +118,7 @@ public class ApkSubject extends AbstractAndroidSubject<ApkSubject> {
             Assert.fail(String.format("locales not found in badging output for %s", apk));
         }
 
-        return check().that(locales);
+        return check().<String, List<String>>that(locales);
     }
 
     public void hasPackageName(@NonNull String packageName) throws ProcessException {
