@@ -19,6 +19,7 @@ package com.android.repository.impl.manager;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
+import com.android.repository.api.ConsoleProgressIndicator;
 import com.android.repository.api.Downloader;
 import com.android.repository.api.FallbackLocalRepoLoader;
 import com.android.repository.api.FallbackRemoteRepoLoader;
@@ -348,23 +349,6 @@ public class RepoManagerImpl extends RepoManager {
         } catch (InterruptedException e) {
             // shouldn't happen.
         }
-        if (sync) {
-            // If we're running synchronously, release the semaphore after run complete.
-            onSuccess = Lists.newArrayList(onSuccess);
-            onSuccess.add(new RepoLoadedCallback() {
-                @Override
-                public void doRun(@NonNull RepositoryPackages packages) {
-                    completed.release();
-                }
-            });
-            onError = Lists.newArrayList(onError);
-            onError.add(new Runnable() {
-                @Override
-                public void run() {
-                    completed.release();
-                }
-            });
-        }
 
         // If we created the currently running task, we need to clean it up at the end.
         boolean createdTask = false;
@@ -374,6 +358,16 @@ public class RepoManagerImpl extends RepoManager {
             if (mTask != null && mTaskCreateTime > taskTimeout) {
                 // If there's a task running already, just add our callbacks to it.
                 mTask.addCallbacks(onLocalComplete, onSuccess, onError, runner);
+                if (sync) {
+                    // If we're running synchronously, release the semaphore after run complete.
+                    // Use a dummy runner to ensure we don't try to run on a different thread, and
+                    // then block trying to release the semaphore.
+                    mTask.addCallbacks(ImmutableList.of(),
+                            ImmutableList.of(packages -> completed.release()),
+                            ImmutableList.of(completed::release),
+                            new DummyProgressRunner(new ConsoleProgressIndicator()));
+                }
+
             } else {
                 // Otherwise, create a new task.
                 mTask = new LoadTask(onLocalComplete, onSuccess, onError,
