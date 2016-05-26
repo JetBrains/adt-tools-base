@@ -77,7 +77,7 @@ public class AndroidGradleOptions {
 
     @NonNull
     public static boolean getUseSdkDownload(@NonNull Project project) {
-        return getBoolean(project, PROPERTY_USE_SDK_DOWNLOAD, false);
+        return getBoolean(project, PROPERTY_USE_SDK_DOWNLOAD, true) && !invokedFromIde(project);
     }
 
     @NonNull
