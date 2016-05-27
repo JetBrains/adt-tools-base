@@ -1,4 +1,5 @@
 set(PROTO_FILES network_profiler_data.proto
+                perfa_service.proto
                 profiler_data.proto
                 profiler_service.proto)
 

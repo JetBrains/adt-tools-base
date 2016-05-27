@@ -1,0 +1,44 @@
+/*
+ * Copyright (C) 2016 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+syntax = "proto3";
+
+import "profiler_data.proto";
+
+package profiler.proto;
+
+// TODO: Add more data to this object what can be sent during initialization
+message RegisterApplication {
+  int64 pid = 1;
+}
+
+// TODO: Fill it in with the data required to control perfa
+message PerfaControlRequest {
+}
+
+message DataStreamResponse {
+}
+
+service PerfaService {
+  // Register a new agent in perfd and open a stream where perfd can send
+  // control requests to the agent.
+  rpc RegisterAgent(RegisterApplication) returns (stream PerfaControlRequest) {
+  }
+
+  // Open a stream where the agent can stream data to perfd in a component
+  // independent way.
+  rpc DataStream(stream ProfilerData) returns (DataStreamResponse) {
+  }
+}

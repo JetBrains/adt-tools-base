@@ -1,4 +1,5 @@
 add_executable(perfd
+               perfa_service.cc
                perfd.cc
                profiler_service.cc)
 
