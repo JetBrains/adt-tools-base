@@ -149,6 +149,26 @@ public class HelloWorldJniApp extends AbstractAndroidTestApp implements AndroidT
 "    }\n" +
 "}\n");
 
+
+    public static final TestSourceFile libraryCpp(String folder, String file) {
+        return new TestSourceFile(folder, file,
+                "#include <string.h>\n"
+                + "#include <jni.h>\n"
+                + "#include <cctype>\n"
+                + "extern \"C\"\n"
+                + "jstring\n"
+                + "Java_com_example_hellojni_HelloJni_stringFromJNI(JNIEnv* env, jobject thiz)\n"
+                + "{\n"
+                + "    char greeting[] = \"HELLO WORLD!\";\n"
+                + "    char* ptr = greeting;\n"
+                + "    while (*ptr) {\n"
+                + "        *ptr = std::tolower(*ptr);\n"
+                + "        ++ptr;\n"
+                + "    }\n"
+                + "    return env->NewStringUTF(greeting);\n"
+                + "}\n");
+    }
+
     public static final TestSourceFile androidMkC(String folder) {
         return new TestSourceFile(
                 folder, "Android.mk",
@@ -181,6 +201,29 @@ public class HelloWorldJniApp extends AbstractAndroidTestApp implements AndroidT
                 "NDK_TOOLCHAIN_VERSION:=clang\n");
     }
 
+    public static final TestSourceFile androidMkMultiModule(String folder) {
+        return new TestSourceFile(
+                folder, "Android.mk",
+                "# TOP_PATH refers to the project root dir (MyProject)\n"
+                + "TOP_PATH := $(call my-dir)\n"
+                + "\n"
+                + "# Build library 1\n"
+                + "include $(CLEAR_VARS)\n"
+                + "LOCAL_PATH := $(TOP_PATH)/library1\n"
+                + "LOCAL_MODULE := library1\n"
+                + "LOCAL_C_INCLUDES := $(LOCAL_PATH)\n"
+                + "LOCAL_SRC_FILES := library1.cpp\n"
+                + "include $(BUILD_SHARED_LIBRARY)\n"
+                + "\n"
+                + "# Build library 2\n"
+                + "include $(CLEAR_VARS)\n"
+                + "LOCAL_PATH := $(TOP_PATH)/library2\n"
+                + "LOCAL_MODULE := library2\n"
+                + "LOCAL_C_INCLUDES := $(LOCAL_PATH)\n"
+                + "LOCAL_SRC_FILES := library2.cpp\n"
+                + "include $(BUILD_SHARED_LIBRARY)");
+    }
+
     public static final TestSourceFile cmakeLists(String folder) {
         return new TestSourceFile(
                 folder, "CMakeLists.txt",
@@ -194,6 +237,17 @@ public class HelloWorldJniApp extends AbstractAndroidTestApp implements AndroidT
                         "\n" +
                         "# Include a nice standard set of libraries to link against by default\n" +
                         "target_link_libraries(hello-jni log)");
+    }
+
+    public static final TestSourceFile cmakeListsMultiModule(String folder) {
+        return new TestSourceFile(
+                folder, "CMakeLists.txt",
+                "cmake_minimum_required(VERSION 3.4.1)\n"
+                + "set(CMAKE_VERBOSE_MAKEFILE ON)\n"
+                + "add_library(library1 SHARED src/main/cpp/library1/library1.cpp)\n"
+                + "add_library(library2 SHARED src/main/cpp/library2/library2.cpp)\n"
+                + "target_link_libraries(library1 log)\n"
+                + "target_link_libraries(library2 log)\n");
     }
 
     public HelloWorldJniApp() {
