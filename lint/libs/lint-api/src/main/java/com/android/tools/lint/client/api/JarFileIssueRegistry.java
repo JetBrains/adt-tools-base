@@ -193,7 +193,7 @@ class JarFileIssueRegistry extends IssueRegistry {
                         while (entry != null) {
                             String name = entry.getName();
                             // Load non-inner-classes
-                            if (name.endsWith(DOT_CLASS) && name.indexOf('$') == -1) {
+                            if (name.endsWith(DOT_CLASS)) {
                                 // Strip .class suffix and change .jar file path (/)
                                 // to class name (.'s).
                                 name = name.substring(0,
