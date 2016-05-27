@@ -182,6 +182,7 @@ startDevicePool.finalizedBy stopDevicePool
 stopDevicePool.mustRunAfter connectedIntegrationTestPrebuilts, connectedIntegrationTest
 
 automaticTest.dependsOn ':publishLocal'
+onlineTest.dependsOn ':publishLocal'
 test.dependsOn buildTestDependencies, ':publishLocal'
 testPrebuilts.dependsOn buildTestDependencies
 connectedIntegrationTest.dependsOn buildTestDependencies, ':publishLocal', startDevicePool

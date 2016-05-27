@@ -17,6 +17,7 @@
 package com.android.build.gradle.integration.application;
 
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat;
+import static org.junit.Assert.assertNotNull;
 
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
@@ -26,18 +27,19 @@ import com.android.build.gradle.integration.common.fixture.GradleBuildResult;
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp;
 import com.android.build.gradle.integration.common.utils.TestFileUtils;
+import com.android.ide.common.repository.GradleCoordinate;
+import com.android.ide.common.repository.MavenRepositories;
+import com.android.ide.common.repository.SdkMavenRepository;
+import com.android.repository.io.FileOp;
+import com.android.repository.io.FileOpUtils;
 import com.android.utils.FileUtils;
-import com.google.common.base.Joiner;
 import com.google.common.base.Throwables;
-import com.google.common.collect.ImmutableList;
 import com.google.common.io.Files;
 
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
 import java.nio.charset.Charset;
@@ -55,11 +57,15 @@ public class SdkDownloadGradleTest {
                     .addGradleProperties(AndroidGradleOptions.PROPERTY_USE_SDK_DOWNLOAD + "=true")
                     .create();
 
-    @Rule public TemporaryFolder mTemporarySdkFolder = new TemporaryFolder(project.getTestDir());
+    private File mSdkHome;
 
     @Before
     public void setUp() throws Exception {
-        File licensesFolder = mTemporarySdkFolder.newFolder("licenses");
+        mSdkHome = project.file("local-sdk-for-test");
+        FileUtils.mkdirs(mSdkHome);
+
+        File licensesFolder = new File(mSdkHome, "licenses");
+        FileUtils.mkdirs(licensesFolder);
         File licenseFile = new File(licensesFolder, "android-sdk-license");
 
         String licensesHash =
@@ -73,7 +79,7 @@ public class SdkDownloadGradleTest {
                 System.lineSeparator()
                         + SdkConstants.SDK_DIR_PROPERTY
                         + " = "
-                        + mTemporarySdkFolder.getRoot().getAbsolutePath());
+                        + mSdkHome.getAbsolutePath());
     }
 
     /**
@@ -95,11 +101,7 @@ public class SdkDownloadGradleTest {
         assertThat(platformTarget).isDirectory();
 
         File androidJarFile =
-                FileUtils.join(
-                        mTemporarySdkFolder.getRoot(),
-                        SdkConstants.FD_PLATFORMS,
-                        "android-23",
-                        "android.jar");
+                FileUtils.join(mSdkHome, SdkConstants.FD_PLATFORMS, "android-23", "android.jar");
         assertThat(androidJarFile).exists();
     }
 
@@ -117,14 +119,10 @@ public class SdkDownloadGradleTest {
 
         project.executor().run("assembleDebug");
 
-        File buildTools =
-                FileUtils.join(
-                        mTemporarySdkFolder.getRoot(), SdkConstants.FD_BUILD_TOOLS, "19.1.0");
+        File buildTools = FileUtils.join(mSdkHome, SdkConstants.FD_BUILD_TOOLS, "19.1.0");
         assertThat(buildTools).isDirectory();
 
-        File dxFile =
-                FileUtils.join(
-                        mTemporarySdkFolder.getRoot(), SdkConstants.FD_BUILD_TOOLS, "19.1.0", "dx");
+        File dxFile = FileUtils.join(mSdkHome, SdkConstants.FD_BUILD_TOOLS, "19.1.0", "dx");
         assertThat(dxFile).exists();
     }
 
@@ -148,10 +146,7 @@ public class SdkDownloadGradleTest {
         assertThat(platformBase).isDirectory();
 
         File addonTarget =
-                FileUtils.join(
-                        mTemporarySdkFolder.getRoot(),
-                        SdkConstants.FD_ADDONS,
-                        "addon-google_apis-google-23");
+                FileUtils.join(mSdkHome, SdkConstants.FD_ADDONS, "addon-google_apis-google-23");
         assertThat(addonTarget).isDirectory();
     }
 
@@ -166,14 +161,11 @@ public class SdkDownloadGradleTest {
 
         project.executor().run("assembleDebug");
 
-        checkForLibrary(
-                "android",
-                "com",
-                "android",
-                "support",
-                "support-v4",
-                "23.0.0",
-                "support-v4-23.0.0.aar");
+        checkForLibrary(SdkMavenRepository.ANDROID, "com.android.support", "support-v4", "23.0.0");
+
+        // Check that the Google repo is not automatically installed if an Android library is
+        // missing.
+        assertThat(SdkMavenRepository.GOOGLE.isInstalled(mSdkHome, FileOpUtils.create())).isFalse();
     }
 
     @Test
@@ -188,40 +180,34 @@ public class SdkDownloadGradleTest {
         project.executor().run("assembleDebug");
 
         checkForLibrary(
-                "google",
-                "com",
-                "google",
-                "android",
-                "support",
-                "wearable",
-                "1.4.0",
-                "wearable-1.4.0.aar");
+                SdkMavenRepository.GOOGLE, "com.google.android.support", "wearable", "1.4.0");
     }
 
-    private void checkForLibrary(@NonNull String repoName, @NonNull String... segments) {
-        File newRepo =
-                FileUtils.join(
-                        mTemporarySdkFolder.getRoot(),
-                        SdkConstants.FD_EXTRAS,
-                        SdkConstants.FD_M2_REPOSITORY);
+    private void checkForLibrary(
+            @NonNull SdkMavenRepository oldRepository,
+            @NonNull String groupId,
+            @NonNull String artifactId,
+            @NonNull String version) {
+        FileOp fileOp = FileOpUtils.create();
+        GradleCoordinate coordinate =
+                new GradleCoordinate(
+                        groupId, artifactId, new GradleCoordinate.StringComponent(version));
 
-        File oldRepo =
-                FileUtils.join(
-                        mTemporarySdkFolder.getRoot(),
-                        SdkConstants.FD_EXTRAS,
-                        repoName,
-                        SdkConstants.FD_M2_REPOSITORY);
+        // Try the new repository first.
+        File repositoryLocation =
+                FileUtils.join(mSdkHome, SdkConstants.FD_EXTRAS, SdkConstants.FD_M2_REPOSITORY);
 
-        for (File repo : ImmutableList.of(newRepo, oldRepo)) {
-            File artifact = FileUtils.join(repo, segments);
-            if (artifact.isFile()) {
-                return;
-            }
+        File artifactDirectory =
+                MavenRepositories.getArtifactDirectory(repositoryLocation, coordinate);
+
+        if (!artifactDirectory.exists()) {
+            // Try the old repository it's supposed to be in.
+            repositoryLocation = oldRepository.getRepositoryLocation(mSdkHome, true, fileOp);
+            assertNotNull(repositoryLocation);
+            artifactDirectory =
+                    MavenRepositories.getArtifactDirectory(repositoryLocation, coordinate);
+            assertThat(artifactDirectory).exists();
         }
-
-        Assert.fail(
-                String.format(
-                        "File %s not found in known locations.", Joiner.on("/").join(segments)));
     }
 
     @Test
@@ -239,7 +225,6 @@ public class SdkDownloadGradleTest {
     }
 
     private File getPlatformFolder() {
-        return FileUtils.join(
-                mTemporarySdkFolder.getRoot(), SdkConstants.FD_PLATFORMS, "android-23");
+        return FileUtils.join(mSdkHome, SdkConstants.FD_PLATFORMS, "android-23");
     }
 }

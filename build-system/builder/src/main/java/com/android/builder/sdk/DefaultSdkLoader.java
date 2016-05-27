@@ -27,6 +27,7 @@ import static com.android.SdkConstants.FN_ANNOTATIONS_JAR;
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.ide.common.repository.GradleCoordinate;
 import com.android.ide.common.repository.SdkMavenRepository;
 import com.android.repository.Revision;
 import com.android.repository.api.Downloader;
@@ -34,7 +35,6 @@ import com.android.repository.api.Installer;
 import com.android.repository.api.ProgressIndicator;
 import com.android.repository.api.RemotePackage;
 import com.android.repository.api.RepoManager;
-import com.android.repository.api.RepoPackage;
 import com.android.repository.api.SettingsController;
 import com.android.repository.api.UpdatablePackage;
 import com.android.repository.io.FileOpUtils;
@@ -327,7 +327,7 @@ public class DefaultSdkLoader implements SdkLoader {
     }
 
     @NonNull
-    public ImmutableList<File> computeRepositories() {
+    private ImmutableList<File> computeRepositories() {
         List<File> repositories = Lists.newArrayListWithExpectedSize(3);
 
         File androidRepo = new File(mSdkLocation, FD_EXTRAS + File.separator + "android"
@@ -368,74 +368,86 @@ public class DefaultSdkLoader implements SdkLoader {
                 sdkLibData.getSettings());
 
         Map<String, RemotePackage> remotePackages = repoManager.getPackages().getRemotePackages();
-        List<RemotePackage> artifactPackages = repositoryPaths
-                .stream()
-                .map(remotePackages::get)
-                .filter(Objects::nonNull)
-                .collect(Collectors.toList());
+        List<RemotePackage> artifactPackages =
+                repositoryPaths
+                        .stream()
+                        .map(remotePackages::get)
+                        .filter(Objects::nonNull)
+                        .collect(Collectors.toList());
 
         boolean installResult = true;
 
         if (!artifactPackages.isEmpty()) {
-            installResult = installRemotePackages(
-                    artifactPackages, repoManager, sdkLibData.getDownloader(), progress);
-            repositoriesBuilder.add(new File(
-                    mSdkLocation +
-                    File.separator +
-                    SdkConstants.FD_EXTRAS +
-                    File.separator +
-                    SdkConstants.FD_M2_REPOSITORY));
+            installResult =
+                    installRemotePackages(
+                            artifactPackages, repoManager, sdkLibData.getDownloader(), progress);
+            repositoriesBuilder.add(
+                    new File(
+                            mSdkLocation
+                                    + File.separator
+                                    + SdkConstants.FD_EXTRAS
+                                    + File.separator
+                                    + SdkConstants.FD_M2_REPOSITORY));
         }
 
         // If we can't find some of the remote packages or some install failed
         // we resort to installing/updating the old big repositories.
         if (artifactPackages.size() != repositoryPaths.size() || !installResult) {
 
-            // Check if there is a Google Repository dependency or an Android Support Repository
-            // dependency in order to download only the necessary repositories.
-            boolean googleRepositoryCheck = false;
-            boolean androidRepositoryCheck = false;
-            for (String repoPath : repositoryPaths) {
-                if (SdkMavenRepository.getCoordinateFromSdkPath(repoPath).getGroupId()
-                        .startsWith(SdkConstants.GOOGLE_SUPPORT_ARTIFACT_PREFIX)) {
-                    googleRepositoryCheck = true;
-                }
+            // Check if there is a Google Repository dependency. If not, we don't install/update
+            // the Google repository. If there is one, we update both repositories, since
+            // the (maven) packages in the Google repo have dependencies (declared in *.pom files)
+            // on packages from the Android repo.
+            boolean googleRepositoryRequired = false;
 
-                if (SdkMavenRepository.getCoordinateFromSdkPath(repoPath).getGroupId()
-                        .startsWith(SdkConstants.ANDROID_SUPPORT_ARTIFACT_PREFIX)) {
-                    androidRepositoryCheck = true;
+            for (String repoPath : repositoryPaths) {
+                GradleCoordinate coordinate = SdkMavenRepository.getCoordinateFromSdkPath(repoPath);
+                if (coordinate != null) {
+                    String group = coordinate.getGroupId();
+                    if (group != null
+                            && group.startsWith(SdkConstants.GOOGLE_SUPPORT_ARTIFACT_PREFIX)) {
+                        googleRepositoryRequired = true;
+                    }
                 }
             }
-            UpdatablePackage googleRepositoryPackage = repoManager.getPackages()
-                    .getConsolidatedPkgs()
-                    .get(SdkMavenRepository.GOOGLE.getPackageId());
+
+            UpdatablePackage googleRepositoryPackage =
+                    repoManager
+                            .getPackages()
+                            .getConsolidatedPkgs()
+                            .get(SdkMavenRepository.GOOGLE.getPackageId());
 
             UpdatablePackage androidRepositoryPackage =
-                    mSdkHandler.getSdkManager(progress).getPackages().getConsolidatedPkgs()
+                    mSdkHandler
+                            .getSdkManager(progress)
+                            .getPackages()
+                            .getConsolidatedPkgs()
                             .get(SdkMavenRepository.ANDROID.getPackageId());
 
-            if (googleRepositoryCheck && (!googleRepositoryPackage.hasLocal()
-                    || googleRepositoryPackage.isUpdate())) {
+            if (googleRepositoryRequired
+                    && (!googleRepositoryPackage.hasLocal()
+                            || googleRepositoryPackage.isUpdate())) {
                 installRemotePackages(
                         ImmutableList.of(googleRepositoryPackage.getRemote()),
                         repoManager,
                         sdkLibData.getDownloader(),
                         progress);
 
-                File googleRepo = SdkMavenRepository.GOOGLE
-                        .getRepositoryLocation(mSdkLocation, true, FileOpUtils.create());
+                File googleRepo =
+                        SdkMavenRepository.GOOGLE.getRepositoryLocation(
+                                mSdkLocation, true, FileOpUtils.create());
                 repositoriesBuilder.add(googleRepo);
             }
 
-            if (androidRepositoryCheck && (!androidRepositoryPackage.hasLocal()
-                    || androidRepositoryPackage.isUpdate())) {
+            if (!androidRepositoryPackage.hasLocal() || androidRepositoryPackage.isUpdate()) {
                 installRemotePackages(
                         ImmutableList.of(androidRepositoryPackage.getRemote()),
                         repoManager,
                         sdkLibData.getDownloader(),
                         progress);
-                File androidRepo = SdkMavenRepository.ANDROID
-                        .getRepositoryLocation(mSdkLocation, true, FileOpUtils.create());
+                File androidRepo =
+                        SdkMavenRepository.ANDROID.getRepositoryLocation(
+                                mSdkLocation, true, FileOpUtils.create());
                 repositoriesBuilder.add(androidRepo);
             }
         }
