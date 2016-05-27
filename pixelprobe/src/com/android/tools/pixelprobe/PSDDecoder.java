@@ -279,6 +279,7 @@ final class PSDDecoder extends Decoder {
             layer.setOpacity(rawLayer.opacity / 255.0f);
             layer.setBlendMode(getBlendModeFromKey(rawLayer.blendMode));
             layer.setOpened(isOpen);
+            layer.setVisible((rawLayer.flags & RawLayer.INVISIBLE) == 0);
 
             // Put the layer either in the image or in its parent group
             Layer parent = stack.peekFirst();
@@ -736,6 +737,8 @@ final class PSDDecoder extends Decoder {
      */
     private static void decodeLayerImageData(Layer layer, RawLayer rawLayer, ChannelsContainer channelsList) {
         Rectangle2D bounds = layer.getBounds();
+        if (bounds.isEmpty()) return;
+
         BufferedImage bitmap = BitmapDecoder.createBitmap(
                 (int) bounds.getWidth(), (int) bounds.getHeight(), rawLayer.channels);
 
@@ -1147,6 +1150,9 @@ final class PSDDecoder extends Decoder {
      */
     @Chunked
     static final class RawLayer {
+        // Mask for the flags field, indicating whether the layer is visible or not
+        static final int INVISIBLE = 0x2;
+
         // Firs we have the layer's bounds, in pixels,
         // in absolute image coordinates
         @Chunk(byteCount = 4)
@@ -1175,9 +1181,9 @@ final class PSDDecoder extends Decoder {
         // from 0 (transparent) to 255 (opaque)
         @Chunk(byteCount = 1)
         short opacity;
-        @Chunk(byteCount = 1)
+        @Chunk
         byte clipping;
-        @Chunk(byteCount = 1)
+        @Chunk
         byte flags;
 
         // Padding gunk

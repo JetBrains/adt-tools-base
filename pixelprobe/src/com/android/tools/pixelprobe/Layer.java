@@ -48,6 +48,7 @@ public final class Layer {
     private TextInfo mTextInfo;
 
     private boolean mOpened = true;
+    private boolean mVisible = true;
 
     private final Effects mEffects = new Effects();
 
@@ -137,6 +138,7 @@ public final class Layer {
 
     /**
      * Returns this layer's bitmap representation for {@link Type#BITMAP} layers.
+     * Can be null if the bounds are empty.
      */
     public BufferedImage getBitmap() {
         return mBitmap;
@@ -168,6 +170,13 @@ public final class Layer {
      */
     public boolean isOpened() {
         return mOpened;
+    }
+
+    /**
+     * Indicates whether this layer is visible.
+     */
+    public boolean isVisible() {
+        return mVisible;
     }
 
     void addLayer(Layer layer) {
@@ -205,6 +214,10 @@ public final class Layer {
 
     void setOpened(boolean opened) {
         mOpened = opened;
+    }
+
+    void setVisible(boolean visible) {
+        mVisible = visible;
     }
 
     @Override
