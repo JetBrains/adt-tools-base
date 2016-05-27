@@ -20,15 +20,22 @@ import static com.android.SdkConstants.ATTR_LAYOUT_EDITOR_ABSOLUTE_X;
 import static com.android.SdkConstants.ATTR_LAYOUT_EDITOR_ABSOLUTE_Y;
 import static com.android.SdkConstants.CLASS_CONSTRAINT_LAYOUT_GUIDELINE;
 import static com.android.SdkConstants.CONSTRAINT_LAYOUT;
+import static com.android.SdkConstants.CONSTRAINT_LAYOUT_LIB_ARTIFACT_ID;
+import static com.android.SdkConstants.CONSTRAINT_LAYOUT_LIB_GROUP_ID;
 import static com.android.SdkConstants.TOOLS_URI;
 
 import com.android.annotations.NonNull;
+import com.android.builder.model.AndroidLibrary;
+import com.android.builder.model.Dependencies;
+import com.android.builder.model.MavenCoordinates;
+import com.android.builder.model.Variant;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.LayoutDetector;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
+import com.android.tools.lint.detector.api.TextFormat;
 import com.android.tools.lint.detector.api.XmlContext;
 
 import org.w3c.dom.Element;
@@ -73,6 +80,26 @@ public class ConstraintLayoutDetector extends LayoutDetector {
 
     @Override
     public void visitElement(@NonNull XmlContext context, @NonNull Element layout) {
+        // Make sure we're using the current version
+        Variant variant = context.getMainProject().getCurrentVariant();
+        if (variant != null) {
+            Dependencies dependencies = GradleDetector.getCompileDependencies(
+                    variant.getMainArtifact(), context.getMainProject().getGradleModelVersion());
+            for (AndroidLibrary library : dependencies.getLibraries()) {
+                MavenCoordinates rc = library.getResolvedCoordinates();
+                if (CONSTRAINT_LAYOUT_LIB_GROUP_ID.equals(rc.getGroupId())
+                    && CONSTRAINT_LAYOUT_LIB_ARTIFACT_ID.equals(rc.getArtifactId())) {
+                    String version = rc.getVersion();
+                    if ("1.0.0-alpha1".equals(version)) {
+                        // Keep in sync with #isUpgradeDependencyError below
+                        String message = "Using version " + version
+                                         + " of the constraint library, which is obsolete";
+                        context.report(ISSUE, layout, context.getLocation(layout), message);
+                    }
+                }
+            }
+        }
+
         // Ensure that all the children have been constrained horizontally and vertically
         for (Node child = layout.getFirstChild(); child != null; child = child.getNextSibling()) {
             if (child.getNodeType() != Node.ELEMENT_NODE) {
@@ -149,8 +176,25 @@ public class ConstraintLayoutDetector extends LayoutDetector {
                     message = "This view is not constrained, it only has designtime positions, "
                             + "so it will jump to (0,0) unless you add constraints";
                 }
-                context.report(ISSUE, context.getLocation(element), message);
+                context.report(ISSUE, element, context.getLocation(element), message);
             }
         }
+    }
+
+    /**
+     * Given an error message produced by this lint detector for the given issue type,
+     * returns whether it represents a suggestion update the library version.
+     * <p>
+     * Intended for IDE quickfix implementations.
+     *
+     * @param errorMessage the error message associated with the error
+     * @param format the format of the error message
+     * @return true if this is a suggestion to update the version
+     */
+    @SuppressWarnings("unused")
+    public static boolean isUpgradeDependencyError(
+            @NonNull String errorMessage,
+            @NonNull TextFormat format) {
+        return errorMessage.startsWith("Using version ");
     }
 }

@@ -16,11 +16,34 @@
 
 package com.android.tools.lint.checks;
 
+import static com.android.tools.lint.detector.api.TextFormat.TEXT;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
+import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
+import com.android.builder.model.AndroidArtifact;
+import com.android.builder.model.AndroidLibrary;
+import com.android.builder.model.Dependencies;
+import com.android.builder.model.MavenCoordinates;
+import com.android.builder.model.Variant;
+import com.android.tools.lint.detector.api.Context;
 import com.android.tools.lint.detector.api.Detector;
+import com.android.tools.lint.detector.api.Issue;
+import com.android.tools.lint.detector.api.Location;
+import com.android.tools.lint.detector.api.Project;
+import com.android.tools.lint.detector.api.Severity;
+
+import java.io.File;
+import java.util.Collections;
+import java.util.List;
 
 public class ConstraintLayoutDetectorTest extends AbstractCheckTest {
     public void test1() throws Exception {
         assertEquals(""
+                + "res/layout/layout1.xml:2: Error: Using version 1.0.0-alpha1 of the constraint library, which is obsolete [MissingConstraints]\n"
+                + "<android.support.constraint.ConstraintLayout xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                + "^\n"
                 + "res/layout/layout1.xml:19: Error: This view is not constrained, it only has designtime positions, so it will jump to (0,0) unless you add constraints [MissingConstraints]\n"
                 + "    <TextView\n"
                 + "    ^\n"
@@ -30,7 +53,7 @@ public class ConstraintLayoutDetectorTest extends AbstractCheckTest {
                 + "res/layout/layout1.xml:53: Error: This view is not constrained horizontally: at runtime it will jump to the left unless you add a horizontal constraint [MissingConstraints]\n"
                 + "    <TextView\n"
                 + "    ^\n"
-                + "3 errors, 0 warnings\n",
+                + "4 errors, 0 warnings\n",
                 lintProject(xml("res/layout/layout1.xml", ""
                         + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
                         + "<android.support.constraint.ConstraintLayout xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
@@ -107,7 +130,62 @@ public class ConstraintLayoutDetectorTest extends AbstractCheckTest {
     }
 
     @Override
+    protected void checkReportedError(@NonNull Context context, @NonNull Issue issue,
+            @NonNull Severity severity, @NonNull Location location, @NonNull String message) {
+        assertEquals(message.contains("obsolete"),
+                ConstraintLayoutDetector.isUpgradeDependencyError(message, TEXT));
+    }
+
+    @Override
     protected Detector getDetector() {
         return new ConstraintLayoutDetector();
+    }
+
+    @Override
+    protected TestLintClient createClient() {
+        return new TestLintClient() {
+            @NonNull
+            @Override
+            protected Project createProject(@NonNull File dir, @NonNull File referenceDir) {
+                return new Project(this, dir, referenceDir) {
+                    @Override
+                    public boolean isGradleProject() {
+                        return true;
+                    }
+
+                    @Nullable
+                    @Override
+                    public Variant getCurrentVariant() {
+                        /*
+                        Simulate variant which has an AndroidLibrary with
+                        resolved coordinates
+
+                        com.android.support.constraint:constraint-layout:1.0.0-alpha1"
+                         */
+                        MavenCoordinates coordinates = mock(MavenCoordinates.class);
+                        when(coordinates.getGroupId()).thenReturn("com.android.support.constraint");
+                        when(coordinates.getArtifactId()).thenReturn("constraint-layout");
+                        when(coordinates.getVersion()).thenReturn("1.0.0-alpha1");
+
+                        AndroidLibrary library = mock(AndroidLibrary.class);
+                        when(library.getResolvedCoordinates()).thenReturn(coordinates);
+                        List<AndroidLibrary> libraries = Collections.singletonList(library);
+
+                        Dependencies dependencies = mock(Dependencies.class);
+                        when(dependencies.getLibraries()).thenReturn(libraries);
+
+                        AndroidArtifact artifact = mock(AndroidArtifact.class);
+                        //noinspection deprecation
+                        when(artifact.getDependencies()).thenReturn(dependencies);
+                        when(artifact.getCompileDependencies()).thenReturn(dependencies);
+                        when(artifact.getCompileDependencies()).thenReturn(dependencies);
+
+                        Variant variant = mock(Variant.class);
+                        when(variant.getMainArtifact()).thenReturn(artifact);
+                        return variant;
+                    }
+                };
+            }
+        };
     }
 }
