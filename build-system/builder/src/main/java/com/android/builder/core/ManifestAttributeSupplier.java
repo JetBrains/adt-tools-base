@@ -21,7 +21,7 @@ import com.android.annotations.Nullable;
 /**
  * An interface that provides methods for reading some of the attribute values from the manifest.
  */
-interface ManifestAttributeSupplier {
+public interface ManifestAttributeSupplier {
 
     /**
      * Returns the package name from the manifest file.

@@ -150,7 +150,14 @@ public class ProcessAndroidResources extends IncrementalTask {
                 new MergingLogRewriter(mergingLog, builder.getErrorReporter()));
 
         try {
-            Aapt aapt = AaptGradleFactory.make(getBuilder(), processOutputHandler, variantScope);
+            Aapt aapt = AaptGradleFactory.make(
+                    getBuilder(),
+                    processOutputHandler,
+                    true,
+                    true,
+                    variantScope.getGlobalScope().getProject(),
+                    variantScope.getVariantConfiguration().getType());
+
             AaptPackageConfig.Builder config = new AaptPackageConfig.Builder()
                     .setManifestFile(manifestFileToPackage)
                     .setOptions(getAaptOptions())

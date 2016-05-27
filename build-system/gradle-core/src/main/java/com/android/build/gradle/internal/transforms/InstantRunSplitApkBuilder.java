@@ -20,16 +20,14 @@ import static com.android.sdklib.BuildToolInfo.PathId.ZIP_ALIGN;
 
 import com.android.annotations.NonNull;
 import com.android.build.gradle.internal.aapt.AaptGradleFactory;
-import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.dsl.AaptOptions;
 import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
 import com.android.build.gradle.internal.incremental.InstantRunBuildContext.FileType;
-import com.android.build.gradle.internal.pipeline.StreamFilter;
 import com.android.build.gradle.internal.scope.ConventionMappingHelper;
+import com.android.build.gradle.internal.scope.PackagingScope;
 import com.android.build.gradle.internal.scope.TaskConfigAction;
-import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.tasks.BaseTask;
-import com.android.build.gradle.internal.variant.ApkVariantOutputData;
+import com.android.builder.core.AndroidBuilder;
 import com.android.builder.core.VariantType;
 import com.android.builder.internal.aapt.Aapt;
 import com.android.builder.internal.aapt.AaptPackageConfig;
@@ -43,14 +41,12 @@ import com.android.ide.common.process.ProcessInfoBuilder;
 import com.android.ide.common.signing.KeytoolException;
 import com.google.common.io.Files;
 
-import org.gradle.api.Action;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.InputFiles;
 import org.gradle.api.tasks.Optional;
 import org.gradle.api.tasks.OutputDirectory;
 import org.gradle.api.tasks.TaskAction;
 import org.gradle.api.tasks.incremental.IncrementalTaskInputs;
-import org.gradle.api.tasks.incremental.InputFileDetails;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -59,7 +55,6 @@ import java.io.OutputStreamWriter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.Callable;
 
 /**
  * Tasks to generate M+ style pure splits APKs with dex files.
@@ -73,7 +68,9 @@ public class InstantRunSplitApkBuilder extends BaseTask {
     private InstantRunBuildContext instantRunBuildContext;
     private File supportDir;
     private File incrementalDir;
-    private ApkVariantOutputData variantOutputData;
+    private int versionCode;
+    private String versionName;
+    private Aapt aapt;
 
     @Input
     public String getApplicationId() {
@@ -86,13 +83,13 @@ public class InstantRunSplitApkBuilder extends BaseTask {
 
     @Input
     public int getVersionCode() {
-        return variantOutputData.getVersionCode();
+        return versionCode;
     }
 
     @Input
     @Optional
     public String getVersionName() {
-        return variantOutputData.getVersionName();
+        return versionName;
     }
 
 
@@ -114,40 +111,34 @@ public class InstantRunSplitApkBuilder extends BaseTask {
 
     @TaskAction
     public void run(IncrementalTaskInputs inputs)
-            throws IOException, DuplicateFileException, KeytoolException, PackagerException,
+            throws IOException, KeytoolException, PackagerException,
             ProcessException, InterruptedException {
         if (inputs.isIncremental()) {
 
-            inputs.outOfDate(new Action<InputFileDetails>() {
-                @Override
-                public void execute(InputFileDetails inputFileDetails) {
-                    try {
-                        // we generate APKs for all slices but the main slice which will get
-                        // packaged in the main APK.
-                        if (!inputFileDetails.getFile().getName().contains(
-                                InstantRunSlicer.MAIN_SLICE_NAME)) {
-                            generateSplitApk(new DexFile(
-                                    inputFileDetails.getFile(),
-                                    inputFileDetails.getFile().getParentFile().getName()));
-                        }
-                    } catch (Exception e) {
-                        throw new RuntimeException(e);
+            inputs.outOfDate(inputFileDetails -> {
+                try {
+                    // we generate APKs for all slices but the main slice which will get
+                    // packaged in the main APK.
+                    if (!inputFileDetails.getFile().getName().contains(
+                            InstantRunSlicer.MAIN_SLICE_NAME)) {
+                        generateSplitApk(new DexFile(
+                                inputFileDetails.getFile(),
+                                inputFileDetails.getFile().getParentFile().getName()));
                     }
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
                 }
             });
 
-            inputs.removed(new Action<InputFileDetails>() {
-                @Override
-                public void execute(InputFileDetails inputFileDetails) {
-                    DexFile dexFile = new DexFile(
-                            inputFileDetails.getFile(),
-                            inputFileDetails.getFile().getParentFile().getName());
+            inputs.removed(inputFileDetails -> {
+                DexFile dexFile = new DexFile(
+                        inputFileDetails.getFile(),
+                        inputFileDetails.getFile().getParentFile().getName());
 
-                    String outputFileName = dexFile.encodeName() + "_unaligned.apk";
-                    new File(getOutputDirectory(), outputFileName).delete();
-                    outputFileName = dexFile.encodeName() + ".apk";
-                    new File(getOutputDirectory(), outputFileName).delete();
-                }
+                String outputFileName = dexFile.encodeName() + "_unaligned.apk";
+                new File(getOutputDirectory(), outputFileName).delete();
+                outputFileName = dexFile.encodeName() + ".apk";
+                new File(getOutputDirectory(), outputFileName).delete();
             });
         } else {
             List<DexFile> allFiles = new ArrayList<>();
@@ -223,10 +214,6 @@ public class InstantRunSplitApkBuilder extends BaseTask {
 
         File resFilePackageFile = new File(supportDir, "resources_ap");
 
-        Aapt aapt =
-                AaptGradleFactory.make(
-                        getBuilder(),
-                        variantOutputData.getScope().getVariantScope());
         AaptPackageConfig.Builder aaptConfig = new AaptPackageConfig.Builder()
                 .setManifestFile(androidManifest)
                 .setOptions(getAaptOptions())
@@ -263,16 +250,16 @@ public class InstantRunSplitApkBuilder extends BaseTask {
 
     public static class ConfigAction implements TaskConfigAction<InstantRunSplitApkBuilder> {
 
-        private final VariantScope variantScope;
+        private final PackagingScope packagingScope;
 
-        public ConfigAction(@NonNull VariantScope variantScope) {
-            this.variantScope = variantScope;
+        public ConfigAction(@NonNull PackagingScope packagingScope) {
+            this.packagingScope = packagingScope;
         }
 
         @NonNull
         @Override
         public String getName() {
-            return variantScope.getTaskName("instantRun", "PureSplitBuilder");
+            return packagingScope.getTaskName("buildInstantRunPureSplits");
         }
 
         @NonNull
@@ -283,58 +270,41 @@ public class InstantRunSplitApkBuilder extends BaseTask {
 
         @Override
         public void execute(@NonNull InstantRunSplitApkBuilder task) {
+            AndroidBuilder androidBuilder = packagingScope.getAndroidBuilder();
 
-            final GradleVariantConfiguration config = variantScope.getVariantConfiguration();
+            task.outputDirectory = packagingScope.getInstantRunSplitApkOutputFolder();
+            task.signingConf = packagingScope.getSigningConfig();
+            task.setApplicationId(packagingScope.getApplicationId());
+            task.setVariantName(packagingScope.getFullVariantName());
+            task.setAndroidBuilder(androidBuilder);
+            task.instantRunBuildContext = packagingScope.getInstantRunBuildContext();
+            task.supportDir = packagingScope.getInstantRunSupportDir();
+            task.incrementalDir = packagingScope.getIncrementalDir(task.getName());
+            task.versionCode = packagingScope.getVersionCode();
+            task.versionName = packagingScope.getVersionName();
 
-            task.outputDirectory = variantScope.getInstantRunSplitApkOutputFolder();
-            task.signingConf = config.getSigningConfig();
-            task.setApplicationId(config.getApplicationId());
-            task.variantOutputData =
-                    (ApkVariantOutputData) variantScope.getVariantData().getOutputs().get(0);
-            task.setVariantName(
-                    variantScope.getVariantConfiguration().getFullName());
-            task.setAndroidBuilder(variantScope.getGlobalScope().getAndroidBuilder());
-            task.instantRunBuildContext = variantScope.getInstantRunBuildContext();
-            task.supportDir = variantScope.getInstantRunSliceSupportDir();
-            task.incrementalDir = variantScope.getIncrementalDir(task.getName());
+            task.aapt =
+                    AaptGradleFactory.make(
+                            androidBuilder,
+                            true,
+                            true,
+                            packagingScope.getProject(),
+                            packagingScope.getVariantType());
 
-            ConventionMappingHelper.map(task, "zipAlignExe", new Callable<File>() {
-                @Override
-                public File call() throws Exception {
-                    final TargetInfo info =
-                            variantScope.getGlobalScope().getAndroidBuilder().getTargetInfo();
-                    if (info == null) {
-                        return null;
-                    }
-                    String path = info.getBuildTools().getPath(ZIP_ALIGN);
-                    if (path == null) {
-                        return null;
-                    }
-                    return new File(path);
+            ConventionMappingHelper.map(task, "zipAlignExe", () -> {
+                final TargetInfo info = androidBuilder.getTargetInfo();
+                if (info == null) {
+                    return null;
                 }
+                String path1 = info.getBuildTools().getPath(ZIP_ALIGN);
+                if (path1 == null) {
+                    return null;
+                }
+                return new File(path1);
             });
 
-            ConventionMappingHelper
-                    .map(task, "dexFolders", new Callable<Set<File>>() {
-                        @Override
-                        public  Set<File> call() {
-                            if (config.getJackOptions().isEnabled()) {
-                                throw new IllegalStateException(
-                                        "InstantRun does not support Jack compiler yet.");
-                            }
-
-                            return variantScope.getTransformManager()
-                                    .getPipelineOutput(StreamFilter.DEX).keySet();
-                        }
-                    });
-            ConventionMappingHelper.map(task, "aaptOptions",
-                    new Callable<AaptOptions>() {
-                        @Override
-                        public AaptOptions call() throws Exception {
-                            return variantScope.getGlobalScope().getExtension().getAaptOptions();
-                        }
-                    });
-
+            ConventionMappingHelper.map(task, "dexFolders", packagingScope::getDexFolders);
+            ConventionMappingHelper.map(task, "aaptOptions", packagingScope::getAaptOptions);
         }
     }
 }

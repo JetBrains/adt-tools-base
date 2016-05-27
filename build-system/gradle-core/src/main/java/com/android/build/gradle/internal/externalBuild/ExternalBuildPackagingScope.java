@@ -28,6 +28,8 @@ import com.android.build.gradle.internal.pipeline.TransformManager;
 import com.android.build.gradle.internal.scope.PackagingScope;
 import com.android.build.gradle.internal.variant.SplitHandlingPolicy;
 import com.android.builder.core.AndroidBuilder;
+import com.android.builder.core.VariantType;
+import com.android.builder.model.AaptOptions;
 import com.android.builder.model.ApiVersion;
 import com.google.devtools.build.lib.rules.android.apkmanifest.ExternalBuildApkManifest;
 
@@ -194,5 +196,40 @@ public class ExternalBuildPackagingScope implements PackagingScope {
     @Override
     public File getAssetsDir() {
         return mVariantScope.getAssetsDir();
+    }
+
+    @NonNull
+    @Override
+    public File getInstantRunSplitApkOutputFolder() {
+        return mVariantScope.getInstantRunSplitApkOutputFolder();
+    }
+
+    @NonNull
+    @Override
+    public String getApplicationId() {
+        return mVariantScope.getApplicationId();
+    }
+
+    @Override
+    public int getVersionCode() {
+        return mVariantScope.getVersionCode();
+    }
+
+    @Nullable
+    @Override
+    public String getVersionName() {
+        return mVariantScope.getVersionName();
+    }
+
+    @NonNull
+    @Override
+    public AaptOptions getAaptOptions() {
+        return mVariantScope.getAaptOptions();
+    }
+
+    @NonNull
+    @Override
+    public VariantType getVariantType() {
+        return VariantType.DEFAULT;
     }
 }

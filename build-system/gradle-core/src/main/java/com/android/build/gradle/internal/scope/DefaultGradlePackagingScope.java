@@ -25,6 +25,8 @@ import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
 import com.android.build.gradle.internal.pipeline.StreamFilter;
 import com.android.build.gradle.internal.variant.SplitHandlingPolicy;
 import com.android.builder.core.AndroidBuilder;
+import com.android.builder.core.VariantType;
+import com.android.builder.model.AaptOptions;
 import com.android.builder.model.ApiVersion;
 
 import org.gradle.api.Project;
@@ -182,5 +184,40 @@ public class DefaultGradlePackagingScope implements PackagingScope {
     @Override
     public File getAssetsDir() {
         return mVariantScope.getMergeAssetsOutputDir();
+    }
+
+    @NonNull
+    @Override
+    public File getInstantRunSplitApkOutputFolder() {
+        return mVariantScope.getInstantRunSplitApkOutputFolder();
+    }
+
+    @NonNull
+    @Override
+    public String getApplicationId() {
+        return mVariantScope.getVariantConfiguration().getApplicationId();
+    }
+
+    @Override
+    public int getVersionCode() {
+        return mVariantScope.getVariantConfiguration().getVersionCode();
+    }
+
+    @Nullable
+    @Override
+    public String getVersionName() {
+        return mVariantScope.getVariantConfiguration().getVersionName();
+    }
+
+    @NonNull
+    @Override
+    public AaptOptions getAaptOptions() {
+        return mGlobalScope.getExtension().getAaptOptions();
+    }
+
+    @NonNull
+    @Override
+    public VariantType getVariantType() {
+        return mVariantScope.getVariantConfiguration().getType();
     }
 }
