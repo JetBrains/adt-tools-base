@@ -204,7 +204,7 @@ public class TruthHelper {
 
     public static <T, C extends Iterable<T>> IterableSubject<? extends IterableSubject<?, T, C>, T, C>
     assertThat(@Nullable Iterable<T> target) {
-        return assert_().that(target);
+        return assert_().<T,C>that(target);
     }
 
     public static <T> ObjectArraySubject<T> assertThat(@Nullable T[] target) {
@@ -250,25 +250,25 @@ public class TruthHelper {
     public static <K, V, M extends Multimap<K, V>>
     MultimapSubject<? extends MultimapSubject<?, K, V, M>, K, V, M> assertThat(
             @Nullable Multimap<K, V> target) {
-        return assert_().that(target);
+        return assert_().<K,V,M>that(target);
     }
 
     public static <K, V, M extends ListMultimap<K, V>>
     ListMultimapSubject<? extends ListMultimapSubject<?, K, V, M>, K, V, M> assertThat(
             @Nullable ListMultimap<K, V> target) {
-        return assert_().that(target);
+        return assert_().<K,V,M>that(target);
     }
 
     public static <K, V, M extends SetMultimap<K, V>>
     SetMultimapSubject<? extends SetMultimapSubject<?, K, V, M>, K, V, M> assertThat(
             @Nullable SetMultimap<K, V> target) {
-        return assert_().that(target);
+        return assert_().<K,V,M>that(target);
     }
 
     public static <E, M extends Multiset<E>>
     MultisetSubject<? extends MultisetSubject<?, E, M>, E, M> assertThat(
             @Nullable Multiset<E> target) {
-        return assert_().that(target);
+        return assert_().<E,M>that(target);
     }
 
     public static TableSubject assertThat(@Nullable Table<?, ?, ?> target) {
