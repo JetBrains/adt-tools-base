@@ -59,7 +59,7 @@ public class ExternalNativeBuildTaskUtils {
      * folder is where build artifacts are placed.
      */
     @NonNull
-    private static File getOutputFolder(@NonNull File jsonFolder, @NonNull String abi) {
+    static File getOutputFolder(@NonNull File jsonFolder, @NonNull String abi) {
         return new File(jsonFolder, abi);
     }
 
@@ -86,7 +86,7 @@ public class ExternalNativeBuildTaskUtils {
      * an issue.
      */
     @NonNull
-    private static NativeBuildConfigValue getNativeBuildConfigValue(
+    static NativeBuildConfigValue getNativeBuildConfigValue(
             @NonNull File json,
             @NonNull String groupName) throws IOException {
 
@@ -113,40 +113,9 @@ public class ExternalNativeBuildTaskUtils {
             @NonNull String groupName) throws IOException {
         List<NativeBuildConfigValue> configValues = Lists.newArrayList();
         for (File json : jsons) {
-            configValues.add(
-                ExternalNativeBuildTaskUtils.getNativeBuildConfigValue(json, groupName));
+            configValues.add(getNativeBuildConfigValue(json, groupName));
         }
         return configValues;
-    }
-
-    /**
-     * Check whether the given JSON file should be regenerated.
-     */
-    public static boolean shouldRebuildJson(@NonNull File json,
-            @NonNull String groupName) throws IOException {
-        if (!json.exists()) {
-            // deciding that JSON file should be rebuilt because it doesn't exist
-            return true;
-        }
-
-        // Now check whether the JSON is out-of-date with respect to the build files it declares.
-        NativeBuildConfigValue config = getNativeBuildConfigValue(json, groupName);
-        if (config.buildFiles != null) {
-            long jsonLastModified = json.lastModified();
-            for (File buildFile : config.buildFiles) {
-                if (!buildFile.exists()) {
-                    throw new GradleException(
-                            String.format("Expected build file %s to exist", buildFile));
-                }
-                if (buildFile.lastModified() > jsonLastModified) {
-                    // deciding that JSON file should be rebuilt because is older than buildFile
-                    return true;
-                }
-            }
-        }
-
-        // deciding that JSON file should not be rebuilt because it is up-to-date
-        return false;
     }
 
     /**
@@ -214,8 +183,7 @@ public class ExternalNativeBuildTaskUtils {
         // If there are more than 1, then that is an error. The user has specified both cmake and
         //    ndkBuild in the same project.
 
-        Map<NativeBuildSystem, File> externalProjectPaths = ExternalNativeBuildTaskUtils
-                .getExternalBuildExplicitPaths(config);
+        Map<NativeBuildSystem, File> externalProjectPaths = getExternalBuildExplicitPaths(config);
         if (externalProjectPaths.size() > 1) {
             return new ExternalNativeBuildProjectPathResolution(
                     null, null, "More than one externalNativeBuild path specified");
