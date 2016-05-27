@@ -61,9 +61,10 @@ public class AaptV2Test {
         FakeProgressIndicator progress = new FakeProgressIndicator();
         BuildToolInfo buildToolInfo =
                 AndroidSdkHandler.getInstance(
-                        TestUtils.getSdkDir()).getBuildToolInfo(revision, progress);
-        if (buildToolInfo == null) {
-            throw new RuntimeException("Test requires build-tools " + revision.toShortString());
+                        TestUtils.getSdkDir()).getLatestBuildTool(progress, true);
+        if (buildToolInfo == null || buildToolInfo.getRevision().compareTo(revision) < 0) {
+            throw new RuntimeException(
+                    "Test requires at least build-tools revision " + revision.toShortString());
         }
 
         return new OutOfProcessAaptV2(

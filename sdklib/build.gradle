@@ -47,7 +47,7 @@ task initSdkForTests(type: JavaExec) {
         }
         args = [sdk_home,
                 'tools', 'platform-tools', //'platform-tools-preview',
-                'build-tools;24.0.0-preview', 'build-tools;23.0.2', 'build-tools;23.0.1',
+                'build-tools;24.0.0-rc4', 'build-tools;23.0.2', 'build-tools;23.0.1',
                 'build-tools;23.0.0', 'build-tools;22.0.1', 'build-tools;21.1.2', 'build-tools;21.1.1',
                 'build-tools;21.1.0', 'build-tools;21.0.0', 'build-tools;20.0.0', 'build-tools;19.1.0',
                 'platforms;android-N', 'platforms;android-23', 'platforms;android-22',

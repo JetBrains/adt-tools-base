@@ -181,7 +181,7 @@ public class AddonTarget implements IAndroidTarget {
     @NonNull
     @Override
     public AndroidVersion getVersion() {
-        return DetailsTypes.getAndroidVersion(mDetails);
+        return mDetails.getAndroidVersion();
     }
 
     @Override

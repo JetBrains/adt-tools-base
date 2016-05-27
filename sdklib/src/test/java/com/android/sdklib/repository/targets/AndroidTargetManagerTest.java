@@ -225,7 +225,7 @@ public class AndroidTargetManagerTest extends TestCase {
     }
 
     private static void recordBuildTool24Preview1(MockFileOp fop) {
-        fop.recordExistingFile("/sdk/build-tools/24.0.0-preview/package.xml",
+        fop.recordExistingFile("/sdk/build-tools/24.0.0-rc1/package.xml",
                 "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>"
                         + "<ns2:sdk-repository "
                         + "xmlns:ns2=\"http://schemas.android.com/sdk/android/repo/repository2/01\" "

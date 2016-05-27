@@ -9,8 +9,8 @@ import com.android.repository.impl.meta.TypeDetails;
 import com.android.repository.io.FileOp;
 import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.ISystemImage;
-import com.android.sdklib.repository.PackageParserUtils;
 import com.android.sdklib.repository.IdDisplay;
+import com.android.sdklib.repository.PackageParserUtils;
 import com.android.sdklib.repository.meta.DetailsTypes;
 import com.android.sdklib.repository.meta.SysImgFactory;
 import com.google.common.collect.HashBasedTable;
@@ -139,8 +139,8 @@ public class SystemImageManager {
             if (p.getTypeDetails() instanceof DetailsTypes.PlatformDetailsType) {
                 File skinDir = new File(p.getLocation(), SdkConstants.FD_SKINS);
                 if (mFop.exists(skinDir)) {
-                    platformSkins.put(DetailsTypes.getAndroidVersion(
-                      (DetailsTypes.PlatformDetailsType) p.getTypeDetails()), skinDir);
+                    platformSkins.put(((DetailsTypes.PlatformDetailsType) p.getTypeDetails())
+                            .getAndroidVersion(), skinDir);
                 }
             }
         }
@@ -185,7 +185,7 @@ public class SystemImageManager {
         TypeDetails details = p.getTypeDetails();
         AndroidVersion version = null;
         if (details instanceof DetailsTypes.ApiDetailsType) {
-            version = DetailsTypes.getAndroidVersion((DetailsTypes.ApiDetailsType) details);
+            version = ((DetailsTypes.ApiDetailsType) details).getAndroidVersion();
         }
         if (details instanceof DetailsTypes.SysImgDetailsType) {
             abi = ((DetailsTypes.SysImgDetailsType) details).getAbi();

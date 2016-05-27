@@ -25,7 +25,6 @@ import com.android.repository.impl.meta.TypeDetails;
 import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.IAndroidTarget;
 import com.android.sdklib.repository.IdDisplay;
-import com.google.common.primitives.Ints;
 
 import java.util.List;
 
@@ -44,6 +43,15 @@ public final class DetailsTypes {
      * Common methods shared by all android version-specific details types.
      */
     public interface ApiDetailsType {
+
+        /**
+         * Convenience method to create an {@link AndroidVersion} with the information from the given
+         * {@link ApiDetailsType}.
+         */
+        @NonNull
+        default AndroidVersion getAndroidVersion() {
+            return new AndroidVersion(getApiLevel(), getCodename());
+        }
 
         /**
          * Sets the api level this package corresponds to.
@@ -70,6 +78,8 @@ public final class DetailsTypes {
 
     /**
      * Trivial details type for source packages.
+     *
+     * TODO: delete this and make ApiDetails concrete in the schema
      */
     @XmlTransient
     public interface SourceDetailsType extends ApiDetailsType {
@@ -233,20 +243,7 @@ public final class DetailsTypes {
     }
 
     /**
-     * Convenience method to create an {@link AndroidVersion} with the information from the given
-     * {@link ApiDetailsType}.
-     *
-     * TODO: move this into ApiDetailsType when we support java 8
-     */
-    @NonNull
-    public static AndroidVersion getAndroidVersion(@NonNull ApiDetailsType details) {
-        return new AndroidVersion(details.getApiLevel(), details.getCodename());
-    }
-
-    /**
      * Gets the path/unique id for the platform of the given {@link AndroidVersion}.
-     *
-     * TODO: move this into PlatformDetailsType when we support java 8
      */
     public static String getPlatformPath(AndroidVersion version) {
         return SdkConstants.FD_PLATFORMS + RepoPackage.PATH_SEPARATOR + "android-" +
@@ -255,8 +252,6 @@ public final class DetailsTypes {
 
     /**
      * Gets the path/unique id for the sources of the given {@link AndroidVersion}.
-     *
-     * TODO: move this into PlatformDetailsType when we support java 8
      */
     public static String getSourcesPath(AndroidVersion version) {
         return SdkConstants.FD_PKG_SOURCES + RepoPackage.PATH_SEPARATOR + "android-" +
@@ -265,6 +260,8 @@ public final class DetailsTypes {
 
     /**
      * Gets the path/unique id for the LLDB of the given {@link Revision}.
+     *
+     * TODO: consider moving to an LLDB-specific place.
      */
     public static String getLldbPath(Revision revision) {
         return SdkConstants.FD_LLDB + RepoPackage.PATH_SEPARATOR + revision.getMajor() + "."
@@ -273,8 +270,6 @@ public final class DetailsTypes {
 
     /**
      * Gets the default path/unique id for the given addon
-     *
-     * TODO: move this into AddonDetailsType when we support java 8
      */
     public static String getAddonPath(IdDisplay vendor, AndroidVersion version, IdDisplay name) {
         return new StringBuilder().append(SdkConstants.FD_ADDONS)
@@ -290,8 +285,6 @@ public final class DetailsTypes {
 
     /**
      * Gets the default path/unique id for the given system image
-     *
-     * TODO: move this into SysImgDetailsType when we support java 8
      */
     public static String getSysImgPath(IdDisplay vendor, AndroidVersion version, IdDisplay name,
             String abi) {
@@ -311,8 +304,6 @@ public final class DetailsTypes {
      * Gets the default path/unique id for the given build tools
      */
     public static String getBuildToolsPath(Revision revision) {
-        String revisionStr = Ints.join(".", revision.toIntArray(false)) +
-                             (revision.isPreview() ? "-preview" : "");
-        return SdkConstants.FD_BUILD_TOOLS + RepoPackage.PATH_SEPARATOR + revisionStr;
+        return SdkConstants.FD_BUILD_TOOLS + RepoPackage.PATH_SEPARATOR + revision.toString("-");
     }
 }
