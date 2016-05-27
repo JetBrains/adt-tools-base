@@ -108,6 +108,10 @@ public class ProfilerPlugin implements Plugin<Project> {
     }
     private void addProfilersLib(Project project, Properties properties) {
         if (getBoolean(properties, PROPERTY_SUPPORT_LIB_ENABLED)) {
+            // Only add the lib to the application:
+            if (!isApplicationProject(project)) {
+                return;
+            }
             String path = "build/profilers-gen/profilers-support-lib.jar";
             ConfigurableFileCollection files = project.files(path);
             ExtractSupportLibJarTask task = project.getTasks()
@@ -142,11 +146,17 @@ public class ProfilerPlugin implements Plugin<Project> {
             // TODO: The following line won't work for the experimental plugin. For that we may need to
             // register a rule that will get executed at the right time. Investigate this before
             // shipping the plugin.
-            Object android = project.getExtensions().getByName("android");
+
+            // Only apply the transformation if this is an application:
+            if (!isApplicationProject(project)) {
+                return;
+            }
+
             try {
-                Method method = android.getClass()
+                Object android = project.getExtensions().getByName("android");
+                Method registerTransform = android.getClass()
                         .getMethod("registerTransform", Transform.class, Object[].class);
-                method.invoke(android, new ProfilerTransform(), new Object[]{});
+                registerTransform.invoke(android, new ProfilerTransform(), new Object[]{});
             } catch (NoSuchMethodException e) {
                 e.printStackTrace();
             } catch (IllegalAccessException e) {
@@ -155,6 +165,18 @@ public class ProfilerPlugin implements Plugin<Project> {
                 e.printStackTrace();
             }
         }
+    }
+
+    private boolean isApplicationProject(Project project) {
+        Object android = project.getExtensions().getByName("android");
+        try {
+            // We use a heuristic to identify whether we are being applied to the application
+            // or the libraries.
+            android.getClass().getMethod("getApplicationVariants");
+        } catch (NoSuchMethodException e) {
+            return false;
+        }
+        return true;
     }
 
     private Properties getProperties(Project project) {

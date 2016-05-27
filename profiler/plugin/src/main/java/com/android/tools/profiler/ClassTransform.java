@@ -72,6 +72,8 @@ abstract class ClassTransform extends Transform {
     public Set<QualifiedContent.Scope> getScopes() {
         return ImmutableSet.of(
                 QualifiedContent.Scope.PROJECT,
+                QualifiedContent.Scope.SUB_PROJECTS,
+                QualifiedContent.Scope.SUB_PROJECTS_LOCAL_DEPS,
                 QualifiedContent.Scope.EXTERNAL_LIBRARIES,
                 QualifiedContent.Scope.PROJECT_LOCAL_DEPS
         );
