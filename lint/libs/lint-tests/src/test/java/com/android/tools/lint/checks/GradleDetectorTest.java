@@ -157,23 +157,27 @@ public class GradleDetectorTest extends AbstractCheckTest {
                     "extras/google//m2repository/com/google/android/support/wearable/1.3.0/wearable-1.3.0.aar"
             };
 
-            for (String path : paths) {
-                File file = new File(mSdkDir, path.replace('/', File.separatorChar));
-                File parent = file.getParentFile();
-                if (!parent.exists()) {
-                    boolean ok = parent.mkdirs();
-                    assertTrue(ok);
-                }
-                try {
-                    boolean created = file.createNewFile();
-                    assertTrue(created);
-                } catch (IOException e) {
-                    fail(e.toString());
-                }
-            }
+            createSdkPaths(mSdkDir, paths);
         }
 
         return mSdkDir;
+    }
+
+    public static void createSdkPaths(File sdkDir, String[] paths) {
+        for (String path : paths) {
+            File file = new File(sdkDir, path.replace('/', File.separatorChar));
+            File parent = file.getParentFile();
+            if (!parent.exists()) {
+                boolean ok = parent.mkdirs();
+                assertTrue(ok);
+            }
+            try {
+                boolean created = file.createNewFile();
+                assertTrue(created);
+            } catch (IOException e) {
+                fail(e.toString());
+            }
+        }
     }
 
     public void testGetOldValue() {

@@ -17,6 +17,7 @@
 package com.android.tools.lint.checks;
 
 import static com.android.SdkConstants.ANDROID_MANIFEST_XML;
+import static com.android.tools.lint.checks.GradleDetectorTest.createSdkPaths;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -35,13 +36,13 @@ import com.android.builder.model.ProductFlavorContainer;
 import com.android.builder.model.SourceProvider;
 import com.android.builder.model.SourceProviderContainer;
 import com.android.builder.model.Variant;
+import com.android.testutils.TestUtils;
 import com.android.tools.lint.client.api.LintClient;
 import com.android.tools.lint.detector.api.Detector;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.Project;
 import com.google.common.collect.Lists;
 
-import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
 import java.io.File;
@@ -53,6 +54,9 @@ import java.util.Set;
 
 @SuppressWarnings("javadoc")
 public class ManifestDetectorTest extends AbstractCheckTest {
+
+    private File mSdkDir;
+
     @Override
     protected Detector getDetector() {
         return new ManifestDetector();
@@ -68,6 +72,16 @@ public class ManifestDetectorTest extends AbstractCheckTest {
                 return super.isEnabled(issue) && mEnabled.contains(issue);
             }
         };
+    }
+
+    @Override
+    protected void tearDown() throws Exception {
+        super.tearDown();
+
+        if (mSdkDir != null) {
+            deleteFile(mSdkDir);
+            mSdkDir = null;
+        }
     }
 
     public void testOrderOk() throws Exception {
@@ -919,6 +933,8 @@ public class ManifestDetectorTest extends AbstractCheckTest {
                                 + "</manifest>\n")));
     }
 
+    // This test uses a mock SDK home to ensure that the latest expected
+    // version is 8.4.0.
     public void testWearableBindListenerCompileSdk24() throws Exception {
         mEnabled = Collections.singleton(ManifestDetector.WEARABLE_BIND_LISTENER);
         assertEquals("AndroidManifest.xml:11: Error: The com.google.android.gms.wearable.BIND_LISTENER action is deprecated. Please upgrade to the latest available version of play-services-wearable: 8.4.0 [WearableBindListener]\n"
@@ -956,6 +972,7 @@ public class ManifestDetectorTest extends AbstractCheckTest {
             // Set up a mock project model for the resource configuration test(s)
             // where we provide a subset of densities to be included
             return new TestLintClient() {
+
                 @NonNull
                 @Override
                 protected Project createProject(@NonNull File dir, @NonNull File referenceDir) {
@@ -1182,6 +1199,12 @@ public class ManifestDetectorTest extends AbstractCheckTest {
 
         } else if (mEnabled.contains(ManifestDetector.WEARABLE_BIND_LISTENER)) {
             return new TestLintClient() {
+
+                @Override
+                public File getSdkHome() {
+                    return getMockSupportLibraryInstallation();
+                }
+
                 @NonNull
                 @Override
                 protected Project createProject(@NonNull File dir, @NonNull File referenceDir) {
@@ -1250,5 +1273,21 @@ public class ManifestDetectorTest extends AbstractCheckTest {
             };
         }
         return super.createClient();
+    }
+
+    private File getMockSupportLibraryInstallation() {
+        if (mSdkDir == null) {
+            // Make fake SDK "installation" such that we can predict the set
+            // of Maven repositories discovered by this test
+            mSdkDir = TestUtils.createTempDirDeletedOnExit();
+
+            String[] paths = new String[]{
+                    "extras/google/m2repository/com/google/android/gms/play-services-wearable/8.4.0/play-services-wearable-8.4.0.aar",
+            };
+
+            createSdkPaths(mSdkDir, paths);
+        }
+
+        return mSdkDir;
     }
 }
