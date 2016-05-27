@@ -111,7 +111,7 @@ $modelAfter
         assertThat(model.getBuildSystems()).containsExactly(NativeBuildSystem.NDK_BUILD.getName());
         assertThat(model.buildFiles).hasSize(1);
         assertThat(model.name).isEqualTo("project");
-        assertThat(model.artifacts).hasSize(14);
+        assertThat(model.artifacts).hasSize(8);
         assertThat(model.fileExtensions).hasSize(1);
 
         for (File file : model.buildFiles) {
@@ -128,6 +128,6 @@ $modelAfter
         }
 
         assertThat(model).hasArtifactGroupsNamed("debug", "release");
-        assertThat(model).hasArtifactGroupsOfSize(7);
+        assertThat(model).hasArtifactGroupsOfSize(4);
     }
 }
