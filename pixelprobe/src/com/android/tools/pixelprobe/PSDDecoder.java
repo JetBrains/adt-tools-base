@@ -707,8 +707,8 @@ final class PSDDecoder extends Decoder {
         transform.translate(-bounds.getX(), -bounds.getY());
         transform.scale(image.getWidth(), image.getHeight());
 
-        Shape shape = path.createTransformedShape(transform);
-        layer.setPath(shape);
+        path.transform(transform);
+        layer.setPath(path);
 
         if (properties.containsKey(LayerProperty.KEY_ADJUSTMENT_SOLID_COLOR)) {
             SolidColorAdjustment adjustment = (SolidColorAdjustment)
@@ -1155,14 +1155,14 @@ final class PSDDecoder extends Decoder {
 
         // Firs we have the layer's bounds, in pixels,
         // in absolute image coordinates
-        @Chunk(byteCount = 4)
-        long top;
-        @Chunk(byteCount = 4)
-        long left;
-        @Chunk(byteCount = 4)
-        long bottom;
-        @Chunk(byteCount = 4)
-        long right;
+        @Chunk
+        int top;
+        @Chunk
+        int left;
+        @Chunk
+        int bottom;
+        @Chunk
+        int right;
 
         // The channels count, 3 or 4 in our case since we
         // only support RGB files
