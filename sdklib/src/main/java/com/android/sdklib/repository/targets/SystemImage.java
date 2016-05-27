@@ -112,7 +112,7 @@ public class SystemImage implements ISystemImage {
         mPackage = pkg;
         TypeDetails details = pkg.getTypeDetails();
         assert details instanceof DetailsTypes.ApiDetailsType;
-        mAndroidVersion = DetailsTypes.getAndroidVersion((DetailsTypes.ApiDetailsType) details);
+        mAndroidVersion = ((DetailsTypes.ApiDetailsType) details).getAndroidVersion();
     }
 
     @NonNull

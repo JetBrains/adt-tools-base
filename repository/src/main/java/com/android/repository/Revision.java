@@ -221,10 +221,10 @@ public class Revision implements Comparable<Revision> {
 
     /**
      * Returns the version in a fixed format major.minor.micro with an optional "rc preview#". For
-     * example it would return "18.0.0", "18.1.0" or "18.1.2 rc5".
+     * example it would return "18.0.0", "18.1.0" or "18.1.2 rc5", with the separator between the
+     * main version number and the preview component being specified by {@code previewSeparator}.
      */
-    @Override
-    public String toString() {
+    public String toString(@NonNull String previewSeparator) {
         StringBuilder sb = new StringBuilder();
         sb.append(getMajor());
 
@@ -233,12 +233,22 @@ public class Revision implements Comparable<Revision> {
             if (mPrecision.compareTo(Precision.MICRO) >= 0) {
                 sb.append('.').append(getMicro());
                 if (mPrecision.compareTo(Precision.PREVIEW) >= 0 && isPreview()) {
-                    sb.append(getSeparator()).append("rc").append(getPreview());
+                    sb.append(previewSeparator).append("rc").append(getPreview());
                 }
             }
         }
 
         return sb.toString();
+    }
+
+    /**
+     * Returns the version in a fixed format major.minor.micro with an optional "rc preview#". For
+     * example it would return "18.0.0", "18.1.0" or "18.1.2 rc5". The character before "rc" is
+     * specified at construction time, and defaults to space.
+     */
+    @Override
+    public String toString() {
+        return toString(getSeparator());
     }
 
     /**

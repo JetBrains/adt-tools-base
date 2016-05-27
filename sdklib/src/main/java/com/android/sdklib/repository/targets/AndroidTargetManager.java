@@ -85,8 +85,8 @@ public class AndroidTargetManager {
                             .getTypeDetails();
                     DetailsTypes.ApiDetailsType details2 = (DetailsTypes.ApiDetailsType) o2
                             .getTypeDetails();
-                    AndroidVersion version1 = DetailsTypes.getAndroidVersion(details1);
-                    AndroidVersion version2 = DetailsTypes.getAndroidVersion(details2);
+                    AndroidVersion version1 = details1.getAndroidVersion();
+                    AndroidVersion version2 = details2.getAndroidVersion();
                     return ComparisonChain.start()
                             .compare(version1, version2)
                             .compare(o1.getPath(), o2.getPath())
@@ -112,8 +112,8 @@ public class AndroidTargetManager {
             for (LocalPackage p : manager.getPackages().getLocalPackages().values()) {
                 TypeDetails details = p.getTypeDetails();
                 if (details instanceof DetailsTypes.AddonDetailsType) {
-                    AndroidVersion addonVersion = DetailsTypes
-                      .getAndroidVersion((DetailsTypes.AddonDetailsType) details);
+                    AndroidVersion addonVersion =
+                            ((DetailsTypes.AddonDetailsType)details).getAndroidVersion();
                     PlatformTarget baseTarget = platformTargets.get(addonVersion);
                     if (baseTarget != null) {
                         result.put(p, new AddonTarget(p, baseTarget,
@@ -124,7 +124,8 @@ public class AndroidTargetManager {
             for (LocalPackage p : manager.getPackages().getLocalPackagesForPrefix(SdkConstants.FD_ANDROID_SOURCES)) {
                 TypeDetails details = p.getTypeDetails();
                 if (details instanceof DetailsTypes.ApiDetailsType) {
-                    PlatformTarget target = platformTargets.get(DetailsTypes.getAndroidVersion((DetailsTypes.ApiDetailsType)details));
+                    PlatformTarget target = platformTargets.get(
+                            ((DetailsTypes.ApiDetailsType)details).getAndroidVersion());
                     if (target != null) {
                         target.setSources(p.getLocation());
                     }

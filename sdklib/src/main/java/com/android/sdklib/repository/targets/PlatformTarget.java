@@ -237,7 +237,7 @@ public class PlatformTarget implements IAndroidTarget {
     @NonNull
     @Override
     public AndroidVersion getVersion() {
-        return new AndroidVersion(mDetails.getApiLevel(), mDetails.getCodename());
+        return mDetails.getAndroidVersion();
     }
 
     @Override
