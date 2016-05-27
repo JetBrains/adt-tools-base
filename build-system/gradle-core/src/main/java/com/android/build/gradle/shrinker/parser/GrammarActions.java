@@ -195,17 +195,7 @@ public class GrammarActions {
 
     @NonNull
     static String getSignature(@NonNull String name, int dim) {
-        return getSignature(name, dim, false);
-    }
-
-    @NonNull
-    static String getSignature(@NonNull String name, int dim, boolean negator) {
         StringBuilder sig = new StringBuilder();
-
-        if (negator) {
-            // Use negative lookahead to discard matches.
-            sig.append("(?!");
-        }
 
         for (int i = 0; i < dim; i++) {
             sig.append("\\[");
@@ -221,8 +211,7 @@ public class GrammarActions {
                 sig.append(".*");
                 break;
             case "%":
-                // % matches any primitive type ("boolean", "int", etc, but not "void")
-                sig.append("(Z|B|C|S|I|F|D|L)");
+                sig.append("(B|C|D|F|I|J|S|Z)");
                 break;
             case "boolean":
                 sig.append("Z");
@@ -254,12 +243,6 @@ public class GrammarActions {
             default:
                 sig.append("L").append(convertNameToPattern(name)).append(";");
                 break;
-        }
-
-        if (negator) {
-            // Close the negative lookahead section and match anything that didn't match the
-            // negated part.
-            sig.append(").*");
         }
 
         return sig.toString();

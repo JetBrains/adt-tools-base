@@ -77,6 +77,7 @@ import com.android.build.gradle.internal.tasks.AndroidReportTask;
 import com.android.build.gradle.internal.tasks.CheckManifest;
 import com.android.build.gradle.internal.tasks.DependencyReportTask;
 import com.android.build.gradle.internal.tasks.DeviceProviderInstrumentTestTask;
+import com.android.build.gradle.internal.tasks.ExtractProguardFiles;
 import com.android.build.gradle.internal.tasks.FileSupplier;
 import com.android.build.gradle.internal.tasks.GenerateApkDataTask;
 import com.android.build.gradle.internal.tasks.InstallVariantTask;
@@ -272,6 +273,8 @@ public abstract class TaskManager {
 
     protected static final String LINT_COMPILE = "compileLint";
 
+    private static final String EXTRACT_PROGUARD_FILES = "extractProguardFiles";
+
     private static final Revision MIN_REVISION_RS_COMPAT_64 = Revision.parseRevision("23.0.3");
 
 
@@ -388,6 +391,12 @@ public abstract class TaskManager {
         });
 
         androidTasks.create(tasks, MAIN_PREBUILD, task -> {});
+
+        AndroidTask<ExtractProguardFiles> extractProguardFiles =
+                androidTasks.create(
+                        tasks, EXTRACT_PROGUARD_FILES, ExtractProguardFiles.class, task -> {});
+        // Make sure MAIN_PREBUILD runs first:
+        extractProguardFiles.dependsOn(tasks, MAIN_PREBUILD);
 
         androidTasks.create(tasks, new SourceSetsTask.ConfigAction(extension));
 
@@ -1725,7 +1734,7 @@ public abstract class TaskManager {
             createJacocoTransform(tasks, variantScope);
         }
 
-        boolean isMinifyEnabled = config.isMinifyEnabled() || isTestedAppMinified(variantScope);
+        boolean isMinifyEnabled = isMinifyEnabled(variantScope);
         boolean isMultiDexEnabled = config.isMultiDexEnabled();
         // Switch to native multidex if possible when using instant run.
         boolean isLegacyMultiDexMode = isLegacyMultidexMode(variantScope);
@@ -1879,6 +1888,11 @@ public abstract class TaskManager {
                         || variantScope.getInstantRunBuildContext().getPatchingPolicy() ==
                         InstantRunPatchingPolicy.PRE_LOLLIPOP);
 
+    }
+
+    private boolean isMinifyEnabled(VariantScope variantScope) {
+        return variantScope.getVariantConfiguration().isMinifyEnabled()
+                || isTestedAppMinified(variantScope);
     }
 
     /**
@@ -2720,6 +2734,10 @@ public abstract class TaskManager {
                     variantData.preBuildTask = task;
                 }));
         scope.getPreBuildTask().dependsOn(tasks, MAIN_PREBUILD);
+
+        if (isMinifyEnabled(scope)) {
+            scope.getPreBuildTask().dependsOn(tasks, EXTRACT_PROGUARD_FILES);
+        }
 
         // for all libraries required by the configurations of this variant, make this task
         // depend on all the tasks preparing these libraries.

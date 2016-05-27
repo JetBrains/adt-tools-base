@@ -56,37 +56,41 @@ public class ProguardFiles {
      * @param project used to determine the output location.
      */
     public static File getDefaultProguardFile(@NonNull String name, @NonNull Project project) {
-        File proguardFile = FileUtils.join(
+        if (!DEFAULT_PROGUARD_WHITELIST.contains(name)) {
+            throw new IllegalArgumentException(
+                    "User supplied default proguard base extension "
+                            + "name is unsupported. Valid values are: "
+                            + DEFAULT_PROGUARD_WHITELIST);
+        }
+
+        return FileUtils.join(
                 project.getRootProject().getBuildDir(),
                 AndroidProject.FD_INTERMEDIATES,
                 "proguard-files",
                 name + "-" + Version.ANDROID_GRADLE_PLUGIN_VERSION);
+    }
 
-        if (DEFAULT_PROGUARD_WHITELIST.contains(name)) {
-            if (!proguardFile.exists()) {
-                extractBundledProguardFile(name, proguardFile);
+    /**
+     * Extracts all default ProGuard files into the build directory.
+     */
+    public static void extractBundledProguardFiles(@NonNull Project project) throws IOException {
+        for (String name : DEFAULT_PROGUARD_WHITELIST) {
+            File defaultProguardFile = getDefaultProguardFile(name, project);
+            if (!defaultProguardFile.isFile()) {
+                extractBundledProguardFile(name, defaultProguardFile);
             }
-            return proguardFile;
-        } else {
-            throw new RuntimeException("User supplied default proguard base extension "
-                    + "name is unsupported. Valid values are: "
-                    + DEFAULT_PROGUARD_WHITELIST);
         }
     }
 
     @VisibleForTesting
-    public static void extractBundledProguardFile(@NonNull String name, File proguardFile) {
-        try {
-            Files.createParentDirs(proguardFile);
-            URL proguardURL = ProguardFiles.class.getResource(name);
-            URLConnection urlConnection = proguardURL.openConnection();
-            urlConnection.setUseCaches(false);
-            try (InputStream is = urlConnection.getInputStream()) {
-                Files.asByteSink(proguardFile).writeFrom(is);
-            }
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+    public static void extractBundledProguardFile(
+            @NonNull String name, @NonNull File proguardFile) throws IOException {
+        Files.createParentDirs(proguardFile);
+        URL proguardURL = ProguardFiles.class.getResource(name);
+        URLConnection urlConnection = proguardURL.openConnection();
+        urlConnection.setUseCaches(false);
+        try (InputStream is = urlConnection.getInputStream()) {
+            Files.asByteSink(proguardFile).writeFrom(is);
         }
     }
-
 }

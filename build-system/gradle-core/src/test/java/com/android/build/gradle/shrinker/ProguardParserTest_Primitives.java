@@ -36,7 +36,14 @@ public class ProguardParserTest_Primitives extends AbstractShrinkerTest {
                         "intReturn:()I",
                         "intArrayReturn:()[I",
                         "intArray2Return:()[[I",
+                        "byteArgument:(B)V",
+                        "charArgument:(C)V",
+                        "doubleArgument:(D)V",
+                        "floatArgument:(F)V",
                         "intArgument:(I)V",
+                        "longArgument:(J)V",
+                        "shortArgument:(S)V",
+                        "boolArgument:(Z)V",
                         "twoPrimitiveArguments:(IF)V",
                         "intArrayArgument:([I)V",
                         "intArray2Argument:([[I)V"),
@@ -46,7 +53,17 @@ public class ProguardParserTest_Primitives extends AbstractShrinkerTest {
     @Test
     public void argument() throws Exception {
         run(parseKeepRules("-keep class test/Main { void *(%); }"));
-        assertMembersLeft("Main", "<init>:()V", "intArgument:(I)V");
+        assertMembersLeft(
+                "Main",
+                "<init>:()V",
+                "byteArgument:(B)V",
+                "charArgument:(C)V",
+                "doubleArgument:(D)V",
+                "floatArgument:(F)V",
+                "intArgument:(I)V",
+                "longArgument:(J)V",
+                "shortArgument:(S)V",
+                "boolArgument:(Z)V");
     }
 
     @Test

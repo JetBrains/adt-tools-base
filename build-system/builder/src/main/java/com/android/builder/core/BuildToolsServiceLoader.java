@@ -225,7 +225,7 @@ public enum BuildToolsServiceLoader {
                 Service<T> serviceType) throws ClassNotFoundException {
             logger.verbose("Looking for %1$s", serviceType);
             ServiceLoader<T> serviceLoader = getServiceLoader(serviceType);
-            logger.verbose("Got a serviceLoader %1$d",
+            logger.verbose("Got a serviceLoader %1$s",
                     Integer.toHexString(System.identityHashCode(serviceLoader)));
             Iterator<T> serviceIterator = serviceLoader.iterator();
             logger.verbose("Service Iterator =  %1$s ", serviceIterator);

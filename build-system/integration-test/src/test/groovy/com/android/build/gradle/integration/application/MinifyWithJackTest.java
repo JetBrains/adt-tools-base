@@ -21,6 +21,7 @@ import static com.google.common.truth.TruthJUnit.assume;
 
 import com.android.build.gradle.integration.common.category.DeviceTests;
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
+import com.android.build.gradle.integration.common.truth.AbstractAndroidSubject.ClassFileScope;
 import com.android.build.gradle.integration.common.truth.ApkSubject;
 
 import org.junit.Before;
@@ -38,7 +39,7 @@ public class MinifyWithJackTest {
             .create();
 
     @Before
-    public void setUp() {
+    public void setUp() throws Exception {
         assume().that(GradleTestProject.USE_JACK).isTrue();
         project.execute("clean", "assembleMinified", "assembleDebugAndroidTest");
     }
@@ -54,13 +55,17 @@ public class MinifyWithJackTest {
         ApkSubject apkSubject = assertThatApk(project.getApk("minified"));
 
         apkSubject.doesNotContainClass("Lcom/android/tests/basic/UnusedTestClass;");
-        apkSubject.containsClass("Lcom/android/tests/basic/Main;");
         apkSubject.containsClass("Lcom/android/tests/basic/a;");
+
+        apkSubject.hasClass("Lcom/android/tests/basic/Main;", ClassFileScope.MAIN)
+                .that()
+                // Make sure default ProGuard rules were applied.
+                .hasMethod("handleOnClick");
     }
 
     @Test
     public void checkTestApkNotMinified() throws Exception {
-        ApkSubject apkSubject = assertThatApk(project.getApk("debug", "androidTest", "unaligned"));
+        ApkSubject apkSubject = assertThatApk(project.getTestApk("debug"));
 
         apkSubject.containsClass("Lcom/android/tests/basic/MainTest;");
         apkSubject.containsClass("Lcom/android/tests/basic/UnusedTestClass;");
