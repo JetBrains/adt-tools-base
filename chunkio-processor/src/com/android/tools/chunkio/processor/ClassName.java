@@ -38,7 +38,7 @@ final class ClassName {
     private ClassName(String packageName, String className, String sourceName) {
         this.packageName = packageName;
         this.className = className;
-        this.qualifiedName = packageName.isEmpty() ? className : packageName + className;
+        this.qualifiedName = packageName.isEmpty() ? className : packageName + '.' + className;
         this.sourceName = sourceName;
     }
 
