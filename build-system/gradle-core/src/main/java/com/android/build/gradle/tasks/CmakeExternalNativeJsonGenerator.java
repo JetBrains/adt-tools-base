@@ -19,7 +19,6 @@ package com.android.build.gradle.tasks;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.builder.core.AndroidBuilder;
-import com.android.ide.common.process.ProcessException;
 import com.android.ide.common.process.ProcessInfoBuilder;
 import com.android.sdklib.IAndroidTarget;
 import com.google.common.base.Joiner;
@@ -58,12 +57,10 @@ class CmakeExternalNativeJsonGenerator extends ExternalNativeJsonGenerator {
         Preconditions.checkNotNull(sdkDirectory);
     }
 
+    @NonNull
     @Override
-    void createNativeBuildJson(
-            @NonNull String abi,
-            @NonNull File outputJson) throws ProcessException {
+    ProcessInfoBuilder getProcessBuilder(@NonNull String abi, @NonNull File outputJson) {
         checkConfiguration();
-
         ProcessInfoBuilder builder = new ProcessInfoBuilder();
         File makeFile = getMakeFileOrFolder();
         if (makeFile.isFile()) {
@@ -110,13 +107,7 @@ class CmakeExternalNativeJsonGenerator extends ExternalNativeJsonGenerator {
             builder.addArgs(argument);
         }
 
-        diagnostic("executing CMake %s", builder);
-
-        ExternalNativeBuildTaskUtils.executeBuildProcessAndLogError(
-                androidBuilder,
-                builder.createProcess());
-
-        diagnostic("done executing CMake");
+        return builder;
     }
 
     @NonNull

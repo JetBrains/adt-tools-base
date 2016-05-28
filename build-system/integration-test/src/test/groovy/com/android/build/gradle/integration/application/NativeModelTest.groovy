@@ -18,8 +18,9 @@ package com.android.build.gradle.integration.application
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldJniApp
-
 import com.android.build.gradle.integration.common.fixture.app.TestSourceFile
+import com.android.build.gradle.tasks.ExternalNativeBuildTaskUtils
+import com.android.build.gradle.tasks.NativeBuildSystem
 import com.android.builder.model.AndroidProject
 import com.android.builder.model.NativeAndroidProject
 import com.android.builder.model.NativeArtifact
@@ -32,12 +33,13 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 
+import java.nio.file.Files
+
 import static com.android.build.gradle.integration.common.fixture.app.HelloWorldJniApp.androidMkC
 import static com.android.build.gradle.integration.common.fixture.app.HelloWorldJniApp.androidMkCpp
 import static com.android.build.gradle.integration.common.fixture.app.HelloWorldJniApp.applicationMk
 import static com.android.build.gradle.integration.common.fixture.app.HelloWorldJniApp.cmakeLists
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
-
 /**
  * General Model tests
  */
@@ -65,7 +67,8 @@ class NativeModelTest {
                       }
                 }
             }
-            """, [androidMkC("src/main/cpp")], false, 2, 7, Compiler.GCC),
+            """, [androidMkC("src/main/cpp")], false, 2, 7, Compiler.GCC,
+                NativeBuildSystem.NDK_BUILD),
         ANDROID_MK_FILE_CPP("""
             apply plugin: 'com.android.application'
 
@@ -84,7 +87,8 @@ class NativeModelTest {
                       }
                 }
             }
-            """, [androidMkCpp("src/main/cpp")], true, 2, 7, Compiler.GCC),
+            """, [androidMkCpp("src/main/cpp")], true, 2, 7, Compiler.GCC,
+                NativeBuildSystem.NDK_BUILD),
         ANDROID_MK_FOLDER_C("""
             apply plugin: 'com.android.application'
 
@@ -103,7 +107,8 @@ class NativeModelTest {
                       }
                 }
             }
-            """, [androidMkC("src/main/cpp")], false, 2, 7, Compiler.GCC),
+            """, [androidMkC("src/main/cpp")], false, 2, 7, Compiler.GCC,
+                NativeBuildSystem.NDK_BUILD),
         ANDROID_MK_FOLDER_CPP("""
             apply plugin: 'com.android.application'
 
@@ -122,7 +127,8 @@ class NativeModelTest {
                       }
                 }
             }
-            """, [androidMkCpp("src/main/cpp")], true, 2, 7, Compiler.GCC),
+            """, [androidMkCpp("src/main/cpp")], true, 2, 7, Compiler.GCC,
+                NativeBuildSystem.NDK_BUILD),
         ANDROID_MK_FILE_CPP_CLANG("""
             apply plugin: 'com.android.application'
 
@@ -142,7 +148,8 @@ class NativeModelTest {
                       }
                 }
             }
-            """, [androidMkCpp("src/main/cpp")], true, 2, 7, Compiler.CLANG),
+            """, [androidMkCpp("src/main/cpp")], true, 2, 7, Compiler.CLANG,
+                NativeBuildSystem.NDK_BUILD),
         ANDROID_MK_FILE_CPP_CLANG_VIA_APPLICATION_MK("""
             apply plugin: 'com.android.application'
 
@@ -162,7 +169,7 @@ class NativeModelTest {
                 }
             }
             """, [androidMkCpp("src/main/cpp"), applicationMk("src/main/cpp")],
-                true, 2, 7, Compiler.CLANG),
+                true, 2, 7, Compiler.CLANG, NativeBuildSystem.NDK_BUILD),
         ANDROID_MK_FOLDER_CPP_CLANG("""
             apply plugin: 'com.android.application'
 
@@ -182,7 +189,8 @@ class NativeModelTest {
                       }
                 }
             }
-            """, [androidMkCpp("src/main/cpp")], true, 2, 7, Compiler.CLANG),
+            """, [androidMkCpp("src/main/cpp")], true, 2, 7, Compiler.CLANG,
+                NativeBuildSystem.NDK_BUILD),
         ANDROID_MK_FOLDER_CPP_CLANG_VIA_APPLICATION_MK("""
             apply plugin: 'com.android.application'
 
@@ -202,7 +210,7 @@ class NativeModelTest {
                 }
             }
             """, [androidMkCpp("src/main/cpp"), applicationMk("src/main/cpp")],
-                true, 2, 7, Compiler.CLANG),
+                true, 2, 7, Compiler.CLANG, NativeBuildSystem.NDK_BUILD),
         ANDROID_MK_CUSTOM_BUILD_TYPE("""
             apply plugin: 'com.android.application'
 
@@ -229,7 +237,8 @@ class NativeModelTest {
                       }
                 }
             }
-            """, [androidMkCpp("src/main/cpp")], true, 3, 7, Compiler.GCC),
+            """, [androidMkCpp("src/main/cpp")], true, 3, 7, Compiler.GCC,
+                NativeBuildSystem.NDK_BUILD),
         CMAKELISTS_FILE_CPP("""
             apply plugin: 'com.android.application'
 
@@ -248,7 +257,8 @@ class NativeModelTest {
                       }
                 }
             }
-            """, [HelloWorldJniApp.cmakeLists(".")], true, 2, 7, Compiler.GCC),
+            """, [cmakeLists(".")], true, 2, 7, Compiler.GCC,
+                NativeBuildSystem.CMAKE),
         CMAKELISTS_FILE_CPP_CLANG("""
             apply plugin: 'com.android.application'
 
@@ -270,7 +280,7 @@ class NativeModelTest {
                       }
                 }
             }
-            """, [cmakeLists(".")], true, 2, 5, Compiler.CLANG),
+            """, [cmakeLists(".")], true, 2, 5, Compiler.CLANG, NativeBuildSystem.CMAKE),
         CMAKELISTS_FILE_C("""
             apply plugin: 'com.android.application'
 
@@ -289,7 +299,8 @@ class NativeModelTest {
                       }
                 }
             }
-            """, [HelloWorldJniApp.cmakeLists(".")], false, 2, 7, Compiler.GCC),
+            """, [cmakeLists(".")], false, 2, 7, Compiler.GCC,
+                NativeBuildSystem.CMAKE),
         CMAKELISTS_FOLDER_CPP("""
             apply plugin: 'com.android.application'
 
@@ -308,7 +319,8 @@ class NativeModelTest {
                       }
                 }
             }
-            """, [HelloWorldJniApp.cmakeLists(".")], true, 2, 7, Compiler.GCC),
+            """, [cmakeLists(".")], true, 2, 7, Compiler.GCC,
+                NativeBuildSystem.CMAKE),
         CMAKELISTS_FOLDER_C("""
             apply plugin: 'com.android.application'
 
@@ -327,7 +339,8 @@ class NativeModelTest {
                       }
                 }
             }
-            """, [HelloWorldJniApp.cmakeLists(".")], false, 2, 7, Compiler.GCC);
+            """, [cmakeLists(".")], false, 2, 7, Compiler.GCC,
+                NativeBuildSystem.CMAKE);
 
         public final String buildGradle;
         private final List<TestSourceFile> extraFiles;
@@ -335,15 +348,17 @@ class NativeModelTest {
         public final int variantCount;
         public final int abiCount;
         public final Compiler compiler;
+        public final NativeBuildSystem buildSystem;
 
         Config(String buildGradle, List<TestSourceFile> extraFiles, boolean isCpp, int variantCount,
-                int abiCount, Compiler compiler) {
+                int abiCount, Compiler compiler, NativeBuildSystem buildSystem) {
             this.buildGradle = buildGradle;
             this.extraFiles = extraFiles;
             this.isCpp = isCpp;
             this.variantCount = variantCount;
             this.abiCount = abiCount;
             this.compiler = compiler;
+            this.buildSystem = buildSystem;
         }
 
         public GradleTestProject create() {
@@ -443,6 +458,81 @@ class NativeModelTest {
         }
     }
 
+    @Test
+    public void checkUpToDate() {
+        File jsonFile = getJsonFile("debug", "armeabi");
+
+        // Initially, JSON file doesn't exist
+        assertThat(jsonFile).doesNotExist()
+
+        // Syncing once, causes the JSON to exist
+        project.model().getSingle(NativeAndroidProject.class);
+        assertThat(jsonFile).exists()
+        long originalTimeStamp = getHighestResolutionTimeStamp(jsonFile);
+
+        // Syncing again, leaves the JSON unchanged
+        NativeAndroidProject nativeProject = project.model().getSingle(NativeAndroidProject.class);
+        assertThat(originalTimeStamp).isEqualTo(
+                getHighestResolutionTimeStamp(jsonFile));
+
+        // Touch each buildFile and check that JSON is regenerated in response
+        assertThat(nativeProject.buildFiles).isNotEmpty();
+        for (File buildFile : nativeProject.buildFiles) {
+            spinTouch(buildFile, originalTimeStamp);
+            project.model().getSingle(NativeAndroidProject.class);
+            long newTimeStamp = getHighestResolutionTimeStamp(jsonFile);
+            assertThat(newTimeStamp).isGreaterThan(originalTimeStamp);
+            originalTimeStamp = newTimeStamp;
+        }
+
+        // Replace flags in the build file and check that JSON is regenerated
+        project.buildFile.text = project.buildFile.text.replace("-DTEST_", "-DTEST_CHANGED_");
+        nativeProject = project.model().getSingle(NativeAndroidProject.class);
+        assertThat(getHighestResolutionTimeStamp(jsonFile)).isGreaterThan(originalTimeStamp);
+
+        // Check that the newly written flags are there.
+        if (config.isCpp) {
+            checkIsChangedCpp(nativeProject);
+        } else {
+            checkIsChangedC(nativeProject);
+        }
+    }
+
+    /*
+    The best file system timestamp is millisecond and lower resolution is available depending on
+    operating system and Java versions. This implementation of touch makes sure that the new
+    timestamp isn't the same as the old timestamp by spinning until the clock increases.
+     */
+    private void spinTouch(File file, long lastTimestamp) {
+        file.setLastModified(System.currentTimeMillis());
+        while (getHighestResolutionTimeStamp(file) == lastTimestamp) {
+            file.setLastModified(System.currentTimeMillis());
+        }
+    }
+
+    private static long getHighestResolutionTimeStamp(File file) {
+        return Files.getLastModifiedTime(
+                file.toPath()).toMillis();
+    }
+
+    private File getBuildSystemFolder() {
+        return new File(project.getIntermediatesDir(), config.buildSystem.getName());
+    }
+
+    private File getVariantBuildSystemFolder(String variantName) {
+        return new File(getBuildSystemFolder(), variantName);
+    }
+
+    private File getVariantJsonFolder(String variantName) {
+        return new File(getVariantBuildSystemFolder(variantName), "json");
+    }
+
+
+    private File getJsonFile(String variantName, String abi) {
+        return ExternalNativeBuildTaskUtils.getOutputJson(
+                getVariantJsonFolder(variantName), abi);
+    }
+
     private static void checkDefaultVariants(NativeAndroidProject model) {
         assertThat(model).hasArtifactGroupsNamed("debug", "release");
 
@@ -489,6 +579,24 @@ class NativeModelTest {
         assertThat(model.fileExtensions).containsEntry("cpp", "c++");
         for (NativeSettings settings : model.settings) {
             assertThat(settings).hasExactCompilerFlag("-DTEST_CPP_FLAG");
+        }
+    }
+
+    private static void checkIsChangedC(NativeAndroidProject model) {
+        assertThat(model.fileExtensions).containsEntry("c", "c");
+        for (NativeSettings settings : model.settings) {
+            assertThat(settings).doesntHaveExactCompilerFlag("-DTEST_C_FLAG");
+            assertThat(settings).doesntHaveExactCompilerFlag("-DTEST_CPP_FLAG");
+            assertThat(settings).hasExactCompilerFlag("-DTEST_CHANGED_C_FLAG");
+            assertThat(settings).doesntHaveExactCompilerFlag("-DTEST_CHANGED_CPP_FLAG");
+        }
+    }
+
+    private static void checkIsChangedCpp(NativeAndroidProject model) {
+        assertThat(model.fileExtensions).containsEntry("cpp", "c++");
+        for (NativeSettings settings : model.settings) {
+            assertThat(settings).doesntHaveExactCompilerFlag("-DTEST_CPP_FLAG");
+            assertThat(settings).hasExactCompilerFlag("-DTEST_CHANGED_CPP_FLAG");
         }
     }
 }
