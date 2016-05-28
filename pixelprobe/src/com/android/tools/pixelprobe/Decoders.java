@@ -31,9 +31,9 @@ final class Decoders {
     private static final int READ_AHEAD_LIMIT = 1024;
     private static final List<Decoder> sDecoders = new ArrayList<>();
     static {
-        register(new JPEGDecoder());
-        register(new PNGDecoder());
-        register(new PSDDecoder());
+        register(new JpegDecoder());
+        register(new PngDecoder());
+        register(new PsdDecoder());
     }
 
     private Decoders() {
