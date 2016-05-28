@@ -5,20 +5,11 @@ group = 'com.android.tools'
 archivesBaseName = 'studio-profiler-plugin'
 version = '1.0'// TODO: Pass in as an argument
 
-configurations {
-    support
-}
-
 dependencies {
     compile gradleApi()
     compile 'org.ow2.asm:asm:5.0.3'
     compile 'com.google.guava:guava:17.0'
     compile('com.android.tools.build:gradle-api:2.0.0-beta2')
-
-    support project(':supportlib')
-}
-jar {
-    from configurations.support
 }
 
 //// Publishing this library goes directly to a directory seen by studio at development time,

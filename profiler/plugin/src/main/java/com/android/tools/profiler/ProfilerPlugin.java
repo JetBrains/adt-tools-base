@@ -18,23 +18,16 @@ package com.android.tools.profiler;
 
 import com.android.build.api.transform.Transform;
 import com.google.common.base.Charsets;
-import com.google.common.io.ByteStreams;
 import com.google.common.io.Closeables;
 import com.google.common.io.Files;
 
-import org.gradle.api.DefaultTask;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.dsl.RepositoryHandler;
-import org.gradle.api.file.ConfigurableFileCollection;
-import org.gradle.api.tasks.OutputFile;
-import org.gradle.api.tasks.TaskAction;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.lang.reflect.InvocationTargetException;
@@ -43,7 +36,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
-import java.util.Set;
 
 /**
  * A gradle plugin which, when applied, instruments the target Android app with support code for
@@ -55,46 +47,10 @@ public class ProfilerPlugin implements Plugin<Project> {
     private static final String PROPERTY_ENABLED = "android.profiler.enabled";
     private static final String PROPERTY_GAPID_ENABLED = "android.profiler.gapid.enabled";
     private static final String PROPERTY_GAPID_TRACER_AAR = "android.profiler.gapid.tracer_aar";
-    private static final String PROPERTY_SUPPORT_LIB_ENABLED = "android.profiler.supportLib.enabled";
-    private static final String PROPERTY_INSTRUMENTATION_ENABLED = "android.profiler.instrumentation.enabled";
-
-    static class ExtractSupportLibJarTask extends DefaultTask {
-
-        private File outputFile;
-
-        // This empty constructor is needed because Gradle will look at the declared constructors
-        // to create objects dynamically. Yeap.
-        public ExtractSupportLibJarTask() {
-        }
-
-        @OutputFile
-        public File getOutputFile() {
-            return outputFile;
-        }
-
-        public void setOutputFile(File file) {
-            this.outputFile = file;
-        }
-
-        @TaskAction
-        public void extract() throws IOException {
-            InputStream jar = ProfilerPlugin.class
-                    .getResourceAsStream("/profilers-support-lib.jar");
-            if (jar == null) {
-                throw new RuntimeException("Couldn't find profiler support library");
-            }
-            FileOutputStream fileOutputStream = new FileOutputStream(getOutputFile());
-            try {
-                ByteStreams.copy(jar, fileOutputStream);
-            } finally {
-                try {
-                    jar.close();
-                } finally {
-                    fileOutputStream.close();
-                }
-            }
-        }
-    }
+    private static final String PROPERTY_SUPPORT_LIB_ENABLED
+            = "android.profiler.supportLib.enabled";
+    private static final String PROPERTY_INSTRUMENTATION_ENABLED
+            = "android.profiler.instrumentation.enabled";
 
     @Override
     public void apply(final Project project) {
@@ -106,21 +62,17 @@ public class ProfilerPlugin implements Plugin<Project> {
             registerTransform(project, properties);
         }
     }
+
     private void addProfilersLib(Project project, Properties properties) {
         if (getBoolean(properties, PROPERTY_SUPPORT_LIB_ENABLED)) {
             // Only add the lib to the application:
             if (!isApplicationProject(project)) {
                 return;
             }
-            String path = "build/profilers-gen/profilers-support-lib.jar";
-            ConfigurableFileCollection files = project.files(path);
-            ExtractSupportLibJarTask task = project.getTasks()
-                    .create("unpackProfilersLib", ExtractSupportLibJarTask.class);
-            task.setOutputFile(project.file(path));
-            files.builtBy(task);
-            project.getDependencies().add("compile", files);
+            project.getDependencies().add("compile", "com.android.tools:studio-profiler-lib:1.0");
         }
     }
+
     private void applyGapidOptions(Project project, Properties properties) {
         if (getBoolean(properties, PROPERTY_GAPID_ENABLED)) {
             String aarFileName = properties.getProperty(PROPERTY_GAPID_TRACER_AAR);
