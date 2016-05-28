@@ -354,12 +354,7 @@ public abstract class SdkTestCase extends TestCase {
             tempFile.delete();
         }
 
-        Files.copy(new InputSupplier<InputStream>() {
-            @Override
-            public InputStream getInput() throws IOException {
-                return contents;
-            }
-        }, tempFile);
+        java.nio.file.Files.copy(contents, tempFile.toPath());
 
         return tempFile;
     }
