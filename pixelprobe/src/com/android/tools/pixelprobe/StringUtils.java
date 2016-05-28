@@ -17,6 +17,7 @@
 package com.android.tools.pixelprobe;
 
 import java.util.Collection;
+import java.util.stream.Collectors;
 
 /**
  * Various utilities to manipulate and generate strings.
@@ -36,17 +37,6 @@ final class StringUtils {
      *         in the collection
      */
     static <T> String join(Collection<T> list, String delimiter) {
-        StringBuilder builder = new StringBuilder();
-
-        int count = 0;
-        for (T element : list) {
-            builder.append(element.toString());
-            if (count != list.size() - 1) {
-                builder.append(delimiter);
-            }
-            count++;
-        }
-
-        return builder.toString();
+        return list.stream().map(Object::toString).collect(Collectors.joining(delimiter));
     }
 }
