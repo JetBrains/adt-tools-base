@@ -16,10 +16,10 @@ final class PSDDecoder$RawLayer$$ChunkIO {
         int size = 0;
         long byteCount = 0;
 
-        rawLayer.top = in.readInt() & 0xffffffffL;
-        rawLayer.left = in.readInt() & 0xffffffffL;
-        rawLayer.bottom = in.readInt() & 0xffffffffL;
-        rawLayer.right = in.readInt() & 0xffffffffL;
+        rawLayer.top = in.readInt();
+        rawLayer.left = in.readInt();
+        rawLayer.bottom = in.readInt();
+        rawLayer.right = in.readInt();
         rawLayer.channels = in.readShort();
         rawLayer.channelsInfo = new ArrayList<PSDDecoder.ChannelInformation>();
         size = rawLayer.channels;

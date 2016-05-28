@@ -18,6 +18,7 @@ package com.android.tools.pixelprobe;
 
 import java.awt.Color;
 import java.awt.Shape;
+import java.awt.geom.Path2D;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
@@ -42,7 +43,7 @@ public final class Layer {
 
     private BufferedImage mBitmap;
 
-    private Shape mPath;
+    private Path2D mPath;
     private Color mPathColor = Color.WHITE;
 
     private TextInfo mTextInfo;
@@ -147,7 +148,7 @@ public final class Layer {
     /**
      * Returns this layer's vector data for {@link Type#PATH} layers.
      */
-    public Shape getPath() {
+    public Path2D getPath() {
         return mPath;
     }
 
@@ -200,7 +201,7 @@ public final class Layer {
         mBitmap = bitmap;
     }
 
-    void setPath(Shape path) {
+    void setPath(Path2D path) {
         mPath = path;
     }
 
