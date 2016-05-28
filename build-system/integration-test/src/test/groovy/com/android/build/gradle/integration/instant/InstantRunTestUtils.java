@@ -52,6 +52,7 @@ import com.google.common.io.Files;
 import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -172,6 +173,34 @@ public final class InstantRunTestUtils {
 
         TruthHelper.assertThat(artifact.type).isEqualTo(InstantRunArtifactType.RELOAD_DEX);
         return artifact;
+    }
+
+    @NonNull
+    public static List<InstantRunArtifact> getCompiledColdSwapChange(
+            @NonNull InstantRun instantRunModel,
+            @NonNull ColdswapMode coldswapMode) throws Exception {
+        List<InstantRunArtifact> artifacts =  loadContext(instantRunModel).getArtifacts();
+        TruthHelper.assertThat(artifacts).isNotEmpty();
+
+        EnumSet<InstantRunArtifactType> allowedArtifactTypes;
+        switch (coldswapMode) {
+            case MULTIAPK:
+                allowedArtifactTypes = EnumSet.of(
+                        InstantRunArtifactType.SPLIT, InstantRunArtifactType.SPLIT_MAIN);
+                break;
+            case MULTIDEX:
+                allowedArtifactTypes = EnumSet.of(InstantRunArtifactType.DEX);
+                break;
+            default:
+                throw new IllegalArgumentException(
+                        "Expecting cold swap mode to be explicitly specified");
+        }
+        for (InstantRunArtifact artifact: artifacts) {
+            if (!allowedArtifactTypes.contains(artifact.type)) {
+                throw new AssertionError("Unexpected artifact " + artifact);
+            }
+        }
+        return artifacts;
     }
 
     public static void printBuildInfoFile(@Nullable InstantRun instantRunModel) {
