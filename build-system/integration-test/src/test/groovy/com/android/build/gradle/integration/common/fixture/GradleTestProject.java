@@ -544,14 +544,6 @@ public class GradleTestProject implements TestRule {
     }
 
     /**
-     * Return the output directory from Android plugins.
-     */
-    public File getIntermediatesDir() {
-        return new File(testDir,
-                Joiner.on(File.separator).join("build", AndroidProject.FD_INTERMEDIATES));
-    }
-
-    /**
      * Return a File under the output directory from Android plugins.
      */
     public File getOutputFile(String path) {

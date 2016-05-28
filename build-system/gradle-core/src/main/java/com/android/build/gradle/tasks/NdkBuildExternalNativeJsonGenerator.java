@@ -22,6 +22,7 @@ import com.android.build.gradle.external.gnumake.NativeBuildConfigValueBuilder;
 import com.android.build.gradle.external.gson.NativeBuildConfigValue;
 import com.android.build.gradle.external.gson.PlainFileGsonTypeAdaptor;
 import com.android.builder.core.AndroidBuilder;
+import com.android.ide.common.process.ProcessException;
 import com.android.ide.common.process.ProcessInfoBuilder;
 import com.android.sdklib.IAndroidTarget;
 import com.google.common.base.Charsets;
@@ -63,10 +64,27 @@ class NdkBuildExternalNativeJsonGenerator extends ExternalNativeJsonGenerator {
     }
 
     @Override
-    void processBuildOutput(@NonNull String buildOutput, @NonNull String abi) throws IOException {
+    void createNativeBuildJson(
+            @NonNull String abi,
+            @NonNull File outputJson) throws ProcessException, IOException {
+        checkConfiguration();
+
         // Discover Application.mk if one exists next to Android.mk
         // If there is an Application.mk file next to Android.mk then pick it up.
         File applicationMk = new File(getMakeFile().getParent(), "Application.mk");
+
+        ProcessInfoBuilder builder = getProcessBuilder(abi, applicationMk);
+
+        // Invoke ndk-build -n and capture resulting info-level logger output to be parsed.
+        diagnostic("executing ndk-build %s\n", builder);
+        String info = ExternalNativeBuildTaskUtils.executeBuildProcessAndLogError(
+                androidBuilder,
+                builder.createProcess());
+
+        // Write the captured ndk-build output to a file for diagnostic purposes.
+        diagnostic("write the raw output from ndk-build to a file");
+        File outputTextFile = new File(getJsonFolder(), "ndk-build-output.txt");
+        Files.write(info, outputTextFile, Charsets.UTF_8);
 
         // Write the captured ndk-build output to a file for diagnostic purposes.
         diagnostic("parse and convert ndk-build output to build configuration JSON");
@@ -74,7 +92,7 @@ class NdkBuildExternalNativeJsonGenerator extends ExternalNativeJsonGenerator {
                 .addCommands(
                         getBuildCommand(abi, applicationMk),
                         variantName,
-                        buildOutput,
+                        info,
                         isWindows())
                 .build();
 
@@ -90,27 +108,8 @@ class NdkBuildExternalNativeJsonGenerator extends ExternalNativeJsonGenerator {
                 .create()
                 .toJson(buildConfig);
 
-        // Write the captured ndk-build output to JSON file
-        File expectedJson = ExternalNativeBuildTaskUtils.getOutputJson(getJsonFolder(), abi);
-        Files.write(actualResult, expectedJson, Charsets.UTF_8);
-    }
-
-    /**
-     * Get the process builder with -n flag. This will tell ndk-build to emit the steps that it
-     * would do to execute the build.
-     */
-    @NonNull
-    @Override
-    ProcessInfoBuilder getProcessBuilder(@NonNull String abi, @NonNull File outputJson) {
-        checkConfiguration();
-        // Discover Application.mk if one exists next to Android.mk
-        // If there is an Application.mk file next to Android.mk then pick it up.
-        File applicationMk = new File(getMakeFile().getParent(), "Application.mk");
-        ProcessInfoBuilder builder = new ProcessInfoBuilder();
-        builder.setExecutable(getNdkBuild())
-                .addArgs(getBaseArgs(abi, applicationMk))
-                .addArgs("-n");
-        return builder;
+        // Write the captured ndk-build output to a file for diagnostic purposes.
+        Files.write(actualResult, outputJson, Charsets.UTF_8);
     }
 
     @NonNull
@@ -139,6 +138,20 @@ class NdkBuildExternalNativeJsonGenerator extends ExternalNativeJsonGenerator {
             return new File(getMakeFileOrFolder(), "Android.mk");
         }
         return getMakeFileOrFolder();
+    }
+
+    /**
+     * Get the process builder with -n flag. This will tell ndk-build to emit the steps that it
+     * would do to execute the build.
+     */
+    @NonNull
+    private ProcessInfoBuilder getProcessBuilder(
+            @NonNull String abi, @NonNull File applicationMk) {
+        ProcessInfoBuilder builder = new ProcessInfoBuilder();
+        builder.setExecutable(getNdkBuild())
+                .addArgs(getBaseArgs(abi, applicationMk))
+                .addArgs("-n");
+        return builder;
     }
 
     /**
