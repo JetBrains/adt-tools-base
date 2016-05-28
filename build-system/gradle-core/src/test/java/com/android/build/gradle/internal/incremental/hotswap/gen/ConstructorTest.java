@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.internal.incremental.hotswap;
+package com.android.build.gradle.internal.incremental.hotswap.gen;
 
 import com.android.build.gradle.internal.incremental.fixture.ClassEnhancement;
 import com.example.basic.Constructors;
