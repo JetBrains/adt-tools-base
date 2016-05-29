@@ -29,6 +29,7 @@ if (!androidJar.exists()) {
 configurations {
     provided
     aar
+    jni
 }
 
 compileJava {
@@ -38,6 +39,8 @@ compileJava {
 
 dependencies {
     provided files(androidJar)
+//  TODO: Uncomment to include the jni libraries once they compile from source tree
+//    jni project(path: ":native", configuration: "perfa")
 }
 
 sourceSets {
@@ -56,8 +59,13 @@ tasks.withType(Javadoc) {
 
 task assembleAar(type:Zip, dependsOn: jar) {
     archiveName "profilers-support-lib"
+
     from "src/aar"
     from jar
+
+//  TODO: Uncomment to include the jni libraries once they compile from source tree
+//  from configurations.jni
+
     extension "aar"
 }
 

@@ -32,6 +32,10 @@ public class ProfilerService {
     private static ProfilerService sInstance;
     private final List<ProfilerComponent> mComponents;
 
+    static {
+        System.loadLibrary("perfa");
+    }
+
     /**
      * Initialization method called multiple times from many entry points in the application.
      * Not thread safe so, when instrumented, it needs to be added in the main thread.
@@ -41,12 +45,14 @@ public class ProfilerService {
             return;
         }
         sInstance = new ProfilerService();
-        Log.i(STUDIO_PROFILER, "Initializing advanced profiling.");
     }
 
     public ProfilerService() {
         mComponents = new ArrayList<ProfilerComponent>();
         mComponents.add(new NetworkProfiler());
         mComponents.add(new MemoryProfiler());
+        nativeInitialize();
     }
+
+    public native void nativeInitialize();
 }
