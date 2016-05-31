@@ -83,7 +83,7 @@ class ApkZFileCreator implements ApkCreator {
                 predicate = isIgnored;
             }
 
-            mZip.mergeFrom(toMerge, predicate);
+            mZip.mergeFrom(toMerge, predicate::apply);
         } catch (Throwable t) {
             throw closer.rethrow(t);
         } finally {

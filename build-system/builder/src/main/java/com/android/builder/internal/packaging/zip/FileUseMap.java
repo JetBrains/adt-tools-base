@@ -32,13 +32,19 @@ import java.util.TreeSet;
  * The file use map keeps track of which parts of the zip file are used which parts are not.
  * It essentially maintains an ordered set of entries ({@link FileUseMapEntry}). Each entry either has
  * some data (an entry, the Central Directory, the EOCD) or is a free entry.
- * <p>
- * For example: [0-95, "foo/"][95-260, "xpto"][260-310, free][310-360, Central Directory]
+ *
+ * <p>For example: [0-95, "foo/"][95-260, "xpto"][260-310, free][310-360, Central Directory]
  * [360-390,EOCD]
- * <p>
- * There are a couple of invariants in this structure: there are no gaps between map entries. The
- * map is fully covered up to its size. There are no two free entries next to each other, this
- * is guaranteed by coalescing the entries upon removal (see {@link #coalesce(FileUseMapEntry)}).
+ *
+ * <p>There are a few invariants in this structure:
+ * <ul>
+ *  <li>there are no gaps between map entries;
+ *  <li>the map is fully covered up to its size;
+ *  <li>there are no two free entries next to each other; this is guaranteed by coalescing the
+ *  entries upon removal (see {@link #coalesce(FileUseMapEntry)});
+ *  <li>all free entries have a minimum size defined in the constructor, with the possible exception
+ *  of the last one
+ * </ul>
  */
 class FileUseMap {
     /**
@@ -63,16 +69,24 @@ class FileUseMap {
     private TreeSet<FileUseMapEntry<?>> mFree;
 
     /**
+     * If defined, defines the minimum size for a free entry.
+     */
+    private int mMinFreeSize;
+
+    /**
      * Creates a new, empty file map.
      *
      * @param size the size of the file
+     * @param minFreeSize minimum size of a free entry
      */
-    FileUseMap(long size) {
+    FileUseMap(long size, int minFreeSize) {
         Preconditions.checkArgument(size >= 0, "size < 0");
+        Preconditions.checkArgument(minFreeSize >= 0, "minFreeSize < 0");
 
         mSize = size;
         mMap = new TreeSet<>(FileUseMapEntry.COMPARE_BY_START);
         mFree = new TreeSet<>(FileUseMapEntry.COMPARE_BY_SIZE);
+        mMinFreeSize = minFreeSize;
 
         if (size > 0) {
             internalAdd(FileUseMapEntry.makeFree(0, size));
@@ -352,7 +366,8 @@ class FileUseMap {
 
     /**
      * Locates a free area in the map with at least {@code size} bytes such that
-     * {@code ((start + alignOffset) % align == 0}. This method will try a
+     * {@code ((start + alignOffset) % align == 0} and such that the free space before {@code start}
+     * is not smaller than the minimum free entry size. This method will try a
      * best-fit algorithm. If no free contiguous block exists in the map that can hold the provided
      * size then the first free index at the end of the map is provided. This means that the map
      * may need to be extended before data can be added.
@@ -397,6 +412,27 @@ class FileUseMap {
             }
 
             /*
+             * We don't care about blocks that leave less than the minimum free size before.
+             */
+            if (extraSize > 0 && extraSize < mMinFreeSize) {
+                continue;
+            }
+
+            /*
+             * We don't care about blocks that leave less than the minimum size after. There are
+             * two exceptions: (1) this is the last block and (2) the next block is free in which
+             * case, after coalescing, the free block with have at least the minimum size.
+             */
+            if (mMinFreeSize > 0) {
+                FileUseMapEntry<?> next = mMap.higher(curr);
+                if (next != null
+                        && !next.isFree()
+                        && curr.getSize() - (size + extraSize) < mMinFreeSize) {
+                    continue;
+                }
+            }
+
+            /*
              * We don't care about blocks that are bigger than the best so far (otherwise this
              * wouldn't be a best-fit algorithm).
              */
@@ -425,6 +461,17 @@ class FileUseMap {
          */
         if (best == null) {
             long extra = (align - ((firstFree + alignOffset) % align)) % align;
+
+            /*
+             * If adding this entry at the end would create a space smaller than the minimum,
+             * push it for 'align' bytes forward.
+             */
+            if (extra > 0) {
+                if (extra < mMinFreeSize) {
+                    extra += align * (((mMinFreeSize - extra) + (align - 1)) / align);
+                }
+            }
+
             return firstFree + extra;
         } else {
             return best.getStart() + bestExtraSize;

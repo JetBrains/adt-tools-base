@@ -63,7 +63,7 @@ public class FileUseMapTest {
         final double MAX_TAIL_TOTAL_RATIO = 2.0;
 
         long mapSize = MAP_SIZE;
-        FileUseMap map = new FileUseMap(mapSize);
+        FileUseMap map = new FileUseMap(mapSize, 0);
         Random rand = new Random(0);
 
         long[] runs = new long[MAX_RUNS];
@@ -122,7 +122,7 @@ public class FileUseMapTest {
 
     @Test
     public void testSizeComputation() {
-        FileUseMap m = new FileUseMap(200);
+        FileUseMap m = new FileUseMap(200, 0);
 
         assertEquals(200, m.size());
         assertEquals(0, m.usedSize());

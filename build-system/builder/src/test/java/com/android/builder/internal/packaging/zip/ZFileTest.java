@@ -30,7 +30,6 @@ import com.android.builder.internal.packaging.zip.utils.CloseableByteSource;
 import com.android.builder.internal.packaging.zip.utils.RandomAccessFileUtils;
 import com.android.utils.FileUtils;
 import com.google.common.base.Charsets;
-import com.google.common.base.Predicate;
 import com.google.common.base.Strings;
 import com.google.common.hash.Hashing;
 import com.google.common.io.ByteStreams;
@@ -52,7 +51,6 @@ import java.io.RandomAccessFile;
 import java.util.Random;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.regex.Pattern;
 import java.util.zip.Deflater;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -497,13 +495,10 @@ public class ZFileTest {
             zos2.write(new byte[] { 7, 8 });
         }
 
-        Predicate<String> ignorePredicate =
-                (input) -> input.matches("not.*") || input.matches(".*gnored.*");
-
         try (
                 ZFile zf1 = new ZFile(zip1);
                 ZFile zf2 = new ZFile(zip2)) {
-            zf1.mergeFrom(zf2, ignorePredicate);
+            zf1.mergeFrom(zf2, (input) -> input.matches("not.*") || input.matches(".*gnored.*"));
 
             StoredEntry only_in_1 = zf1.get("only_in_1");
             assertNotNull(only_in_1);

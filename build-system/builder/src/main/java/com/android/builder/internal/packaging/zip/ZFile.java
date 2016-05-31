@@ -26,10 +26,7 @@ import com.android.builder.internal.utils.CachedFileContents;
 import com.android.builder.internal.utils.IOExceptionFunction;
 import com.android.builder.internal.utils.IOExceptionRunnable;
 import com.android.utils.FileUtils;
-import com.google.common.base.Function;
-import com.google.common.base.Functions;
 import com.google.common.base.Preconditions;
-import com.google.common.base.Predicate;
 import com.google.common.base.Verify;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -60,6 +57,8 @@ import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.function.Function;
+import java.util.function.Predicate;
 
 /**
  * The {@code ZFile} provides the main interface for interacting with zip files. A {@code ZFile}
@@ -207,6 +206,16 @@ public class ZFile implements Closeable {
      * flag a infinite recursion problem.
      */
     private static final int MAXIMUM_EXTENSION_CYCLE_COUNT = 10;
+
+    /**
+     * Minimum size for the extra field.
+     */
+    private static final int MINIMUM_EXTRA_FIELD_SIZE = 6;
+
+    /**
+     * Header ID for field with zip alignment.
+     */
+    private static final int ALIGNMENT_ZIP_EXTRA_DATA_FIELD_HEADER_ID = 0xd935;
 
     /**
      * File zip file.
@@ -371,7 +380,11 @@ public class ZFile implements Closeable {
      */
     public ZFile(@NonNull File file, @NonNull ZFileOptions options) throws IOException {
         mFile = file;
-        mMap = new FileUseMap(0);
+        mMap = new FileUseMap(
+                0,
+                options.getCoverEmptySpaceUsingExtraField()
+                        ? MINIMUM_EXTRA_FIELD_SIZE
+                        : 0);
         mDirty = false;
         mClosedControl = null;
         mAlignmentRule = options.getAlignmentRule();
@@ -497,6 +510,19 @@ public class ZFile implements Closeable {
             for (StoredEntry entry : directory.getEntries().values()) {
                 long start = entry.getCentralDirectoryHeader().getOffset();
                 long end = start + entry.getInFileSize();
+
+                /*
+                 * If isExtraAlignmentBlock(entry.getLocalExtra()) is true, we know the entry
+                 * has an extra field that is solely used for alignment. This means the
+                 * actual entry could start at start + extra.length and leave space before.
+                 *
+                 * But, if we did this here, we would be modifying the zip file and that is
+                 * weird because we're just opening it for reading.
+                 *
+                 * The downside is that we will never reuse that space. Maybe one day ZFile
+                 * can be clever enough to remove the local extra when we start modifying the zip
+                 * file.
+                 */
 
                 FileUseMapEntry<StoredEntry> mapEntry = mMap.add(start, end, entry);
                 mEntries.put(entry.getCentralDirectoryHeader().getName(), mapEntry);
@@ -687,7 +713,7 @@ public class ZFile implements Closeable {
         Preconditions.checkArgument(end <= mRaf.length(), "end > mRaf.length()");
 
         return new InputStream() {
-            long mCurr = start;
+            private long mCurr = start;
 
             @Override
             public int read() throws IOException {
@@ -822,7 +848,9 @@ public class ZFile implements Closeable {
                 mMap.remove(entry);
                 Verify.verify(entry == mEntries.remove(name));
 
-                storedEntry.setLocalExtra(new byte[localExtraSize]);
+                storedEntry.setLocalExtra(makeExtraAlignmentBlock(localExtraSize,
+                        mAlignmentRule.alignment(
+                                storedEntry.getCentralDirectoryHeader().getName())));
                 mEntries.put(name, mMap.add(newStart, newStart + newSize, storedEntry));
             }
         }
@@ -1302,10 +1330,12 @@ public class ZFile implements Closeable {
                     Futures.transform(result, CompressionResult::getSource);
             LazyDelegateByteSource compressedByteSource = new LazyDelegateByteSource(
                     compressedByteSourceFuture);
+            //noinspection IOResourceOpenedButNotSafelyClosed
             newSource = new ProcessedAndRawByteSources(source, compressedByteSource);
         } else {
             compressInfo.set(new CentralDirectoryHeaderCompressInfo(newFileData,
                     CompressionMethod.STORE, source.size()));
+            //noinspection IOResourceOpenedButNotSafelyClosed
             newSource = new ProcessedAndRawByteSources(source, source);
         }
 
@@ -1496,7 +1526,7 @@ public class ZFile implements Closeable {
     public void mergeFrom(@NonNull ZFile src, @NonNull Predicate<String> ignoreFilter)
             throws IOException {
         for (StoredEntry fromEntry : src.entries()) {
-            if (ignoreFilter.apply(fromEntry.getCentralDirectoryHeader().getName())) {
+            if (ignoreFilter.test(fromEntry.getCentralDirectoryHeader().getName())) {
                 continue;
             }
 
@@ -1563,6 +1593,7 @@ public class ZFile implements Closeable {
                 CloseableByteSource rawContents = mTracker.fromSource(fromSource.getRawByteSource());
                 CloseableByteSource processedContents;
                 if (fromCompressInfo.getMethod() == CompressionMethod.DEFLATE) {
+                    //noinspection IOResourceOpenedButNotSafelyClosed
                     processedContents = new InflaterByteSource(rawContents);
                 } else {
                     processedContents = rawContents;
@@ -1706,6 +1737,7 @@ public class ZFile implements Closeable {
         CloseableByteSource processedContents;
 
         if (compressInfo.getMethod() == CompressionMethod.DEFLATE) {
+            //noinspection IOResourceOpenedButNotSafelyClosed
             processedContents = new InflaterByteSource(rawContents);
         } else {
             processedContents = rawContents;
@@ -1899,7 +1931,7 @@ public class ZFile implements Closeable {
      * @throws IOException failed to some (or all ) of the files
      */
     public void addAllRecursively(@NonNull File file) throws IOException {
-        addAllRecursively(file, Functions.constant(true));
+        addAllRecursively(file, f -> true);
     }
 
     /**
@@ -1920,14 +1952,9 @@ public class ZFile implements Closeable {
             boolean mayCompressFile = Verify.verifyNotNull(mayCompress.apply(file),
                     "mayCompress.apply() returned null");
 
-            Closer closer = Closer.create();
-            FileInputStream fileInput = closer.register(new FileInputStream(file));
-            try {
+            try (Closer closer = Closer.create()) {
+                FileInputStream fileInput = closer.register(new FileInputStream(file));
                 add(file.getName(), fileInput, mayCompressFile);
-            } catch (IOException e) {
-                throw closer.rethrow(e);
-            } finally {
-                closer.close();
             }
 
             return;
@@ -1938,8 +1965,7 @@ public class ZFile implements Closeable {
             path = FileUtils.toSystemIndependentPath(path);
 
             InputStream stream;
-            Closer closer = Closer.create();
-            try {
+            try (Closer closer = Closer.create()) {
                 boolean mayCompressFile;
                 if (f.isDirectory()) {
                     stream = closer.register(new ByteArrayInputStream(new byte[0]));
@@ -1951,10 +1977,6 @@ public class ZFile implements Closeable {
                 }
 
                 add(path, stream, mayCompressFile);
-            } catch (IOException e) {
-                throw closer.rethrow(e);
-            } finally {
-                closer.close();
             }
         }
     }
@@ -2110,5 +2132,33 @@ public class ZFile implements Closeable {
     @NonNull
     public File getFile() {
         return mFile;
+    }
+
+    /**
+     * Creates the extra field block to fill in {@code blockSize} bytes.
+     *
+     * @param blockSize the block size to fill as an extra field
+     * @param alignment the alignment that is being used for the file
+     * @return the extra field block
+     * @throws IOException failed to write the extra block
+     */
+    @NonNull
+    private static byte[] makeExtraAlignmentBlock(int blockSize, int alignment) throws IOException {
+        Preconditions.checkArgument(
+                blockSize >= MINIMUM_EXTRA_FIELD_SIZE,
+                "blockSize (" + blockSize + ") < MINIMUM_EXTRA_FIELD_SIZE");
+
+        byte[] data = new byte[blockSize];
+        ByteBuffer buffer = ByteBuffer.wrap(data);
+
+        LittleEndianUtils.writeUnsigned2Le(buffer, ALIGNMENT_ZIP_EXTRA_DATA_FIELD_HEADER_ID);
+        LittleEndianUtils.writeUnsigned2Le(buffer, blockSize - 4);
+        LittleEndianUtils.writeUnsigned2Le(buffer, alignment);
+
+        /*
+         * The rest is left filled with zeroes.
+         */
+
+        return data;
     }
 }
