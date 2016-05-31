@@ -25,14 +25,14 @@ import java.util.Set;
 import javax.lang.model.element.Modifier;
 
 public final class ClassDef {
-    private final String mName;
-    private final List<MethodDef> mMethods;
-    private final Set<Modifier> mModifiers;
+    private final String name;
+    private final List<MethodDef> methods;
+    private final Set<Modifier> modifiers;
 
     private ClassDef(Builder builder) {
-        mName = builder.mName;
-        mMethods = Utils.immutableCopy(builder.mMethods);
-        mModifiers = Utils.immutableCopy(builder.mModifiers);
+        name = builder.name;
+        methods = Utils.immutableCopy(builder.methods);
+        modifiers = Utils.immutableCopy(builder.modifiers);
     }
 
     public static Builder builder(String name) {
@@ -40,13 +40,13 @@ public final class ClassDef {
     }
 
     void emit(CodeGenerator generator) throws IOException {
-        generator.emitModifiers(mModifiers);
-        generator.emit("class $L", mName);
+        generator.emitModifiers(modifiers);
+        generator.emit("class $L", name);
         generator.emit(" {\n");
         generator.indent();
 
         boolean needNewLine = false;
-        for (MethodDef method : mMethods) {
+        for (MethodDef method : methods) {
             if (needNewLine) generator.emit("\n");
             method.emit(generator);
             needNewLine = true;
@@ -57,21 +57,21 @@ public final class ClassDef {
     }
 
     public static final class Builder {
-        private final String mName;
-        private final List<MethodDef> mMethods = new ArrayList<>();
-        private Set<Modifier> mModifiers;
+        private final String name;
+        private final List<MethodDef> methods = new ArrayList<>();
+        private Set<Modifier> modifiers;
 
         private Builder(String name) {
-            mName = name;
+            this.name = name;
         }
 
         public Builder addMethod(MethodDef method) {
-            mMethods.add(method);
+            methods.add(method);
             return this;
         }
 
         public Builder modifiers(EnumSet<Modifier> modifiers) {
-            mModifiers = EnumSet.copyOf(modifiers);
+            this.modifiers = EnumSet.copyOf(modifiers);
             return this;
         }
 

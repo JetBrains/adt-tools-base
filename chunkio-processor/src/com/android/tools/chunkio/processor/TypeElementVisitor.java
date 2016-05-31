@@ -34,12 +34,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 class TypeElementVisitor extends SimpleTypeVisitor6<ChunkReader, Void> {
-    private final Elements mElements;
-    private final ErrorHandler mErrorHandler;
+    private final Elements elements;
+    private final ErrorHandler errorHandler;
 
     TypeElementVisitor(Elements elements, ErrorHandler handler) {
-        mElements = elements;
-        mErrorHandler = handler;
+        this.elements = elements;
+        errorHandler = handler;
     }
 
     @Override
@@ -89,8 +89,8 @@ class TypeElementVisitor extends SimpleTypeVisitor6<ChunkReader, Void> {
 
             CollectionChunkReader collectionReader = (CollectionChunkReader) reader;
             if (!collectionReader.acceptTypeParameters(paramElements)) {
-                mErrorHandler.error(declaredType.asElement(),
-                        "Invalid collection type parameters");
+                errorHandler.error(declaredType.asElement(),
+                                   "Invalid collection type parameters");
             }
         }
 
@@ -101,14 +101,14 @@ class TypeElementVisitor extends SimpleTypeVisitor6<ChunkReader, Void> {
         Chunked chunked = element.getAnnotation(Chunked.class);
         //noinspection VariableNotUsedInsideIf
         if (chunked != null) {
-            ClassName targetName = ClassName.from(element, mElements);
+            ClassName targetName = ClassName.from(element, elements);
             return ChunkReaders.createReader(targetName.packageName, targetName.className);
         }
         return null;
     }
 
     private ChunkReader getEnumChunkReader(TypeElement element) {
-        ClassName targetName = ClassName.from(element, mElements);
+        ClassName targetName = ClassName.from(element, elements);
         return ChunkReaders.createEnumReader(targetName.packageName, targetName.sourceName);
     }
 

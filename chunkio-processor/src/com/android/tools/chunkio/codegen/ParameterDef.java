@@ -24,14 +24,14 @@ import java.util.Set;
 import javax.lang.model.element.Modifier;
 
 public final class ParameterDef {
-    private final String mName;
-    private final TypeDef mType;
-    private final Set<Modifier> mModifiers;
+    private final String name;
+    private final TypeDef type;
+    private final Set<Modifier> modifiers;
 
     private ParameterDef(Builder builder) {
-        mName = builder.mName;
-        mType = builder.mType;
-        mModifiers = Utils.immutableCopy(builder.mModifiers);
+        name = builder.name;
+        type = builder.type;
+        modifiers = Utils.immutableCopy(builder.modifiers);
     }
 
     public static Builder builder(Type type, String name, EnumSet<Modifier> modifiers) {
@@ -43,27 +43,27 @@ public final class ParameterDef {
     }
 
     void emit(CodeGenerator generator) throws IOException {
-        generator.emitModifiers(mModifiers);
-        generator.emit("$T $L", mType, mName);
+        generator.emitModifiers(modifiers);
+        generator.emit("$T $L", type, name);
     }
 
     public static final class Builder {
-        private final String mName;
-        private TypeDef mType;
-        private Set<Modifier> mModifiers;
+        private final String name;
+        private TypeDef type;
+        private Set<Modifier> modifiers;
 
         private Builder(Type type, String name) {
-            mName = name;
-            mType = TypeDef.of(type);
+            this.name = name;
+            this.type = TypeDef.of(type);
         }
 
         private Builder(TypeDef type, String name) {
-            mType = type;
-            mName = name;
+            this.type = type;
+            this.name = name;
         }
 
         private Builder modifiers(EnumSet<Modifier> modifiers) {
-            mModifiers = EnumSet.copyOf(modifiers);
+            this.modifiers = EnumSet.copyOf(modifiers);
             return this;
         }
 

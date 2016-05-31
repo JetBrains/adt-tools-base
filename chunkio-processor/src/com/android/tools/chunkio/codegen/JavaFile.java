@@ -26,27 +26,27 @@ import java.util.Set;
 public final class JavaFile {
     private static final NullAppendable NULL_APPENDABLE = new NullAppendable();
 
-    private final String mPackageName;
-    private final ClassDef mClass;
-    private final String mIndent;
+    private final String packageName;
+    private final ClassDef classDef;
+    private final String indent;
 
     private JavaFile(Builder builder) {
-        mPackageName = builder.mPackageName;
-        mClass = builder.mClass;
-        mIndent = builder.mIndent;
+        packageName = builder.mPackageName;
+        classDef = builder.mClass;
+        indent = builder.mIndent;
     }
 
     public void emit(Appendable out) throws IOException {
         CodeGenerator generator = new CodeGenerator(NULL_APPENDABLE, "");
         emit(generator);
-        generator = new CodeGenerator(out, mIndent, generator.getImportCandidates());
+        generator = new CodeGenerator(out, indent, generator.getImportCandidates());
         emit(generator);
     }
 
     private void emit(CodeGenerator generator) throws IOException {
-        if (!mPackageName.isEmpty()) {
-            generator.emit("package $L;\n\n", mPackageName);
-            generator.setPackage(mPackageName);
+        if (!packageName.isEmpty()) {
+            generator.emit("package $L;\n\n", packageName);
+            generator.setPackage(packageName);
         }
 
         Set<String> imports = generator.getImports();
@@ -57,7 +57,7 @@ public final class JavaFile {
             generator.emit("\n");
         }
 
-        mClass.emit(generator);
+        classDef.emit(generator);
 
         generator.setPackage(null);
     }

@@ -16,83 +16,23 @@
 
 package com.android.tools.pixelprobe;
 
-import java.awt.Color;
+import com.android.tools.pixelprobe.effect.Shadow;
+import com.android.tools.pixelprobe.util.Lists;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
 /**
- * Holds the effects associated to an image's layer.
+ * Holds the effects associated with an image's layer.
  */
 public final class Effects {
-    /**
-     * Represents either an inner or an outer ("drop") shadow.
-     */
-    public static final class Shadow {
-        private final float mBlur;
-        private final float mAngle;
-        private final float mDistance;
-        private final float mOpacity;
-        private final Color mColor;
-        private final BlendMode mBlendMode;
+    private final List<Shadow> outerShadows;
+    private final List<Shadow> innerShadows;
 
-        private Shadow(float blur, float angle, float distance, float opacity,
-                Color color, BlendMode blendMode) {
-            mBlur = blur;
-            mAngle = angle;
-            mDistance = distance;
-            mOpacity = opacity;
-            mColor = color;
-            mBlendMode = blendMode;
-        }
-
-        /**
-         * Returns this shadow's blur amount in pixels.
-         */
-        public float getBlur() {
-            return mBlur;
-        }
-
-        /**
-         * Returns this shadow's casting angle in degrees.
-         */
-        public float getAngle() {
-            return mAngle;
-        }
-
-        /**
-         * Returns this shadow's distance to the source in pixels.
-         */
-        public float getDistance() {
-            return mDistance;
-        }
-
-        /**
-         * Returns this shadow's opacity between 0 and 1.
-         */
-        public float getOpacity() {
-            return mOpacity;
-        }
-
-        /**
-         * Returns this shadow's color.
-         */
-        public Color getColor() {
-            return mColor;
-        }
-
-        /**
-         * Returns this shadows blending mode.
-         */
-        public BlendMode getBlendMode() {
-            return mBlendMode;
-        }
-    }
-
-    private List<Shadow> mOuterShadows = Collections.emptyList();
-    private List<Shadow> mInnerShadows = Collections.emptyList();
-
-    Effects() {
+    Effects(Builder builder) {
+        outerShadows = Lists.immutableCopy(builder.outerShadows);
+        innerShadows = Lists.immutableCopy(builder.innerShadows);
     }
 
     /**
@@ -100,7 +40,7 @@ public final class Effects {
      * list will be empty or contain a single shadow.
      */
     public List<Shadow> getOuterShadows() {
-        return Collections.unmodifiableList(mOuterShadows);
+        return Collections.unmodifiableList(outerShadows);
     }
 
     /**
@@ -108,19 +48,28 @@ public final class Effects {
      * list will be empty or contain a single shadow.
      */
     public List<Shadow> getInnerShadows() {
-        return Collections.unmodifiableList(mInnerShadows);
+        return Collections.unmodifiableList(innerShadows);
     }
 
-    void addShadow(float blur, float angle, float distance, float opacity,
-            Color color, BlendMode blendMode, boolean inner) {
-        List<Shadow> list = inner ? mInnerShadows : mOuterShadows;
-        if (list.size() == 0) {
-            list = new ArrayList<>();
-            if (inner) mInnerShadows = list;
-            else mOuterShadows = list;
+    public static final class Builder {
+        List<Shadow> outerShadows = new ArrayList<>();
+        List<Shadow> innerShadows = new ArrayList<>();
+
+        public Builder addShadow(Shadow shadow) {
+            boolean isInner = shadow.getType() == Shadow.Type.INNER;
+            List<Shadow> list = isInner ? innerShadows : outerShadows;
+            if (list.size() == 0) {
+                list = new ArrayList<>();
+                if (isInner) innerShadows = list;
+                else outerShadows = list;
+            }
+
+            list.add(shadow);
+            return this;
         }
 
-        Shadow shadow = new Shadow(blur, angle, distance, opacity, color, blendMode);
-        list.add(shadow);
+        public Effects build() {
+            return new Effects(this);
+        }
     }
 }

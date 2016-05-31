@@ -16,8 +16,9 @@
 
 package com.android.tools.pixelprobe;
 
+import com.android.tools.pixelprobe.util.Lists;
+
 import java.awt.Color;
-import java.awt.Shape;
 import java.awt.geom.Path2D;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
@@ -26,32 +27,31 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * A layer in an Image. The values returned by a layer depends on
- * its type. Make sure to query getType() before you call type
- * specific getters (getTextInfo() for instance).
+ * A layer can hold different data depending on its type.
+ * Make sure to query {@link #getType()} before you call type
+ * specific getters ({@link #getTextInfo()} for instance).
  */
 public final class Layer {
-    private final String mName;
-    private final Type mType;
+    private final String name;
+    private final Type type;
 
-    private final Rectangle2D.Float mBounds = new Rectangle2D.Float();
+    private final Rectangle2D.Float bounds;
 
-    private float mOpacity = 1.0f;
-    private BlendMode mBlendMode = BlendMode.NORMAL;
+    private final float opacity;
+    private final BlendMode blendMode;
 
-    private List<Layer> mChildren = Collections.emptyList();
+    private final List<Layer> children;
 
-    private BufferedImage mBitmap;
+    private final BufferedImage bitmap;
 
-    private Path2D mPath;
-    private Color mPathColor = Color.WHITE;
+    private final Path2D path;
+    private final Color pathColor;
 
-    private TextInfo mTextInfo;
+    private final TextInfo textInfo;
+    private final Effects effects;
 
-    private boolean mOpened = true;
-    private boolean mVisible = true;
-
-    private final Effects mEffects = new Effects();
+    private final boolean open;
+    private final boolean visible;
 
     /**
      * Available layer types.
@@ -79,33 +79,49 @@ public final class Layer {
         TEXT,
     }
 
-    /**
-     * Creates a new layer with the specified name and type.
-     */
-    Layer(String name, Type type) {
-        mName = name;
-        mType = type;
+    Layer(Builder builder) {
+        name = builder.name;
+        type = builder.type;
+
+        bounds = builder.bounds;
+
+        opacity = builder.opacity;
+        blendMode = builder.blendMode;
+
+        children = Lists.immutableCopy(builder.children);
+
+        bitmap = builder.bitmap;
+
+        path = builder.path;
+        pathColor = builder.pathColor;
+
+        textInfo = builder.textInfo;
+
+        open = builder.open;
+        visible = builder.visible;
+
+        effects = builder.effects;
     }
 
     /**
      * Returns this layer's name. Never null.
      */
     public String getName() {
-        return mName;
+        return name;
     }
 
     /**
      * Returns this layer's type.
      */
     public Type getType() {
-        return mType;
+        return type;
     }
 
     /**
-     * Returns the list of children for GROUP layers.
+     * Returns the list of children for {@link Type#GROUP} layers.
      */
     public List<Layer> getChildren() {
-        return Collections.unmodifiableList(mChildren);
+        return Collections.unmodifiableList(children);
     }
 
     /**
@@ -113,28 +129,28 @@ public final class Layer {
      * absolute image coordinates.
      */
     public Rectangle2D getBounds() {
-        return mBounds;
+        return bounds;
     }
 
     /**
      * Returns this layer's opacity between 0 and 1.
      */
     public float getOpacity() {
-        return mOpacity;
+        return opacity;
     }
 
     /**
      * Returns this layer's blending mode.
      */
     public BlendMode getBlendMode() {
-        return mBlendMode;
+        return blendMode;
     }
 
     /**
      * Returns this layer's list of effects.
      */
     public Effects getEffects() {
-        return mEffects;
+        return effects;
     }
 
     /**
@@ -142,87 +158,138 @@ public final class Layer {
      * Can be null if the bounds are empty.
      */
     public BufferedImage getBitmap() {
-        return mBitmap;
+        return bitmap;
     }
 
     /**
      * Returns this layer's vector data for {@link Type#PATH} layers.
      */
     public Path2D getPath() {
-        return mPath;
+        return path;
     }
 
     /**
      * Returns this layer's vector color for {@link Type#PATH} layers.
      */
     public Color getPathColor() {
-        return mPathColor;
+        return pathColor;
     }
 
     /**
      * Returns this layer's text information for {@link Type#TEXT} layers.
      */
     public TextInfo getTextInfo() {
-        return mTextInfo;
+        return textInfo;
     }
 
     /**
      * Indicates whether this layer is opened or closed, only for {@link Type#GROUP} layers.
      */
-    public boolean isOpened() {
-        return mOpened;
+    public boolean isOpen() {
+        return open;
     }
 
     /**
      * Indicates whether this layer is visible.
      */
     public boolean isVisible() {
-        return mVisible;
-    }
-
-    void addLayer(Layer layer) {
-        if (mChildren.size() == 0) mChildren = new ArrayList<>();
-        mChildren.add(layer);
-    }
-
-    void setBounds(long left, long top, long right, long bottom) {
-        mBounds.setRect(left, top, right - left, bottom - top);
-    }
-
-    void setOpacity(float opacity) {
-        mOpacity = opacity;
-    }
-
-    void setBlendMode(BlendMode blendMode) {
-        mBlendMode = blendMode;
-    }
-
-    void setBitmap(BufferedImage bitmap) {
-        mBitmap = bitmap;
-    }
-
-    void setPath(Path2D path) {
-        mPath = path;
-    }
-
-    void setPathColor(Color color) {
-        mPathColor = color;
-    }
-
-    void setTextInfo(TextInfo textInfo) {
-        mTextInfo = textInfo;
-    }
-
-    void setOpened(boolean opened) {
-        mOpened = opened;
-    }
-
-    void setVisible(boolean visible) {
-        mVisible = visible;
+        return visible;
     }
 
     @Override
     public String toString() {
-        return mName;
+        return name;
+    }
+
+    @SuppressWarnings("UseJBColor")
+    public static final class Builder {
+        private final String name;
+        private final Type type;
+
+        private final Rectangle2D.Float bounds = new Rectangle2D.Float();
+
+        private float opacity = 1.0f;
+        private BlendMode blendMode = BlendMode.NORMAL;
+
+        private final List<Layer> children = new ArrayList<>();
+
+        private BufferedImage bitmap;
+
+        private Path2D path;
+        private Color pathColor = Color.WHITE;
+
+        private TextInfo textInfo;
+        private Effects effects;
+
+        private boolean open = true;
+        private boolean visible = true;
+
+        public Builder(String name, Type type) {
+            this.name = name;
+            this.type = type;
+        }
+
+        public Rectangle2D bounds() {
+            return new Rectangle2D.Float(bounds.x, bounds.y, bounds.width, bounds.height);
+        }
+
+        public Builder bounds(int left, int top, int width, int height) {
+            this.bounds.setRect(left, top, width, height);
+            return this;
+        }
+
+        public Builder opacity(float opacity) {
+            this.opacity = opacity;
+            return this;
+        }
+
+        public Builder blendMode(BlendMode blendMode) {
+            this.blendMode = blendMode;
+            return this;
+        }
+
+        public Builder addLayer(Layer layer) {
+            children.add(layer);
+            return this;
+        }
+
+        public Builder bitmap(BufferedImage image) {
+            bitmap = image;
+            return this;
+        }
+
+        public Builder path(Path2D path) {
+            this.path = path;
+            return this;
+        }
+
+        public Builder pathColor(Color pathColor) {
+            this.pathColor = pathColor;
+            return this;
+        }
+
+        public Builder textInfo(TextInfo info) {
+            textInfo = info;
+            return this;
+        }
+
+        public Builder effects(Effects effects) {
+            this.effects = effects;
+            return this;
+        }
+
+        public Builder open(boolean open) {
+            this.open = open;
+            return this;
+        }
+
+        public Builder visible(boolean visible) {
+            this.visible = visible;
+            return this;
+        }
+
+        public Layer build() {
+            return new Layer(this);
+        }
     }
 }

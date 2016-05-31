@@ -16,6 +16,10 @@
 
 package com.android.tools.chunkio;
 
+/**
+ * Exception used by {@link ChunkIO} to report issues when decoding
+ * data sources.
+ */
 public class ChunkException extends RuntimeException {
     public ChunkException(String message, Throwable cause) {
         super(message, cause);

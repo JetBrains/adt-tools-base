@@ -28,12 +28,12 @@ import java.util.List;
 import java.util.Set;
 
 class ChunksCollector {
-    private final TypeElement mElement;
-    private final ErrorHandler mErrorHandler;
+    private final TypeElement element;
+    private final ErrorHandler errorHandler;
 
     ChunksCollector(TypeElement element, ErrorHandler errorHandler) {
-        mElement = element;
-        mErrorHandler = errorHandler;
+        this.element = element;
+        this.errorHandler = errorHandler;
     }
 
     /**
@@ -48,7 +48,7 @@ class ChunksCollector {
      * - is not static
      */
     List<FieldChunk> collect() {
-        List<? extends Element> enclosedElements = mElement.getEnclosedElements();
+        List<? extends Element> enclosedElements = element.getEnclosedElements();
         List<VariableElement> fields = ElementFilter.fieldsIn(enclosedElements);
 
         List<FieldChunk> chunks = new ArrayList<>();
@@ -65,13 +65,13 @@ class ChunksCollector {
     private boolean validate(VariableElement field) {
         Set<Modifier> modifiers = field.getModifiers();
         if (modifiers.contains(Modifier.FINAL)) {
-            mErrorHandler.error(mElement, "Field %s in class %s is final", field.getSimpleName());
+            errorHandler.error(element, "Field %s in class %s is final", field.getSimpleName());
             return false;
         } else if (modifiers.contains(Modifier.PRIVATE)) {
-            mErrorHandler.error(mElement, "Field %s in class %s is private", field.getSimpleName());
+            errorHandler.error(element, "Field %s in class %s is private", field.getSimpleName());
             return false;
         } else if (modifiers.contains(Modifier.STATIC)) {
-            mErrorHandler.error(mElement, "Field %s in class %s is static", field.getSimpleName());
+            errorHandler.error(element, "Field %s in class %s is static", field.getSimpleName());
             return false;
         }
         return true;
