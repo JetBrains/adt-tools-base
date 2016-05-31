@@ -121,9 +121,14 @@ public class Snapshot extends Capture {
 
     @NonNull
     public static Snapshot createSnapshot(@NonNull DataBuffer buffer) {
+        return createSnapshot(buffer, new ProguardMap());
+    }
+
+    @NonNull
+    public static Snapshot createSnapshot(@NonNull DataBuffer buffer, @NonNull ProguardMap map) {
         try {
             Snapshot snapshot = new Snapshot(buffer);
-            HprofParser.parseBuffer(snapshot, buffer);
+            HprofParser.parseBuffer(snapshot, buffer, map);
             return snapshot;
         } catch (RuntimeException e) {
             buffer.dispose();
