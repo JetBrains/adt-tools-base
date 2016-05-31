@@ -53,6 +53,7 @@ import com.android.build.gradle.internal.process.GradleProcessExecutor;
 import com.android.build.gradle.internal.profile.RecordingBuildListener;
 import com.android.build.gradle.internal.transforms.DexTransform;
 import com.android.build.gradle.internal.variant.BaseVariantData;
+import com.android.builder.sdk.SdkLibData;
 import com.android.build.gradle.internal.variant.VariantFactory;
 import com.android.build.gradle.tasks.ExternalNativeBuildTaskUtils;
 import com.android.build.gradle.tasks.ExternalNativeJsonGenerator;
@@ -68,7 +69,6 @@ import com.android.builder.profile.ExecutionType;
 import com.android.builder.profile.ProcessRecorderFactory;
 import com.android.builder.profile.Recorder;
 import com.android.builder.profile.ThreadRecorder;
-import com.android.builder.sdk.SdkLibData;
 import com.android.builder.sdk.TargetInfo;
 import com.android.dx.command.dexer.Main;
 import com.android.ide.common.internal.ExecutorSingleton;
@@ -375,8 +375,8 @@ public abstract class BasePlugin {
 
         project.afterEvaluate(p -> {
             // TODO: Read flag from extension.
-            if (AndroidGradleOptions.getUseSdkDownload(p)
-                    && !p.getGradle().getStartParameter().isOffline()) {
+            if (!p.getGradle().getStartParameter().isOffline()
+                    && AndroidGradleOptions.getUseSdkDownload(p)) {
                 SdkLibData sdkLibData =
                         SdkLibData.download(getDownloader(), getSettingsController());
                 dependencyManager.setSdkLibData(sdkLibData);
