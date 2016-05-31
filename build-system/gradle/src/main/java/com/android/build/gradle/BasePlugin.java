@@ -852,45 +852,7 @@ public abstract class BasePlugin {
 
     }
 
-    private Downloader getDownloader() {
-        // Used for testing, in case we don't want to download online, we could use file URLs.
-        if (System.getenv(AndroidSdkHandler.SDK_TEST_BASE_URL_ENV_VAR) != null) {
-            return new Downloader() {
-                @Nullable
-                @Override
-                public InputStream downloadAndStream(@NonNull URL url,
-                        @NonNull ProgressIndicator indicator)
-                        throws IOException {
-                    return url.openStream();
-                }
-
-                @Nullable
-                @Override
-                public File downloadFully(@NonNull URL url, @NonNull ProgressIndicator indicator)
-                        throws IOException {
-                    File tempFile = File.createTempFile("GradleDownloader", null);
-                    downloadFully(url, tempFile, null, indicator);
-                    return tempFile;
-                }
-
-                @Override
-                public void downloadFully(
-                        @NonNull URL url,
-                        @NonNull File target,
-                        @Nullable String checksum,
-                        @NonNull ProgressIndicator indicator) throws IOException {
-                    Files.createParentDirs(target);
-                    URLConnection urlConnection = url.openConnection();
-                    try (InputStream is = urlConnection.getInputStream()) {
-                        Files.asByteSink(target).writeFrom(is);
-                    } catch (IOException e) {
-                        indicator.setText("The download was cancelled.");
-                        throw new RuntimeException(e);
-                    }
-                }
-            };
-        } else {
-            return new LegacyDownloader(FileOpUtils.create());
-        }
+    public static Downloader getDownloader() {
+        return new LegacyDownloader(FileOpUtils.create());
     }
 }

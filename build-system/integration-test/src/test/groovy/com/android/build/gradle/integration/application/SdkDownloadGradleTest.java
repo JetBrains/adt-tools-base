@@ -64,6 +64,8 @@ public class SdkDownloadGradleTest {
 
     @Before
     public void setUp() throws Exception {
+
+        // TODO: Set System property {@code AndroidSdkHandler.SDK_TEST_BASE_URL_PROPERTY}.
         mSdkHome = project.file("local-sdk-for-test");
         FileUtils.mkdirs(mSdkHome);
 
@@ -158,7 +160,9 @@ public class SdkDownloadGradleTest {
         TestFileUtils.appendToFile(
                 project.getBuildFile(),
                 System.lineSeparator()
-                        + "android.defaultConfig.minSdkVersion = 21"
+                        + "android.defaultConfig.minSdkVersion = 23"
+                        + System.lineSeparator()
+                        + "android.buildToolsVersion \"19.1.0\""
                         + System.lineSeparator()
                         + "dependencies { compile 'com.android.support:support-v4:23.0.0' }");
 
@@ -176,7 +180,9 @@ public class SdkDownloadGradleTest {
         TestFileUtils.appendToFile(
                 project.getBuildFile(),
                 System.lineSeparator()
-                        + "android.defaultConfig.minSdkVersion = 21"
+                        + "android.defaultConfig.minSdkVersion = 23"
+                        + System.lineSeparator()
+                        + "android.buildToolsVersion \"19.1.0\""
                         + System.lineSeparator()
                         + "dependencies { compile 'com.google.android.support:wearable:1.4.0' }");
 
@@ -184,6 +190,30 @@ public class SdkDownloadGradleTest {
 
         checkForLibrary(
                 SdkMavenRepository.GOOGLE, "com.google.android.support", "wearable", "1.4.0");
+    }
+
+    @Test
+    public void checkDependencies_individualRepository() throws Exception {
+        TestFileUtils.appendToFile(
+                project.getBuildFile(),
+                System.lineSeparator()
+                        + "android.defaultConfig.minSdkVersion = 23"
+                        + System.lineSeparator()
+                        + "android.buildToolsVersion \"19.1.0\""
+                        + System.lineSeparator()
+                        + "dependencies { compile 'com.android.support.constraint:constraint-layout-solver:1.0.0-alpha2' }");
+
+        project.executor().run("assembleDebug");
+
+        checkForLibrary(
+                SdkMavenRepository.ANDROID,
+                "com.android.support.constraint",
+                "constraint-layout-solver",
+                "1.0.0-alpha2");
+
+        assertThat(SdkMavenRepository.GOOGLE.isInstalled(mSdkHome, FileOpUtils.create())).isFalse();
+        assertThat(SdkMavenRepository.ANDROID.isInstalled(mSdkHome, FileOpUtils.create()))
+                .isFalse();
     }
 
     private void checkForLibrary(
@@ -217,7 +247,10 @@ public class SdkDownloadGradleTest {
     public void checkDependencies_invalidDependency() throws Exception {
         TestFileUtils.appendToFile(
                 project.getBuildFile(),
-                System.lineSeparator() + "dependencies { compile 'foo:bar:baz' }");
+                System.lineSeparator()
+                        + "android.buildToolsVersion \"19.1.0\""
+                        + System.lineSeparator()
+                        + "dependencies { compile 'foo:bar:baz' }");
 
         GradleBuildResult result = project.executor().expectFailure().run("assembleDebug");
         assertNotNull(result.getException());
@@ -292,15 +325,19 @@ public class SdkDownloadGradleTest {
                 System.lineSeparator()
                         + "android.compileSdkVersion \"Google Inc.:Google APIs:23\""
                         + System.lineSeparator()
-                        + "android.buildToolsVersion \"23.0.3\"");
+                        + "android.buildToolsVersion \"19.1.0\"");
 
         GradleBuildResult result = project.executor().expectFailure().run("assembleDebug");
         assertNotNull(result.getException());
 
         assertThat(Throwables.getRootCause(result.getException()).getMessage())
-                .contains("[Android SDK Build-Tools 23.0.3, Android SDK Platform 23, Google APIs]");
-        assertThat(Throwables.getRootCause(result.getException()).getMessage())
                 .contains("missing components");
+        assertThat(Throwables.getRootCause(result.getException()).getMessage())
+                .contains("Android SDK Build-Tools 19.1");
+        assertThat(Throwables.getRootCause(result.getException()).getMessage())
+                .contains("Android SDK Platform 23");
+        assertThat(Throwables.getRootCause(result.getException()).getMessage())
+                .contains("Google APIs");
     }
 
     private File getPlatformFolder() {

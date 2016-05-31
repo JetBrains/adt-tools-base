@@ -57,6 +57,7 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.Map;
 import java.util.function.Function;
+import java.util.Optional;
 
 
 /**
@@ -109,6 +110,12 @@ public final class AndroidSdkHandler {
      * testing.
      */
     public static final String SDK_TEST_BASE_URL_ENV_VAR = "SDK_TEST_BASE_URL";
+
+    /**
+     * The name of the system property used to override the url of the primary repository, for
+     * testing.
+     */
+    public static final String SDK_TEST_BASE_URL_PROPERTY = "sdk.test.base.url";
 
     /**
      * The latest version of legacy remote packages we should expect to receive from a server. If
@@ -560,12 +567,14 @@ public final class AndroidSdkHandler {
 
         /**
          * Gets the default url (without the actual filename or specific final part of the path
-         * (e.g. sys-img). This will be either the value of {@link #SDK_TEST_BASE_URL_ENV_VAR} or
-         * {@link #URL_GOOGLE_SDK_SITE}
+         * (e.g. sys-img). This will be either the value of {@link #SDK_TEST_BASE_URL_ENV_VAR},
+         * {@link #URL_GOOGLE_SDK_SITE} or {@link #SDK_TEST_BASE_URL_PROPERTY} JVM property.
          */
         @NonNull
         private static String getBaseUrl(@NonNull ProgressIndicator progress) {
-            String baseUrl = System.getenv(SDK_TEST_BASE_URL_ENV_VAR);
+            String baseUrl =
+                    Optional.ofNullable(System.getenv(SDK_TEST_BASE_URL_ENV_VAR))
+                            .orElse(System.getProperty(SDK_TEST_BASE_URL_PROPERTY));
             if (baseUrl != null) {
                 if (!baseUrl.isEmpty() && baseUrl.endsWith("/")) {
                     return baseUrl;
