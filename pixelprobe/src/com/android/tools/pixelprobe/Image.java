@@ -18,6 +18,7 @@ package com.android.tools.pixelprobe;
 
 import com.android.tools.pixelprobe.util.Lists;
 
+import java.awt.color.ColorSpace;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -47,6 +48,8 @@ public class Image {
     private final List<Guide> guides;
     private final List<Layer> layers;
 
+    private final ColorSpace colorSpace;
+
     Image(Builder builder) {
         width = builder.width;
         height = builder.height;
@@ -60,6 +63,8 @@ public class Image {
 
         guides = Lists.immutableCopy(builder.guides);
         layers = Lists.immutableCopy(builder.layers);
+
+        colorSpace = builder.colorSpace;
     }
 
     /**
@@ -95,6 +100,13 @@ public class Image {
      */
     public ColorMode getColorMode() {
         return colorMode;
+    }
+
+    /**
+     * Returns the color space of this image.
+     */
+    public ColorSpace getColorSpace() {
+        return colorSpace;
     }
 
     /**
@@ -141,6 +153,8 @@ public class Image {
         final List<Guide> guides = new ArrayList<>();
         final List<Layer> layers = new ArrayList<>();
 
+        ColorSpace colorSpace = ColorSpace.getInstance(ColorSpace.CS_sRGB);
+
         public int width() {
             return width;
         }
@@ -155,6 +169,10 @@ public class Image {
 
         public float horizontalResolution() {
             return horizontalResolution;
+        }
+
+        public ColorSpace colorSpace() {
+            return colorSpace;
         }
 
         public Builder flattenedBitmap(BufferedImage flattenedBitmap) {
@@ -191,6 +209,11 @@ public class Image {
 
         public Builder addLayer(Layer layer) {
             layers.add(layer);
+            return this;
+        }
+
+        public Builder colorSpace(ColorSpace colorSpace) {
+            this.colorSpace = colorSpace;
             return this;
         }
 

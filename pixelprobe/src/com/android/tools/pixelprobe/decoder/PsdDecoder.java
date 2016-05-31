@@ -29,6 +29,9 @@ import com.android.tools.pixelprobe.util.Strings;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
+import java.awt.color.ColorSpace;
+import java.awt.color.ICC_ColorSpace;
+import java.awt.color.ICC_Profile;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.GeneralPath;
 import java.awt.geom.Path2D;
@@ -273,7 +276,7 @@ final class PsdDecoder extends Decoder {
                 case ADJUSTMENT:
                     break;
                 case BITMAP:
-                    decodeLayerImageData(layer, rawLayer, layersList.channels.get(i));
+                    decodeLayerImageData(image, layer, rawLayer, layersList.channels.get(i));
                     break;
                 case GROUP:
                     stack.offerFirst(layer);
@@ -818,6 +821,7 @@ final class PsdDecoder extends Decoder {
 
     private static void addToPath(GeneralPath path, PathRecord.BezierKnot firstKnot,
             PathRecord.BezierKnot lastKnot) {
+
         path.curveTo(
                 Bytes.fixed8_24ToFloat(lastKnot.controlExitX),
                 Bytes.fixed8_24ToFloat(lastKnot.controlExitY),
@@ -834,13 +838,15 @@ final class PsdDecoder extends Decoder {
      * There are 4 encoding formats: RAW, RLE, ZIP and ZIP without prediction.
      * Since we have yet to encounter the ZIP case, we only support RAW and RLE.
      */
-    private static void decodeLayerImageData(Layer.Builder layer, RawLayer rawLayer,
-                                             ChannelsContainer channelsList) {
+    private static void decodeLayerImageData(Image.Builder image, Layer.Builder layer,
+            RawLayer rawLayer, ChannelsContainer channelsList) {
+
         Rectangle2D bounds = layer.bounds();
         if (bounds.isEmpty()) return;
 
+        ColorSpace colorSpace = image.colorSpace();
         BufferedImage bitmap = Images.create(
-                (int) bounds.getWidth(), (int) bounds.getHeight(), rawLayer.channels);
+                (int) bounds.getWidth(), (int) bounds.getHeight(), rawLayer.channels, colorSpace);
 
         for (int i = 0; i < rawLayer.channelsInfo.size(); i++) {
             ChannelInformation info = rawLayer.channelsInfo.get(i);
@@ -864,7 +870,7 @@ final class PsdDecoder extends Decoder {
             }
         }
 
-        layer.bitmap(bitmap);
+        layer.bitmap(Colors.convertToSRGB(bitmap, colorSpace));
     }
 
     private static BlendMode getBlendModeFromKey(String mode) {
@@ -895,8 +901,19 @@ final class PsdDecoder extends Decoder {
                     // Extract dpi information, required to properly handle text
                     extractResolution(image, (ResolutionInfoBlock) block.data);
                     break;
+                case ColorProfileBlock.ID:
+                    extractColorProfile(image, (ColorProfileBlock) block.data);
+                    break;
             }
         }
+    }
+
+    /**
+     * Extracts the ICC color profile embedded in the file, if any.
+     */
+    private static void extractColorProfile(Image.Builder image, ColorProfileBlock colorProfileBlock) {
+        ICC_Profile iccProfile = ICC_Profile.getInstance(colorProfileBlock.icc);
+        image.colorSpace(new ICC_ColorSpace(iccProfile));
     }
 
     /**
@@ -948,24 +965,26 @@ final class PsdDecoder extends Decoder {
      */
     private static void decodeImageData(Image.Builder image, PSD psd) {
         int channels = Math.min(psd.header.channels, 4);
+        ColorSpace colorSpace = image.colorSpace();
 
         BufferedImage bitmap = null;
         switch (psd.imageData.compression) {
             case RAW:
                 bitmap = Images.decodeRaw(psd.imageData.data, 0,
-                        image.width(), image.height(), channels, psd.header.depth);
+                        image.width(), image.height(), channels, psd.header.depth, colorSpace);
                 break;
             case RLE:
                 int offset = image.height() * psd.header.channels * 2;
                 bitmap = Images.decodeRLE(
-                        psd.imageData.data, offset, image.width(), image.height(), channels);
+                        psd.imageData.data, offset, image.width(), image.height(), channels, colorSpace);
                 break;
             case ZIP:
                 break;
             case ZIP_NO_PREDICTION:
                 break;
         }
-        image.flattenedBitmap(bitmap);
+
+        image.flattenedBitmap(Colors.convertToSRGB(bitmap, colorSpace));
     }
 
     /**
@@ -1016,7 +1035,7 @@ final class PsdDecoder extends Decoder {
         @Chunk
         short depth;
         // We only support RGB documents
-        @Chunk(byteCount = 2, match = "ColorMode.RGB")
+        @Chunk(byteCount = 2)
         ColorMode colorMode;
     }
 
@@ -1101,6 +1120,8 @@ final class PsdDecoder extends Decoder {
      */
     @Chunked
     static final class ColorProfileBlock {
+        static final int ID = 0x040F;
+
         @Chunk
         byte[] icc;
     }
