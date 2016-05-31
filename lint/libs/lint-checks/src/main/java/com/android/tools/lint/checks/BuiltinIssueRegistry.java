@@ -31,7 +31,7 @@ import java.util.List;
 public class BuiltinIssueRegistry extends IssueRegistry {
     private static final List<Issue> sIssues;
 
-    static final int INITIAL_CAPACITY = 262;
+    static final int INITIAL_CAPACITY = 263;
 
     static {
         List<Issue> issues = new ArrayList<Issue>(INITIAL_CAPACITY);
@@ -116,6 +116,7 @@ public class BuiltinIssueRegistry extends IssueRegistry {
         issues.add(HandlerDetector.ISSUE);
         issues.add(HardcodedDebugModeDetector.ISSUE);
         issues.add(HardcodedValuesDetector.ISSUE);
+        issues.add(HardwareIdDetector.ISSUE);
         issues.add(IconDetector.DUPLICATES_CONFIGURATIONS);
         issues.add(IconDetector.DUPLICATES_NAMES);
         issues.add(IconDetector.GIF_USAGE);
@@ -327,7 +328,7 @@ public class BuiltinIssueRegistry extends IssueRegistry {
             }
 
             if (scope.contains(Scope.JAVA_FILE)) {
-                initialSize += 74;
+                initialSize += 75;
             } else if (scope.contains(Scope.CLASS_FILE)) {
                 initialSize += 15;
             } else if (scope.contains(Scope.MANIFEST)) {
