@@ -47,25 +47,25 @@ import java.util.LinkedList;
 import java.util.List;
 
 public class ClassEmitter {
-    private final TypeElement mTypeElement;
+    private final TypeElement typeElement;
 
-    private final Elements mElementUtils;
-    private final ErrorHandler mErrorHandler;
-    private final Filer mFiler;
-    private final TypeVisitor<ChunkReader, Void> mTypeVisitor;
+    private final Elements elementUtils;
+    private final ErrorHandler errorHandler;
+    private final Filer filer;
+    private final TypeVisitor<ChunkReader, Void> typeVisitor;
 
     public ClassEmitter(TypeElement typeElement, Environment environment) {
-        mTypeElement = typeElement;
-        mElementUtils = environment.elementUtils;
-        mErrorHandler = environment.errorHandler;
-        mFiler = environment.filer;
-        mTypeVisitor = environment.typeElementVisitor;
+        this.typeElement = typeElement;
+        elementUtils = environment.elementUtils;
+        errorHandler = environment.errorHandler;
+        filer = environment.filer;
+        typeVisitor = environment.typeElementVisitor;
     }
 
     public void emit() {
         // Find all annotated fields in the class
-        List<FieldChunk> chunks = new ChunksCollector(mTypeElement, mErrorHandler).collect();
-        ClassName className = ClassName.from(mTypeElement, mElementUtils);
+        List<FieldChunk> chunks = new ChunksCollector(typeElement, errorHandler).collect();
+        ClassName className = ClassName.from(typeElement, elementUtils);
         emitCode(chunks, className);
     }
 
@@ -75,14 +75,14 @@ public class ClassEmitter {
             JavaFile javaFile = JavaFile.builder(className.packageName, classDef).build();
             writeCodeToFile(className, javaFile);
         } catch (Exception e) {
-            mErrorHandler.error(mTypeElement,
-                    "Code generation failed with exception: %s", Utils.stackTraceToString(e));
+            errorHandler.error(typeElement,
+                               "Code generation failed with exception: %s", Utils.stackTraceToString(e));
         }
     }
 
     private void writeCodeToFile(ClassName className, JavaFile javaFile)
             throws IOException {
-        JavaFileObject sourceFile = mFiler.createSourceFile(className.qualifiedName);
+        JavaFileObject sourceFile = filer.createSourceFile(className.qualifiedName);
         Writer writer = sourceFile.openWriter();
         javaFile.emit(writer);
         writer.close();
@@ -91,7 +91,7 @@ public class ClassEmitter {
     private ClassDef createClass(List<FieldChunk> chunks, ClassName className) {
         return ClassDef.builder(className.className)
                 .modifiers(EnumSet.of(Modifier.FINAL))
-                .addMethod(generateMethod(mTypeElement, chunks, className))
+                .addMethod(generateMethod(typeElement, chunks, className))
                 .build();
     }
 
@@ -121,7 +121,7 @@ public class ClassEmitter {
         emitMethodPrologue(type, builder, name);
 
         for (FieldChunk chunk : chunks) {
-            ChunkReader reader = chunk.type.accept(mTypeVisitor, null);
+            ChunkReader reader = chunk.type.accept(typeVisitor, null);
             if (reader == null) {
                 errorReaderNotFound(typeElement, chunk);
                 continue;
@@ -157,7 +157,7 @@ public class ClassEmitter {
         for (Chunk.Case test : tests) {
             TypeMirror typeMirror = typeFromTest(test);
 
-            ChunkReader switchedReader = typeMirror.accept(mTypeVisitor, null);
+            ChunkReader switchedReader = typeMirror.accept(typeVisitor, null);
             if (switchedReader == null) {
                 errorReaderNotFound(typeElement, chunk);
                 continue;
@@ -234,7 +234,7 @@ public class ClassEmitter {
 
         TypeMirror elementType = collectionReader.getElementType();
         String elementName = Utils.variableName(TypeDef.of(elementType).getSimpleName());
-        ChunkReader elementReader = elementType.accept(mTypeVisitor, null);
+        ChunkReader elementReader = elementType.accept(typeVisitor, null);
 
         reader.emitRead(builder, dottedName, chunk);
 
@@ -398,8 +398,8 @@ public class ClassEmitter {
     }
 
     private void errorReaderNotFound(TypeElement typeElement, FieldChunk chunk) {
-        mErrorHandler.error(typeElement,
-                "Could not generate code for field %s in class %s", chunk.name);
+        errorHandler.error(typeElement,
+                           "Could not generate code for field %s in class %s", chunk.name);
     }
 
     private static boolean hasTypeSwitch(FieldChunk chunk, ChunkReader reader) {
@@ -410,7 +410,7 @@ public class ClassEmitter {
         TypeMirror typeMirror;
         try {
             String canonicalName = test.type().getCanonicalName();
-            TypeElement switchedElement = mElementUtils.getTypeElement(canonicalName);
+            TypeElement switchedElement = elementUtils.getTypeElement(canonicalName);
             typeMirror = switchedElement.asType();
         } catch (MirroredTypeException e) {
             typeMirror = e.getTypeMirror();

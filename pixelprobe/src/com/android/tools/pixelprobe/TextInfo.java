@@ -16,6 +16,8 @@
 
 package com.android.tools.pixelprobe;
 
+import com.android.tools.pixelprobe.util.Lists;
+
 import java.awt.Color;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Rectangle2D;
@@ -24,30 +26,30 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * The text information for an Image's text layer.
+ * The text information for an image's text layer.
  * Contains information about the data (text) as well as styling.
  */
 public final class TextInfo {
-    private String mText = "";
+    private final String text;
 
-    private AffineTransform mTransform = new AffineTransform();
-    private final Rectangle2D.Double mBounds = new Rectangle2D.Double();
+    private final AffineTransform transform;
+    private final Rectangle2D.Double bounds;
 
-    private final List<StyleRun> mStyleRuns = new ArrayList<>();
-    private final List<ParagraphRun> mParagraphRuns = new ArrayList<>();
+    private final List<StyleRun> styleRuns;
+    private final List<ParagraphRun> paragraphRuns;
 
     /**
      * A run represents a range of characters in a string.
      */
     public static abstract class Run {
-        private int mStart;
-        private int mEnd;
-        private int mLength;
+        private int start;
+        private int end;
+        private int length;
 
         private Run(int start, int end) {
-            mStart = start;
-            mEnd = end;
-            mLength = end - start;
+            this.start = start;
+            this.end = end;
+            length = end - start;
         }
 
         /**
@@ -55,7 +57,7 @@ public final class TextInfo {
          * text String.
          */
         public int getStart() {
-            return mStart;
+            return start;
         }
 
         /**
@@ -63,14 +65,14 @@ public final class TextInfo {
          * text String.
          */
         public int getEnd() {
-            return mEnd;
+            return end;
         }
 
         /**
          * Returns the length of the run.
          */
         public int getLength() {
-            return mLength;
+            return length;
         }
     }
 
@@ -80,20 +82,25 @@ public final class TextInfo {
      * etc. in a single text element.
      */
     public static final class StyleRun extends Run {
-        private String mFont;
-        private float mFontSize;
-        private Color mColor;
-        private float mTracking;
+        private final String font;
+        private final float fontSize;
+        private final Color color;
+        private final float tracking;
 
-        private StyleRun(int start, int end) {
-            super(start, end);
+        private StyleRun(Builder builder) {
+            super(builder.start, builder.end);
+
+            font = builder.font;
+            fontSize = builder.fontSize;
+            color = builder.color;
+            tracking = builder.tracking;
         }
 
         /**
          * Returns the name of the font for this run.
          */
         public String getFont() {
-            return mFont;
+            return font;
         }
 
         /**
@@ -102,31 +109,61 @@ public final class TextInfo {
          * account the Image's vertical resolution.
          */
         public float getFontSize() {
-            return mFontSize;
+            return fontSize;
         }
 
         /**
          * Returns the color of this run.
          */
         public Color getColor() {
-            return mColor;
-        }
-
-        void setStyle(String font, float fontSize, Color color) {
-            mFont = font;
-            mFontSize = fontSize;
-            mColor = color;
+            return color;
         }
 
         /**
          * Returns the tracking of this run.
          */
         public float getTracking() {
-            return mTracking;
+            return tracking;
         }
 
-        void setTracking(float tracking) {
-            mTracking = tracking;
+        @SuppressWarnings("UseJBColor")
+        public static final class Builder {
+            private final int start;
+            private final int end;
+
+            private String font = "arial";
+            private float fontSize = 12.0f;
+            private Color color = Color.BLACK;
+            private float tracking = 0.0f;
+
+            public Builder(int start, int end) {
+                this.start = start;
+                this.end = end;
+            }
+
+            public Builder font(String font) {
+                this.font = font;
+                return this;
+            }
+
+            public Builder fontSize(float fontSize) {
+                this.fontSize = fontSize;
+                return this;
+            }
+
+            public Builder color(Color color) {
+                this.color = color;
+                return this;
+            }
+
+            public Builder tracking(float tracking) {
+                this.tracking = tracking;
+                return this;
+            }
+
+            public StyleRun build() {
+                return new StyleRun(this);
+            }
         }
     }
 
@@ -135,7 +172,7 @@ public final class TextInfo {
      * identified by range of characters in the text data.
      */
     public static final class ParagraphRun extends Run {
-        private Alignment mAlignment = Alignment.LEFT;
+        private final Alignment alignment;
 
         /**
          * The paragraph justification.
@@ -151,23 +188,48 @@ public final class TextInfo {
             JUSTIFY
         }
 
-        private ParagraphRun(int start, int end) {
-            super(start, end);
+        ParagraphRun(Builder builder) {
+            super(builder.start, builder.end);
+            alignment = builder.alignment;
         }
 
         /**
          * Returns the alignment of this paragraph.
          */
         public Alignment getAlignment() {
-            return mAlignment;
+            return alignment;
         }
 
-        void setAlignment(Alignment alignment) {
-            mAlignment = alignment;
+        public static final class Builder {
+            private final int start;
+            private final int end;
+
+            private Alignment alignment = Alignment.LEFT;
+
+            public Builder(int start, int end) {
+                this.start = start;
+                this.end = end;
+            }
+
+            public Builder alignment(Alignment alignment) {
+                this.alignment = alignment;
+                return this;
+            }
+
+            public ParagraphRun build() {
+                return new ParagraphRun(this);
+            }
         }
     }
 
-    TextInfo() {
+    TextInfo(Builder builder) {
+        text = builder.text;
+
+        transform = builder.transform;
+        bounds = builder.bounds;
+
+        styleRuns = Lists.immutableCopy(builder.styleRuns);
+        paragraphRuns = Lists.immutableCopy(builder.paragraphRuns);
     }
 
     /**
@@ -179,22 +241,14 @@ public final class TextInfo {
      * baseline of this text element.
      */
     public AffineTransform getTransform() {
-        return mTransform;
-    }
-
-    void setTransform(AffineTransform transform) {
-        mTransform = transform;
+        return transform;
     }
 
     /**
      * Returns the actual text for this text element as a String.
      */
     public String getText() {
-        return mText;
-    }
-
-    void setText(String text) {
-        mText = text;
+        return text;
     }
 
     /**
@@ -202,13 +256,7 @@ public final class TextInfo {
      * describes the style of a range of the text String.
      */
     public List<StyleRun> getStyleRuns() {
-        return Collections.unmodifiableList(mStyleRuns);
-    }
-
-    StyleRun addStyleRun(int start, int end) {
-        StyleRun run = new StyleRun(start, end);
-        mStyleRuns.add(run);
-        return run;
+        return Collections.unmodifiableList(styleRuns);
     }
 
     /**
@@ -217,13 +265,7 @@ public final class TextInfo {
      * by a character range.
      */
     public List<ParagraphRun> getParagraphRuns() {
-        return Collections.unmodifiableList(mParagraphRuns);
-    }
-
-    ParagraphRun addParagraphRun(int start, int end) {
-        ParagraphRun run = new ParagraphRun(start, end);
-        mParagraphRuns.add(run);
-        return run;
+        return Collections.unmodifiableList(paragraphRuns);
     }
 
     /**
@@ -231,15 +273,50 @@ public final class TextInfo {
      * relative to the translation transform returned by {@link #getTransform()}.
      */
     public Rectangle2D getBounds() {
-        return mBounds;
-    }
-
-    void setBounds(double left, double top, double right, double bottom) {
-        mBounds.setRect(left, top, right - left, bottom - top);
+        return bounds;
     }
 
     @Override
     public String toString() {
-        return mText;
+        return text;
+    }
+
+    public static final class Builder {
+        String text = "";
+
+        final AffineTransform transform = new AffineTransform();
+        final Rectangle2D.Double bounds = new Rectangle2D.Double();
+
+        final List<StyleRun> styleRuns = new ArrayList<>();
+        final List<ParagraphRun> paragraphRuns = new ArrayList<>();
+
+        public Builder transform(AffineTransform transform) {
+            this.transform.setTransform(transform);
+            return this;
+        }
+
+        public Builder text(String text) {
+            this.text = text;
+            return this;
+        }
+
+        public Builder bounds(double left, double top, double right, double bottom) {
+            bounds.setRect(left, top, right - left, bottom - top);
+            return this;
+        }
+
+        public Builder addStyleRun(StyleRun run) {
+            styleRuns.add(run);
+            return this;
+        }
+
+        public Builder addParagraphRun(ParagraphRun run) {
+            paragraphRuns.add(run);
+            return this;
+        }
+
+        public TextInfo build() {
+            return new TextInfo(this);
+        }
     }
 }

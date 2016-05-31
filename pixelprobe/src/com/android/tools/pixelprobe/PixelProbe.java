@@ -16,7 +16,11 @@
 
 package com.android.tools.pixelprobe;
 
+import com.android.tools.pixelprobe.decoder.Decoder;
+import com.android.tools.pixelprobe.decoder.Decoders;
+
 import java.io.BufferedInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 
 /**
@@ -47,7 +51,7 @@ public final class PixelProbe {
      *
      * @return An Image instance, never null.
      */
-    public static Image probe(InputStream in) {
+    public static Image probe(InputStream in) throws IOException {
         // Make sure we have rewind capabilities to run Decoder.accept()
         if (!in.markSupported()) {
             in = new BufferedInputStream(in);
@@ -55,10 +59,10 @@ public final class PixelProbe {
 
         Decoder decoder = Decoders.find(in);
         if (decoder == null) {
-            return new Image();
+            throw new IOException("Unknown image format");
         }
 
-        return createImageFromStream(decoder, in);
+        return decoder.decode(in);
     }
 
     /**
@@ -67,46 +71,21 @@ public final class PixelProbe {
      * descriptive name. Examples: "png", "jpg", "jpeg", "psd",
      * "photoshop". Format matching is case insensitive. If a
      * suitable decoder cannot be found, this method will delegate
-     * to @{link #probe(InputStream)}.
+     * to {@link #probe(InputStream)}.
      *
      * This method does not close the stream.
-     *
-     * The returned image is always non-null but you must check
-     * the return value of Image.isValid() before attempting to use
-     * it. If the image is marked invalid, an error occurred while
-     * decoding the stream.
      *
      * @param in The input stream to decode an image from
      * @param format The expected format of the image to decode from the stream
      *
      * @return An Image instance, never null.
      */
-    public static Image probe(String format, InputStream in) {
+    public static Image probe(String format, InputStream in) throws IOException {
         Decoder decoder = Decoders.find(format);
         if (decoder == null) {
             return probe(in);
         }
 
-        return createImageFromStream(decoder, in);
+        return decoder.decode(in);
     }
-
-    private static Image createImageFromStream(Decoder decoder, InputStream in) {
-        if (decoder == null) {
-            return new Image();
-        }
-        try {
-            return decoder.decode(in);
-        } catch (DecoderException e) {
-            return new Image();
-        }
-    }
-
-    //public static void main(String[] args) throws IOException {
-    //    InputStream in = new BufferedInputStream(new FileInputStream(args[0]));
-    //    Image image = probe(in);
-    //    if (image.isValid()) {
-    //        System.out.println("image = " + image);
-    //    }
-    //    in.close();
-    //}
 }

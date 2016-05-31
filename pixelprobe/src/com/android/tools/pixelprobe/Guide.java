@@ -23,8 +23,13 @@ package com.android.tools.pixelprobe;
  * the image decoding process.
  */
 public final class Guide {
-    private final Orientation mOrientation;
-    private final float mPosition;
+    private final Orientation orientation;
+    private final float position;
+
+    Guide(Builder builder) {
+        orientation = builder.orientation;
+        position = builder.position;
+    }
 
     /**
      * Defines a guide's orientation.
@@ -41,21 +46,10 @@ public final class Guide {
     }
 
     /**
-     * Creates a new guide with the specified position and orientation.
-     *
-     * @param orientation The guide's orientation
-     * @param position The guide's position in pixels
-     */
-    Guide(Orientation orientation, float position) {
-        mOrientation = orientation;
-        mPosition = position;
-    }
-
-    /**
      * Returns this guide's orientation.
      */
     public Orientation getOrientation() {
-        return mOrientation;
+        return orientation;
     }
 
     /**
@@ -64,14 +58,33 @@ public final class Guide {
      * If the guide is vertical, the returned value is an X coordinate.
      */
     public float getPosition() {
-        return mPosition;
+        return position;
+    }
+
+    public static final class Builder {
+        Orientation orientation;
+        float position;
+
+        public Builder orientation(Orientation orientation) {
+            this.orientation = orientation;
+            return this;
+        }
+
+        public Builder position(float position) {
+            this.position = position;
+            return this;
+        }
+
+        public Guide build() {
+            return new Guide(this);
+        }
     }
 
     @Override
     public String toString() {
         return "Guide{" +
-                "orientation=" + mOrientation +
-                ", position=" + String.format("%.2f", mPosition) +
-                '}';
+               "orientation=" + orientation +
+               ", position=" + String.format("%.2f", position) +
+               '}';
     }
 }

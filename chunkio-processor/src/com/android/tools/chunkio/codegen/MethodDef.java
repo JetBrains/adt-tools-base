@@ -26,24 +26,24 @@ import java.util.Set;
 import javax.lang.model.element.Modifier;
 
 public class MethodDef {
-    private final String mName;
-    private final TypeDef mReturnType;
-    private final Set<Modifier> mModifiers;
-    private final List<ParameterDef> mParameters;
-    private final List<TypeDef> mExceptions;
-    private final CodeSnippet mBody;
+    private final String name;
+    private final TypeDef returnType;
+    private final Set<Modifier> modifiers;
+    private final List<ParameterDef> parameters;
+    private final List<TypeDef> exceptions;
+    private final CodeSnippet body;
 
     private MethodDef(Builder builder) {
-        mName = builder.mName;
-        mReturnType = builder.mReturnType;
-        mModifiers = Utils.immutableCopy(builder.mModifiers);
-        mParameters = Utils.immutableCopy(builder.mParameters);
-        mExceptions = Utils.immutableCopy(builder.mExceptions);
-        mBody = builder.mBody.build();
+        name = builder.name;
+        returnType = builder.returnType;
+        modifiers = Utils.immutableCopy(builder.modifiers);
+        parameters = Utils.immutableCopy(builder.parameters);
+        exceptions = Utils.immutableCopy(builder.exceptions);
+        body = builder.body.build();
     }
 
     String getName() {
-        return mName;
+        return name;
     }
 
     public static Builder builder(String name) {
@@ -51,11 +51,11 @@ public class MethodDef {
     }
 
     void emit(CodeGenerator generator) throws IOException {
-        generator.emitModifiers(mModifiers);
-        generator.emit("$T $L(", mReturnType, mName);
+        generator.emitModifiers(modifiers);
+        generator.emit("$T $L(", returnType, name);
 
         boolean firstParam = true;
-        for (ParameterDef parameter : mParameters) {
+        for (ParameterDef parameter : parameters) {
             if (!firstParam) {
                 generator.emit(", ");
             }
@@ -65,10 +65,10 @@ public class MethodDef {
 
         generator.emit(")");
 
-        if (!mExceptions.isEmpty()) {
+        if (!exceptions.isEmpty()) {
             generator.emit(" throws ");
             boolean firstException = true;
-            for (TypeDef exception : mExceptions) {
+            for (TypeDef exception : exceptions) {
                 if (!firstException) {
                     generator.emit(", ");
                 }
@@ -80,27 +80,27 @@ public class MethodDef {
         generator.emit(" {\n");
         generator.indent();
 
-        generator.emit(mBody);
+        generator.emit(body);
 
         generator.unindent();
         generator.emit("}\n");
     }
 
     public static final class Builder {
-        private final String mName;
-        private TypeDef mReturnType;
-        private Set<Modifier> mModifiers;
-        private final List<ParameterDef> mParameters = new ArrayList<>();
-        private final List<TypeDef> mExceptions = new ArrayList<>();
+        private final String name;
+        private TypeDef returnType;
+        private Set<Modifier> modifiers;
+        private final List<ParameterDef> parameters = new ArrayList<>();
+        private final List<TypeDef> exceptions = new ArrayList<>();
 
-        private final CodeSnippet.Builder mBody = CodeSnippet.builder();
+        private final CodeSnippet.Builder body = CodeSnippet.builder();
 
         private Builder(String name) {
-            mName = name;
+            this.name = name;
         }
 
         public Builder modifiers(EnumSet<Modifier> modifiers) {
-            mModifiers = EnumSet.copyOf(modifiers);
+            this.modifiers = EnumSet.copyOf(modifiers);
             return this;
         }
 
@@ -109,13 +109,13 @@ public class MethodDef {
         }
 
         public Builder addParameter(Type type, String name, EnumSet<Modifier> modifiers) {
-            mParameters.add(ParameterDef.builder(type, name, modifiers).build());
+            parameters.add(ParameterDef.builder(type, name, modifiers).build());
             return this;
         }
 
         public Builder throwsException(Type... exceptions) {
             for (Type exception : exceptions) {
-                mExceptions.add(TypeDef.of(exception));
+                this.exceptions.add(TypeDef.of(exception));
             }
             return this;
         }
@@ -129,47 +129,47 @@ public class MethodDef {
         }
 
         public Builder returns(TypeDef type) {
-            mReturnType = type;
+            returnType = type;
             return this;
         }
 
         public Builder add(CodeSnippet snippet) {
-            mBody.add(snippet);
+            body.add(snippet);
             return this;
         }
 
         public Builder add(String format, Object... args) {
-            mBody.add(format, args);
+            body.add(format, args);
             return this;
         }
 
         public Builder addStatement(String format, Object... args) {
-            mBody.addStatement(format, args);
+            body.addStatement(format, args);
             return this;
         }
 
         public Builder beginControlStatement(String format, Object... args) {
-            mBody.beginControlStatement(format, args);
+            body.beginControlStatement(format, args);
             return this;
         }
 
         public Builder continueControlStatement(String format, Object... args) {
-            mBody.continueControlStatement(format, args);
+            body.continueControlStatement(format, args);
             return this;
         }
 
         public Builder endControlStatement() {
-            mBody.endControlStatement();
+            body.endControlStatement();
             return this;
         }
 
         public Builder beginBlock() {
-            mBody.beginBlock();
+            body.beginBlock();
             return this;
         }
 
         public Builder endBlock() {
-            mBody.endBlock();
+            body.endBlock();
             return this;
         }
 

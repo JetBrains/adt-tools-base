@@ -24,12 +24,12 @@ import java.util.Iterator;
 import java.util.List;
 
 final class CodeSnippet {
-    private final List<String> mParts;
-    private final List<Object> mValues;
+    private final List<String> parts;
+    private final List<Object> values;
 
     private CodeSnippet(Builder builder) {
-        mParts = Utils.immutableCopy(builder.mParts);
-        mValues = Utils.immutableCopy(builder.mValues);
+        parts = Utils.immutableCopy(builder.parts);
+        values = Utils.immutableCopy(builder.values);
     }
 
     public static Builder builder() {
@@ -37,16 +37,16 @@ final class CodeSnippet {
     }
 
     List<String> getParts() {
-        return mParts;
+        return parts;
     }
 
     List<Object> getValues() {
-        return mValues;
+        return values;
     }
 
     public static final class Builder {
-        private final List<String> mParts = new ArrayList<>();
-        private final List<Object> mValues = new ArrayList<>();
+        private final List<String> parts = new ArrayList<>();
+        private final List<Object> values = new ArrayList<>();
 
         private Builder() {
         }
@@ -56,8 +56,8 @@ final class CodeSnippet {
         }
 
         public Builder add(CodeSnippet snippet) {
-            mParts.addAll(snippet.mParts);
-            mValues.addAll(snippet.mValues);
+            parts.addAll(snippet.parts);
+            values.addAll(snippet.values);
             return this;
         }
 
@@ -75,16 +75,16 @@ final class CodeSnippet {
 
                     switch (format.charAt(index + 1)) {
                         case 'L':
-                            mValues.add(asLiteral(values.next()));
+                            this.values.add(asLiteral(values.next()));
                             break;
                         case 'N':
-                            mValues.add(asName(values.next()));
+                            this.values.add(asName(values.next()));
                             break;
                         case 'S':
-                            mValues.add(asString(values.next()));
+                            this.values.add(asString(values.next()));
                             break;
                         case 'T':
-                            mValues.add(asType(values.next()));
+                            this.values.add(asType(values.next()));
                             break;
                         case '$':
                         case '<':
@@ -98,11 +98,11 @@ final class CodeSnippet {
                     }
 
                     index += 2;
-                    mParts.add(format.substring(prevIndex, index));
+                    parts.add(format.substring(prevIndex, index));
                 } else {
                     index = format.indexOf('$', index + 1);
                     if (index == -1) index = format.length();
-                    mParts.add(format.substring(prevIndex, index));
+                    parts.add(format.substring(prevIndex, index));
                 }
             }
 
@@ -137,12 +137,12 @@ final class CodeSnippet {
         }
 
         private Builder indent() {
-            mParts.add("$>");
+            parts.add("$>");
             return this;
         }
 
         private Builder unindent() {
-            mParts.add("$<");
+            parts.add("$<");
             return this;
         }
 

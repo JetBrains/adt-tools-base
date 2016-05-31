@@ -42,35 +42,35 @@ public final class TypeDef {
     private static final TypeDef TYPE_SHORT = new TypeDef("short");
     private static final TypeDef TYPE_VOID = new TypeDef("void");
 
-    private boolean mIsPrimitive = false;
-    private boolean mIsArray = false;
+    private boolean isPrimitive = false;
+    private boolean isArray = false;
 
-    private List<String> mNames = new ArrayList<>();
-    private List<TypeDef> mTypeParameters = new ArrayList<>();
+    private List<String> names = new ArrayList<>();
+    private List<TypeDef> typeParameters = new ArrayList<>();
 
     private TypeDef(String primitiveName) {
-        mNames.add(primitiveName);
-        mIsPrimitive = true;
+        names.add(primitiveName);
+        isPrimitive = true;
     }
 
     private TypeDef(TypeDef arrayType) {
-        mNames.addAll(arrayType.mNames);
-        mIsArray = true;
-        mIsPrimitive = arrayType.mIsPrimitive;
+        names.addAll(arrayType.names);
+        isArray = true;
+        isPrimitive = arrayType.isPrimitive;
     }
 
     private TypeDef() {
     }
 
     void emit(CodeGenerator generator) throws IOException {
-        if (mIsPrimitive) {
-            generator.emitIndented(mNames.get(0));
+        if (isPrimitive) {
+            generator.emitIndented(names.get(0));
         } else {
-            generator.emitClassName(mNames);
-            if (!mTypeParameters.isEmpty()) {
+            generator.emitClassName(names);
+            if (!typeParameters.isEmpty()) {
                 generator.emit("<");
                 boolean first = true;
-                for (TypeDef type : mTypeParameters) {
+                for (TypeDef type : typeParameters) {
                     if (!first) {
                         generator.emit(", ");
                     }
@@ -80,7 +80,7 @@ public final class TypeDef {
                 generator.emit(">");
             }
         }
-        if (mIsArray) {
+        if (isArray) {
             generator.emitIndented("[]");
         }
     }
@@ -109,7 +109,7 @@ public final class TypeDef {
         Type[] typeArguments = type.getActualTypeArguments();
         TypeDef typeDef = fromClass((Class<?>) type.getRawType());
         for (Type typeArgument : typeArguments) {
-            typeDef.mTypeParameters.add(TypeDef.of(typeArgument));
+            typeDef.typeParameters.add(of(typeArgument));
         }
         return typeDef;
     }
@@ -124,21 +124,22 @@ public final class TypeDef {
             @Override
             public TypeDef visitPrimitive(PrimitiveType primitiveType, Void ignore) {
                 switch (primitiveType.getKind()) {
-                    case BOOLEAN: return TypeDef.TYPE_BOOLEAN;
-                    case BYTE: return TypeDef.TYPE_BYTE;
-                    case SHORT: return TypeDef.TYPE_SHORT;
-                    case INT: return TypeDef.TYPE_INT;
-                    case LONG: return TypeDef.TYPE_LONG;
-                    case CHAR: return TypeDef.TYPE_CHAR;
-                    case FLOAT: return TypeDef.TYPE_FLOAT;
-                    case DOUBLE: return TypeDef.TYPE_DOUBLE;
+                    case BOOLEAN: return TYPE_BOOLEAN;
+                    case BYTE: return TYPE_BYTE;
+                    case SHORT: return TYPE_SHORT;
+                    case INT: return TYPE_INT;
+                    case LONG: return TYPE_LONG;
+                    case CHAR: return TYPE_CHAR;
+                    case FLOAT: return TYPE_FLOAT;
+                    case DOUBLE: return TYPE_DOUBLE;
+                    default: break;
                 }
                 return super.visitPrimitive(primitiveType, ignore);
             }
 
             @Override
             public TypeDef visitNoType(NoType noType, Void aVoid) {
-                return TypeDef.TYPE_VOID;
+                return TYPE_VOID;
             }
 
             @Override
@@ -149,15 +150,15 @@ public final class TypeDef {
                 Element e;
                 for (e = typeElement; e.getKind().isClass() || e.getKind().isInterface();
                         e = e.getEnclosingElement()) {
-                    typeDef.mNames.add(e.getSimpleName().toString());
+                    typeDef.names.add(e.getSimpleName().toString());
                 }
-                typeDef.mNames.add(((PackageElement) e).getQualifiedName().toString());
+                typeDef.names.add(((PackageElement) e).getQualifiedName().toString());
 
-                Collections.reverse(typeDef.mNames);
+                Collections.reverse(typeDef.names);
 
                 List<? extends TypeMirror> typeArguments = declaredType.getTypeArguments();
                 for (TypeMirror typeArgument : typeArguments) {
-                    typeDef.mTypeParameters.add(TypeDef.of(typeArgument));
+                    typeDef.typeParameters.add(of(typeArgument));
                 }
 
                 return typeDef;
@@ -167,30 +168,26 @@ public final class TypeDef {
 
     public static TypeDef fromClass(String packageName, String name) {
         TypeDef type = new TypeDef();
-        type.mNames.add(packageName);
-        Collections.addAll(type.mNames, name.split("\\."));
+        type.names.add(packageName);
+        Collections.addAll(type.names, name.split("\\."));
         return type;
     }
 
     private static TypeDef fromClass(Class<?> classType) {
         TypeDef name = new TypeDef();
         for (Class<?> c = classType; c != null; c = c.getEnclosingClass()) {
-            name.mNames.add(c.getSimpleName());
+            name.names.add(c.getSimpleName());
         }
 
         if (classType.getPackage() != null) {
-            name.mNames.add(classType.getPackage().getName());
+            name.names.add(classType.getPackage().getName());
         }
 
-        Collections.reverse(name.mNames);
+        Collections.reverse(name.names);
         return name;
     }
 
     public String getSimpleName() {
-        return mNames.get(mNames.size() - 1);
-    }
-
-    public List<String> getNames() {
-        return mNames;
+        return names.get(names.size() - 1);
     }
 }

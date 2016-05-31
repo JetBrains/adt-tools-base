@@ -21,13 +21,13 @@ import javax.lang.model.element.Element;
 import javax.tools.Diagnostic;
 
 final class ErrorHandler {
-    private final Messager mMessager;
+    private final Messager messager;
 
     ErrorHandler(Messager messager) {
-        mMessager = messager;
+        this.messager = messager;
     }
 
     void error(Element element, String message, Object... args) {
-        mMessager.printMessage(Diagnostic.Kind.ERROR, String.format(message, args), element);
+        messager.printMessage(Diagnostic.Kind.ERROR, String.format(message, args), element);
     }
 }

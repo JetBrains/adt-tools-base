@@ -28,55 +28,55 @@ import java.util.Set;
 import java.util.TreeSet;
 
 final class CodeGenerator {
-    private final Appendable mOut;
+    private final Appendable out;
 
-    private final String mIndent;
-    private int mIndentLevel = 0;
-    private boolean mNeedIndent = false;
-    private int mMultiline = -1;
+    private final String indent;
+    private int indentLevel = 0;
+    private boolean needIndent = false;
+    private int multiline = -1;
 
-    private String mCurrentPackage;
+    private String currentPackage;
 
-    private final Set<String> mImportCandidates = new TreeSet<>();
-    private final Set<String> mImports;
+    private final Set<String> importCandidates = new TreeSet<>();
+    private final Set<String> imports;
 
     CodeGenerator(Appendable out, String indent) {
-        mOut = out;
-        mIndent = indent;
-        mImports = Collections.emptySet();
+        this.out = out;
+        this.indent = indent;
+        imports = Collections.emptySet();
     }
 
     CodeGenerator(Appendable out, String indent, Set<String> imports) {
-        mOut = out;
-        mIndent = indent;
-        mImports = imports;
+        this.out = out;
+        this.indent = indent;
+        this.imports = imports;
     }
 
     Set<String> getImportCandidates() {
-        return mImportCandidates;
+        return importCandidates;
     }
 
     Set<String> getImports() {
-        return mImports;
+        return imports;
     }
 
     CodeGenerator indent() {
-        mIndentLevel++;
+        indentLevel++;
         return this;
     }
 
     private CodeGenerator indent(int level) {
-        mIndentLevel += level;
+        indentLevel += level;
         return this;
     }
 
     CodeGenerator unindent() {
-        if (mIndentLevel > 0) mIndentLevel--;
+        if (indentLevel > 0) indentLevel--;
         return this;
     }
 
     private CodeGenerator unindent(int level) {
-        if (mIndentLevel > level - 1) mIndentLevel -= level;
+        if (indentLevel > level - 1) indentLevel -= level;
         return this;
     }
 
@@ -99,10 +99,10 @@ final class CodeGenerator {
             } else if ("$<".equals(part)) {
                 unindent();
             } else if ("$[".equals(part)) {
-                mMultiline = 0;
+                multiline = 0;
             } else if ("$]".equals(part)) {
-                if (mMultiline > 0) unindent(2);
-                mMultiline = -1;
+                if (multiline > 0) unindent(2);
+                multiline = -1;
             } else {
                 emitIndented(part);
             }
@@ -172,29 +172,29 @@ final class CodeGenerator {
 
         for (String line : lines) {
             if (!firstLine) {
-                mOut.append('\n');
+                out.append('\n');
                 if (!lastLineWasStatement) {
-                    if (mMultiline >= 0) {
-                        if (mMultiline == 0) indent(2);
-                        mMultiline++;
+                    if (multiline >= 0) {
+                        if (multiline == 0) indent(2);
+                        multiline++;
                     }
                 }
-                mNeedIndent = true;
+                needIndent = true;
             }
             firstLine = false;
 
             if (line.isEmpty()) continue;
-            if (mNeedIndent) emitIndent();
-            mNeedIndent = false;
+            if (needIndent) emitIndent();
+            needIndent = false;
 
-            mOut.append(line);
+            out.append(line);
             lastLineWasStatement = line.charAt(line.length() - 1) == ';';
         }
     }
 
     private void emitIndent() throws IOException {
-        for (int i = 0; i < mIndentLevel; i++) {
-            mOut.append(mIndent);
+        for (int i = 0; i < indentLevel; i++) {
+            out.append(indent);
         }
     }
 
@@ -205,18 +205,18 @@ final class CodeGenerator {
     }
 
     void setPackage(String currentPackage) {
-        mCurrentPackage = currentPackage;
+        this.currentPackage = currentPackage;
     }
 
     void emitClassName(List<String> names) throws IOException {
         String packageName = names.get(0);
-        if (!packageName.equals(mCurrentPackage) && !"java.lang".equals(packageName)) {
+        if (!packageName.equals(currentPackage) && !"java.lang".equals(packageName)) {
             String canonicalName = ChunkUtils.join(names, ".");
-            if (mImports.contains(canonicalName)) {
+            if (imports.contains(canonicalName)) {
                 emit(ChunkUtils.join(names.subList(1, names.size()), "."));
                 return;
             }
-            mImportCandidates.add(canonicalName);
+            importCandidates.add(canonicalName);
             emitIndented(canonicalName);
             return;
         }

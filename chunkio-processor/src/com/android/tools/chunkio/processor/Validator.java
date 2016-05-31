@@ -28,12 +28,12 @@ import javax.lang.model.util.Types;
 import java.util.List;
 
 public class Validator {
-    private final Types mTypeUtils;
-    private final ErrorHandler mErrorHandler;
+    private final Types typeUtils;
+    private final ErrorHandler errorHandler;
 
     public Validator(Types typeUtils, Environment environment) {
-        mTypeUtils = typeUtils;
-        mErrorHandler = environment.errorHandler;
+        this.typeUtils = typeUtils;
+        errorHandler = environment.errorHandler;
     }
 
     /**
@@ -59,14 +59,14 @@ public class Validator {
 
     private boolean hasSuperclass(TypeElement typeElement) {
         TypeMirror superType = typeElement.getSuperclass();
-        TypeElement superClass = (TypeElement) mTypeUtils.asElement(superType);
+        TypeElement superClass = (TypeElement) typeUtils.asElement(superType);
         String superName = superClass.getQualifiedName().toString();
 
         // TODO: support super classes
         if (!superName.equals(Object.class.getCanonicalName())) {
-            mErrorHandler.error(typeElement,
-                    "Class %s annotated with @%s cannot extend another class",
-                    typeElement.getQualifiedName());
+            errorHandler.error(typeElement,
+                               "Class %s annotated with @%s cannot extend another class",
+                               typeElement.getQualifiedName());
             return true;
         }
         return false;
@@ -74,8 +74,8 @@ public class Validator {
 
     private boolean isAbstract(TypeElement typeElement) {
         if (Utils.isAbstract(typeElement)) {
-            mErrorHandler.error(typeElement, "Class %s annotated with @%s cannot be abstract",
-                    typeElement.getQualifiedName());
+            errorHandler.error(typeElement, "Class %s annotated with @%s cannot be abstract",
+                               typeElement.getQualifiedName());
             return true;
         }
         return false;
@@ -86,15 +86,17 @@ public class Validator {
         switch (enclosingKind) {
             case CLASS:
                 if (!Utils.isTopLevel(typeElement) && !Utils.isStatic(typeElement)) {
-                    mErrorHandler.error(typeElement,
-                            "Class %s must be static", typeElement.getQualifiedName());
+                    errorHandler.error(typeElement,
+                                       "Class %s must be static", typeElement.getQualifiedName());
                     return true;
                 }
                 break;
             case METHOD:
-                mErrorHandler.error(typeElement, "Class %s cannot be declared in a method",
-                        typeElement.getQualifiedName());
+                errorHandler.error(typeElement, "Class %s cannot be declared in a method",
+                                   typeElement.getQualifiedName());
                 return true;
+            default:
+                break;
         }
 
         return false;
@@ -112,8 +114,8 @@ public class Validator {
         }
 
         if (!hasEmptyConstructor) {
-            mErrorHandler.error(typeElement, "Class %s must have an empty constructor",
-                    typeElement.getQualifiedName());
+            errorHandler.error(typeElement, "Class %s must have an empty constructor",
+                               typeElement.getQualifiedName());
             return false;
         }
 

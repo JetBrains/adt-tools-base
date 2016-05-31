@@ -16,6 +16,8 @@
 
 package com.android.tools.pixelprobe;
 
+import com.android.tools.pixelprobe.util.Lists;
+
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -25,73 +27,74 @@ import java.util.List;
  * An Image represents the decoded content of an image stream.
  * The values exposed by this class depends greatly on the format
  * of the source image. For instance, an Image decoded from a JPEG
- * will not provide layers or guides, which an Image decoded from
+ * will not provide layers or guides, whereas an Image decoded from
  * a PSD (Photoshop) will.
  *
  * You should always check whether an Image is valid before using
  * it. Invalid images may contain erroneous or meaningless values.
  */
 public class Image {
-    private int mWidth;
-    private int mHeight;
-    private ColorMode mColorMode = ColorMode.UNKNOWN;
+    private final int width;
+    private final int height;
+    private final ColorMode colorMode;
 
-    private float mHorizontalResolution = 96.0f;
-    private float mVerticalResolution = 96.0f;
+    private final float horizontalResolution;
+    private final float verticalResolution;
 
-    private boolean mValid;
+    private final BufferedImage flattenedBitmap;
+    private final BufferedImage thumbnailBitmap;
 
-    private BufferedImage mFlattenedBitmap;
-    private BufferedImage mThumbnail;
+    private final List<Guide> guides;
+    private final List<Layer> layers;
 
-    private final List<Guide> mGuides = new ArrayList<>();
-    private final List<Layer> mLayers = new ArrayList<>();
+    Image(Builder builder) {
+        width = builder.width;
+        height = builder.height;
+        colorMode = builder.colorMode;
 
-    Image() {
-    }
+        horizontalResolution = builder.horizontalResolution;
+        verticalResolution = builder.verticalResolution;
 
-    /**
-     * Indicates whether this image is valid and can be used.
-     *
-     * @return True if this image is valid, false otherwise.
-     */
-    public boolean isValid() {
-        return mValid;
+        flattenedBitmap = builder.flattenedBitmap;
+        thumbnailBitmap = builder.thumbnailBitmap;
+
+        guides = Lists.immutableCopy(builder.guides);
+        layers = Lists.immutableCopy(builder.layers);
     }
 
     /**
      * Returns the width of the image in pixels.
      */
     public int getWidth() {
-        return mWidth;
+        return width;
     }
 
     /**
      * Returns the height of the image in pixels.
      */
     public int getHeight() {
-        return mHeight;
+        return height;
     }
 
     /**
      * Returns the horizontal resolution of this image in dpi.
      */
     public float getHorizontalResolution() {
-        return mHorizontalResolution;
+        return horizontalResolution;
     }
 
     /**
      * Returns the vertical resolution of this image in dpi.
      */
     public float getVerticalResolution() {
-        return mVerticalResolution;
+        return verticalResolution;
     }
 
     /**
      * Returns the color mode of this image.
      */
     public ColorMode getColorMode() {
-        return mColorMode;
+        return colorMode;
     }
 
     /**
@@ -99,7 +102,7 @@ public class Image {
      * as a bitmap. For images without layers, this is the actual image data.
      */
     public BufferedImage getFlattenedBitmap() {
-        return mFlattenedBitmap;
+        return flattenedBitmap;
     }
 
     /**
@@ -107,69 +110,106 @@ public class Image {
      * might be null if no thumbnail was found in the original source.
      */
     public BufferedImage getThumbnailBitmap() {
-        return mThumbnail;
+        return thumbnailBitmap;
     }
 
     /**
      * Returns the list of guides for this image. The list is never null.
      */
     public List<Guide> getGuides() {
-        return Collections.unmodifiableList(mGuides);
+        return Collections.unmodifiableList(guides);
     }
 
     /**
      * Returns the list of layers for this image. The list is never null.
      */
     public List<Layer> getLayers() {
-        return Collections.unmodifiableList(mLayers);
+        return Collections.unmodifiableList(layers);
     }
 
-    void markValid() {
-        mValid = true;
-    }
+    public static final class Builder {
+        int width;
+        int height;
+        ColorMode colorMode = ColorMode.UNKNOWN;
 
-    void setFlattenedBitmap(BufferedImage flattenedBitmap) {
-        mFlattenedBitmap = flattenedBitmap;
-    }
+        float horizontalResolution = 96.0f;
+        float verticalResolution = 96.0f;
 
-    void setDimensions(int width, int height) {
-        mWidth = width;
-        mHeight = height;
-    }
+        BufferedImage flattenedBitmap;
+        BufferedImage thumbnailBitmap;
 
-    void setResolution(float horizontal, float vertical) {
-        mHorizontalResolution = horizontal;
-        mVerticalResolution = vertical;
-    }
+        final List<Guide> guides = new ArrayList<>();
+        final List<Layer> layers = new ArrayList<>();
 
-    void addGuide(Guide guide) {
-        mGuides.add(guide);
-    }
+        public int width() {
+            return width;
+        }
 
-    void setColorMode(ColorMode mode) {
-        mColorMode = mode;
-    }
+        public int height() {
+            return height;
+        }
 
-    void setThumbnail(BufferedImage thumbnail) {
-        mThumbnail = thumbnail;
-    }
+        public float verticalResolution() {
+            return verticalResolution;
+        }
 
-    void addLayer(Layer layer) {
-        mLayers.add(layer);
+        public float horizontalResolution() {
+            return horizontalResolution;
+        }
+
+        public Builder flattenedBitmap(BufferedImage flattenedBitmap) {
+            this.flattenedBitmap = flattenedBitmap;
+            return this;
+        }
+
+        public Builder dimensions(int width, int height) {
+            this.width = width;
+            this.height = height;
+            return this;
+        }
+
+        public Builder resolution(float horizontal, float vertical) {
+            horizontalResolution = horizontal;
+            verticalResolution = vertical;
+            return this;
+        }
+
+        public Builder colorMode(ColorMode mode) {
+            colorMode = mode;
+            return this;
+        }
+
+        public Builder thumbnail(BufferedImage thumbnail) {
+            this.thumbnailBitmap = thumbnail;
+            return this;
+        }
+
+        public Builder addGuide(Guide guide) {
+            guides.add(guide);
+            return this;
+        }
+
+        public Builder addLayer(Layer layer) {
+            layers.add(layer);
+            return this;
+        }
+
+        public Image build() {
+            return new Image(this);
+        }
     }
 
     @Override
     public String toString() {
         return "Image{" +
-                "width=" + mWidth +
-                ", height=" + mHeight +
-                ", hRes=" + mHorizontalResolution +
-                ", vRes=" + mVerticalResolution +
-                ", colorMode=" + mColorMode +
-                ", guides=" + mGuides.size() +
-                ", layers=" + mLayers.size() +
-                ", hasThumbnail=" + (mThumbnail != null) +
-                ", valid=" + mValid +
-                '}';
+               "width=" + width +
+               ", height=" + height +
+               ", hRes=" + horizontalResolution +
+               ", vRes=" + verticalResolution +
+               ", colorMode=" + colorMode +
+               ", guides=" + guides.size() +
+               ", layers=" + layers.size() +
+               ", hasThumbnail=" + (thumbnailBitmap != null) +
+               '}';
     }
 }

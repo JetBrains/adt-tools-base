@@ -38,14 +38,14 @@ import java.util.Set;
  */
 @SupportedAnnotationTypes({ "com.android.tools.chunkio.Chunked" })
 public class ChunkProcessor extends AbstractProcessor {
-    private Validator mValidator;
-    private Environment mEnvironment;
+    private Validator validator;
+    private Environment environment;
 
     @Override
     public synchronized void init(ProcessingEnvironment processingEnvironment) {
         super.init(processingEnvironment);
-        mEnvironment = Environment.from(processingEnvironment);
-        mValidator = new Validator(processingEnvironment.getTypeUtils(), mEnvironment);
+        environment = Environment.from(processingEnvironment);
+        validator = new Validator(processingEnvironment.getTypeUtils(), environment);
     }
 
     @Override
@@ -57,11 +57,11 @@ public class ChunkProcessor extends AbstractProcessor {
     public boolean process(Set<? extends TypeElement> set, RoundEnvironment roundEnvironment) {
         Set<? extends Element> chunked = roundEnvironment.getElementsAnnotatedWith(Chunked.class);
         for (Element element : chunked) {
-            if (!mValidator.validate(element)) return true;
+            if (!validator.validate(element)) return true;
 
             TypeElement typeElement = (TypeElement) element;
 
-            ClassEmitter generator = new ClassEmitter(typeElement, mEnvironment);
+            ClassEmitter generator = new ClassEmitter(typeElement, environment);
             generator.emit();
         }
 

@@ -44,29 +44,29 @@ import java.util.Map;
  * </ul>
  */
 public final class ChunkReaders {
-    private static final Map<TypeKind, ChunkReader> sTypeReaders = new EnumMap<>(TypeKind.class);
-    private static final Map<TypeKind, ChunkReader> sArrayReaders = new EnumMap<>(TypeKind.class);
-    private static final Map<String, ChunkReader> sClassReaders = new HashMap<>();
-    private static final Map<String, ChunkReader> sCollectionReaders = new HashMap<>();
+    private static final Map<TypeKind, ChunkReader> typeReaders = new EnumMap<>(TypeKind.class);
+    private static final Map<TypeKind, ChunkReader> arrayReaders = new EnumMap<>(TypeKind.class);
+    private static final Map<String, ChunkReader> classReaders = new HashMap<>();
+    private static final Map<String, ChunkReader> collectionReaders = new HashMap<>();
 
     static {
-        sTypeReaders.put(TypeKind.BOOLEAN, new BooleanChunkReaderImpl());
-        sTypeReaders.put(TypeKind.BYTE, new ByteChunkReaderImpl());
-        sTypeReaders.put(TypeKind.CHAR, new CharChunkReaderImpl());
-        sTypeReaders.put(TypeKind.DOUBLE, new DoubleChunkReaderImpl());
-        sTypeReaders.put(TypeKind.FLOAT, new FloatChunkReaderImpl());
-        sTypeReaders.put(TypeKind.INT, new IntChunkReaderImpl());
-        sTypeReaders.put(TypeKind.LONG, new LongChunkReaderImpl());
-        sTypeReaders.put(TypeKind.SHORT, new ShortChunkReaderImpl());
+        typeReaders.put(TypeKind.BOOLEAN, new BooleanChunkReaderImpl());
+        typeReaders.put(TypeKind.BYTE, new ByteChunkReaderImpl());
+        typeReaders.put(TypeKind.CHAR, new CharChunkReaderImpl());
+        typeReaders.put(TypeKind.DOUBLE, new DoubleChunkReaderImpl());
+        typeReaders.put(TypeKind.FLOAT, new FloatChunkReaderImpl());
+        typeReaders.put(TypeKind.INT, new IntChunkReaderImpl());
+        typeReaders.put(TypeKind.LONG, new LongChunkReaderImpl());
+        typeReaders.put(TypeKind.SHORT, new ShortChunkReaderImpl());
 
-        sArrayReaders.put(TypeKind.BYTE, new ByteArrayChunkReaderImpl());
+        arrayReaders.put(TypeKind.BYTE, new ByteArrayChunkReaderImpl());
 
-        sClassReaders.put(Object.class.getCanonicalName(), new ObjectChunkReaderImpl());
-        sClassReaders.put(String.class.getCanonicalName(), new StringChunkReaderImpl());
-        sClassReaders.put(Void.class.getCanonicalName(), new VoidChunkReaderImpl());
+        classReaders.put(Object.class.getCanonicalName(), new ObjectChunkReaderImpl());
+        classReaders.put(String.class.getCanonicalName(), new StringChunkReaderImpl());
+        classReaders.put(Void.class.getCanonicalName(), new VoidChunkReaderImpl());
 
-        sCollectionReaders.put(List.class.getCanonicalName(), new ListChunkReaderImpl());
-        sCollectionReaders.put(Map.class.getCanonicalName(), new MapChunkReaderImpl());
+        collectionReaders.put(List.class.getCanonicalName(), new ListChunkReaderImpl());
+        collectionReaders.put(Map.class.getCanonicalName(), new MapChunkReaderImpl());
     }
 
     private ChunkReaders() {
@@ -77,7 +77,7 @@ public final class ChunkReaders {
      * are primitives: boolean, byte, char, double, float, int, long and short.
      */
     public static ChunkReader get(TypeKind kind) {
-        return sTypeReaders.get(kind);
+        return typeReaders.get(kind);
     }
 
     /**
@@ -87,7 +87,7 @@ public final class ChunkReaders {
      * {@link #createEnumReader(String, String)}.
      */
     public static ChunkReader get(String className) {
-        return sClassReaders.get(className);
+        return classReaders.get(className);
     }
 
     /**
@@ -95,7 +95,7 @@ public final class ChunkReaders {
      * Only byte arrays are supported.
      */
     public static ChunkReader getArrayReader(TypeKind kind) {
-        return sArrayReaders.get(kind);
+        return arrayReaders.get(kind);
     }
 
     /**
@@ -104,7 +104,7 @@ public final class ChunkReaders {
      * <code>java.util.Map</code>.
      */
     public static ChunkReader getCollectionReader(String className) {
-        return sCollectionReaders.get(className);
+        return collectionReaders.get(className);
     }
 
     /**
@@ -138,7 +138,7 @@ public final class ChunkReaders {
     }
 
     private static void cacheReader(String className, ChunkReader reader) {
-        sClassReaders.put(className + '.' + className, reader);
+        classReaders.put(className + '.' + className, reader);
     }
 
     private abstract static class ClassChunkReader implements ChunkReader {
@@ -161,7 +161,7 @@ public final class ChunkReaders {
 
     private abstract static class CollectionClassChunkReader extends ClassChunkReader
             implements CollectionChunkReader {
-        List<TypeElement> mParameters;
+        List<TypeElement> parameters;
 
         @Override
         public void emitPrologue(MethodDef.Builder builder, String target, FieldChunk chunk) {
@@ -182,14 +182,14 @@ public final class ChunkReaders {
 
         @Override
         public boolean acceptTypeParameters(List<TypeElement> parameters) {
-            mParameters = parameters;
+            this.parameters = parameters;
             return true;
         }
 
         @Override
         public TypeMirror getElementType() {
             // the last parameter works for lists and maps
-            return mParameters.get(mParameters.size() - 1).asType();
+            return parameters.get(parameters.size() - 1).asType();
         }
     }
 
@@ -208,7 +208,7 @@ public final class ChunkReaders {
         @Override
         public void emitRead(MethodDef.Builder builder, String target, FieldChunk chunk) {
             builder.addStatement("$L$L = new $T<$T>()", target, chunk.name, ArrayList.class,
-                    mParameters.get(0).asType());
+                                 parameters.get(0).asType());
         }
 
         @Override
@@ -242,7 +242,7 @@ public final class ChunkReaders {
         @Override
         public void emitRead(MethodDef.Builder builder, String target, FieldChunk chunk) {
             builder.addStatement("$L$L = new $T<$T, $T>()", target, chunk.name, HashMap.class,
-                    mParameters.get(0).asType(), mParameters.get(1).asType());
+                                 parameters.get(0).asType(), parameters.get(1).asType());
         }
 
         @Override
@@ -252,12 +252,12 @@ public final class ChunkReaders {
     }
 
     private static class EnumChunkReaderImpl implements ChunkReader, EnumChunkReader {
-        private final TypeDef mType;
-        private boolean mSkip;
-        private long mCount;
+        private final TypeDef type;
+        private boolean skip;
+        private long count;
 
         private EnumChunkReaderImpl(String packageName, String className) {
-            mType = TypeDef.fromClass(packageName, className);
+            type = TypeDef.fromClass(packageName, className);
         }
 
         @Override
@@ -266,18 +266,18 @@ public final class ChunkReaders {
 
         @Override
         public void emitEpilogue(MethodDef.Builder builder, String target, FieldChunk chunk) {
-            if (mSkip) {
-                builder.addStatement("$T.skip(in, $L)", ChunkUtils.class, mCount - 4);
+            if (skip) {
+                builder.addStatement("$T.skip(in, $L)", ChunkUtils.class, count - 4);
             }
         }
 
         @Override
         public void emitRead(MethodDef.Builder builder, String target, FieldChunk chunk) {
             String expression;
-            mSkip = false;
-            mCount = chunk.byteCount();
+            skip = false;
+            count = chunk.byteCount();
 
-            switch ((int) mCount) {
+            switch ((int)count) {
                 case 1:
                     expression = "in.readUnsignedByte()";
                     break;
@@ -290,26 +290,26 @@ public final class ChunkReaders {
                     break;
                 default:
                     expression = "in.readInt()";
-                    mSkip = true;
+                    skip = true;
             }
             builder.beginBlock();
             builder.addStatement("int index = $L", expression);
-            builder.addStatement("if (index > $T.values().length) index = 0", mType);
-            builder.addStatement("$L$L = $T.values()[index]", target, chunk.name, mType);
+            builder.addStatement("if (index > $T.values().length) index = 0", type);
+            builder.addStatement("$L$L = $T.values()[index]", target, chunk.name, type);
             builder.endBlock();
         }
 
         @Override
         public void emitDynamicRead(MethodDef.Builder builder, String target, FieldChunk chunk) {
-            builder.addStatement("$L$L = $T.values()[byteCount]", target, chunk.name, mType);
+            builder.addStatement("$L$L = $T.values()[byteCount]", target, chunk.name, type);
         }
     }
 
     private static class ChunkedChunkReaderImpl extends ClassChunkReader {
-        private final TypeDef mType;
+        private final TypeDef type;
 
         private ChunkedChunkReaderImpl(String packageName, String className) {
-            mType = TypeDef.fromClass(packageName, className);
+            type = TypeDef.fromClass(packageName, className);
         }
 
         @Override
@@ -335,7 +335,7 @@ public final class ChunkReaders {
             if (byteCount > 0) {
                 emitRangedRead(builder, target, chunk);
             } else {
-                builder.addStatement("$L$L = $T.read(in, stack)", target, chunk.name, mType);
+                builder.addStatement("$L$L = $T.read(in, stack)", target, chunk.name, type);
             }
         }
 
@@ -346,7 +346,7 @@ public final class ChunkReaders {
 
         private void emitRangedRead(MethodDef.Builder builder, String target, FieldChunk chunk) {
             builder.addStatement("$L$L = $T.read(in, stack)",
-                    target, chunk.name, mType);
+                                 target, chunk.name, type);
         }
     }
 
@@ -400,10 +400,10 @@ public final class ChunkReaders {
 
     private abstract static class PrimitiveChunkReaderImpl
             implements ChunkReader, PrimitiveChunkReader {
-        private String mPrimitive;
+        private String primitive;
 
         private PrimitiveChunkReaderImpl(String primitive) {
-            mPrimitive = primitive;
+            this.primitive = primitive;
         }
 
         @Override
@@ -422,7 +422,7 @@ public final class ChunkReaders {
         public void emitDynamicRead(MethodDef.Builder builder, String target,
                 FieldChunk chunk) {
             builder.addStatement("$L$L = $T.read$L(in, byteCount)", target, chunk.name,
-                    ChunkUtils.class, mPrimitive);
+                                 ChunkUtils.class, primitive);
         }
 
         void emitRead(MethodDef.Builder builder, String target, FieldChunk chunk,

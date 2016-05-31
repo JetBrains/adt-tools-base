@@ -32,12 +32,12 @@ import java.util.LinkedList;
  */
 @SuppressWarnings("WeakerAccess")
 public final class RangedInputStream extends InputStream implements DataInput {
-    private final byte[] mScratch = new byte[8];
+    private final byte[] scratch = new byte[8];
 
-    private final CountingInputStream mSource;
+    private final CountingInputStream source;
 
-    private StreamState mCurrentState;
-    private final Deque<StreamState> mStack = new LinkedList<>();
+    private StreamState currentState;
+    private final Deque<StreamState> stack = new LinkedList<>();
 
     private static class StreamState {
         final long byteCount;
@@ -49,27 +49,27 @@ public final class RangedInputStream extends InputStream implements DataInput {
     }
 
     private class CountingInputStream extends InputStream {
-        private final InputStream mSource;
+        private final InputStream source;
 
         private CountingInputStream(InputStream in) {
-            mSource = in;
+            source = in;
         }
 
         @Override
         public int available() throws IOException {
-            if (mCurrentState.byteCount < 0) return super.available();
-            return (int) (mCurrentState.byteCount - mCurrentState.readCount);
+            if (currentState.byteCount < 0) return super.available();
+            return (int) (currentState.byteCount - currentState.readCount);
         }
 
         @Override
         public int read() throws IOException {
-            if (mCurrentState.byteCount >= 0 &&
-                    mCurrentState.readCount >= mCurrentState.byteCount) {
+            if (currentState.byteCount >= 0 &&
+                currentState.readCount >= currentState.byteCount) {
                 return -1;
             }
 
-            int read = mSource.read();
-            if (read >= 0) mCurrentState.readCount++;
+            int read = source.read();
+            if (read >= 0) currentState.readCount++;
 
             return read;
         }
@@ -81,24 +81,24 @@ public final class RangedInputStream extends InputStream implements DataInput {
      * @param in The stream to decorate
      */
     public RangedInputStream(InputStream in) {
-        mSource = new CountingInputStream(in);
-        mCurrentState = new StreamState(-1);
-        mStack.offerFirst(mCurrentState);
+        source = new CountingInputStream(in);
+        currentState = new StreamState(-1);
+        stack.offerFirst(currentState);
     }
 
     @SuppressWarnings("unused")
     public void pushRange(long byteCount) {
-        mCurrentState = new StreamState(byteCount);
-        mStack.offerFirst(mCurrentState);
+        currentState = new StreamState(byteCount);
+        stack.offerFirst(currentState);
     }
 
     @SuppressWarnings("unused")
     public void popRange() throws IOException {
-        StreamState previous = mStack.pollFirst();
+        StreamState previous = stack.pollFirst();
         consume();
 
-        mCurrentState = mStack.peekFirst();
-        mCurrentState.readCount += previous.byteCount;
+        currentState = stack.peekFirst();
+        currentState.readCount += previous.byteCount;
     }
 
     /**
@@ -106,7 +106,7 @@ public final class RangedInputStream extends InputStream implements DataInput {
      */
     @SuppressWarnings("unused")
     public void consume() throws IOException {
-        if (mCurrentState.byteCount > 0) {
+        if (currentState.byteCount > 0) {
             int count = available();
             if (count > 0) {
                 ChunkUtils.skip(this, count);
@@ -116,49 +116,49 @@ public final class RangedInputStream extends InputStream implements DataInput {
 
     @Override
     public int read() throws IOException {
-        return mSource.read();
+        return source.read();
     }
 
     @Override
     public int available() throws IOException {
-        return mSource.available();
+        return source.available();
     }
 
     @SuppressWarnings("NullableProblems")
     @Override
     public int read(byte[] bytes) throws IOException {
-        return mSource.read(bytes);
+        return source.read(bytes);
     }
 
     @SuppressWarnings("NullableProblems")
     @Override
     public int read(byte[] bytes, int offset, int length) throws IOException {
-        return mSource.read(bytes, offset, length);
+        return source.read(bytes, offset, length);
     }
 
     @Override
     public long skip(long l) throws IOException {
-        return mSource.skip(l);
+        return source.skip(l);
     }
 
     @Override
     public void close() throws IOException {
-        mSource.close();
+        source.close();
     }
 
     @Override
-    public void mark(int i) {
-        mSource.mark(i);
+    public synchronized void mark(int i) {
+        source.mark(i);
     }
 
     @Override
-    public void reset() throws IOException {
-        mSource.reset();
+    public synchronized void reset() throws IOException {
+        source.reset();
     }
 
     @Override
     public boolean markSupported() {
-        return mSource.markSupported();
+        return source.markSupported();
     }
 
     @SuppressWarnings("NullableProblems")
@@ -176,7 +176,7 @@ public final class RangedInputStream extends InputStream implements DataInput {
         checkOffsetAndCount(dst.length, offset, byteCount);
 
         while (byteCount > 0) {
-            int bytesRead = mSource.read(dst, offset, byteCount);
+            int bytesRead = source.read(dst, offset, byteCount);
             if (bytesRead < 0) throw new EOFException();
             offset += bytesRead;
             byteCount -= bytesRead;
@@ -194,7 +194,7 @@ public final class RangedInputStream extends InputStream implements DataInput {
         long skip;
         int skipped = 0;
 
-        while (skipped < count && (skip = mSource.skip(count - skipped)) != 0) {
+        while (skipped < count && (skip = source.skip(count - skipped)) != 0) {
             skipped += skip;
         }
 
@@ -203,21 +203,21 @@ public final class RangedInputStream extends InputStream implements DataInput {
 
     @Override
     public final boolean readBoolean() throws IOException {
-        int temp = mSource.read();
+        int temp = source.read();
         if (temp < 0) throw new EOFException();
         return temp != 0;
     }
 
     @Override
     public final byte readByte() throws IOException {
-        int temp = mSource.read();
+        int temp = source.read();
         if (temp < 0) throw new EOFException();
         return (byte) temp;
     }
 
     @Override
     public int readUnsignedByte() throws IOException {
-        int temp = mSource.read();
+        int temp = source.read();
         if (temp < 0) throw new EOFException();
         return temp;
     }
@@ -244,28 +244,28 @@ public final class RangedInputStream extends InputStream implements DataInput {
 
     @Override
     public final short readShort() throws IOException {
-        return (short) ((mSource.read() << 8) | (mSource.read() & 0xff));
+        return (short) ((source.read() << 8) | (source.read() & 0xff));
     }
 
     @Override
     public int readInt() throws IOException {
-        return (((mSource.read() & 0xff) << 24) |
-                ((mSource.read() & 0xff) << 16) |
-                ((mSource.read() & 0xff) <<  8) |
-                ((mSource.read() & 0xff)      ));
+        return (((source.read() & 0xff) << 24) |
+                ((source.read() & 0xff) << 16) |
+                ((source.read() & 0xff) <<  8) |
+                ((source.read() & 0xff)      ));
     }
 
     @Override
     public long readLong() throws IOException {
-        readFully(mScratch, 0, 8);
-        int h = ((mScratch[0] & 0xff) << 24) |
-                ((mScratch[1] & 0xff) << 16) |
-                ((mScratch[2] & 0xff) <<  8) |
-                ((mScratch[3] & 0xff)      );
-        int l = ((mScratch[4] & 0xff) << 24) |
-                ((mScratch[5] & 0xff) << 16) |
-                ((mScratch[6] & 0xff) <<  8) |
-                ((mScratch[7] & 0xff)      );
+        readFully(scratch, 0, 8);
+        int h = ((scratch[0] & 0xff) << 24) |
+                ((scratch[1] & 0xff) << 16) |
+                ((scratch[2] & 0xff) <<  8) |
+                ((scratch[3] & 0xff)      );
+        int l = ((scratch[4] & 0xff) << 24) |
+                ((scratch[5] & 0xff) << 16) |
+                ((scratch[6] & 0xff) <<  8) |
+                ((scratch[7] & 0xff)      );
         return (((long) h) << 32L) | ((long) l) & 0xffffffffL;
     }
 
@@ -283,8 +283,8 @@ public final class RangedInputStream extends InputStream implements DataInput {
         return decode(buf, new char[utfSize], 0, utfSize);
     }
 
-    private static String decode(byte[] in, char[] out, int offset, int utfSize) throws
-            UTFDataFormatException {
+    private static String decode(byte[] in, char[] out, int offset, int utfSize)
+            throws UTFDataFormatException {
 
         int count = 0, s = 0, a;
         while (count < utfSize) {
