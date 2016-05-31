@@ -87,7 +87,6 @@ import com.android.builder.internal.compiler.PreDexCache;
 import com.android.builder.profile.ProcessRecorderFactory;
 import com.android.builder.profile.Recorder;
 import com.android.builder.profile.ThreadRecorder;
-import com.android.builder.sdk.SdkLibData;
 import com.android.builder.sdk.TargetInfo;
 import com.android.builder.signing.DefaultSigningConfig;
 import com.android.ide.common.internal.ExecutorSingleton;
@@ -292,12 +291,7 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
         });
 
         // setup SDK repositories.
-        for (final File file : sdkHandler.getSdkLoader().getRepositories()) {
-            project.getRepositories().maven(repo -> {
-                repo.setUrl(file.toURI());
-
-            });
-        }
+        sdkHandler.addLocalRepositories(project);
         return sdkHandler;
     }
 
@@ -587,12 +581,7 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
                 SdkHandler sdkHandler,
                 Project project,
                 @Path("android.sources") ModelMap<FunctionalSourceSet> androidSources) {
-            // setup SDK repositories.
-            for (final File file : sdkHandler.getSdkLoader().getRepositories()) {
-                project.getRepositories().maven(repo -> {
-                    repo.setUrl(file.toURI());
-                });
-            }
+            sdkHandler.addLocalRepositories(project);
             // TODO: determine how to provide functionalities of variant API objects.
         }
 
