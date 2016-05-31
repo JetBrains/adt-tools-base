@@ -57,6 +57,7 @@ public class Implementation {
      * @param scope the scope of files required to analyze this issue
      * @param analysisScopes optional set of extra scopes the detector is capable of working in
      */
+    @SafeVarargs
     public Implementation(
             @NonNull Class<? extends Detector> detectorClass,
             @NonNull EnumSet<Scope> scope,

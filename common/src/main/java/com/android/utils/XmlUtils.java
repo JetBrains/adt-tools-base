@@ -37,7 +37,6 @@ import com.android.ide.common.blame.SourceFile;
 import com.android.ide.common.blame.SourceFilePosition;
 import com.android.ide.common.blame.SourcePosition;
 import com.google.common.base.CharMatcher;
-import com.google.common.collect.Maps;
 import com.google.common.io.Files;
 
 import org.w3c.dom.Attr;
@@ -49,9 +48,12 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
+import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.StringReader;
@@ -62,6 +64,9 @@ import java.util.Map;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.stream.XMLInputFactory;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamReader;
 
 /** XML Utilities */
 public class XmlUtils {
@@ -689,5 +694,29 @@ public class XmlUtils {
         } else {
             return Integer.toString((int) value);
         }
+    }
+
+    /**
+     * Returns the name of the root element tag stored in the given file, or null if it can't be
+     * determined.
+     */
+    @Nullable
+    public static String getRootTagName(@NonNull File xmlFile) {
+        try (InputStream stream = new BufferedInputStream(new FileInputStream(xmlFile))) {
+            XMLInputFactory factory = XMLInputFactory.newFactory();
+            XMLStreamReader xmlStreamReader =
+                    factory.createXMLStreamReader(stream);
+
+            while (xmlStreamReader.hasNext()) {
+                int event = xmlStreamReader.next();
+                if (event == XMLStreamReader.START_ELEMENT) {
+                    return xmlStreamReader.getLocalName();
+                }
+            }
+        } catch (XMLStreamException | IOException ignored) {
+            // Ignored.
+        }
+
+        return null;
     }
 }

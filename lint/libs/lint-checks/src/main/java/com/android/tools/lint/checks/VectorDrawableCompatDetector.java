@@ -22,13 +22,18 @@ import static com.android.SdkConstants.ATTR_SRC_COMPAT;
 import static com.android.SdkConstants.AUTO_URI;
 import static com.android.SdkConstants.TAG_VECTOR;
 
+import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.builder.model.AndroidProject;
 import com.android.builder.model.Variant;
 import com.android.ide.common.repository.GradleVersion;
+import com.android.ide.common.res2.AbstractResourceRepository;
+import com.android.ide.common.res2.ResourceFile;
+import com.android.ide.common.res2.ResourceItem;
 import com.android.ide.common.resources.ResourceUrl;
 import com.android.resources.ResourceFolderType;
+import com.android.resources.ResourceType;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Context;
 import com.android.tools.lint.detector.api.Implementation;
@@ -39,15 +44,19 @@ import com.android.tools.lint.detector.api.ResourceXmlDetector;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
 import com.android.tools.lint.detector.api.XmlContext;
+import com.android.utils.XmlUtils;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Sets;
 
 import org.w3c.dom.Attr;
 import org.w3c.dom.Element;
 
+import java.io.File;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Set;
+import java.util.function.Predicate;
 
 /**
  * Finds all the vector drawables and checks references to them in layouts.
@@ -75,7 +84,8 @@ public class VectorDrawableCompatDetector extends ResourceXmlDetector {
             Severity.ERROR,
             new Implementation(
                     VectorDrawableCompatDetector.class,
-                    Scope.ALL_RESOURCES_SCOPE))
+                    Scope.ALL_RESOURCES_SCOPE,
+                    Scope.RESOURCE_FILE_SCOPE))
             .addMoreInfo("http://chris.banes.me/2016/02/25/appcompat-vector/#enabling-the-flag");
 
     /** Whether to skip the checks altogether. */
@@ -86,7 +96,6 @@ public class VectorDrawableCompatDetector extends ResourceXmlDetector {
 
     /** Whether the project uses AppCompat for vectors. */
     private boolean mUseSupportLibrary;
-
 
     @Override
     public void beforeCheckProject(@NonNull Context context) {
@@ -116,16 +125,18 @@ public class VectorDrawableCompatDetector extends ResourceXmlDetector {
         }
 
         if (Boolean.TRUE.equals(
-                currentVariant
-                        .getMergedFlavor()
-                        .getVectorDrawables()
-                        .getUseSupportLibrary())) {
+                currentVariant.getMergedFlavor().getVectorDrawables().getUseSupportLibrary())) {
             mUseSupportLibrary = true;
         }
     }
 
     @Override
     public boolean appliesTo(@NonNull ResourceFolderType folderType) {
+        //noinspection SimplifiableIfStatement
+        if (mSkipChecks) {
+            return false;
+        }
+
         return folderType == ResourceFolderType.DRAWABLE || folderType == ResourceFolderType.LAYOUT;
     }
 
@@ -146,19 +157,43 @@ public class VectorDrawableCompatDetector extends ResourceXmlDetector {
     @Nullable
     @Override
     public Collection<String> getApplicableElements() {
-        return Collections.singletonList(TAG_VECTOR);
+        return mSkipChecks ? null : Collections.singletonList(TAG_VECTOR);
     }
 
     @Nullable
     @Override
     public Collection<String> getApplicableAttributes() {
-        return ImmutableList.of(ATTR_SRC, ATTR_SRC_COMPAT);
+        return mSkipChecks ? null : ImmutableList.of(ATTR_SRC, ATTR_SRC_COMPAT);
     }
 
     @Override
     public void visitAttribute(@NonNull XmlContext context, @NonNull Attr attribute) {
-        if (mSkipChecks || mVectors.isEmpty()) {
+        if (mSkipChecks) {
             return;
+        }
+
+        boolean incrementalMode =
+                !context.getDriver().getScope().contains(Scope.ALL_RESOURCE_FILES);
+
+        if (!incrementalMode && mVectors.isEmpty()) {
+            return;
+        }
+
+        Predicate<String> isVector;
+        if (!incrementalMode) {
+            // TODO: Always use resources, once command-line client supports it.
+            isVector = mVectors::contains;
+        } else {
+            AbstractResourceRepository resources =
+                    context.getClient().getProjectResources(context.getMainProject(), true);
+
+            if (resources == null) {
+                // We only run on a single layout file, but have no access to the resources
+                // database, there's no way we can perform the check.
+                return;
+            }
+
+            isVector = name -> checkResourceRepository(resources, name);
         }
 
         String name = attribute.getLocalName();
@@ -174,9 +209,7 @@ public class VectorDrawableCompatDetector extends ResourceXmlDetector {
             return;
         }
 
-        if (mUseSupportLibrary
-                && ATTR_SRC.equals(name)
-                && mVectors.contains(resourceUrl.name)) {
+        if (mUseSupportLibrary && ATTR_SRC.equals(name) && isVector.test(resourceUrl.name)) {
             Location location = context.getNameLocation(attribute);
             String message = "When using VectorDrawableCompat, you need to use `app:srcCompat`.";
             context.report(ISSUE, attribute, location, message);
@@ -184,11 +217,38 @@ public class VectorDrawableCompatDetector extends ResourceXmlDetector {
 
         if (!mUseSupportLibrary
                 && ATTR_SRC_COMPAT.equals(name)
-                && mVectors.contains(resourceUrl.name)) {
+                && isVector.test(resourceUrl.name)) {
             Location location = context.getNameLocation(attribute);
-            String message = "To use VectorDrawableCompat, you need to set "
-                    + "`android.defaultConfig.vectorDrawables.useSupportLibrary = true`.";
+            String message =
+                    "To use VectorDrawableCompat, you need to set "
+                            + "`android.defaultConfig.vectorDrawables.useSupportLibrary = true`.";
             context.report(ISSUE, attribute, location, message);
         }
+    }
+
+    private static boolean checkResourceRepository(
+            @NonNull AbstractResourceRepository resources, @NonNull String name) {
+        List<ResourceItem> items = resources.getResourceItem(ResourceType.DRAWABLE, name);
+
+        if (items == null) {
+            return false;
+        }
+
+        // Check if at least one drawable with this name is a vector.
+        for (ResourceItem item : items) {
+            ResourceFile source = item.getSource();
+            if (source == null) {
+                return false;
+            }
+
+            File file = source.getFile();
+            if (!file.getPath().endsWith(SdkConstants.DOT_XML)) {
+                continue;
+            }
+
+            return SdkConstants.TAG_VECTOR.equals(XmlUtils.getRootTagName(file));
+        }
+
+        return false;
     }
 }
