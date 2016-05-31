@@ -16,13 +16,16 @@
 
 package com.android.tools.pixelprobe.util;
 
-import java.awt.image.BufferedImage;
-import java.awt.image.WritableRaster;
+import java.awt.*;
+import java.awt.color.ColorSpace;
+import java.awt.image.*;
 
 /**
  * Various utilities to create and decode images.
  */
 public final class Images {
+    private static final int TYPE_BYTE_ALPHA_GRAY = 42;
+
     private Images() {
     }
 
@@ -33,12 +36,58 @@ public final class Images {
      * @param width The bitmap's width
      * @param height The bitmap's height
      * @param channels The number of channels, must be 3 or 4
+     * @param colorSpace The bitmap's color space, can be null
      *
      * @return A BufferedImage instance
      */
-    public static BufferedImage create(int width, int height, int channels) {
+    public static BufferedImage create(int width, int height, int channels, ColorSpace colorSpace) {
+        int type = getImageType(channels);
+        ColorModel colorModel;
+        WritableRaster raster;
+
+        switch (type) {
+            case BufferedImage.TYPE_BYTE_GRAY:
+                if (colorSpace == null) colorSpace = ColorSpace.getInstance(ColorSpace.CS_GRAY);
+                colorModel = new ComponentColorModel(colorSpace, new int[] { 8 }, false, false,
+                        Transparency.OPAQUE, DataBuffer.TYPE_BYTE);
+                raster = colorModel.createCompatibleWritableRaster(width, height);
+                break;
+            case TYPE_BYTE_ALPHA_GRAY:
+                if (colorSpace == null) colorSpace = ColorSpace.getInstance(ColorSpace.CS_GRAY);
+                colorModel = new ComponentColorModel(colorSpace, new int[] { 8, 8 }, true, false,
+                        Transparency.TRANSLUCENT, DataBuffer.TYPE_BYTE);
+                raster = colorModel.createCompatibleWritableRaster(width, height);
+                break;
+            case BufferedImage.TYPE_INT_RGB:
+                if (colorSpace == null) colorSpace = ColorSpace.getInstance(ColorSpace.CS_sRGB);
+                colorModel = new DirectColorModel(colorSpace, 24,
+                        0x00ff0000, 0x0000ff00, 0x000000ff, 0x0, false, getDefaultTransferType(24));
+                raster = colorModel.createCompatibleWritableRaster(width, height);
+                break;
+            case BufferedImage.TYPE_INT_ARGB:
+                if (colorSpace == null) colorSpace = ColorSpace.getInstance(ColorSpace.CS_sRGB);
+                colorModel = new DirectColorModel(colorSpace, 32,
+                        0x00ff0000, 0x0000ff00, 0x000000ff, 0xff000000, false, getDefaultTransferType(32));
+                raster = colorModel.createCompatibleWritableRaster(width, height);
+                break;
+            default:
+                throw new RuntimeException("Unknown image type " + type);
+        }
+
         //noinspection UndesirableClassUsage
-        return new BufferedImage(width, height, getImageType(channels));
+        return new BufferedImage(colorModel, raster, false, null);
+    }
+
+    private static int getDefaultTransferType(int bits) {
+        if (bits <= 8) {
+            return DataBuffer.TYPE_BYTE;
+        } else if (bits <= 16) {
+            return DataBuffer.TYPE_USHORT;
+        } else if (bits <= 32) {
+            return DataBuffer.TYPE_INT;
+        } else {
+            return DataBuffer.TYPE_UNDEFINED;
+        }
     }
 
     /**
@@ -65,7 +114,7 @@ public final class Images {
         int width = image.getWidth();
         int height = image.getHeight();
 
-        int band = getBand(channel);
+        int band = getBand(channel, image.getColorModel());
 
         int pos = offset;
         for (int y = 0; y < height; y++) {
@@ -101,14 +150,17 @@ public final class Images {
      * @param height Height of the image to decode
      * @param channels Number of channels to decode, must be 3 or 4
      *
+     * @param colorSpace
      * @return A BufferedImage instance
      */
-    public static BufferedImage decodeRLE(byte[] data, int offset, int width, int height, int channels) {
-        int[] pixels = new int[width * height];
+    public static BufferedImage decodeRLE(byte[] data, int offset, int width, int height,
+            int channels, ColorSpace colorSpace) {
+
+        BufferedImage image = create(width, height, channels, colorSpace);
+        WritableRaster raster = image.getRaster();
 
         int pos = offset;
         for (int c = 0; c < channels; c++) {
-            int bitShift = getBitShift(c);
             for (int y = 0; y < height; y++) {
                 int x = 0;
                 while (x < width) {
@@ -117,20 +169,18 @@ public final class Images {
                         int runCount = -packetInfo + 1;
                         int value = data[pos++] & 0xff;
                         for (int i = 0; i < runCount; i++, x++) {
-                            pixels[y * width + x] |= value << bitShift;
+                            raster.setSample(x, y, c, value);
                         }
                     } else {
                         int runCount = packetInfo + 1;
                         for (int i = 0; i < runCount; i++, x++) {
-                            pixels[y * width + x] |= (data[pos++] & 0xff) << bitShift;
+                            raster.setSample(x, y, c, data[pos++] & 0xff);
                         }
                     }
                 }
             }
         }
 
-        BufferedImage image = create(width, height, channels);
-        image.setRGB(0, 0, width, height, pixels, 0, width);
         return image;
     }
 
@@ -154,13 +204,14 @@ public final class Images {
      * @param depth The number of bits per channel, must be 8, 16 or 32
      */
     public static void decodeChannelRaw(byte[] data, int offset, int channel,
-                                        BufferedImage image, int depth) {
+            BufferedImage image, int depth) {
+
         WritableRaster raster = image.getRaster();
 
         int width = image.getWidth();
         int height = image.getHeight();
 
-        int band = getBand(channel);
+        int band = getBand(channel, image.getColorModel());
         int pos = offset;
 
         switch (depth) {
@@ -184,10 +235,10 @@ public final class Images {
             case 32: {
                 for (int y = 0; y < height; y++) {
                     for (int x = 0; x < width; x++) {
-                        int d =  ((data[pos++] & 0xff) << 24) |
-                                 ((data[pos++] & 0xff) << 16) |
-                                 ((data[pos++] & 0xff) <<  8) |
-                                 ((data[pos++] & 0xff)      );
+                        int d = ((data[pos++] & 0xff) << 24) |
+                                ((data[pos++] & 0xff) << 16) |
+                                ((data[pos++] & 0xff) <<  8) |
+                                ((data[pos++] & 0xff)      );
                         raster.setSample(x, y, band, (int) (Float.intBitsToFloat(d) * 255.0f) & 0xff);
                     }
                 }
@@ -206,20 +257,23 @@ public final class Images {
      * @param channels Number of channels to decode, must be 3 or 4
      * @param depth Bit-depth of each channel, must be 8, 16 or 32
      *
+     * @param colorSpace
      * @return A BufferedImage instance, never null
      */
     public static BufferedImage decodeRaw(byte[] data, int offset, int width, int height,
-                                          int channels, int depth) {
+            int channels, int depth, ColorSpace colorSpace) {
+
         int pos = offset;
-        int[] pixels = new int[width * height];
+
+        BufferedImage image = create(width, height, channels, colorSpace);
+        WritableRaster raster = image.getRaster();
 
         switch (depth) {
             case 8: {
                 for (int c = 0; c < channels; c++) {
-                    int bitShift = getBitShift(c);
                     for (int y = 0; y < height; y++) {
                         for (int x = 0; x < width; x++) {
-                            pixels[y * width + x] |= (data[pos++] & 0xff) << bitShift;
+                            raster.setSample(x, y, c, data[pos++] & 0xff);
                         }
                     }
                 }
@@ -227,12 +281,10 @@ public final class Images {
             }
             case 16: {
                 for (int c = 0; c < channels; c++) {
-                    int bitShift = getBitShift(c);
                     for (int y = 0; y < height; y++) {
                         for (int x = 0; x < width; x++) {
                             int d = (data[pos++] & 0xff) << 8 | (data[pos++] & 0xff);
-                            pixels[y * width + x] |=
-                                    ((int) (d / 65535.0f * 255.0f) & 0xff) << bitShift;
+                            raster.setSample(x, y, c, ((int) (d / 65535.0f * 255.0f) & 0xff));
                         }
                     }
                 }
@@ -240,15 +292,13 @@ public final class Images {
             }
             case 32: {
                 for (int c = 0; c < channels; c++) {
-                    int bitShift = getBitShift(c);
                     for (int y = 0; y < height; y++) {
                         for (int x = 0; x < width; x++) {
-                            int d =  ((data[pos++] & 0xff) << 24) |
-                                     ((data[pos++] & 0xff) << 16) |
-                                     ((data[pos++] & 0xff) <<  8) |
-                                     ((data[pos++] & 0xff)      );
-                            pixels[y * width + x] |=
-                                    ((int) (Float.intBitsToFloat(d) * 255.0f) & 0xff) << bitShift;
+                            int d = ((data[pos++] & 0xff) << 24) |
+                                    ((data[pos++] & 0xff) << 16) |
+                                    ((data[pos++] & 0xff) <<  8) |
+                                    ((data[pos++] & 0xff)      );
+                            raster.setSample(x, y, c, (int) (Float.intBitsToFloat(d) * 255.0f) & 0xff);
                         }
                     }
                 }
@@ -256,41 +306,18 @@ public final class Images {
             }
         }
 
-        BufferedImage image = create(width, height, channels);
-        image.setRGB(0, 0, width, height, pixels, 0, width);
         return image;
     }
 
     /**
-     * Returns the number of bits to shift a channel value by to store it in
-     * a packed ARGB pixel.
-     *
-     * For instance, getBitShift(0) will return 16 (the red channel must be
-     * shifted by 16 bits to be stored in a packed ARGB pixel).
-     *
+     * Returns the BufferedImage band that corresponds to a given channel index.
      * @param channel The channel index, must be -1, 0, 1, 2 or 3
+     * @param colorModel The color model the channel belongs to
      */
-    private static int getBitShift(int channel) {
-        // RGBA to ARGB
+    private static int getBand(int channel, ColorModel colorModel) {
         switch (channel) {
-            case -1: return 24; // A
-            case  0: return 16; // R
-            case  1: return 8;  // G
-            case  2: return 0;  // B
-            case  3: return 24; // A
-        }
-        throw new IllegalArgumentException("The channel index must be <= 3, not " + channel);
-    }
-
-    /**
-     * Returns the BufferedImage band that corresponds to a given channel
-     * index.
-     *
-     * @param channel The channel index, must be -1, 0, 1, 2 or 3
-     */
-    private static int getBand(int channel) {
-        switch (channel) {
-            case -1: return 3; // A
+            // handle the special alpha case
+            case -1: return colorModel.getNumComponents() - 1;
             case  0: return 0; // R
             case  1: return 1; // G
             case  2: return 2; // B
@@ -302,16 +329,21 @@ public final class Images {
     /**
      * Returns a BufferedImage type for a given number of channels.
      *
-     * @param channels The number of channels, must be 3, 4 or 5
+     * @param channels The number of channels, must be <= 5
      */
     private static int getImageType(int channels) {
         switch (channels) {
+            case 1:
+                return BufferedImage.TYPE_BYTE_GRAY;
+            case 2:
+                return TYPE_BYTE_ALPHA_GRAY;
             case 3:
                 return BufferedImage.TYPE_INT_RGB;
             case 4:
             case 5:
                 return BufferedImage.TYPE_INT_ARGB;
         }
-        throw new IllegalArgumentException("The channels count must be 3, 4 or 5");
+        throw new IllegalArgumentException("The channels count must be <= 5");
     }
+
 }

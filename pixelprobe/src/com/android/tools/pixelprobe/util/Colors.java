@@ -16,9 +16,12 @@
 
 package com.android.tools.pixelprobe.util;
 
+import java.awt.*;
 import java.awt.color.ColorSpace;
 import java.awt.color.ICC_ColorSpace;
 import java.awt.color.ICC_Profile;
+import java.awt.image.BufferedImage;
+import java.awt.image.ColorConvertOp;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -96,32 +99,32 @@ public final class Colors {
       return v;
     }
 
-  /**
-   * Converts the specified linear RGB component to an sRGB component.
-   * The input value must be between 0.0 and 1.0. The output value is
-   * in the same range.
-   *
-   * @param c A linear RGB component between 0.0 and 1.0
-   *
-   * @return An sRGB component between 0.0 and 1.0
-   */
+    /**
+     * Converts the specified linear RGB component to an sRGB component.
+     * The input value must be between 0.0 and 1.0. The output value is
+     * in the same range.
+     *
+     * @param c A linear RGB component between 0.0 and 1.0
+     *
+     * @return An sRGB component between 0.0 and 1.0
+     */
     public static float linearToSRGB(float c) {
         return (c <= 0.0031308f) ? c * 12.92f : ((float) Math.pow(c, 1.0f / 2.4f) * 1.055f) - 0.055f;
     }
 
-  /**
-   * Converts the specified CMYK color to linear RGB. The conversion
-   * is done using the "U.S. Web Coated v2" ICC color profile.
-   */
+    /**
+     * Converts the specified CMYK color to linear RGB. The conversion
+     * is done using the "U.S. Web Coated v2" ICC color profile.
+     */
     public static float[] CMYKtoRGB(float C, float M, float Y, float K) {
         return getCMYKProfile().toRGB(new float[] { C, M, Y, K });
     }
 
-  /**
-   * Returns the ICC CMYK color profile used for CMYK to RGB conversions.
-   * The color profile is the standard "U.S. Web Coated v2" profile.
-   */
-  public static ICC_ColorSpace getCMYKProfile() {
+    /**
+     * Returns the ICC CMYK color profile used for CMYK to RGB conversions.
+     * The color profile is the standard "U.S. Web Coated v2" profile.
+     */
+    public static ICC_ColorSpace getCMYKProfile() {
         if (CMYK_ICC_Profile == null) {
             try (InputStream in = Colors.class.getResourceAsStream("USWebCoatedSWOP.icc")) {
                 CMYK_ICC_Profile = ICC_Profile.getInstance(in);
@@ -131,5 +134,26 @@ public final class Colors {
             }
         }
         return CMYK_ICC_ColorSpace;
+    }
+
+    /**
+     * Converts an image from the specified source color space to the sRGB space.
+     * If the color space is null or if the source color space is sRGB, the image
+     * is returned directly.
+     *
+     * @param image The image to convert
+     * @param colorSpace The source color space of the image
+     *
+     * @return A new image, or the source image
+     */
+    public static BufferedImage convertToSRGB(BufferedImage image, ColorSpace colorSpace) {
+        if (image != null && colorSpace != null && !colorSpace.isCS_sRGB()) {
+            RenderingHints hints = new RenderingHints(
+                    RenderingHints.KEY_COLOR_RENDERING, RenderingHints.VALUE_COLOR_RENDER_QUALITY);
+            ColorConvertOp op = new ColorConvertOp(colorSpace,
+                    ColorSpace.getInstance(ColorSpace.CS_sRGB), hints);
+            image = op.filter(image, null);
+        }
+        return image;
     }
 }
