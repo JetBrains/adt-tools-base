@@ -26,7 +26,6 @@ import static com.android.SdkConstants.FN_ANNOTATIONS_JAR;
 
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
 import com.android.ide.common.repository.GradleCoordinate;
 import com.android.ide.common.repository.SdkMavenRepository;
 import com.android.repository.Revision;
@@ -103,18 +102,15 @@ public class DefaultSdkLoader implements SdkLoader {
             @NonNull SdkLibData sdkLibData) {
         init(logger);
 
-        ProgressIndicator progress = new LoggerProgressIndicatorWrapper(
-                new StdLogger(StdLogger.Level.VERBOSE)) {
-            @Override
-            public void setText(@Nullable String s) {
-                super.setText(s);
-                logInfo(s);
-            }
-        };
+        // One progress is used for the auto-download feature,
+        // the other is used for parsing the repository XMLs and other operations.
+        ProgressIndicator progress = new LoggerProgressIndicatorWrapper(logger);
+        ProgressIndicator stdOutputProgress = getNewDownloadProgress();
         IAndroidTarget target = mSdkHandler.getAndroidTargetManager(progress)
                 .getTargetFromHashString(targetHash, progress);
 
-        BuildToolInfo buildToolInfo = mSdkHandler.getBuildToolInfo(buildToolRevision, progress);
+        BuildToolInfo buildToolInfo =
+                mSdkHandler.getBuildToolInfo(buildToolRevision, progress);
 
         if (sdkLibData.useSdkDownload()) {
             SettingsController settings = sdkLibData.getSettings();
@@ -124,7 +120,7 @@ public class DefaultSdkLoader implements SdkLoader {
 
             // Check if Build Tools is preview that the user is requesting the latest revision.
             if (buildToolInfo != null && !buildToolInfo.getRevision().equals(buildToolRevision)) {
-                progress.logWarning("Build Tools revision " +
+                stdOutputProgress.logWarning("Build Tools revision " +
                         buildToolRevision +
                         " requested, but the latest available preview is " +
                         buildToolInfo.getRevision()+ ", which will be used to build.");
@@ -139,12 +135,12 @@ public class DefaultSdkLoader implements SdkLoader {
                 if (buildToolInfo == null) {
                     installResults.putAll(
                             installBuildTools(
-                                    buildToolRevision, repoManager, downloader, progress));
+                                    buildToolRevision, repoManager, downloader, stdOutputProgress));
                 }
 
                 if (target == null) {
                     installResults.putAll(
-                            installTarget(targetHash, repoManager, downloader, progress));
+                            installTarget(targetHash, repoManager, downloader, stdOutputProgress));
                 }
 
                 checkUnlicensed(installResults);
@@ -398,12 +394,12 @@ public class DefaultSdkLoader implements SdkLoader {
 
         ImmutableList.Builder<File> repositoriesBuilder = ImmutableList.builder();
         Map<RemotePackage, InstallResultType> installResults = new HashMap<>();
-        ProgressIndicator progress = new LoggerProgressIndicatorWrapper(logger);
+        ProgressIndicator progress = getNewDownloadProgress();
         RepoManager repoManager = mSdkHandler.getSdkManager(progress);
 
         repoManager.loadSynchronously(
                 sdkLibData.getCacheExpirationPeriod(),
-                progress,
+                new LoggerProgressIndicatorWrapper(logger),
                 sdkLibData.getDownloader(),
                 sdkLibData.getSettings());
 
@@ -507,7 +503,7 @@ public class DefaultSdkLoader implements SdkLoader {
     /**
      * Checks if any of the installation attempts failed due to the license file missing.
      *
-     * @throws IllegalArgumentException if some packages could not have been installed
+     * @throws IllegalArgumentException if some packages could not be installed.
      */
     private static void checkUnlicensed(Map<RemotePackage, InstallResultType> installResults) {
         List<String> unlicensedPackages =
@@ -527,5 +523,9 @@ public class DefaultSdkLoader implements SdkLoader {
                     + "been reviewed and accepted, so to build this project, open Android Studio,\n"
                     + "go to the SDK Manager and install these components.");
         }
+    }
+
+    public ProgressIndicator getNewDownloadProgress() {
+        return new LoggerProgressIndicatorWrapper(new StdLogger(StdLogger.Level.VERBOSE));
     }
 }
