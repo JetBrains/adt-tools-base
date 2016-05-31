@@ -51,7 +51,6 @@ import com.android.utils.ILogger;
 import com.android.utils.StdLogger;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Lists;
 
 import java.io.File;
 import java.util.HashMap;
@@ -367,26 +366,14 @@ public class DefaultSdkLoader implements SdkLoader {
 
     @NonNull
     private ImmutableList<File> computeRepositories() {
-        List<File> repositories = Lists.newArrayListWithExpectedSize(3);
-
-        File androidRepo = new File(mSdkLocation, FD_EXTRAS + File.separator + "android"
-                + File.separator + FD_M2_REPOSITORY);
-        if (androidRepo.isDirectory()) {
-            repositories.add(androidRepo);
-        }
-
-        File googleRepo = new File(mSdkLocation, FD_EXTRAS + File.separator + "google"
-                + File.separator + FD_M2_REPOSITORY);
-        if (googleRepo.isDirectory()) {
-            repositories.add(googleRepo);
-        }
-
-        File m2Repo = new File(mSdkLocation, FD_EXTRAS + File.separator + FD_M2_REPOSITORY);
-        if (m2Repo.isDirectory()) {
-            repositories.add(m2Repo);
-        }
-
-        return ImmutableList.copyOf(repositories);
+        return ImmutableList.of(
+                new File(
+                        mSdkLocation,
+                        FD_EXTRAS + File.separator + "android" + File.separator + FD_M2_REPOSITORY),
+                new File(
+                        mSdkLocation,
+                        FD_EXTRAS + File.separator + "google" + File.separator + FD_M2_REPOSITORY),
+                new File(mSdkLocation, FD_EXTRAS + File.separator + FD_M2_REPOSITORY));
     }
 
     @Override

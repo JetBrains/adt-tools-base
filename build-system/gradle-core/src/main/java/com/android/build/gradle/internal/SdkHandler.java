@@ -22,13 +22,13 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.annotations.concurrency.GuardedBy;
 import com.android.build.gradle.AndroidGradleOptions;
-import com.android.builder.sdk.SdkLibData;
 import com.android.builder.core.AndroidBuilder;
 import com.android.builder.core.LibraryRequest;
 import com.android.builder.model.OptionalCompilationStep;
 import com.android.builder.sdk.DefaultSdkLoader;
 import com.android.builder.sdk.PlatformLoader;
 import com.android.builder.sdk.SdkInfo;
+import com.android.builder.sdk.SdkLibData;
 import com.android.builder.sdk.SdkLoader;
 import com.android.builder.sdk.TargetInfo;
 import com.android.repository.Revision;
@@ -298,5 +298,14 @@ public class SdkHandler {
 
     public void setResetCache(boolean resetCache) {
         this.resetCache = resetCache;
+    }
+
+    public void addLocalRepositories(Project project) {
+        for (File repository : getSdkLoader().getRepositories()) {
+            project.getRepositories().maven(newRepo -> {
+                newRepo.setName(repository.getPath());
+                newRepo.setUrl(repository);
+            });
+        }
     }
 }

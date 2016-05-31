@@ -27,23 +27,22 @@ import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES;
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.build.gradle.internal.scope.AndroidTask;
-import com.android.builder.dependency.DependencyContainerImpl;
-import com.android.builder.dependency.LibraryDependency;
 import com.android.build.gradle.internal.dependency.VariantDependencies;
+import com.android.build.gradle.internal.scope.AndroidTask;
 import com.android.build.gradle.internal.tasks.PrepareDependenciesTask;
 import com.android.build.gradle.internal.tasks.PrepareLibraryTask;
 import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.builder.dependency.DependencyContainer;
+import com.android.builder.dependency.DependencyContainerImpl;
 import com.android.builder.dependency.JarDependency;
+import com.android.builder.dependency.LibraryDependency;
 import com.android.builder.dependency.MavenCoordinatesImpl;
 import com.android.builder.model.AndroidLibrary;
 import com.android.builder.model.JavaLibrary;
 import com.android.builder.model.MavenCoordinates;
 import com.android.builder.model.SyncIssue;
 import com.android.builder.sdk.SdkLibData;
-import com.android.ide.common.repository.GradleCoordinate;
 import com.android.repository.api.RepoManager;
 import com.android.repository.api.RepoPackage;
 import com.android.utils.ILogger;
@@ -507,9 +506,15 @@ public class DependencyManager {
                 // Adding the updated local maven repositories to the project in order to
                 // bypass the fact that the old repositories contain the unresolved
                 // resolution result.
-                for (File updatedRepository : updatedRepositories) {
-                    project.getRepositories().maven(mavenArtifactRepository -> {
-                        mavenArtifactRepository.setUrl(updatedRepository.toURI());
+                for (File updatedRepository : sdkHandler.getSdkLoader().getRepositories()) {
+                    project.getRepositories().maven(newRepo -> {
+                        newRepo.setName("Updated " + updatedRepository.getPath());
+                        newRepo.setUrl(updatedRepository.toURI());
+
+                        // Make sure the new repo uses a different cache of resolution results,
+                        // by adding a fake additional URL.
+                        // See Gradle's DependencyResolverIdentifier#forExternalResourceResolver
+                        newRepo.artifactUrls(project.getRootProject().file("sdk-manager"));
                     });
                 }
                 repositoriesUpdated = true;
