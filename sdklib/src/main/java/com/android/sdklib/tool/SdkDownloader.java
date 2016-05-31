@@ -36,6 +36,7 @@ import com.google.common.collect.Lists;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Simple tool for downloading SDK packages, to be used in the windows studio release process.
@@ -43,8 +44,9 @@ import java.util.List;
  * Can be run from the commandline like:
  * {@code java -cp plugins/android/lib/repository.jar:plugins/android/lib/sdklib.jar:\
  *          plugins/android/lib/common.jar:lib/guava-17.0.jar:lib/httpcore-4.4.1.jar:\
- *          lib/httpclient-4.4.1.jar:lib/commons-logging-1.2.jar \
- *          com.android.sdklib.tool.SdkDownloader <sdkdir> <paths...>}
+ *          lib/httpclient-4.4.1.jar:lib/commons-logging-1.2.jar:\
+ *          plugins/android/lib/commons-compress-1.0.jar
+ *          com.android.sdklib.tool.SdkDownloader <sdkdir> (<path> ...|--update)
  */
 public class SdkDownloader {
 
@@ -75,7 +77,7 @@ public class SdkDownloader {
         mgr.loadSynchronously(0, progress, downloader, settings);
 
         List<RemotePackage> remotes = Lists.newArrayList();
-        for (String path : settings.getPaths()) {
+        for (String path : settings.getPaths(mgr)) {
             RemotePackage p = mgr.getPackages().getRemotePackages().get(path);
             if (p == null) {
                 progress.logError("Failed to find package " + path);
@@ -113,7 +115,7 @@ public class SdkDownloader {
             @NonNull RepoManager mgr) {
         mgr.loadSynchronously(0, progress, null, settings);
 
-        for (String path : settings.getPaths()) {
+        for (String path : settings.getPaths(mgr)) {
             LocalPackage p = mgr.getPackages().getLocalPackages().get(path);
             if (p == null) {
                 progress.logWarning("Unable to find package " + path);
@@ -150,11 +152,13 @@ public class SdkDownloader {
 
         private static final String CHANNEL_ARG = "--channel=";
         private static final String UNINSTALL_ARG = "--uninstall";
+        private static final String UPDATE_ARG = "--update";
 
         private File mLocalPath;
         private List<String> mPackages = new ArrayList<>();
         private int mChannel = 0;
         private boolean mIsInstall = true;
+        private boolean mIsUpdate = false;
 
         @Nullable
         public static Settings createSettings(@NonNull String[] args) {
@@ -162,6 +166,8 @@ public class SdkDownloader {
             for (String arg : args) {
                 if (arg.equals(UNINSTALL_ARG)) {
                     result.mIsInstall = false;
+                } else if (arg.equals(UPDATE_ARG)) {
+                    result.mIsUpdate = true;
                 } else if (arg.startsWith(CHANNEL_ARG)) {
                     try {
                         result.mChannel = Integer.parseInt(arg.substring(CHANNEL_ARG.length()));
@@ -185,7 +191,7 @@ public class SdkDownloader {
                     result.mPackages.add(arg);
                 }
             }
-            if (result.mLocalPath == null || result.mPackages.isEmpty()) {
+            if (result.mLocalPath == null || (result.mPackages.isEmpty() && !result.mIsUpdate)) {
                 return null;
             }
             return result;
@@ -208,7 +214,12 @@ public class SdkDownloader {
         }
 
         @NonNull
-        public List<String> getPaths() {
+        public List<String> getPaths(@NonNull RepoManager mgr) {
+            if (mIsUpdate) {
+                return mgr.getPackages().getUpdatedPkgs().stream()
+                        .map(p -> p.getRepresentative().getPath())
+                        .collect(Collectors.toList());
+            }
             return mPackages;
         }
 
