@@ -25,6 +25,7 @@ import com.google.common.truth.SubjectFactory;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
 
 /**
  * Truth support for validating File.
@@ -81,6 +82,23 @@ public class FileSubject extends Subject<FileSubject, File> {
                 if (!contents.contains(expectedContent)) {
                     failWithBadResults("contains", expectedContent, "is", contents);
                 }
+            }
+        } catch (IOException e) {
+            failWithRawMessage("Unable to read %s", getSubject());
+        }
+    }
+
+    public void contains(byte[] expectedContents) {
+        isFile();
+
+        try {
+            byte[] contents = Files.toByteArray(getSubject());
+            if (!Arrays.equals(contents, expectedContents)) {
+                failWithBadResults(
+                        "contains",
+                        "byte[" + expectedContents.length + "]",
+                        "is",
+                        "byte[" + contents.length + "]");
             }
         } catch (IOException e) {
             failWithRawMessage("Unable to read %s", getSubject());
