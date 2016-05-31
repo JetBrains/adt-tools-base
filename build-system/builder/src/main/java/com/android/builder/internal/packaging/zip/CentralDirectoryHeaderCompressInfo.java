@@ -23,6 +23,17 @@ import com.android.annotations.NonNull;
  * need to be computed lazily.
  */
 public class CentralDirectoryHeaderCompressInfo {
+
+    /**
+     * Version of zip file that only supports stored files.
+     */
+    public static final long VERSION_WITH_STORE_FILES_ONLY = 10L;
+
+    /**
+     * Version of zip file that only supports directories and deflated files.
+     */
+    public static final long VERSION_WITH_DIRECTORIES_AND_DEFLATE = 20L;
+
     /**
      * The compression method.
      */
@@ -44,10 +55,13 @@ public class CentralDirectoryHeaderCompressInfo {
      *
      * @param method the compression method
      * @param compressedSize the compressed size
-     * @param versionToExtract minimum version to extract
+     * @param versionToExtract minimum version to extract (typically
+     * {@link #VERSION_WITH_STORE_FILES_ONLY} or {@link #VERSION_WITH_DIRECTORIES_AND_DEFLATE})
      */
-    public CentralDirectoryHeaderCompressInfo(@NonNull CompressionMethod method,
-            long compressedSize, long versionToExtract) {
+    public CentralDirectoryHeaderCompressInfo(
+            @NonNull CompressionMethod method,
+            long compressedSize,
+            long versionToExtract) {
         mMethod = method;
         mCompressedSize = compressedSize;
         mVersionExtract = versionToExtract;
@@ -69,9 +83,9 @@ public class CentralDirectoryHeaderCompressInfo {
             /*
              * Directories and compressed files only in version 2.0.
              */
-            mVersionExtract = 20L;
+            mVersionExtract = VERSION_WITH_DIRECTORIES_AND_DEFLATE;
         } else {
-            mVersionExtract = 10L;
+            mVersionExtract = VERSION_WITH_STORE_FILES_ONLY;
         }
     }
 

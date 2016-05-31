@@ -26,7 +26,9 @@ import com.android.builder.internal.utils.CachedFileContents;
 import com.android.builder.internal.utils.IOExceptionFunction;
 import com.android.builder.internal.utils.IOExceptionRunnable;
 import com.android.utils.FileUtils;
+import com.google.common.base.Charsets;
 import com.google.common.base.Preconditions;
+import com.google.common.base.Strings;
 import com.google.common.base.Verify;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -136,6 +138,14 @@ import java.util.function.Predicate;
  * {code jar} tool. However, setting this option will destroy the contents of the file's extra
  * field.
  *
+ * <p>Activating {@link ZFileOptions#setCoverEmptySpaceUsingExtraField(boolean)} may lead to
+ * <i>virtual files</i> being added to the zip file. Since extra field is limited to 64k, it is not
+ * possible to cover any space bigger than that using the extra field. In those cases, <i>virtual
+ * files</i> are added to the file. A virtual file is a file that exists in the actual zip data,
+ * but is not referenced from the central directory. A zip-compliant utility should ignore these
+ * files. However, zip utilities that expect the zip to be a stream, such as Oracle's jar, will
+ * find these files instead of considering the zip to be corrupt.
+ *
  * <p>{@code ZFile} support sorting zip files. Sorting (done through the {@link #sortZipContents()}
  * method) is a process by which all files are re-read into memory, if not already in memory,
  * removed from the zip and re-added in alphabetical order, respecting alignment rules. So, in
@@ -216,6 +226,32 @@ public class ZFile implements Closeable {
      * Header ID for field with zip alignment.
      */
     private static final int ALIGNMENT_ZIP_EXTRA_DATA_FIELD_HEADER_ID = 0xd935;
+
+    /**
+     * Explanation to write in the file contents of virtual files.
+     */
+    private static final String VIRTUAL_FILE_EXPLANATION =
+            "If you are seeing this file, then the zip utility that was used to uncompress the "
+                    + "zip file is non-compliant with the zip standard. This file exists only to "
+                    + "cover unused space in the zip file and should not have been created during "
+                    + "expansion. These spaces are the result of incrementally updating a zip. "
+                    + "For example, removing a file and adding a bigger one that doesn't fit in "
+                    + "space left by the removed file will yield an empty area in the zip file.";
+
+    /**
+     * Name prefix of a virtual file.
+     */
+    private static final String VIRTUAL_FILE_NAME_PREFIX = "__this_file_does_not_exist_";
+
+    /**
+     * Name suffix of a virtual file.
+     */
+    private static final String VIRTUAL_FILE_NAME_SUFFIX = ".txt";
+
+    /**
+     * Maximum size of the extra field.
+     */
+    private static final int MAX_LOCAL_EXTRA_FIELD_CONTENTS_SIZE = (1 << 16);
 
     /**
      * File zip file.
@@ -822,6 +858,11 @@ public class ZFile implements Closeable {
         mMap.truncate();
 
         /*
+         * If we need to add virtual entries, register them here.
+         */
+        Set<FileUseMapEntry<StoredEntry>> addedVirtualEntries = new HashSet<>();
+
+        /*
          * If we need to use the extra field to cover empty spaces, we do the processing here.
          */
         if (mCoverEmptySpaceUsingExtraField) {
@@ -829,29 +870,53 @@ public class ZFile implements Closeable {
             /* We will go over all files in the zip and check whether there is empty space before
              * them. If there is, then we will move the entry to the beginning of the empty space
              * (covering it) and extend the extra field with the size of the empty space.
+             *
+             * If the empty space is too large to use the extra field, we'll create a virtual
+             * file.
              */
+            int virtualFileCount = 0;
             for (FileUseMapEntry<StoredEntry> entry : new HashSet<>(mEntries.values())) {
                 StoredEntry storedEntry = entry.getStore();
-                Verify.verifyNotNull(storedEntry, "storedEntry == null");
+                assert storedEntry != null;
 
                 FileUseMapEntry<?> before = mMap.before(entry);
                 if (before == null || !before.isFree()) {
                     continue;
                 }
 
-                long newStart = before.getStart();
-                long newSize = entry.getSize() + before.getSize();
                 int localExtraSize =
                         storedEntry.getLocalExtra().length + Ints.checkedCast(before.getSize());
+                if (localExtraSize > MAX_LOCAL_EXTRA_FIELD_CONTENTS_SIZE) {
+                    /*
+                     * We can't use the local extra field for this one. Create a virtual file.
+                     */
+                    String vfName = VIRTUAL_FILE_NAME_PREFIX + virtualFileCount
+                            + VIRTUAL_FILE_NAME_SUFFIX;
 
-                String name = storedEntry.getCentralDirectoryHeader().getName();
-                mMap.remove(entry);
-                Verify.verify(entry == mEntries.remove(name));
+                    StoredEntry virtualEntry = makeVirtual(vfName, before.getSize());
+                    FileUseMapEntry<StoredEntry> virtualEntryInMap =
+                            mMap.add(before.getStart(), before.getEnd(), virtualEntry);
+                    addedVirtualEntries.add(virtualEntryInMap);
 
-                storedEntry.setLocalExtra(makeExtraAlignmentBlock(localExtraSize,
-                        mAlignmentRule.alignment(
-                                storedEntry.getCentralDirectoryHeader().getName())));
-                mEntries.put(name, mMap.add(newStart, newStart + newSize, storedEntry));
+                    mEntries.put(vfName, virtualEntryInMap);
+                } else {
+                    long newStart = before.getStart();
+                    long newSize = entry.getSize() + before.getSize();
+
+                    String name = storedEntry.getCentralDirectoryHeader().getName();
+                    mMap.remove(entry);
+                    Verify.verify(entry == mEntries.remove(name));
+
+                    storedEntry.setLocalExtra(makeExtraAlignmentBlock(localExtraSize,
+                            mAlignmentRule.alignment(
+                                    storedEntry.getCentralDirectoryHeader().getName())));
+                    mEntries.put(name, mMap.add(newStart, newStart + newSize, storedEntry));
+
+                    /*
+                     * Reset the offset to force the file to be rewritten.
+                     */
+                    storedEntry.getCentralDirectoryHeader().setOffset(-1);
+                }
             }
         }
 
@@ -867,7 +932,6 @@ public class ZFile implements Closeable {
          */
         TreeMap<FileUseMapEntry<?>, StoredEntry> toWriteToStore =
                 new TreeMap<>(FileUseMapEntry.COMPARE_BY_START);
-
 
         for (FileUseMapEntry<StoredEntry> entry : mEntries.values()) {
             StoredEntry entryStore = entry.getStore();
@@ -895,6 +959,16 @@ public class ZFile implements Closeable {
             } else {
                 writeEntry(entry, fileUseMapEntry.getStart());
             }
+        }
+
+        /*
+         * Remove all virtual entries.
+         */
+        for (FileUseMapEntry<StoredEntry> virtualEntryInMap : addedVirtualEntries) {
+            mMap.remove(virtualEntryInMap);
+            StoredEntry entry = virtualEntryInMap.getStore();
+            assert entry != null;
+            mEntries.remove(entry.getCentralDirectoryHeader().getName());
         }
 
         boolean hasCentralDirectory;
@@ -1269,28 +1343,21 @@ public class ZFile implements Closeable {
     }
 
     /**
-     * Adds a file to the archive.
+     * Creates a stored entry. This does not add the entry to the zip file, it just creates the
+     * {@link StoredEntry} object.
      *
-     * <p>Adding the file will not update the archive immediately. Updating will only happen
-     * when the {@link #update()} method is invoked.
-     *
-     * <p>Adding a file with the same name as an existing file will replace that file in the
-     * archive.
-     *
-     * @param name the file name (<em>i.e.</em>, path); paths should be defined using slashes
-     * and the name should not end in slash
-     * @param stream the source for the file's data
-     * @param mayCompress can the file be compressed? This flag will be ignored if the alignment
-     * rules force the file to be aligned, in which case the file will not be compressed.
-     * @throws IOException failed to read the source data
+     * @param name the name of the entry
+     * @param stream the input stream with the entry's data
+     * @param mayCompress can the entry be compressed?
+     * @return the created entry
+     * @throws IOException failed to create the entry
      */
-    public void add(@NonNull String name, @NonNull InputStream stream, boolean mayCompress)
+    @NonNull
+    private StoredEntry makeStoredEntry(
+            @NonNull String name,
+            @NonNull InputStream stream,
+            boolean mayCompress)
             throws IOException {
-        /*
-         * Clean pending background work, if needed.
-         */
-        processAllReadyEntries();
-
         /*
          * We cannot compress if we need to align because it is pointless ot align a compressed
          * file.
@@ -1304,13 +1371,43 @@ public class ZFile implements Closeable {
 
         boolean encodeWithUtf8 = !EncodeUtils.canAsciiEncode(name);
 
-        final SettableFuture<CentralDirectoryHeaderCompressInfo> compressInfo =
+        SettableFuture<CentralDirectoryHeaderCompressInfo> compressInfo =
                 SettableFuture.create();
-        final CentralDirectoryHeader newFileData = new CentralDirectoryHeader(name,
+        CentralDirectoryHeader newFileData = new CentralDirectoryHeader(name,
                 source.size(), compressInfo, GPFlags.make(encodeWithUtf8));
         newFileData.setCrc32(crc32);
 
-        ProcessedAndRawByteSources newSource;
+        /*
+         * Create the new entry and sets its data source. Offset should be set to -1 automatically
+         * because this is a new file. With offset set to -1, StoredEntry does not try to verify the
+         * local header. Since this is a new file, there is no local header and not checking it is
+         * what we want to happen.
+         */
+        Verify.verify(newFileData.getOffset() == -1);
+        return new StoredEntry(
+                newFileData,
+                this,
+                createSources(mayCompress, source, compressInfo, newFileData));
+    }
+
+    /**
+     * Creates the processed and raw sources for an entry.
+     *
+     * @param mayCompress can the entry be compressed?
+     * @param source the entry's data (uncompressed)
+     * @param compressInfo the compression info future that will be set when the raw entry is
+     * created and the {@link CentralDirectoryHeaderCompressInfo} object can be created
+     * @param newFileData the central directory header for the new file
+     * @return the sources whose data may or may not be already defined
+     * @throws IOException failed to create the raw sources
+     */
+    @NonNull
+    private ProcessedAndRawByteSources createSources(
+            boolean mayCompress,
+            @NonNull CloseableByteSource source,
+            @NonNull SettableFuture<CentralDirectoryHeaderCompressInfo> compressInfo,
+            @NonNull CentralDirectoryHeader newFileData)
+            throws IOException {
         if (mayCompress) {
             ListenableFuture<CompressionResult> result = mCompressor.compress(source);
             Futures.addCallback(result, new FutureCallback<CompressionResult>() {
@@ -1330,25 +1427,39 @@ public class ZFile implements Closeable {
                     Futures.transform(result, CompressionResult::getSource);
             LazyDelegateByteSource compressedByteSource = new LazyDelegateByteSource(
                     compressedByteSourceFuture);
-            //noinspection IOResourceOpenedButNotSafelyClosed
-            newSource = new ProcessedAndRawByteSources(source, compressedByteSource);
+            return new ProcessedAndRawByteSources(source, compressedByteSource);
         } else {
             compressInfo.set(new CentralDirectoryHeaderCompressInfo(newFileData,
                     CompressionMethod.STORE, source.size()));
-            //noinspection IOResourceOpenedButNotSafelyClosed
-            newSource = new ProcessedAndRawByteSources(source, source);
+            return new ProcessedAndRawByteSources(source, source);
         }
+    }
+
+    /**
+     * Adds a file to the archive.
+     *
+     * <p>Adding the file will not update the archive immediately. Updating will only happen
+     * when the {@link #update()} method is invoked.
+     *
+     * <p>Adding a file with the same name as an existing file will replace that file in the
+     * archive.
+     *
+     * @param name the file name (<em>i.e.</em>, path); paths should be defined using slashes
+     * and the name should not end in slash
+     * @param stream the source for the file's data
+     * @param mayCompress can the file be compressed? This flag will be ignored if the alignment
+     * rules force the file to be aligned, in which case the file will not be compressed.
+     * @throws IOException failed to read the source data
+     */
+    public void add(@NonNull String name, @NonNull InputStream stream, boolean mayCompress)
+            throws IOException {
 
         /*
-         * Create the new entry and sets its data source. Offset should be set to -1 automatically
-         * because this is a new file. With offset set to -1, StoredEntry does not try to verify the
-         * local header. Since this is a new file, there is no local header and not checking it is
-         * what we want to happen.
+         * Clean pending background work, if needed.
          */
-        Verify.verify(newFileData.getOffset() == -1);
-        StoredEntry newEntry = new StoredEntry(newFileData, this, newSource);
+        processAllReadyEntries();
 
-        add(newEntry);
+        add(makeStoredEntry(name, stream, mayCompress));
     }
 
     /**
@@ -2160,5 +2271,42 @@ public class ZFile implements Closeable {
          */
 
         return data;
+    }
+
+    /**
+     * Creates a virtual file.
+     *
+     * @param name the file name
+     * @param totalSize the total size to be occupied by the file, including header
+     * @return the created entry
+     * @throws IOException failed to create the entry
+     */
+    private StoredEntry makeVirtual(@NonNull String name, long totalSize)
+            throws IOException {
+        Preconditions.checkArgument(totalSize > 0, "totalSize <= 0");
+
+        boolean encodeWithUtf8 = !EncodeUtils.canAsciiEncode(name);
+        GPFlags flags = GPFlags.make(encodeWithUtf8);
+        byte[] encodedName = EncodeUtils.encode(name, flags);
+
+        long contentsSize = totalSize - StoredEntry.FIXED_LOCAL_FILE_HEADER_SIZE
+                - encodedName.length;
+        if (contentsSize <= VIRTUAL_FILE_EXPLANATION.length()) {
+            throw new IllegalArgumentException("Virtual file size '" + totalSize + "' is too "
+                    + "small");
+        }
+
+        /*
+         * We make use of the fact that under ASCII encoding, each character is one byte.
+         */
+        byte[] contents = Charsets.US_ASCII.encode(
+                Strings.padEnd(
+                    VIRTUAL_FILE_EXPLANATION,
+                    Ints.checkedCast(contentsSize),
+                    ' '))
+                .array();
+        Verify.verify(contents.length == contentsSize);
+
+        return makeStoredEntry(name, new ByteArrayInputStream(contents), false);
     }
 }
