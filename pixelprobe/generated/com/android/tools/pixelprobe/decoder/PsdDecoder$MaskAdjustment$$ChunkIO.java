@@ -7,7 +7,6 @@ import java.util.LinkedList;
 final class PsdDecoder$MaskAdjustment$$ChunkIO {
     static PsdDecoder.MaskAdjustment read(RangedInputStream in, LinkedList<Object> stack) throws IOException {
         PsdDecoder.MaskAdjustment maskAdjustment = new PsdDecoder.MaskAdjustment();
-        if (stack == null) stack = new LinkedList<Object>();
         stack.addFirst(maskAdjustment);
 
         int size = 0;

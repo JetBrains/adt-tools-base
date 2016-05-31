@@ -292,16 +292,16 @@ public final class ChunkReaders {
                     expression = "in.readInt()";
                     skip = true;
             }
-            builder.beginBlock();
-            builder.addStatement("int index = $L", expression);
-            builder.addStatement("if (index > $T.values().length) index = 0", type);
-            builder.addStatement("$L$L = $T.values()[index]", target, chunk.name, type);
-            builder.endBlock();
+            builder.addStatement("$L$L = $T.values()[\n" +
+                    "Math.max(0, Math.min($L, $T.values().length - 1))]",
+                    target, chunk.name, type, expression, type);
         }
 
         @Override
         public void emitDynamicRead(MethodDef.Builder builder, String target, FieldChunk chunk) {
-            builder.addStatement("$L$L = $T.values()[byteCount]", target, chunk.name, type);
+            builder.addStatement("$L$L = $T.values()[\n" +
+                     "Math.max(0, Math.min($T.readInt(in, byteCount), $T.values().length - 1))]",
+                     target, chunk.name, type, ChunkUtils.class, type);
         }
     }
 
@@ -345,8 +345,7 @@ public final class ChunkReaders {
         }
 
         private void emitRangedRead(MethodDef.Builder builder, String target, FieldChunk chunk) {
-            builder.addStatement("$L$L = $T.read(in, stack)",
-                                 target, chunk.name, type);
+            builder.addStatement("$L$L = $T.read(in, stack)", target, chunk.name, type);
         }
     }
 
@@ -398,8 +397,7 @@ public final class ChunkReaders {
         }
     }
 
-    private abstract static class PrimitiveChunkReaderImpl
-            implements ChunkReader, PrimitiveChunkReader {
+    private abstract static class PrimitiveChunkReaderImpl implements ChunkReader, PrimitiveChunkReader {
         private String primitive;
 
         private PrimitiveChunkReaderImpl(String primitive) {
@@ -419,10 +417,9 @@ public final class ChunkReaders {
         }
 
         @Override
-        public void emitDynamicRead(MethodDef.Builder builder, String target,
-                FieldChunk chunk) {
+        public void emitDynamicRead(MethodDef.Builder builder, String target, FieldChunk chunk) {
             builder.addStatement("$L$L = $T.read$L(in, byteCount)", target, chunk.name,
-                                 ChunkUtils.class, primitive);
+                    ChunkUtils.class, primitive);
         }
 
         void emitRead(MethodDef.Builder builder, String target, FieldChunk chunk,

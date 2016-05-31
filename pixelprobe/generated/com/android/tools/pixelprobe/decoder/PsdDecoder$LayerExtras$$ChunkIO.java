@@ -11,7 +11,6 @@ import java.util.LinkedList;
 final class PsdDecoder$LayerExtras$$ChunkIO {
     static PsdDecoder.LayerExtras read(RangedInputStream in, LinkedList<Object> stack) throws IOException {
         PsdDecoder.LayerExtras layerExtras = new PsdDecoder.LayerExtras();
-        if (stack == null) stack = new LinkedList<Object>();
         stack.addFirst(layerExtras);
 
         int size = 0;

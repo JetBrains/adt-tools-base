@@ -8,7 +8,6 @@ import java.util.LinkedList;
 final class PsdDecoder$VectorMask$$ChunkIO {
     static PsdDecoder.VectorMask read(RangedInputStream in, LinkedList<Object> stack) throws IOException {
         PsdDecoder.VectorMask vectorMask = new PsdDecoder.VectorMask();
-        if (stack == null) stack = new LinkedList<Object>();
         stack.addFirst(vectorMask);
 
         int size = 0;

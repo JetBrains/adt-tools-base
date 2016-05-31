@@ -9,7 +9,6 @@ import java.util.LinkedList;
 final class PsdDecoder$LayerProperty$$ChunkIO {
     static PsdDecoder.LayerProperty read(RangedInputStream in, LinkedList<Object> stack) throws IOException {
         PsdDecoder.LayerProperty layerProperty = new PsdDecoder.LayerProperty();
-        if (stack == null) stack = new LinkedList<Object>();
         stack.addFirst(layerProperty);
 
         int size = 0;

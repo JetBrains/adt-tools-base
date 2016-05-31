@@ -7,7 +7,6 @@ import java.util.LinkedList;
 final class PsdDecoder$SolidColorAdjustment$$ChunkIO {
     static PsdDecoder.SolidColorAdjustment read(RangedInputStream in, LinkedList<Object> stack) throws IOException {
         PsdDecoder.SolidColorAdjustment solidColorAdjustment = new PsdDecoder.SolidColorAdjustment();
-        if (stack == null) stack = new LinkedList<Object>();
         stack.addFirst(solidColorAdjustment);
 
         int size = 0;

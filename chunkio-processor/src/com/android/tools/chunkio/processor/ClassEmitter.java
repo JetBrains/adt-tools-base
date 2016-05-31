@@ -388,8 +388,6 @@ public class ClassEmitter {
      */
     private static void emitMethodPrologue(TypeDef type, MethodDef.Builder builder, String name) {
         builder.addStatement("$T $L = new $T()", type, name, type);
-        builder.addStatement("if (stack == null) stack = new $T()",
-                StackType.class.getGenericSuperclass());
         builder.addStatement("stack.addFirst($L)", name);
         builder.add("\n");
         builder.addStatement("int size = 0");
@@ -398,8 +396,7 @@ public class ClassEmitter {
     }
 
     private void errorReaderNotFound(TypeElement typeElement, FieldChunk chunk) {
-        errorHandler.error(typeElement,
-                           "Could not generate code for field %s in class %s", chunk.name);
+        errorHandler.error(typeElement, "Could not generate code for field %s in class %s", chunk.name);
     }
 
     private static boolean hasTypeSwitch(FieldChunk chunk, ChunkReader reader) {

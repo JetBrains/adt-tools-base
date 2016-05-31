@@ -9,7 +9,6 @@ import java.util.LinkedList;
 final class PsdDecoder$DescriptorItem$Value$$ChunkIO {
     static PsdDecoder.DescriptorItem.Value read(RangedInputStream in, LinkedList<Object> stack) throws IOException {
         PsdDecoder.DescriptorItem.Value value = new PsdDecoder.DescriptorItem.Value();
-        if (stack == null) stack = new LinkedList<Object>();
         stack.addFirst(value);
 
         int size = 0;

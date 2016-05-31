@@ -9,7 +9,6 @@ import java.util.LinkedList;
 final class PsdDecoder$ImageResourceBlock$$ChunkIO {
     static PsdDecoder.ImageResourceBlock read(RangedInputStream in, LinkedList<Object> stack) throws IOException {
         PsdDecoder.ImageResourceBlock imageResourceBlock = new PsdDecoder.ImageResourceBlock();
-        if (stack == null) stack = new LinkedList<Object>();
         stack.addFirst(imageResourceBlock);
 
         int size = 0;
@@ -34,6 +33,8 @@ final class PsdDecoder$ImageResourceBlock$$ChunkIO {
             imageResourceBlock.data = PsdDecoder$ThumbnailResourceBlock$$ChunkIO.read(in, stack);
         } else if (imageResourceBlock.id == 0x03ED) {
             imageResourceBlock.data = PsdDecoder$ResolutionInfoBlock$$ChunkIO.read(in, stack);
+        } else if (imageResourceBlock.id == 0x040F) {
+            imageResourceBlock.data = PsdDecoder$ColorProfileBlock$$ChunkIO.read(in, stack);
         }
         in.popRange();
 

@@ -7,7 +7,6 @@ import java.util.LinkedList;
 final class PsdDecoder$TypeToolObject$$ChunkIO {
     static PsdDecoder.TypeToolObject read(RangedInputStream in, LinkedList<Object> stack) throws IOException {
         PsdDecoder.TypeToolObject typeToolObject = new PsdDecoder.TypeToolObject();
-        if (stack == null) stack = new LinkedList<Object>();
         stack.addFirst(typeToolObject);
 
         int size = 0;

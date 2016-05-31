@@ -7,7 +7,6 @@ import java.util.LinkedList;
 final class PsdDecoder$PathRecord$BezierKnot$$ChunkIO {
     static PsdDecoder.PathRecord.BezierKnot read(RangedInputStream in, LinkedList<Object> stack) throws IOException {
         PsdDecoder.PathRecord.BezierKnot bezierKnot = new PsdDecoder.PathRecord.BezierKnot();
-        if (stack == null) stack = new LinkedList<Object>();
         stack.addFirst(bezierKnot);
 
         int size = 0;

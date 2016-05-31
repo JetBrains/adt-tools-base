@@ -7,34 +7,21 @@ import java.util.LinkedList;
 final class PsdDecoder$ResolutionInfoBlock$$ChunkIO {
     static PsdDecoder.ResolutionInfoBlock read(RangedInputStream in, LinkedList<Object> stack) throws IOException {
         PsdDecoder.ResolutionInfoBlock resolutionInfoBlock = new PsdDecoder.ResolutionInfoBlock();
-        if (stack == null) stack = new LinkedList<Object>();
         stack.addFirst(resolutionInfoBlock);
 
         int size = 0;
         long byteCount = 0;
 
         resolutionInfoBlock.horizontalResolution = in.readInt();
-        {
-            int index = in.readUnsignedShort();
-            if (index > PsdDecoder.ResolutionUnit.values().length) index = 0;
-            resolutionInfoBlock.horizontalUnit = PsdDecoder.ResolutionUnit.values()[index];
-        }
-        {
-            int index = in.readUnsignedShort();
-            if (index > PsdDecoder.DisplayUnit.values().length) index = 0;
-            resolutionInfoBlock.widthUnit = PsdDecoder.DisplayUnit.values()[index];
-        }
+        resolutionInfoBlock.horizontalUnit = PsdDecoder.ResolutionUnit.values()[
+                Math.max(0, Math.min(in.readUnsignedShort(), PsdDecoder.ResolutionUnit.values().length - 1))];
+        resolutionInfoBlock.widthUnit = PsdDecoder.DisplayUnit.values()[
+                Math.max(0, Math.min(in.readUnsignedShort(), PsdDecoder.DisplayUnit.values().length - 1))];
         resolutionInfoBlock.verticalResolution = in.readInt();
-        {
-            int index = in.readUnsignedShort();
-            if (index > PsdDecoder.ResolutionUnit.values().length) index = 0;
-            resolutionInfoBlock.verticalUnit = PsdDecoder.ResolutionUnit.values()[index];
-        }
-        {
-            int index = in.readUnsignedShort();
-            if (index > PsdDecoder.DisplayUnit.values().length) index = 0;
-            resolutionInfoBlock.heightUnit = PsdDecoder.DisplayUnit.values()[index];
-        }
+        resolutionInfoBlock.verticalUnit = PsdDecoder.ResolutionUnit.values()[
+                Math.max(0, Math.min(in.readUnsignedShort(), PsdDecoder.ResolutionUnit.values().length - 1))];
+        resolutionInfoBlock.heightUnit = PsdDecoder.DisplayUnit.values()[
+                Math.max(0, Math.min(in.readUnsignedShort(), PsdDecoder.DisplayUnit.values().length - 1))];
 
         stack.removeFirst();
         return resolutionInfoBlock;

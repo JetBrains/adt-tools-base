@@ -8,7 +8,6 @@ import java.util.LinkedList;
 final class PsdDecoder$FixedByteArray$$ChunkIO {
     static PsdDecoder.FixedByteArray read(RangedInputStream in, LinkedList<Object> stack) throws IOException {
         PsdDecoder.FixedByteArray fixedByteArray = new PsdDecoder.FixedByteArray();
-        if (stack == null) stack = new LinkedList<Object>();
         stack.addFirst(fixedByteArray);
 
         int size = 0;

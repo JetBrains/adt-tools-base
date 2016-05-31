@@ -9,7 +9,6 @@ import java.util.LinkedList;
 final class PsdDecoder$GuidesResourceBlock$$ChunkIO {
     static PsdDecoder.GuidesResourceBlock read(RangedInputStream in, LinkedList<Object> stack) throws IOException {
         PsdDecoder.GuidesResourceBlock guidesResourceBlock = new PsdDecoder.GuidesResourceBlock();
-        if (stack == null) stack = new LinkedList<Object>();
         stack.addFirst(guidesResourceBlock);
 
         int size = 0;

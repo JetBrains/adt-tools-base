@@ -7,7 +7,6 @@ import java.util.LinkedList;
 final class PsdDecoder$ChannelInformation$$ChunkIO {
     static PsdDecoder.ChannelInformation read(RangedInputStream in, LinkedList<Object> stack) throws IOException {
         PsdDecoder.ChannelInformation channelInformation = new PsdDecoder.ChannelInformation();
-        if (stack == null) stack = new LinkedList<Object>();
         stack.addFirst(channelInformation);
 
         int size = 0;

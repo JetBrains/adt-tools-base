@@ -8,7 +8,6 @@ import java.util.LinkedList;
 final class PsdDecoder$ColorData$$ChunkIO {
     static PsdDecoder.ColorData read(RangedInputStream in, LinkedList<Object> stack) throws IOException {
         PsdDecoder.ColorData colorData = new PsdDecoder.ColorData();
-        if (stack == null) stack = new LinkedList<Object>();
         stack.addFirst(colorData);
 
         int size = 0;

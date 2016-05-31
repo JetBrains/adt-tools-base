@@ -8,7 +8,6 @@ import java.util.LinkedList;
 final class PsdDecoder$DescriptorItem$Reference$$ChunkIO {
     static PsdDecoder.DescriptorItem.Reference read(RangedInputStream in, LinkedList<Object> stack) throws IOException {
         PsdDecoder.DescriptorItem.Reference reference = new PsdDecoder.DescriptorItem.Reference();
-        if (stack == null) stack = new LinkedList<Object>();
         stack.addFirst(reference);
 
         int size = 0;

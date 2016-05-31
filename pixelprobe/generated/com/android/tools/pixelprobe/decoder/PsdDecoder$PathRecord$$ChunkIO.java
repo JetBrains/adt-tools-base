@@ -8,7 +8,6 @@ import java.util.LinkedList;
 final class PsdDecoder$PathRecord$$ChunkIO {
     static PsdDecoder.PathRecord read(RangedInputStream in, LinkedList<Object> stack) throws IOException {
         PsdDecoder.PathRecord pathRecord = new PsdDecoder.PathRecord();
-        if (stack == null) stack = new LinkedList<Object>();
         stack.addFirst(pathRecord);
 
         int size = 0;

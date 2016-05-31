@@ -7,7 +7,6 @@ import java.util.LinkedList;
 final class PsdDecoder$BlendRange$$ChunkIO {
     static PsdDecoder.BlendRange read(RangedInputStream in, LinkedList<Object> stack) throws IOException {
         PsdDecoder.BlendRange blendRange = new PsdDecoder.BlendRange();
-        if (stack == null) stack = new LinkedList<Object>();
         stack.addFirst(blendRange);
 
         int size = 0;

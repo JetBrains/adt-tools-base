@@ -1088,10 +1088,21 @@ final class PsdDecoder extends Decoder {
                 @Chunk.Case(test = "imageResourceBlock.id == 0x040C",
                         type = ThumbnailResourceBlock.class),
                 @Chunk.Case(test = "imageResourceBlock.id == 0x03ED",
-                        type = ResolutionInfoBlock.class)
+                        type = ResolutionInfoBlock.class),
+                @Chunk.Case(test = "imageResourceBlock.id == 0x040F",
+                        type = ColorProfileBlock.class)
             }
         )
         Object data;
+    }
+
+    /**
+     * Stores an ICC color profile.
+     */
+    @Chunked
+    static final class ColorProfileBlock {
+        @Chunk
+        byte[] icc;
     }
 
     /**

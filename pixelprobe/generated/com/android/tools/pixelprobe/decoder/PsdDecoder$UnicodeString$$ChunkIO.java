@@ -9,7 +9,6 @@ import java.util.LinkedList;
 final class PsdDecoder$UnicodeString$$ChunkIO {
     static PsdDecoder.UnicodeString read(RangedInputStream in, LinkedList<Object> stack) throws IOException {
         PsdDecoder.UnicodeString unicodeString = new PsdDecoder.UnicodeString();
-        if (stack == null) stack = new LinkedList<Object>();
         stack.addFirst(unicodeString);
 
         int size = 0;

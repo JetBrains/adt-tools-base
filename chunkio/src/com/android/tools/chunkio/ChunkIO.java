@@ -71,7 +71,7 @@ public final class ChunkIO {
 
         try {
             //noinspection unchecked
-            return (T) method.invoke(null, new RangedInputStream(in), null);
+            return (T) method.invoke(null, new RangedInputStream(in), new LinkedList<>());
         } catch (InvocationTargetException | IllegalAccessException e) {
             throw new ChunkException("Could not invoke the read() method for type " + type, e);
         }

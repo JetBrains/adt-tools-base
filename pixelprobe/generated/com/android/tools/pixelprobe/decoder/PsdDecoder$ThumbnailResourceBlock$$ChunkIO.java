@@ -8,7 +8,6 @@ import java.util.LinkedList;
 final class PsdDecoder$ThumbnailResourceBlock$$ChunkIO {
     static PsdDecoder.ThumbnailResourceBlock read(RangedInputStream in, LinkedList<Object> stack) throws IOException {
         PsdDecoder.ThumbnailResourceBlock thumbnailResourceBlock = new PsdDecoder.ThumbnailResourceBlock();
-        if (stack == null) stack = new LinkedList<Object>();
         stack.addFirst(thumbnailResourceBlock);
 
         int size = 0;

@@ -8,7 +8,6 @@ import java.util.LinkedList;
 final class PsdDecoder$ImageResources$$ChunkIO {
     static PsdDecoder.ImageResources read(RangedInputStream in, LinkedList<Object> stack) throws IOException {
         PsdDecoder.ImageResources imageResources = new PsdDecoder.ImageResources();
-        if (stack == null) stack = new LinkedList<Object>();
         stack.addFirst(imageResources);
 
         int size = 0;

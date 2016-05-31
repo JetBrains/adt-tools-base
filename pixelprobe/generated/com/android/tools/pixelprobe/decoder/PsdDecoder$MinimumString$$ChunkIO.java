@@ -9,7 +9,6 @@ import java.util.LinkedList;
 final class PsdDecoder$MinimumString$$ChunkIO {
     static PsdDecoder.MinimumString read(RangedInputStream in, LinkedList<Object> stack) throws IOException {
         PsdDecoder.MinimumString minimumString = new PsdDecoder.MinimumString();
-        if (stack == null) stack = new LinkedList<Object>();
         stack.addFirst(minimumString);
 
         int size = 0;
