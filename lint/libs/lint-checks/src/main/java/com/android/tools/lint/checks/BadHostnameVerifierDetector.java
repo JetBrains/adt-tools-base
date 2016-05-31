@@ -85,7 +85,7 @@ public class BadHostnameVerifierDetector extends Detector implements JavaPsiScan
                                 "could cause insecure network traffic due to trusting "
                                 + "TLS/SSL server certificates for wrong hostnames",
                         method.getName());
-                context.report(ISSUE, location, message);
+                context.report(ISSUE, method, location, message);
                 break;
             }
         }
