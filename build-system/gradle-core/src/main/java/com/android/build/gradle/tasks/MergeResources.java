@@ -141,7 +141,8 @@ public class MergeResources extends IncrementalTask {
                             getBuilder(),
                             getCrunchPng(),
                             getProcess9Patch(),
-                            variantScope);
+                            variantScope,
+                            getAaptTempDir());
             MergedResourceWriter writer = new MergedResourceWriter(
                     destinationDir,
                     getPublicFile(),
@@ -218,7 +219,8 @@ public class MergeResources extends IncrementalTask {
                             getBuilder(),
                             getCrunchPng(),
                             getProcess9Patch(),
-                            variantScope);
+                            variantScope,
+                            getAaptTempDir());
             MergedResourceWriter writer = new MergedResourceWriter(
                     getOutputDir(),
                     getPublicFile(),
@@ -373,6 +375,16 @@ public class MergeResources extends IncrementalTask {
 
     public void setDisableVectorDrawables(boolean disableVectorDrawables) {
         this.disableVectorDrawables = disableVectorDrawables;
+    }
+
+    /**
+     * Obtains the temporary directory for {@code aapt} to use.
+     *
+     * @return the temporary directory
+     */
+    @NonNull
+    private File getAaptTempDir() {
+        return FileUtils.mkdirs(new File(getIncrementalFolder(), "aapt-temp"));
     }
 
     public static class ConfigAction implements TaskConfigAction<MergeResources> {

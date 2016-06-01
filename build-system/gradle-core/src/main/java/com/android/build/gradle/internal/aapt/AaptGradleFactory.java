@@ -37,6 +37,7 @@ import com.google.common.collect.Lists;
 
 import org.gradle.api.Project;
 
+import java.io.File;
 import java.util.List;
 import java.util.regex.Pattern;
 
@@ -53,11 +54,15 @@ public final class AaptGradleFactory {
      *
      * @param builder the android builder project model
      * @param scope the scope of the variant to use {@code aapt2} with
+     * @param intermediateDir intermediate directory for aapt to use
      * @return the newly-created instance
      */
     @NonNull
-    public static Aapt make(@NonNull AndroidBuilder builder, @NonNull VariantScope scope) {
-        return make(builder, true, true, scope);
+    public static Aapt make(
+            @NonNull AndroidBuilder builder,
+            @NonNull VariantScope scope,
+            @NonNull File intermediateDir) {
+        return make(builder, true, true, scope, intermediateDir);
     }
 
     /**
@@ -67,6 +72,7 @@ public final class AaptGradleFactory {
      * @param crunchPng should PNGs be crunched?
      * @param process9Patch should 9-patch be processed even if PNGs are not crunched?
      * @param scope the scope of the variant to use {@code aapt2} with
+     * @param intermediateDir intermediate directory for aapt to use
      * @return the newly-created instance
      */
     @NonNull
@@ -74,13 +80,15 @@ public final class AaptGradleFactory {
             @NonNull AndroidBuilder builder,
             boolean crunchPng,
             boolean process9Patch,
-            @NonNull VariantScope scope) {
+            @NonNull VariantScope scope,
+            @NonNull File intermediateDir) {
         return make(
                 builder,
                 crunchPng,
                 process9Patch,
                 scope.getGlobalScope().getProject(),
-                scope.getVariantConfiguration().getType());
+                scope.getVariantConfiguration().getType(),
+                intermediateDir);
     }
 
     /**
@@ -91,6 +99,7 @@ public final class AaptGradleFactory {
      * @param process9Patch should 9-patch be processed even if PNGs are not crunched?
      * @param project the Gradle project
      * @param variantType type of the variant to process
+     * @param intermediateDir intermediate directory for aapt to use
      * @return the newly-created instance
      */
     @NonNull
@@ -99,14 +108,16 @@ public final class AaptGradleFactory {
             boolean crunchPng,
             boolean process9Patch,
             @NonNull Project project,
-            @NonNull VariantType variantType) {
+            @NonNull VariantType variantType,
+            @NonNull File intermediateDir) {
         return make(
                 builder,
                 new LoggedProcessOutputHandler(new FilteringLogger(builder.getLogger())),
                 crunchPng,
                 process9Patch,
                 project,
-                variantType);
+                variantType,
+                intermediateDir);
     }
 
     /**
@@ -118,6 +129,7 @@ public final class AaptGradleFactory {
      * @param process9Patch should 9-patch be processed even if PNGs are not crunched?
      * @param project the Gradle project
      * @param variantType type of the variant to process
+     * @param intermediateDir intermediate directory for aapt to use
      * @return the newly-created instance
      */
     @NonNull
@@ -127,7 +139,8 @@ public final class AaptGradleFactory {
             boolean crunchPng,
             boolean process9Patch,
             @NonNull Project project,
-            @NonNull VariantType variantType) {
+            @NonNull VariantType variantType,
+            @NonNull File intermediateDir) {
         TargetInfo target = builder.getTargetInfo();
         Preconditions.checkNotNull(target, "target == null");
         BuildToolInfo buildTools = target.getBuildTools();
@@ -145,6 +158,7 @@ public final class AaptGradleFactory {
                     builder.getProcessExecutor(),
                     outputHandler,
                     buildTools,
+                    intermediateDir,
                     new FilteringLogger(builder.getLogger()));
         } else {
             AaptV1.PngProcessMode processMode;
