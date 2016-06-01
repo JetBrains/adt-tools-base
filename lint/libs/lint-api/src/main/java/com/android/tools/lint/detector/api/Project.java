@@ -19,6 +19,7 @@ package com.android.tools.lint.detector.api;
 import static com.android.SdkConstants.ANDROID_LIBRARY;
 import static com.android.SdkConstants.ANDROID_LIBRARY_REFERENCE_FORMAT;
 import static com.android.SdkConstants.ANDROID_MANIFEST_XML;
+import static com.android.SdkConstants.ANDROID_SUPPORT_PKG_PREFIX;
 import static com.android.SdkConstants.ANDROID_URI;
 import static com.android.SdkConstants.APPCOMPAT_LIB_ARTIFACT;
 import static com.android.SdkConstants.ATTR_MIN_SDK_VERSION;
@@ -756,7 +757,7 @@ public class Project {
         // have binary libraries, the support libraries have to be source-copied into
         // the workspace which then triggers warnings in these libraries that users
         // shouldn't have to investigate)
-        if (mPackage != null && mPackage.startsWith("android.support.")) {
+        if (mPackage != null && mPackage.startsWith(ANDROID_SUPPORT_PKG_PREFIX)) {
             mReportIssues = false;
         }
 

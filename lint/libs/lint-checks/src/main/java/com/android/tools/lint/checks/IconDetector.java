@@ -472,7 +472,7 @@ public class IconDetector extends ResourceXmlDetector implements JavaPsiScanner 
 
     /** Like {@link LintUtils#isBitmapFile(File)} but (a) operates on Strings instead
      * of files and (b) also considers XML drawables as images */
-    private static boolean isDrawableFile(String name) {
+    public static boolean isDrawableFile(String name) {
         // endsWith(name, DOT_PNG) is also true for endsWith(name, DOT_9PNG)
         return endsWith(name, DOT_PNG)|| endsWith(name, DOT_JPG) || endsWith(name, DOT_GIF)
                 || endsWith(name, DOT_XML) || endsWith(name, DOT_JPEG) || endsWith(name, DOT_WEBP);
@@ -1820,7 +1820,7 @@ public class IconDetector extends ResourceXmlDetector implements JavaPsiScanner 
         }
     }
 
-    private static Dimension getSize(File file) {
+    public static Dimension getSize(File file) {
         try {
             ImageInputStream input = ImageIO.createImageInputStream(file);
             if (input != null) {

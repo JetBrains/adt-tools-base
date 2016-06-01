@@ -324,7 +324,20 @@ public class XmlUtils {
      * @param textValue the text value to be appended and escaped
      */
     public static void appendXmlTextValue(@NonNull StringBuilder sb, @NonNull String textValue) {
-        for (int i = 0, n = textValue.length(); i < n; i++) {
+        appendXmlTextValue(sb, textValue, 0, textValue.length());
+    }
+
+    /**
+     * Appends text to the given {@link StringBuilder} and escapes it as required for a
+     * DOM text node.
+     *
+     * @param sb        the string builder
+     * @param start     the starting offset in the text string
+     * @param end       the ending offset in the text string
+     * @param textValue the text value to be appended and escaped
+     */
+    public static void appendXmlTextValue(@NonNull StringBuilder sb, @NonNull String textValue, int start, int end) {
+        for (int i = start, n = Math.min(textValue.length(), end); i < n; i++) {
             char c = textValue.charAt(i);
             if (c == '<') {
                 sb.append(LT_ENTITY);

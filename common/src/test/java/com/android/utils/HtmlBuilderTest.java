@@ -134,7 +134,7 @@ public class HtmlBuilderTest extends TestCase {
 
     public void testColoredText() {
         HtmlBuilder builder = new HtmlBuilder();
-        assertEquals("<FONT color=\"#\"804020>This is a test</FONT>",
+        assertEquals("<FONT color=\"#804020\">This is a test</FONT>",
                 builder.coloredText(new Color(128, 64, 32), "This is a test").getHtml());
     }
 

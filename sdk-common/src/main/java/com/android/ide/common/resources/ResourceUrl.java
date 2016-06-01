@@ -40,6 +40,9 @@ public class ResourceUrl {
     /** Name of resource */
     @NonNull public final String name;
 
+    /** The namespace, or null if it's in the project namespace */
+    @Nullable public final String namespace;
+
     /** If true, the resource is in the android: framework */
     public final boolean framework;
 
@@ -50,10 +53,12 @@ public class ResourceUrl {
     public final boolean theme;
 
     private ResourceUrl(@NonNull ResourceType type, @NonNull String name,
-            boolean framework, boolean create, boolean theme) {
+                        @Nullable String namespace, boolean framework,
+                        boolean create, boolean theme) {
         this.type = type;
         this.name = name;
         this.framework = framework;
+        this.namespace = namespace;
         this.create = create;
         this.theme = theme;
     }
@@ -68,7 +73,7 @@ public class ResourceUrl {
      */
     public static ResourceUrl create(@NonNull ResourceType type, @NonNull String name,
             boolean framework, boolean create) {
-        return new ResourceUrl(type, name, framework, create, false);
+        return new ResourceUrl(type, name, framework ? ANDROID_NS_NAME : null, framework, create, false);
     }
 
     public static ResourceUrl create(@NonNull ResourceValue value) {
@@ -136,11 +141,15 @@ public class ResourceUrl {
 
         int colon = url.lastIndexOf(':', typeEnd);
         boolean framework = forceFramework;
+        String namespace = forceFramework ? ANDROID_NS_NAME : null;
         if (colon != -1) {
             if (url.startsWith(ANDROID_NS_NAME, typeBegin)) {
                 framework = true;
+                namespace = ANDROID_NS_NAME;
+            } else {
+                namespace = url.substring(typeBegin, colon);
             }
-          typeBegin = colon + 1;
+            typeBegin = colon + 1;
         }
         String typeName = url.substring(typeBegin, typeEnd);
         ResourceType type = ResourceType.getEnum(typeName);
@@ -151,7 +160,7 @@ public class ResourceUrl {
         if (name.isEmpty()) {
             return null;
         }
-        return new ResourceUrl(type, name, framework, create, isTheme);
+        return new ResourceUrl(type, name, namespace, framework, create, isTheme);
     }
 
     /** Returns if the resource url is @null, @empty or @undefined. */

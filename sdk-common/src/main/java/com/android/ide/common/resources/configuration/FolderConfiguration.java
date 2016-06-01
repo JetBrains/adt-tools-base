@@ -881,28 +881,53 @@ public final class FolderConfiguration implements Comparable<FolderConfiguration
         return result.toString();
     }
 
-  /**
-   * Returns the folder configuration as a unique key
-   */
-  @NonNull
-  public String getUniqueKey() {
-    StringBuilder result = new StringBuilder(100);
+    /**
+     * Returns the folder configuration as a unique key
+     */
+    @NonNull
+    public String getUniqueKey() {
+        StringBuilder result = new StringBuilder(100);
 
-      for (int i = 0; i < mQualifiers.length; i++) {
-          ResourceQualifier qualifier = mQualifiers[i];
-          if (qualifier != NULL_QUALIFIERS[i]) {
-              String segment = qualifier.getFolderSegment();
-              if (segment != null && !segment.isEmpty()) {
-                  result.append(SdkConstants.RES_QUALIFIER_SEP);
-                  result.append(segment);
-              }
-          }
-      }
+        for (int i = 0; i < mQualifiers.length; i++) {
+            ResourceQualifier qualifier = mQualifiers[i];
+            if (qualifier != NULL_QUALIFIERS[i]) {
+                String segment = qualifier.getFolderSegment();
+                if (segment != null && !segment.isEmpty()) {
+                    result.append(SdkConstants.RES_QUALIFIER_SEP);
+                    result.append(segment);
+                }
+            }
+        }
 
-    return result.toString();
-  }
+        return result.toString();
+    }
 
-  /**
+    /**
+     * Returns the folder configuration as a qualifier string, e.g.
+     * for the folder values-en-rUS this returns "en-rUS". For the
+     * default configuration it returns "".
+     */
+    @NonNull
+    public String getQualifierString() {
+        StringBuilder result = new StringBuilder(40);
+
+        for (int i = 0; i < mQualifiers.length; i++) {
+            ResourceQualifier qualifier = mQualifiers[i];
+            if (qualifier != NULL_QUALIFIERS[i]) {
+                String segment = qualifier.getFolderSegment();
+                if (segment != null && !segment.isEmpty()) {
+                    if (result.length() > 0) {
+                        result.append(SdkConstants.RES_QUALIFIER_SEP);
+                    }
+                    result.append(segment);
+                }
+            }
+        }
+
+        return result.toString();
+    }
+
+    /**
      * Returns {@link #toDisplayString()}.
      */
     @NonNull
