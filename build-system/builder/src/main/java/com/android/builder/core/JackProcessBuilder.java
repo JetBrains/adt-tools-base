@@ -16,7 +16,6 @@
 
 package com.android.builder.core;
 
-import static com.android.builder.core.JackProcessOptions.JACK_MIN_REV;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.android.SdkConstants;
@@ -25,7 +24,6 @@ import com.android.ide.common.process.JavaProcessInfo;
 import com.android.ide.common.process.ProcessEnvBuilder;
 import com.android.ide.common.process.ProcessException;
 import com.android.ide.common.process.ProcessInfoBuilder;
-import com.android.repository.Revision;
 import com.android.sdklib.BuildToolInfo;
 import com.android.utils.FileUtils;
 import com.google.common.base.Charsets;
@@ -34,7 +32,6 @@ import com.google.common.io.Files;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 /**
@@ -51,14 +48,6 @@ public class JackProcessBuilder extends ProcessEnvBuilder<JackProcessBuilder> {
 
     @NonNull
     public JavaProcessInfo build(@NonNull BuildToolInfo buildToolInfo) throws ProcessException {
-
-        Revision revision = buildToolInfo.getRevision();
-        if (revision.compareTo(JACK_MIN_REV, Revision.PreviewComparison.IGNORE) < 0) {
-            throw new ProcessException(
-                    "Jack requires Build Tools " + JACK_MIN_REV.toString() +
-                    " or later");
-        }
-
         ProcessInfoBuilder builder = new ProcessInfoBuilder();
         builder.addEnvironments(mEnvironment);
 

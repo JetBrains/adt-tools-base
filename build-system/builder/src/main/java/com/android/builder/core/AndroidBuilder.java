@@ -22,6 +22,7 @@ import static com.android.SdkConstants.DOT_XML;
 import static com.android.SdkConstants.FD_RES_XML;
 import static com.android.builder.core.BuilderConstants.ANDROID_WEAR;
 import static com.android.builder.core.BuilderConstants.ANDROID_WEAR_MICRO_APK;
+import static com.android.builder.core.JackProcessOptions.JACK_MIN_REV;
 import static com.android.manifmerger.ManifestMerger2.Invoker;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
@@ -1575,6 +1576,11 @@ public class AndroidBuilder {
     public void convertByteCodeUsingJack(@NonNull JackProcessOptions options, boolean isInProcess)
             throws ConfigNotSupportedException, ClassNotFoundException, CompilationException,
             ConfigurationException, UnrecoverableException, ProcessException {
+        Revision revision = getTargetInfo().getBuildTools().getRevision();
+        if (revision.compareTo(JACK_MIN_REV, Revision.PreviewComparison.IGNORE) < 0) {
+            throw new ConfigNotSupportedException(
+                    "Jack requires Build Tools " + JACK_MIN_REV.toString() + " or later");
+        }
 
         // Create all the necessary directories if needed.
         if (options.getDexOutputDirectory() != null) {
