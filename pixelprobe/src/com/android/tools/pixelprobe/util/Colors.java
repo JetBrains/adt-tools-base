@@ -27,7 +27,7 @@ import java.util.concurrent.locks.ReentrantLock;
  * Various utilities to manipulate and convert colors.
  */
 public final class Colors {
-    private static final float[] WHITE_POINT_D65 = { 95.0429f, 100.0f, 108.89f };
+    private static final float[] WHITE_POINT_D50 = { 96.4212f, 100.0f, 82.5188f };
 
     private static ICC_Profile CMYK_ICC_Profile;
     private static ICC_ColorSpace CMYK_ICC_ColorSpace;
@@ -73,9 +73,9 @@ public final class Colors {
         }
 
         return new float[] {
-            (float) (x * WHITE_POINT_D65[0]),
-            (float) (y * WHITE_POINT_D65[1]),
-            (float) (z * WHITE_POINT_D65[2])
+            (float) (x * WHITE_POINT_D50[0]),
+            (float) (y * WHITE_POINT_D50[1]),
+            (float) (z * WHITE_POINT_D50[2])
         };
     }
 
