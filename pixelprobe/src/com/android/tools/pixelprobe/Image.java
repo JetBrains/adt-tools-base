@@ -38,6 +38,7 @@ public class Image {
     private final int width;
     private final int height;
     private final ColorMode colorMode;
+    private final ColorSpace colorSpace;
 
     private final float horizontalResolution;
     private final float verticalResolution;
@@ -48,12 +49,11 @@ public class Image {
     private final List<Guide> guides;
     private final List<Layer> layers;
 
-    private final ColorSpace colorSpace;
-
     Image(Builder builder) {
         width = builder.width;
         height = builder.height;
         colorMode = builder.colorMode;
+        colorSpace = builder.colorSpace;
 
         horizontalResolution = builder.horizontalResolution;
         verticalResolution = builder.verticalResolution;
@@ -63,8 +63,6 @@ public class Image {
 
         guides = Lists.immutableCopy(builder.guides);
         layers = Lists.immutableCopy(builder.layers);
-
-        colorSpace = builder.colorSpace;
     }
 
     /**
@@ -112,6 +110,9 @@ public class Image {
     /**
      * Returns a flattened (or merged or composited) version of the image
      * as a bitmap. For images without layers, this is the actual image data.
+     * Make sure to check the color model and/or color space of this image
+     * before using it in high performance code paths. The color model/color
+     * space might not be suitable for direct rendering.
      */
     public BufferedImage getFlattenedBitmap() {
         return flattenedBitmap;
@@ -143,6 +144,7 @@ public class Image {
         int width;
         int height;
         ColorMode colorMode = ColorMode.UNKNOWN;
+        ColorSpace colorSpace = ColorSpace.getInstance(ColorSpace.CS_sRGB);
 
         float horizontalResolution = 96.0f;
         float verticalResolution = 96.0f;
@@ -152,8 +154,6 @@ public class Image {
 
         final List<Guide> guides = new ArrayList<>();
         final List<Layer> layers = new ArrayList<>();
-
-        ColorSpace colorSpace = ColorSpace.getInstance(ColorSpace.CS_sRGB);
 
         public int width() {
             return width;
@@ -173,6 +173,10 @@ public class Image {
 
         public ColorSpace colorSpace() {
             return colorSpace;
+        }
+
+        public ColorMode colorMode() {
+            return colorMode;
         }
 
         public Builder flattenedBitmap(BufferedImage flattenedBitmap) {

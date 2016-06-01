@@ -155,7 +155,10 @@ public final class Layer {
 
     /**
      * Returns this layer's bitmap representation for {@link Type#BITMAP} layers.
-     * Can be null if the bounds are empty.
+     * Can be null if the bounds are empty. Make sure to check the color model
+     * and/or color space of this image before using it in high performance code
+     * paths. The color model/color space might not be suitable for direct
+     * rendering.
      */
     public BufferedImage getBitmap() {
         return bitmap;

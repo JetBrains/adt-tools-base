@@ -135,25 +135,4 @@ public final class Colors {
         }
         return CMYK_ICC_ColorSpace;
     }
-
-    /**
-     * Converts an image from the specified source color space to the sRGB space.
-     * If the color space is null or if the source color space is sRGB, the image
-     * is returned directly.
-     *
-     * @param image The image to convert
-     * @param colorSpace The source color space of the image
-     *
-     * @return A new image, or the source image
-     */
-    public static BufferedImage convertToSRGB(BufferedImage image, ColorSpace colorSpace) {
-        if (image != null && colorSpace != null && !colorSpace.isCS_sRGB()) {
-            RenderingHints hints = new RenderingHints(
-                    RenderingHints.KEY_COLOR_RENDERING, RenderingHints.VALUE_COLOR_RENDER_QUALITY);
-            ColorConvertOp op = new ColorConvertOp(colorSpace,
-                    ColorSpace.getInstance(ColorSpace.CS_sRGB), hints);
-            image = op.filter(image, null);
-        }
-        return image;
-    }
 }

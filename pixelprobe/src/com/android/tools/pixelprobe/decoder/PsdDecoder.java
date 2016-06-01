@@ -845,8 +845,8 @@ final class PsdDecoder extends Decoder {
         if (bounds.isEmpty()) return;
 
         ColorSpace colorSpace = image.colorSpace();
-        BufferedImage bitmap = Images.create(
-                (int) bounds.getWidth(), (int) bounds.getHeight(), rawLayer.channels, colorSpace);
+        BufferedImage bitmap = Images.create((int)bounds.getWidth(), (int) bounds.getHeight(),
+                image.colorMode(), rawLayer.channels, colorSpace);
 
         for (int i = 0; i < rawLayer.channelsInfo.size(); i++) {
             ChannelInformation info = rawLayer.channelsInfo.get(i);
@@ -859,7 +859,6 @@ final class PsdDecoder extends Decoder {
                     Images.decodeChannelRaw(imageData.data, 0, info.id, bitmap, 8);
                     break;
                 case RLE:
-                    // TODO: don't assume 8 bit depth
                     int offset = (int) (bounds.getHeight() * 2);
                     Images.decodeChannelRLE(imageData.data, offset, info.id, bitmap);
                     break;
@@ -870,7 +869,7 @@ final class PsdDecoder extends Decoder {
             }
         }
 
-        layer.bitmap(Colors.convertToSRGB(bitmap, colorSpace));
+        layer.bitmap(fixBitmap(image, bitmap));
     }
 
     private static BlendMode getBlendModeFromKey(String mode) {
@@ -970,13 +969,13 @@ final class PsdDecoder extends Decoder {
         BufferedImage bitmap = null;
         switch (psd.imageData.compression) {
             case RAW:
-                bitmap = Images.decodeRaw(psd.imageData.data, 0,
-                        image.width(), image.height(), channels, psd.header.depth, colorSpace);
+                bitmap = Images.decodeRaw(psd.imageData.data, 0, image.width(), image.height(),
+                        image.colorMode(), channels, colorSpace, psd.header.depth);
                 break;
             case RLE:
                 int offset = image.height() * psd.header.channels * 2;
-                bitmap = Images.decodeRLE(
-                        psd.imageData.data, offset, image.width(), image.height(), channels, colorSpace);
+                bitmap = Images.decodeRLE(psd.imageData.data, offset, image.width(), image.height(),
+                        image.colorMode(), channels, colorSpace);
                 break;
             case ZIP:
                 break;
@@ -984,7 +983,16 @@ final class PsdDecoder extends Decoder {
                 break;
         }
 
-        image.flattenedBitmap(Colors.convertToSRGB(bitmap, colorSpace));
+        image.flattenedBitmap(fixBitmap(image, bitmap));
+    }
+
+    private static BufferedImage fixBitmap(Image.Builder image, BufferedImage bitmap) {
+        // Fun fact: CMYK colors are stored reversed...
+        // Cyan 100% is stored as 0x0 and Cyan 0% is stored as 0xff
+        if (image.colorMode() == ColorMode.CMYK) {
+            bitmap = Images.invert(bitmap);
+        }
+        return bitmap;
     }
 
     /**

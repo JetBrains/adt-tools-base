@@ -28,7 +28,6 @@ public enum ColorMode {
     BITMAP,
     /**
      * Each pixel is a grayscale value.
-     * This mode is currently not supported.
      */
     GRAYSCALE,
     /**
@@ -43,7 +42,6 @@ public enum ColorMode {
     RGB,
     /**
      * Each pixel is stored as a CMYK value.
-     * This mode is currently not supported.
      */
     CMYK,
     /**
@@ -69,5 +67,5 @@ public enum ColorMode {
      * Each is pixel is stored as a Lab value (3 channels).
      * This mode is currently not supported.
      */
-    LAB;
+    LAB
 }
