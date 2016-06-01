@@ -218,7 +218,7 @@ public class DefaultSdkLoader implements SdkLoader {
                     String addonHash = AndroidTargetHash.getAddonHashString(
                             addonDetails.getVendor().getDisplay(),
                             addonDetails.getTag().getDisplay(),
-                            DetailsTypes.getAndroidVersion(addonDetails));
+                            addonDetails.getAndroidVersion());
                     if (targetHash.equals(addonHash)) {
                         addonPackage = p;
                         break;

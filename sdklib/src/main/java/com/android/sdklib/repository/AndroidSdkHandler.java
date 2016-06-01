@@ -561,6 +561,7 @@ public final class AndroidSdkHandler {
         RepositoryPackages packages = getSdkManager(progress).getPackages();
         LocalPackage p = packages.getLocalPackages()
                 .get(DetailsTypes.getBuildToolsPath(revision));
+
         if (p == null) {
             return null;
         }
