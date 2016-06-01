@@ -32,6 +32,8 @@ public final class Images {
     private static final int TYPE_BYTE_ALPHA_GRAY = 42;
     private static final int TYPE_4BYTE_CMYK = 43;
     private static final int TYPE_5BYTE_ALPHA_CMYK = 44;
+    private static final int TYPE_3BYTE_LAB = 45;
+    private static final int TYPE_4BYTE_ALPHA_LAB = 46;
 
     private static final Map<LutKey, BufferedImageOp> lookupTables = new HashMap<>();
     private static final ReentrantLock lookupTablesLock = new ReentrantLock();
@@ -74,13 +76,13 @@ public final class Images {
             case BufferedImage.TYPE_INT_RGB:
                 if (colorSpace == null) colorSpace = ColorSpace.getInstance(ColorSpace.CS_sRGB);
                 colorModel = new DirectColorModel(colorSpace, 24,
-                        0x00ff0000, 0x0000ff00, 0x000000ff, 0x0, false, getDefaultTransferType(24));
+                        0x00ff0000, 0x0000ff00, 0x000000ff, 0x0, false, getTransferType(24));
                 raster = colorModel.createCompatibleWritableRaster(width, height);
                 break;
             case BufferedImage.TYPE_INT_ARGB:
                 if (colorSpace == null) colorSpace = ColorSpace.getInstance(ColorSpace.CS_sRGB);
                 colorModel = new DirectColorModel(colorSpace, 32,
-                        0x00ff0000, 0x0000ff00, 0x000000ff, 0xff000000, false, getDefaultTransferType(32));
+                        0x00ff0000, 0x0000ff00, 0x000000ff, 0xff000000, false, getTransferType(32));
                 raster = colorModel.createCompatibleWritableRaster(width, height);
                 break;
             case TYPE_4BYTE_CMYK:
@@ -97,6 +99,24 @@ public final class Images {
                 raster = Raster.createInterleavedRaster(DataBuffer.TYPE_BYTE,
                         width, height, width * 5, 5, new int[] { 1, 2, 3, 4, 0 }, null);
                 break;
+            case TYPE_3BYTE_LAB:
+                if (colorSpace == null || colorSpace.getType() != ColorSpace.TYPE_Lab) {
+                    colorSpace = Colors.getLabColorSpace();
+                }
+                colorModel = new ComponentColorModel(colorSpace, new int[] { 8, 8, 8 },
+                        false, false, Transparency.OPAQUE, DataBuffer.TYPE_BYTE);
+                raster = Raster.createInterleavedRaster(DataBuffer.TYPE_BYTE,
+                        width, height, width * 3, 3, new int[] { 0, 1, 2 }, null);
+                break;
+            case TYPE_4BYTE_ALPHA_LAB:
+                if (colorSpace == null || colorSpace.getType() != ColorSpace.TYPE_Lab) {
+                    colorSpace = Colors.getLabColorSpace();
+                }
+                colorModel = new ComponentColorModel(colorSpace, new int[] { 8, 8, 8, 8 },
+                        true, false, Transparency.TRANSLUCENT, DataBuffer.TYPE_BYTE);
+                raster = Raster.createInterleavedRaster(DataBuffer.TYPE_BYTE,
+                        width, height, width * 4, 4, new int[] { 0, 1, 2, 3 }, null);
+                break;
             default:
                 throw new RuntimeException("Unknown image type, color mode = " +
                         colorMode + ", channels = " + channels);
@@ -106,7 +126,7 @@ public final class Images {
         return new BufferedImage(colorModel, raster, colorModel.isAlphaPremultiplied(), null);
     }
 
-    private static int getDefaultTransferType(int bits) {
+    private static int getTransferType(int bits) {
         if (bits <= 8) {
             return DataBuffer.TYPE_BYTE;
         } else if (bits <= 16) {
@@ -413,7 +433,7 @@ public final class Images {
                     case 1: return BufferedImage.TYPE_BYTE_GRAY;
                     case 2: return TYPE_BYTE_ALPHA_GRAY;
                 }
-                throw new IllegalArgumentException("The Grayscale channels count must be 4 or 5");
+                throw new IllegalArgumentException("The Grayscale channels count must be 1 or 2");
             case INDEXED:
                 break;
             case RGB:
@@ -430,15 +450,14 @@ public final class Images {
                 throw new IllegalArgumentException("The CMYK channels count must be 4 or 5");
             case UNKNOWN:
             case NONE:
-                break;
             case MULTI_CHANNEL:
                 break;
             case DUOTONE:
                 break;
             case LAB:
                 switch (channels) {
-                    case 3: return BufferedImage.TYPE_INT_RGB;
-                    case 4: return BufferedImage.TYPE_INT_ARGB;
+                    case 3: return TYPE_3BYTE_LAB;
+                    case 4: return TYPE_4BYTE_ALPHA_LAB;
                 }
                 throw new IllegalArgumentException("The LAB channels count must be 3 or 4");
         }

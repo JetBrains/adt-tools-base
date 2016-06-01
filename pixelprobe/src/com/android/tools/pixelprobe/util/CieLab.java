@@ -60,29 +60,29 @@ public class CieLab extends ColorSpace {
     @Override
     public float[] toCIEXYZ(float[] lab) {
         double fy = (lab[0] + 16.0) / 116.0;
-        double fx = lab[1] / 500.0 + fy;
-        double fz = fy - lab[2] / 200.0;
+        double fx = fy + (lab[1] / 500.0);
+        double fz = fy - (lab[2] / 200.0);
 
-        double X = fx > 6.0 / 29.0 ? fx * fx * fx : (108.0 / 841.0) * (fx - 4.0 / 29.0);
-        double Y = fy > 6.0 / 29.0 ? fy * fy * fy : (108.0 / 841.0) * (fy - 4.0 / 29.0);
-        double Z = fz > 6.0 / 29.0 ? fz * fz * fz : (108.0 / 841.0) * (fz - 4.0 / 29.0);
+        double X = fx > (6.0 / 29.0) ? fx * fx * fx : (108.0 / 841.0) * (fx - (4.0 / 29.0));
+        double Y = fy > (6.0 / 29.0) ? fy * fy * fy : (108.0 / 841.0) * (fy - (4.0 / 29.0));
+        double Z = fz > (6.0 / 29.0) ? fz * fz * fz : (108.0 / 841.0) * (fz - (4.0 / 29.0));
 
         return new float[] {
-            (float) (X * WHITE_POINT_D50[0]),
-            (float) (Y * WHITE_POINT_D50[1]),
-            (float) (Z * WHITE_POINT_D50[2])
+            (float) (X * WHITE_POINT_D50[0] * 0.01),
+            (float) (Y * WHITE_POINT_D50[1] * 0.01),
+            (float) (Z * WHITE_POINT_D50[2] * 0.01)
         };
     }
 
     @Override
     public float[] fromCIEXYZ(float[] xyz) {
-        double X = xyz[0] / WHITE_POINT_D50[0];
-        double Y = xyz[1] / WHITE_POINT_D50[2];
-        double Z = xyz[2] / WHITE_POINT_D50[1];
+        double X = xyz[0] * (100.0 / WHITE_POINT_D50[0]);
+        double Y = xyz[1] * (100.0 / WHITE_POINT_D50[2]);
+        double Z = xyz[2] * (100.0 / WHITE_POINT_D50[1]);
 
-        double fx = X > 216.0 / 24389.0 ? Math.cbrt(X) : (841.0 / 108.0) * X + 4.0 / 29.0;
-        double fy = Y > 216.0 / 24389.0 ? Math.cbrt(Y) : (841.0 / 108.0) * Y + 4.0 / 29.0;
-        double fz = Z > 216.0 / 24389.0 ? Math.cbrt(Z) : (841.0 / 108.0) * Z + 4.0 / 29.0;
+        double fx = X > (216.0 / 24389.0) ? Math.cbrt(X) : (841.0 / 108.0) * X + (4.0 / 29.0);
+        double fy = Y > (216.0 / 24389.0) ? Math.cbrt(Y) : (841.0 / 108.0) * Y + (4.0 / 29.0);
+        double fz = Z > (216.0 / 24389.0) ? Math.cbrt(Z) : (841.0 / 108.0) * Z + (4.0 / 29.0);
 
         double L = 116.0 * fy - 16.0;
         double a = 500.0 * (fx - fy);
