@@ -869,7 +869,7 @@ final class PsdDecoder extends Decoder {
 
         ColorSpace colorSpace = image.colorSpace();
         BufferedImage bitmap = Images.create((int) bounds.getWidth(), (int) bounds.getHeight(),
-                image.colorMode(), channels, colorSpace);
+                image.colorMode(), channels, colorSpace, image.depth());
 
         for (int i = 0; i < rawLayer.channelsInfo.size(); i++) {
             ChannelInformation info = rawLayer.channelsInfo.get(i);
@@ -901,8 +901,10 @@ final class PsdDecoder extends Decoder {
     }
 
     private static void extractHeaderData(Image.Builder image, FileHeader header) {
-        image.dimensions(header.width, header.height);
-        image.colorMode(header.colorMode);
+        image
+            .dimensions(header.width, header.height)
+            .colorMode(header.colorMode)
+            .depth(header.depth);
     }
 
     /**
@@ -1027,7 +1029,7 @@ final class PsdDecoder extends Decoder {
             case RLE:
                 int offset = image.height() * psd.header.channels * 2;
                 bitmap = Images.decodeRLE(psd.imageData.data, offset, image.width(), image.height(),
-                        image.colorMode(), channels, colorSpace);
+                        image.colorMode(), channels, colorSpace, psd.header.depth);
                 break;
             case ZIP:
                 break;

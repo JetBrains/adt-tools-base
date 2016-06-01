@@ -29,11 +29,20 @@ import java.util.concurrent.locks.ReentrantLock;
  * Various utilities to create and decode images.
  */
 public final class Images {
-    private static final int TYPE_BYTE_ALPHA_GRAY = 42;
-    private static final int TYPE_4BYTE_CMYK = 43;
-    private static final int TYPE_5BYTE_ALPHA_CMYK = 44;
-    private static final int TYPE_3BYTE_LAB = 45;
-    private static final int TYPE_4BYTE_ALPHA_LAB = 46;
+    enum Type {
+        INT_RGB,
+        INT_ALPHA_RGB,
+        BYTE_GRAY,
+        BYTE_ALPHA_GRAY,
+        BYTE_CMYK,
+        BYTE_ALPHA_CMYK,
+        BYTE_LAB,
+        BYTE_ALPHA_LAB,
+        FLOAT_RGB,
+        FLOAT_ALPHA_RGB,
+        FLOAT_GRAY,
+        FLOAT_ALPHA_GRAY,
+    }
 
     private static final Map<LutKey, BufferedImageOp> lookupTables = new HashMap<>();
     private static final ReentrantLock lookupTablesLock = new ReentrantLock();
@@ -50,56 +59,57 @@ public final class Images {
      * @param colorMode The bitmap's source color mode
      * @param channels The number of channels
      * @param colorSpace The bitmap's color space, can be null
+     * @param depth The bitmaps' component depth
      *
      * @return A BufferedImage instance
      */
     public static BufferedImage create(int width, int height, ColorMode colorMode,
-            int channels, ColorSpace colorSpace) {
+            int channels, ColorSpace colorSpace, int depth) {
 
-        int type = getImageType(channels, colorMode);
+        Type type = getImageType(channels, colorMode, depth);
         ColorModel colorModel;
         WritableRaster raster;
 
         switch (type) {
-            case BufferedImage.TYPE_BYTE_GRAY:
-                if (colorSpace == null) colorSpace = ColorSpace.getInstance(ColorSpace.CS_GRAY);
-                colorModel = new ComponentColorModel(colorSpace, new int[] { 8 }, false, false,
-                        Transparency.OPAQUE, DataBuffer.TYPE_BYTE);
-                raster = colorModel.createCompatibleWritableRaster(width, height);
-                break;
-            case TYPE_BYTE_ALPHA_GRAY:
-                if (colorSpace == null) colorSpace = ColorSpace.getInstance(ColorSpace.CS_GRAY);
-                colorModel = new ComponentColorModel(colorSpace, new int[] { 8, 8 }, true, false,
-                        Transparency.TRANSLUCENT, DataBuffer.TYPE_BYTE);
-                raster = colorModel.createCompatibleWritableRaster(width, height);
-                break;
-            case BufferedImage.TYPE_INT_RGB:
+            case INT_RGB:
                 if (colorSpace == null) colorSpace = ColorSpace.getInstance(ColorSpace.CS_sRGB);
                 colorModel = new DirectColorModel(colorSpace, 24,
                         0x00ff0000, 0x0000ff00, 0x000000ff, 0x0, false, getTransferType(24));
                 raster = colorModel.createCompatibleWritableRaster(width, height);
                 break;
-            case BufferedImage.TYPE_INT_ARGB:
+            case INT_ALPHA_RGB:
                 if (colorSpace == null) colorSpace = ColorSpace.getInstance(ColorSpace.CS_sRGB);
                 colorModel = new DirectColorModel(colorSpace, 32,
                         0x00ff0000, 0x0000ff00, 0x000000ff, 0xff000000, false, getTransferType(32));
                 raster = colorModel.createCompatibleWritableRaster(width, height);
                 break;
-            case TYPE_4BYTE_CMYK:
+            case BYTE_GRAY:
+                if (colorSpace == null) colorSpace = ColorSpace.getInstance(ColorSpace.CS_GRAY);
+                colorModel = new ComponentColorModel(colorSpace, new int[] { 8 }, false, false,
+                        Transparency.OPAQUE, DataBuffer.TYPE_BYTE);
+                raster = colorModel.createCompatibleWritableRaster(width, height);
+                break;
+            case BYTE_ALPHA_GRAY:
+                if (colorSpace == null) colorSpace = ColorSpace.getInstance(ColorSpace.CS_GRAY);
+                colorModel = new ComponentColorModel(colorSpace, new int[] { 8, 8 }, true, false,
+                        Transparency.TRANSLUCENT, DataBuffer.TYPE_BYTE);
+                raster = colorModel.createCompatibleWritableRaster(width, height);
+                break;
+            case BYTE_CMYK:
                 if (colorSpace == null) colorSpace = Colors.getCmykColorSpace();
                 colorModel = new ComponentColorModel(colorSpace, new int[] { 8, 8, 8, 8 },
                         false, false, Transparency.OPAQUE, DataBuffer.TYPE_BYTE);
                 raster = Raster.createInterleavedRaster(DataBuffer.TYPE_BYTE,
                         width, height, width * 4, 4, new int[] { 0, 1, 2, 3 }, null);
                 break;
-            case TYPE_5BYTE_ALPHA_CMYK:
+            case BYTE_ALPHA_CMYK:
                 if (colorSpace == null) colorSpace = Colors.getCmykColorSpace();
                 colorModel = new ComponentColorModel(colorSpace, new int[] { 8, 8, 8, 8, 8 },
                         true, false, Transparency.TRANSLUCENT, DataBuffer.TYPE_BYTE);
                 raster = Raster.createInterleavedRaster(DataBuffer.TYPE_BYTE,
                         width, height, width * 5, 5, new int[] { 1, 2, 3, 4, 0 }, null);
                 break;
-            case TYPE_3BYTE_LAB:
+            case BYTE_LAB:
                 if (colorSpace == null || colorSpace.getType() != ColorSpace.TYPE_Lab) {
                     colorSpace = Colors.getLabColorSpace();
                 }
@@ -108,7 +118,7 @@ public final class Images {
                 raster = Raster.createInterleavedRaster(DataBuffer.TYPE_BYTE,
                         width, height, width * 3, 3, new int[] { 0, 1, 2 }, null);
                 break;
-            case TYPE_4BYTE_ALPHA_LAB:
+            case BYTE_ALPHA_LAB:
                 if (colorSpace == null || colorSpace.getType() != ColorSpace.TYPE_Lab) {
                     colorSpace = Colors.getLabColorSpace();
                 }
@@ -116,6 +126,30 @@ public final class Images {
                         true, false, Transparency.TRANSLUCENT, DataBuffer.TYPE_BYTE);
                 raster = Raster.createInterleavedRaster(DataBuffer.TYPE_BYTE,
                         width, height, width * 4, 4, new int[] { 0, 1, 2, 3 }, null);
+                break;
+            case FLOAT_RGB:
+                if (colorSpace == null) colorSpace = ColorSpace.getInstance(ColorSpace.CS_sRGB);
+                colorModel = new ComponentColorModel(colorSpace, new int[] { 32, 32, 32 },
+                        false, false, Transparency.OPAQUE, DataBuffer.TYPE_FLOAT);
+                raster = colorModel.createCompatibleWritableRaster(width, height);
+                break;
+            case FLOAT_ALPHA_RGB:
+                if (colorSpace == null) colorSpace = ColorSpace.getInstance(ColorSpace.CS_sRGB);
+                colorModel = new ComponentColorModel(colorSpace, new int[] { 32, 32, 32, 32 },
+                        true, false, Transparency.TRANSLUCENT, DataBuffer.TYPE_FLOAT);
+                raster = colorModel.createCompatibleWritableRaster(width, height);
+                break;
+            case FLOAT_GRAY:
+                if (colorSpace == null) colorSpace = ColorSpace.getInstance(ColorSpace.CS_GRAY);
+                colorModel = new ComponentColorModel(colorSpace, new int[] { 32 }, false, false,
+                        Transparency.OPAQUE, DataBuffer.TYPE_FLOAT);
+                raster = colorModel.createCompatibleWritableRaster(width, height);
+                break;
+            case FLOAT_ALPHA_GRAY:
+                if (colorSpace == null) colorSpace = ColorSpace.getInstance(ColorSpace.CS_GRAY);
+                colorModel = new ComponentColorModel(colorSpace, new int[] { 32, 32 }, true, false,
+                        Transparency.TRANSLUCENT, DataBuffer.TYPE_FLOAT);
+                raster = colorModel.createCompatibleWritableRaster(width, height);
                 break;
             default:
                 throw new RuntimeException("Unknown image type, color mode = " +
@@ -184,10 +218,11 @@ public final class Images {
      * the decoded data. The index must be set to one of the following values:
      *
      * <ul>
-     * <li>0, red channel</li>
-     * <li>1, green channel</li>
-     * <li>2, blue channel</li>
-     * <li>3, alpha channel</li>
+     * <li>0, red/cyan channel</li>
+     * <li>1, green/magenta channel</li>
+     * <li>2, blue/yellow channel</li>
+     * <li>3, alpha/black channel</li>
+     * <li>4, alpha/black channel</li>
      * <li>-1, alpha channel</li>
      * </ul>
      *
@@ -239,13 +274,14 @@ public final class Images {
      * @param colorMode The image's source color mode
      * @param channels Number of channels to decode
      * @param colorSpace The image's source color space
+     * @param depth The image's component depth
      *
      * @return A BufferedImage instance
      */
     public static BufferedImage decodeRLE(byte[] data, int offset, int width, int height,
-            ColorMode colorMode, int channels, ColorSpace colorSpace) {
+            ColorMode colorMode, int channels, ColorSpace colorSpace, int depth) {
 
-        BufferedImage image = create(width, height, colorMode, channels, colorSpace);
+        BufferedImage image = create(width, height, colorMode, channels, colorSpace, depth);
         WritableRaster raster = image.getRaster();
 
         int pos = offset;
@@ -279,11 +315,13 @@ public final class Images {
      *
      * You must specify the channel's index to indicate where to store
      * the decoded data. The index must be set to one of the following values:
+     *
      * <ul>
-     * <li>0, red channel</li>
-     * <li>1, green channel</li>
-     * <li>2, blue channel</li>
-     * <li>3, alpha channel</li>
+     * <li>0, red/cyan channel</li>
+     * <li>1, green/magenta channel</li>
+     * <li>2, blue/yellow channel</li>
+     * <li>3, alpha/black channel</li>
+     * <li>4, alpha/black channel</li>
      * <li>-1, alpha channel</li>
      * </ul>
      *
@@ -314,10 +352,19 @@ public final class Images {
                 break;
             }
             case 16: {
-                for (int y = 0; y < height; y++) {
-                    for (int x = 0; x < width; x++) {
-                        int d = (data[pos++] & 0xff) << 8 | (data[pos++] & 0xff);
-                        raster.setSample(x, y, band, (int) (d / 65535.0f * 255.0f) & 0xff);
+                if (shouldCompress(image.getColorModel().getColorSpace())) {
+                    for (int y = 0; y < height; y++) {
+                        for (int x = 0; x < width; x++) {
+                            int d = (data[pos++] & 0xff) << 8 | (data[pos++] & 0xff);
+                            raster.setSample(x, y, band, ((int) (d / 65535.0f * 255.0f) & 0xff));
+                        }
+                    }
+                } else {
+                    for (int y = 0; y < height; y++) {
+                        for (int x = 0; x < width; x++) {
+                            int d = (data[pos++] & 0xff) << 8 | (data[pos++] & 0xff);
+                            raster.setSample(x, y, band, d / 65535.0f);
+                        }
                     }
                 }
                 break;
@@ -327,9 +374,10 @@ public final class Images {
                     for (int x = 0; x < width; x++) {
                         int d = ((data[pos++] & 0xff) << 24) |
                                 ((data[pos++] & 0xff) << 16) |
-                                ((data[pos++] & 0xff) <<  8) |
-                                ((data[pos++] & 0xff)      );
-                        raster.setSample(x, y, band, (int) (Float.intBitsToFloat(d) * 255.0f) & 0xff);
+                                ((data[pos++] & 0xff) << 8) |
+                                ((data[pos++] & 0xff));
+                        // TODO: apply the proper tone mapping curve
+                        raster.setSample(x, y, band, Colors.toneMappingACES(Float.intBitsToFloat(d)));
                     }
                 }
                 break;
@@ -356,7 +404,7 @@ public final class Images {
 
         int pos = offset;
 
-        BufferedImage image = create(width, height, colorMode, channels, colorSpace);
+        BufferedImage image = create(width, height, colorMode, channels, colorSpace, depth);
         WritableRaster raster = image.getRaster();
 
         switch (depth) {
@@ -371,11 +419,22 @@ public final class Images {
                 break;
             }
             case 16: {
-                for (int c = 0; c < channels; c++) {
-                    for (int y = 0; y < height; y++) {
-                        for (int x = 0; x < width; x++) {
-                            int d = (data[pos++] & 0xff) << 8 | (data[pos++] & 0xff);
-                            raster.setSample(x, y, c, ((int) (d / 65535.0f * 255.0f) & 0xff));
+                if (shouldCompress(image.getColorModel().getColorSpace())) {
+                    for (int c = 0; c < channels; c++) {
+                        for (int y = 0; y < height; y++) {
+                            for (int x = 0; x < width; x++) {
+                                int d = (data[pos++] & 0xff) << 8 | (data[pos++] & 0xff);
+                                raster.setSample(x, y, c, ((int) (d / 65535.0f * 255.0f) & 0xff));
+                            }
+                        }
+                    }
+                } else {
+                    for (int c = 0; c < channels; c++) {
+                        for (int y = 0; y < height; y++) {
+                            for (int x = 0; x < width; x++) {
+                                int d = (data[pos++] & 0xff) << 8 | (data[pos++] & 0xff);
+                                raster.setSample(x, y, c, d / 65535.0f);
+                            }
                         }
                     }
                 }
@@ -387,9 +446,10 @@ public final class Images {
                         for (int x = 0; x < width; x++) {
                             int d = ((data[pos++] & 0xff) << 24) |
                                     ((data[pos++] & 0xff) << 16) |
-                                    ((data[pos++] & 0xff) <<  8) |
-                                    ((data[pos++] & 0xff)      );
-                            raster.setSample(x, y, c, (int) (Float.intBitsToFloat(d) * 255.0f) & 0xff);
+                                    ((data[pos++] & 0xff) << 8) |
+                                    ((data[pos++] & 0xff));
+                            // TODO: apply the proper tone mapping curve
+                            raster.setSample(x, y, c, Colors.toneMappingACES(Float.intBitsToFloat(d)));
                         }
                     }
                 }
@@ -398,6 +458,14 @@ public final class Images {
         }
 
         return image;
+    }
+
+    private static boolean shouldCompress(ColorSpace colorSpace) {
+        // Couldn't get 16 bit CMYK images to work so let's turn them into 8 bit images
+        // We also want to compress Lab images to keep the CIELAB ColorSpace implementation
+        // working in the regular Lab ranges instead of 0..1
+        int type = colorSpace.getType();
+        return type == ColorSpace.TYPE_CMYK || type == ColorSpace.TYPE_Lab;
     }
 
     /**
@@ -422,30 +490,31 @@ public final class Images {
      * Returns a BufferedImage type for a given number of channels.
      *
      * @param channels The number of channels, must be <= 5
-     * @param colorMode
+     * @param colorMode The color mode
+     * @param depth The depth the components
      */
-    private static int getImageType(int channels, ColorMode colorMode) {
+    private static Type getImageType(int channels, ColorMode colorMode, int depth) {
         switch (colorMode) {
             case BITMAP:
                 break;
             case GRAYSCALE:
                 switch (channels) {
-                    case 1: return BufferedImage.TYPE_BYTE_GRAY;
-                    case 2: return TYPE_BYTE_ALPHA_GRAY;
+                    case 1: return depth > 8 ? Type.FLOAT_GRAY : Type.BYTE_GRAY;
+                    case 2: return depth > 8 ? Type.FLOAT_ALPHA_GRAY : Type.BYTE_ALPHA_GRAY;
                 }
                 throw new IllegalArgumentException("The Grayscale channels count must be 1 or 2");
             case INDEXED:
                 break;
             case RGB:
                 switch (channels) {
-                    case 3: return BufferedImage.TYPE_INT_RGB;
-                    case 4: return BufferedImage.TYPE_INT_ARGB;
+                    case 3: return depth > 8 ? Type.FLOAT_RGB : Type.INT_RGB;
+                    case 4: return depth > 8 ? Type.FLOAT_ALPHA_RGB : Type.INT_ALPHA_RGB;
                 }
                 throw new IllegalArgumentException("The RGB channels count must be 3 or 4");
             case CMYK:
                 switch (channels) {
-                    case 4: return TYPE_4BYTE_CMYK;
-                    case 5: return TYPE_5BYTE_ALPHA_CMYK;
+                    case 4: return Type.BYTE_CMYK;
+                    case 5: return Type.BYTE_ALPHA_CMYK;
                 }
                 throw new IllegalArgumentException("The CMYK channels count must be 4 or 5");
             case UNKNOWN:
@@ -456,8 +525,8 @@ public final class Images {
                 break;
             case LAB:
                 switch (channels) {
-                    case 3: return TYPE_3BYTE_LAB;
-                    case 4: return TYPE_4BYTE_ALPHA_LAB;
+                    case 3: return Type.BYTE_LAB;
+                    case 4: return Type.BYTE_ALPHA_LAB;
                 }
                 throw new IllegalArgumentException("The LAB channels count must be 3 or 4");
         }

@@ -76,6 +76,27 @@ public final class Colors {
     }
 
     /**
+     * Applies a Reinhard tone-mapping curve to the input value
+     * and returns the result.
+     */
+    public static float toneMappingReinhard(float x) {
+        return x / (1.0f + x);
+    }
+
+    /**
+     * Applies an approximated ACES tone-mapping curve to the input value
+     * and returns the result.
+     */
+    public static float toneMappingACES(float x) {
+        float a = 2.51f;
+        float b = 0.03f;
+        float c = 2.43f;
+        float d = 0.59f;
+        float e = 0.14f;
+        return (x * (a * x + b)) / (x * (c * x + d) + e);
+    }
+
+    /**
      * Returns a Lab color space.
      */
     public static ColorSpace getLabColorSpace() {

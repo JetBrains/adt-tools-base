@@ -37,6 +37,7 @@ import java.util.List;
 public class Image {
     private final int width;
     private final int height;
+    private final int depth;
     private final ColorMode colorMode;
     private final ColorSpace colorSpace;
 
@@ -52,6 +53,7 @@ public class Image {
     Image(Builder builder) {
         width = builder.width;
         height = builder.height;
+        depth = builder.depth;
         colorMode = builder.colorMode;
         colorSpace = builder.colorSpace;
 
@@ -91,6 +93,14 @@ public class Image {
      */
     public float getVerticalResolution() {
         return verticalResolution;
+    }
+
+    /**
+     * Returns the depth, in bits, of each color component of this image.
+     * The value will usually be 8, 16 or 32.
+     */
+    public int getColorDepth() {
+        return depth;
     }
 
     /**
@@ -143,6 +153,7 @@ public class Image {
     public static final class Builder {
         int width;
         int height;
+        int depth;
         ColorMode colorMode = ColorMode.UNKNOWN;
         ColorSpace colorSpace = ColorSpace.getInstance(ColorSpace.CS_sRGB);
 
@@ -171,6 +182,10 @@ public class Image {
             return horizontalResolution;
         }
 
+        public int depth() {
+            return depth;
+        }
+
         public ColorSpace colorSpace() {
             return colorSpace;
         }
@@ -193,6 +208,11 @@ public class Image {
         public Builder resolution(float horizontal, float vertical) {
             horizontalResolution = horizontal;
             verticalResolution = vertical;
+            return this;
+        }
+
+        public Builder depth(int depth) {
+            this.depth = depth;
             return this;
         }
 
