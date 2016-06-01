@@ -105,7 +105,7 @@ public class InstantRunChangeDeviceTest {
                     .withInstantRun(
                             firstBuild.getApiLevel(),
                             ColdswapMode.AUTO,
-                            OptionalCompilationStep.RESTART_ONLY)
+                            OptionalCompilationStep.FULL_APK)
                     .run("assembleDebug");
             InstantRunBuildInfo initialContext = InstantRunTestUtils.loadContext(instantRunModel);
             startBuildId = initialContext.getTimeStamp();
@@ -120,7 +120,7 @@ public class InstantRunChangeDeviceTest {
                     .withInstantRun(
                             secondBuild.getApiLevel(),
                             ColdswapMode.AUTO,
-                            OptionalCompilationStep.RESTART_ONLY)
+                            OptionalCompilationStep.FULL_APK)
                     .run("assembleDebug");
             InstantRunBuildInfo buildContext = InstantRunTestUtils.loadContext(instantRunModel);
             assertThat(buildContext.getTimeStamp()).isNotEqualTo(startBuildId);

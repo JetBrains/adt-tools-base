@@ -128,14 +128,14 @@ public class AntennaPodInstantRunPerformanceTest {
             makeHotSwapChange(i);
             project.executor()
                     .withInstantRun(23, coldswapMode)
-                    .run(instantRunModel.getIncrementalAssembleTaskName());
+                    .run("assembleDebug");
         }
         makeHotSwapChange(100);
 
         project.executor()
                 .recordBenchmark(benchmarkName, BenchmarkMode.INSTANT_RUN_HOT_SWAP)
                 .withInstantRun(23, coldswapMode)
-                .run(instantRunModel.getIncrementalAssembleTaskName());
+                .run("assembleDebug");
 
         InstantRunArtifact artifact =
                 InstantRunTestUtils.getCompiledHotSwapCompatibleChange(instantRunModel);
@@ -151,14 +151,14 @@ public class AntennaPodInstantRunPerformanceTest {
             makeColdSwapChange(i);
             project.executor()
                     .withInstantRun(23, coldswapMode)
-                    .run(instantRunModel.getIncrementalAssembleTaskName());
+                    .run(":app:assembleDebug");
         }
         makeColdSwapChange(100);
 
         project.executor()
                 .recordBenchmark(benchmarkName, BenchmarkMode.INSTANT_RUN_COLD_SWAP)
                 .withInstantRun(23, coldswapMode)
-                .run(instantRunModel.getIncrementalAssembleTaskName());
+                .run(":app:assembleDebug");
 
         List<InstantRunArtifact> coldSwapArtifact =
                 InstantRunTestUtils.getCompiledColdSwapChange(instantRunModel, coldswapMode);

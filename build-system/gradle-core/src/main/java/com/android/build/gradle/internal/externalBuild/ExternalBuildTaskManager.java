@@ -24,7 +24,6 @@ import com.android.build.gradle.internal.TaskContainerAdaptor;
 import com.android.build.gradle.internal.dsl.DexOptions;
 import com.android.build.gradle.internal.incremental.BuildInfoLoaderTask;
 import com.android.build.gradle.internal.incremental.InstantRunPatchingPolicy;
-import com.android.build.gradle.internal.incremental.InstantRunWrapperTask;
 import com.android.build.gradle.internal.model.AaptOptionsImpl;
 import com.android.build.gradle.internal.pipeline.ExtendedContentType;
 import com.android.build.gradle.internal.pipeline.OriginalStream;
@@ -40,7 +39,6 @@ import com.android.build.gradle.internal.transforms.DexTransform;
 import com.android.build.gradle.internal.transforms.ExtractJarsTransform;
 import com.android.build.gradle.internal.transforms.InstantRunSplitApkBuilder;
 import com.android.build.gradle.tasks.PackageApplication;
-import com.android.build.gradle.tasks.PrePackageApplication;
 import com.android.builder.core.DefaultDexOptions;
 import com.android.builder.core.DefaultManifestParser;
 import com.android.utils.FileUtils;
@@ -142,10 +140,12 @@ class ExternalBuildTaskManager {
 
         extractJarsTask.dependsOn(tasks, buildInfoLoaderTask);
 
-        AndroidTask<InstantRunWrapperTask> incrementalBuildWrapperTask =
-                instantRunTaskManager.createInstantRunIncrementalTasks(project);
+        instantRunTaskManager.createPreColdswapTask(project);
 
-        externalBuildAnchorTask.dependsOn(tasks, incrementalBuildWrapperTask);
+        if (variantScope.getInstantRunBuildContext().getPatchingPolicy() != InstantRunPatchingPolicy.PRE_LOLLIPOP) {
+            instantRunTaskManager.createSlicerTask();
+        }
+
 
         // TODO: support multi-dex.
         DexTransform dexTransform =
@@ -161,22 +161,6 @@ class ExternalBuildTaskManager {
 
         AndroidTask<TransformTask> dexTask =
                 transformManager.addTransform(tasks, variantScope, dexTransform);
-
-        // if we are in instant-run mode and the patching policy is relying on multi-dex shards,
-        // we should run the dexing as part of the incremental build.
-        if (InstantRunPatchingPolicy.PRE_LOLLIPOP
-                != variantScope.getInstantRunBuildContext().getPatchingPolicy()) {
-            incrementalBuildWrapperTask.dependsOn(tasks, dexTask);
-        }
-
-        AndroidTask<PrePackageApplication> prePackageApp =
-                androidTasks.create(
-                        tasks,
-                        new PrePackageApplication.ConfigAction(
-                                "prePackageMarkerFor", variantScope, variantScope));
-
-        // TODO: what's the equivalent?
-        // prePackageApp.dependsOn(tasks, variantScope.getInstantRunAnchorTask());
 
         PackagingScope packagingScope =
                 new ExternalBuildPackagingScope(

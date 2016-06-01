@@ -97,7 +97,7 @@ public class HotSwapTester {
 
             // Now build the hot swap patch.
             project.executor().withInstantRun(device, ColdswapMode.MULTIDEX)
-                    .run(instantRunModel.getIncrementalAssembleTaskName());
+                    .run("assembleDebug");
 
             InstantRunArtifact artifact =
                     InstantRunTestUtils.getCompiledHotSwapCompatibleChange(instantRunModel);

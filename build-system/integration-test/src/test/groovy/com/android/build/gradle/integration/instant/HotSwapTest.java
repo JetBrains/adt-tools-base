@@ -101,7 +101,7 @@ public class HotSwapTest {
         makeBasicHotswapChange();
 
         project.executor().withInstantRun(19, COLDSWAP_MODE)
-                .run(instantRunModel.getIncrementalAssembleTaskName());
+                .run("assembleDebug");
 
         InstantRunArtifact artifact =
                 InstantRunTestUtils.getCompiledHotSwapCompatibleChange(instantRunModel);

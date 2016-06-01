@@ -33,9 +33,7 @@ import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.coverage.JacocoReportTask;
 import com.android.build.gradle.internal.dsl.AbiSplitOptions;
 import com.android.build.gradle.internal.dsl.CoreBuildType;
-import com.android.build.gradle.internal.incremental.InstantRunAnchorTask;
 import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
-import com.android.build.gradle.internal.incremental.InstantRunWrapperTask;
 import com.android.build.gradle.internal.pipeline.TransformManager;
 import com.android.build.gradle.internal.pipeline.TransformTask;
 import com.android.build.gradle.internal.tasks.CheckManifest;
@@ -54,7 +52,6 @@ import com.android.build.gradle.tasks.GenerateBuildConfig;
 import com.android.build.gradle.tasks.GenerateResValues;
 import com.android.build.gradle.tasks.MergeResources;
 import com.android.build.gradle.tasks.MergeSourceSetFolders;
-import com.android.build.gradle.tasks.PackageApplication;
 import com.android.build.gradle.tasks.ProcessAndroidResources;
 import com.android.build.gradle.tasks.RenderscriptCompile;
 import com.android.build.gradle.tasks.ShaderCompile;
@@ -674,6 +671,7 @@ public class VariantScopeImpl extends GenericVariantScopeImpl implements Variant
                 "source/aidl/" + getVariantConfiguration().getDirName());
     }
 
+    @Override
     @NonNull
     public File getIncrementalDir(String name) {
         return FileUtils.join(
@@ -1126,33 +1124,6 @@ public class VariantScopeImpl extends GenericVariantScopeImpl implements Variant
         return instantRunBuildContext;
     }
 
-    private AndroidTask<InstantRunWrapperTask> instantRunWrapperTask;
-
-    @NonNull
-    @Override
-    public AndroidTask<InstantRunWrapperTask> getInstantRunIncrementalTask() {
-        return instantRunWrapperTask;
-    }
-
-    @Override
-    public void setInstantRunIncrementalTask(
-            @NonNull AndroidTask<InstantRunWrapperTask> instantRunWrapperTask) {
-        this.instantRunWrapperTask = instantRunWrapperTask;
-    }
-
-    private AndroidTask<InstantRunAnchorTask> instantRunAllActions;
-
-    @NonNull
-    @Override
-    public AndroidTask<InstantRunAnchorTask> getInstantRunAnchorTask() {
-        return instantRunAllActions;
-    }
-
-    @Override
-    public void setInstantRunAnchorTask(
-            @NonNull AndroidTask<InstantRunAnchorTask> instantAllActionsTask) {
-        this.instantRunAllActions = instantAllActionsTask;
-    }
 
     @NonNull
     @Override

@@ -18,6 +18,7 @@ package com.android.build.gradle.integration.instant;
 
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat;
 
+import com.android.annotations.NonNull;
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.internal.incremental.ColdswapMode;
 import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
@@ -40,9 +41,6 @@ class ColdSwapTester {
         mSteps = steps;
     }
 
-    /**
-     * @deprecated Cold-swap is a no-op on Dalvik, most likely you don't need to call this method.
-     */
     static void testDalvik(GradleTestProject project, Steps steps) throws Exception {
         ColdSwapTester tester = new ColdSwapTester(project, steps);
         tester.doTest(15, ColdswapMode.AUTO);
@@ -66,7 +64,7 @@ class ColdSwapTester {
 
         mProject.executor()
                 .withInstantRun(apiLevel, coldswapMode)
-                .run(instantRunModel.getIncrementalAssembleTaskName());
+                .run("assembleDebug");
 
         InstantRunBuildContext buildContext =
                 InstantRunTestUtils.loadBuildContext(apiLevel, instantRunModel);
@@ -86,12 +84,12 @@ class ColdSwapTester {
     }
 
     interface Steps {
-        void checkApk(File apk) throws Exception;
+        void checkApk(@NonNull File apk) throws Exception;
 
         void makeChange() throws Exception;
 
-        void checkVerifierStatus(InstantRunVerifierStatus status) throws Exception;
+        void checkVerifierStatus(@NonNull InstantRunVerifierStatus status) throws Exception;
 
-        void checkArtifacts(List<InstantRunBuildContext.Artifact> artifacts) throws Exception;
+        void checkArtifacts(@NonNull List<InstantRunBuildContext.Artifact> artifacts) throws Exception;
     }
 }

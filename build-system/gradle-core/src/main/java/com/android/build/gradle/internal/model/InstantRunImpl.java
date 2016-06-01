@@ -27,22 +27,13 @@ import java.io.Serializable;
  */
 public class InstantRunImpl implements InstantRun, Serializable {
 
-    @NonNull private final String incrementalBuildTaskName;
     @NonNull private final File infoFile;
     private final boolean isSupported;
 
     public InstantRunImpl(
-            @NonNull String incrementalBuildTaskName,
             @NonNull File infoFile, boolean isSupported) {
-        this.incrementalBuildTaskName = incrementalBuildTaskName;
         this.infoFile = infoFile;
         this.isSupported = isSupported;
-    }
-
-    @NonNull
-    @Override
-    public String getIncrementalAssembleTaskName() {
-        return incrementalBuildTaskName;
     }
 
     @NonNull

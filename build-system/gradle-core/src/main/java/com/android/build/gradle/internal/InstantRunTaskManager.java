@@ -20,10 +20,9 @@ import com.android.annotations.NonNull;
 import com.android.build.api.transform.QualifiedContent;
 import com.android.build.gradle.AndroidGradleOptions;
 import com.android.build.gradle.internal.incremental.BuildInfoLoaderTask;
-import com.android.build.gradle.internal.incremental.InstantRunAnchorTask;
-import com.android.build.gradle.internal.incremental.InstantRunPatchingPolicy;
+import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
+import com.android.build.gradle.internal.incremental.InstantRunBuildMode;
 import com.android.build.gradle.internal.incremental.InstantRunVerifierStatus;
-import com.android.build.gradle.internal.incremental.InstantRunWrapperTask;
 import com.android.build.gradle.internal.pipeline.ExtendedContentType;
 import com.android.build.gradle.internal.pipeline.OriginalStream;
 import com.android.build.gradle.internal.pipeline.TransformManager;
@@ -32,17 +31,17 @@ import com.android.build.gradle.internal.scope.AndroidTask;
 import com.android.build.gradle.internal.scope.AndroidTaskRegistry;
 import com.android.build.gradle.internal.scope.InstantRunVariantScope;
 import com.android.build.gradle.internal.scope.TransformVariantScope;
-import com.android.build.gradle.internal.transforms.InstantRunBuildType;
 import com.android.build.gradle.internal.transforms.InstantRunDex;
 import com.android.build.gradle.internal.transforms.InstantRunSlicer;
 import com.android.build.gradle.internal.transforms.InstantRunTransform;
 import com.android.build.gradle.internal.transforms.InstantRunVerifierTransform;
 import com.android.build.gradle.internal.transforms.NoChangesVerifierTransform;
-import com.android.build.gradle.tasks.ColdswapArtifactsKickerTask;
+import com.android.build.gradle.tasks.PreColdSwapTask;
 import com.android.build.gradle.tasks.fd.FastDeployRuntimeExtractorTask;
 import com.android.build.gradle.tasks.fd.GenerateInstantRunAppInfoTask;
 import com.android.builder.core.DexByteCodeConverter;
 import com.android.builder.core.DexOptions;
+import com.android.builder.model.OptionalCompilationStep;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 
@@ -113,8 +112,7 @@ public class InstantRunTaskManager {
         NoChangesVerifierTransform jniLibsVerifierTransform = new NoChangesVerifierTransform(
                 variantScope,
                 ImmutableSet.of(QualifiedContent.DefaultContentType.RESOURCES, ExtendedContentType.NATIVE_LIBS),
-                resMergingScopes, InstantRunVerifierStatus.JAVA_RESOURCES_CHANGED,
-                true /* abortBuild */);
+                resMergingScopes, InstantRunVerifierStatus.JAVA_RESOURCES_CHANGED);
         AndroidTask<TransformTask> jniLibsVerifierTask =
                 transformManager.addTransform(
                         tasks,
@@ -137,8 +135,7 @@ public class InstantRunTaskManager {
                                     QualifiedContent.Scope.PROJECT_LOCAL_DEPS,
                                     QualifiedContent.Scope.SUB_PROJECTS_LOCAL_DEPS,
                                     QualifiedContent.Scope.EXTERNAL_LIBRARIES),
-                            InstantRunVerifierStatus.DEPENDENCY_CHANGED,
-                            false /* abortBuild */);
+                            InstantRunVerifierStatus.DEPENDENCY_CHANGED);
             AndroidTask<TransformTask> dependenciesVerifierTask =
                     transformManager.addTransform(
                             tasks,
@@ -202,73 +199,46 @@ public class InstantRunTaskManager {
      * Creates all InstantRun related transforms after compilation.
      */
     @NonNull
-    public AndroidTask<InstantRunWrapperTask> createInstantRunIncrementalTasks(
+    public AndroidTask<PreColdSwapTask> createPreColdswapTask(
             @NonNull Project project) {
 
         TransformVariantScope transformVariantScope = variantScope.getTransformVariantScope();
+        InstantRunBuildContext context = variantScope.getInstantRunBuildContext();
 
-        // we are creating two anchor tasks
-        // 1. allActionAnchorTask to anchor tasks that should be executed whether a full build or
-        //    incremental build is invoked.
-        // 2. incrementalAnchorTask to anchor tasks that should only be executed when an
-        //    incremental build is requested.
-        // the incrementalAnchorTask will therefore depend on the allActionAnchorTask.
-        AndroidTask<InstantRunAnchorTask> incrementalAnchorTask = androidTasks.create(tasks,
-                new InstantRunAnchorTask.ConfigAction(transformVariantScope));
-
-        // create the incremental version of the build-info.xml, another task will take care
-        // of generating the build-info.xml when a full build is invoked.
-        AndroidTask<InstantRunWrapperTask> incrementalWrapperTask = androidTasks.create(tasks,
-                new InstantRunWrapperTask.ConfigAction(
-                        variantScope, InstantRunWrapperTask.TaskType.INCREMENTAL, logger));
-
-        // this will force build-info.xml to be generated only when the external task is directly
-        // invoked by the IDE.
-        incrementalAnchorTask.dependsOn(tasks, incrementalWrapperTask);
-
-        variantScope.getInstantRunBuildContext().setApiLevel(
+        context.setApiLevel(
                 AndroidGradleOptions.getTargetApiLevel(project),
                 AndroidGradleOptions.getColdswapMode(project),
                 AndroidGradleOptions.getBuildTargetAbi(project));
-        variantScope.getInstantRunBuildContext().setDensity(
-                AndroidGradleOptions.getBuildTargetDensity(project));
-        InstantRunPatchingPolicy patchingPolicy =
-                variantScope.getInstantRunBuildContext().getPatchingPolicy();
+        context.setDensity(AndroidGradleOptions.getBuildTargetDensity(project));
 
+        if (transformVariantScope.getGlobalScope().isActive(OptionalCompilationStep.FULL_APK)) {
+            context.setVerifierResult(InstantRunVerifierStatus.FULL_BUILD_REQUESTED);
+        } else if (transformVariantScope.getGlobalScope().isActive(
+                OptionalCompilationStep.RESTART_ONLY)) {
+            context.setVerifierResult(InstantRunVerifierStatus.COLD_SWAP_REQUESTED);
+        }
 
-        // let's create the coldswap kicker task. It is necessary as sometimes the IDE will
-        // request an assembleDebug to get the latest coldswap bits yet without any user changes.
-        // so we need to manually kick the tasks that accumulated changes during reload.dex
-        // iterations so they produce the artifacts.
-        AndroidTask<ColdswapArtifactsKickerTask> coldswapKickerTask = androidTasks.create(
-                tasks, new ColdswapArtifactsKickerTask.ConfigAction("coldswapKicker",
+        AndroidTask<PreColdSwapTask> preColdSwapTask = androidTasks.create(
+                tasks, new PreColdSwapTask.ConfigAction("preColdswap",
                         transformVariantScope,
                         variantScope));
 
-        // this kicker task is dependent on the verifier and associated tasks result.
-        coldswapKickerTask.dependsOn(tasks, verifierTask);
+        preColdSwapTask.dependsOn(tasks, verifierTask);
 
-        if (patchingPolicy == InstantRunPatchingPolicy.PRE_LOLLIPOP) {
-            // for Dalvik, we cannot cold swap.
-            incrementalWrapperTask.dependsOn(tasks, coldswapKickerTask);
-        } else {
-            // if we are at API 21 or above, we generate multi-dexes.
-            // this transform and all its dependencies will also run in full build mode as
-            // it is automatically enrolled by the transform manager.
-            InstantRunSlicer slicer = new InstantRunSlicer(logger, variantScope);
-            AndroidTask<TransformTask> slicing = transformManager
-                    .addTransform(tasks, transformVariantScope, slicer);
-
-            // slicing should only happen if we need to produce the restart dexes.
-            assert slicing!=null;
-            slicing.dependsOn(tasks, coldswapKickerTask);
-            variantScope.setInstantRunSlicerTask(slicing);
+        return preColdSwapTask;
+    }
 
 
-            incrementalWrapperTask.dependsOn(tasks, slicing);
-        }
-
-        return incrementalWrapperTask;
+    /**
+     * If we are at API 21 or above, we generate multi-dexes.
+     */
+    public void createSlicerTask() {
+        TransformVariantScope transformVariantScope = variantScope.getTransformVariantScope();
+        //
+        InstantRunSlicer slicer = new InstantRunSlicer(logger, variantScope);
+        AndroidTask<TransformTask> slicing = transformManager
+                .addTransform(tasks, transformVariantScope, slicer);
+        variantScope.addColdSwapBuildTask(slicing);
     }
 
 }

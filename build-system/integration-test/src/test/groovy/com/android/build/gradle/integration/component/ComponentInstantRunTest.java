@@ -79,7 +79,7 @@ public class ComponentInstantRunTest {
         InstantRun instantRunModel = InstantRunTestUtils.getInstantRunModel(model);
         project.executor()
                 .withInstantRun(21, ColdswapMode.DEFAULT)
-                .run(instantRunModel.getIncrementalAssembleTaskName());
+                .run("assembleDebug");
         InstantRunBuildInfo context = InstantRunTestUtils.loadContext(instantRunModel);
         assertThat(context.getVerifierStatus()).isEqualTo(
                 InstantRunVerifierStatus.JAVA_RESOURCES_CHANGED.toString());
