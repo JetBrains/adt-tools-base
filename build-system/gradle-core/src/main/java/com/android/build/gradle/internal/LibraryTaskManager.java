@@ -125,9 +125,7 @@ public class LibraryTaskManager extends TaskManager {
 
         final File intermediatesDir = globalScope.getIntermediatesDir();
         final Collection<String> variantDirectorySegments = variantConfig.getDirectorySegments();
-        final File variantBundleDir = FileUtils.join(
-                intermediatesDir,
-                StringHelper.toStrings(DIR_BUNDLES, variantDirectorySegments));
+        final File variantBundleDir = variantScope.getBaseBundleDir();
 
         createAnchorTasks(tasks, variantScope);
 
@@ -638,7 +636,6 @@ public class LibraryTaskManager extends TaskManager {
 
         return task;
     }
-
 
     private Task getAssembleDefault() {
         if (assembleDefault == null) {
