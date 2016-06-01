@@ -20,10 +20,8 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.api.ApkVariant;
 import com.android.build.gradle.internal.variant.ApkVariantData;
+import com.android.build.gradle.internal.variant.InstallableVariantData;
 import com.android.builder.core.AndroidBuilder;
-import com.android.builder.model.SigningConfig;
-
-import org.gradle.api.DefaultTask;
 
 import java.io.File;
 import java.util.Collection;
@@ -34,7 +32,7 @@ import java.util.Collection;
  * This is a wrapper around the internal data model, in order to control what is accessible
  * through the external API.
  */
-public abstract class ApkVariantImpl extends BaseVariantImpl implements ApkVariant {
+public abstract class ApkVariantImpl extends InstallableVariantImpl implements ApkVariant {
 
     protected ApkVariantImpl(@NonNull AndroidBuilder androidBuilder,
             @NonNull ReadOnlyObjectProvider immutableObjectProvider) {
@@ -44,15 +42,10 @@ public abstract class ApkVariantImpl extends BaseVariantImpl implements ApkVaria
     @NonNull
     protected abstract ApkVariantData getApkVariantData();
 
+    @NonNull
     @Override
-    @Nullable
-    public String getVersionName() {
-        return getApkVariantData().getVariantConfiguration().getVersionName();
-    }
-
-    @Override
-    public int getVersionCode() {
-        return getApkVariantData().getVariantConfiguration().getVersionCode();
+    protected InstallableVariantData getInstallableVariantData() {
+        return getApkVariantData();
     }
 
     @Nullable
@@ -61,22 +54,6 @@ public abstract class ApkVariantImpl extends BaseVariantImpl implements ApkVaria
         throw new RuntimeException("Access to the dex task is now impossible, starting with 1.4.0\n"
                 + "1.4.0 introduces a new Transform API allowing manipulation of the .class files.\n"
                 + "See more information: http://tools.android.com/tech-docs/new-build-system/transform-api");
-    }
-
-    @Override
-    public DefaultTask getUninstall() {
-        return getApkVariantData().uninstallTask;
-    }
-
-    @Override
-    public SigningConfig getSigningConfig() {
-        return readOnlyObjectProvider.getSigningConfig(
-                getApkVariantData().getVariantConfiguration().getSigningConfig());
-    }
-
-    @Override
-    public boolean isSigningReady() {
-        return getApkVariantData().isSigned();
     }
 
     @Override
@@ -90,10 +67,5 @@ public abstract class ApkVariantImpl extends BaseVariantImpl implements ApkVaria
     @NonNull
     public Collection<File> getApkLibraries() {
         return androidBuilder.getAllPackagedJars(getVariantData().getVariantConfiguration());
-    }
-
-    @Override
-    public DefaultTask getInstall() {
-        return getApkVariantData().installTask;
     }
 }
