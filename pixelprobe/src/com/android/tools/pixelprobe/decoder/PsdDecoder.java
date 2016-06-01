@@ -844,9 +844,32 @@ final class PsdDecoder extends Decoder {
         Rectangle2D bounds = layer.bounds();
         if (bounds.isEmpty()) return;
 
+        int channels = rawLayer.channels;
+        switch (image.colorMode()) {
+            case BITMAP:
+            case GRAYSCALE:
+            case INDEXED:
+                channels = Math.min(channels, 2);
+                break;
+            case RGB:
+                channels = Math.min(channels, 4);
+                break;
+            case CMYK:
+                channels = Math.min(channels, 5);
+                break;
+            case UNKNOWN:
+            case NONE:
+            case MULTI_CHANNEL:
+            case DUOTONE:
+                break;
+            case LAB:
+                channels = Math.min(channels, 4);
+                break;
+        }
+
         ColorSpace colorSpace = image.colorSpace();
-        BufferedImage bitmap = Images.create((int)bounds.getWidth(), (int) bounds.getHeight(),
-                image.colorMode(), rawLayer.channels, colorSpace);
+        BufferedImage bitmap = Images.create((int) bounds.getWidth(), (int) bounds.getHeight(),
+                image.colorMode(), channels, colorSpace);
 
         for (int i = 0; i < rawLayer.channelsInfo.size(); i++) {
             ChannelInformation info = rawLayer.channelsInfo.get(i);
@@ -963,7 +986,36 @@ final class PsdDecoder extends Decoder {
      * the same for all channels. The ZIP formats are not supported.
      */
     private static void decodeImageData(Image.Builder image, PSD psd) {
-        int channels = Math.min(psd.header.channels, 4);
+        int channels = psd.header.channels;
+        int alphaChannel = 0;
+        // When the layer count is negative, the first alpha channel is the
+        // merged result's alpha mask
+        if (psd.layersInfo.layers.count < 0) {
+            alphaChannel = 1;
+        }
+
+        switch (image.colorMode()) {
+            case BITMAP:
+            case GRAYSCALE:
+            case INDEXED:
+                channels = Math.min(channels, 1 + alphaChannel);
+                break;
+            case RGB:
+                channels = Math.min(channels, 3 + alphaChannel);
+                break;
+            case CMYK:
+                channels = Math.min(channels, 4 + alphaChannel);
+                break;
+            case UNKNOWN:
+            case NONE:
+            case MULTI_CHANNEL:
+            case DUOTONE:
+                break;
+            case LAB:
+                channels = Math.min(channels, 3 + alphaChannel);
+                break;
+        }
+
         ColorSpace colorSpace = image.colorSpace();
 
         BufferedImage bitmap = null;

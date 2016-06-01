@@ -16,14 +16,12 @@
 
 package com.android.tools.pixelprobe.util;
 
-import java.awt.*;
 import java.awt.color.ColorSpace;
 import java.awt.color.ICC_ColorSpace;
 import java.awt.color.ICC_Profile;
-import java.awt.image.BufferedImage;
-import java.awt.image.ColorConvertOp;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Various utilities to manipulate and convert colors.
@@ -33,6 +31,7 @@ public final class Colors {
 
     private static ICC_Profile CMYK_ICC_Profile;
     private static ICC_ColorSpace CMYK_ICC_ColorSpace;
+    private static final ReentrantLock colorSpaceLock = new ReentrantLock();
 
     private Colors() {
     }
@@ -125,13 +124,19 @@ public final class Colors {
      * The color profile is the standard "U.S. Web Coated v2" profile.
      */
     public static ICC_ColorSpace getCMYKProfile() {
-        if (CMYK_ICC_Profile == null) {
-            try (InputStream in = Colors.class.getResourceAsStream("USWebCoatedSWOP.icc")) {
-                CMYK_ICC_Profile = ICC_Profile.getInstance(in);
-                CMYK_ICC_ColorSpace = new ICC_ColorSpace(CMYK_ICC_Profile);
-            } catch (IOException e) {
-                throw new RuntimeException("Cannot find built-in CMYK ICC color profile");
+        colorSpaceLock.lock();
+        try {
+            if (CMYK_ICC_Profile == null) {
+                try (InputStream in = Colors.class.getResourceAsStream("USWebCoatedSWOP.icc")) {
+                    CMYK_ICC_Profile = ICC_Profile.getInstance(in);
+                    CMYK_ICC_ColorSpace = new ICC_ColorSpace(CMYK_ICC_Profile);
+                }
+                catch (IOException e) {
+                    throw new RuntimeException("Cannot find built-in CMYK ICC color profile");
+                }
             }
+        } finally {
+            colorSpaceLock.unlock();
         }
         return CMYK_ICC_ColorSpace;
     }
