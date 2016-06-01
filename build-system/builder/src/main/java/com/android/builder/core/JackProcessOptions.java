@@ -33,7 +33,7 @@ import java.util.Map;
  */
 public class JackProcessOptions {
 
-    static final Revision JACK_MIN_REV = new Revision(24, 0, 0);
+    public static final Revision JACK_MIN_REV = new Revision(24, 0, 0);
 
     private boolean mDebugLog = false;
     private boolean mVerbose = false;

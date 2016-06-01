@@ -27,7 +27,6 @@ import com.android.build.api.transform.TransformException;
 import com.android.build.api.transform.TransformInvocation;
 import com.android.build.api.transform.TransformOutputProvider;
 import com.android.build.gradle.internal.dsl.CoreJackOptions;
-import com.android.build.gradle.internal.dsl.JackOptions;
 import com.android.build.gradle.internal.pipeline.TransformManager;
 import com.android.build.gradle.internal.transforms.TransformInputUtil;
 import com.android.builder.core.AndroidBuilder;

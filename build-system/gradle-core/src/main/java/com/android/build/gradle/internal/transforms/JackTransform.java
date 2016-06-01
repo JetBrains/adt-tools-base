@@ -89,8 +89,6 @@ import java.util.Set;
  * </ul>
  */
 public class JackTransform extends Transform {
-    public static final Revision JACK_MIN_REV = new Revision(24, 0, 0);
-
     private Project project;
 
     private AndroidBuilder androidBuilder;
