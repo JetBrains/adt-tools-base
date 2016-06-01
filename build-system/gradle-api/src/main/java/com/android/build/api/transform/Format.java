@@ -16,8 +16,6 @@
 
 package com.android.build.api.transform;
 
-import com.google.common.annotations.Beta;
-
 /**
  * The format in which content is stored.
  */
