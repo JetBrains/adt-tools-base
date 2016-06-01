@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.Charset;
+import java.nio.file.Path;
 import java.util.Properties;
 
 
@@ -66,7 +67,7 @@ public interface FileOp {
      *
      * @param file The file or directory to set permissions on.
      */
-    void setReadOnly(@NonNull File file);
+    void setReadOnly(@NonNull File file) throws IOException;
 
     /**
      * Copies a binary file.
@@ -102,7 +103,7 @@ public interface FileOp {
     boolean canWrite(@NonNull File file);
 
     /** Invokes {@link File#length()} on the given {@code file}. */
-    long length(@NonNull File file);
+    long length(@NonNull File file) throws IOException;
 
     /**
      * Invokes {@link File#delete()} on the given {@code file}.
@@ -126,41 +127,15 @@ public interface FileOp {
 
     /** Creates a new {@link OutputStream} for the given {@code file}. */
     @NonNull
-    OutputStream newFileOutputStream(@NonNull File file)
-            throws FileNotFoundException;
+    OutputStream newFileOutputStream(@NonNull File file) throws IOException;
 
     /** Creates a new {@link OutputStream} for the given {@code file}. */
     @NonNull
-    OutputStream newFileOutputStream(@NonNull File file, boolean append)
-            throws FileNotFoundException;
+    OutputStream newFileOutputStream(@NonNull File file, boolean append) throws IOException;
 
     /** Creates a new {@link InputStream} for the given {@code file}. */
     @NonNull
-    InputStream newFileInputStream(@NonNull File file)
-            throws FileNotFoundException;
-
-    /**
-     * Load {@link Properties} from a file. Returns an empty property set on error.
-     *
-     * @param file A non-null file to load from. File may not exist.
-     * @return A new {@link Properties} with the properties loaded from the file,
-     *          or an empty property set in case of error.
-     */
-    @NonNull
-    Properties loadProperties(@NonNull File file);
-
-    /**
-     * Saves (write, store) the given {@link Properties} into the given {@link File}.
-     *
-     * @param file A non-null file to write to.
-     * @param props The properties to write.
-     * @param comments A non-null description of the properly list, written in the file.
-     * @throws IOException if the write operation failed.
-     */
-    void saveProperties(
-            @NonNull File file,
-            @NonNull Properties props,
-            @NonNull String comments) throws IOException;
+    InputStream newFileInputStream(@NonNull File file) throws IOException;
 
     /**
      * Returns the lastModified attribute of the file.
@@ -220,4 +195,6 @@ public interface FileOp {
      * @throws IOException if there is an error setting the modification time.
      */
     boolean setLastModified(@NonNull File file, long time) throws IOException;
+
+    Path toPath(@NonNull File file);
 }
