@@ -84,14 +84,14 @@ public final class Images {
                 raster = colorModel.createCompatibleWritableRaster(width, height);
                 break;
             case TYPE_4BYTE_CMYK:
-                if (colorSpace == null) colorSpace = Colors.getCMYKProfile();
+                if (colorSpace == null) colorSpace = Colors.getCmykColorSpace();
                 colorModel = new ComponentColorModel(colorSpace, new int[] { 8, 8, 8, 8 },
                         false, false, Transparency.OPAQUE, DataBuffer.TYPE_BYTE);
                 raster = Raster.createInterleavedRaster(DataBuffer.TYPE_BYTE,
                         width, height, width * 4, 4, new int[] { 0, 1, 2, 3 }, null);
                 break;
             case TYPE_5BYTE_ALPHA_CMYK:
-                if (colorSpace == null) colorSpace = Colors.getCMYKProfile();
+                if (colorSpace == null) colorSpace = Colors.getCmykColorSpace();
                 colorModel = new ComponentColorModel(colorSpace, new int[] { 8, 8, 8, 8, 8 },
                         true, false, Transparency.TRANSLUCENT, DataBuffer.TYPE_BYTE);
                 raster = Raster.createInterleavedRaster(DataBuffer.TYPE_BYTE,
