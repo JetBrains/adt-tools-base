@@ -528,7 +528,7 @@ final class PsdDecoder extends Decoder {
     }
 
     private static Color colorFromCMYK(Descriptor color) {
-        float[] rgb = Colors.linearToSRGB(Colors.CMYKtoRGB(
+        float[] rgb = Colors.linearTosRGB(Colors.CMYKtoRGB(
                 (float) getDouble(color, "Cyn "),
                 (float) getDouble(color, "Mgnt"),
                 (float) getDouble(color, "Ylw "),
@@ -537,7 +537,7 @@ final class PsdDecoder extends Decoder {
     }
 
     private static Color colorFromLAB(Descriptor color) {
-        float[] rgb = Colors.linearToSRGB(Colors.LABtoRGB(
+        float[] rgb = Colors.linearTosRGB(Colors.LABtoRGB(
                 (float) getDouble(color, "Lmnc"),
                 (float) getDouble(color, "A   "),
                 (float) getDouble(color, "B   ")));
@@ -545,7 +545,7 @@ final class PsdDecoder extends Decoder {
     }
 
     private static Color colorFromGray(Descriptor color) {
-        float gray = Colors.linearToSRGB((float) getDouble(color, "Gry ") / 255.0f);
+        float gray = Colors.linearTosRGB((float) getDouble(color, "Gry ") / 255.0f);
         return new Color(gray, gray, gray);
     }
 

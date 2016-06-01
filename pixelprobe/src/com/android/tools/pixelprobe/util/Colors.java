@@ -21,62 +21,26 @@ import java.awt.color.ICC_ColorSpace;
 import java.awt.color.ICC_Profile;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Various utilities to manipulate and convert colors.
  */
 public final class Colors {
-    private static final float[] WHITE_POINT_D50 = { 96.4212f, 100.0f, 82.5188f };
+    private static final class ColorSpaceHolder {
+        static ICC_Profile CMYK_ICC_Profile;
+        static ICC_ColorSpace CMYK_ICC_ColorSpace;
 
-    private static ICC_Profile CMYK_ICC_Profile;
-    private static ICC_ColorSpace CMYK_ICC_ColorSpace;
-    private static final ReentrantLock colorSpaceLock = new ReentrantLock();
+        static {
+            try (InputStream in = Colors.class.getResourceAsStream("USWebCoatedSWOP.icc")) {
+                CMYK_ICC_Profile = ICC_Profile.getInstance(in);
+                CMYK_ICC_ColorSpace = new ICC_ColorSpace(CMYK_ICC_Profile);
+            } catch (IOException e) {
+                throw new RuntimeException("Cannot find built-in CMYK ICC color profile");
+            }
+        }
+    }
 
     private Colors() {
-    }
-
-    /**
-     * Converts a Lab color to linear RGB.
-     */
-    public static float[] LABtoRGB(float L, float a, float b) {
-        ColorSpace xyz = ColorSpace.getInstance(ColorSpace.CS_CIEXYZ);
-        return xyz.toRGB(LABtoXYZ(L, a, b));
-    }
-
-    /**
-     * Converts a Lab color to the XYZ color space (assuming a D65 white point).
-     */
-    public static float[] LABtoXYZ(float L, float a, float b) {
-        double y = (L + 16.0) / 116.0;
-        double y3 = Math.pow(y, 3.0);
-        if (y3 > 0.008856) {
-            y = y3;
-        } else {
-            y = (y - (16.0 / 116.0)) / 7.787;
-        }
-
-        double x = (a / 500.0) + y;
-        double x3 = Math.pow(x, 3.0);
-        if (x3 > 0.008856) {
-            x = x3;
-        } else {
-            x = (x - (16.0 / 116.0)) / 7.787;
-        }
-
-        double z = y - (b / 200.0);
-        double z3 = Math.pow(z, 3.0);
-        if (z3 > 0.008856) {
-            z = z3;
-        } else {
-            z = (z - (16.0 / 116.0)) / 7.787;
-        }
-
-        return new float[] {
-            (float) (x * WHITE_POINT_D50[0]),
-            (float) (y * WHITE_POINT_D50[1]),
-            (float) (z * WHITE_POINT_D50[2])
-        };
     }
 
     /**
@@ -90,10 +54,10 @@ public final class Colors {
      * @return A new array of floats, of the same size as the input array,
      *         representing an sRGB color
      */
-    public static float[] linearToSRGB(float[] c) {
+    public static float[] linearTosRGB(float[] c) {
       float[] v = new float[c.length];
       for (int i = 0; i < c.length; i++) {
-          v[i] = linearToSRGB(c[i]);
+          v[i] = linearTosRGB(c[i]);
       }
       return v;
     }
@@ -107,8 +71,23 @@ public final class Colors {
      *
      * @return An sRGB component between 0.0 and 1.0
      */
-    public static float linearToSRGB(float c) {
+    public static float linearTosRGB(float c) {
         return (c <= 0.0031308f) ? c * 12.92f : ((float) Math.pow(c, 1.0f / 2.4f) * 1.055f) - 0.055f;
+    }
+
+    /**
+     * Returns a Lab color space.
+     */
+    public static ColorSpace getLabColorSpace() {
+        return CieLab.getInstance();
+    }
+
+    /**
+     * Converts the specified Lab color to linear RGB. The conversion
+     * is done using a D50 illuminant.
+     */
+    public static float[] LABtoRGB(float L, float a, float b) {
+        return getLabColorSpace().toRGB(new float[] { L, a, b });
     }
 
     /**
@@ -116,28 +95,14 @@ public final class Colors {
      * is done using the "U.S. Web Coated v2" ICC color profile.
      */
     public static float[] CMYKtoRGB(float C, float M, float Y, float K) {
-        return getCMYKProfile().toRGB(new float[] { C, M, Y, K });
+        return getCmykColorSpace().toRGB(new float[] { C, M, Y, K });
     }
 
     /**
      * Returns the ICC CMYK color profile used for CMYK to RGB conversions.
      * The color profile is the standard "U.S. Web Coated v2" profile.
      */
-    public static ICC_ColorSpace getCMYKProfile() {
-        colorSpaceLock.lock();
-        try {
-            if (CMYK_ICC_Profile == null) {
-                try (InputStream in = Colors.class.getResourceAsStream("USWebCoatedSWOP.icc")) {
-                    CMYK_ICC_Profile = ICC_Profile.getInstance(in);
-                    CMYK_ICC_ColorSpace = new ICC_ColorSpace(CMYK_ICC_Profile);
-                }
-                catch (IOException e) {
-                    throw new RuntimeException("Cannot find built-in CMYK ICC color profile");
-                }
-            }
-        } finally {
-            colorSpaceLock.unlock();
-        }
-        return CMYK_ICC_ColorSpace;
+    public static ColorSpace getCmykColorSpace() {
+        return ColorSpaceHolder.CMYK_ICC_ColorSpace;
     }
 }
