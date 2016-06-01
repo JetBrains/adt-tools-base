@@ -323,10 +323,10 @@ public class AaptV1 extends AbstractProcessExecutionAapt {
             if (preferredDensity != null && !densityResourceConfigs.isEmpty()) {
                 throw new AaptException(
                         String.format("When using splits in tools 21 and above, "
-                                + "resConfigs should not contain any densities. Right now, it "
-                                + "contains \"%1$s\"\nSuggestion: remove these from resConfigs "
-                                + "from build.gradle",
-                        Joiner.on("\",\"").join(densityResourceConfigs)));
+                                        + "resConfigs should not contain any densities. Right now, it "
+                                        + "contains \"%1$s\"\nSuggestion: remove these from resConfigs "
+                                        + "from build.gradle",
+                                Joiner.on("\",\"").join(densityResourceConfigs)));
             }
 
             if (densityResourceConfigs.size() > 1) {
@@ -433,8 +433,14 @@ public class AaptV1 extends AbstractProcessExecutionAapt {
          * the original file. If the original file is smaller, copy the original file over the
          * generated file.
          *
+         * However, this doesn't work with 9-patch because those need to be processed.
+         *
          * Return a new future after this verification is done.
          */
+        if (file.getName().endsWith(SdkConstants.DOT_9PNG)) {
+            return compilationFuture;
+        }
+
         return Futures.transform(compilationFuture, (File result) -> {
             SettableFuture<File> returnFuture = SettableFuture.create();
 
