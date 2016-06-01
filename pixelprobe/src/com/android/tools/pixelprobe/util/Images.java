@@ -16,6 +16,8 @@
 
 package com.android.tools.pixelprobe.util;
 
+import com.android.tools.pixelprobe.ColorMode;
+
 import java.awt.*;
 import java.awt.color.ColorSpace;
 import java.awt.image.*;
@@ -25,6 +27,8 @@ import java.awt.image.*;
  */
 public final class Images {
     private static final int TYPE_BYTE_ALPHA_GRAY = 42;
+    private static final int TYPE_4BYTE_CMYK = 43;
+    private static final int TYPE_5BYTE_ALPHA_CMYK = 44;
 
     private Images() {
     }
@@ -35,13 +39,16 @@ public final class Images {
      *
      * @param width The bitmap's width
      * @param height The bitmap's height
-     * @param channels The number of channels, must be 3 or 4
+     * @param colorMode The bitmap's source color mode
+     * @param channels The number of channels
      * @param colorSpace The bitmap's color space, can be null
      *
      * @return A BufferedImage instance
      */
-    public static BufferedImage create(int width, int height, int channels, ColorSpace colorSpace) {
-        int type = getImageType(channels);
+    public static BufferedImage create(int width, int height, ColorMode colorMode,
+            int channels, ColorSpace colorSpace) {
+
+        int type = getImageType(channels, colorMode);
         ColorModel colorModel;
         WritableRaster raster;
 
@@ -70,12 +77,27 @@ public final class Images {
                         0x00ff0000, 0x0000ff00, 0x000000ff, 0xff000000, false, getDefaultTransferType(32));
                 raster = colorModel.createCompatibleWritableRaster(width, height);
                 break;
+            case TYPE_4BYTE_CMYK:
+                if (colorSpace == null) colorSpace = Colors.getCMYKProfile();
+                colorModel = new ComponentColorModel(colorSpace, new int[] { 8, 8, 8, 8 },
+                        false, false, Transparency.OPAQUE, DataBuffer.TYPE_BYTE);
+                raster = Raster.createInterleavedRaster(DataBuffer.TYPE_BYTE,
+                        width, height, width * 4, 4, new int[] { 0, 1, 2, 3 }, null);
+                break;
+            case TYPE_5BYTE_ALPHA_CMYK:
+                if (colorSpace == null) colorSpace = Colors.getCMYKProfile();
+                colorModel = new ComponentColorModel(colorSpace, new int[] { 8, 8, 8, 8, 8 },
+                        true, false, Transparency.TRANSLUCENT, DataBuffer.TYPE_BYTE);
+                raster = Raster.createInterleavedRaster(DataBuffer.TYPE_BYTE,
+                        width, height, width * 5, 5, new int[] { 1, 2, 3, 4, 0 }, null);
+                break;
             default:
-                throw new RuntimeException("Unknown image type " + type);
+                throw new RuntimeException("Unknown image type, color mode = " +
+                        colorMode + ", channels = " + channels);
         }
 
         //noinspection UndesirableClassUsage
-        return new BufferedImage(colorModel, raster, false, null);
+        return new BufferedImage(colorModel, raster, colorModel.isAlphaPremultiplied(), null);
     }
 
     private static int getDefaultTransferType(int bits) {
@@ -91,17 +113,31 @@ public final class Images {
     }
 
     /**
+     * Inverts the specififed image.
+     */
+    public static BufferedImage invert(BufferedImage image) {
+        byte[] lut = new byte[256];
+        for (int i = 0; i < 256; i++) {
+            lut[i] = (byte) (255 - i);
+        }
+        BufferedImageOp op = new LookupOp(new ByteLookupTable(0, lut), null);
+        return op.filter(image, null);
+    }
+
+    /**
      * Decodes the supplied byte array as an RLE encoded channel and stores
      * the decoded result in the specified BufferedImage.
      *
      * You must specify the channel's index to indicate where to store
      * the decoded data. The index must be set to one of the following values:
      *
-     *      0, red channel
-     *      1, green channel
-     *      2, blue channel
-     *      3, alpha channel
-     *     -1, alpha channel
+     * <ul>
+     * <li>0, red channel</li>
+     * <li>1, green channel</li>
+     * <li>2, blue channel</li>
+     * <li>3, alpha channel</li>
+     * <li>-1, alpha channel</li>
+     * </ul>
      *
      * @param data The source data
      * @param offset Start offset of the data to decode in the byte array
@@ -148,15 +184,16 @@ public final class Images {
      * @param offset Start offset of the data to decode in the byte array
      * @param width Width of the image to decode
      * @param height Height of the image to decode
-     * @param channels Number of channels to decode, must be 3 or 4
+     * @param colorMode The image's source color mode
+     * @param channels Number of channels to decode
+     * @param colorSpace The image's source color space
      *
-     * @param colorSpace
      * @return A BufferedImage instance
      */
     public static BufferedImage decodeRLE(byte[] data, int offset, int width, int height,
-            int channels, ColorSpace colorSpace) {
+            ColorMode colorMode, int channels, ColorSpace colorSpace) {
 
-        BufferedImage image = create(width, height, channels, colorSpace);
+        BufferedImage image = create(width, height, colorMode, channels, colorSpace);
         WritableRaster raster = image.getRaster();
 
         int pos = offset;
@@ -190,12 +227,13 @@ public final class Images {
      *
      * You must specify the channel's index to indicate where to store
      * the decoded data. The index must be set to one of the following values:
-     *
-     *      0, red channel
-     *      1, green channel
-     *      2, blue channel
-     *      3, alpha channel
-     *     -1, alpha channel
+     * <ul>
+     * <li>0, red channel</li>
+     * <li>1, green channel</li>
+     * <li>2, blue channel</li>
+     * <li>3, alpha channel</li>
+     * <li>-1, alpha channel</li>
+     * </ul>
      *
      * @param data The source data
      * @param offset Start offset of the data to decode in the byte array
@@ -254,18 +292,19 @@ public final class Images {
      * @param offset Start offset of the data to decode in the byte array
      * @param width Width of the image to decode
      * @param height Height of the image to decode
-     * @param channels Number of channels to decode, must be 3 or 4
+     * @param colorMode The image's source color mode
+     * @param channels Number of channels to decode
+     * @param colorSpace The image's source color space
      * @param depth Bit-depth of each channel, must be 8, 16 or 32
      *
-     * @param colorSpace
      * @return A BufferedImage instance, never null
      */
     public static BufferedImage decodeRaw(byte[] data, int offset, int width, int height,
-            int channels, int depth, ColorSpace colorSpace) {
+            ColorMode colorMode, int channels, ColorSpace colorSpace, int depth) {
 
         int pos = offset;
 
-        BufferedImage image = create(width, height, channels, colorSpace);
+        BufferedImage image = create(width, height, colorMode, channels, colorSpace);
         WritableRaster raster = image.getRaster();
 
         switch (depth) {
@@ -318,10 +357,11 @@ public final class Images {
         switch (channel) {
             // handle the special alpha case
             case -1: return colorModel.getNumComponents() - 1;
-            case  0: return 0; // R
-            case  1: return 1; // G
-            case  2: return 2; // B
-            case  3: return 3; // A
+            case  0: return 0; // R, C
+            case  1: return 1; // G, M
+            case  2: return 2; // B, Y
+            case  3: return 3; // A, K
+            case  4: return 4; // A
         }
         throw new IllegalArgumentException("The channel index must be <= 3, not " + channel);
     }
@@ -330,20 +370,48 @@ public final class Images {
      * Returns a BufferedImage type for a given number of channels.
      *
      * @param channels The number of channels, must be <= 5
+     * @param colorMode
      */
-    private static int getImageType(int channels) {
-        switch (channels) {
-            case 1:
-                return BufferedImage.TYPE_BYTE_GRAY;
-            case 2:
-                return TYPE_BYTE_ALPHA_GRAY;
-            case 3:
-                return BufferedImage.TYPE_INT_RGB;
-            case 4:
-            case 5:
-                return BufferedImage.TYPE_INT_ARGB;
+    private static int getImageType(int channels, ColorMode colorMode) {
+        switch (colorMode) {
+            case BITMAP:
+                break;
+            case GRAYSCALE:
+                switch (channels) {
+                    case 1: return BufferedImage.TYPE_BYTE_GRAY;
+                    case 2: return TYPE_BYTE_ALPHA_GRAY;
+                }
+                throw new IllegalArgumentException("The Grayscale channels count must be 4 or 5");
+            case INDEXED:
+                break;
+            case RGB:
+                switch (channels) {
+                    case 3: return BufferedImage.TYPE_INT_RGB;
+                    case 4: return BufferedImage.TYPE_INT_ARGB;
+                }
+                throw new IllegalArgumentException("The RGB channels count must be 3 or 4");
+            case CMYK:
+                switch (channels) {
+                    case 4: return TYPE_4BYTE_CMYK;
+                    case 5: return TYPE_5BYTE_ALPHA_CMYK;
+                }
+                throw new IllegalArgumentException("The CMYK channels count must be 4 or 5");
+            case UNKNOWN:
+            case NONE:
+                break;
+            case MULTI_CHANNEL:
+                break;
+            case DUOTONE:
+                break;
+            case LAB:
+                switch (channels) {
+                    case 3: return BufferedImage.TYPE_INT_RGB;
+                    case 4: return BufferedImage.TYPE_INT_ARGB;
+                }
+                throw new IllegalArgumentException("The LAB channels count must be 3 or 4");
         }
-        throw new IllegalArgumentException("The channels count must be <= 5");
+
+        throw new IllegalArgumentException("Unsupported color mode/channels count: " + colorMode);
     }
 
 }
