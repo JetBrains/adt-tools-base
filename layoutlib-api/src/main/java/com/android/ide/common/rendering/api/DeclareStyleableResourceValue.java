@@ -41,7 +41,12 @@ public class DeclareStyleableResourceValue extends ResourceValue {
 
     public DeclareStyleableResourceValue(@NonNull ResourceType type, @NonNull String name,
             boolean isFramework) {
-        super(type, name, isFramework);
+        this(type, name, isFramework, null);
+    }
+
+    public DeclareStyleableResourceValue(@NonNull ResourceType type, @NonNull String name,
+            boolean isFramework, String libraryName) {
+        super(type, name, isFramework, libraryName);
         assert type == ResourceType.DECLARE_STYLEABLE;
     }
 

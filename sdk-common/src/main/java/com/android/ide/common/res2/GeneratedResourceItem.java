@@ -18,6 +18,7 @@ package com.android.ide.common.res2;
 
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.resources.ResourceType;
 
 import org.w3c.dom.Document;
@@ -40,8 +41,9 @@ public class GeneratedResourceItem extends ResourceItem {
             @NonNull String name,
             @NonNull File generatedFile,
             @NonNull ResourceType type,
-            @NonNull String qualifiers) {
-        super(name, type, null);
+            @NonNull String qualifiers,
+            @Nullable String libraryName) {
+        super(name, type, null, libraryName);
         mGeneratedFile = generatedFile;
         mQualifiers = qualifiers;
     }

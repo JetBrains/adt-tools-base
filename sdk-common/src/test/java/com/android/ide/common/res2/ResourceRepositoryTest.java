@@ -552,7 +552,7 @@ public class ResourceRepositoryTest extends BaseTestCase {
     private static ResourceMerger createMerger(String[][] data) {
         ResourceMerger merger = new ResourceMerger(0);
         for (String[] setData : data) {
-            ResourceSet set = new ResourceSet(setData[0]);
+            ResourceSet set = new ResourceSet(setData[0], null);
             merger.addDataSet(set);
             for (int i = 1, n = setData.length; i < n; i++) {
                 set.addSource(new File(setData[i]));
@@ -573,7 +573,7 @@ public class ResourceRepositoryTest extends BaseTestCase {
 
         RecordingLogger logger = new RecordingLogger();
 
-        ResourceSet overlay = new ResourceSet("overlay");
+        ResourceSet overlay = new ResourceSet("overlay", null);
         overlay.addSource(new File(root, "overlay"));
         overlay.loadFromFiles(logger);
 
@@ -599,7 +599,7 @@ public class ResourceRepositoryTest extends BaseTestCase {
         ResourceMerger resourceMerger = new ResourceMerger(0);
 
         for (String setName : sets) {
-            ResourceSet resourceSet = new ResourceSet(setName);
+            ResourceSet resourceSet = new ResourceSet(setName, null);
             resourceSet.addSource(new File(root, setName));
             resourceSet.loadFromFiles(logger);
             checkLogger(logger);

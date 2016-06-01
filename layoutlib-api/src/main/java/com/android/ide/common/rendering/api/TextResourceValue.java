@@ -25,12 +25,21 @@ public class TextResourceValue extends ResourceValue {
     private String mRawXmlValue;
 
     public TextResourceValue(ResourceType type, String name, boolean isFramework) {
-        super(type, name, isFramework);
+        this(type, name, isFramework, null);
+    }
+
+    public TextResourceValue(ResourceType type, String name, boolean isFramework, String libraryName) {
+        super(type, name, isFramework, libraryName);
     }
 
     public TextResourceValue(ResourceType type, String name, String textValue, String rawXmlValue,
             boolean isFramework) {
-        super(type, name, textValue, isFramework);
+        this(type, name, textValue, rawXmlValue, isFramework, null);
+    }
+
+    public TextResourceValue(ResourceType type, String name, String textValue, String rawXmlValue,
+            boolean isFramework, String libraryName) {
+        super(type, name, textValue, isFramework, libraryName);
         mRawXmlValue = rawXmlValue;
     }
 

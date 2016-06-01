@@ -1195,8 +1195,8 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
             for (AndroidLibrary dependency : mFlatPackageDependencies.getAndroidDependencies().reverse()) {
                 File resFolder = dependency.getResFolder();
                 if (resFolder.isDirectory()) {
-                    ResourceSet resourceSet =
-                            new ResourceSet(dependency.getFolder().getName(), validateEnabled);
+                    ResourceSet resourceSet = new ResourceSet(dependency.getFolder().getName(),
+                            dependency.getName(), validateEnabled);
                     resourceSet.addSource(resFolder);
                     resourceSet.setFromDependency(true);
                     resourceSets.add(resourceSet);

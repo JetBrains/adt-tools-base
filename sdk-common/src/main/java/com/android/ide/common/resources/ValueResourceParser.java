@@ -57,10 +57,12 @@ public final class ValueResourceParser extends DefaultHandler {
     private AttrResourceValue mCurrentAttr;
     private IValueResourceRepository mRepository;
     private final boolean mIsFramework;
+    private final String mLibraryName;
 
-    public ValueResourceParser(IValueResourceRepository repository, boolean isFramework) {
+    public ValueResourceParser(IValueResourceRepository repository, boolean isFramework, String libraryName) {
         mRepository = repository;
         mIsFramework = isFramework;
+        mLibraryName = libraryName;
     }
 
     @Override
@@ -114,24 +116,24 @@ public final class ValueResourceParser extends DefaultHandler {
                             case STYLE:
                                 String parent = attributes.getValue(ATTR_PARENT);
                                 mCurrentStyle = new StyleResourceValue(type, name, parent,
-                                        mIsFramework);
+                                        mIsFramework, mLibraryName);
                                 mRepository.addResourceValue(mCurrentStyle);
                                 break;
                             case DECLARE_STYLEABLE:
                                 mCurrentDeclareStyleable = new DeclareStyleableResourceValue(
-                                        type, name, mIsFramework);
+                                        type, name, mIsFramework, mLibraryName);
                                 mRepository.addResourceValue(mCurrentDeclareStyleable);
                                 break;
                             case ATTR:
-                                mCurrentAttr = new AttrResourceValue(type, name, mIsFramework);
+                                mCurrentAttr = new AttrResourceValue(type, name, mIsFramework, mLibraryName);
                                 mRepository.addResourceValue(mCurrentAttr);
                                 break;
                             case ARRAY:
-                                mArrayResourceValue = new ArrayResourceValue(name, mIsFramework);
+                                mArrayResourceValue = new ArrayResourceValue(name, mIsFramework, mLibraryName);
                                 mRepository.addResourceValue(mArrayResourceValue);
                                 break;
                             default:
-                                mCurrentValue = new ResourceValue(type, name, mIsFramework);
+                                mCurrentValue = new ResourceValue(type, name, mIsFramework, mLibraryName);
                                 mRepository.addResourceValue(mCurrentValue);
                                 break;
                         }
@@ -150,7 +152,7 @@ public final class ValueResourceParser extends DefaultHandler {
                             isFrameworkAttr = true;
                         }
 
-                        mCurrentValue = new ItemResourceValue(name, isFrameworkAttr, mIsFramework);
+                        mCurrentValue = new ItemResourceValue(name, isFrameworkAttr, mIsFramework, mLibraryName);
                         mCurrentStyle.addItem((ItemResourceValue)mCurrentValue);
                     } else if (mCurrentDeclareStyleable != null) {
                         // is the attribute in the android namespace?
@@ -160,7 +162,7 @@ public final class ValueResourceParser extends DefaultHandler {
                             isFramework = true;
                         }
 
-                        mCurrentAttr = new AttrResourceValue(ResourceType.ATTR, name, isFramework);
+                        mCurrentAttr = new AttrResourceValue(ResourceType.ATTR, name, isFramework, mLibraryName);
                         mCurrentDeclareStyleable.addValue(mCurrentAttr);
 
                         // also add it to the repository.
@@ -182,7 +184,7 @@ public final class ValueResourceParser extends DefaultHandler {
                     if (mArrayResourceValue != null) {
                         // Create a temporary resource value to hold the item's value. The value is
                         // not added to the repository, since it's just a holder.
-                        mCurrentValue = new ResourceValue(null, null, mIsFramework);
+                        mCurrentValue = new ResourceValue(null, null, mIsFramework, mLibraryName);
                     }
             } else if (mDepth == 4 && mCurrentAttr != null) {
                 // get the enum/flag name

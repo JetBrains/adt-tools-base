@@ -167,7 +167,7 @@ public final class MultiResourceFile extends ResourceFile implements IValueResou
     private void parseFile() {
         try {
             SAXParser parser = sParserFactory.newSAXParser();
-            parser.parse(getFile().getContents(), new ValueResourceParser(this, isFramework()));
+            parser.parse(getFile().getContents(), new ValueResourceParser(this, isFramework(), null));
         } catch (ParserConfigurationException e) {
         } catch (SAXException e) {
         } catch (IOException e) {

@@ -31,13 +31,21 @@ public class ArrayResourceValue extends ResourceValue implements Iterable<String
     private final List<String> mItems = new ArrayList<String>();
 
     /**
+     * @see #ArrayResourceValue(String, boolean, String)
+     */
+    public ArrayResourceValue(String name, boolean isFramework) {
+        this(name, isFramework, null);
+    }
+
+    /**
      * Constructs a new {@linkplain ArrayResourceValue}
      *
      * @param name        the name of the array
      * @param isFramework whether this is a framework resource
+     * @param libraryName the name of the library where the resource was found
      */
-    public ArrayResourceValue(String name, boolean isFramework) {
-        super(ResourceType.ARRAY, name, isFramework);
+    public ArrayResourceValue(String name, boolean isFramework, String libraryName) {
+        super(ResourceType.ARRAY, name, isFramework, libraryName);
     }
 
     /**
