@@ -33,6 +33,7 @@ public interface NativeSourceFolder {
     /**
      * The source folder.
      */
+    @Nullable
     File getSrc();
     void setSrc(File src);
 
@@ -41,14 +42,14 @@ public interface NativeSourceFolder {
      *
      * Lowercase 'c' because otherwise it would produce CFlags instead of cFlags.
      */
-    @NonNull
+    @Nullable
     String getcFlags();
     void setcFlags(String flags);
 
     /**
      * Compiler flags for all C++ files.
      */
-    @NonNull
+    @Nullable
     String getCppFlags();
     void setCppFlags(String flags);
 

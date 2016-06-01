@@ -62,21 +62,41 @@ public class NativeModelHelper {
     public static Map<File, List<String>> getCFlags(
             @NonNull NativeAndroidProject project,
             @NonNull NativeArtifact artifact) {
+        return getFlags(project, artifact, "c");
+    }
+
+    /**
+     * Return a map of C++ flags for each NativeFolder and NativeFile.
+     *
+     * The key is the folderPath of a NativeFolder or filePath of a NativeFile.
+     * The value is the list of flags.
+     */
+    @NonNull
+    public static Map<File, List<String>> getCppFlags(
+            @NonNull NativeAndroidProject project,
+            @NonNull NativeArtifact artifact) {
+        return getFlags(project, artifact, "cpp");
+    }
+
+    @NonNull
+    private static Map<File, List<String>> getFlags(
+            @NonNull NativeAndroidProject project,
+            @NonNull NativeArtifact artifact,
+            @NonNull String extension) {
         Map<File, String> settingsMap = Maps.newHashMap();
 
         for (NativeFolder nativeFolder : artifact.getSourceFolders()) {
-            String setting = nativeFolder.getPerLanguageSettings().get("c");
+            String setting = nativeFolder.getPerLanguageSettings().get(extension);
             if (setting != null) {
                 settingsMap.put(nativeFolder.getFolderPath(), setting);
             }
         }
         for (NativeFile nativeFile : artifact.getSourceFiles()) {
-            if (nativeFile.getFilePath().getName().endsWith(".c")) {
+            if (nativeFile.getFilePath().getName().endsWith("." + extension)) {
                 String setting = nativeFile.getSettingsName();
                 settingsMap.put(nativeFile.getFilePath(), setting);
             }
         }
-
 
         Map<File, List<String>> flagsMap = Maps.newHashMap();
         for (Map.Entry<File, String> entry : settingsMap.entrySet()) {
@@ -93,6 +113,18 @@ public class NativeModelHelper {
             @NonNull NativeAndroidProject project,
             @NonNull NativeArtifact artifact) {
         return getCFlags(project, artifact).values().stream()
+                .flatMap(Collection::stream)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Return the C++ flags for all NativeFolder and NativeFile.
+     * Flags in all NativeFolder and NativeFile in the NativeArtifact is flatten into a single list.
+     */
+    public static List<String> getFlatCppFlags(
+            @NonNull NativeAndroidProject project,
+            @NonNull NativeArtifact artifact) {
+        return getCppFlags(project, artifact).values().stream()
                 .flatMap(Collection::stream)
                 .collect(Collectors.toList());
     }

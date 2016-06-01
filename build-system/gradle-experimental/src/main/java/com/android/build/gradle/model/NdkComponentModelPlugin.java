@@ -523,8 +523,10 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
                 nativeLibrary.setAssembleTaskName(nativeBinary.getBuildTask().getName());
                 nativeLibrary.setAbi(abi.getName());
 
-                final List<String> cFlags = nativeBinary.getcCompiler().getArgs();
-                final List<String> cppFlags = nativeBinary.getCppCompiler().getArgs();
+                final List<String> cFlags =
+                        Lists.newArrayList(nativeBinary.getcCompiler().getArgs());
+                final List<String> cppFlags =
+                        Lists.newArrayList(nativeBinary.getCppCompiler().getArgs());
 
                 NdkAbiOptions abiConfig = abiConfigs.get(abi.getName());
 
@@ -565,11 +567,9 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
                             nativeSourceFolder -> {
                                 nativeSourceFolder.setSrc(srcFolder);
                                 nativeSourceFolder.setcFlags(
-                                        nativeSourceFolder.getcFlags() + ' ' +
-                                                StringHelper.quoteAndJoinTokens(cFlags));
+                                        StringHelper.quoteAndJoinTokens(cFlags));
                                 nativeSourceFolder.setCppFlags(
-                                        nativeSourceFolder.getCppFlags() + ' ' +
-                                                StringHelper.quoteAndJoinTokens(cppFlags));
+                                        StringHelper.quoteAndJoinTokens(cppFlags));
                             });
                 }
 

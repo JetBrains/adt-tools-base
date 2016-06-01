@@ -32,13 +32,14 @@ public interface NativeSourceFile {
     /**
      * The source file.
      */
+    @Nullable
     File getSrc();
     void setSrc(File src);
 
     /**
      * Compiler flags for this file.
      */
-    @NonNull
+    @Nullable
     String getFlags();
     void setFlags(String flags);
 
