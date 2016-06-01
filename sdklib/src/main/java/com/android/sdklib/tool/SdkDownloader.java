@@ -46,7 +46,7 @@ import java.util.stream.Collectors;
  *          plugins/android/lib/common.jar:lib/guava-17.0.jar:lib/httpcore-4.4.1.jar:\
  *          lib/httpclient-4.4.1.jar:lib/commons-logging-1.2.jar:\
  *          plugins/android/lib/commons-compress-1.0.jar
- *          com.android.sdklib.tool.SdkDownloader <sdkdir> (<path> ...|--update)
+ *          com.android.sdklib.tool.SdkDownloader <sdkdir> (<path> ...|--update)}
  */
 public class SdkDownloader {
 
