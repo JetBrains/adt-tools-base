@@ -84,6 +84,7 @@ public abstract class Decoder {
             .dimensions(bitmap.getWidth(), bitmap.getHeight())
             .flattenedBitmap(bitmap)
             .colorMode(ColorMode.RGB)
+            .depth(8)
             .build();
     }
 

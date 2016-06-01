@@ -23,7 +23,7 @@ import java.awt.color.ColorSpace;
  */
 public class CieLab extends ColorSpace {
     private static final double[] WHITE_POINT_D50 = { 96.4212, 100.0, 82.5188 };
-    private static final ColorSpace CIEXYZ = ColorSpace.getInstance(ColorSpace.CS_CIEXYZ);
+    private static final ColorSpace sRGB = ColorSpace.getInstance(ColorSpace.CS_sRGB);
 
     private static final class InstanceHolder {
         static final CieLab CIELab = new CieLab();
@@ -49,12 +49,27 @@ public class CieLab extends ColorSpace {
 
     @Override
     public float[] toRGB(float[] lab) {
-        return CIEXYZ.toRGB(toCIEXYZ(lab));
+        float[] xyz = toCIEXYZ(lab);
+
+        // Bradford-adapted D50 XYZ to sRGB matrix
+        double r =  3.1338561 * xyz[0] + -1.6168667 * xyz[1] + -0.4906146 * xyz[2];
+        double g = -0.9787684 * xyz[0] +  1.9161415 * xyz[1] +  0.0334540 * xyz[2];
+        double b =  0.0719453 * xyz[0] + -0.2289914 * xyz[1] +  1.4052427 * xyz[2];
+
+        xyz[0] = clamp(Colors.linearTosRGB((float) r));
+        xyz[1] = clamp(Colors.linearTosRGB((float) g));
+        xyz[2] = clamp(Colors.linearTosRGB((float) b));
+
+        return xyz;
+    }
+
+    private static float clamp(float v) {
+        return Math.max(0.0f, Math.min(v, 1.0f));
     }
 
     @Override
     public float[] fromRGB(float[] rgb) {
-        return fromCIEXYZ(CIEXYZ.fromRGB(rgb));
+        return fromCIEXYZ(sRGB.toCIEXYZ(rgb));
     }
 
     @Override
@@ -77,8 +92,8 @@ public class CieLab extends ColorSpace {
     @Override
     public float[] fromCIEXYZ(float[] xyz) {
         double X = xyz[0] * (100.0 / WHITE_POINT_D50[0]);
-        double Y = xyz[1] * (100.0 / WHITE_POINT_D50[2]);
-        double Z = xyz[2] * (100.0 / WHITE_POINT_D50[1]);
+        double Y = xyz[1] * (100.0 / WHITE_POINT_D50[1]);
+        double Z = xyz[2] * (100.0 / WHITE_POINT_D50[2]);
 
         double fx = X > (216.0 / 24389.0) ? Math.cbrt(X) : (841.0 / 108.0) * X + (4.0 / 29.0);
         double fy = Y > (216.0 / 24389.0) ? Math.cbrt(Y) : (841.0 / 108.0) * Y + (4.0 / 29.0);
