@@ -385,7 +385,6 @@ public final class SdkConstants {
     public static final String FD_M2_REPOSITORY = "m2repository";       //$NON-NLS-1$
     public static final String FD_NDK = "ndk-bundle";                   //$NON-NLS-1$
     public static final String FD_LLDB = "lldb";                        //$NON-NLS-1$
-    public static final String FD_CMAKE = "cmake";                      //$NON-NLS-1$
     /**
      * Name of an extra's sample folder.
      * Ideally extras should have one {@link #FD_SAMPLES} folder containing

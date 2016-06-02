@@ -36,6 +36,9 @@ import javax.xml.bind.annotation.XmlTransient;
 
 /**
  * Store of currently-known local and remote packages, in convenient forms.
+ *
+ * TODO: some of the functionality of this class may no longer be needed. Reevaluate once adoption
+ * has progressed further.
  */
 @XmlTransient
 public final class RepositoryPackages {
@@ -57,7 +60,8 @@ public final class RepositoryPackages {
 
     /**
      * Multimap from all prefixes of {@code path}s (the unique IDs of packages) to
-     * {@link LocalPackage}s with that path prefix.
+     * {@link LocalPackage}s with that path prefix. All packages that are  installed or
+     * available will be included.
      *
      * For example, if there are packages
      * {@code foo;bar;baz},
@@ -70,15 +74,7 @@ public final class RepositoryPackages {
      * {@code foo;bar;qux->[Qux package]},
      * {@code foo;xyzzy->[Xyzzy package]}
      */
-    private Multimap<String, LocalPackage> mLocalPackagesByPrefix = TreeMultimap.create();
-
-    /**
-     * Multimap from all prefixes of {@code path}s (the unique IDs of packages) to
-     * {@link RemotePackage}s with that path prefix.
-     *
-     * @see #mLocalPackagesByPrefix for examples.
-     */
-    private Multimap<String, RemotePackage> mRemotePackagesByPrefix = TreeMultimap.create();
+    private Multimap<String, ? extends LocalPackage> mLocalPackagesByPrefix = TreeMultimap.create();
 
     /**
      * Map from {@code path} (the unique ID of a package) to {@link UpdatablePackage}, including all
@@ -90,7 +86,7 @@ public final class RepositoryPackages {
      * Map from {@code path} (the unique ID of a package) to {@link LocalPackage}, including all
      * installed packages.
      */
-    private Map<String, LocalPackage> mLocalPackages = Maps.newHashMap();
+    private Map<String, ? extends LocalPackage> mLocalPackages = Maps.newHashMap();
 
     /**
      * Map from {@code path} (the unique ID of a package) to {@link RemotePackage}. There may be
@@ -178,7 +174,7 @@ public final class RepositoryPackages {
      * packages currently installed.
      */
     @NonNull
-    public Map<String, LocalPackage> getLocalPackages() {
+    public Map<String, ? extends LocalPackage> getLocalPackages() {
         return mLocalPackages;
     }
 
@@ -192,15 +188,9 @@ public final class RepositoryPackages {
     }
 
     @NonNull
-    public Collection<LocalPackage> getLocalPackagesForPrefix(
+    public Collection<? extends LocalPackage> getLocalPackagesForPrefix(
             @Nullable String pathPrefix) {
         return mLocalPackagesByPrefix.get(pathPrefix);
-    }
-
-    @NonNull
-    public Collection<RemotePackage> getRemotePackagesForPrefix(
-            @Nullable String pathPrefix) {
-        return mRemotePackagesByPrefix.get(pathPrefix);
     }
 
     /**
@@ -209,10 +199,9 @@ public final class RepositoryPackages {
      */
     public void setLocalPkgInfos(@NonNull Map<String, ? extends LocalPackage> packages) {
         synchronized (mLock) {
-            mLocalPackages.clear();
-            mLocalPackages.putAll(packages);
+            mLocalPackages = packages;
             invalidate();
-            mLocalPackagesByPrefix = computePackagePrefixes(mLocalPackages);
+            computeLocalPackagePrefixes();
         }
     }
 
@@ -220,12 +209,10 @@ public final class RepositoryPackages {
      * Sets the collection of known {@link RemotePackage}s, and recomputes the list of updates and
      * new packages, if {@link LocalPackage}s have been set.
      */
-    public void setRemotePkgInfos(@NonNull Map<String, ? extends RemotePackage> packages) {
+    public void setRemotePkgInfos(@NonNull Map<String, RemotePackage> packages) {
         synchronized (mLock) {
-            mRemotePackages.clear();
-            mRemotePackages.putAll(packages);
+            mRemotePackages = packages;
             invalidate();
-            mRemotePackagesByPrefix = computePackagePrefixes(mRemotePackages);
         }
     }
 
@@ -263,13 +250,12 @@ public final class RepositoryPackages {
         mConsolidatedPkgs = newConsolidatedPkgs;
     }
 
-    private static <P extends RepoPackage> Multimap<String, P> computePackagePrefixes(
-            Map<String, ? extends P> packages) {
-        Multimap<String, P> packagesByPrefix = TreeMultimap.create();
-        for (Map.Entry<String, ? extends P> entry : packages.entrySet()) {
+    private void computeLocalPackagePrefixes() {
+        Multimap<String, LocalPackage> res = TreeMultimap.create();
+        for (Map.Entry<String, ? extends LocalPackage> entry : mLocalPackages.entrySet()) {
             String key = entry.getKey();
             while(true) {
-                packagesByPrefix.put(key, entry.getValue());
+                res.put(key, entry.getValue());
                 int endIndex = key.lastIndexOf(RepoPackage.PATH_SEPARATOR);
                 if (endIndex < 0) {
                     break;
@@ -277,7 +263,7 @@ public final class RepositoryPackages {
                 key = key.substring(0, endIndex);
             }
         }
-        return packagesByPrefix;
+        mLocalPackagesByPrefix = res;
     }
 
 }
