@@ -54,7 +54,7 @@ public class AaptV2Test {
      * @throws Exception failed to create the {@link Aapt} instance
      */
     @NonNull
-    private Aapt makeAapt() throws Exception {
+    private static Aapt makeAapt() throws Exception {
         ILogger logger = new StdLogger(StdLogger.Level.VERBOSE);
         Revision revision = Revision.parseRevision("24.0.0 rc2");
 
@@ -70,7 +70,6 @@ public class AaptV2Test {
                 new DefaultProcessExecutor(logger),
                 new LoggedProcessOutputHandler(logger),
                 buildToolInfo,
-                mTemporaryFolder.newFolder(),
                 logger);
     }
 

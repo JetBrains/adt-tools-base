@@ -156,8 +156,7 @@ public class ProcessAndroidResources extends IncrementalTask {
                     true,
                     true,
                     variantScope.getGlobalScope().getProject(),
-                    variantScope.getVariantConfiguration().getType(),
-                    FileUtils.mkdirs(new File(getIncrementalFolder(), "aapt-temp")));
+                    variantScope.getVariantConfiguration().getType());
 
             AaptPackageConfig.Builder config = new AaptPackageConfig.Builder()
                     .setManifestFile(manifestFileToPackage)

@@ -39,7 +39,6 @@ import com.android.ide.common.process.LoggedProcessOutputHandler;
 import com.android.ide.common.process.ProcessException;
 import com.android.ide.common.process.ProcessInfoBuilder;
 import com.android.ide.common.signing.KeytoolException;
-import com.android.utils.FileUtils;
 import com.google.common.io.Files;
 
 import org.gradle.api.tasks.Input;
@@ -290,10 +289,7 @@ public class InstantRunSplitApkBuilder extends BaseTask {
                             true,
                             true,
                             packagingScope.getProject(),
-                            packagingScope.getVariantType(),
-                            FileUtils.mkdirs(new File(
-                                    packagingScope.getIncrementalDir(getName()),
-                                    "aapt-temp")));
+                            packagingScope.getVariantType());
 
             ConventionMappingHelper.map(task, "zipAlignExe", () -> {
                 final TargetInfo info = androidBuilder.getTargetInfo();
