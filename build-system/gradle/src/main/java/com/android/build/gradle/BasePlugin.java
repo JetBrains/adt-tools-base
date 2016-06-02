@@ -53,7 +53,6 @@ import com.android.build.gradle.internal.process.GradleProcessExecutor;
 import com.android.build.gradle.internal.profile.RecordingBuildListener;
 import com.android.build.gradle.internal.transforms.DexTransform;
 import com.android.build.gradle.internal.variant.BaseVariantData;
-import com.android.builder.sdk.SdkLibData;
 import com.android.build.gradle.internal.variant.VariantFactory;
 import com.android.build.gradle.tasks.ExternalNativeBuildTaskUtils;
 import com.android.build.gradle.tasks.ExternalNativeJsonGenerator;
@@ -69,15 +68,15 @@ import com.android.builder.profile.ExecutionType;
 import com.android.builder.profile.ProcessRecorderFactory;
 import com.android.builder.profile.Recorder;
 import com.android.builder.profile.ThreadRecorder;
+import com.android.builder.sdk.SdkLibData;
 import com.android.builder.sdk.TargetInfo;
 import com.android.dx.command.dexer.Main;
 import com.android.ide.common.internal.ExecutorSingleton;
 import com.android.repository.api.Channel;
 import com.android.repository.api.Downloader;
-import com.android.repository.api.ProgressIndicator;
 import com.android.repository.api.SettingsController;
+import com.android.repository.impl.downloader.LocalFileAwareDownloader;
 import com.android.repository.io.FileOpUtils;
-import com.android.sdklib.repository.AndroidSdkHandler;
 import com.android.sdklib.repository.legacy.LegacyDownloader;
 import com.android.utils.ILogger;
 import com.google.common.base.CharMatcher;
@@ -85,7 +84,6 @@ import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
-import com.google.common.io.Files;
 
 import org.gradle.BuildListener;
 import org.gradle.BuildResult;
@@ -109,12 +107,10 @@ import android.databinding.tool.DataBindingBuilder;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.net.URLConnection;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Calendar;
@@ -830,7 +826,7 @@ public abstract class BasePlugin {
         throw new StopExecutionException(message);
     }
 
-    private SettingsController getSettingsController() {
+    private static SettingsController getSettingsController() {
         return new SettingsController() {
             @Override
             public boolean getForceHttp() {
@@ -848,11 +844,9 @@ public abstract class BasePlugin {
                 return Channel.DEFAULT;
             }
         };
-
-
     }
 
-    public static Downloader getDownloader() {
-        return new LegacyDownloader(FileOpUtils.create());
+    private static Downloader getDownloader() {
+        return new LocalFileAwareDownloader(new LegacyDownloader(FileOpUtils.create()));
     }
 }
