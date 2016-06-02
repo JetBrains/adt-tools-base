@@ -276,6 +276,9 @@ public interface VariantScope extends TransformVariantScope, InstantRunVariantSc
     @NonNull
     File getMicroApkResDirectory();
 
+    @NonNull
+    File getBaseBundleDir();
+
     AndroidTask<DefaultTask> getAssembleTask();
 
     void setAssembleTask(@NonNull AndroidTask<DefaultTask> assembleTask);

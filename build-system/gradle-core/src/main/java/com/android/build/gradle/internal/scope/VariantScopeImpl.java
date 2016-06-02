@@ -451,9 +451,7 @@ public class VariantScopeImpl extends GenericVariantScopeImpl implements Variant
     @NonNull
     public File getProguardOutputFile() {
         return (variantData instanceof LibraryVariantData) ?
-                new File(globalScope.getIntermediatesDir(),
-                        DIR_BUNDLES + "/" + getVariantConfiguration().getDirName()
-                                + "/classes.jar") :
+                new File(getBaseBundleDir(), "classes.jar") :
                 new File(globalScope.getIntermediatesDir(),
                         "/classes-proguard/" + getVariantConfiguration().getDirName()
                                 + "/classes.jar");
@@ -552,10 +550,8 @@ public class VariantScopeImpl extends GenericVariantScopeImpl implements Variant
     @Override
     @NonNull
     public File getMergeAssetsOutputDir() {
-        return getVariantConfiguration().getType() == VariantType.LIBRARY ?
-                new File(globalScope.getIntermediatesDir(),
-                        DIR_BUNDLES + "/" + getVariantConfiguration().getDirName() +
-                                "/assets") :
+        return getVariantConfiguration().isBundled() ?
+                new File(getBaseBundleDir(), "assets") :
                 new File(globalScope.getIntermediatesDir(),
                         "/assets/" + getVariantConfiguration().getDirName());
     }
@@ -683,8 +679,7 @@ public class VariantScopeImpl extends GenericVariantScopeImpl implements Variant
     @Override
     @NonNull
     public File getPackagedAidlDir() {
-        return new File(globalScope.getIntermediatesDir(),
-                DIR_BUNDLES + "/" + getVariantConfiguration().getDirName() + "/aidl");
+        return new File(getBaseBundleDir(), "aidl");
     }
 
     @NonNull
@@ -814,15 +809,13 @@ public class VariantScopeImpl extends GenericVariantScopeImpl implements Variant
     @NonNull
     @Override
     public File getAaptFriendlyManifestOutputFile() {
-        return FileUtils.join(globalScope.getIntermediatesDir(), DIR_BUNDLES,
-                getVariantConfiguration().getDirName(), "aapt", "AndroidManifest.xml");
+        return FileUtils.join(getBaseBundleDir(), "aapt", "AndroidManifest.xml");
     }
 
     @NonNull
     @Override
     public File getInstantRunManifestOutputFile() {
-        return FileUtils.join(globalScope.getIntermediatesDir(), DIR_BUNDLES,
-                getVariantConfiguration().getDirName(), "instant-run", "AndroidManifest.xml");
+        return FileUtils.join(getBaseBundleDir(), "instant-run", "AndroidManifest.xml");
     }
 
     @NonNull
@@ -852,6 +845,14 @@ public class VariantScopeImpl extends GenericVariantScopeImpl implements Variant
                 "res",
                 "microapk",
                 getVariantConfiguration().getDirName());
+    }
+
+    @NonNull
+    @Override
+    public File getBaseBundleDir() {
+        return FileUtils.join(
+                globalScope.getIntermediatesDir(),
+                DIR_BUNDLES, getVariantConfiguration().getDirName());
     }
 
     // Tasks getters/setters.

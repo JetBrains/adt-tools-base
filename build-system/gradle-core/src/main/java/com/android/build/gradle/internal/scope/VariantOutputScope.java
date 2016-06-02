@@ -140,10 +140,7 @@ public class VariantOutputScope implements TransformVariantScope {
                         "/manifests/full/"  + variantOutputData.getDirName()
                                 + "/AndroidManifest.xml");
             case LIBRARY:
-                return new File(getGlobalScope().getIntermediatesDir(),
-                        TaskManager.DIR_BUNDLES + "/"
-                                + getVariantScope().getVariantConfiguration().getDirName()
-                                + "/AndroidManifest.xml");
+                return new File(variantScope.getBaseBundleDir(), "AndroidManifest.xml");
             case ANDROID_TEST:
                 return new File(getGlobalScope().getIntermediatesDir(),
                         "manifest/" + variantScope.getVariantConfiguration().getDirName()

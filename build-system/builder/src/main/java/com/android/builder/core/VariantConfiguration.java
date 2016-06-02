@@ -2274,6 +2274,13 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
         return false;
     }
 
+    /**
+     * Returns true if the variant output is a bundle.
+     */
+    public boolean isBundled() {
+        return mType == VariantType.LIBRARY;
+    }
+
     @NonNull
     public Collection<File> getJarJarRuleFiles() {
         ImmutableList.Builder<File> jarjarRuleFiles = ImmutableList.builder();
