@@ -15,24 +15,23 @@
  */
 
 package com.android.build.gradle.internal.dependency;
+
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.internal.ConfigurationProvider;
 import com.android.builder.core.ErrorReporter;
 import com.android.builder.core.VariantType;
 import com.android.builder.dependency.DependencyContainer;
+import com.android.builder.model.SyncIssue;
 import com.google.common.base.Objects;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.Configuration;
-import org.gradle.api.artifacts.ResolvedArtifact;
+import org.gradle.api.artifacts.ResolvedConfiguration;
 
 import java.io.File;
-import java.util.Collection;
-import java.util.List;
+import java.util.Collections;
 import java.util.Set;
 
 /**
@@ -277,15 +276,33 @@ public class VariantDependencies {
     }
 
     @NonNull
-    public List<File> resolveAndGetAnnotationProcessorClassPath() {
-        Set<ResolvedArtifact> artifacts = getAnnotationProcessorConfiguration()
-                .getResolvedConfiguration().getResolvedArtifacts();
-
-        ImmutableList.Builder<File> files = ImmutableList.builder();
-        for (ResolvedArtifact artifact: artifacts) {
-            files.add(artifact.getFile());
+    public Set<File> resolveAndGetAnnotationProcessorClassPath(
+            boolean includeClasspath,
+            @NonNull ErrorReporter errorReporter) {
+        if (getAnnotationProcessorConfiguration().getAllDependencies().isEmpty()) {
+            return Collections.emptySet();
         }
-        return files.build();
+
+        if (getAnnotationProcessorConfiguration().getState() != Configuration.State.RESOLVED
+                && includeClasspath) {
+            getAnnotationProcessorConfiguration().extendsFrom(
+                    getCompileConfiguration(),
+                    getPackageConfiguration());
+        }
+        ResolvedConfiguration resolvedConfiguration =
+                getAnnotationProcessorConfiguration().getResolvedConfiguration();
+        if (resolvedConfiguration.hasError()) {
+            try {
+                resolvedConfiguration.rethrowFailure();
+            } catch (Exception e) {
+                errorReporter.handleSyncError(
+                        "annotationProcessor",
+                        SyncIssue.TYPE_UNRESOLVED_DEPENDENCY,
+                        e.getMessage());
+                return Collections.emptySet();
+            }
+        }
+        return getAnnotationProcessorConfiguration().getFiles();
     }
 
     @NonNull

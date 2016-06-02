@@ -268,16 +268,17 @@ public class JackTransform extends Transform {
         options.setOutputFile(scope.getJackClassesZip());
         options.setResourceDirectories(ImmutableList.of(scope.getJavaResourcesDestinationDir()));
 
-        List<File> annotationProcessors =
-                scope.getVariantData().getVariantDependency()
-                        .resolveAndGetAnnotationProcessorClassPath();
-        if (!annotationProcessors.isEmpty()) {
-            CoreAnnotationProcessorOptions annotationProcessorOptions =
-                    config.getJavaCompileOptions().getAnnotationProcessorOptions();
-            options.setAnnotationProcessorClassPath(annotationProcessors);
-            options.setAnnotationProcessorNames(annotationProcessorOptions.getClassNames());
-            options.setAnnotationProcessorOptions(annotationProcessorOptions.getArguments());
-        }
+        CoreAnnotationProcessorOptions annotationProcessorOptions =
+                config.getJavaCompileOptions().getAnnotationProcessorOptions();
+        checkNotNull(annotationProcessorOptions.getIncludeClasspath());
+        options.setAnnotationProcessorClassPath(
+                Lists.newArrayList(
+                        scope.getVariantData().getVariantDependency()
+                                .resolveAndGetAnnotationProcessorClassPath(
+                                        annotationProcessorOptions.getIncludeClasspath(),
+                                        androidBuilder.getErrorReporter())));
+        options.setAnnotationProcessorNames(annotationProcessorOptions.getClassNames());
+        options.setAnnotationProcessorOptions(annotationProcessorOptions.getArguments());
         options.setEcjOptionFile(scope.getJackEcjOptionsFile());
         options.setAdditionalParameters(config.getJackOptions().getAdditionalParameters());
 

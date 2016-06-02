@@ -14,25 +14,23 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.managed;
+/**
+ * Build script that uses built-in annotation processor instead of android-apt.
+ */
 
-import com.android.annotations.NonNull;
+apply from: "../commonHeader.gradle"
+buildscript { apply from: "../commonBuildScript.gradle" }
+apply plugin: 'com.android.application'
 
-import org.gradle.model.Managed;
-import org.gradle.model.ModelMap;
+apply from: "../commonLocalRepo.gradle"
 
-import java.util.List;
+android {
+    compileSdkVersion rootProject.latestCompileSdk
+    buildToolsVersion = rootProject.buildToolsVersion
+}
 
-@Managed
-public interface AnnotationProcessorOptions {
-
-    @NonNull
-    List<String> getClassNames();
-
-    @NonNull
-    ModelMap<KeyValuePair> getArguments();
-
-    @NonNull
-    Boolean getIncludeClasspath();
-    void setIncludeClasspath(Boolean includeClasspath);
+dependencies {
+    annotationProcessor 'com.google.dagger:dagger-compiler:2.0'
+    compile 'com.google.dagger:dagger:2.0'
+    provided 'javax.annotation:jsr250-api:1.0'
 }
