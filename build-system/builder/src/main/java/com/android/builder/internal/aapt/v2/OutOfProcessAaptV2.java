@@ -31,6 +31,7 @@ import com.android.ide.common.process.ProcessOutputHandler;
 import com.android.repository.Revision;
 import com.android.sdklib.BuildToolInfo;
 import com.android.sdklib.IAndroidTarget;
+import com.android.utils.FileUtils;
 import com.android.utils.ILogger;
 import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
@@ -144,7 +145,14 @@ public class OutOfProcessAaptV2 extends AbstractProcessExecutionAapt {
         if (config.getResourceOutputApk() != null) {
             builder.addArgs("-o", config.getResourceOutputApk().getAbsolutePath());
         } else {
-            throw new AaptException("No output apk defined.");
+            // FIXME: Fix when aapt 2 support not providing -o (http://b.android.com/210026)
+            try {
+                File tmpOutput = File.createTempFile("aapt-", "-out");
+                tmpOutput.deleteOnExit();
+                builder.addArgs("-o", tmpOutput.getAbsolutePath());
+            } catch (IOException e) {
+                throw new AaptException("No output apk defined and failed to create tmp file", e);
+            }
         }
 
         if (config.getProguardOutputFile()!= null) {
