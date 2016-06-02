@@ -17,8 +17,9 @@ package com.android.sdklib.repository.legacy;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.sdklib.internal.repository.ITaskMonitor;
+import com.android.sdklib.internal.repository.UserCredentials;
 import com.android.repository.api.ProgressIndicator;
-import com.android.sdklib.repository.legacy.remote.internal.ITaskMonitor;
 
 /**
  * Implementation of {@link ITaskMonitor} that wraps a {@link ProgressIndicator}, for interaction
@@ -76,7 +77,24 @@ class LegacyTaskMonitor implements ITaskMonitor {
     }
 
     @Override
+    public boolean isCancelRequested() {
+        return mWrapped.isCanceled();
+    }
+
+    @Override
     public ITaskMonitor createSubMonitor(int tickCount) {
+        // TODO: implement if necessary
+        return null;
+    }
+
+    @Override
+    public boolean displayPrompt(String title, String message) {
+        // TODO: implement if necessary
+        return false;
+    }
+
+    @Override
+    public UserCredentials displayLoginCredentialsPrompt(String title, String message) {
         // TODO: implement if necessary
         return null;
     }

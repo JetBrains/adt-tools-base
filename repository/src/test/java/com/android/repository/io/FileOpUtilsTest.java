@@ -359,7 +359,7 @@ public class FileOpUtilsTest {
         MockFileOp fop = new MockFileOp() {
             @Override
             public boolean renameTo(@NonNull File oldFile, @NonNull File newFile) {
-                if (getAgnosticAbsPath(oldFile).equals("/root/dest")) {
+                if (oldFile.equals(new File("/root/dest"))) {
                     return false;
                 }
                 return super.renameTo(oldFile, newFile);
@@ -367,7 +367,7 @@ public class FileOpUtilsTest {
 
             @Override
             public boolean delete(@NonNull File oldFile) {
-                if (getAgnosticAbsPath(oldFile.getPath()).startsWith(("/root/dest/"))) {
+                if (oldFile.getPath().startsWith(("/root/dest/"))) {
                     if (deletedSomething.compareAndSet(false, true)) {
                         return super.delete(oldFile);
                     }
@@ -391,7 +391,7 @@ public class FileOpUtilsTest {
                     new FakeProgressIndicator());
             fail("Expected exception");
         }
-        catch (IOException expected) {}
+        catch (Exception expected) {}
 
         assertTrue(deletedSomething.get());
         // Ensure nothing changed
@@ -421,8 +421,8 @@ public class FileOpUtilsTest {
 
             @Override
             public boolean renameTo(@NonNull File oldFile, @NonNull File newFile) {
-                if (getAgnosticAbsPath(oldFile.getPath()).equals("/root/src") &&
-                        getAgnosticAbsPath(newFile.getPath()).equals("/root/dest")) {
+                if (oldFile.getPath().equals("/root/src") &&
+                        newFile.getPath().equals("/root/dest")) {
                     return false;
                 }
                 return super.renameTo(oldFile, newFile);
@@ -438,7 +438,7 @@ public class FileOpUtilsTest {
                     new FakeProgressIndicator());
             fail("Expected exception");
         }
-        catch (IOException expected) {}
+        catch (Exception expected) {}
 
         // Ensure nothing changed
         assertEquals("content1", new String(fop.getContent(s1)));
@@ -493,7 +493,7 @@ public class FileOpUtilsTest {
                     progress);
             fail("Expected exception");
         }
-        catch (IOException expected) {}
+        catch (Exception expected) {}
 
         final String marker = "available at ";
         String message = progress.getWarnings().stream()
@@ -545,7 +545,7 @@ public class FileOpUtilsTest {
                     progress);
             fail("Expected exception");
         }
-        catch (IOException expected) {}
+        catch (Exception expected) {}
 
         final String marker = "available at ";
         String message = progress.getWarnings().stream()

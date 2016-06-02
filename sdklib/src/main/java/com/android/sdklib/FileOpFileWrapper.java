@@ -47,7 +47,7 @@ public class FileOpFileWrapper implements IAbstractFile, IAbstractFolder {
     public InputStream getContents() throws StreamException {
         try {
             return mFileOp.newFileInputStream(mFile);
-        } catch (IOException e) {
+        } catch (FileNotFoundException e) {
             throw new StreamException(e, this);
         }
     }
@@ -80,7 +80,7 @@ public class FileOpFileWrapper implements IAbstractFile, IAbstractFolder {
     public OutputStream getOutputStream() throws StreamException {
         try {
             return mFileOp.newFileOutputStream(mFile);
-        } catch (IOException ex) {
+        } catch (FileNotFoundException ex) {
             throw new StreamException(ex, this);
         }
     }

@@ -20,7 +20,8 @@ import com.android.annotations.Nullable;
 import com.android.repository.api.Downloader;
 import com.android.repository.api.ProgressIndicator;
 import com.android.repository.io.FileOp;
-import com.android.sdklib.repository.legacy.remote.internal.DownloadCache;
+import com.android.sdklib.internal.repository.CanceledByUserException;
+import com.android.sdklib.internal.repository.DownloadCache;
 import com.android.utils.Pair;
 import com.google.common.io.ByteStreams;
 
@@ -51,7 +52,12 @@ public class LegacyDownloader implements Downloader {
     @Nullable
     public InputStream downloadAndStream(@NonNull URL url, @NonNull ProgressIndicator indicator)
             throws IOException {
-        return mDownloadCache.openCachedUrl(url.toString(), new LegacyTaskMonitor(indicator));
+        try {
+            return mDownloadCache.openCachedUrl(url.toString(), new LegacyTaskMonitor(indicator));
+        } catch (CanceledByUserException e) {
+            indicator.logInfo("The download was cancelled.");
+        }
+        return null;
     }
 
     @Nullable
@@ -75,11 +81,15 @@ public class LegacyDownloader implements Downloader {
         }
         mFileOp.mkdirs(target.getParentFile());
         OutputStream out = mFileOp.newFileOutputStream(target);
-        Pair<InputStream, Integer> downloadedResult = mDownloadCache
-                .openDirectUrl(url.toString(), new LegacyTaskMonitor(indicator));
-        if (downloadedResult.getSecond() == 200) {
-            ByteStreams.copy(downloadedResult.getFirst(), out);
-            out.close();
+        try {
+            Pair<InputStream, Integer> downloadedResult = mDownloadCache
+                    .openDirectUrl(url.toString(), new LegacyTaskMonitor(indicator));
+            if (downloadedResult.getSecond() == 200) {
+                ByteStreams.copy(downloadedResult.getFirst(), out);
+                out.close();
+            }
+        } catch (CanceledByUserException e) {
+            indicator.logInfo("The download was cancelled.");
         }
     }
 

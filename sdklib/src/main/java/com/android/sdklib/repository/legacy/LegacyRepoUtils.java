@@ -247,7 +247,7 @@ public class LegacyRepoUtils {
                     addOnManifest.getPath(),
                     null);
 
-        } catch (IOException e) {
+        } catch (FileNotFoundException e) {
             progress.logWarning("Failed to find " + addOnManifest, e);
             return result;
         }

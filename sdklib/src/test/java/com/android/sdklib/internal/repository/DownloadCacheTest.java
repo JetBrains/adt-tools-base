@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016 The Android Open Source Project
+ * Copyright (C) 2014 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.android.sdklib.repository.legacy.remote.internal;
+package com.android.sdklib.internal.repository;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
@@ -22,6 +22,7 @@ import com.android.repository.io.FileOp;
 import com.android.repository.io.FileOpUtils;
 import com.android.repository.testframework.MockFileOp;
 import com.android.sdklib.AndroidLocationTestCase;
+import com.android.sdklib.internal.repository.DownloadCache.Strategy;
 import com.android.utils.Pair;
 import com.google.common.base.Charsets;
 
@@ -34,72 +35,26 @@ import org.apache.http.message.BasicStatusLine;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
-import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.net.URLConnection;
+import java.util.Arrays;
 import java.util.HashMap;
-import java.util.LinkedHashSet;
 import java.util.Map;
-import java.util.Set;
 
 public class DownloadCacheTest extends AndroidLocationTestCase {
 
-    private OutputStreamMockFileOp mFileOp;
+    private MockFileOp mFileOp;
     private MockMonitor mMonitor;
-
-    static class OutputStreamMockFileOp extends MockFileOp {
-        Set<File> mWrittenFiles = new LinkedHashSet<>();
-
-        @NonNull
-        @Override
-        public OutputStream newFileOutputStream(@NonNull File file, boolean append)
-                throws IOException {
-            mWrittenFiles.add(file);
-            return super.newFileOutputStream(file, append);
-        }
-
-        @NonNull
-        @Override
-        public OutputStream newFileOutputStream(@NonNull File file) throws IOException {
-            mWrittenFiles.add(file);
-            return super.newFileOutputStream(file);
-        }
-
-        @Override
-        public void reset() {
-            super.reset();
-            mWrittenFiles.clear();
-        }
-
-        public String getWrittenFiles() {
-            StringBuilder sb = new StringBuilder();
-            for (File f : mWrittenFiles) {
-                sb.append('<').append(getAgnosticAbsPath(f)).append(": ");
-                byte[] data = super.getContent(f);
-                if (data == null) {
-                    sb.append("(stream not closed properly)>");
-                } else {
-                    sb.append('\'').append(new String(data)).append("'>");
-                }
-            }
-            return sb.toString();
-        }
-
-    };
 
     /**
      * A private version of DownloadCache that never calls {@link UrlOpener}.
      */
     private static class NoDownloadCache extends DownloadCache {
 
-        private final Map<String, Pair<InputStream, Integer>> mReplies =
-            new HashMap<>();
+        private final Map<String, Pair<InputStream, HttpResponse>> mReplies =
+            new HashMap<String, Pair<InputStream,HttpResponse>>();
 
         public NoDownloadCache(@NonNull Strategy strategy) {
             super(strategy);
@@ -110,32 +65,15 @@ public class DownloadCacheTest extends AndroidLocationTestCase {
         }
 
         @Override
-        protected Pair<InputStream, URLConnection> openUrl(
+        protected Pair<InputStream, HttpResponse> openUrl(
                 @NonNull String url,
                 boolean needsMarkResetSupport,
                 @NonNull ITaskMonitor monitor,
-                @Nullable Header[] headers) throws IOException {
+                @Nullable Header[] headers) throws IOException, CanceledByUserException {
 
-            Pair<InputStream, Integer> reply = mReplies.get(url);
+            Pair<InputStream, HttpResponse> reply = mReplies.get(url);
             if (reply != null) {
-                return Pair.of(reply.getFirst(),
-                        new HttpURLConnection(new URL(url)) {
-                            @Override
-                            public void disconnect() {}
-
-                            @Override
-                            public boolean usingProxy() {
-                                return false;
-                            }
-
-                            @Override
-                            public void connect() throws IOException {}
-
-                            @Override
-                            public int getResponseCode() throws IOException {
-                                return reply.getSecond();
-                            }
-                        });
+                return reply;
             }
 
             // http-client's behavior is to return a FNF instead of 404.
@@ -148,7 +86,10 @@ public class DownloadCacheTest extends AndroidLocationTestCase {
                 is = new ByteArrayInputStream(content.getBytes(Charsets.UTF_8));
             }
 
-            Pair<InputStream, Integer> reply = Pair.of(is, httpCode);
+            ProtocolVersion p = new ProtocolVersion("HTTP", 1, 1);
+            StatusLine statusLine = new BasicStatusLine(p, httpCode, "Code " + httpCode);
+            HttpResponse httpResponse = new BasicHttpResponse(statusLine);
+            Pair<InputStream, HttpResponse> reply = Pair.of(is, httpResponse);
 
             mReplies.put(url, reply);
         }
@@ -158,7 +99,7 @@ public class DownloadCacheTest extends AndroidLocationTestCase {
     @Override
     public void setUp() throws Exception {
         super.setUp();
-        mFileOp = new OutputStreamMockFileOp();
+        mFileOp = new MockFileOp();
         mMonitor = new MockMonitor();
     }
 
@@ -174,16 +115,16 @@ public class DownloadCacheTest extends AndroidLocationTestCase {
         // difference between the various cache strategies.
 
         mFileOp.reset();
-        NoDownloadCache d1 = new NoDownloadCache(mFileOp, DownloadCache.Strategy.ONLY_CACHE);
+        NoDownloadCache d1 = new NoDownloadCache(mFileOp, Strategy.ONLY_CACHE);
         InputStream is1 = d1.openCachedUrl("http://www.example.com/download1.xml", mMonitor);
         assertNull(is1);
         assertEquals("", mMonitor.getAllCapturedLogs());
         assertTrue(mFileOp.hasRecordedExistingFolder(d1.getCacheRoot()));
-        assertEquals("", mFileOp.getWrittenFiles());
+        assertEquals("[]", Arrays.toString(mFileOp.getOutputStreams()));
 
         // HTTP-Client's behavior is to return a FNF instead of 404 so we'll try that first
         mFileOp.reset();
-        NoDownloadCache d2 = new NoDownloadCache(mFileOp, DownloadCache.Strategy.DIRECT);
+        NoDownloadCache d2 = new NoDownloadCache(mFileOp, Strategy.DIRECT);
 
         try {
             d2.openCachedUrl("http://www.example.com/download1.xml", mMonitor);
@@ -192,7 +133,7 @@ public class DownloadCacheTest extends AndroidLocationTestCase {
             assertEquals("http://www.example.com/download1.xml", e.getMessage());
         }
         assertEquals("", mMonitor.getAllCapturedLogs());
-        assertEquals("", mFileOp.getWrittenFiles());
+        assertEquals("[]", Arrays.toString(mFileOp.getOutputStreams()));
 
         // Try again but this time we'll define a 404 reply to test the rest of the code path.
         mFileOp.reset();
@@ -200,84 +141,83 @@ public class DownloadCacheTest extends AndroidLocationTestCase {
         InputStream is2 = d2.openCachedUrl("http://www.example.com/download1.xml", mMonitor);
         assertNull(is2);
         assertEquals("", mMonitor.getAllCapturedLogs());
-        assertEquals("", mFileOp.getWrittenFiles());
+        assertEquals("[]", Arrays.toString(mFileOp.getOutputStreams()));
 
         mFileOp.reset();
-        NoDownloadCache d3 = new NoDownloadCache(mFileOp, DownloadCache.Strategy.SERVE_CACHE);
+        NoDownloadCache d3 = new NoDownloadCache(mFileOp, Strategy.SERVE_CACHE);
         d3.registerResponse("http://www.example.com/download1.xml", 404, null);
         InputStream is3 = d3.openCachedUrl("http://www.example.com/download1.xml", mMonitor);
         assertNull(is3);
         assertEquals("", mMonitor.getAllCapturedLogs());
-        assertEquals("", mFileOp.getWrittenFiles());
+        assertEquals("[]", Arrays.toString(mFileOp.getOutputStreams()));
 
         mFileOp.reset();
-        NoDownloadCache d4 = new NoDownloadCache(mFileOp, DownloadCache.Strategy.FRESH_CACHE);
+        NoDownloadCache d4 = new NoDownloadCache(mFileOp, Strategy.FRESH_CACHE);
         d4.registerResponse("http://www.example.com/download1.xml", 404, null);
         InputStream is4 = d4.openCachedUrl("http://www.example.com/download1.xml", mMonitor);
         assertNull(is4);
         assertEquals("", mMonitor.getAllCapturedLogs());
-        assertEquals("", mFileOp.getWrittenFiles());
+        assertEquals("[]", Arrays.toString(mFileOp.getOutputStreams()));
     }
 
     public void testExistingResource() throws Exception {
         // The resource exists but only-cache doesn't hit the network so it will
         // fail when the resource is not cached.
         mFileOp.reset();
-        NoDownloadCache d1 = new NoDownloadCache(mFileOp, DownloadCache.Strategy.ONLY_CACHE);
+        NoDownloadCache d1 = new NoDownloadCache(mFileOp, Strategy.ONLY_CACHE);
         d1.registerResponse("http://www.example.com/download1.xml", 200, "Blah blah blah");
         InputStream is1 = d1.openCachedUrl("http://www.example.com/download1.xml", mMonitor);
         assertNull(is1);
         assertEquals("", mMonitor.getAllCapturedLogs());
         assertTrue(mFileOp.hasRecordedExistingFolder(d1.getCacheRoot()));
-        assertEquals("", mFileOp.getWrittenFiles());
+        assertEquals("[]", Arrays.toString(mFileOp.getOutputStreams()));
 
         // HTTP-Client's behavior is to return a FNF instead of 404 so we'll try that first
         mFileOp.reset();
-        NoDownloadCache d2 = new NoDownloadCache(mFileOp, DownloadCache.Strategy.DIRECT);
+        NoDownloadCache d2 = new NoDownloadCache(mFileOp, Strategy.DIRECT);
         d2.registerResponse("http://www.example.com/download1.xml", 200, "Blah blah blah");
         InputStream is2 = d2.openCachedUrl("http://www.example.com/download1.xml", mMonitor);
         assertNotNull(is2);
         assertEquals("Blah blah blah", new BufferedReader(new InputStreamReader(is2, Charsets.UTF_8)).readLine());
         assertEquals("", mMonitor.getAllCapturedLogs());
-        assertEquals("", mFileOp.getWrittenFiles());
+        assertEquals("[]", Arrays.toString(mFileOp.getOutputStreams()));
 
         mFileOp.reset();
-        NoDownloadCache d3 = new NoDownloadCache(mFileOp, DownloadCache.Strategy.SERVE_CACHE);
+        NoDownloadCache d3 = new NoDownloadCache(mFileOp, Strategy.SERVE_CACHE);
         d3.registerResponse("http://www.example.com/download1.xml", 200, "Blah blah blah");
         InputStream is3 = d3.openCachedUrl("http://www.example.com/download1.xml", mMonitor);
         assertNotNull(is3);
         assertEquals("Blah blah blah", new BufferedReader(new InputStreamReader(is3, Charsets.UTF_8)).readLine());
         assertEquals("", mMonitor.getAllCapturedLogs());
         assertEquals(
-                "<$CACHE/sdkbin-1_9b8dc757-download1_xml: 'Blah blah blah'>" +
+                "[<$CACHE/sdkbin-1_9b8dc757-download1_xml: 'Blah blah blah'>, " +
                  "<$CACHE/sdkinf-1_9b8dc757-download1_xml: '### Meta data for SDK Manager cache. Do not modify.\n" +
                   "#<creation timestamp>\n" +
                   "URL=http\\://www.example.com/download1.xml\n" +
                   "Status-Code=200\n" +
-                "'>",
-                sanitize(d3, mFileOp.getWrittenFiles()));
+                "'>]",
+                sanitize(d3, Arrays.toString(mFileOp.getOutputStreams())));
 
         mFileOp.reset();
-        NoDownloadCache d4 = new NoDownloadCache(mFileOp,
-                DownloadCache.Strategy.FRESH_CACHE);
+        NoDownloadCache d4 = new NoDownloadCache(mFileOp, Strategy.FRESH_CACHE);
         d4.registerResponse("http://www.example.com/download1.xml", 200, "Blah blah blah");
         InputStream is4 = d4.openCachedUrl("http://www.example.com/download1.xml", mMonitor);
         assertNotNull(is4);
         assertEquals("Blah blah blah", new BufferedReader(new InputStreamReader(is4, Charsets.UTF_8)).readLine());
         assertEquals("", mMonitor.getAllCapturedLogs());
         assertEquals(
-                "<$CACHE/sdkbin-1_9b8dc757-download1_xml: 'Blah blah blah'>" +
+                "[<$CACHE/sdkbin-1_9b8dc757-download1_xml: 'Blah blah blah'>, " +
                  "<$CACHE/sdkinf-1_9b8dc757-download1_xml: '### Meta data for SDK Manager cache. Do not modify.\n" +
                   "#<creation timestamp>\n" +
                   "URL=http\\://www.example.com/download1.xml\n" +
                   "Status-Code=200\n" +
-                "'>",
-                sanitize(d4, mFileOp.getWrittenFiles()));
+                "'>]",
+                sanitize(d4, Arrays.toString(mFileOp.getOutputStreams())));
     }
 
     public void testCachedResource() throws Exception {
         mFileOp.reset();
-        NoDownloadCache d1 = new NoDownloadCache(mFileOp, DownloadCache.Strategy.ONLY_CACHE);
+        NoDownloadCache d1 = new NoDownloadCache(mFileOp, Strategy.ONLY_CACHE);
         d1.registerResponse("http://www.example.com/download1.xml", 200, "This is the new content");
         mFileOp.recordExistingFile(
                 mFileOp.getAgnosticAbsPath(
@@ -285,115 +225,95 @@ public class DownloadCacheTest extends AndroidLocationTestCase {
                 123456L,
                 "This is the cached content");
         mFileOp.recordExistingFile(
-                mFileOp.getAgnosticAbsPath(
-                        FileOpUtils.append(d1.getCacheRoot(), "sdkinf-1_9b8dc757-download1_xml")),
+                mFileOp.getAgnosticAbsPath(FileOpUtils.append(d1.getCacheRoot(), "sdkinf-1_9b8dc757-download1_xml")),
                 123456L,
                 "URL=http\\://www.example.com/download1.xml\n" +
-                        "Status-Code=200\n");
+                "Status-Code=200\n");
         InputStream is1 = d1.openCachedUrl("http://www.example.com/download1.xml", mMonitor);
         // Only-cache strategy returns the value from the cache, not the actual resource.
-        assertEquals("This is the cached content",
-                new BufferedReader(new InputStreamReader(is1, Charsets.UTF_8)).readLine());
+        assertEquals("This is the cached content", new BufferedReader(new InputStreamReader(is1, Charsets.UTF_8)).readLine());
         assertEquals("", mMonitor.getAllCapturedLogs());
         assertTrue(mFileOp.hasRecordedExistingFolder(d1.getCacheRoot()));
         // The cache hasn't been modified, only read
-        assertEquals("", mFileOp.getWrittenFiles());
-    }
+        assertEquals("[]", sanitize(d1, Arrays.toString(mFileOp.getOutputStreams())));
 
-    public void testCachedResource2() throws Exception {
         // Direct ignores the cache.
         mFileOp.reset();
-        NoDownloadCache d2 = new NoDownloadCache(mFileOp, DownloadCache.Strategy.DIRECT);
+        NoDownloadCache d2 = new NoDownloadCache(mFileOp, Strategy.DIRECT);
         d2.registerResponse("http://www.example.com/download1.xml", 200, "This is the new content");
         mFileOp.recordExistingFile(
-                mFileOp.getAgnosticAbsPath(
-                        FileOpUtils.append(d2.getCacheRoot(), "sdkbin-1_9b8dc757-download1_xml")),
+                mFileOp.getAgnosticAbsPath(FileOpUtils.append(d2.getCacheRoot(), "sdkbin-1_9b8dc757-download1_xml")),
                 123456L,
                 "This is the cached content");
         mFileOp.recordExistingFile(
-                mFileOp.getAgnosticAbsPath(
-                        FileOpUtils.append(d2.getCacheRoot(), "sdkinf-1_9b8dc757-download1_xml")),
+                mFileOp.getAgnosticAbsPath(FileOpUtils.append(d2.getCacheRoot(), "sdkinf-1_9b8dc757-download1_xml")),
                 123456L,
                 "URL=http\\://www.example.com/download1.xml\n" +
-                        "Status-Code=200\n");
+                "Status-Code=200\n");
         InputStream is2 = d2.openCachedUrl("http://www.example.com/download1.xml", mMonitor);
         // Direct strategy ignores the cache.
-        assertEquals("This is the new content",
-                new BufferedReader(new InputStreamReader(is2, Charsets.UTF_8)).readLine());
+        assertEquals("This is the new content", new BufferedReader(new InputStreamReader(is2, Charsets.UTF_8)).readLine());
         assertEquals("", mMonitor.getAllCapturedLogs());
         assertTrue(mFileOp.hasRecordedExistingFolder(d2.getCacheRoot()));
         // Direct strategy doesn't update the cache.
-        assertEquals("", mFileOp.getWrittenFiles());
-    }
+        assertEquals("[]", sanitize(d2, Arrays.toString(mFileOp.getOutputStreams())));
 
-    public void testCachedResource3() throws Exception {
         // Serve-cache reads from the cache if available, ignoring its freshness (here the timestamp
         // is way older than the 10-minute freshness encoded in the DownloadCache.)
         mFileOp.reset();
-        NoDownloadCache d3 = new NoDownloadCache(mFileOp, DownloadCache.Strategy.SERVE_CACHE);
+        NoDownloadCache d3 = new NoDownloadCache(mFileOp, Strategy.SERVE_CACHE);
         d3.registerResponse("http://www.example.com/download1.xml", 200, "This is the new content");
         mFileOp.recordExistingFile(
-                mFileOp.getAgnosticAbsPath(
-                        FileOpUtils.append(d3.getCacheRoot(), "sdkbin-1_9b8dc757-download1_xml")),
+                mFileOp.getAgnosticAbsPath(FileOpUtils.append(d3.getCacheRoot(), "sdkbin-1_9b8dc757-download1_xml")),
                 123456L,
                 "This is the cached content");
         mFileOp.recordExistingFile(
-                mFileOp.getAgnosticAbsPath(
-                        FileOpUtils.append(d3.getCacheRoot(), "sdkinf-1_9b8dc757-download1_xml")),
+                mFileOp.getAgnosticAbsPath(FileOpUtils.append(d3.getCacheRoot(), "sdkinf-1_9b8dc757-download1_xml")),
                 123456L,
                 "URL=http\\://www.example.com/download1.xml\n" +
-                        "Status-Code=200\n");
+                "Status-Code=200\n");
         InputStream is3 = d3.openCachedUrl("http://www.example.com/download1.xml", mMonitor);
         // We get content from the cache.
-        assertEquals("This is the cached content",
-                new BufferedReader(new InputStreamReader(is3, Charsets.UTF_8)).readLine());
+        assertEquals("This is the cached content", new BufferedReader(new InputStreamReader(is3, Charsets.UTF_8)).readLine());
         assertEquals("", mMonitor.getAllCapturedLogs());
         assertTrue(mFileOp.hasRecordedExistingFolder(d3.getCacheRoot()));
         // Cache isn't updated since nothing fresh was read.
-        assertEquals("", mFileOp.getWrittenFiles());
-    }
+        assertEquals("[]", sanitize(d3, Arrays.toString(mFileOp.getOutputStreams())));
 
-    public void testCachedResource4() throws Exception {
         // fresh-cache reads the cache, finds it stale (here the timestamp
         // is way older than the 10-minute freshness encoded in the DownloadCache)
         // and will fetch the new resource instead and update the cache.
         mFileOp.reset();
-        NoDownloadCache d4 = new NoDownloadCache(mFileOp, DownloadCache.Strategy.FRESH_CACHE);
+        NoDownloadCache d4 = new NoDownloadCache(mFileOp, Strategy.FRESH_CACHE);
         d4.registerResponse("http://www.example.com/download1.xml", 200, "This is the new content");
         mFileOp.recordExistingFile(
-                mFileOp.getAgnosticAbsPath(
-                        FileOpUtils.append(d4.getCacheRoot(), "sdkbin-1_9b8dc757-download1_xml")),
+                mFileOp.getAgnosticAbsPath(FileOpUtils.append(d4.getCacheRoot(), "sdkbin-1_9b8dc757-download1_xml")),
                 123456L,
                 "This is the cached content");
         mFileOp.recordExistingFile(
-                mFileOp.getAgnosticAbsPath(
-                        FileOpUtils.append(d4.getCacheRoot(), "sdkinf-1_9b8dc757-download1_xml")),
+                mFileOp.getAgnosticAbsPath(FileOpUtils.append(d4.getCacheRoot(), "sdkinf-1_9b8dc757-download1_xml")),
                 123456L,
                 "URL=http\\://www.example.com/download1.xml\n" +
-                        "Status-Code=200\n");
+                "Status-Code=200\n");
         InputStream is4 = d4.openCachedUrl("http://www.example.com/download1.xml", mMonitor);
         // Cache is discarded, actual resource is returned.
-        assertEquals("This is the new content",
-                new BufferedReader(new InputStreamReader(is4, Charsets.UTF_8)).readLine());
+        assertEquals("This is the new content", new BufferedReader(new InputStreamReader(is4, Charsets.UTF_8)).readLine());
         assertEquals("", mMonitor.getAllCapturedLogs());
         assertTrue(mFileOp.hasRecordedExistingFolder(d4.getCacheRoot()));
         // Cache isn updated since something fresh was read.
         assertEquals(
-                "<$CACHE/sdkbin-1_9b8dc757-download1_xml: 'This is the new content'>" +
-                        "<$CACHE/sdkinf-1_9b8dc757-download1_xml: '### Meta data for SDK Manager cache. Do not modify.\n"
-                        +
-                        "#<creation timestamp>\n" +
-                        "URL=http\\://www.example.com/download1.xml\n" +
-                        "Status-Code=200\n" +
-                        "'>",
-                sanitize(d4, mFileOp.getWrittenFiles()));
-    }
+                "[<$CACHE/sdkbin-1_9b8dc757-download1_xml: 'This is the new content'>, " +
+                 "<$CACHE/sdkinf-1_9b8dc757-download1_xml: '### Meta data for SDK Manager cache. Do not modify.\n" +
+                  "#<creation timestamp>\n" +
+                  "URL=http\\://www.example.com/download1.xml\n" +
+                  "Status-Code=200\n" +
+                "'>]",
+                sanitize(d4, Arrays.toString(mFileOp.getOutputStreams())));
 
-    public void testCachedResource5() throws Exception {
         // fresh-cache reads the cache, finds it still valid stale (less than 10-minute old),
         // and uses the cached resource.
         mFileOp.reset();
-        NoDownloadCache d5 = new NoDownloadCache(mFileOp, DownloadCache.Strategy.FRESH_CACHE);
+        NoDownloadCache d5 = new NoDownloadCache(mFileOp, Strategy.FRESH_CACHE);
         d5.registerResponse("http://www.example.com/download1.xml", 200, "This is the new content");
         mFileOp.recordExistingFile(
                 mFileOp.getAgnosticAbsPath(FileOpUtils.append(d5.getCacheRoot(), "sdkbin-1_9b8dc757-download1_xml")),
@@ -410,7 +330,7 @@ public class DownloadCacheTest extends AndroidLocationTestCase {
         assertEquals("", mMonitor.getAllCapturedLogs());
         assertTrue(mFileOp.hasRecordedExistingFolder(d5.getCacheRoot()));
         // Cache isn't updated since nothing fresh was read.
-        assertEquals("", mFileOp.getWrittenFiles());
+        assertEquals("[]", sanitize(d5, Arrays.toString(mFileOp.getOutputStreams())));
     }
 
     // --------
@@ -428,4 +348,5 @@ public class DownloadCacheTest extends AndroidLocationTestCase {
         }
         return msg;
     }
+
 }
