@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.android.tools.pixelprobe.util;
+package com.android.tools.pixelprobe.color;
 
 import java.awt.color.ColorSpace;
 
