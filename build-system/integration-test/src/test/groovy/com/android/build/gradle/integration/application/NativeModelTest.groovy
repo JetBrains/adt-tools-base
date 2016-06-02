@@ -259,7 +259,7 @@ class NativeModelTest {
             }
             """, [cmakeLists(".")], true, 2, 7, Compiler.GCC,
                 NativeBuildSystem.CMAKE),
-        CMAKELISTS_FILE_CPP_CLANG("""
+        CMAKELISTS_ARGUMENTS("""
             apply plugin: 'com.android.application'
 
             android {
@@ -272,15 +272,14 @@ class NativeModelTest {
                 }
                 defaultConfig {
                       cmake {
-                        arguments "-DANDROID_TOOLCHAIN_NAME=arm-linux-androideabi-clang3.5"
+                        arguments "-DCMAKE_CXX_FLAGS=-DTEST_CPP_FLAG"
                         cFlags "-DTEST_C_FLAG"
-                        cppFlags "-DTEST_CPP_FLAG"
                         abiFilters "armeabi-v7a", "armeabi", "armeabi-v7a with NEON",
                             "armeabi-v7a with VFPV3", "armeabi-v6 with VFP"
                       }
                 }
             }
-            """, [cmakeLists(".")], true, 2, 5, Compiler.CLANG, NativeBuildSystem.CMAKE),
+            """, [cmakeLists(".")], true, 2, 5, Compiler.GCC, NativeBuildSystem.CMAKE),
         CMAKELISTS_FILE_C("""
             apply plugin: 'com.android.application'
 
@@ -391,7 +390,7 @@ class NativeModelTest {
                 [Config.ANDROID_MK_CUSTOM_BUILD_TYPE].toArray(),
                 [Config.CMAKELISTS_FILE_C].toArray(),
                 [Config.CMAKELISTS_FILE_CPP].toArray(),
-                [Config.CMAKELISTS_FILE_CPP_CLANG].toArray(),
+                [Config.CMAKELISTS_ARGUMENTS].toArray(),
                 [Config.CMAKELISTS_FOLDER_C].toArray(),
                 [Config.CMAKELISTS_FOLDER_CPP].toArray()
         ];

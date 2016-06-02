@@ -139,7 +139,7 @@ public class ExternalNativeBuildTaskUtils {
     /**
      * Return true if we should regenerate out-of-date JSON files.
      */
-    public static boolean shouldRegenerateOutOfDateJsons(Project project) {
+    public static boolean shouldRegenerateOutOfDateJsons(@NonNull Project project) {
         return AndroidGradleOptions.buildModelOnly(project)
                 || AndroidGradleOptions.buildModelOnlyAdvanced(project)
                 || AndroidGradleOptions.invokedFromIde(project)
@@ -154,7 +154,7 @@ public class ExternalNativeBuildTaskUtils {
         @Nullable
         public final File makeFile;
 
-        ExternalNativeBuildProjectPathResolution(
+        private ExternalNativeBuildProjectPathResolution(
                 @Nullable NativeBuildSystem buildSystem,
                 @Nullable File makeFile,
                 @Nullable String errorText) {
@@ -231,32 +231,31 @@ public class ExternalNativeBuildTaskUtils {
             @NonNull AndroidBuilder androidBuilder,
             @NonNull ProcessInfo process)
             throws ProcessException {
-        final StringBuilder all = new StringBuilder();
-        final StringBuilder info = new StringBuilder();
+        ExecuteBuildProcessLogger logger =
+                new ExecuteBuildProcessLogger(androidBuilder.getLogger());
         try {
-            androidBuilder.executeProcess(process,
-                    new LoggedProcessOutputHandler(
-                            new ExecuteBuildProcessLogger(all, info, androidBuilder.getLogger())))
+            androidBuilder.executeProcess(process, new LoggedProcessOutputHandler(logger))
                     .rethrowFailure().assertNormalExitValue();
-            return info.toString();
+            return logger.getOutput();
         } catch (ProcessException e) {
-            // In the case of error, print to STDERR so it can be seen by Android Studio and
-            // from command-line build
-            System.err.print(all.toString());
-            throw e;
+            // Also, add process output to the process exception so that it can be analyzed by
+            // caller
+            String combinedMessage = String.format("%s\n%s", e.getMessage(), logger.getOutput());
+            throw new ProcessException(combinedMessage);
         }
     }
 
     private static class ExecuteBuildProcessLogger implements ILogger {
 
-        private final StringBuilder all;
-        private final StringBuilder info;
+        private final StringBuilder output = new StringBuilder();
         private final ILogger logger;
 
-        public ExecuteBuildProcessLogger(StringBuilder all, StringBuilder info, ILogger logger) {
-            this.all = all;
-            this.info = info;
+        private ExecuteBuildProcessLogger(ILogger logger) {
             this.logger = logger;
+        }
+
+        String getOutput() {
+            return this.output.toString();
         }
 
         @Override
@@ -265,14 +264,16 @@ public class ExternalNativeBuildTaskUtils {
                 @Nullable String msgFormat,
                 Object... args) {
             if (msgFormat != null) {
-                all.append(msgFormat);
+                output.append(msgFormat);
             }
             logger.error(t, msgFormat, args);
         }
 
         @Override
         public void warning(@NonNull String msgFormat, Object... args) {
-            all.append(msgFormat);
+            // executeProcess doesn't currently output to warning. Capture it anyway. If this
+            // changes later don't want to lose information.
+            output.append(msgFormat);
             logger.warning(msgFormat, args);
         }
 
@@ -280,14 +281,15 @@ public class ExternalNativeBuildTaskUtils {
         public void info(@NonNull String msgFormat, Object... args) {
             // Cannot String.format(msgFormat, args) or printf or similar because compiler output
             // may produce msgFormat with embedded percent (%)
-            all.append(msgFormat);
-            info.append(msgFormat);
+            output.append(msgFormat);
             logger.info(msgFormat, args);
         }
 
         @Override
         public void verbose(@NonNull String msgFormat, Object... args) {
-            all.append(msgFormat);
+            // executeProcess doesn't currently output to verbose. Capture it anyway. If this
+            // changes later don't want to lose information.
+            output.append(msgFormat);
             logger.verbose(msgFormat, args);
         }
     }
