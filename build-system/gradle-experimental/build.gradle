@@ -39,6 +39,36 @@ jar.manifest.attributes("Plugin-Version": version)
 jar.manifest.attributes("Inception-Date":"${Calendar.getInstance().get(Calendar.YEAR)}:" +
         "${Calendar.getInstance().get(Calendar.MONTH)}:${Calendar.getInstance().get(Calendar.DATE)}")
 
+def generated = new File("${project.buildDir}/generated/java")
+sourceSets {
+    main {
+        java {
+            srcDir generated
+        }
+    }
+}
+
+def pluginVersion = rootProject.ext.buildVersion;
+def componentPluginVersion = rootProject.ext.experimentalVersion;
+task generateVersionConstantsJava {
+    inputs.property("pluginVersion", pluginVersion)
+    inputs.property("componentPluginVersion", componentPluginVersion)
+    ext.versionFile = new File(generated, "com/android/build/gradle/model/Version.java")
+    outputs.file(versionFile)
+}
+generateVersionConstantsJava << {
+    versionFile.parentFile.mkdirs()
+    versionFile.text = """
+package com.android.build.gradle.model;
+
+public final class Version {
+    private Version() {}
+    public static final String ANDROID_GRADLE_PLUGIN_VERSION = "$pluginVersion";
+    public static final String ANDROID_GRADLE_COMPONENT_PLUGIN_VERSION = "$componentPluginVersion";
+}
+"""
+}
+tasks.compileJava.dependsOn generateVersionConstantsJava
 
 test {
     environment("CUSTOM_REPO", rootProject.file("../out/repo"))

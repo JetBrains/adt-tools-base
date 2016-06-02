@@ -29,6 +29,7 @@ import com.android.build.gradle.model.internal.DefaultAndroidBinary;
 import com.android.build.gradle.model.internal.DefaultAndroidComponentSpec;
 import com.android.build.gradle.model.internal.DefaultAndroidLanguageSourceSet;
 import com.android.build.gradle.model.internal.DefaultJniLibsSourceSet;
+import com.android.builder.Version;
 import com.android.builder.core.BuilderConstants;
 import com.android.repository.Revision;
 import com.android.utils.StringHelper;
@@ -57,6 +58,7 @@ import org.gradle.platform.base.ComponentTypeBuilder;
 import org.gradle.platform.base.LanguageType;
 import org.gradle.platform.base.LanguageTypeBuilder;
 import org.gradle.tooling.BuildException;
+import org.gradle.tooling.UnsupportedVersionException;
 
 import java.io.File;
 import java.util.List;
@@ -80,8 +82,29 @@ public class AndroidComponentModelPlugin implements Plugin<Project> {
 
     @Override
     public void apply(Project project) {
+        checkPluginVersion();
         checkGradleVersion(project);
         project.getPlugins().apply(ComponentModelBasePlugin.class);
+    }
+
+    /**
+     * Verify the plugin version.  If a newer version of gradle plugin is applied, then builder.jar
+     * module will be resolved to a different version than the one this gradle-experimental plugin
+     * is compiled with.  Throw an error and suggest to update this plugin.
+     */
+    public static void checkPluginVersion() {
+        String actualGradlePluginVersion = Version.getAndroidGradleComponentPluginVersion();
+        if(!actualGradlePluginVersion.equals(
+                com.android.build.gradle.model.Version.ANDROID_GRADLE_COMPONENT_PLUGIN_VERSION)) {
+            throw new UnsupportedVersionException(String.format("Plugin version mismatch.  "
+                            + "'com.android.tools.build:gradle:%s' was applied, and it "
+                            + "requires 'com.android.tools.build:gradle-experimental:%s'.  Current "
+                            + "version is '%s'.  Please update to version '%s'.",
+                    Version .getAndroidGradlePluginVersion(),
+                    Version .getAndroidGradleComponentPluginVersion(),
+                    com.android.build.gradle.model.Version.ANDROID_GRADLE_COMPONENT_PLUGIN_VERSION,
+                    Version .getAndroidGradleComponentPluginVersion()));
+        }
     }
 
     private static void checkGradleVersion(Project project) {

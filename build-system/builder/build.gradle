@@ -58,10 +58,12 @@ sourceSets {
     }
 }
 
+def componentPluginVersion = rootProject.ext.experimentalVersion
 task generateVersionConstantsJava {
     inputs.property("apiVersion", apiVersion)
     inputs.property("nativeApiVersion", nativeApiVersion)
     inputs.property("version", version)
+    inputs.property("componentPluginVersion", componentPluginVersion)
     ext.versionFile = new File(generated, "com/android/builder/Version.java")
     outputs.file(versionFile)
 }
@@ -73,8 +75,17 @@ package com.android.builder;
 public final class Version {
     private Version() {}
     public static final String ANDROID_GRADLE_PLUGIN_VERSION = "$version";
+    public static final String ANDROID_GRADLE_COMPONENT_PLUGIN_VERSION = "$componentPluginVersion";
     public static final int BUILDER_MODEL_API_VERSION = $apiVersion;
     public static final int BUILDER_NATIVE_MODEL_API_VERSION = $nativeApiVersion;
+
+    // Getter method for the plugin version so that it is not inlined.
+    public static String getAndroidGradlePluginVersion() {
+        return ANDROID_GRADLE_PLUGIN_VERSION;
+    }
+    public static String getAndroidGradleComponentPluginVersion() {
+        return ANDROID_GRADLE_COMPONENT_PLUGIN_VERSION;
+    }
 }
 """
 }

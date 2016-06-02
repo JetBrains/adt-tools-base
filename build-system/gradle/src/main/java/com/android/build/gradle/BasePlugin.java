@@ -103,6 +103,7 @@ import org.gradle.api.plugins.JavaBasePlugin;
 import org.gradle.api.plugins.JavaPlugin;
 import org.gradle.api.tasks.StopExecutionException;
 import org.gradle.internal.reflect.Instantiator;
+import org.gradle.tooling.UnsupportedVersionException;
 import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry;
 
 import android.databinding.tool.DataBindingBuilder;
@@ -304,6 +305,8 @@ public abstract class BasePlugin {
 
 
     protected void apply(@NonNull Project project) {
+        checkPluginVersion();
+
         this.project = project;
         ExecutionConfigurationUtil.setThreadPoolSize(project);
         checkPathForErrors();
@@ -794,6 +797,26 @@ public abstract class BasePlugin {
             } else {
                 subProjectsById.put(id, subProject);
             }
+        }
+    }
+
+    /**
+     * Verify the plugin version.  If a newer version of gradle-experimental plugin is applied, then
+     * builder.jar module will be resolved to a different version than the one this gradle plugin is
+     * compiled with.  Throw an error and suggest to update this plugin.
+     */
+    private static void checkPluginVersion() {
+        String actualGradlePluginVersion = Version.getAndroidGradlePluginVersion();
+        if(!actualGradlePluginVersion.equals(
+                com.android.build.gradle.internal.Version.ANDROID_GRADLE_PLUGIN_VERSION)) {
+            throw new UnsupportedVersionException(String.format("Plugin version mismatch.  "
+                    + "'com.android.tools.build:gradle-experimental:%s' was applied, and it "
+                    + "requires 'com.android.tools.build:gradle:%s'.  Current version is '%s'.  "
+                    + "Please update to version '%s'.",
+                    Version .getAndroidGradleComponentPluginVersion(),
+                    Version .getAndroidGradlePluginVersion(),
+                    com.android.build.gradle.internal.Version.ANDROID_GRADLE_PLUGIN_VERSION,
+                    Version .getAndroidGradlePluginVersion()));
         }
     }
 
