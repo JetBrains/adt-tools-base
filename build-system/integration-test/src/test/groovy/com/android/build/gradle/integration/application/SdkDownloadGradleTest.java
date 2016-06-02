@@ -243,7 +243,7 @@ public class SdkDownloadGradleTest {
         assertThat(Throwables.getRootCause(result.getException()).getMessage())
                 .contains("Android SDK Platform 23");
         assertThat(Throwables.getRootCause(result.getException()).getMessage())
-                .contains("missing the following");
+                .contains("missing components");
     }
 
     @Test
@@ -262,7 +262,7 @@ public class SdkDownloadGradleTest {
         assertThat(Throwables.getRootCause(result.getException()).getMessage())
                 .contains("Google APIs");
         assertThat(Throwables.getRootCause(result.getException()).getMessage())
-                .contains("missing the following");
+                .contains("missing components");
     }
 
     @Test
@@ -281,7 +281,7 @@ public class SdkDownloadGradleTest {
         assertThat(Throwables.getRootCause(result.getException()).getMessage())
                 .contains("Android SDK Build-Tools 19.1");
         assertThat(Throwables.getRootCause(result.getException()).getMessage())
-                .contains("missing the following");
+                .contains("missing components");
     }
 
     @Test
@@ -300,7 +300,7 @@ public class SdkDownloadGradleTest {
         assertThat(Throwables.getRootCause(result.getException()).getMessage())
                 .contains("[Android SDK Build-Tools 23.0.3, Android SDK Platform 23, Google APIs]");
         assertThat(Throwables.getRootCause(result.getException()).getMessage())
-                .contains("missing the following");
+                .contains("missing components");
     }
 
     private File getPlatformFolder() {

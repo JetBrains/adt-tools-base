@@ -494,21 +494,20 @@ public class DefaultSdkLoader implements SdkLoader {
      */
     private static void checkUnlicensed(Map<RemotePackage, InstallResultType> installResults) {
         List<String> unlicensedPackages =
-                installResults.entrySet()
+                installResults
+                        .entrySet()
                         .stream()
                         .filter(p -> p.getValue() == InstallResultType.LICENSE_FAIL)
                         .map(p -> p.getKey().getDisplayName())
                         .collect(Collectors.toList());
         if (!unlicensedPackages.isEmpty()) {
             throw new IllegalStateException(
-                      "Your SDK installation is missing the following SDK components required to "
-                    + "build this project: \n"
-                    + unlicensedPackages.toString()
-                    + ".\nNormally these can be installed automatically by the build system if\n"
-                    + "you've already agreed to the license terms while running Android Studio.\n"
-                    + "However, one or more licenses required by these components has not yet\n"
-                    + "been reviewed and accepted, so to build this project, open Android Studio,\n"
-                    + "go to the SDK Manager and install these components.");
+                    "You have not accepted the license agreements of the following SDK components:\n"
+                            + unlicensedPackages.toString()
+                            + ".\nBefore building your project, you need to accept the license agreements "
+                            + "and complete the installation of the missing components using the Android Studio SDK Manager.\n"
+                            + "Alternatively, to learn how to transfer the license agreements from one "
+                            + "workstation to another, go to http://d.android.com/r/studio-ui/export-licenses.html");
         }
     }
 
