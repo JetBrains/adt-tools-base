@@ -148,16 +148,7 @@ public class ConnectedColdSwapTest {
 
         InstantRunBuildInfo coldSwapContext = InstantRunTestUtils.loadContext(instantRunModel);
 
-        if (thatUsesDalvik().matches(device.getVersion())) {
-            // No artifact should have been produced, and the verifier is marked as failed,
-            // so studio knows to then call assembleDebug.
-            assertThat(coldSwapContext.canHotswap()).named("verifier passed").isFalse();
-            assertThat(coldSwapContext.getArtifacts()).isEmpty();
-            device.uninstallPackage("com.example.helloworld");
-            return;
-        }
-
-        if (coldswapMode == ColdswapMode.MULTIAPK) {
+        if (coldswapMode == ColdswapMode.MULTIAPK || thatUsesDalvik().matches(device.getVersion())) {
             InstantRunTestUtils.doInstall(device, info.getArtifacts());
         } else {
             UpdateMode updateMode = client
