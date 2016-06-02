@@ -28,12 +28,12 @@ def cmake(cl) {
       throw new GradleException('Windwows CMake invokation is not yet supported.')
     }
     def host = os.startsWith("linux") ? "linux" : "darwin"
-    def jdkHost = os.startsWith("linux") ? "linux" : "mac"
+    def jdkHost = os.startsWith("linux") ? "linux" : "mac/Contents/Home"
 
     if (data.abis.size() == 0) {
         // Building for the host
         // TODO: Use a toolchain file to set up the compilers and flags
-        def jdk = "$rootDir/../../../prebuilts/studio/jdk/$jdkHost/Contents/Home"
+        def jdk = "$rootDir/../../../prebuilts/studio/jdk/$jdkHost"
         def flags = [
             "-DCMAKE_CXX_FLAGS=-I$jdk/include -I$jdk/include/$host",
             "-DCMAKE_C_FLAGS=-I$jdk/include -I$jdk/include/$host"
