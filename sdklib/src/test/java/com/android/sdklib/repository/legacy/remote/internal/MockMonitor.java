@@ -1,11 +1,11 @@
 /*
- * Copyright (C) 2009 The Android Open Source Project
+ * Copyright (C) 2016 The Android Open Source Project
  *
- * Licensed under the Eclipse Public License, Version 1.0 (the "License");
+ * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.eclipse.org/org/documents/epl-v10.php
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.android.sdklib.internal.repository;
+package com.android.sdklib.repository.legacy.remote.internal;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
@@ -81,22 +81,12 @@ public class MockMonitor implements ITaskMonitor {
     }
 
     @Override
-    public boolean isCancelRequested() {
-        return false;
-    }
-
-    @Override
     public void incProgress(int delta) {
     }
 
     @Override
     public int getProgress() {
         return 0;
-    }
-
-    @Override
-    public boolean displayPrompt(String title, String message) {
-        return false;
     }
 
     @Override
@@ -118,10 +108,5 @@ public class MockMonitor implements ITaskMonitor {
 
     @Override
     public void warning(@NonNull String warningFormat, Object... args) {
-    }
-
-    @Override
-    public UserCredentials displayLoginCredentialsPrompt(String title, String message) {
-        return null;
     }
 }

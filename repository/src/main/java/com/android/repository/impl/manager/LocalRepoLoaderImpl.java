@@ -285,8 +285,8 @@ public final class LocalRepoLoaderImpl implements LocalRepoLoader {
             SchemaModuleUtil.marshal(factory.generateRepository(repo),
                                      mRepoManager.getSchemaModules(), fos,
                                      mRepoManager.getResourceResolver(progress), progress);
-        } catch (FileNotFoundException e) {
-            progress.logInfo("File not found while marshalling " + packageXml
+        } catch (IOException e) {
+            progress.logInfo("Exception while marshalling " + packageXml
                     + ". Probably the SDK is read-only");
         } finally {
             if (fos != null) {
@@ -311,7 +311,7 @@ public final class LocalRepoLoaderImpl implements LocalRepoLoader {
             repo = (Repository) SchemaModuleUtil.unmarshal(mFop.newFileInputStream(packageXml),
                     mRepoManager.getSchemaModules(), mRepoManager.getResourceResolver(progress),
                     false, progress);
-        } catch (FileNotFoundException e) {
+        } catch (IOException e) {
             // This shouldn't ever happen
             progress.logError(String.format("XML file %s doesn't exist", packageXml), e);
             return null;
