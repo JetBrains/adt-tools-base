@@ -63,34 +63,21 @@ public class OutOfProcessAaptV2 extends AbstractProcessExecutionAapt {
     private final BuildToolInfo mBuildToolInfo;
 
     /**
-     * Directory where to store intermediate files.
-     */
-    @NonNull
-    private final File mIntermediateDir;
-
-    /**
      * Creates a new entry point to the original {@code aapt}.
      *
      * @param processExecutor the executor for external processes
      * @param processOutputHandler the handler to process the executed process' output
      * @param buildToolInfo the build tools to use
-     * @param intermediateDir directory where to store intermediate files
      * @param logger logger to use
      */
     public OutOfProcessAaptV2(
             @NonNull ProcessExecutor processExecutor,
             @NonNull ProcessOutputHandler processOutputHandler,
             @NonNull BuildToolInfo buildToolInfo,
-            @NonNull File intermediateDir,
             @NonNull ILogger logger) {
         super(processExecutor, processOutputHandler);
 
-        Preconditions.checkArgument(
-                intermediateDir.isDirectory(),
-                "!intermediateDir.isDirectory()");
-
         mBuildToolInfo = buildToolInfo;
-        mIntermediateDir = intermediateDir;
     }
 
     @Nullable
@@ -123,8 +110,8 @@ public class OutOfProcessAaptV2 extends AbstractProcessExecutionAapt {
             builder.addArgs("-v");
         }
 
-        File stableResourceIdsFile = new File(mIntermediateDir, "stable-resource-ids.txt");
-        // TODO: For now, we ignore this file, but as soon as aapt2 supports it, we'll use it.
+//        builder.addArgs("-f");
+//        builder.addArgs("--no-crunch");
 
         // inputs
         IAndroidTarget target = config.getAndroidTarget();
