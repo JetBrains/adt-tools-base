@@ -78,6 +78,30 @@ public class AaptTestUtils {
     }
 
     /**
+     * Obtains a PNG that can be crunched for testing.
+     *
+     * @return a PNG
+     */
+    @NonNull
+    public static File getCrunchableTestPng() {
+        File png = new File(TestUtils.getRoot("aapt"), "lorem-lena.png");
+        assertTrue(png.isFile());
+        return png;
+    }
+
+    /**
+     * Obtains a PNG that cannot be crunched for testing.
+     *
+     * @return a PNG
+     */
+    @NonNull
+    public static File getNinePatchTestPng() {
+        File png = new File(TestUtils.getRoot("aapt"), "9patch.9.png");
+        assertTrue(png.isFile());
+        return png;
+    }
+
+    /**
      * Obtains the temporary directory where output files should be placed.
      *
      * @param temporaryFolder the temporary folder where temporary files should be placed

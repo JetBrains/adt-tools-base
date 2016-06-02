@@ -143,11 +143,53 @@ public class AaptV1Test {
         assertTrue(compiled.isFile());
 
         assertTrue(
-                "originaFile.length() ["
+                "originalFile.length() ["
                         + originalFile.length()
-                        + "] >= compiled.length() ["
+                        + "] != compiled.length() ["
                         + compiled.length()
                         + "]",
-                originalFile.length() >= compiled.length());
+                originalFile.length() == compiled.length());
+    }
+
+    @Test
+    public void crunchPngIfSmaller() throws Exception {
+        Aapt aapt = makeAapt();
+
+        File originalFile = AaptTestUtils.getCrunchableTestPng();
+
+        Future<File> compiledFuture =
+                aapt.compile(originalFile, AaptTestUtils.getOutputDir(mTemporaryFolder));
+        File compiled = compiledFuture.get();
+        assertNotNull(compiled);
+        assertTrue(compiled.isFile());
+
+        assertTrue(
+                "originalFile.length() ["
+                        + originalFile.length()
+                        + "] < compiled.length() ["
+                        + compiled.length()
+                        + "]",
+                originalFile.length() > compiled.length());
+    }
+
+    @Test
+    public void ninePatchPngsAlwaysProcessedEvenIfBigger() throws Exception {
+        Aapt aapt = makeAapt();
+
+        File originalFile = AaptTestUtils.getNinePatchTestPng();
+
+        Future<File> compiledFuture =
+                aapt.compile(originalFile, AaptTestUtils.getOutputDir(mTemporaryFolder));
+        File compiled = compiledFuture.get();
+        assertNotNull(compiled);
+        assertTrue(compiled.isFile());
+
+        assertTrue(
+                "originalFile.length() ["
+                        + originalFile.length()
+                        + "] > compiled.length() ["
+                        + compiled.length()
+                        + "]",
+                originalFile.length() < compiled.length());
     }
 }
