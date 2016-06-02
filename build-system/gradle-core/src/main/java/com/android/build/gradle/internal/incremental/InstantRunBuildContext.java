@@ -19,7 +19,6 @@ package com.android.build.gradle.internal.incremental;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.ide.common.xml.XmlPrettyPrinter;
-import com.android.sdklib.AndroidVersion;
 import com.android.utils.XmlUtils;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.CaseFormat;
@@ -284,7 +283,7 @@ public class InstantRunBuildContext {
     private InstantRunPatchingPolicy patchingPolicy;
     /** Null until setApiLevel is called. */
     @Nullable
-    private AndroidVersion apiLevel = null;
+    private Integer featureLevel = null;
     private String density = null;
     private String abi = null;
     private final Build currentBuild = new Build(
@@ -345,19 +344,18 @@ public class InstantRunBuildContext {
                 || currentBuild.verifierStatus.get() == InstantRunVerifierStatus.COMPATIBLE;
     }
 
-    public void setApiLevel(@NonNull AndroidVersion apiLevel,
+    public void setApiLevel(int featureLevel,
             @Nullable String coldswapMode,
             @Nullable String targetAbi) {
-        this.apiLevel = apiLevel;
+        this.featureLevel = featureLevel;
         // cache the patching policy.
         this.patchingPolicy = InstantRunPatchingPolicy.getPatchingPolicy(
-                apiLevel, coldswapMode, targetAbi);
+                featureLevel, coldswapMode, targetAbi);
         this.abi = targetAbi;
     }
 
-    @NonNull
-    public AndroidVersion getApiLevel() {
-        return Preconditions.checkNotNull(apiLevel,
+    public int getFeatureLevel() {
+        return Preconditions.checkNotNull(featureLevel,
                 "setApiLevel should be called before any other actions.");
     }
 
@@ -644,8 +642,7 @@ public class InstantRunBuildContext {
     private void loadFromDocument(@NonNull Document document) {
         Element instantRun = document.getDocumentElement();
 
-        if (!String.valueOf(getApiLevel().getApiLevel())
-                .equals(instantRun.getAttribute(ATTR_API_LEVEL))) {
+        if (!String.valueOf(getFeatureLevel()).equals(instantRun.getAttribute(ATTR_API_LEVEL))) {
             // Don't load if we've changed api level.
             Logging.getLogger(InstantRunBuildContext.class)
                     .quiet("Instant Run: Target device API level has changed.");
@@ -794,7 +791,7 @@ public class InstantRunBuildContext {
         }
 
         currentBuild.toXml(document, instantRun);
-        instantRun.setAttribute(ATTR_API_LEVEL, String.valueOf(getApiLevel().getApiLevel()));
+        instantRun.setAttribute(ATTR_API_LEVEL, String.valueOf(getFeatureLevel()));
         if (density != null) {
             instantRun.setAttribute(ATTR_DENSITY, density);
         }

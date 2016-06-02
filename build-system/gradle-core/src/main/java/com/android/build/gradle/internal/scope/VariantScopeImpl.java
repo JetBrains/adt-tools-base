@@ -1138,27 +1138,30 @@ public class VariantScopeImpl extends GenericVariantScopeImpl implements Variant
 
         File annotationsJar = sdkHandler.getSdkLoader().getSdkInfo(LOGGER).getAnnotationsJar();
 
-        AndroidVersion targetDeviceApiLevel =
-                AndroidGradleOptions.getTargetApiLevel(getGlobalScope().getProject());
+        int targetDeviceFeatureLevel =
+                AndroidGradleOptions.getTargetFeatureLevel(getGlobalScope().getProject());
 
-        if (androidBuilderTarget.getVersion().equals(targetDeviceApiLevel)) {
+        if (androidBuilderTarget.getVersion().getFeatureLevel() == targetDeviceFeatureLevel) {
             // Compile SDK and the target device match, re-use the target that we have already
             // found earlier.
             return BootClasspathBuilder.computeFullBootClasspath(
                     androidBuilderTarget, annotationsJar);
         }
 
+        // Try treating it as a stable version
         IAndroidTarget targetToUse = getAndroidTarget(
                 sdkHandler,
-                AndroidTargetHash.getPlatformHashString(targetDeviceApiLevel));
+                AndroidTargetHash.getPlatformHashString(
+                        new AndroidVersion(targetDeviceFeatureLevel, null)));
 
+        // Otherwise try a preview version
         if (targetToUse == null) {
             // Currently AS always sets the injected api level to a number, so the target hash above
             // is something like "android-24". We failed to find it, so let's try "android-N".
-            String buildCode = SdkVersionInfo.getBuildCode(targetDeviceApiLevel.getApiLevel());
+            String buildCode = SdkVersionInfo.getBuildCode(targetDeviceFeatureLevel);
             if (buildCode != null) {
                 AndroidVersion versionFromBuildCode =
-                        new AndroidVersion(targetDeviceApiLevel.getApiLevel(), buildCode);
+                        new AndroidVersion(targetDeviceFeatureLevel - 1, buildCode);
 
                 targetToUse = getAndroidTarget(
                         sdkHandler,

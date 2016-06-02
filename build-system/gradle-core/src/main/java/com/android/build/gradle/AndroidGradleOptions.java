@@ -205,24 +205,26 @@ public class AndroidGradleOptions {
     }
 
     /**
-     * Returns the {@link AndroidVersion} for the target device.
+     * Returns the feature level for the target device.
+     *
+     * For preview versions that is the last stable version + 1.
      *
      * @param project the project being built
-     * @return a {@link AndroidVersion} for the targeted device, following the
+     * @return a the feature level for the targeted device, following the
      *         {@link AndroidProject#PROPERTY_BUILD_API} value passed by Android Studio.
      */
-    @NonNull
-    public static AndroidVersion getTargetApiLevel(@NonNull Project project) {
-        String apiVersion = getString(project, AndroidProject.PROPERTY_BUILD_API);
-        AndroidVersion version = AndroidVersion.DEFAULT;
-        if (apiVersion != null) {
-            try {
-                version = new AndroidVersion(apiVersion);
-            } catch (AndroidVersion.AndroidVersionException e) {
-                project.getLogger().warn("Wrong build target version passed ", e);
-            }
+    public static int getTargetFeatureLevel(@NonNull Project project) {
+        String featureLevelString = getString(project, AndroidProject.PROPERTY_BUILD_API);
+        if (featureLevelString == null) {
+            return AndroidVersion.DEFAULT.getFeatureLevel();
         }
-        return version;
+
+        try {
+            return Integer.parseInt(featureLevelString);
+        } catch (NumberFormatException ignore) {
+            project.getLogger().warn("Wrong build target version passed ", ignore);
+            return AndroidVersion.DEFAULT.getFeatureLevel();
+        }
     }
 
 

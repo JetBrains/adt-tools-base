@@ -211,7 +211,7 @@ public class RunGradleTasks extends BaseGradleExecutor<RunGradleTasks> {
             @NonNull OptionalCompilationStep[] flags) {
         if (androidVersion != null) {
             mArguments.add(String.format(
-                    "-Pandroid.injected.build.api=%s", androidVersion.getApiString()));
+                    "-Pandroid.injected.build.api=%s", androidVersion.getFeatureLevel()));
         }
         if (density != null) {
             mArguments.add(String.format(
