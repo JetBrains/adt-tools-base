@@ -37,7 +37,7 @@ final class PsdDecoder$LayerExtras$$ChunkIO {
         PsdDecoder.LayerProperty layerProperty;
         while (in.available() > 0) {
             layerProperty = PsdDecoder$LayerProperty$$ChunkIO.read(in, stack);
-            layerExtras.properties.put(String.valueOf(layerProperty.key), layerProperty);
+            layerExtras.properties.put(layerProperty.key, layerProperty);
         }
 
         stack.removeFirst();

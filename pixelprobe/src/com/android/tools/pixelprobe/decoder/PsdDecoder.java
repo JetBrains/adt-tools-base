@@ -22,7 +22,7 @@ import com.android.tools.chunkio.Chunked;
 import com.android.tools.pixelprobe.*;
 import com.android.tools.pixelprobe.Image;
 import com.android.tools.pixelprobe.effect.Shadow;
-import com.android.tools.pixelprobe.util.Colors;
+import com.android.tools.pixelprobe.color.Colors;
 import com.android.tools.pixelprobe.util.Images;
 import com.android.tools.pixelprobe.util.Bytes;
 import com.android.tools.pixelprobe.util.Strings;
@@ -225,7 +225,7 @@ final class PsdDecoder extends Decoder {
             LayerProperty sectionProperty = properties.get(LayerProperty.KEY_SECTION);
 
             // Assume we are decoding a bitmap (raster) layer by default
-            Layer.Type type = Layer.Type.BITMAP;
+            Layer.Type type = Layer.Type.IMAGE;
             boolean isOpen = true;
 
             // If the section property is set, the layer is either the beginning
@@ -275,7 +275,7 @@ final class PsdDecoder extends Decoder {
             switch (type) {
                 case ADJUSTMENT:
                     break;
-                case BITMAP:
+                case IMAGE:
                     decodeLayerImageData(image, layer, rawLayer, layersList.channels.get(i));
                     break;
                 case GROUP:
@@ -304,7 +304,7 @@ final class PsdDecoder extends Decoder {
 
     private static Layer.Type getLayerType(RawLayer rawLayer) {
         Map<String, LayerProperty> properties = rawLayer.extras.properties;
-        Layer.Type type = Layer.Type.BITMAP;
+        Layer.Type type = Layer.Type.IMAGE;
 
         // The type of layer can only be identified by peeking at the various
         // properties set on that layer
@@ -353,7 +353,7 @@ final class PsdDecoder extends Decoder {
         switch (type) {
             case ADJUSTMENT:
                 return "Adjustment";
-            case BITMAP:
+            case IMAGE:
                 return "Raster";
             case GROUP:
                 return "Group";
@@ -847,8 +847,10 @@ final class PsdDecoder extends Decoder {
         int channels = rawLayer.channels;
         switch (image.colorMode()) {
             case BITMAP:
-            case GRAYSCALE:
             case INDEXED:
+                // Bitmap and indexed color modes do not support layers
+                break;
+            case GRAYSCALE:
                 channels = Math.min(channels, 2);
                 break;
             case RGB:
@@ -860,7 +862,10 @@ final class PsdDecoder extends Decoder {
             case UNKNOWN:
             case NONE:
             case MULTI_CHANNEL:
+                // Unsupported
+                break;
             case DUOTONE:
+                channels = Math.min(channels, 2);
                 break;
             case LAB:
                 channels = Math.min(channels, 4);
@@ -886,13 +891,12 @@ final class PsdDecoder extends Decoder {
                     Images.decodeChannelRLE(imageData.data, offset, info.id, bitmap);
                     break;
                 case ZIP:
-                    break;
                 case ZIP_NO_PREDICTION:
                     break;
             }
         }
 
-        layer.bitmap(fixBitmap(image, bitmap));
+        layer.image(fixBitmap(image, bitmap));
     }
 
     private static BlendMode getBlendModeFromKey(String mode) {
@@ -907,35 +911,30 @@ final class PsdDecoder extends Decoder {
             .depth(header.depth);
     }
 
+    private static <T> T getBlock(ImageResources resources, int id) {
+        ImageResourceBlock block = resources.blocks.get(id);
+        //noinspection unchecked
+        return block == null ? null : (T) block.data;
+    }
+
     /**
      * Image resource blocks contain a lot of information in PSD files but not
      * all of it is interesting to us. Here we only look for the few blocks that
      * we actually care about.
      */
     private static void resolveBlocks(Image.Builder image, ImageResources resources) {
-        for (ImageResourceBlock block : resources.blocks) {
-            switch (block.id) {
-                case GuidesResourceBlock.ID:
-                    extractGuides(image, (GuidesResourceBlock) block.data);
-                    break;
-                case ThumbnailResourceBlock.ID:
-                    extractThumbnail(image, (ThumbnailResourceBlock) block.data);
-                    break;
-                case ResolutionInfoBlock.ID:
-                    // Extract dpi information, required to properly handle text
-                    extractResolution(image, (ResolutionInfoBlock) block.data);
-                    break;
-                case ColorProfileBlock.ID:
-                    extractColorProfile(image, (ColorProfileBlock) block.data);
-                    break;
-            }
-        }
+        extractGuides(image, getBlock(resources, GuidesResourceBlock.ID));
+        extractThumbnail(image, getBlock(resources, ThumbnailResourceBlock.ID));
+        extractResolution(image, getBlock(resources, ResolutionInfoBlock.ID));
+        extractColorProfile(image, getBlock(resources, ColorProfileBlock.ID));
     }
 
     /**
      * Extracts the ICC color profile embedded in the file, if any.
      */
     private static void extractColorProfile(Image.Builder image, ColorProfileBlock colorProfileBlock) {
+        if (colorProfileBlock == null) return;
+
         ICC_Profile iccProfile = ICC_Profile.getInstance(colorProfileBlock.icc);
         image.colorSpace(new ICC_ColorSpace(iccProfile));
     }
@@ -946,6 +945,8 @@ final class PsdDecoder extends Decoder {
      * unit used in text layers.
      */
     private static void extractResolution(Image.Builder image, ResolutionInfoBlock resolutionBlock) {
+        if (resolutionBlock == null) return;
+
         float hRes = Bytes.fixed16_16ToFloat(resolutionBlock.horizontalResolution);
         ResolutionUnit unit = resolutionBlock.horizontalUnit;
         if (unit == ResolutionUnit.UNKNOWN) unit = ResolutionUnit.PIXEL_PER_INCH;
@@ -964,6 +965,8 @@ final class PsdDecoder extends Decoder {
     }
 
     private static void extractThumbnail(Image.Builder image, ThumbnailResourceBlock thumbnailBlock) {
+        if (thumbnailBlock == null) return;
+
         try {
             image.thumbnail(ImageIO.read(new ByteArrayInputStream(thumbnailBlock.thumbnail)));
         } catch (IOException e) {
@@ -972,6 +975,8 @@ final class PsdDecoder extends Decoder {
     }
 
     private static void extractGuides(Image.Builder image, GuidesResourceBlock guidesBlock) {
+        if (guidesBlock == null) return;
+
         // Guides are stored in a 27.5 fixed-point format, kind of weird
         for (GuideBlock block : guidesBlock.guides) {
             Guide guide = new Guide.Builder()
@@ -998,8 +1003,10 @@ final class PsdDecoder extends Decoder {
 
         switch (image.colorMode()) {
             case BITMAP:
-            case GRAYSCALE:
             case INDEXED:
+                decodeIndexedImageData(image, psd);
+                return;
+            case GRAYSCALE:
                 channels = Math.min(channels, 1 + alphaChannel);
                 break;
             case RGB:
@@ -1011,7 +1018,10 @@ final class PsdDecoder extends Decoder {
             case UNKNOWN:
             case NONE:
             case MULTI_CHANNEL:
+                // Unsupported
+                break;
             case DUOTONE:
+                channels = Math.min(channels, 1 + alphaChannel);
                 break;
             case LAB:
                 channels = Math.min(channels, 3 + alphaChannel);
@@ -1032,12 +1042,40 @@ final class PsdDecoder extends Decoder {
                         image.colorMode(), channels, colorSpace, psd.header.depth);
                 break;
             case ZIP:
-                break;
             case ZIP_NO_PREDICTION:
                 break;
         }
 
-        image.flattenedBitmap(fixBitmap(image, bitmap));
+        image.mergedImage(fixBitmap(image, bitmap));
+    }
+
+    private static void decodeIndexedImageData(Image.Builder image, PSD psd) {
+        ColorSpace colorSpace = image.colorSpace();
+
+        UnsignedShortBlock block;
+        block = getBlock(psd.resources, UnsignedShortBlock.ID_INDEX_TABLE_COUNT);
+        int size = block == null ? 256 : block.data;
+
+        block = getBlock(psd.resources, UnsignedShortBlock.ID_INDEX_TRANSPARENCY);
+        int transparency = block == null ? -1 : block.data;
+
+        BufferedImage bitmap = null;
+        switch (psd.imageData.compression) {
+            case RAW:
+                bitmap = Images.decodeIndexedRaw(psd.imageData.data, 0, image.width(), image.height(),
+                        image.colorMode(), colorSpace, size, psd.colorData.data, transparency);
+                break;
+            case RLE:
+                int offset = image.height() * psd.header.channels * 2;
+                bitmap = Images.decodeIndexedRLE(psd.imageData.data, offset, image.width(), image.height(),
+                        image.colorMode(), colorSpace, size, psd.colorData.data, transparency);
+                break;
+            case ZIP:
+            case ZIP_NO_PREDICTION:
+                break;
+        }
+
+        image.mergedImage(bitmap);
     }
 
     private static BufferedImage fixBitmap(Image.Builder image, BufferedImage bitmap) {
@@ -1102,18 +1140,15 @@ final class PsdDecoder extends Decoder {
     }
 
     /**
-     * Only useful for indexed images.
+     * Only useful for indexed and duotone images.
      */
     @Chunked
     static final class ColorData {
         @Chunk(byteCount = 4)
         long length;
 
-        // We don't care about color data so let's skip it
-        // We should care if we supported indexed color modes
-        @SuppressWarnings("unused")
         @Chunk(dynamicByteCount = "colorData.length")
-        Void data;
+        byte[] data;
     }
 
     /**
@@ -1130,8 +1165,8 @@ final class PsdDecoder extends Decoder {
         // Specifying how many bytes we want to read upfront
         // ensures we'll be able to successfully read the rest
         // of the document
-        @Chunk(dynamicByteCount = "imageResources.length")
-        List<ImageResourceBlock> blocks;
+        @Chunk(dynamicByteCount = "imageResources.length", key = "imageResourceBlock.id")
+        Map<Integer, ImageResourceBlock> blocks;
     }
 
     /**
@@ -1171,10 +1206,26 @@ final class PsdDecoder extends Decoder {
                 @Chunk.Case(test = "imageResourceBlock.id == 0x03ED",
                         type = ResolutionInfoBlock.class),
                 @Chunk.Case(test = "imageResourceBlock.id == 0x040F",
-                        type = ColorProfileBlock.class)
+                        type = ColorProfileBlock.class),
+                @Chunk.Case(test = "imageResourceBlock.id == 0x0416",
+                        type = UnsignedShortBlock.class),
+                @Chunk.Case(test = "imageResourceBlock.id == 0x0417",
+                        type = UnsignedShortBlock.class)
             }
         )
         Object data;
+    }
+
+    /**
+     * Stores an unsigned short.
+     */
+    @Chunked
+    static final class UnsignedShortBlock {
+        static final int ID_INDEX_TABLE_COUNT = 0x0416;
+        static final int ID_INDEX_TRANSPARENCY = 0x0417;
+
+        @Chunk(byteCount = 2)
+        int data;
     }
 
     /**
@@ -1326,7 +1377,7 @@ final class PsdDecoder extends Decoder {
     /**
      * The list of layers is actually made of two lists in the PSD
      * file. First, the description and extra data for each layer
-     * (name, bounds, etc.). Then a bitmap representation for each
+     * (name, bounds, etc.). Then an image representation for each
      * layer, as a series of independently encoded channels.
      */
     @Chunked
@@ -1351,7 +1402,7 @@ final class PsdDecoder extends Decoder {
 
     /**
      * A layer contains a few static properties and a list of
-     * keyed "extras", The extras are crucial for non-bitmap
+     * keyed "extras", The extras are crucial for non-image
      * layers. They also contain layer effects (drop shadows,
      * inner glow, etc.).
      */
@@ -1594,7 +1645,7 @@ final class PsdDecoder extends Decoder {
         @Chunk
         int count;
 
-        @Chunk(dynamicSize = "descriptor.count", key = "descriptorItem.key")
+        @Chunk(dynamicSize = "descriptor.count", key = "String.valueOf(descriptorItem.key)")
         Map<String, DescriptorItem> items;
 
         @Override
@@ -2104,7 +2155,7 @@ final class PsdDecoder extends Decoder {
 
     /**
      * Extremely important: this section gives us the number of bytes
-     * used to encode the bitmap data of each channel in a given layer.
+     * used to encode the image data of each channel in a given layer.
      */
     @Chunked
     static final class ChannelInformation {

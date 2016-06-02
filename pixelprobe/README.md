@@ -9,8 +9,8 @@ The currently supported image formats are:
 
 # Generated source
 
-The `generated` directory contains source code generated using the chunkio-processor
+The `generated` directory contains source code generated using the `chunkio-processor`
 annotation processor. This code is generated from the annotations provided by the
-chunkio support library.
+`chunkio` support library.
 
-Changing the implementation of PSDDecoder requires regeneration of this source code.
+Changing the implementation of `PsdDecoder` requires regeneration of this source code.

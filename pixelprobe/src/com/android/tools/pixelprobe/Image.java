@@ -44,8 +44,8 @@ public class Image {
     private final float horizontalResolution;
     private final float verticalResolution;
 
-    private final BufferedImage flattenedBitmap;
-    private final BufferedImage thumbnailBitmap;
+    private final BufferedImage mergedImage;
+    private final BufferedImage thumbnail;
 
     private final List<Guide> guides;
     private final List<Layer> layers;
@@ -60,8 +60,8 @@ public class Image {
         horizontalResolution = builder.horizontalResolution;
         verticalResolution = builder.verticalResolution;
 
-        flattenedBitmap = builder.flattenedBitmap;
-        thumbnailBitmap = builder.thumbnailBitmap;
+        mergedImage = builder.mergedImage;
+        thumbnail = builder.thumbnail;
 
         guides = Lists.immutableCopy(builder.guides);
         layers = Lists.immutableCopy(builder.layers);
@@ -111,7 +111,9 @@ public class Image {
     }
 
     /**
-     * Returns the color space of this image.
+     * Returns the color space of this image. This color space may be
+     * different than the color space attached to the merged image or
+     * layer images.
      */
     public ColorSpace getColorSpace() {
         return colorSpace;
@@ -119,21 +121,21 @@ public class Image {
 
     /**
      * Returns a flattened (or merged or composited) version of the image
-     * as a bitmap. For images without layers, this is the actual image data.
-     * Make sure to check the color model and/or color space of this image
-     * before using it in high performance code paths. The color model/color
-     * space might not be suitable for direct rendering.
+     * as a renderable image. For images without layers, this is the actual
+     * image data. Make sure to check the color model and/or color space of
+     * this image before using it in high performance code paths. The color
+     * model/color space might not be suitable for direct rendering.
      */
-    public BufferedImage getFlattenedBitmap() {
-        return flattenedBitmap;
+    public BufferedImage getMergedImage() {
+        return mergedImage;
     }
 
     /**
      * Returns a thumbnail for this image, if present. The returned value
      * might be null if no thumbnail was found in the original source.
      */
-    public BufferedImage getThumbnailBitmap() {
-        return thumbnailBitmap;
+    public BufferedImage getThumbnailImage() {
+        return thumbnail;
     }
 
     /**
@@ -160,8 +162,8 @@ public class Image {
         float horizontalResolution = 96.0f;
         float verticalResolution = 96.0f;
 
-        BufferedImage flattenedBitmap;
-        BufferedImage thumbnailBitmap;
+        BufferedImage mergedImage;
+        BufferedImage thumbnail;
 
         final List<Guide> guides = new ArrayList<>();
         final List<Layer> layers = new ArrayList<>();
@@ -194,8 +196,8 @@ public class Image {
             return colorMode;
         }
 
-        public Builder flattenedBitmap(BufferedImage flattenedBitmap) {
-            this.flattenedBitmap = flattenedBitmap;
+        public Builder mergedImage(BufferedImage mergedImage) {
+            this.mergedImage = mergedImage;
             return this;
         }
 
@@ -222,7 +224,7 @@ public class Image {
         }
 
         public Builder thumbnail(BufferedImage thumbnail) {
-            this.thumbnailBitmap = thumbnail;
+            this.thumbnail = thumbnail;
             return this;
         }
 
@@ -256,7 +258,7 @@ public class Image {
                ", colorMode=" + colorMode +
                ", guides=" + guides.size() +
                ", layers=" + layers.size() +
-               ", hasThumbnail=" + (thumbnailBitmap != null) +
+               ", hasThumbnail=" + (thumbnail != null) +
                '}';
     }
 }

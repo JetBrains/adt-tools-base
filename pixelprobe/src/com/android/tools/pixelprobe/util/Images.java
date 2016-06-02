@@ -17,6 +17,8 @@
 package com.android.tools.pixelprobe.util;
 
 import com.android.tools.pixelprobe.ColorMode;
+import com.android.tools.pixelprobe.color.Colors;
+import com.android.tools.pixelprobe.color.CsIndexColorModel;
 
 import java.awt.*;
 import java.awt.color.ColorSpace;
@@ -54,6 +56,12 @@ public final class Images {
      * Creates a new BufferedImage with the specified width and height.
      * The type of the BufferedImage depends on the number of channels.
      *
+     * This method does not support indexed color modes
+     * ({@link ColorMode#INDEXED} or {@link ColorMode#BITMAP}).
+     * Use {@link #decodeIndexedRaw(byte[], int, int, int, ColorMode, ColorSpace, int, byte[], int)}
+     * and {@link #decodeIndexedRLE(byte[], int, int, int, ColorMode, ColorSpace, int, byte[], int)}
+     * to create and decode indexed images.
+     *
      * @param width The bitmap's width
      * @param height The bitmap's height
      * @param colorMode The bitmap's source color mode
@@ -72,38 +80,51 @@ public final class Images {
 
         switch (type) {
             case INT_RGB:
-                if (colorSpace == null) colorSpace = ColorSpace.getInstance(ColorSpace.CS_sRGB);
+                if (colorSpace == null || colorSpace.getType() != ColorSpace.TYPE_RGB) {
+                    colorSpace = ColorSpace.getInstance(ColorSpace.CS_sRGB);
+                }
                 colorModel = new DirectColorModel(colorSpace, 24,
                         0x00ff0000, 0x0000ff00, 0x000000ff, 0x0, false, getTransferType(24));
                 raster = colorModel.createCompatibleWritableRaster(width, height);
                 break;
             case INT_ALPHA_RGB:
-                if (colorSpace == null) colorSpace = ColorSpace.getInstance(ColorSpace.CS_sRGB);
+                if (colorSpace == null || colorSpace.getType() != ColorSpace.TYPE_RGB) {
+                    colorSpace = ColorSpace.getInstance(ColorSpace.CS_sRGB);
+                }
                 colorModel = new DirectColorModel(colorSpace, 32,
                         0x00ff0000, 0x0000ff00, 0x000000ff, 0xff000000, false, getTransferType(32));
                 raster = colorModel.createCompatibleWritableRaster(width, height);
                 break;
             case BYTE_GRAY:
-                if (colorSpace == null) colorSpace = ColorSpace.getInstance(ColorSpace.CS_GRAY);
+                if (colorSpace == null || colorSpace.getType() != ColorSpace.TYPE_GRAY) {
+                    colorSpace = ColorSpace.getInstance(ColorSpace.CS_GRAY);
+                }
                 colorModel = new ComponentColorModel(colorSpace, new int[] { 8 }, false, false,
                         Transparency.OPAQUE, DataBuffer.TYPE_BYTE);
                 raster = colorModel.createCompatibleWritableRaster(width, height);
                 break;
             case BYTE_ALPHA_GRAY:
-                if (colorSpace == null) colorSpace = ColorSpace.getInstance(ColorSpace.CS_GRAY);
+                if (colorSpace == null || colorSpace.getType() != ColorSpace.TYPE_GRAY) {
+                    colorSpace = ColorSpace.getInstance(ColorSpace.CS_GRAY);
+                }
                 colorModel = new ComponentColorModel(colorSpace, new int[] { 8, 8 }, true, false,
                         Transparency.TRANSLUCENT, DataBuffer.TYPE_BYTE);
                 raster = colorModel.createCompatibleWritableRaster(width, height);
                 break;
             case BYTE_CMYK:
-                if (colorSpace == null) colorSpace = Colors.getCmykColorSpace();
+                if (colorSpace == null || colorSpace.getType() != ColorSpace.TYPE_CMYK) {
+                    colorSpace = Colors.getCmykColorSpace();
+                }
                 colorModel = new ComponentColorModel(colorSpace, new int[] { 8, 8, 8, 8 },
                         false, false, Transparency.OPAQUE, DataBuffer.TYPE_BYTE);
                 raster = Raster.createInterleavedRaster(DataBuffer.TYPE_BYTE,
                         width, height, width * 4, 4, new int[] { 0, 1, 2, 3 }, null);
                 break;
             case BYTE_ALPHA_CMYK:
-                if (colorSpace == null) colorSpace = Colors.getCmykColorSpace();
+                if (colorSpace == null || colorSpace.getType() != ColorSpace.TYPE_CMYK) {
+                    colorSpace = Colors.getCmykColorSpace();
+                }
+
                 colorModel = new ComponentColorModel(colorSpace, new int[] { 8, 8, 8, 8, 8 },
                         true, false, Transparency.TRANSLUCENT, DataBuffer.TYPE_BYTE);
                 raster = Raster.createInterleavedRaster(DataBuffer.TYPE_BYTE,
@@ -128,25 +149,33 @@ public final class Images {
                         width, height, width * 4, 4, new int[] { 0, 1, 2, 3 }, null);
                 break;
             case FLOAT_RGB:
-                if (colorSpace == null) colorSpace = ColorSpace.getInstance(ColorSpace.CS_sRGB);
+                if (colorSpace == null || colorSpace.getType() != ColorSpace.TYPE_RGB) {
+                    colorSpace = ColorSpace.getInstance(ColorSpace.CS_sRGB);
+                }
                 colorModel = new ComponentColorModel(colorSpace, new int[] { 32, 32, 32 },
                         false, false, Transparency.OPAQUE, DataBuffer.TYPE_FLOAT);
                 raster = colorModel.createCompatibleWritableRaster(width, height);
                 break;
             case FLOAT_ALPHA_RGB:
-                if (colorSpace == null) colorSpace = ColorSpace.getInstance(ColorSpace.CS_sRGB);
+                if (colorSpace == null || colorSpace.getType() != ColorSpace.TYPE_RGB) {
+                    colorSpace = ColorSpace.getInstance(ColorSpace.CS_sRGB);
+                }
                 colorModel = new ComponentColorModel(colorSpace, new int[] { 32, 32, 32, 32 },
                         true, false, Transparency.TRANSLUCENT, DataBuffer.TYPE_FLOAT);
                 raster = colorModel.createCompatibleWritableRaster(width, height);
                 break;
             case FLOAT_GRAY:
-                if (colorSpace == null) colorSpace = ColorSpace.getInstance(ColorSpace.CS_GRAY);
+                if (colorSpace == null || colorSpace.getType() != ColorSpace.TYPE_GRAY) {
+                    colorSpace = ColorSpace.getInstance(ColorSpace.CS_GRAY);
+                }
                 colorModel = new ComponentColorModel(colorSpace, new int[] { 32 }, false, false,
                         Transparency.OPAQUE, DataBuffer.TYPE_FLOAT);
                 raster = colorModel.createCompatibleWritableRaster(width, height);
                 break;
             case FLOAT_ALPHA_GRAY:
-                if (colorSpace == null) colorSpace = ColorSpace.getInstance(ColorSpace.CS_GRAY);
+                if (colorSpace == null || colorSpace.getType() != ColorSpace.TYPE_GRAY) {
+                    colorSpace = ColorSpace.getInstance(ColorSpace.CS_GRAY);
+                }
                 colorModel = new ComponentColorModel(colorSpace, new int[] { 32, 32 }, true, false,
                         Transparency.TRANSLUCENT, DataBuffer.TYPE_FLOAT);
                 raster = colorModel.createCompatibleWritableRaster(width, height);
@@ -238,30 +267,7 @@ public final class Images {
         int height = image.getHeight();
 
         int band = getBand(channel, image.getColorModel());
-
-        int pos = offset;
-        for (int y = 0; y < height; y++) {
-            int x = 0;
-            while (x < width) {
-                byte packetInfo = data[pos++];
-                if (packetInfo < 0) {
-                    // When packet info is negative, the following byte
-                    // must be repeated (-packetInfo + 1) times
-                    int runCount = -packetInfo + 1;
-                    int value = data[pos++] & 0xff;
-                    for (int i = 0; i < runCount; i++, x++) {
-                        raster.setSample(x, y, band, value);
-                    }
-                } else {
-                    // The packet info is positive, we need to read
-                    // the next packetInfo+1 bytes individually
-                    int runCount = packetInfo + 1;
-                    for (int i = 0; i < runCount; i++, x++) {
-                        raster.setSample(x, y, band, data[pos++] & 0xff);
-                    }
-                }
-            }
-        }
+        decodeRLEChannel(data, offset, width, height, raster, band);
     }
 
     /**
@@ -284,26 +290,8 @@ public final class Images {
         BufferedImage image = create(width, height, colorMode, channels, colorSpace, depth);
         WritableRaster raster = image.getRaster();
 
-        int pos = offset;
         for (int c = 0; c < channels; c++) {
-            for (int y = 0; y < height; y++) {
-                int x = 0;
-                while (x < width) {
-                    byte packetInfo = data[pos++];
-                    if (packetInfo < 0) {
-                        int runCount = -packetInfo + 1;
-                        int value = data[pos++] & 0xff;
-                        for (int i = 0; i < runCount; i++, x++) {
-                            raster.setSample(x, y, c, value);
-                        }
-                    } else {
-                        int runCount = packetInfo + 1;
-                        for (int i = 0; i < runCount; i++, x++) {
-                            raster.setSample(x, y, c, data[pos++] & 0xff);
-                        }
-                    }
-                }
-            }
+            offset += decodeRLEChannel(data, offset, width, height, raster, c);
         }
 
         return image;
@@ -331,17 +319,126 @@ public final class Images {
      * @param image The destination image
      * @param depth The number of bits per channel, must be 8, 16 or 32
      */
-    public static void decodeChannelRaw(byte[] data, int offset, int channel,
-            BufferedImage image, int depth) {
-
-        WritableRaster raster = image.getRaster();
+    public static void decodeChannelRaw(byte[] data, int offset, int channel, BufferedImage image, int depth) {
 
         int width = image.getWidth();
         int height = image.getHeight();
-
         int band = getBand(channel, image.getColorModel());
-        int pos = offset;
 
+        decodeRAWChannel(data, offset, width, height, depth, image, band);
+    }
+
+    /**
+     * Decodes the supplied byte array as a planar, RAW encoded bitmap.
+     *
+     * @param data The source data
+     * @param offset Start offset of the data to decode in the byte array
+     * @param width Width of the image to decode
+     * @param height Height of the image to decode
+     * @param colorMode The image's source color mode
+     * @param channels Number of channels to decode
+     * @param colorSpace The image's source color space
+     * @param depth Bit-depth of each channel, must be 8, 16 or 32
+     *
+     * @return A BufferedImage instance, never null
+     */
+    public static BufferedImage decodeRaw(byte[] data, int offset, int width, int height,
+            ColorMode colorMode, int channels, ColorSpace colorSpace, int depth) {
+
+        BufferedImage image = create(width, height, colorMode, channels, colorSpace, depth);
+        for (int c = 0; c < channels; c++) {
+            offset += decodeRAWChannel(data, offset, width, height, depth, image, c);
+        }
+
+        return image;
+    }
+
+    private static boolean shouldCompress(ColorSpace colorSpace) {
+        // Couldn't get 16 bit CMYK images to work so let's turn them into 8 bit images
+        // We also want to compress Lab images to keep the CIELAB ColorSpace implementation
+        // working in the regular Lab ranges instead of 0..1
+        int type = colorSpace.getType();
+        return type == ColorSpace.TYPE_CMYK || type == ColorSpace.TYPE_Lab;
+    }
+
+    /**
+     * Decodes the supplied byte array as an indexed, RAW encoded bitmap.
+     *
+     * @param data The source data
+     * @param offset Start offset of the data to decode in the byte array
+     * @param width Width of the image to decode
+     * @param height Height of the image to decode
+     * @param colorMode The image's source color mode
+     * @param colorSpace The image's source color space
+     * @param size Size of the index map
+     * @param map Color map in RGB planar mode
+     * @param transparency Index of the transparency color in the map,
+     *                     -1 if no transparency
+     *
+     * @return A BufferedImage instance, never null
+     */
+    public static BufferedImage decodeIndexedRaw(byte[] data, int offset, int width, int height,
+            ColorMode colorMode, ColorSpace colorSpace, int size, byte[] map, int transparency) {
+
+        if (colorSpace == null) colorSpace = ColorSpace.getInstance(ColorSpace.CS_sRGB);
+        ColorModel colorModel = CsIndexColorModel.create(size, map, transparency, colorSpace);
+        WritableRaster raster = colorModel.createCompatibleWritableRaster(width, height);
+
+        //noinspection UndesirableClassUsage
+        BufferedImage image = new BufferedImage(colorModel, raster, colorModel.isAlphaPremultiplied(), null);
+
+        int pos = offset;
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                raster.setSample(x, y, 0, data[pos++] & 0xff);
+            }
+        }
+
+        return image;
+    }
+
+    /**
+     Decodes the supplied byte array as an indexed, RLE encoded bitmap.
+     *
+     * @param data The source data
+     * @param offset Start offset of the data to decode in the byte array
+     * @param width Width of the image to decode
+     * @param height Height of the image to decode
+     * @param colorMode The image's source color mode
+     * @param colorSpace The image's source color space
+     * @param size Size of the index map
+     * @param map Color map in RGB planar mode
+     * @param transparency Index of the transparency color in the map,
+     *                     -1 if no transparency
+     *
+     * @return A BufferedImage instance, never null
+     */
+    public static BufferedImage decodeIndexedRLE(byte[] data, int offset, int width, int height,
+            ColorMode colorMode, ColorSpace colorSpace, int size, byte[] map, int transparency) {
+
+        if (colorSpace == null) colorSpace = ColorSpace.getInstance(ColorSpace.CS_sRGB);
+        ColorModel colorModel = CsIndexColorModel.create(size, map, transparency, colorSpace);
+        WritableRaster raster = colorModel.createCompatibleWritableRaster(width, height);
+
+        //noinspection UndesirableClassUsage
+        BufferedImage image = new BufferedImage(colorModel, raster, colorModel.isAlphaPremultiplied(), null);
+
+        decodeRLEChannel(data, offset, width, height, raster, 0);
+
+        return image;
+    }
+
+    /**
+     * Decodes a RAW channel at the specified offset in the data byte array.
+     *
+     * @return Returns the number of bytes read from the array
+     */
+    private static int decodeRAWChannel(byte[] data, int offset, int width, int height, int depth,
+                BufferedImage image, int band) {
+
+        WritableRaster raster = image.getRaster();
+
+        int pos = offset;
         switch (depth) {
             case 8: {
                 for (int y = 0; y < height; y++) {
@@ -374,7 +471,7 @@ public final class Images {
                     for (int x = 0; x < width; x++) {
                         int d = ((data[pos++] & 0xff) << 24) |
                                 ((data[pos++] & 0xff) << 16) |
-                                ((data[pos++] & 0xff) << 8) |
+                                ((data[pos++] & 0xff) <<  8) |
                                 ((data[pos++] & 0xff));
                         // TODO: apply the proper tone mapping curve
                         raster.setSample(x, y, band, Colors.toneMappingACES(Float.intBitsToFloat(d)));
@@ -383,94 +480,46 @@ public final class Images {
                 break;
             }
         }
+        return pos - offset;
     }
 
     /**
-     * Decodes the supplied byte array as a planar, RAW encoded bitmap.
+     * Decodes an RLE channel at the specified offset in the data byte array.
      *
-     * @param data The source data
-     * @param offset Start offset of the data to decode in the byte array
-     * @param width Width of the image to decode
-     * @param height Height of the image to decode
-     * @param colorMode The image's source color mode
-     * @param channels Number of channels to decode
-     * @param colorSpace The image's source color space
-     * @param depth Bit-depth of each channel, must be 8, 16 or 32
-     *
-     * @return A BufferedImage instance, never null
+     * @return The number of bytes read from the array
      */
-    public static BufferedImage decodeRaw(byte[] data, int offset, int width, int height,
-            ColorMode colorMode, int channels, ColorSpace colorSpace, int depth) {
+    private static int decodeRLEChannel(byte[] data, int offset, int width, int height,
+            WritableRaster raster, int band) {
 
         int pos = offset;
-
-        BufferedImage image = create(width, height, colorMode, channels, colorSpace, depth);
-        WritableRaster raster = image.getRaster();
-
-        switch (depth) {
-            case 8: {
-                for (int c = 0; c < channels; c++) {
-                    for (int y = 0; y < height; y++) {
-                        for (int x = 0; x < width; x++) {
-                            raster.setSample(x, y, c, data[pos++] & 0xff);
-                        }
-                    }
-                }
-                break;
-            }
-            case 16: {
-                if (shouldCompress(image.getColorModel().getColorSpace())) {
-                    for (int c = 0; c < channels; c++) {
-                        for (int y = 0; y < height; y++) {
-                            for (int x = 0; x < width; x++) {
-                                int d = (data[pos++] & 0xff) << 8 | (data[pos++] & 0xff);
-                                raster.setSample(x, y, c, ((int) (d / 65535.0f * 255.0f) & 0xff));
-                            }
-                        }
+        for (int y = 0; y < height; y++) {
+            int x = 0;
+            while (x < width) {
+                byte packetInfo = data[pos++];
+                if (packetInfo < 0) {
+                    // When packet info is negative, the following byte
+                    // must be repeated (-packetInfo + 1) times
+                    int runCount = -packetInfo + 1;
+                    int value = data[pos++] & 0xff;
+                    for (int i = 0; i < runCount; i++, x++) {
+                        raster.setSample(x, y, band, value);
                     }
                 } else {
-                    for (int c = 0; c < channels; c++) {
-                        for (int y = 0; y < height; y++) {
-                            for (int x = 0; x < width; x++) {
-                                int d = (data[pos++] & 0xff) << 8 | (data[pos++] & 0xff);
-                                raster.setSample(x, y, c, d / 65535.0f);
-                            }
-                        }
+                    // The packet info is positive, we need to read
+                    // the next packetInfo+1 bytes individually
+                    int runCount = packetInfo + 1;
+                    for (int i = 0; i < runCount; i++, x++) {
+                        raster.setSample(x, y, band, data[pos++] & 0xff);
                     }
                 }
-                break;
-            }
-            case 32: {
-                for (int c = 0; c < channels; c++) {
-                    for (int y = 0; y < height; y++) {
-                        for (int x = 0; x < width; x++) {
-                            int d = ((data[pos++] & 0xff) << 24) |
-                                    ((data[pos++] & 0xff) << 16) |
-                                    ((data[pos++] & 0xff) << 8) |
-                                    ((data[pos++] & 0xff));
-                            // TODO: apply the proper tone mapping curve
-                            raster.setSample(x, y, c, Colors.toneMappingACES(Float.intBitsToFloat(d)));
-                        }
-                    }
-                }
-                break;
             }
         }
-
-        return image;
-    }
-
-    private static boolean shouldCompress(ColorSpace colorSpace) {
-        // Couldn't get 16 bit CMYK images to work so let's turn them into 8 bit images
-        // We also want to compress Lab images to keep the CIELAB ColorSpace implementation
-        // working in the regular Lab ranges instead of 0..1
-        int type = colorSpace.getType();
-        return type == ColorSpace.TYPE_CMYK || type == ColorSpace.TYPE_Lab;
+        return pos - offset;
     }
 
     /**
      * Returns the BufferedImage band that corresponds to a given channel index.
-     * @param channel The channel index, must be -1, 0, 1, 2 or 3
+     * @param channel The channel index, must be -1, 0, 1, 2, 3 or 4
      * @param colorModel The color model the channel belongs to
      */
     private static int getBand(int channel, ColorModel colorModel) {
@@ -496,6 +545,7 @@ public final class Images {
     private static Type getImageType(int channels, ColorMode colorMode, int depth) {
         switch (colorMode) {
             case BITMAP:
+                // Bitmap images are handled in a different code path
                 break;
             case GRAYSCALE:
                 switch (channels) {
@@ -504,6 +554,7 @@ public final class Images {
                 }
                 throw new IllegalArgumentException("The Grayscale channels count must be 1 or 2");
             case INDEXED:
+                // Indexed images are handled in a different code path
                 break;
             case RGB:
                 switch (channels) {
@@ -520,9 +571,14 @@ public final class Images {
             case UNKNOWN:
             case NONE:
             case MULTI_CHANNEL:
+                // Unsupported
                 break;
             case DUOTONE:
-                break;
+                switch (channels) {
+                    case 1: return Type.BYTE_GRAY;
+                    case 2: return Type.BYTE_ALPHA_GRAY;
+                }
+                throw new IllegalArgumentException("The Duotone channels count must be 1 or 2");
             case LAB:
                 switch (channels) {
                     case 3: return Type.BYTE_LAB;

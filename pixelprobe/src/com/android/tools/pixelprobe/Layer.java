@@ -42,7 +42,7 @@ public final class Layer {
 
     private final List<Layer> children;
 
-    private final BufferedImage bitmap;
+    private final BufferedImage image;
 
     private final Path2D path;
     private final Color pathColor;
@@ -64,7 +64,7 @@ public final class Layer {
         /**
          * Bitmap or raster layer. Only contains raw pixels.
          */
-        BITMAP,
+        IMAGE,
         /**
          * Contains children layers but does not hold data.
          */
@@ -90,7 +90,7 @@ public final class Layer {
 
         children = Lists.immutableCopy(builder.children);
 
-        bitmap = builder.bitmap;
+        image = builder.image;
 
         path = builder.path;
         pathColor = builder.pathColor;
@@ -154,14 +154,14 @@ public final class Layer {
     }
 
     /**
-     * Returns this layer's bitmap representation for {@link Type#BITMAP} layers.
+     * Returns this layer's image representation for {@link Type#IMAGE} layers.
      * Can be null if the bounds are empty. Make sure to check the color model
      * and/or color space of this image before using it in high performance code
      * paths. The color model/color space might not be suitable for direct
      * rendering.
      */
-    public BufferedImage getBitmap() {
-        return bitmap;
+    public BufferedImage getImage() {
+        return image;
     }
 
     /**
@@ -216,7 +216,7 @@ public final class Layer {
 
         private final List<Layer> children = new ArrayList<>();
 
-        private BufferedImage bitmap;
+        private BufferedImage image;
 
         private Path2D path;
         private Color pathColor = Color.WHITE;
@@ -256,8 +256,8 @@ public final class Layer {
             return this;
         }
 
-        public Builder bitmap(BufferedImage image) {
-            bitmap = image;
+        public Builder image(BufferedImage image) {
+            this.image = image;
             return this;
         }
 

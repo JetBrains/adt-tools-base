@@ -2,7 +2,7 @@ package com.android.tools.pixelprobe.decoder;
 
 import com.android.tools.chunkio.RangedInputStream;
 import java.io.IOException;
-import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedList;
 
 final class PsdDecoder$ImageResources$$ChunkIO {
@@ -14,13 +14,13 @@ final class PsdDecoder$ImageResources$$ChunkIO {
         long byteCount = 0;
 
         imageResources.length = in.readInt() & 0xffffffffL;
-        imageResources.blocks = new ArrayList<PsdDecoder.ImageResourceBlock>();
+        imageResources.blocks = new HashMap<Integer, PsdDecoder.ImageResourceBlock>();
         byteCount = imageResources.length;
         in.pushRange(byteCount);
         PsdDecoder.ImageResourceBlock imageResourceBlock;
         while (in.available() > 0) {
             imageResourceBlock = PsdDecoder$ImageResourceBlock$$ChunkIO.read(in, stack);
-            imageResources.blocks.add(imageResourceBlock);
+            imageResources.blocks.put(imageResourceBlock.id, imageResourceBlock);
         }
         in.popRange();
 
