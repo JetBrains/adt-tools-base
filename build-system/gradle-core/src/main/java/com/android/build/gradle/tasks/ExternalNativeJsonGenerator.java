@@ -28,6 +28,7 @@ import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.builder.core.AndroidBuilder;
+import com.android.builder.model.SyncIssue;
 import com.android.ide.common.process.ProcessException;
 import com.android.ide.common.process.ProcessInfoBuilder;
 import com.android.utils.FileUtils;
@@ -52,6 +53,7 @@ import java.util.Set;
  * Base class for generation of native JSON.
  */
 public abstract class ExternalNativeJsonGenerator {
+
     @NonNull
     final String variantName;
     @NonNull
@@ -123,7 +125,7 @@ public abstract class ExternalNativeJsonGenerator {
     /**
      * Check whether the given JSON file should be regenerated.
      */
-    public static boolean shouldRebuildJson(@NonNull File json, @NonNull String groupName)
+    private static boolean shouldRebuildJson(@NonNull File json, @NonNull String groupName)
             throws IOException {
         if (!json.exists()) {
             // deciding that JSON file should be rebuilt because it doesn't exist
@@ -155,11 +157,29 @@ public abstract class ExternalNativeJsonGenerator {
     }
 
     public void build() throws IOException, ProcessException {
-        build(false);
+        buildAndPropagateException(false);
     }
 
-    public void build(boolean forceJsonGeneration) throws IOException, ProcessException {
-        diagnostic("starting build");
+    public void build(boolean forceJsonGeneration) {
+        try {
+            buildAndPropagateException(forceJsonGeneration);
+        } catch (IOException | GradleException e ) {
+            androidBuilder.getErrorReporter().handleSyncError(
+                    variantName,
+                    SyncIssue.TYPE_EXTERNAL_NATIVE_BUILD_CONFIGURATION,
+                    e.getMessage());
+        } catch (ProcessException e) {
+            androidBuilder.getErrorReporter().handleSyncError(
+                    e.getMessage(),
+                    SyncIssue.TYPE_EXTERNAL_NATIVE_BUILD_PROCESS_EXCEPTION,
+                    String.format("executing external native build for %s %s",
+                            getNativeBuildSystem().getName(),
+                            makeFileOrFolder));
+        }
+    }
+
+    private void buildAndPropagateException(boolean forceJsonGeneration) throws IOException, ProcessException {
+        diagnostic("starting JSON generation");
         diagnostic("bringing JSONs up-to-date");
         for (String abi : abis) {
             File expectedJson = ExternalNativeBuildTaskUtils.getOutputJson(getJsonFolder(), abi);
@@ -193,7 +213,7 @@ public abstract class ExternalNativeJsonGenerator {
                 }
 
                 if (generateDueToBuildFileChange) {
-                    diagnostic("- dependent build file change");
+                    diagnostic("- dependent build file missing or changed");
                 }
 
                 if (rebuildDueToMissingPreviousCommand) {
@@ -246,8 +266,8 @@ public abstract class ExternalNativeJsonGenerator {
      * Derived class implements this method to post-process build output. Ndk-build uses this to
      * capture and analyze the compile and link commands that were written to stdout.
      */
-    void processBuildOutput(@NonNull String buildOutput, @NonNull String abi) throws IOException {
-    }
+    abstract void processBuildOutput(@NonNull String buildOutput,
+            @NonNull String abi) throws IOException;
 
     @NonNull
     abstract ProcessInfoBuilder getProcessBuilder(
@@ -264,8 +284,7 @@ public abstract class ExternalNativeJsonGenerator {
      */
     void diagnostic(String format, Object... args) {
         androidBuilder.getLogger().info(String.format(
-                "External native build generation " + variantName +
-                        ": " + format + "\n", args));
+                "External native build " + variantName + ": " + format, args));
     }
 
     /**

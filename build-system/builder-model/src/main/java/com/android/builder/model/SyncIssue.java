@@ -84,8 +84,9 @@ public interface SyncIssue {
     // Errors configuring NativeConfigValues for individual individual variants
     int TYPE_EXTERNAL_NATIVE_BUILD_CONFIGURATION = 16;
 
-    // Clashes between variants involving multiple Json originated NativeConfigValues
-    int TYPE_EXTERNAL_NATIVE_BUILD_COMBINED_CONFIGURATION = 17;
+    // Errors configuring NativeConfigValues. There was a process exception.
+    // Data contains STDERR which should be interpreted by Android Studio
+    int TYPE_EXTERNAL_NATIVE_BUILD_PROCESS_EXCEPTION = 17;
 
     int TYPE_MAX                      = 17; // increment when adding new types.
 

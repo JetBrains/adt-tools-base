@@ -51,6 +51,9 @@ public abstract class BaseGradleExecutor<T extends BaseGradleExecutor> {
     @NonNull
     final List<String> mArguments = Lists.newArrayList();
 
+    @NonNull
+    boolean enableInfoLogging = true;
+
     BaseGradleExecutor(
             @NonNull ProjectConnection projectConnection,
             @NonNull File buildDotGradleFile,
@@ -90,6 +93,13 @@ public abstract class BaseGradleExecutor<T extends BaseGradleExecutor> {
         return (T) this;
     }
 
+    /**
+     * Whether --info is passed or not. Default is true.
+     */
+    public T withEnableInfoLogging(boolean enableInfoLogging) {
+        this.enableInfoLogging = enableInfoLogging;
+        return (T) this;
+    }
 
     void setJvmArguments(@NonNull LongRunningOperation launcher) {
         List<String> jvmArguments = new ArrayList<>();

@@ -33,6 +33,7 @@ import com.google.common.collect.Lists;
 import org.gradle.api.GradleException;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.List;
 import java.util.Set;
 
@@ -60,6 +61,12 @@ class CmakeExternalNativeJsonGenerator extends ExternalNativeJsonGenerator {
         super(variantName, abis, androidBuilder, sdkFolder, ndkFolder, soFolder, objFolder,
                 jsonFolder, makeFileOrFolder, debuggable, buildArguments, cFlags, cppFlags);
         Preconditions.checkNotNull(sdkDirectory);
+    }
+
+    @Override
+    void processBuildOutput(@NonNull String buildOutput, @NonNull String abi) throws IOException {
+        // CMake doesn't need to process build output because it directly writes JSON file
+        // to specified location.
     }
 
     @NonNull

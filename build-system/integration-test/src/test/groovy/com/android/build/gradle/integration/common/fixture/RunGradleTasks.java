@@ -25,7 +25,6 @@ import com.android.build.gradle.internal.incremental.ColdswapMode;
 import com.android.builder.model.OptionalCompilationStep;
 import com.android.builder.tasks.BooleanLatch;
 import com.android.ddmlib.IDevice;
-import com.android.ide.common.util.ReferenceHolder;
 import com.android.resources.Density;
 import com.android.sdklib.AndroidVersion;
 import com.google.common.base.Joiner;
@@ -119,15 +118,17 @@ public class RunGradleTasks extends BaseGradleExecutor<RunGradleTasks> {
     public GradleBuildResult run(@NonNull List<String> tasksList) {
         assertThat(tasksList).named("tasks list").isNotEmpty();
 
-        ReferenceHolder<GradleConnectionException> result = ReferenceHolder.empty();
         ByteArrayOutputStream stdout = new ByteArrayOutputStream();
         ByteArrayOutputStream stderr = new ByteArrayOutputStream();
 
         syncFileSystem();
-        List<String> args = Lists.newArrayListWithCapacity(5 + mArguments.size());
+        List<String> args = Lists.newArrayList();
 
-        args.add("-i");
-        args.add("-u");
+        if (enableInfoLogging) {
+            args.add("-i"); // -i, --info Set log level to info.
+        }
+        args.add("-u"); // -u, --no-search-upward  Don't search in parent folders for a
+                        // settings.gradle file.
         args.add("-Pcom.android.build.gradle.integratonTest.useJack="
                 + Boolean.toString(isUseJack));
         args.add("-Pcom.android.build.gradle.integratonTest.minifyEnabled="
