@@ -242,7 +242,7 @@ public class AndroidTargetManagerTest extends TestCase {
                         + "xmlns:ns4=\"http://schemas.android.com/repository/android/generic/01\" "
                         + "xmlns:ns5=\"http://schemas.android.com/sdk/android/repo/addon2/01\">"
                         + "<license id=\"license-19E6313A\" type=\"text\">License text\n"
-                        + "</license><localPackage path=\"build-tools;24.0.0-preview\" obsolete=\"false\">"
+                        + "</license><localPackage path=\"build-tools;24.0.0-rc1\" obsolete=\"false\">"
                         + "<type-details xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" "
                         + "xsi:type=\"ns4:genericDetailsType\"/>"
                         + "<revision><major>24</major><minor>0</minor><micro>0</micro><preview>1</preview></revision>"
