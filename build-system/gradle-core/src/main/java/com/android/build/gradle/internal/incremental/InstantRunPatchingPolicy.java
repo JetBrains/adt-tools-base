@@ -35,7 +35,7 @@ public enum InstantRunPatchingPolicy {
      * non incremental build or the last build that contained changes identified by the verifier as
      * incompatible.
      */
-    PRE_LOLLIPOP(DexPackagingPolicy.STANDARD),
+    PRE_LOLLIPOP(DexPackagingPolicy.STANDARD, false /* useMultidex */),
 
     /**
      * For Lollipop and before N, the application will be split in shards of dex files upon initial
@@ -43,19 +43,28 @@ public enum InstantRunPatchingPolicy {
      * rebuilding the affected shard dex files. Such dex files will be pushed on the device using
      * the embedded micro-server and installed by it.
      */
-    MULTI_DEX(DexPackagingPolicy.INSTANT_RUN_SHARDS_IN_SINGLE_APK),
+    MULTI_DEX(DexPackagingPolicy.INSTANT_RUN_SHARDS_IN_SINGLE_APK, true /* useMultidex */),
 
     /**
      * For N and above, each shard dex file described above will be packaged in a single pure
      * split APK that will be pushed and installed on the device using adb install-multiple
      * commands.
      */
-    MULTI_APK(DexPackagingPolicy.INSTANT_RUN_MULTI_APK);
+    MULTI_APK(DexPackagingPolicy.INSTANT_RUN_MULTI_APK, true /* useMultidex */);
 
     private final DexPackagingPolicy dexPatchingPolicy;
+    private final boolean useMultiDex;
 
-    InstantRunPatchingPolicy(DexPackagingPolicy dexPatchingPolicy) {
+    InstantRunPatchingPolicy(DexPackagingPolicy dexPatchingPolicy, boolean useMultiDex) {
         this.dexPatchingPolicy = dexPatchingPolicy;
+        this.useMultiDex = useMultiDex;
+    }
+
+    /**
+     * Returns true of this packaging policy relies on multidex or not.
+     */
+    public boolean useMultiDex() {
+        return useMultiDex;
     }
 
     /**

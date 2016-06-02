@@ -17,10 +17,16 @@
 package com.android.build.gradle.integration.application
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
+import com.android.build.gradle.integration.common.truth.ApkSubject
 import com.android.build.gradle.integration.common.utils.SdkHelper
 import com.android.build.gradle.internal.incremental.ColdswapMode
+import com.android.build.gradle.internal.incremental.InstantRunBuildContext
+import com.android.build.gradle.internal.incremental.InstantRunVerifierStatus
+import com.android.sdklib.AndroidVersion
+import com.android.sdklib.BuildToolInfo
 import com.android.sdklib.IAndroidTarget
 import com.google.common.io.Files
+import com.google.common.truth.Expect
 import com.google.devtools.build.lib.rules.android.apkmanifest.ExternalBuildApkManifest
 import com.google.devtools.build.lib.rules.android.apkmanifest.ExternalBuildApkManifest.ApkManifest
 import com.google.protobuf.ByteString
@@ -28,6 +34,7 @@ import com.google.protobuf.CodedOutputStream
 import org.junit.After
 import org.junit.Before
 import org.junit.ClassRule
+import org.junit.Rule
 import org.junit.Test
 
 import java.util.zip.ZipEntry
@@ -41,6 +48,9 @@ import static com.google.common.truth.Truth.assertThat
 public class ExternalBuildPluginTest {
 
     File manifestFile;
+
+    @Rule
+    public Expect expect = Expect.createAndEnableStackTrace();
 
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
@@ -57,20 +67,15 @@ public class ExternalBuildPluginTest {
         def resourceFile = project.file("resources.ap_")
         def manifest = project.file("AndroidManifest.xml")
 
-        ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(resourceFile));
-        zos.putNextEntry(new ZipEntry("AndroidManifest.xml"));
-        Files.copy(manifest, zos);
-        zos.closeEntry();
-        zos.flush();
-        zos.close();
-
         ApkManifest.Builder apkManifest =
                 ApkManifest.newBuilder()
                         .setAndroidSdk(ExternalBuildApkManifest.AndroidSdk.newBuilder()
                                 .setAndroidJar(
                                     target.getFile(IAndroidTarget.ANDROID_JAR).absolutePath)
                                 // TODO: Start putting dx.jar in the proto
-                                .setDx(SdkHelper.getDxJar().absolutePath))
+                                .setDx(SdkHelper.getDxJar().absolutePath)
+                                .setAapt(target.getBuildToolInfo().getPath(
+                                        BuildToolInfo.PathId.AAPT)))
                         .setResourceApk(ExternalBuildApkManifest.Artifact.newBuilder()
                                 .setExecRootPath(resourceFile.absolutePath))
                         .setAndroidManifest(ExternalBuildApkManifest.Artifact.newBuilder()
@@ -112,5 +117,26 @@ externalBuild {
         project.executor()
             .withInstantRun(23, ColdswapMode.AUTO)
             .run("clean", "process")
+
+        // assert build-info.xml presence.
+        File buildInfo = new File(project.getTestDir(), "build/reload-dex/debug/build-info.xml");
+        assertThat(buildInfo.exists()).isTrue();
+        InstantRunBuildContext instantRunBuildContext = new InstantRunBuildContext();
+        instantRunBuildContext.setApiLevel(23, ColdswapMode.AUTO.toString(), "arm");
+        instantRunBuildContext.loadFromXmlFile(buildInfo);
+        assertThat(instantRunBuildContext.getPreviousBuilds()).hasSize(1);
+        assertThat(instantRunBuildContext.getLastBuild().artifacts).hasSize(1);
+        InstantRunBuildContext.Build fullBuild  = instantRunBuildContext.getLastBuild();
+        assertThat(fullBuild.verifierStatus).hasValue(InstantRunVerifierStatus.INITIAL_BUILD);
+        assertThat(fullBuild.artifacts).hasSize(1);
+        InstantRunBuildContext.Artifact artifact = fullBuild.artifacts.get(0);
+        assertThat(artifact.type).is(InstantRunBuildContext.FileType.MAIN);
+        assertThat(artifact.getLocation().exists()).isTrue();
+
+        ApkSubject apkSubject = expect.about(ApkSubject.FACTORY).that(artifact.getLocation());
+        assertThat(apkSubject.containsApkSigningBlock());
+        assertThat(apkSubject.contains("instant-run.zip"));
+        assertThat(apkSubject.hasMainDexFile());
     }
+
 }

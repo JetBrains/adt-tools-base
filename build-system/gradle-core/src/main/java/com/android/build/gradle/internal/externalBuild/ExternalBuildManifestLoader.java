@@ -23,6 +23,7 @@ import com.android.build.gradle.internal.process.GradleJavaProcessExecutor;
 import com.android.build.gradle.internal.process.GradleProcessExecutor;
 import com.android.builder.core.AndroidBuilder;
 import com.android.builder.sdk.TargetInfo;
+import com.android.repository.Revision;
 import com.android.sdklib.BuildToolInfo;
 import com.android.sdklib.IAndroidTarget;
 import com.google.common.collect.ImmutableMap;
@@ -81,13 +82,14 @@ public class ExternalBuildManifestLoader {
         ExternalBuildApkManifest.AndroidSdk sdk = manifest.getAndroidSdk();
 
         BuildToolInfo buildToolInfo = BuildToolInfo.partial(
-                // Just make AndroidBuilder happy.
-                AndroidBuilder.MIN_BUILD_TOOLS_REV,
+                new Revision(23, 0, 2),
                 project.getProjectDir(),
                 ImmutableMap.of(
                         // TODO: Put dx.jar in the proto
                         BuildToolInfo.PathId.DX_JAR,
-                        project.file(sdk.getDx())));
+                        project.file(sdk.getDx()),
+                        BuildToolInfo.PathId.AAPT,
+                        project.file(sdk.getAapt())));
 
         IAndroidTarget androidTarget =
                 new ExternalBuildAndroidTarget(project.file(sdk.getAndroidJar()));
