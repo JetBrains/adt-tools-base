@@ -1,0 +1,11 @@
+# IDEA gitignore forked and modified from
+# https://raw.githubusercontent.com/github/gitignore/master/Global/JetBrains.gitignore
+
+.idea/workspace.xml
+.idea/modules.xml
+.idea/tasks.xml
+.idea/dictionaries
+.idea/vcs.xml
+
+*.iws
+*.iml
