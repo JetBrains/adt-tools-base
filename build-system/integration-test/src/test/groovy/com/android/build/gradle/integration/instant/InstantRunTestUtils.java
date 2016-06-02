@@ -74,7 +74,7 @@ public final class InstantRunTestUtils {
             int apiLevel,
             @NonNull InstantRun instantRunModel) throws Exception {
         InstantRunBuildContext context = new InstantRunBuildContext();
-        context.setApiLevel(new AndroidVersion(apiLevel, null), null, null);
+        context.setApiLevel(apiLevel, null, null);
         context.loadFromXml(Files.toString(instantRunModel.getInfoFile(), Charsets.UTF_8));
         return context;
     }

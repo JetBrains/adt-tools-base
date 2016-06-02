@@ -40,6 +40,9 @@ public interface AndroidProject {
     String PROPERTY_REFRESH_EXTERNAL_NATIVE_MODEL = "android.injected.refresh.external.native.model";
 
     // Sent by Studio 1.5+
+
+    // The "feature level" of the device that is targeted, as returned by
+    // AndroidVersion.getFeatureLevel().
     String PROPERTY_BUILD_API = "android.injected.build.api";
     String PROPERTY_BUILD_ABI = "android.injected.build.abi";
     String PROPERTY_BUILD_DENSITY = "android.injected.build.density";

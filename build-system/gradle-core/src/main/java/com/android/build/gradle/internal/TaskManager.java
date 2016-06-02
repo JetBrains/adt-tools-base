@@ -1446,8 +1446,8 @@ public abstract class TaskManager {
             @NonNull Project project) {
         if (config.isLegacyMultiDexMode()) {
             // We don't support legacy multi-dex on Dalvik.
-            return AndroidGradleOptions.getTargetApiLevel(project)
-                    .compareTo(AndroidVersion.ART_RUNTIME) >= 0;
+            return AndroidGradleOptions.getTargetFeatureLevel(project) >=
+                    AndroidVersion.ART_RUNTIME.getFeatureLevel();
         }
 
         return true;

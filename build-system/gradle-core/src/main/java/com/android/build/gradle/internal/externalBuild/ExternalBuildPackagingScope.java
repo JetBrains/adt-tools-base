@@ -22,12 +22,12 @@ import com.android.build.gradle.api.ApkOutputFile;
 import com.android.build.gradle.internal.dsl.CoreSigningConfig;
 import com.android.build.gradle.internal.dsl.PackagingOptions;
 import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
-import com.android.build.gradle.internal.model.ApiVersionImpl;
 import com.android.build.gradle.internal.pipeline.StreamFilter;
 import com.android.build.gradle.internal.pipeline.TransformManager;
 import com.android.build.gradle.internal.scope.PackagingScope;
 import com.android.build.gradle.internal.variant.SplitHandlingPolicy;
 import com.android.builder.core.AndroidBuilder;
+import com.android.builder.core.DefaultApiVersion;
 import com.android.builder.core.VariantType;
 import com.android.builder.model.AaptOptions;
 import com.android.builder.model.ApiVersion;
@@ -88,7 +88,7 @@ public class ExternalBuildPackagingScope implements PackagingScope {
     @NonNull
     @Override
     public ApiVersion getMinSdkVersion() {
-        return ApiVersionImpl.clone(mInstantRunBuildContext.getApiLevel());
+        return new DefaultApiVersion(mInstantRunBuildContext.getFeatureLevel());
     }
 
     @NonNull
