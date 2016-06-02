@@ -156,19 +156,6 @@ public class Revision implements Comparable<Revision> {
         return parseRevision(revisionString, Precision.MAJOR);
     }
 
-  /**
-   * A safe version of {@link #parseRevision} that does not throw, but instead returns an
-   * unspecified revision if it fails to parse.
-   */
-    @NonNull
-    public static Revision safeParseRevision(@NonNull String revisionString) {
-        try {
-            return parseRevision(revisionString);
-        } catch (NumberFormatException ignored) {
-            return NOT_SPECIFIED;
-        }
-    }
-
     /**
      * Creates a new {@code Revision} with the specified major revision and no other revision
      * components.
