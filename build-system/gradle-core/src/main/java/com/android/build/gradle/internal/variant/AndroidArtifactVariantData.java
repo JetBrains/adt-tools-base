@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013 The Android Open Source Project
+ * Copyright (C) 2016 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,44 +13,47 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.android.build.gradle.internal.variant;
 
 import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
 import com.android.build.gradle.AndroidConfig;
 import com.android.build.gradle.internal.TaskManager;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.builder.core.ErrorReporter;
-import com.android.builder.core.VariantType;
-import com.google.common.collect.Maps;
 
-import java.util.Map;
+import java.util.Collections;
+import java.util.Set;
 
 /**
- * Data about a variant that produce an application APK
+ * Data about a variant that produces an android artifact.
  */
-public class ApplicationVariantData extends ApkVariantData implements TestedVariantData {
-    private final Map<VariantType, TestVariantData> testVariants;
+public abstract class AndroidArtifactVariantData<T extends BaseVariantOutputData>
+        extends BaseVariantData<T> {
+    private Set<String> compatibleScreens = null;
 
-    public ApplicationVariantData(
+    protected AndroidArtifactVariantData(
             @NonNull AndroidConfig androidConfig,
-            @NonNull GradleVariantConfiguration config,
             @NonNull TaskManager taskManager,
+            @NonNull GradleVariantConfiguration config,
             @NonNull ErrorReporter errorReporter) {
         super(androidConfig, taskManager, config, errorReporter);
-        testVariants = Maps.newEnumMap(VariantType.class);
     }
 
-    @Override
-    public void setTestVariantData(
-            @NonNull TestVariantData testVariantData,
-            @NonNull VariantType type) {
-        testVariants.put(type, testVariantData);
+    public void setCompatibleScreens(Set<String> compatibleScreens) {
+        this.compatibleScreens = compatibleScreens;
     }
 
-    @Nullable
-    @Override
-    public TestVariantData getTestVariantData(@NonNull VariantType type) {
-        return testVariants.get(type);
+    @NonNull
+    public Set<String> getCompatibleScreens() {
+        if (compatibleScreens == null) {
+            return Collections.emptySet();
+        }
+
+        return compatibleScreens;
+    }
+
+    public boolean isSigned() {
+        return getVariantConfiguration().isSigningReady();
     }
 }

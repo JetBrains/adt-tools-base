@@ -18,9 +18,6 @@ package com.android.build.gradle.api;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.builder.model.SigningConfig;
-
-import org.gradle.api.DefaultTask;
 
 import java.io.File;
 import java.util.Collection;
@@ -28,33 +25,7 @@ import java.util.Collection;
 /**
  * A Build variant and all its public data.
  */
-public interface ApkVariant extends BaseVariant {
-
-    /**
-     * Return the app versionCode. Even the value is not found, then 1 is returned as this
-     * is the implicit value that the platform would use.
-     *
-     * If not output define its own variant override then this is used for all outputs.
-     */
-    int getVersionCode();
-
-    /**
-     * Return the app versionName or null if none found.
-     */
-    @Nullable
-    String getVersionName();
-
-    /**
-     * Returns the {@link SigningConfig} for this build variant,
-     * if one has been specified.
-     */
-    @Nullable
-    SigningConfig getSigningConfig();
-
-    /**
-     * Returns true if this variant has the information it needs to create a signed APK.
-     */
-    boolean isSigningReady();
+public interface ApkVariant extends BaseVariant, InstallableVariant, AndroidArtifactVariant {
 
     /**
      * Returns the Dex task.
@@ -79,19 +50,4 @@ public interface ApkVariant extends BaseVariant {
      */
     @NonNull
     Collection<File> getApkLibraries();
-
-    /**
-     * Returns the install task for the variant.
-     */
-    @Nullable
-    DefaultTask getInstall();
-
-    /**
-     * Returns the uninstallation task.
-     *
-     * For non-library project this is always true even if the APK is not created because
-     * signing isn't setup.
-     */
-    @Nullable
-    DefaultTask getUninstall();
 }

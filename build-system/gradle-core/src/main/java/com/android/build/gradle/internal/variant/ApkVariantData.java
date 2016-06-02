@@ -23,17 +23,12 @@ import com.android.build.gradle.internal.TaskManager;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.builder.core.ErrorReporter;
 
-import org.gradle.api.DefaultTask;
-
 import java.util.Collection;
 
 /**
  * Base data about a variant that generates an APK file.
  */
-public abstract class ApkVariantData extends BaseVariantData<ApkVariantOutputData> {
-
-    public DefaultTask installTask;
-    public DefaultTask uninstallTask;
+public abstract class ApkVariantData extends InstallableVariantData<ApkVariantOutputData> {
 
     protected ApkVariantData(
             @NonNull AndroidConfig androidConfig,
@@ -61,10 +56,6 @@ public abstract class ApkVariantData extends BaseVariantData<ApkVariantOutputDat
         } else {
             return String.format("%s build", getCapitalizedBuildTypeName());
         }
-    }
-
-    public boolean isSigned() {
-        return getVariantConfiguration().isSigningReady();
     }
 
     public boolean getZipAlignEnabled() {
