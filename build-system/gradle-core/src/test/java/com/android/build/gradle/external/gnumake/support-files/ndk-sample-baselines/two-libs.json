@@ -5,26 +5,20 @@
     }
   ],
   "libraries": {
-    "x86-libtwolib-second-debug": {
+    "mips64-libtwolib-first-release": {
       "buildCommand": "echo build command",
-      "toolchain": "toolchain-x86",
-      "abi": "x86",
+      "toolchain": "toolchain-mips64",
+      "abi": "mips64",
       "files": [
         {
           "src": {
             "path": "{ndkPath}/samples/two-libs/jni/first.c"
           },
-          "flags": "\"-MMD\" \"-MP\" \"-ffunction-sections\" \"-funwind-tables\" \"-no-canonical-prefixes\" \"-fstack-protector\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-O0\" \"-UNDEBUG\" \"-fno-omit-frame-pointer\" \"-fno-strict-aliasing\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
-        },
-        {
-          "src": {
-            "path": "{ndkPath}/samples/two-libs/jni/second.c"
-          },
-          "flags": "\"-MMD\" \"-MP\" \"-ffunction-sections\" \"-funwind-tables\" \"-no-canonical-prefixes\" \"-fstack-protector\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-O0\" \"-UNDEBUG\" \"-fno-omit-frame-pointer\" \"-fno-strict-aliasing\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-fno-strict-aliasing\" \"-finline-functions\" \"-ffunction-sections\" \"-funwind-tables\" \"-fmessage-length\u003d0\" \"-fno-inline-functions-called-once\" \"-fgcse-after-reload\" \"-frerun-cse-after-loop\" \"-frename-registers\" \"-no-canonical-prefixes\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
         }
       ],
       "output": {
-        "path": "{ndkPath}/samples/two-libs/obj/local/x86/libtwolib-second.so"
+        "path": "{ndkPath}/samples/two-libs/obj/local/mips64/libtwolib-first.a"
       }
     },
     "x86-libtwolib-second-release": {
@@ -71,28 +65,6 @@
         "path": "{ndkPath}/samples/two-libs/obj/local/armeabi/libtwolib-second.so"
       }
     },
-    "x86_64-libtwolib-second-debug": {
-      "buildCommand": "echo build command",
-      "toolchain": "toolchain-x86_64",
-      "abi": "x86_64",
-      "files": [
-        {
-          "src": {
-            "path": "{ndkPath}/samples/two-libs/jni/first.c"
-          },
-          "flags": "\"-MMD\" \"-MP\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-O0\" \"-UNDEBUG\" \"-fno-omit-frame-pointer\" \"-fno-strict-aliasing\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
-        },
-        {
-          "src": {
-            "path": "{ndkPath}/samples/two-libs/jni/second.c"
-          },
-          "flags": "\"-MMD\" \"-MP\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-O0\" \"-UNDEBUG\" \"-fno-omit-frame-pointer\" \"-fno-strict-aliasing\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
-        }
-      ],
-      "output": {
-        "path": "{ndkPath}/samples/two-libs/obj/local/x86_64/libtwolib-second.so"
-      }
-    },
     "armeabi-libtwolib-second-release": {
       "buildCommand": "echo build command",
       "toolchain": "toolchain-armeabi",
@@ -113,28 +85,6 @@
       ],
       "output": {
         "path": "{ndkPath}/samples/two-libs/obj/local/armeabi/libtwolib-second.so"
-      }
-    },
-    "mips-libtwolib-second-release": {
-      "buildCommand": "echo build command",
-      "toolchain": "toolchain-mips",
-      "abi": "mips",
-      "files": [
-        {
-          "src": {
-            "path": "{ndkPath}/samples/two-libs/jni/first.c"
-          },
-          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-fno-strict-aliasing\" \"-finline-functions\" \"-ffunction-sections\" \"-funwind-tables\" \"-fmessage-length\u003d0\" \"-fno-inline-functions-called-once\" \"-fgcse-after-reload\" \"-frerun-cse-after-loop\" \"-frename-registers\" \"-no-canonical-prefixes\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
-        },
-        {
-          "src": {
-            "path": "{ndkPath}/samples/two-libs/jni/second.c"
-          },
-          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-fno-strict-aliasing\" \"-finline-functions\" \"-ffunction-sections\" \"-funwind-tables\" \"-fmessage-length\u003d0\" \"-fno-inline-functions-called-once\" \"-fgcse-after-reload\" \"-frerun-cse-after-loop\" \"-frename-registers\" \"-no-canonical-prefixes\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
-        }
-      ],
-      "output": {
-        "path": "{ndkPath}/samples/two-libs/obj/local/mips/libtwolib-second.so"
       }
     },
     "arm64-v8a-libtwolib-second-release": {
@@ -181,7 +131,23 @@
         "path": "{ndkPath}/samples/two-libs/obj/local/mips64/libtwolib-second.so"
       }
     },
-    "mips-libtwolib-second-debug": {
+    "mips64-libtwolib-first-debug": {
+      "buildCommand": "echo build command",
+      "toolchain": "toolchain-mips64",
+      "abi": "mips64",
+      "files": [
+        {
+          "src": {
+            "path": "{ndkPath}/samples/two-libs/jni/first.c"
+          },
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-fno-strict-aliasing\" \"-finline-functions\" \"-ffunction-sections\" \"-funwind-tables\" \"-fmessage-length\u003d0\" \"-fno-inline-functions-called-once\" \"-fgcse-after-reload\" \"-frerun-cse-after-loop\" \"-frename-registers\" \"-no-canonical-prefixes\" \"-O0\" \"-g\" \"-fno-omit-frame-pointer\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+        }
+      ],
+      "output": {
+        "path": "{ndkPath}/samples/two-libs/obj/local/mips64/libtwolib-first.a"
+      }
+    },
+    "mips-libtwolib-first-release": {
       "buildCommand": "echo build command",
       "toolchain": "toolchain-mips",
       "abi": "mips",
@@ -190,17 +156,27 @@
           "src": {
             "path": "{ndkPath}/samples/two-libs/jni/first.c"
           },
-          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-fno-strict-aliasing\" \"-finline-functions\" \"-ffunction-sections\" \"-funwind-tables\" \"-fmessage-length\u003d0\" \"-fno-inline-functions-called-once\" \"-fgcse-after-reload\" \"-frerun-cse-after-loop\" \"-frename-registers\" \"-no-canonical-prefixes\" \"-O0\" \"-g\" \"-fno-omit-frame-pointer\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
-        },
-        {
-          "src": {
-            "path": "{ndkPath}/samples/two-libs/jni/second.c"
-          },
-          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-fno-strict-aliasing\" \"-finline-functions\" \"-ffunction-sections\" \"-funwind-tables\" \"-fmessage-length\u003d0\" \"-fno-inline-functions-called-once\" \"-fgcse-after-reload\" \"-frerun-cse-after-loop\" \"-frename-registers\" \"-no-canonical-prefixes\" \"-O0\" \"-g\" \"-fno-omit-frame-pointer\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-fno-strict-aliasing\" \"-finline-functions\" \"-ffunction-sections\" \"-funwind-tables\" \"-fmessage-length\u003d0\" \"-fno-inline-functions-called-once\" \"-fgcse-after-reload\" \"-frerun-cse-after-loop\" \"-frename-registers\" \"-no-canonical-prefixes\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
         }
       ],
       "output": {
-        "path": "{ndkPath}/samples/two-libs/obj/local/mips/libtwolib-second.so"
+        "path": "{ndkPath}/samples/two-libs/obj/local/mips/libtwolib-first.a"
+      }
+    },
+    "x86-libtwolib-first-release": {
+      "buildCommand": "echo build command",
+      "toolchain": "toolchain-x86",
+      "abi": "x86",
+      "files": [
+        {
+          "src": {
+            "path": "{ndkPath}/samples/two-libs/jni/first.c"
+          },
+          "flags": "\"-MMD\" \"-MP\" \"-ffunction-sections\" \"-funwind-tables\" \"-no-canonical-prefixes\" \"-fstack-protector\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+        }
+      ],
+      "output": {
+        "path": "{ndkPath}/samples/two-libs/obj/local/x86/libtwolib-first.a"
       }
     },
     "x86_64-libtwolib-second-release": {
@@ -223,6 +199,282 @@
       ],
       "output": {
         "path": "{ndkPath}/samples/two-libs/obj/local/x86_64/libtwolib-second.so"
+      }
+    },
+    "arm64-v8a-libtwolib-first-debug": {
+      "buildCommand": "echo build command",
+      "toolchain": "toolchain-arm64-v8a",
+      "abi": "arm64-v8a",
+      "files": [
+        {
+          "src": {
+            "path": "{ndkPath}/samples/two-libs/jni/first.c"
+          },
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-O0\" \"-UNDEBUG\" \"-fno-omit-frame-pointer\" \"-fno-strict-aliasing\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+        }
+      ],
+      "output": {
+        "path": "{ndkPath}/samples/two-libs/obj/local/arm64-v8a/libtwolib-first.a"
+      }
+    },
+    "mips64-libtwolib-second-release": {
+      "buildCommand": "echo build command",
+      "toolchain": "toolchain-mips64",
+      "abi": "mips64",
+      "files": [
+        {
+          "src": {
+            "path": "{ndkPath}/samples/two-libs/jni/first.c"
+          },
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-fno-strict-aliasing\" \"-finline-functions\" \"-ffunction-sections\" \"-funwind-tables\" \"-fmessage-length\u003d0\" \"-fno-inline-functions-called-once\" \"-fgcse-after-reload\" \"-frerun-cse-after-loop\" \"-frename-registers\" \"-no-canonical-prefixes\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+        },
+        {
+          "src": {
+            "path": "{ndkPath}/samples/two-libs/jni/second.c"
+          },
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-fno-strict-aliasing\" \"-finline-functions\" \"-ffunction-sections\" \"-funwind-tables\" \"-fmessage-length\u003d0\" \"-fno-inline-functions-called-once\" \"-fgcse-after-reload\" \"-frerun-cse-after-loop\" \"-frename-registers\" \"-no-canonical-prefixes\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+        }
+      ],
+      "output": {
+        "path": "{ndkPath}/samples/two-libs/obj/local/mips64/libtwolib-second.so"
+      }
+    },
+    "armeabi-v7a-libtwolib-second-release": {
+      "buildCommand": "echo build command",
+      "toolchain": "toolchain-armeabi-v7a",
+      "abi": "armeabi-v7a",
+      "files": [
+        {
+          "src": {
+            "path": "{ndkPath}/samples/two-libs/jni/first.c"
+          },
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector\" \"-no-canonical-prefixes\" \"-march\u003darmv7-a\" \"-mfpu\u003dvfpv3-d16\" \"-mfloat-abi\u003dsoftfp\" \"-mthumb\" \"-Os\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fno-strict-aliasing\" \"-finline-limit\u003d64\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+        },
+        {
+          "src": {
+            "path": "{ndkPath}/samples/two-libs/jni/second.c"
+          },
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector\" \"-no-canonical-prefixes\" \"-march\u003darmv7-a\" \"-mfpu\u003dvfpv3-d16\" \"-mfloat-abi\u003dsoftfp\" \"-mthumb\" \"-Os\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fno-strict-aliasing\" \"-finline-limit\u003d64\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+        }
+      ],
+      "output": {
+        "path": "{ndkPath}/samples/two-libs/obj/local/armeabi-v7a/libtwolib-second.so"
+      }
+    },
+    "mips-libtwolib-first-debug": {
+      "buildCommand": "echo build command",
+      "toolchain": "toolchain-mips",
+      "abi": "mips",
+      "files": [
+        {
+          "src": {
+            "path": "{ndkPath}/samples/two-libs/jni/first.c"
+          },
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-fno-strict-aliasing\" \"-finline-functions\" \"-ffunction-sections\" \"-funwind-tables\" \"-fmessage-length\u003d0\" \"-fno-inline-functions-called-once\" \"-fgcse-after-reload\" \"-frerun-cse-after-loop\" \"-frename-registers\" \"-no-canonical-prefixes\" \"-O0\" \"-g\" \"-fno-omit-frame-pointer\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+        }
+      ],
+      "output": {
+        "path": "{ndkPath}/samples/two-libs/obj/local/mips/libtwolib-first.a"
+      }
+    },
+    "x86-libtwolib-second-debug": {
+      "buildCommand": "echo build command",
+      "toolchain": "toolchain-x86",
+      "abi": "x86",
+      "files": [
+        {
+          "src": {
+            "path": "{ndkPath}/samples/two-libs/jni/first.c"
+          },
+          "flags": "\"-MMD\" \"-MP\" \"-ffunction-sections\" \"-funwind-tables\" \"-no-canonical-prefixes\" \"-fstack-protector\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-O0\" \"-UNDEBUG\" \"-fno-omit-frame-pointer\" \"-fno-strict-aliasing\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+        },
+        {
+          "src": {
+            "path": "{ndkPath}/samples/two-libs/jni/second.c"
+          },
+          "flags": "\"-MMD\" \"-MP\" \"-ffunction-sections\" \"-funwind-tables\" \"-no-canonical-prefixes\" \"-fstack-protector\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-O0\" \"-UNDEBUG\" \"-fno-omit-frame-pointer\" \"-fno-strict-aliasing\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+        }
+      ],
+      "output": {
+        "path": "{ndkPath}/samples/two-libs/obj/local/x86/libtwolib-second.so"
+      }
+    },
+    "armeabi-libtwolib-first-release": {
+      "buildCommand": "echo build command",
+      "toolchain": "toolchain-armeabi",
+      "abi": "armeabi",
+      "files": [
+        {
+          "src": {
+            "path": "{ndkPath}/samples/two-libs/jni/first.c"
+          },
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector\" \"-no-canonical-prefixes\" \"-march\u003darmv5te\" \"-mtune\u003dxscale\" \"-msoft-float\" \"-mthumb\" \"-Os\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fno-strict-aliasing\" \"-finline-limit\u003d64\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+        }
+      ],
+      "output": {
+        "path": "{ndkPath}/samples/two-libs/obj/local/armeabi/libtwolib-first.a"
+      }
+    },
+    "x86_64-libtwolib-second-debug": {
+      "buildCommand": "echo build command",
+      "toolchain": "toolchain-x86_64",
+      "abi": "x86_64",
+      "files": [
+        {
+          "src": {
+            "path": "{ndkPath}/samples/two-libs/jni/first.c"
+          },
+          "flags": "\"-MMD\" \"-MP\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-O0\" \"-UNDEBUG\" \"-fno-omit-frame-pointer\" \"-fno-strict-aliasing\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+        },
+        {
+          "src": {
+            "path": "{ndkPath}/samples/two-libs/jni/second.c"
+          },
+          "flags": "\"-MMD\" \"-MP\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-O0\" \"-UNDEBUG\" \"-fno-omit-frame-pointer\" \"-fno-strict-aliasing\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+        }
+      ],
+      "output": {
+        "path": "{ndkPath}/samples/two-libs/obj/local/x86_64/libtwolib-second.so"
+      }
+    },
+    "armeabi-v7a-libtwolib-first-debug": {
+      "buildCommand": "echo build command",
+      "toolchain": "toolchain-armeabi-v7a",
+      "abi": "armeabi-v7a",
+      "files": [
+        {
+          "src": {
+            "path": "{ndkPath}/samples/two-libs/jni/first.c"
+          },
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector\" \"-no-canonical-prefixes\" \"-march\u003darmv7-a\" \"-mfpu\u003dvfpv3-d16\" \"-mfloat-abi\u003dsoftfp\" \"-mthumb\" \"-Os\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fno-strict-aliasing\" \"-finline-limit\u003d64\" \"-O0\" \"-UNDEBUG\" \"-marm\" \"-fno-omit-frame-pointer\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+        }
+      ],
+      "output": {
+        "path": "{ndkPath}/samples/two-libs/obj/local/armeabi-v7a/libtwolib-first.a"
+      }
+    },
+    "mips-libtwolib-second-release": {
+      "buildCommand": "echo build command",
+      "toolchain": "toolchain-mips",
+      "abi": "mips",
+      "files": [
+        {
+          "src": {
+            "path": "{ndkPath}/samples/two-libs/jni/first.c"
+          },
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-fno-strict-aliasing\" \"-finline-functions\" \"-ffunction-sections\" \"-funwind-tables\" \"-fmessage-length\u003d0\" \"-fno-inline-functions-called-once\" \"-fgcse-after-reload\" \"-frerun-cse-after-loop\" \"-frename-registers\" \"-no-canonical-prefixes\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+        },
+        {
+          "src": {
+            "path": "{ndkPath}/samples/two-libs/jni/second.c"
+          },
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-fno-strict-aliasing\" \"-finline-functions\" \"-ffunction-sections\" \"-funwind-tables\" \"-fmessage-length\u003d0\" \"-fno-inline-functions-called-once\" \"-fgcse-after-reload\" \"-frerun-cse-after-loop\" \"-frename-registers\" \"-no-canonical-prefixes\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+        }
+      ],
+      "output": {
+        "path": "{ndkPath}/samples/two-libs/obj/local/mips/libtwolib-second.so"
+      }
+    },
+    "x86_64-libtwolib-first-debug": {
+      "buildCommand": "echo build command",
+      "toolchain": "toolchain-x86_64",
+      "abi": "x86_64",
+      "files": [
+        {
+          "src": {
+            "path": "{ndkPath}/samples/two-libs/jni/first.c"
+          },
+          "flags": "\"-MMD\" \"-MP\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-O0\" \"-UNDEBUG\" \"-fno-omit-frame-pointer\" \"-fno-strict-aliasing\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+        }
+      ],
+      "output": {
+        "path": "{ndkPath}/samples/two-libs/obj/local/x86_64/libtwolib-first.a"
+      }
+    },
+    "x86-libtwolib-first-debug": {
+      "buildCommand": "echo build command",
+      "toolchain": "toolchain-x86",
+      "abi": "x86",
+      "files": [
+        {
+          "src": {
+            "path": "{ndkPath}/samples/two-libs/jni/first.c"
+          },
+          "flags": "\"-MMD\" \"-MP\" \"-ffunction-sections\" \"-funwind-tables\" \"-no-canonical-prefixes\" \"-fstack-protector\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-O0\" \"-UNDEBUG\" \"-fno-omit-frame-pointer\" \"-fno-strict-aliasing\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+        }
+      ],
+      "output": {
+        "path": "{ndkPath}/samples/two-libs/obj/local/x86/libtwolib-first.a"
+      }
+    },
+    "mips-libtwolib-second-debug": {
+      "buildCommand": "echo build command",
+      "toolchain": "toolchain-mips",
+      "abi": "mips",
+      "files": [
+        {
+          "src": {
+            "path": "{ndkPath}/samples/two-libs/jni/first.c"
+          },
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-fno-strict-aliasing\" \"-finline-functions\" \"-ffunction-sections\" \"-funwind-tables\" \"-fmessage-length\u003d0\" \"-fno-inline-functions-called-once\" \"-fgcse-after-reload\" \"-frerun-cse-after-loop\" \"-frename-registers\" \"-no-canonical-prefixes\" \"-O0\" \"-g\" \"-fno-omit-frame-pointer\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+        },
+        {
+          "src": {
+            "path": "{ndkPath}/samples/two-libs/jni/second.c"
+          },
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-fno-strict-aliasing\" \"-finline-functions\" \"-ffunction-sections\" \"-funwind-tables\" \"-fmessage-length\u003d0\" \"-fno-inline-functions-called-once\" \"-fgcse-after-reload\" \"-frerun-cse-after-loop\" \"-frename-registers\" \"-no-canonical-prefixes\" \"-O0\" \"-g\" \"-fno-omit-frame-pointer\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+        }
+      ],
+      "output": {
+        "path": "{ndkPath}/samples/two-libs/obj/local/mips/libtwolib-second.so"
+      }
+    },
+    "x86_64-libtwolib-first-release": {
+      "buildCommand": "echo build command",
+      "toolchain": "toolchain-x86_64",
+      "abi": "x86_64",
+      "files": [
+        {
+          "src": {
+            "path": "{ndkPath}/samples/two-libs/jni/first.c"
+          },
+          "flags": "\"-MMD\" \"-MP\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+        }
+      ],
+      "output": {
+        "path": "{ndkPath}/samples/two-libs/obj/local/x86_64/libtwolib-first.a"
+      }
+    },
+    "armeabi-v7a-libtwolib-first-release": {
+      "buildCommand": "echo build command",
+      "toolchain": "toolchain-armeabi-v7a",
+      "abi": "armeabi-v7a",
+      "files": [
+        {
+          "src": {
+            "path": "{ndkPath}/samples/two-libs/jni/first.c"
+          },
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector\" \"-no-canonical-prefixes\" \"-march\u003darmv7-a\" \"-mfpu\u003dvfpv3-d16\" \"-mfloat-abi\u003dsoftfp\" \"-mthumb\" \"-Os\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fno-strict-aliasing\" \"-finline-limit\u003d64\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+        }
+      ],
+      "output": {
+        "path": "{ndkPath}/samples/two-libs/obj/local/armeabi-v7a/libtwolib-first.a"
+      }
+    },
+    "arm64-v8a-libtwolib-first-release": {
+      "buildCommand": "echo build command",
+      "toolchain": "toolchain-arm64-v8a",
+      "abi": "arm64-v8a",
+      "files": [
+        {
+          "src": {
+            "path": "{ndkPath}/samples/two-libs/jni/first.c"
+          },
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+        }
+      ],
+      "output": {
+        "path": "{ndkPath}/samples/two-libs/obj/local/arm64-v8a/libtwolib-first.a"
       }
     },
     "armeabi-v7a-libtwolib-second-debug": {
@@ -269,48 +521,20 @@
         "path": "{ndkPath}/samples/two-libs/obj/local/arm64-v8a/libtwolib-second.so"
       }
     },
-    "mips64-libtwolib-second-release": {
+    "armeabi-libtwolib-first-debug": {
       "buildCommand": "echo build command",
-      "toolchain": "toolchain-mips64",
-      "abi": "mips64",
+      "toolchain": "toolchain-armeabi",
+      "abi": "armeabi",
       "files": [
         {
           "src": {
             "path": "{ndkPath}/samples/two-libs/jni/first.c"
           },
-          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-fno-strict-aliasing\" \"-finline-functions\" \"-ffunction-sections\" \"-funwind-tables\" \"-fmessage-length\u003d0\" \"-fno-inline-functions-called-once\" \"-fgcse-after-reload\" \"-frerun-cse-after-loop\" \"-frename-registers\" \"-no-canonical-prefixes\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
-        },
-        {
-          "src": {
-            "path": "{ndkPath}/samples/two-libs/jni/second.c"
-          },
-          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-fno-strict-aliasing\" \"-finline-functions\" \"-ffunction-sections\" \"-funwind-tables\" \"-fmessage-length\u003d0\" \"-fno-inline-functions-called-once\" \"-fgcse-after-reload\" \"-frerun-cse-after-loop\" \"-frename-registers\" \"-no-canonical-prefixes\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector\" \"-no-canonical-prefixes\" \"-march\u003darmv5te\" \"-mtune\u003dxscale\" \"-msoft-float\" \"-mthumb\" \"-Os\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fno-strict-aliasing\" \"-finline-limit\u003d64\" \"-O0\" \"-UNDEBUG\" \"-marm\" \"-fno-omit-frame-pointer\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
         }
       ],
       "output": {
-        "path": "{ndkPath}/samples/two-libs/obj/local/mips64/libtwolib-second.so"
-      }
-    },
-    "armeabi-v7a-libtwolib-second-release": {
-      "buildCommand": "echo build command",
-      "toolchain": "toolchain-armeabi-v7a",
-      "abi": "armeabi-v7a",
-      "files": [
-        {
-          "src": {
-            "path": "{ndkPath}/samples/two-libs/jni/first.c"
-          },
-          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector\" \"-no-canonical-prefixes\" \"-march\u003darmv7-a\" \"-mfpu\u003dvfpv3-d16\" \"-mfloat-abi\u003dsoftfp\" \"-mthumb\" \"-Os\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fno-strict-aliasing\" \"-finline-limit\u003d64\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
-        },
-        {
-          "src": {
-            "path": "{ndkPath}/samples/two-libs/jni/second.c"
-          },
-          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector\" \"-no-canonical-prefixes\" \"-march\u003darmv7-a\" \"-mfpu\u003dvfpv3-d16\" \"-mfloat-abi\u003dsoftfp\" \"-mthumb\" \"-Os\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fno-strict-aliasing\" \"-finline-limit\u003d64\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
-        }
-      ],
-      "output": {
-        "path": "{ndkPath}/samples/two-libs/obj/local/armeabi-v7a/libtwolib-second.so"
+        "path": "{ndkPath}/samples/two-libs/obj/local/armeabi/libtwolib-first.a"
       }
     }
   },

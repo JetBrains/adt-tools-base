@@ -22,7 +22,6 @@ import com.google.common.collect.ListMultimap;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -98,16 +97,12 @@ class FlowAnalyzer {
             BuildStepInfo current = commandSummaries.get(i);
             Set<String> outputsConsumed = commandOutputsConsumed.get(i);
             for (String output : current.getOutputs()) {
-                if (!outputsConsumed.contains(output)) {
+                if (!outputsConsumed.contains(output) || !current.inputsAreSourceFiles()) {
                     // Sort the inputs
                     List<BuildStepInfo> ordered = new ArrayList<>();
                     ordered.addAll(outputToTerminals.get(i));
-                    Collections.sort(ordered, new Comparator<BuildStepInfo>() {
-                        @Override
-                        public int compare(BuildStepInfo o1, BuildStepInfo o2) {
-                            return o1.getOnlyInput().compareTo(o2.getOnlyInput());
-                        }
-                    });
+                    Collections.sort(ordered,
+                            (o1, o2) -> o1.getOnlyInput().compareTo(o2.getOnlyInput()));
                     result.put(output, ordered);
                 }
             }

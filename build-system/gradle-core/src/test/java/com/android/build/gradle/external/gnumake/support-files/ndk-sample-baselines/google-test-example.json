@@ -1,0 +1,328 @@
+{
+  "buildFiles": [
+    {
+      "path": "{testPath}"
+    }
+  ],
+  "libraries": {
+    "arm64-v8a-libgoogletest_main-release": {
+      "buildCommand": "echo build command",
+      "toolchain": "toolchain-arm64-v8a",
+      "abi": "arm64-v8a",
+      "files": [
+        {
+          "src": {
+            "path": "{NDK}/ndk-bundle/sources/third_party/googletest/googletest/src/gtest_main.cc"
+          },
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-g\" \"-fno-exceptions\" \"-fno-rtti\" \"-O2\" \"-DNDEBUG\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-isystem\" \"{NDK}/ndk-bundle/platforms/android-23/arch-arm64/usr/include\""
+        }
+      ],
+      "output": {
+        "path": "{NDK}/debug/obj/local/arm64-v8a/libgoogletest_main.a"
+      }
+    },
+    "arm64-v8a-libsample1-release": {
+      "buildCommand": "echo build command",
+      "toolchain": "toolchain-arm64-v8a",
+      "abi": "arm64-v8a",
+      "files": [
+        {
+          "src": {
+            "path": "{HOME}/projects/NdkBuildTestApplication/app/sample/jni/sample1.cc"
+          },
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-g\" \"-fno-exceptions\" \"-fno-rtti\" \"-O2\" \"-DNDEBUG\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-isystem\" \"{NDK}/ndk-bundle/platforms/android-23/arch-arm64/usr/include\""
+        }
+      ],
+      "output": {
+        "path": "{NDK}/debug/obj/local/arm64-v8a/libsample1.so"
+      }
+    },
+    "arm64-v8a-libgoogletest_static-release": {
+      "buildCommand": "echo build command",
+      "toolchain": "toolchain-arm64-v8a",
+      "abi": "arm64-v8a",
+      "files": [
+        {
+          "src": {
+            "path": "{NDK}/ndk-bundle/sources/third_party/googletest/googletest/src/gtest-death-test.cc"
+          },
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-g\" \"-fno-exceptions\" \"-fno-rtti\" \"-O2\" \"-DNDEBUG\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-isystem\" \"{NDK}/ndk-bundle/platforms/android-23/arch-arm64/usr/include\""
+        },
+        {
+          "src": {
+            "path": "{NDK}/ndk-bundle/sources/third_party/googletest/googletest/src/gtest-filepath.cc"
+          },
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-g\" \"-fno-exceptions\" \"-fno-rtti\" \"-O2\" \"-DNDEBUG\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-isystem\" \"{NDK}/ndk-bundle/platforms/android-23/arch-arm64/usr/include\""
+        },
+        {
+          "src": {
+            "path": "{NDK}/ndk-bundle/sources/third_party/googletest/googletest/src/gtest-port.cc"
+          },
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-g\" \"-fno-exceptions\" \"-fno-rtti\" \"-O2\" \"-DNDEBUG\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-isystem\" \"{NDK}/ndk-bundle/platforms/android-23/arch-arm64/usr/include\""
+        },
+        {
+          "src": {
+            "path": "{NDK}/ndk-bundle/sources/third_party/googletest/googletest/src/gtest-printers.cc"
+          },
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-g\" \"-fno-exceptions\" \"-fno-rtti\" \"-O2\" \"-DNDEBUG\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-isystem\" \"{NDK}/ndk-bundle/platforms/android-23/arch-arm64/usr/include\""
+        },
+        {
+          "src": {
+            "path": "{NDK}/ndk-bundle/sources/third_party/googletest/googletest/src/gtest-test-part.cc"
+          },
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-g\" \"-fno-exceptions\" \"-fno-rtti\" \"-O2\" \"-DNDEBUG\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-isystem\" \"{NDK}/ndk-bundle/platforms/android-23/arch-arm64/usr/include\""
+        },
+        {
+          "src": {
+            "path": "{NDK}/ndk-bundle/sources/third_party/googletest/googletest/src/gtest-typed-test.cc"
+          },
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-g\" \"-fno-exceptions\" \"-fno-rtti\" \"-O2\" \"-DNDEBUG\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-isystem\" \"{NDK}/ndk-bundle/platforms/android-23/arch-arm64/usr/include\""
+        },
+        {
+          "src": {
+            "path": "{NDK}/ndk-bundle/sources/third_party/googletest/googletest/src/gtest.cc"
+          },
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-g\" \"-fno-exceptions\" \"-fno-rtti\" \"-O2\" \"-DNDEBUG\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-isystem\" \"{NDK}/ndk-bundle/platforms/android-23/arch-arm64/usr/include\""
+        }
+      ],
+      "output": {
+        "path": "{NDK}/debug/obj/local/arm64-v8a/libgoogletest_static.a"
+      }
+    },
+    "arm64-v8a-libgoogletest_main-debug": {
+      "buildCommand": "echo build command",
+      "toolchain": "toolchain-arm64-v8a",
+      "abi": "arm64-v8a",
+      "files": [
+        {
+          "src": {
+            "path": "{NDK}/ndk-bundle/sources/third_party/googletest/googletest/src/gtest_main.cc"
+          },
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-g\" \"-fno-exceptions\" \"-fno-rtti\" \"-O2\" \"-DNDEBUG\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-isystem\" \"{NDK}/ndk-bundle/platforms/android-23/arch-arm64/usr/include\""
+        }
+      ],
+      "output": {
+        "path": "{NDK}/debug/obj/local/arm64-v8a/libgoogletest_main.a"
+      }
+    },
+    "arm64-v8a-sample1_unittest-release": {
+      "buildCommand": "echo build command",
+      "toolchain": "toolchain-arm64-v8a",
+      "abi": "arm64-v8a",
+      "files": [
+        {
+          "src": {
+            "path": "{HOME}/projects/NdkBuildTestApplication/app/sample/jni/sample1.cc"
+          },
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-g\" \"-fno-exceptions\" \"-fno-rtti\" \"-O2\" \"-DNDEBUG\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-isystem\" \"{NDK}/ndk-bundle/platforms/android-23/arch-arm64/usr/include\""
+        },
+        {
+          "src": {
+            "path": "{HOME}/projects/NdkBuildTestApplication/app/sample/jni/sample1_unittest.cc"
+          },
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-g\" \"-fno-exceptions\" \"-fno-rtti\" \"-O2\" \"-DNDEBUG\" \"-DANDROID\" \"-fPIE\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-fPIE\" \"-isystem\" \"{NDK}/ndk-bundle/platforms/android-23/arch-arm64/usr/include\""
+        },
+        {
+          "src": {
+            "path": "{NDK}/ndk-bundle/sources/third_party/googletest/googletest/src/gtest-death-test.cc"
+          },
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-g\" \"-fno-exceptions\" \"-fno-rtti\" \"-O2\" \"-DNDEBUG\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-isystem\" \"{NDK}/ndk-bundle/platforms/android-23/arch-arm64/usr/include\""
+        },
+        {
+          "src": {
+            "path": "{NDK}/ndk-bundle/sources/third_party/googletest/googletest/src/gtest-filepath.cc"
+          },
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-g\" \"-fno-exceptions\" \"-fno-rtti\" \"-O2\" \"-DNDEBUG\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-isystem\" \"{NDK}/ndk-bundle/platforms/android-23/arch-arm64/usr/include\""
+        },
+        {
+          "src": {
+            "path": "{NDK}/ndk-bundle/sources/third_party/googletest/googletest/src/gtest-port.cc"
+          },
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-g\" \"-fno-exceptions\" \"-fno-rtti\" \"-O2\" \"-DNDEBUG\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-isystem\" \"{NDK}/ndk-bundle/platforms/android-23/arch-arm64/usr/include\""
+        },
+        {
+          "src": {
+            "path": "{NDK}/ndk-bundle/sources/third_party/googletest/googletest/src/gtest-printers.cc"
+          },
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-g\" \"-fno-exceptions\" \"-fno-rtti\" \"-O2\" \"-DNDEBUG\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-isystem\" \"{NDK}/ndk-bundle/platforms/android-23/arch-arm64/usr/include\""
+        },
+        {
+          "src": {
+            "path": "{NDK}/ndk-bundle/sources/third_party/googletest/googletest/src/gtest-test-part.cc"
+          },
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-g\" \"-fno-exceptions\" \"-fno-rtti\" \"-O2\" \"-DNDEBUG\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-isystem\" \"{NDK}/ndk-bundle/platforms/android-23/arch-arm64/usr/include\""
+        },
+        {
+          "src": {
+            "path": "{NDK}/ndk-bundle/sources/third_party/googletest/googletest/src/gtest-typed-test.cc"
+          },
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-g\" \"-fno-exceptions\" \"-fno-rtti\" \"-O2\" \"-DNDEBUG\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-isystem\" \"{NDK}/ndk-bundle/platforms/android-23/arch-arm64/usr/include\""
+        },
+        {
+          "src": {
+            "path": "{NDK}/ndk-bundle/sources/third_party/googletest/googletest/src/gtest.cc"
+          },
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-g\" \"-fno-exceptions\" \"-fno-rtti\" \"-O2\" \"-DNDEBUG\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-isystem\" \"{NDK}/ndk-bundle/platforms/android-23/arch-arm64/usr/include\""
+        },
+        {
+          "src": {
+            "path": "{NDK}/ndk-bundle/sources/third_party/googletest/googletest/src/gtest_main.cc"
+          },
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-g\" \"-fno-exceptions\" \"-fno-rtti\" \"-O2\" \"-DNDEBUG\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-isystem\" \"{NDK}/ndk-bundle/platforms/android-23/arch-arm64/usr/include\""
+        }
+      ],
+      "output": {
+        "path": "{NDK}/debug/obj/local/arm64-v8a/sample1_unittest"
+      }
+    },
+    "arm64-v8a-libgoogletest_static-debug": {
+      "buildCommand": "echo build command",
+      "toolchain": "toolchain-arm64-v8a",
+      "abi": "arm64-v8a",
+      "files": [
+        {
+          "src": {
+            "path": "{NDK}/ndk-bundle/sources/third_party/googletest/googletest/src/gtest-death-test.cc"
+          },
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-g\" \"-fno-exceptions\" \"-fno-rtti\" \"-O2\" \"-DNDEBUG\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-isystem\" \"{NDK}/ndk-bundle/platforms/android-23/arch-arm64/usr/include\""
+        },
+        {
+          "src": {
+            "path": "{NDK}/ndk-bundle/sources/third_party/googletest/googletest/src/gtest-filepath.cc"
+          },
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-g\" \"-fno-exceptions\" \"-fno-rtti\" \"-O2\" \"-DNDEBUG\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-isystem\" \"{NDK}/ndk-bundle/platforms/android-23/arch-arm64/usr/include\""
+        },
+        {
+          "src": {
+            "path": "{NDK}/ndk-bundle/sources/third_party/googletest/googletest/src/gtest-port.cc"
+          },
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-g\" \"-fno-exceptions\" \"-fno-rtti\" \"-O2\" \"-DNDEBUG\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-isystem\" \"{NDK}/ndk-bundle/platforms/android-23/arch-arm64/usr/include\""
+        },
+        {
+          "src": {
+            "path": "{NDK}/ndk-bundle/sources/third_party/googletest/googletest/src/gtest-printers.cc"
+          },
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-g\" \"-fno-exceptions\" \"-fno-rtti\" \"-O2\" \"-DNDEBUG\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-isystem\" \"{NDK}/ndk-bundle/platforms/android-23/arch-arm64/usr/include\""
+        },
+        {
+          "src": {
+            "path": "{NDK}/ndk-bundle/sources/third_party/googletest/googletest/src/gtest-test-part.cc"
+          },
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-g\" \"-fno-exceptions\" \"-fno-rtti\" \"-O2\" \"-DNDEBUG\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-isystem\" \"{NDK}/ndk-bundle/platforms/android-23/arch-arm64/usr/include\""
+        },
+        {
+          "src": {
+            "path": "{NDK}/ndk-bundle/sources/third_party/googletest/googletest/src/gtest-typed-test.cc"
+          },
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-g\" \"-fno-exceptions\" \"-fno-rtti\" \"-O2\" \"-DNDEBUG\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-isystem\" \"{NDK}/ndk-bundle/platforms/android-23/arch-arm64/usr/include\""
+        },
+        {
+          "src": {
+            "path": "{NDK}/ndk-bundle/sources/third_party/googletest/googletest/src/gtest.cc"
+          },
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-g\" \"-fno-exceptions\" \"-fno-rtti\" \"-O2\" \"-DNDEBUG\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-isystem\" \"{NDK}/ndk-bundle/platforms/android-23/arch-arm64/usr/include\""
+        }
+      ],
+      "output": {
+        "path": "{NDK}/debug/obj/local/arm64-v8a/libgoogletest_static.a"
+      }
+    },
+    "arm64-v8a-sample1_unittest-debug": {
+      "buildCommand": "echo build command",
+      "toolchain": "toolchain-arm64-v8a",
+      "abi": "arm64-v8a",
+      "files": [
+        {
+          "src": {
+            "path": "{HOME}/projects/NdkBuildTestApplication/app/sample/jni/sample1.cc"
+          },
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-g\" \"-fno-exceptions\" \"-fno-rtti\" \"-O2\" \"-DNDEBUG\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-isystem\" \"{NDK}/ndk-bundle/platforms/android-23/arch-arm64/usr/include\""
+        },
+        {
+          "src": {
+            "path": "{HOME}/projects/NdkBuildTestApplication/app/sample/jni/sample1_unittest.cc"
+          },
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-g\" \"-fno-exceptions\" \"-fno-rtti\" \"-O2\" \"-DNDEBUG\" \"-DANDROID\" \"-fPIE\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-fPIE\" \"-isystem\" \"{NDK}/ndk-bundle/platforms/android-23/arch-arm64/usr/include\""
+        },
+        {
+          "src": {
+            "path": "{NDK}/ndk-bundle/sources/third_party/googletest/googletest/src/gtest-death-test.cc"
+          },
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-g\" \"-fno-exceptions\" \"-fno-rtti\" \"-O2\" \"-DNDEBUG\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-isystem\" \"{NDK}/ndk-bundle/platforms/android-23/arch-arm64/usr/include\""
+        },
+        {
+          "src": {
+            "path": "{NDK}/ndk-bundle/sources/third_party/googletest/googletest/src/gtest-filepath.cc"
+          },
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-g\" \"-fno-exceptions\" \"-fno-rtti\" \"-O2\" \"-DNDEBUG\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-isystem\" \"{NDK}/ndk-bundle/platforms/android-23/arch-arm64/usr/include\""
+        },
+        {
+          "src": {
+            "path": "{NDK}/ndk-bundle/sources/third_party/googletest/googletest/src/gtest-port.cc"
+          },
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-g\" \"-fno-exceptions\" \"-fno-rtti\" \"-O2\" \"-DNDEBUG\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-isystem\" \"{NDK}/ndk-bundle/platforms/android-23/arch-arm64/usr/include\""
+        },
+        {
+          "src": {
+            "path": "{NDK}/ndk-bundle/sources/third_party/googletest/googletest/src/gtest-printers.cc"
+          },
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-g\" \"-fno-exceptions\" \"-fno-rtti\" \"-O2\" \"-DNDEBUG\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-isystem\" \"{NDK}/ndk-bundle/platforms/android-23/arch-arm64/usr/include\""
+        },
+        {
+          "src": {
+            "path": "{NDK}/ndk-bundle/sources/third_party/googletest/googletest/src/gtest-test-part.cc"
+          },
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-g\" \"-fno-exceptions\" \"-fno-rtti\" \"-O2\" \"-DNDEBUG\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-isystem\" \"{NDK}/ndk-bundle/platforms/android-23/arch-arm64/usr/include\""
+        },
+        {
+          "src": {
+            "path": "{NDK}/ndk-bundle/sources/third_party/googletest/googletest/src/gtest-typed-test.cc"
+          },
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-g\" \"-fno-exceptions\" \"-fno-rtti\" \"-O2\" \"-DNDEBUG\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-isystem\" \"{NDK}/ndk-bundle/platforms/android-23/arch-arm64/usr/include\""
+        },
+        {
+          "src": {
+            "path": "{NDK}/ndk-bundle/sources/third_party/googletest/googletest/src/gtest.cc"
+          },
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-g\" \"-fno-exceptions\" \"-fno-rtti\" \"-O2\" \"-DNDEBUG\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-isystem\" \"{NDK}/ndk-bundle/platforms/android-23/arch-arm64/usr/include\""
+        },
+        {
+          "src": {
+            "path": "{NDK}/ndk-bundle/sources/third_party/googletest/googletest/src/gtest_main.cc"
+          },
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-g\" \"-fno-exceptions\" \"-fno-rtti\" \"-O2\" \"-DNDEBUG\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-isystem\" \"{NDK}/ndk-bundle/platforms/android-23/arch-arm64/usr/include\""
+        }
+      ],
+      "output": {
+        "path": "{NDK}/debug/obj/local/arm64-v8a/sample1_unittest"
+      }
+    },
+    "arm64-v8a-libsample1-debug": {
+      "buildCommand": "echo build command",
+      "toolchain": "toolchain-arm64-v8a",
+      "abi": "arm64-v8a",
+      "files": [
+        {
+          "src": {
+            "path": "{HOME}/projects/NdkBuildTestApplication/app/sample/jni/sample1.cc"
+          },
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-g\" \"-fno-exceptions\" \"-fno-rtti\" \"-O2\" \"-DNDEBUG\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-isystem\" \"{NDK}/ndk-bundle/platforms/android-23/arch-arm64/usr/include\""
+        }
+      ],
+      "output": {
+        "path": "{NDK}/debug/obj/local/arm64-v8a/libsample1.so"
+      }
+    }
+  },
+  "toolchains": {
+    "toolchain-arm64-v8a": {
+      "cppCompilerExecutable": {
+        "path": "{NDK}/ndk-bundle/toolchains/aarch64-linux-android-4.9/prebuilt/linux-x86_64/bin/aarch64-linux-android-g++"
+      }
+    }
+  },
+  "cFileExtensions": [],
+  "cppFileExtensions": [
+    "cc"
+  ]
+}
