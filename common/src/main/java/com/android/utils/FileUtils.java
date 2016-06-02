@@ -181,13 +181,22 @@ public final class FileUtils {
         }
     }
 
-    public static void mkdirs(@NonNull File folder) {
+    /**
+     * Creates a directory, if it doesn't exist.
+     *
+     * @param folder the directory to create, may already exist
+     * @return {@code folder}
+     */
+    @NonNull
+    public static File mkdirs(@NonNull File folder) {
         // attempt to create first.
         // if failure only throw if folder does not exist.
         // This makes this method able to create the same folder(s) from different thread
         if (!folder.mkdirs() && !folder.exists()) {
             throw new RuntimeException("Cannot create directory " + folder);
         }
+
+        return folder;
     }
 
     /**

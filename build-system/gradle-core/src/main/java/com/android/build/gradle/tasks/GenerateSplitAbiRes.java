@@ -29,6 +29,7 @@ import com.android.builder.core.VariantConfiguration;
 import com.android.builder.internal.aapt.Aapt;
 import com.android.builder.internal.aapt.AaptPackageConfig;
 import com.android.ide.common.process.ProcessException;
+import com.android.utils.FileUtils;
 import com.google.common.base.CharMatcher;
 
 import org.gradle.api.tasks.Input;
@@ -114,7 +115,14 @@ public class GenerateSplitAbiRes extends BaseTask {
             Aapt aapt =
                     AaptGradleFactory.make(
                             getBuilder(),
-                            variantOutputData.getScope().getVariantScope());
+                            variantOutputData.getScope().getVariantScope(),
+                            FileUtils.mkdirs(
+                                    new File(
+                                            variantOutputData
+                                                    .getScope()
+                                                    .getVariantScope()
+                                                    .getIncrementalDir(getName()),
+                                            "aapt-temp")));
             AaptPackageConfig.Builder aaptConfig = new AaptPackageConfig.Builder();
             aaptConfig
                     .setManifestFile(tmpFile)

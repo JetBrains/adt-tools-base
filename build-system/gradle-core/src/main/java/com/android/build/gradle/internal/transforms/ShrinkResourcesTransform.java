@@ -225,7 +225,11 @@ public class ShrinkResourcesTransform extends Transform {
                 Aapt aapt =
                         AaptGradleFactory.make(
                                 androidBuilder,
-                                variantOutputData.getScope().getVariantScope());
+                                variantOutputData.getScope().getVariantScope(),
+                                FileUtils.mkdirs(
+                                        new File(
+                                                invocation.getContext().getTemporaryDir(),
+                                                "temp-aapt")));
                 AaptPackageConfig.Builder aaptPackageConfig = new AaptPackageConfig.Builder()
                         .setManifestFile(mergedManifest)
                         .setOptions(processResourcesTask.getAaptOptions())
@@ -238,7 +242,9 @@ public class ShrinkResourcesTransform extends Transform {
                         .setResourceConfigs(processResourcesTask.getResourceConfigs())
                         .setSplits(processResourcesTask.getSplits());
 
-                androidBuilder.processResources(aapt, aaptPackageConfig,
+                androidBuilder.processResources(
+                        aapt,
+                        aaptPackageConfig,
                         processResourcesTask.getEnforceUniquePackageName());
             } else {
                 // Just rewrite the .ap_ file to strip out the res/ files for unused resources
