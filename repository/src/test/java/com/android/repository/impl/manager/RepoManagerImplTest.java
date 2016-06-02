@@ -378,7 +378,6 @@ public class RepoManagerImplTest extends TestCase {
         RepoManagerImpl mgr = new RepoManagerImpl(fop, localRunningFactory,
                 new TestLoaderFactory());
         File repoRoot = new File("/repo");
-        fop.mkdirs(repoRoot);
         mgr.setLocalPath(repoRoot);
         mgr.registerSourceProvider(new FakeRepositorySourceProvider(
                 ImmutableList.<RepositorySource>of()));

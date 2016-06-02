@@ -30,7 +30,6 @@ import com.android.sdklib.repository.legacy.descriptors.PkgDesc;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -134,32 +133,33 @@ public class LocalPlatformPkgInfo extends LocalPkgInfo {
             Map<String, String> map = null;
 
             try {
-                map = ProjectProperties.parsePropertyStream(fileOp.newFileInputStream(buildProp), buildProp.getPath(), null);
+                map = ProjectProperties.parsePropertyStream(fileOp.newFileInputStream(buildProp), buildProp.getPath(), null /*log*/);
                 if (map != null) {
                     result.putAll(map);
                 }
             }
-            catch (IOException ignore) {
+            catch (FileNotFoundException ignore) {
             }
 
             try {
-                map = ProjectProperties.parsePropertyStream(fileOp.newFileInputStream(sourcePropFile), sourcePropFile.getPath(), null);
+                map =
+                        ProjectProperties.parsePropertyStream(fileOp.newFileInputStream(sourcePropFile), sourcePropFile.getPath(), null /*log*/);
                 if (map != null) {
                     result.putAll(map);
                 }
             }
-            catch (IOException ignore) {
+            catch (FileNotFoundException ignore) {
             }
 
             File sdkPropFile = new File(platformFolder, SdkConstants.FN_SDK_PROP);
             if (fileOp.isFile(sdkPropFile)) { // obsolete platforms don't have this.
                 try {
-                    map = ProjectProperties.parsePropertyStream(fileOp.newFileInputStream(sdkPropFile), sdkPropFile.getPath(), null);
+                    map = ProjectProperties.parsePropertyStream(fileOp.newFileInputStream(sdkPropFile), sdkPropFile.getPath(), null /*log*/);
                     if (map != null) {
                         result.putAll(map);
                     }
                 }
-                catch (IOException ignore) {
+                catch (FileNotFoundException ignore) {
                 }
             }
             myPlatformProp = result;

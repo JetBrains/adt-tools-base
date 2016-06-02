@@ -184,5 +184,13 @@ public abstract class LocalPkgInfo
     public String getListDescription() {
         return getDesc().getListDescription();
     }
+
+    /**
+     * Deletes the files in the SDK corresponding to this package.
+     */
+    public void delete() {
+        FileOpUtils.create().deleteFileOrFolder(getLocalDir());
+    }
+
 }
 

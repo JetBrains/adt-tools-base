@@ -225,7 +225,7 @@ class MavenInstallListener implements PackageOperation.StatusChangeListener {
         InputStream metadataInputStream;
         try {
             metadataInputStream = fop.newFileInputStream(f);
-        } catch (IOException e) {
+        } catch (FileNotFoundException e) {
             return null;
         }
         try {
@@ -255,7 +255,7 @@ class MavenInstallListener implements PackageOperation.StatusChangeListener {
         OutputStream hashOutputStream;
         try {
             hashOutputStream = fop.newFileOutputStream(hashFile);
-        } catch (IOException e) {
+        } catch (FileNotFoundException e) {
             progress.logWarning("Failed to open " + algorithm + " file");
             return false;
         }
