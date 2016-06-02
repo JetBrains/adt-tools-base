@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+<#if appCompat>
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+</#if>
     android:layout_width="match_parent"
     android:layout_height="@dimen/nav_header_height"
     android:background="@drawable/side_nav_bar"
@@ -15,7 +19,11 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:paddingTop="@dimen/nav_header_vertical_spacing"
+<#if appCompat>
+        app:srcCompat="@android:drawable/sym_def_app_icon"
+<#else>
         android:src="@android:drawable/sym_def_app_icon"
+</#if>
         android:id="@+id/imageView" />
 
     <TextView

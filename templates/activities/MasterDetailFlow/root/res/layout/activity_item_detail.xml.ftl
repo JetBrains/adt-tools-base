@@ -55,7 +55,7 @@
         android:layout_height="wrap_content"
         android:layout_gravity="center_vertical|start"
         android:layout_margin="@dimen/fab_margin"
-        android:src="@android:drawable/stat_notify_chat"
+        app:srcCompat="@android:drawable/stat_notify_chat"
         app:layout_anchor="@+id/${detail_name}_container"
         app:layout_anchorGravity="top|end" />
 
