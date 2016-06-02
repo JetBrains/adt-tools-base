@@ -896,6 +896,7 @@ public class AndroidBuilder {
         aaptConfigBuilder.setLogger(mLogger);
 
         AaptPackageConfig aaptConfig = aaptConfigBuilder.build();
+
         try {
             aapt.link(aaptConfig).get();
         } catch (Exception e) {
