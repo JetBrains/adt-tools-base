@@ -76,7 +76,7 @@ public final class ApkCreatorFactories {
 
             ZFileOptions options = new ZFileOptions();
             options.setNoTimestamps(!keepTimestamps);
-            options.setCoverEmptySpaceUsingExtraField(false);
+            options.setCoverEmptySpaceUsingExtraField(true);
 
             ThreadPoolExecutor compressionExecutor =
                     new ThreadPoolExecutor(
