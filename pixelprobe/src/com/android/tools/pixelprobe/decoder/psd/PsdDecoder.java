@@ -82,6 +82,7 @@ public final class PsdDecoder extends Decoder {
     public Image decode(InputStream in) throws IOException {
         try {
             Image.Builder image = new Image.Builder();
+            image.format("PSD");
 
             // The PsdFile class represents the entire document
             PsdFile psd = ChunkIO.read(in, PsdFile.class);
