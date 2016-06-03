@@ -37,7 +37,6 @@ import java.util.ListIterator;
  */
 @SuppressWarnings({"WeakerAccess", "unused"}) // Used in studio and in integration tests.
 public class InstantRunBuildInfo {
-
     /**
      * Right now Gradle plugin doesn't sort the build id's, but when it does we can rely on element
      * order in the doc
@@ -83,7 +82,8 @@ public class InstantRunBuildInfo {
 
     public long getSecretToken() {
         String tokenString = mRoot.getAttribute(ATTR_TOKEN);
-        return Strings.isNullOrEmpty(tokenString) ? 0 : Long.parseLong(tokenString);
+        assert !Strings.isNullOrEmpty(tokenString) : "Application authorization token was not generated";
+        return Long.parseLong(tokenString);
     }
 
     @NonNull
