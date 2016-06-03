@@ -146,6 +146,11 @@ public class ExternalNativeBuildTaskUtils {
                 || AndroidGradleOptions.refreshExternalNativeModel(project);
     }
 
+    public static boolean isExternalNativeBuildEnabled(@NonNull CoreExternalNativeBuild config) {
+        return (config.getNdkBuild().getPath() != null)
+                || (config.getCmake().getPath() != null);
+    }
+
     public static class ExternalNativeBuildProjectPathResolution {
         @Nullable
         public final String errorText;
