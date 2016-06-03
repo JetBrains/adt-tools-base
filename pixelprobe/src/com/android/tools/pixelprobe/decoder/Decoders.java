@@ -32,6 +32,7 @@ import java.util.function.Predicate;
 public final class Decoders {
     private static final int READ_AHEAD_LIMIT = 1024;
     private static final List<Decoder> decoders = new ArrayList<>();
+
     static {
         register(new JpegDecoder());
         register(new PngDecoder());

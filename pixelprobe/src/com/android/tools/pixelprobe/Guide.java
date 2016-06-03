@@ -83,8 +83,8 @@ public final class Guide {
     @Override
     public String toString() {
         return "Guide{" +
-               "orientation=" + orientation +
-               ", position=" + String.format("%.2f", position) +
-               '}';
+                "orientation=" + orientation +
+                ", position=" + String.format("%.2f", position) +
+                '}';
     }
 }

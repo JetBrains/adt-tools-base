@@ -178,13 +178,21 @@ public final class TextInfo {
          * The paragraph justification.
          */
         public enum Alignment {
-            /** The paragraph is left-aligned. */
+            /**
+             * The paragraph is left-aligned.
+             */
             LEFT,
-            /** The paragraph is right-aligned. */
+            /**
+             * The paragraph is right-aligned.
+             */
             RIGHT,
-            /** The paragraph is centered. */
+            /**
+             * The paragraph is centered.
+             */
             CENTER,
-            /** The paragraph is justified. */
+            /**
+             * The paragraph is justified.
+             */
             JUSTIFY
         }
 

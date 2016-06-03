@@ -80,7 +80,7 @@ public abstract class Decoder {
      * @param in Input stream to decode
      *
      * @return An Image instance, never null. Might be marked invalid if
-     *         an error occurred during the decoding process.
+     * an error occurred during the decoding process.
      */
     public Image decode(InputStream in) throws IOException {
         ImageInputStream stream = ImageIO.createImageInputStream(in);
@@ -102,13 +102,13 @@ public abstract class Decoder {
         ColorSpace colorSpace = colorModel.getColorSpace();
 
         return new Image.Builder()
-            .format(reader.getFormatName())
-            .dimensions(image.getWidth(), image.getHeight())
-            .mergedImage(image)
-            .colorMode(getColorMode(colorSpace))
-            .colorSpace(colorSpace)
-            .depth(colorModel.getComponentSize(0))
-            .build();
+                .format(reader.getFormatName())
+                .dimensions(image.getWidth(), image.getHeight())
+                .mergedImage(image)
+                .colorMode(getColorMode(colorSpace))
+                .colorSpace(colorSpace)
+                .depth(colorModel.getComponentSize(0))
+                .build();
     }
 
     private static ImageReader getImageReader(ImageInputStream stream) throws IOException {
@@ -121,10 +121,14 @@ public abstract class Decoder {
 
     private static ColorMode getColorMode(ColorSpace colorSpace) {
         switch (colorSpace.getType()) {
-            case ColorSpace.TYPE_CMYK: return ColorMode.CMYK;
-            case ColorSpace.TYPE_GRAY: return ColorMode.GRAYSCALE;
-            case ColorSpace.TYPE_Lab: return ColorMode.LAB;
-            case ColorSpace.TYPE_RGB: return ColorMode.RGB;
+            case ColorSpace.TYPE_CMYK:
+                return ColorMode.CMYK;
+            case ColorSpace.TYPE_GRAY:
+                return ColorMode.GRAYSCALE;
+            case ColorSpace.TYPE_Lab:
+                return ColorMode.LAB;
+            case ColorSpace.TYPE_RGB:
+                return ColorMode.RGB;
         }
         return ColorMode.UNKNOWN;
     }
@@ -132,7 +136,7 @@ public abstract class Decoder {
     @Override
     public String toString() {
         return "Decoder{" +
-               "formats={" + Strings.join(formats, ",") + '}' +
-               '}';
+                "formats={" + Strings.join(formats, ",") + '}' +
+                '}';
     }
 }

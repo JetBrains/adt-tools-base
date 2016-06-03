@@ -60,8 +60,11 @@ public final class Effects {
             List<Shadow> list = isInner ? innerShadows : outerShadows;
             if (list.size() == 0) {
                 list = new ArrayList<>();
-                if (isInner) innerShadows = list;
-                else outerShadows = list;
+                if (isInner) {
+                    innerShadows = list;
+                } else {
+                    outerShadows = list;
+                }
             }
 
             list.add(shadow);
