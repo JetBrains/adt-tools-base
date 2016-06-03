@@ -78,6 +78,7 @@ public class PermissionRequirementTest extends TestCase {
             when (pair.getValue()).thenReturn(literal);
 
             when(annotation.findAttributeValue(value.name)).thenReturn(literal);
+            when(annotation.findDeclaredAttributeValue(value.name)).thenReturn(literal);
         }
         PsiNameValuePair[] attributes = pairs.toArray(PsiNameValuePair.EMPTY_ARRAY);
         when(parameterList.getAttributes()).thenReturn(attributes);

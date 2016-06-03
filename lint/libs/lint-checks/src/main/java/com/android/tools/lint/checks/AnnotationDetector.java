@@ -219,7 +219,7 @@ public class AnnotationDetector extends Detector implements JavaPsiScanner {
 
     @Override
     public List<Class<? extends PsiElement>> getApplicablePsiTypes() {
-        List<Class<? extends PsiElement>> types = new ArrayList<Class<? extends PsiElement>>(2);
+        List<Class<? extends PsiElement>> types = new ArrayList<>(2);
         types.add(PsiAnnotation.class);
         types.add(PsiSwitchStatement.class);
         return types;
@@ -342,7 +342,7 @@ public class AnnotationDetector extends Detector implements JavaPsiScanner {
                         mContext.report(ANNOTATION_USAGE, annotation, mContext.getLocation(annotation),
                                 "The size multiple must be at least 1");
 
-                    } else if (exact < 0 && exact != unset) {
+                    } else if (exact < 0 && exact != unset || min < 0 && min != Long.MIN_VALUE) {
                         mContext.report(ANNOTATION_USAGE, annotation, mContext.getLocation(annotation),
                                 "The size can't be negative");
                     }
@@ -612,9 +612,9 @@ public class AnnotationDetector extends Detector implements JavaPsiScanner {
                 return;
             }
 
-            PsiAnnotationMemberValue value = annotation.findAttributeValue(ATTR_VALUE);
+            PsiAnnotationMemberValue value = annotation.findDeclaredAttributeValue(ATTR_VALUE);
             if (value == null) {
-                value = annotation.findAttributeValue(null);
+                value = annotation.findDeclaredAttributeValue(null);
             }
             if (value == null) {
                 return;

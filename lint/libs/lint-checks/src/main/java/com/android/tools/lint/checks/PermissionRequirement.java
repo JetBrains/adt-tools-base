@@ -141,9 +141,9 @@ public abstract class PermissionRequirement {
     public static Boolean getAnnotationBooleanValue(@Nullable PsiAnnotation annotation,
             @NonNull String name) {
         if (annotation != null) {
-            PsiAnnotationMemberValue attributeValue = annotation.findAttributeValue(name);
+            PsiAnnotationMemberValue attributeValue = annotation.findDeclaredAttributeValue(name);
             if (attributeValue == null && ATTR_VALUE.equals(name)) {
-                attributeValue = annotation.findAttributeValue(null);
+                attributeValue = annotation.findDeclaredAttributeValue(null);
             }
             // Use constant evaluator since we want to resolve field references as well
             if (attributeValue != null) {
@@ -161,9 +161,9 @@ public abstract class PermissionRequirement {
     public static Long getAnnotationLongValue(@Nullable PsiAnnotation annotation,
             @NonNull String name) {
         if (annotation != null) {
-            PsiAnnotationMemberValue attributeValue = annotation.findAttributeValue(name);
+            PsiAnnotationMemberValue attributeValue = annotation.findDeclaredAttributeValue(name);
             if (attributeValue == null && ATTR_VALUE.equals(name)) {
-                attributeValue = annotation.findAttributeValue(null);
+                attributeValue = annotation.findDeclaredAttributeValue(null);
             }
             // Use constant evaluator since we want to resolve field references as well
             if (attributeValue != null) {
@@ -181,9 +181,9 @@ public abstract class PermissionRequirement {
     public static Double getAnnotationDoubleValue(@Nullable PsiAnnotation annotation,
             @NonNull String name) {
         if (annotation != null) {
-            PsiAnnotationMemberValue attributeValue = annotation.findAttributeValue(name);
+            PsiAnnotationMemberValue attributeValue = annotation.findDeclaredAttributeValue(name);
             if (attributeValue == null && ATTR_VALUE.equals(name)) {
-                attributeValue = annotation.findAttributeValue(null);
+                attributeValue = annotation.findDeclaredAttributeValue(null);
             }
             // Use constant evaluator since we want to resolve field references as well
             if (attributeValue != null) {
@@ -201,9 +201,9 @@ public abstract class PermissionRequirement {
     public static String getAnnotationStringValue(@Nullable PsiAnnotation annotation,
             @NonNull String name) {
         if (annotation != null) {
-            PsiAnnotationMemberValue attributeValue = annotation.findAttributeValue(name);
+            PsiAnnotationMemberValue attributeValue = annotation.findDeclaredAttributeValue(name);
             if (attributeValue == null && ATTR_VALUE.equals(name)) {
-                attributeValue = annotation.findAttributeValue(null);
+                attributeValue = annotation.findDeclaredAttributeValue(null);
             }
             // Use constant evaluator since we want to resolve field references as well
             if (attributeValue != null) {
@@ -221,9 +221,9 @@ public abstract class PermissionRequirement {
     public static String[] getAnnotationStringValues(@Nullable PsiAnnotation annotation,
             @NonNull String name) {
         if (annotation != null) {
-            PsiAnnotationMemberValue attributeValue = annotation.findAttributeValue(name);
+            PsiAnnotationMemberValue attributeValue = annotation.findDeclaredAttributeValue(name);
             if (attributeValue == null && ATTR_VALUE.equals(name)) {
-                attributeValue = annotation.findAttributeValue(null);
+                attributeValue = annotation.findDeclaredAttributeValue(null);
             }
             if (attributeValue instanceof PsiArrayInitializerMemberValue) {
                 PsiAnnotationMemberValue[] initializers =
