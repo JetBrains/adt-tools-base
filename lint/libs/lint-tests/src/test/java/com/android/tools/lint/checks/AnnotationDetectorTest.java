@@ -564,6 +564,11 @@ public class AnnotationDetectorTest extends AbstractCheckTest {
                                 + "    public void varargs(@DrawableRes int... param1) { }\n"
                                 + "    public void varargs(@DrawableRes List<Integer> param1) { }\n"
                                 + "\n"
+                                + "\n"
+                                + "    @Size(min=1)\n"
+                                + "    public int[] okSize() {\n"
+                                + "        return null;\n"
+                                + "    }\n"
                                 // TODO: Warn when using on collections that aren't supported
                                 // TODO: Warn about inapplicable nullness stuff (outside of IDE)
                                 + "}"),
