@@ -16,6 +16,7 @@
 
 package com.android.tools.pixelprobe;
 
+import com.android.tools.pixelprobe.color.Colors;
 import com.android.tools.pixelprobe.util.Lists;
 
 import java.awt.color.ColorSpace;
@@ -42,6 +43,7 @@ public class Image {
     private final int depth;
     private final ColorMode colorMode;
     private final ColorSpace colorSpace;
+    private final String colorProfileDescription;
 
     private final float horizontalResolution;
     private final float verticalResolution;
@@ -60,6 +62,7 @@ public class Image {
         depth = builder.depth;
         colorMode = builder.colorMode;
         colorSpace = builder.colorSpace;
+        colorProfileDescription = Colors.getIccProfileDescription(colorSpace);
 
         horizontalResolution = builder.horizontalResolution;
         verticalResolution = builder.verticalResolution;
@@ -128,6 +131,15 @@ public class Image {
      */
     public ColorSpace getColorSpace() {
         return colorSpace;
+    }
+
+    /**
+     * Returns the profile description of this image's color space.
+     * If the color space does not have a profile description, this
+     * method returns an empty string.
+     */
+    public String getColorProfileDescription() {
+        return colorProfileDescription;
     }
 
     /**
@@ -271,16 +283,17 @@ public class Image {
     @Override
     public String toString() {
         return "Image{" +
-               "format=" + format +
-               ", width=" + width +
-               ", height=" + height +
-               ", hRes=" + horizontalResolution +
-               ", vRes=" + verticalResolution +
-               ", depth=" + depth +
-               ", colorMode=" + colorMode +
-               ", guides=" + guides.size() +
-               ", layers=" + layers.size() +
-               ", hasThumbnail=" + (thumbnail != null) +
-               '}';
+                "format=" + format +
+                ", width=" + width +
+                ", height=" + height +
+                ", hRes=" + horizontalResolution +
+                ", vRes=" + verticalResolution +
+                ", depth=" + depth +
+                ", colorMode=" + colorMode +
+                ", profile=" + colorProfileDescription +
+                ", guides=" + guides.size() +
+                ", layers=" + layers.size() +
+                ", hasThumbnail=" + (thumbnail != null) +
+                '}';
     }
 }

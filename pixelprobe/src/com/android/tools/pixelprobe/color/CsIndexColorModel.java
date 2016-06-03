@@ -62,9 +62,10 @@ public class CsIndexColorModel extends IndexColorModel {
             src[2] = srcMap[i + 512] / 255.0f;
 
             float[] dst = colorSpace.toRGB(src);
-            dstMap[i] = (((int) (dst[0] * 255.0f) & 0xff) << 16) |
-                        (((int) (dst[1] * 255.0f) & 0xff) <<  8) |
-                         ((int) (dst[2] * 255.0f) & 0xff);
+            dstMap[i] =
+                    (((int) (dst[0] * 255.0f) & 0xff) << 16) |
+                    (((int) (dst[1] * 255.0f) & 0xff) << 8) |
+                     ((int) (dst[2] * 255.0f) & 0xff);
         }
     }
 }

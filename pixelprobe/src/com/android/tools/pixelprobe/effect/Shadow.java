@@ -61,7 +61,7 @@ public final class Shadow {
      * Returns this shadow's casting angle in degrees.
      */
     public float getAngle() {
-      return angle;
+        return angle;
     }
 
     /**

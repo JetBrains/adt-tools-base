@@ -27,13 +27,13 @@ public final class Lists {
     private Lists() {
     }
 
-   /**
-    * Creates an immutable copy of the specified list.
-    *
-    * @param list The list fo make a copy of, cannot be null
-    *
-    * @return An immutable copy of the specified list
-    */
+    /**
+     * Creates an immutable copy of the specified list.
+     *
+     * @param list The list fo make a copy of, cannot be null
+     *
+     * @return An immutable copy of the specified list
+     */
     public static <T> List<T> immutableCopy(List<T> list) {
         return Collections.unmodifiableList(new ArrayList<>(list));
     }

@@ -12,11 +12,11 @@ final class PsdFile$$ChunkIO {
         int size = 0;
         long byteCount = 0;
 
-        psdFile.header = Header$$ChunkIO.read(in, stack);
-        psdFile.colorData = ColorData$$ChunkIO.read(in, stack);
-        psdFile.resources = ImageResources$$ChunkIO.read(in, stack);
-        psdFile.layersInfo = LayersInformation$$ChunkIO.read(in, stack);
-        psdFile.imageData = ImageData$$ChunkIO.read(in, stack);
+        psdFile.header = PsdFile$Header$$ChunkIO.read(in, stack);
+        psdFile.colorData = PsdFile$ColorData$$ChunkIO.read(in, stack);
+        psdFile.resources = PsdFile$ImageResources$$ChunkIO.read(in, stack);
+        psdFile.layersInfo = PsdFile$LayersInformation$$ChunkIO.read(in, stack);
+        psdFile.imageData = PsdFile$ImageData$$ChunkIO.read(in, stack);
 
         stack.removeFirst();
         return psdFile;

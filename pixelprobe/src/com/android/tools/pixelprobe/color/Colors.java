@@ -21,6 +21,7 @@ import java.awt.color.ICC_ColorSpace;
 import java.awt.color.ICC_Profile;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
 
 /**
  * Various utilities to manipulate and convert colors.
@@ -49,17 +50,17 @@ public final class Colors {
      * output values are in the same range.
      *
      * @param c An array of floats representing a linear RGB color.
-     *          Cannot be null
+     * Cannot be null
      *
      * @return A new array of floats, of the same size as the input array,
-     *         representing an sRGB color
+     * representing an sRGB color
      */
     public static float[] linearTosRGB(float[] c) {
-      float[] v = new float[c.length];
-      for (int i = 0; i < c.length; i++) {
-          v[i] = linearTosRGB(c[i]);
-      }
-      return v;
+        float[] v = new float[c.length];
+        for (int i = 0; i < c.length; i++) {
+            v[i] = linearTosRGB(c[i]);
+        }
+        return v;
     }
 
     /**
@@ -100,7 +101,7 @@ public final class Colors {
      * Returns a Lab color space.
      */
     public static ColorSpace getLabColorSpace() {
-        return CieLab.getInstance();
+        return CieLabColorSpace.getInstance();
     }
 
     /**
@@ -183,5 +184,48 @@ public final class Colors {
      */
     public static ColorSpace getCmykColorSpace() {
         return ColorSpaceHolder.CMYK_ICC_ColorSpace;
+    }
+
+    /**
+     * Returns the description of the ICC profile embedded in the specified color
+     * space. If the description cannot be decoded or if the color space is not
+     * an ICC color space, this method returns an empty string.
+     *
+     * @param colorSpace An ICC color space
+     *
+     * @return The description of the color space's ICC profile, or an empty string
+     */
+    public static String getIccProfileDescription(ColorSpace colorSpace) {
+        if (colorSpace instanceof ICC_ColorSpace) {
+            return getIccProfileDescription(((ICC_ColorSpace) colorSpace).getProfile());
+        }
+        return "";
+    }
+
+    /**
+     * Returns the description of an ICC profile. If the description cannot be
+     * decoded or if the profile is null, this method returns an empty string.
+     *
+     * @param profile An ICC color profile
+     *
+     * @return The description of the color space's ICC profile, or an empty string
+     */
+    public static String getIccProfileDescription(ICC_Profile profile) {
+        if (profile == null) return "";
+
+        byte[] data = profile.getData(ICC_Profile.icSigProfileDescriptionTag);
+        if (data == null) return "";
+
+        // bytes 0-3  signature
+        // bytes 4-7  offset to tag data
+        // bytes 8-11 data length
+        int length = data[8] << 24 | data[9] << 16 | data[10] << 8 | data[11];
+
+        try {
+            // Skip the null terminator
+            return new String(data, 12, length - 1, "US-ASCII");
+        } catch (UnsupportedEncodingException e) {
+            return "";
+        }
     }
 }

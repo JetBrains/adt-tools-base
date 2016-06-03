@@ -19,20 +19,17 @@ package com.android.tools.pixelprobe.decoder.psd;
 import com.android.tools.chunkio.ChunkIO;
 import com.android.tools.pixelprobe.*;
 import com.android.tools.pixelprobe.Image;
+import com.android.tools.pixelprobe.color.Colors;
 import com.android.tools.pixelprobe.decoder.Decoder;
 import com.android.tools.pixelprobe.effect.Shadow;
-import com.android.tools.pixelprobe.color.Colors;
-import com.android.tools.pixelprobe.util.Images;
 import com.android.tools.pixelprobe.util.Bytes;
+import com.android.tools.pixelprobe.util.Images;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.color.ColorSpace;
-import java.awt.color.ICC_ColorSpace;
-import java.awt.color.ICC_Profile;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.GeneralPath;
-import java.awt.geom.Path2D;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
@@ -42,13 +39,15 @@ import java.util.*;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static com.android.tools.pixelprobe.decoder.psd.PsdFile.*;
+
 /**
  * Decodes PSD (Adobe Photoshop) streams. Accepts the "psd" and "photoshop"
  * format strings. The PSB variant of the Photoshop format, used to store
  * large images (> 30,000 pixels in either dimension), is currently not
  * supported.
  */
-@SuppressWarnings({"UseJBColor"})
+@SuppressWarnings({ "UseJBColor" })
 public final class PsdDecoder extends Decoder {
     /**
      * Constant to convert centimeters to inches.
@@ -105,7 +104,8 @@ public final class PsdDecoder extends Decoder {
     /**
      * Extract layers information from the PSD raw data into the specified image.
      * Not all layers will be extracted.
-     *  @param image The user image
+     *
+     * @param image The user image
      * @param layersInfo The document's layers information
      */
     private static void extractLayers(Image.Builder image, LayersInformation layersInfo) {
@@ -166,10 +166,10 @@ public final class PsdDecoder extends Decoder {
             Layer.Builder layer = new Layer.Builder(name, type);
             layer.bounds(rawLayer.left, rawLayer.top,
                     rawLayer.right - rawLayer.left, rawLayer.bottom - rawLayer.top)
-                .opacity(rawLayer.opacity / 255.0f)
-                .blendMode(Constants.getBlendMode(rawLayer.blendMode))
-                .open(isOpen)
-                .visible((rawLayer.flags & RawLayer.INVISIBLE) == 0);
+                    .opacity(rawLayer.opacity / 255.0f)
+                    .blendMode(PsdUtils.getBlendMode(rawLayer.blendMode))
+                    .open(isOpen)
+                    .visible((rawLayer.flags & RawLayer.INVISIBLE) == 0);
 
             // Get the current parent before we modify the stack
             Layer.Builder parent = stack.peekFirst();
@@ -219,7 +219,7 @@ public final class PsdDecoder extends Decoder {
             if (pathProperty != null) {
                 type = Layer.Type.PATH;
             } else {
-                for (String key : Constants.getAdjustmentLayerKeys()) {
+                for (String key : PsdUtils.getAdjustmentLayerKeys()) {
                     if (properties.containsKey(key)) {
                         type = Layer.Type.ADJUSTMENT;
                         break;
@@ -303,7 +303,7 @@ public final class PsdDecoder extends Decoder {
         LayerEffects layerEffects = (LayerEffects) property.data;
         Effects.Builder effects = new Effects.Builder();
 
-        boolean effectsEnabled = layerEffects.effects.get("masterFXSwitch");
+        boolean effectsEnabled = PsdUtils.get(layerEffects.effects, "masterFXSwitch");
         if (effectsEnabled) {
             extractShadowEffects(image, effects, layerEffects, isMultiEffects, LayerShadow.INNER);
             extractShadowEffects(image, effects, layerEffects, isMultiEffects, LayerShadow.OUTER);
@@ -315,7 +315,7 @@ public final class PsdDecoder extends Decoder {
     private static void extractShadowEffects(Image.Builder image, Effects.Builder effects,
             LayerEffects layerEffects, boolean isMultiEffects, LayerShadow shadowType) {
         if (isMultiEffects) {
-            DescriptorItem.ValueList list = layerEffects.effects.get(shadowType.getMultiName());
+            DescriptorItem.ValueList list = PsdUtils.get(layerEffects.effects, shadowType.getMultiName());
             if (list != null) {
                 for (int i = 0; i < list.count; i++) {
                     Descriptor descriptor = (Descriptor) list.items.get(i).data;
@@ -323,7 +323,7 @@ public final class PsdDecoder extends Decoder {
                 }
             }
         } else {
-            Descriptor descriptor = layerEffects.effects.get(shadowType.getName());
+            Descriptor descriptor = PsdUtils.get(layerEffects.effects, shadowType.getName());
             if (descriptor != null) {
                 addShadowEffect(image, effects, descriptor, shadowType);
             }
@@ -338,19 +338,19 @@ public final class PsdDecoder extends Decoder {
         if (type == LayerShadow.OUTER) shadowType = Shadow.Type.OUTER;
 
         Shadow shadow = new Shadow.Builder(shadowType)
-                .blur(descriptor.getUnitFloat("blur", scale))
-                .angle(descriptor.getUnitFloat("lagl", scale))
-                .distance(descriptor.getUnitFloat("Dstn", scale))
-                .opacity(descriptor.getUnitFloat("Opct", scale))
+                .blur(PsdUtils.getUnitFloat(descriptor, "blur", scale))
+                .angle(PsdUtils.getUnitFloat(descriptor, "lagl", scale))
+                .distance(PsdUtils.getUnitFloat(descriptor, "Dstn", scale))
+                .opacity(PsdUtils.getUnitFloat(descriptor, "Opct", scale))
                 .color(getColor(descriptor))
-                .blendMode(Constants.getBlendMode(descriptor.get("Md  ")))
+                .blendMode(PsdUtils.getBlendMode(PsdUtils.get(descriptor, "Md  ")))
                 .build();
 
         effects.addShadow(shadow);
     }
 
     private static Color getColor(Descriptor descriptor) {
-        Descriptor color = descriptor.get("Clr ");
+        Descriptor color = PsdUtils.get(descriptor, "Clr ");
         if (color == null) return Color.BLACK;
 
         String colorType = color.classId.toString();
@@ -373,38 +373,38 @@ public final class PsdDecoder extends Decoder {
 
     private static Color colorFromsRGB(Descriptor color) {
         return new Color(
-                color.getFloat("Rd  ") / 255.0f,
-                color.getFloat("Grn ") / 255.0f,
-                color.getFloat("Bl  ") / 255.0f);
+                PsdUtils.getFloat(color, "Rd  ") / 255.0f,
+                PsdUtils.getFloat(color, "Grn ") / 255.0f,
+                PsdUtils.getFloat(color, "Bl  ") / 255.0f);
     }
 
     private static Color colorFromHSB(Descriptor color) {
         float[] rgb = Colors.HSBtosRGB(
-                color.getUnitFloat("H   ", 0.0f) / 360.0f,
-                color.getFloat("Strt") / 100.0f,
-                color.getFloat("Brgh") / 100.0f);
+                PsdUtils.getUnitFloat(color, "H   ", 0.0f) / 360.0f,
+                PsdUtils.getFloat(color, "Strt") / 100.0f,
+                PsdUtils.getFloat(color, "Brgh") / 100.0f);
         return new Color(rgb[0], rgb[1], rgb[2]);
     }
 
     private static Color colorFromCMYK(Descriptor color) {
         float[] rgb = Colors.CMYKtosRGB(
-                color.getFloat("Cyn "),
-                color.getFloat("Mgnt"),
-                color.getFloat("Ylw "),
-                color.getFloat("Blck"));
+                PsdUtils.getFloat(color, "Cyn "),
+                PsdUtils.getFloat(color, "Mgnt"),
+                PsdUtils.getFloat(color, "Ylw "),
+                PsdUtils.getFloat(color, "Blck"));
         return new Color(rgb[0], rgb[1], rgb[2]);
     }
 
     private static Color colorFromLAB(Descriptor color) {
         float[] rgb = Colors.LABtosRGB(
-                color.getFloat("Lmnc"),
-                color.getFloat("A   "),
-                color.getFloat("B   "));
+                PsdUtils.getFloat(color, "Lmnc"),
+                PsdUtils.getFloat(color, "A   "),
+                PsdUtils.getFloat(color, "B   "));
         return new Color(rgb[0], rgb[1], rgb[2]);
     }
 
     private static Color colorFromGray(Descriptor color) {
-        float gray = Colors.linearTosRGB(color.getFloat("Gry ") / 255.0f);
+        float gray = Colors.linearTosRGB(PsdUtils.getFloat(color, "Gry ") / 255.0f);
         return new Color(gray, gray, gray);
     }
 
@@ -418,7 +418,7 @@ public final class PsdDecoder extends Decoder {
 
         // The text data uses \r to indicate new lines
         // Replace them with \n instead
-        info.text(typeTool.text.<String>get(TypeToolObject.KEY_TEXT).replace('\r', '\n'));
+        info.text(PsdUtils.<String>get(typeTool.text, TypeToolObject.KEY_TEXT).replace('\r', '\n'));
 
         // Compute the text layer's transform
         AffineTransform transform = new AffineTransform(
@@ -434,10 +434,10 @@ public final class PsdDecoder extends Decoder {
         // in the affine transform above gives us the origin for text
         // alignment and the bounding box gives us the actual position of
         // the text box from that origin
-        DescriptorItem.UnitDouble left = typeTool.text.get("boundingBox.Left");
-        DescriptorItem.UnitDouble top = typeTool.text.get("boundingBox.Top ");
-        DescriptorItem.UnitDouble right = typeTool.text.get("boundingBox.Rght");
-        DescriptorItem.UnitDouble bottom = typeTool.text.get("boundingBox.Btom");
+        DescriptorItem.UnitDouble left = PsdUtils.get(typeTool.text, "boundingBox.Left");
+        DescriptorItem.UnitDouble top = PsdUtils.get(typeTool.text, "boundingBox.Top ");
+        DescriptorItem.UnitDouble right = PsdUtils.get(typeTool.text, "boundingBox.Rght");
+        DescriptorItem.UnitDouble bottom = PsdUtils.get(typeTool.text, "boundingBox.Btom");
 
         if (left != null && top != null && right != null && bottom != null) {
             info.bounds(
@@ -446,14 +446,14 @@ public final class PsdDecoder extends Decoder {
         }
 
         // Retrieves styles from the structured text data
-        byte[] data = typeTool.text.get(TypeToolObject.KEY_ENGINE_DATA);
+        byte[] data = PsdUtils.get(typeTool.text, TypeToolObject.KEY_ENGINE_DATA);
 
         TextEngine parser = new TextEngine();
         TextEngine.MapProperty properties = parser.parse(data);
 
         // Find the list of fonts
         List<TextEngine.Property<?>> fontProperties = ((TextEngine.ListProperty)
-                properties.get("ResourceDict.FontSet")).getValue();
+                                                               properties.get("ResourceDict.FontSet")).getValue();
         List<String> fonts = new ArrayList<>(fontProperties.size());
         fonts.addAll(fontProperties.stream()
                 .map(element -> ((TextEngine.MapProperty) element).get("Name").toString())
@@ -480,8 +480,7 @@ public final class PsdDecoder extends Decoder {
             // Get the typeface, font size and color from each style run
             // If the run does not have a style, fall back to the default stylesheet
             int index = ((TextEngine.IntProperty) getFromMap(sheet, defaultSheet, "Font")).getValue();
-            float size = ((TextEngine.FloatProperty)
-                    getFromMap(sheet, defaultSheet, "FontSize")).getValue() / resolutionScale;
+            float size = ((TextEngine.FloatProperty) getFromMap(sheet, defaultSheet, "FontSize")).getValue() / resolutionScale;
             float[] rgb = ((TextEngine.ListProperty)
                     getFromMap(sheet, defaultSheet, "FillColor.Values")).toFloatArray();
             int tracking = ((TextEngine.IntProperty) getFromMap(sheet, defaultSheet, "Tracking")).getValue();
@@ -538,16 +537,6 @@ public final class PsdDecoder extends Decoder {
     }
 
     /**
-     * Simple enum used to track the state of path records.
-     * See decodePathData().
-     */
-    private enum Subpath {
-        NONE,
-        CLOSED,
-        OPEN
-    }
-
-    /**
      * Decodes the path data for a given layer. The path data is encoded as a
      * series of path records that are fairly straightforward to interpret.
      */
@@ -555,76 +544,9 @@ public final class PsdDecoder extends Decoder {
             Map<String, LayerProperty> properties) {
         // We are guaranteed to have this property if this method is called
         LayerProperty property = properties.get(LayerProperty.KEY_VECTOR_MASK);
-
-        // Photoshop only uses the even/odd fill rule
-        GeneralPath path = new GeneralPath(Path2D.WIND_EVEN_ODD);
-
-        // Each Bézier knot in a PSD is made of three points:
-        //   - the anchor (the know or point itself)
-        //   - the control point before the anchor
-        //   - the control point after the anchor
-        //
-        // PSD Bézier knots must be converted to moveTo/curveTo commands.
-        // A curveTo() describes a cubic curve. To generate a curveTo() we
-        // need three points:
-        //   - the next anchor (the destination point of the curveTo())
-        //   - the control point after the previous anchor
-        //   - the control point before the next anchor
-
-        Subpath currentSubpath = Subpath.NONE;
-        PathRecord.BezierKnot firstKnot = null;
-        PathRecord.BezierKnot lastKnot = null;
-
         VectorMask mask = (VectorMask) property.data;
-        for (PathRecord record : mask.pathRecords) {
-            switch (record.selector) {
-                // A "LENGTH" record marks the beginning of a new sub-path
-                // Closed subpath needs special handling at the end
-                case PathRecord.CLOSED_SUBPATH_LENGTH:
-                    if (currentSubpath == Subpath.CLOSED) {
-                        // If the previous subpath is of the closed type, close it now
-                        addToPath(path, firstKnot, lastKnot);
-                    }
-                    currentSubpath = Subpath.CLOSED;
-                    firstKnot = lastKnot = null;
-                    break;
-                // New subpath
-                case PathRecord.OPEN_SUBPATH_LENGTH:
-                    if (currentSubpath == Subpath.CLOSED) {
-                        // Close the previous subpath if needed
-                        addToPath(path, firstKnot, lastKnot);
-                    }
-                    currentSubpath = Subpath.OPEN;
-                    firstKnot = lastKnot = null;
-                    break;
-                // Open and closed subpath knots can be handled the same way
-                // The linked/unlinked characteristic only matters to interactive
-                // editors and we happily throw away that information
-                case PathRecord.CLOSED_SUBPATH_KNOT_LINKED:
-                case PathRecord.CLOSED_SUBPATH_KNOT_UNLINKED:
-                case PathRecord.OPEN_SUBPATH_KNOT_LINKED:
-                case PathRecord.OPEN_SUBPATH_KNOT_UNLINKED:
-                    PathRecord.BezierKnot knot = (PathRecord.BezierKnot) record.data;
-                    if (lastKnot == null) {
-                        // If we just started a subpath we need to insert a moveTo()
-                        // using the new anchor
-                        path.moveTo(
-                          Bytes.fixed8_24ToFloat(knot.anchorX),
-                          Bytes.fixed8_24ToFloat(knot.anchorY));
-                        firstKnot = knot;
-                    } else {
-                        // Otherwise let's curve to the new anchor
-                        addToPath(path, knot, lastKnot);
-                    }
-                    lastKnot = knot;
-                    break;
-            }
-        }
 
-        // Close the subpath if needed
-        if (currentSubpath == Subpath.CLOSED) {
-            addToPath(path, firstKnot, lastKnot);
-        }
+        GeneralPath path = PsdUtils.createPath(mask);
 
         // Vector data is stored in relative coordinates in PSD files
         // For instance, a point at 0.5,0.5 is in the center of the document
@@ -644,18 +566,6 @@ public final class PsdDecoder extends Decoder {
                     properties.get(LayerProperty.KEY_ADJUSTMENT_SOLID_COLOR).data;
             layer.pathColor(getColor(adjustment.solidColor));
         }
-    }
-
-    private static void addToPath(GeneralPath path, PathRecord.BezierKnot firstKnot,
-            PathRecord.BezierKnot lastKnot) {
-
-        path.curveTo(
-                Bytes.fixed8_24ToFloat(lastKnot.controlExitX),
-                Bytes.fixed8_24ToFloat(lastKnot.controlExitY),
-                Bytes.fixed8_24ToFloat(firstKnot.controlEnterX),
-                Bytes.fixed8_24ToFloat(firstKnot.controlEnterY),
-                Bytes.fixed8_24ToFloat(firstKnot.anchorX),
-                Bytes.fixed8_24ToFloat(firstKnot.anchorY));
     }
 
     /**
@@ -723,7 +633,7 @@ public final class PsdDecoder extends Decoder {
             }
         }
 
-        layer.image(fixBitmap(image, bitmap));
+        layer.image(bitmap);
     }
 
     private static void extractHeaderData(Image.Builder image, Header header) {
@@ -739,20 +649,17 @@ public final class PsdDecoder extends Decoder {
      * we actually care about.
      */
     private static void resolveBlocks(Image.Builder image, ImageResources resources) {
-        extractGuides(image, resources.get(GuidesResourceBlock.ID));
-        extractThumbnail(image, resources.get(ThumbnailResourceBlock.ID));
-        extractResolution(image, resources.get(ResolutionInfoBlock.ID));
-        extractColorProfile(image, resources.get(ColorProfileBlock.ID));
+        extractGuides(image, PsdUtils.get(resources, GuidesResourceBlock.ID));
+        extractThumbnail(image, PsdUtils.get(resources, ThumbnailResourceBlock.ID));
+        extractResolution(image, PsdUtils.get(resources, ResolutionInfoBlock.ID));
+        extractColorProfile(image, PsdUtils.get(resources, ColorProfileBlock.ID));
     }
 
     /**
      * Extracts the ICC color profile embedded in the file, if any.
      */
     private static void extractColorProfile(Image.Builder image, ColorProfileBlock colorProfileBlock) {
-        if (colorProfileBlock == null) return;
-
-        ICC_Profile iccProfile = ICC_Profile.getInstance(colorProfileBlock.icc);
-        image.colorSpace(new ICC_ColorSpace(iccProfile));
+        image.colorSpace(PsdUtils.createColorSpace(colorProfileBlock));
     }
 
     /**
@@ -862,17 +769,17 @@ public final class PsdDecoder extends Decoder {
                 break;
         }
 
-        image.mergedImage(fixBitmap(image, bitmap));
+        image.mergedImage(bitmap);
     }
 
     private static void decodeIndexedImageData(Image.Builder image, PsdFile psd) {
         ColorSpace colorSpace = image.colorSpace();
 
         UnsignedShortBlock block;
-        block = psd.resources.get(UnsignedShortBlock.ID_INDEX_TABLE_COUNT);
+        block = PsdUtils.get(psd.resources, UnsignedShortBlock.ID_INDEX_TABLE_COUNT);
         int size = block == null ? 256 : block.data;
 
-        block = psd.resources.get(UnsignedShortBlock.ID_INDEX_TRANSPARENCY);
+        block = PsdUtils.get(psd.resources, UnsignedShortBlock.ID_INDEX_TRANSPARENCY);
         int transparency = block == null ? -1 : block.data;
 
         BufferedImage bitmap = null;
@@ -892,14 +799,5 @@ public final class PsdDecoder extends Decoder {
         }
 
         image.mergedImage(bitmap);
-    }
-
-    private static BufferedImage fixBitmap(Image.Builder image, BufferedImage bitmap) {
-        // Fun fact: CMYK colors are stored reversed...
-        // Cyan 100% is stored as 0x0 and Cyan 0% is stored as 0xff
-        if (image.colorMode() == ColorMode.CMYK) {
-            bitmap = Images.invert(bitmap);
-        }
-        return bitmap;
     }
 }

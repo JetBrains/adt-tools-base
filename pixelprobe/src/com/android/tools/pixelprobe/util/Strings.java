@@ -34,7 +34,7 @@ public final class Strings {
      * @param delimiter The delimiter to insert between each item
      *
      * @return A String containing the String representation of each item
-     *         in the collection
+     * in the collection
      */
     public static <T> String join(Collection<T> list, String delimiter) {
         return list.stream().map(Object::toString).collect(Collectors.joining(delimiter));

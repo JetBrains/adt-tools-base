@@ -66,7 +66,7 @@ import java.util.regex.Pattern;
  * This format is both fairly easy to read and quirky. Please refer to the
  * comments in the implementation below for more information.
  */
-public final class TextEngine {
+final class TextEngine {
     /**
      * A property has a type and a value.
      */
@@ -81,6 +81,7 @@ public final class TextEngine {
         }
 
         Property.Type getType();
+
         T getValue();
     }
 
@@ -157,7 +158,8 @@ public final class TextEngine {
             Pattern pattern = PATH_PATTERN;
 
             String[] elements = path.split("\\.");
-out:        for (String element : elements) {
+            out:
+            for (String element : elements) {
                 int index = -1;
                 Matcher matcher = pattern.matcher(element);
                 if (matcher.matches()) {
