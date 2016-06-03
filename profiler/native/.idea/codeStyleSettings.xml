@@ -40,6 +40,9 @@
             <pair source="c" header="h" />
           </extensions>
         </Objective-C-extensions>
+        <codeStyleSettings language="CMake">
+          <option name="ALIGN_MULTILINE_PARAMETERS_IN_CALLS" value="true" />
+        </codeStyleSettings>
         <codeStyleSettings language="ObjectiveC">
           <indentOptions>
             <option name="INDENT_SIZE" value="2" />
