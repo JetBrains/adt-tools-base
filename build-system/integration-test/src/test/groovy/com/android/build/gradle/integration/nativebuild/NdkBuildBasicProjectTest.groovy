@@ -52,9 +52,8 @@ class NdkBuildBasicProjectTest {
     @Rule
     public GradleTestProject project = GradleTestProject.builder()
             .fromTestApp(HelloWorldJniApp.builder()
-                .withNativeDir("cxx")
                 .build())
-            .addFile(HelloWorldJniApp.androidMkC("src/main/cxx"))
+            .addFile(HelloWorldJniApp.androidMkC("src/main/jni"))
             .useExperimentalGradleVersion(isModel)
             .create();
 
@@ -77,7 +76,7 @@ $modelBefore
         buildToolsVersion "$GradleTestProject.DEFAULT_BUILD_TOOL_VERSION"
         externalNativeBuild {
           ndkBuild {
-            path "src/main/cxx/Android.mk"
+            path "src/main/jni/Android.mk"
           }
         }
     }
