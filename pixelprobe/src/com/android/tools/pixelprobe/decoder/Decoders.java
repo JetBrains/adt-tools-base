@@ -16,6 +16,8 @@
 
 package com.android.tools.pixelprobe.decoder;
 
+import com.android.tools.pixelprobe.decoder.psd.PsdDecoder;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;

@@ -30,6 +30,16 @@ public class CsIndexColorModel extends IndexColorModel {
     }
 
     /**
+     * Creates a new index color model that represents inverted bitmap.
+     * The first index of the color map maps to white, and all the other
+     * entries maps to black.
+     */
+    public static CsIndexColorModel createInvertedBitmap() {
+        int[] bwMap = new int[] { 0x00ffffff, 0x0 };
+        return new CsIndexColorModel(1, 2, bwMap, 0, false, -1, DataBuffer.TYPE_BYTE);
+    }
+
+    /**
      * Creates a new index color model managed by a color space. The color model
      * is assumed to use 8 bits per pixel. All colors in the color map are assumed
      * to be opaque. Each plane in the color map must have 256 entries.
@@ -38,7 +48,7 @@ public class CsIndexColorModel extends IndexColorModel {
      * @param map RGB color planes, its length must be <pre>3 * size</pre>
      * @param transparency Index of the transparency pixel
      */
-    public static CsIndexColorModel create(int size, byte[] map, int transparency, ColorSpace colorSpace) {
+    public static CsIndexColorModel createIndexed(int size, byte[] map, int transparency, ColorSpace colorSpace) {
         int[] sRgbMap = new int[size];
         convert(size, map, sRgbMap, colorSpace);
         return new CsIndexColorModel(8, size, sRgbMap, 0, false, transparency, DataBuffer.TYPE_BYTE);

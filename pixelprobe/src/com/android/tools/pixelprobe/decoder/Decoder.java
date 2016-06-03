@@ -43,7 +43,7 @@ public abstract class Decoder {
      *
      * @param formats A list of formats
      */
-    Decoder(String... formats) {
+    public Decoder(String... formats) {
         for (String format : formats) {
             this.formats.add(format.toLowerCase(Locale.ROOT));
         }
