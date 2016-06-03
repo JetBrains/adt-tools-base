@@ -29,7 +29,12 @@ class FileReader {
   static bool Read(const std::string &file_path,
                    std::vector<std::string> *lines);
 
-  // Read whole file from beginning, and put output in a single string content.
+  // Reads whole file from beginning, and put output in a single string content.
+  // Returns true on success.
+  // The ownership of |content| is not transferred.
+  // TODO(b/29111072): Provide an option to read the entire file in a single
+  // access. Multiple reads may cause consistency issues, especially for virtual
+  // files such as /proc.stat in Android/Linux.
   static bool Read(const std::string &file_path, std::string *content);
 
   // Returns true if the needed token is found, false otherwise. Tokens are
@@ -48,10 +53,11 @@ class FileReader {
 
  private:
   // Single system call buffer size.
-  static const short kBufferSize = 4096;
+  // TODO: Make the buffer size configurable in a constructor.
+  static const short kBufferSize_ = 4096;
 };
 
 }  // namespace utils
 }  // namespace profiler
 
-#endif // FILE_READER_H_
+#endif  // FILE_READER_H_
