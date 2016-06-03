@@ -18,6 +18,7 @@ package com.android.build.gradle.tasks;
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.annotations.VisibleForTesting;
 import com.android.build.gradle.AndroidGradleOptions;
 import com.android.build.gradle.internal.LoggingUtil;
 import com.android.build.gradle.internal.aapt.AaptGradleFactory;
@@ -184,39 +185,68 @@ public class ProcessAndroidResources extends IncrementalTask {
 
                     instantRunBuildContext.addChangedFile(
                             InstantRunBuildContext.FileType.RESOURCES, resOutBaseNameFile);
-
-                    // get the new manifest file CRC
-                    String currentIterationCRC = null;
-                    try (JarFile jarFile = new JarFile(resOutBaseNameFile)) {
-                        ZipEntry entry = jarFile.getEntry(SdkConstants.ANDROID_MANIFEST_XML);
-                        if (entry != null) {
-                            currentIterationCRC = String.valueOf(entry.getCrc());
-                        }
-                    }
-
-                    // check the manifest file binary format.
-                    File crcFile = new File(instantRunSupportDir, "manifest.crc");
-                    if (crcFile.exists() && currentIterationCRC != null) {
-                        // compare its content with the new binary file crc.
-                        String previousIterationCRC = Files.readFirstLine(crcFile, Charsets.UTF_8);
-                        if (!currentIterationCRC.equals(previousIterationCRC)) {
-                            instantRunBuildContext.setVerifierResult(
-                                    InstantRunVerifierStatus.BINARY_MANIFEST_FILE_CHANGE);
-                        }
-                    }
-
-                    // write the new manifest file CRC.
-                    Files.createParentDirs(crcFile);
-                    Files.write(currentIterationCRC, crcFile, Charsets.UTF_8);
+                    runManifestChangeVerifier(instantRunBuildContext, instantRunSupportDir,
+                            manifestFileToPackage);
+                    runManifestBinaryChangeVerifier(instantRunBuildContext, instantRunSupportDir,
+                            resOutBaseNameFile);
                 }
             }
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        } catch (ProcessException e) {
+        } catch (IOException | InterruptedException | ProcessException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    @VisibleForTesting
+    static void runManifestChangeVerifier(InstantRunBuildContext instantRunBuildContext,
+            File instantRunSupportDir,
+            @NonNull File manifestFileToPackage) throws IOException {
+        File previousManifestFile = new File(instantRunSupportDir, "manifest.xml");
+
+        if (previousManifestFile.exists()) {
+            String currentManifest =
+                    Files.asCharSource(manifestFileToPackage, Charsets.UTF_8).read();
+            String previousManifest =
+                    Files.asCharSource(previousManifestFile, Charsets.UTF_8).read();
+            if (!currentManifest.equals(previousManifest)) {
+                // TODO: Deeper comparison, call out just a version change.
+                instantRunBuildContext.setVerifierResult(
+                        InstantRunVerifierStatus.MANIFEST_FILE_CHANGE);
+                Files.copy(manifestFileToPackage, previousManifestFile);
+            }
+        } else {
+            Files.createParentDirs(previousManifestFile);
+            Files.copy(manifestFileToPackage, previousManifestFile);
+        }
+    }
+
+    @VisibleForTesting
+    static void runManifestBinaryChangeVerifier(
+            InstantRunBuildContext instantRunBuildContext,
+            File instantRunSupportDir,
+            @NonNull File resOutBaseNameFile)
+            throws IOException {
+        // get the new manifest file CRC
+        String currentIterationCRC = null;
+        try (JarFile jarFile = new JarFile(resOutBaseNameFile)) {
+            ZipEntry entry = jarFile.getEntry(SdkConstants.ANDROID_MANIFEST_XML);
+            if (entry != null) {
+                currentIterationCRC = String.valueOf(entry.getCrc());
+            }
+        }
+        File crcFile = new File(instantRunSupportDir, "manifest.crc");
+        // check the manifest file binary format.
+        if (crcFile.exists() && currentIterationCRC != null) {
+            // compare its content with the new binary file crc.
+            String previousIterationCRC = Files.readFirstLine(crcFile, Charsets.UTF_8);
+            if (!currentIterationCRC.equals(previousIterationCRC)) {
+                instantRunBuildContext.setVerifierResult(
+                        InstantRunVerifierStatus.BINARY_MANIFEST_FILE_CHANGE);
+            }
+        }
+
+        // write the new manifest file CRC.
+        Files.createParentDirs(crcFile);
+        Files.write(currentIterationCRC, crcFile, Charsets.UTF_8);
     }
 
     private boolean isSplitPackage(File file, File resBaseName) {

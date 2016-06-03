@@ -76,6 +76,15 @@ public enum InstantRunVerifierStatus {
 
     DEPENDENCY_CHANGED,
 
+    /**
+     * The merged xml manifest file changed.
+     *
+     * <p>Changes to resource ids referenced by the binary manifest will be
+     * {@link #BINARY_MANIFEST_FILE_CHANGE}.
+     */
+    MANIFEST_FILE_CHANGE(
+            InstantRunBuildMode.FULL, InstantRunBuildMode.FULL, InstantRunBuildMode.COLD),
+
     // the binary manifest file changed, probably due to references to resources which ID changed
     // since last build.
     BINARY_MANIFEST_FILE_CHANGE(
