@@ -224,19 +224,13 @@ public final class ChunkReaders {
                 return false;
             }
 
-            //noinspection SimplifiableIfStatement
-            if (!parameters.get(0).getQualifiedName().toString().equals("java.lang.String")) {
-                return false;
-            }
-
             return super.acceptTypeParameters(parameters);
         }
 
         @Override
         public void pushElement(MethodDef.Builder builder, String target, FieldChunk chunk,
                 String elementName) {
-            builder.addStatement("$L$L.put(String.valueOf($L), $L)",
-                    target, chunk.name, chunk.key(), elementName);
+            builder.addStatement("$L$L.put($L, $L)", target, chunk.name, chunk.key(), elementName);
         }
 
         @Override

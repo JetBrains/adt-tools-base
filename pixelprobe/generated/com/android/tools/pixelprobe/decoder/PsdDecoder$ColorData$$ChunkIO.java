@@ -15,8 +15,7 @@ final class PsdDecoder$ColorData$$ChunkIO {
 
         colorData.length = in.readInt() & 0xffffffffL;
         byteCount = colorData.length;
-        /* colorData.data */
-        ChunkUtils.skip(in, byteCount);
+        colorData.data = ChunkUtils.readByteArray(in, byteCount, 4096);
 
         stack.removeFirst();
         return colorData;

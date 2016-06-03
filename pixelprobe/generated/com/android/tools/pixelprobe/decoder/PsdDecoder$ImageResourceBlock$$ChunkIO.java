@@ -35,6 +35,10 @@ final class PsdDecoder$ImageResourceBlock$$ChunkIO {
             imageResourceBlock.data = PsdDecoder$ResolutionInfoBlock$$ChunkIO.read(in, stack);
         } else if (imageResourceBlock.id == 0x040F) {
             imageResourceBlock.data = PsdDecoder$ColorProfileBlock$$ChunkIO.read(in, stack);
+        } else if (imageResourceBlock.id == 0x0416) {
+            imageResourceBlock.data = PsdDecoder$UnsignedShortBlock$$ChunkIO.read(in, stack);
+        } else if (imageResourceBlock.id == 0x0417) {
+            imageResourceBlock.data = PsdDecoder$UnsignedShortBlock$$ChunkIO.read(in, stack);
         }
         in.popRange();
 
