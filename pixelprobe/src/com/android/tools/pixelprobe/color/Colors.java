@@ -104,18 +104,76 @@ public final class Colors {
     }
 
     /**
-     * Converts the specified Lab color to linear RGB. The conversion
-     * is done using a D50 illuminant.
+     * Converts the specified Lab color to sRGB. The conversion
+     * is done using a D50 illuminant. The parameters must be
+     * in the range 0..100 for L, and -128..127 for a and b.
      */
-    public static float[] LABtoRGB(float L, float a, float b) {
+    public static float[] LABtosRGB(float L, float a, float b) {
         return getLabColorSpace().toRGB(new float[] { L, a, b });
     }
 
     /**
-     * Converts the specified CMYK color to linear RGB. The conversion
+     * Converts the specified HSB color to sRGB. The parameters must
+     * be in the range 0..1.
+     */
+    public static float[] HSBtosRGB(float H, float S, float B) {
+        if (S == 0.0f) {
+            return new float[] { B, B, B };
+        }
+
+        double h = H * 6.0;
+        if (h >= 6.0) h = 0.0;
+
+        double f = h - Math.floor(h);
+        double u = B * (1.0 - S);
+        double v = B * (1.0 - S * f);
+        double w = B * (1.0 - S * (1.0 - f));
+
+        double r = 0.0;
+        double g = 0.0;
+        double b = 0.0;
+
+        switch ((int) h) {
+            case 0:
+                r = B;
+                g = w;
+                b = u;
+                break;
+            case 1:
+                r = v;
+                g = B;
+                b = u;
+                break;
+            case 2:
+                r = u;
+                g = B;
+                b = w;
+                break;
+            case 3:
+                r = u;
+                g = v;
+                b = B;
+                break;
+            case 4:
+                r = w;
+                g = u;
+                b = B;
+                break;
+            case 5:
+                r = B;
+                g = u;
+                b = v;
+                break;
+        }
+
+        return new float[] { (float) r, (float) g, (float) b };
+    }
+
+    /**
+     * Converts the specified CMYK color to sRGB. The conversion
      * is done using the "U.S. Web Coated v2" ICC color profile.
      */
-    public static float[] CMYKtoRGB(float C, float M, float Y, float K) {
+    public static float[] CMYKtosRGB(float C, float M, float Y, float K) {
         return getCmykColorSpace().toRGB(new float[] { C, M, Y, K });
     }
 
