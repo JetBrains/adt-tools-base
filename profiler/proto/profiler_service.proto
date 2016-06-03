@@ -15,14 +15,9 @@
  */
 syntax = "proto3";
 
-option java_package = "com.android.tools.profiler.proto";
-option java_outer_classname = "ProfilerService";
-
-import "profiler.proto";
-
 package profiler.proto;
 
-service DeviceService {
+service ProfilerService {
   // Gets version.
   rpc GetVersion(VersionRequest) returns (VersionResponse) {
   }

@@ -1,12 +1,4 @@
 subprojects {
-  buildscript {
-    repositories {
-      maven {
-        url = '../../../../prebuilts/tools/common/m2/repository/'
-      }
-    }
-  }
-
   buildDir = "$rootDir/../../../out/studio/$project.name"
   repositories {
     maven { url = "$rootDir/../../../prebuilts/tools/common/m2/repository" }

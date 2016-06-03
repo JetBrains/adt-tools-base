@@ -1,4 +1,3 @@
 include 'plugin'
 include 'supportlib'
 include 'native'
-include 'grpc-java'

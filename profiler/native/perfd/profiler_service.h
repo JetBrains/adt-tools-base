@@ -23,7 +23,7 @@
 namespace profiler {
 
 class ProfilerServiceImpl final
-    : public profiler::proto::DeviceService::Service {
+    : public profiler::proto::ProfilerService::Service {
   grpc::Status GetVersion(grpc::ServerContext* context,
                           const profiler::proto::VersionRequest* request,
                           profiler::proto::VersionResponse* reply) override;
