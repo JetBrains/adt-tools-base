@@ -10,6 +10,7 @@
           <option name="INDENT_CLASS_MEMBERS" value="2" />
           <option name="INDENT_VISIBILITY_KEYWORDS" value="1" />
           <option name="INDENT_INSIDE_CODE_BLOCK" value="2" />
+          <option name="FIELDS_SUFFIX" value="_" />
         </Objective-C>
         <Objective-C-extensions>
           <option name="GENERATE_INSTANCE_VARIABLES_FOR_PROPERTIES" value="ASK" />
