@@ -16,8 +16,8 @@
 #include "file_reader.h"
 
 #include <fcntl.h>
-#include <sstream>
 #include <unistd.h>
+#include <sstream>
 
 namespace profiler {
 namespace utils {
@@ -42,10 +42,10 @@ bool FileReader::Read(const std::string &file_path, std::string *content) {
   if (file == -1) {
     return false;
   }
-  char buffer[kBufferSize];
+  char buffer[kBufferSize_];
   off_t offset = 0;
   ssize_t read_size;
-  while ((read_size = pread(file, buffer, kBufferSize, offset)) > 0) {
+  while ((read_size = pread(file, buffer, kBufferSize_, offset)) > 0) {
     offset += read_size;
     content->append(buffer, read_size);
   }
