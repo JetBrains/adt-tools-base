@@ -23,10 +23,6 @@ def cmake(cl) {
     cl.delegate = data;
     cl.call();
     def os = System.getProperty("os.name").toLowerCase();
-    if (os.startsWith("windows")) {
-      // TODO Add windows compilation support.
-      throw new GradleException('Windwows CMake invokation is not yet supported.')
-    }
     def host = os.startsWith("linux") ? "linux" : "darwin"
     def jdkHost = os.startsWith("linux") ? "linux" : "mac/Contents/Home"
 
