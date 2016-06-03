@@ -20,27 +20,26 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 import com.android.annotations.NonNull;
 import com.google.common.base.Charsets;
-import com.google.common.base.Function;
 import com.google.common.base.Joiner;
 import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
-import com.google.common.base.Predicate;
 import com.google.common.base.Predicates;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.Iterables;
 import com.google.common.hash.HashCode;
 import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;
-import com.google.common.io.Closeables;
 import com.google.common.io.Files;
 
 import java.io.EOFException;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.nio.file.StandardCopyOption;
 import java.util.List;
 import java.util.regex.Pattern;
 
+@SuppressWarnings("WeakerAccess") // These are utility methods, meant to be public.
 public final class FileUtils {
 
     private FileUtils() {}
@@ -48,39 +47,6 @@ public final class FileUtils {
     private static final Joiner PATH_JOINER = Joiner.on(File.separatorChar);
     private static final Joiner COMMA_SEPARATED_JOINER = Joiner.on(", ");
     private static final Joiner UNIX_NEW_LINE_JOINER = Joiner.on('\n');
-
-    public static final Function<File, String> GET_NAME = new Function<File, String>() {
-        @Override
-        public String apply(File file) {
-            return file.getName();
-        }
-    };
-
-    public static final Function<File, String> GET_PATH = new Function<File, String>() {
-        @Override
-        public String apply(File file) {
-            return file.getPath();
-        }
-    };
-
-    public static final Function<File, String> GET_ABSOLUTE_PATH = new Function<File, String>() {
-        @Override
-        public String apply(File file) {
-            return file.getAbsolutePath();
-        }
-    };
-
-    @NonNull
-    public static Predicate<File> withExtension(@NonNull final String extension) {
-        checkArgument(extension.charAt(0) != '.', "Extension should not start with a dot.");
-
-        return new Predicate<File>() {
-            @Override
-            public boolean apply(File input) {
-                return Files.getFileExtension(input.getName()).equals(extension);
-            }
-        };
-    }
 
     /**
      * Recursively deletes a path.
@@ -119,18 +85,6 @@ public final class FileUtils {
     }
 
     /**
-     * Recursively deletes a directory or file.
-     *
-     * @param directory the directory / file to delete, may exist or not
-     * @throws IOException failed to delete the file / directory
-     * @deprecated use {@link #deletePath(File)} instead
-     */
-    @Deprecated
-    public static void deleteFolder(@NonNull final File directory) throws IOException {
-        deletePath(directory);
-    }
-
-    /**
      * Makes sure {@code path} is an empty directory. If {@code path} is a directory, its contents
      * are removed recursively, leaving an empty directory. If {@code path} is not a directory,
      * it is removed and a directory created with the given path. If {@code path} does not
@@ -157,28 +111,60 @@ public final class FileUtils {
     }
 
     /**
-     * @deprecated use {@link #cleanOutputDir(File)}
+     * Copies a regular file from one path to another, preserving file attributes. If the
+     * destination file exists, it gets overwritten.
      */
-    @Deprecated
-    public static void emptyFolder(@NonNull File directory) throws IOException {
-        cleanOutputDir(directory);
+    public static void copyFile(@NonNull File from, @NonNull File to) throws IOException {
+        java.nio.file.Files.copy(
+                from.toPath(),
+                to.toPath(),
+                StandardCopyOption.COPY_ATTRIBUTES,
+                StandardCopyOption.REPLACE_EXISTING);
     }
 
-    public static void copy(@NonNull final File from, @NonNull final File toDir)
-            throws IOException {
-        File to = new File(toDir, from.getName());
-        if (from.isDirectory()) {
-            mkdirs(to);
+    /**
+     * Copies a directory from one path to another. If the destination directory exists, the file
+     * contents are merged and files from the source directory overwrite files in the destination.
+     */
+    public static void copyDirectory(@NonNull File from, @NonNull File to) throws IOException {
+        Preconditions.checkArgument(from.isDirectory(), "Source path is not a directory.");
+        Preconditions.checkArgument(
+                !to.exists() || to.isDirectory(),
+                "Destination path exists and is not a directory.");
 
-            File[] children = from.listFiles();
-            if (children != null) {
-                for (File child : children) {
-                    copy(child, to);
+        mkdirs(to);
+        File[] children = from.listFiles();
+        if (children != null) {
+            for (File child : children) {
+                if (child.isFile()) {
+                    copyFileToDirectory(child, to);
+                } else if (child.isDirectory()) {
+                    copyDirectoryToDirectory(child, to);
+                } else {
+                    throw new IllegalArgumentException(
+                            "Don't know how to copy file " + child.getAbsolutePath());
                 }
             }
-        } else if (from.isFile()) {
-            Files.copy(from, to);
         }
+    }
+
+    /**
+     * Makes a copy of the given file in the specified directory, preserving the name and file
+     * attributes.
+     */
+    public static void copyFileToDirectory(@NonNull final File from, @NonNull final File to)
+            throws IOException {
+        copyFile(from, new File(to, from.getName()));
+    }
+
+    /**
+     * Makes a copy of the given directory in the specified destination directory.
+     *
+     * @see #copyDirectory(File, File)
+     */
+    public static void copyDirectoryToDirectory(@NonNull final File from, @NonNull final File to)
+            throws IOException {
+        copyDirectory(from, new File(to, from.getName()));
     }
 
     /**
@@ -359,7 +345,7 @@ public final class FileUtils {
 
     @NonNull
     public static String getNamesAsCommaSeparatedList(@NonNull Iterable<File> files) {
-        return COMMA_SEPARATED_JOINER.join(Iterables.transform(files, GET_NAME));
+        return COMMA_SEPARATED_JOINER.join(Iterables.transform(files, File::getName));
     }
 
     /**
@@ -399,7 +385,7 @@ public final class FileUtils {
         checkArgument(base.isDirectory(), "'base' must be a directory.");
         return Files.fileTreeTraverser()
                 .preOrderTraversal(base)
-                .filter(Predicates.compose(Predicates.contains(pattern), GET_PATH))
+                .filter(Predicates.compose(Predicates.contains(pattern), File::getPath))
                 .toList();
     }
 
@@ -410,7 +396,7 @@ public final class FileUtils {
         checkArgument(base.isDirectory(), "'base' must be a directory.");
         return Files.fileTreeTraverser()
                 .preOrderTraversal(base)
-                .filter(Predicates.compose(Predicates.equalTo(name), GET_NAME))
+                .filter(Predicates.compose(Predicates.equalTo(name), File::getName))
                 .last();
     }
 
@@ -429,9 +415,7 @@ public final class FileUtils {
         Preconditions.checkArgument(length >= 0, "length < 0");
 
         byte data[];
-        boolean threw = true;
-        RandomAccessFile raf = new RandomAccessFile(file, "r");
-        try {
+        try (RandomAccessFile raf = new RandomAccessFile(file, "r")) {
             raf.seek(start);
 
             data = new byte[length];
@@ -444,10 +428,6 @@ public final class FileUtils {
 
                 tot += r;
             }
-
-            threw = false;
-        } finally {
-            Closeables.close(raf, threw);
         }
 
         return data;
@@ -459,25 +439,7 @@ public final class FileUtils {
     @NonNull
     public static String joinFilePaths(@NonNull Iterable<File> files) {
         return Joiner.on(File.pathSeparatorChar)
-                .join(Iterables.transform(files, GET_ABSOLUTE_PATH));
+                .join(Iterables.transform(files, File::getAbsolutePath));
     }
 
-    /**
-     * Sleeps the current thread for enough time to ensure that we exceed filesystem timestamp
-     * resolution. This method is usually called in tests when it is necessary to ensure filesystem
-     * writes are detected through timestamp modification.
-     *
-     * @throws InterruptedException waiting interrupted
-     */
-    public static void waitFilesystemTime() throws InterruptedException {
-        /*
-         * How much time to wait until we are sure that the file system will update the last
-         * modified timestamp of a file. This is usually related to the accuracy of last timestamps.
-         * In modern windows systems 100ms be more than enough (NTFS has 100us accuracy --
-         * see https://msdn.microsoft.com/en-us/library/windows/desktop/ms724290(v=vs.85).aspx).
-         * In linux it will depend on the filesystem. ext4 has 1ns accuracy (if inodes are 256 byte
-         * or larger), but ext3 has 1 second.
-         */
-        Thread.sleep(2000);
-    }
 }

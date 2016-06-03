@@ -22,7 +22,6 @@ import static com.android.builder.core.BuilderConstants.FD_ANDROID_RESULTS;
 import static com.android.builder.core.BuilderConstants.FD_ANDROID_TESTS;
 import static com.android.builder.core.BuilderConstants.FD_FLAVORS_ALL;
 import static com.android.builder.core.VariantType.ANDROID_TEST;
-import static com.android.utils.FileUtils.copy;
 
 import com.android.annotations.NonNull;
 import com.android.build.gradle.internal.scope.ConventionMappingHelper;
@@ -115,7 +114,7 @@ public class AndroidReportTask extends DefaultTask implements AndroidTestTask {
     }
 
     @InputFiles
-    public List<File> getResultInputs() {
+    public List<File> getResultsDirectories() {
         return subTasks.stream().map(AndroidTestTask::getResultsDir).collect(Collectors.toList());
     }
 
@@ -165,15 +164,10 @@ public class AndroidReportTask extends DefaultTask implements AndroidTestTask {
     }
 
     private void copyResults(File reportOutDir) throws IOException {
-        List<File> inputs = getResultInputs();
+        List<File> resultDirectories = getResultsDirectories();
 
-        for (File input : inputs) {
-            File[] children = input.listFiles();
-            if (children != null) {
-                for (File child : children) {
-                    copy(child, reportOutDir);
-                }
-            }
+        for (File directory : resultDirectories) {
+            FileUtils.copyDirectory(directory, reportOutDir);
         }
     }
 

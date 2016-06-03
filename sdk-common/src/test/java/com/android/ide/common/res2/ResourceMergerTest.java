@@ -523,7 +523,7 @@ public class ResourceMergerTest extends BaseTestCase {
         copyFolder(srcDrawables, copiedDrawables);
 
         File srcPng = FileUtils.join(TestUtils.getRoot("resources", "baseSet"), "drawable", "icon.png");
-        FileUtils.copy(srcPng, copiedDrawables);
+        FileUtils.copyFileToDirectory(srcPng, copiedDrawables);
         assertTrue(FileUtils.join(copiedDrawables, "drawable_for_id_scan.xml").exists());
 
         ResourceSet resourceSet = new ResourceSet("idResources", null);

@@ -17,7 +17,6 @@
 package com.android.build.gradle.shrinker;
 
 import static com.android.utils.FileUtils.getAllFiles;
-import static com.android.utils.FileUtils.withExtension;
 
 import com.android.annotations.NonNull;
 import com.android.build.api.transform.TransformInput;
@@ -216,7 +215,7 @@ public class FullRunShrinker<T> extends AbstractShrinker<T> {
 
     @NonNull
     private static FluentIterable<File> getClassFiles(@NonNull File dir) {
-        return getAllFiles(dir).filter(withExtension("class"));
+        return getAllFiles(dir).filter(f -> Files.getFileExtension(f.getName()).equals("class"));
     }
 
     /**
