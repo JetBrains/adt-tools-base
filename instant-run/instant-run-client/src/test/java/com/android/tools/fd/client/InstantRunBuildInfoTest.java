@@ -44,7 +44,7 @@ public class InstantRunBuildInfoTest {
     @Test
     public void testHasNoChanges() throws IOException {
         InstantRunBuildInfo info = getBuildInfo("instantrun", "build-info-no-artifacts.xml");
-        assertFalse("If verifier is not empty, then there are changes that weren't captured in this build.", info.hasNoChanges());
+        assertTrue("If there are no artifacts, then it doesn't matter what the verifier said.", info.hasNoChanges());
 
         info = getBuildInfo("instantrun", "build-info-res.xml");
         assertFalse("If there is an artifact, then there are changes", info.hasNoChanges());

@@ -110,11 +110,7 @@ public class InstantRunBuildInfo {
 
     /** Returns whether there were NO changes from the previous build. */
     public boolean hasNoChanges() {
-        // In order to say that there are no changes:
-        // 1. The artifacts have to be empty
-        // 2. The verifier status must also be empty, since otherwise it indicates that there are changes that were not captured by
-        // the current incremental build.
-        return getArtifacts().isEmpty() && getVerifierStatus().isEmpty();
+        return getArtifacts().isEmpty();
     }
 
     public int getFeatureLevel() { // The build info calls it as the API level, but we always pass the feature level to Gradle..
