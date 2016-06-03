@@ -357,7 +357,7 @@ public final class PsdDecoder extends Decoder {
 
         switch (colorType) {
             case Descriptor.CLASS_ID_COLOR_RGB:
-                return colorFromRGB(color);
+                return colorFromsRGB(color);
             case Descriptor.CLASS_ID_COLOR_HSB:
                 return colorFromHSB(color);
             case Descriptor.CLASS_ID_COLOR_CMYK:
@@ -371,7 +371,7 @@ public final class PsdDecoder extends Decoder {
         return Color.BLACK;
     }
 
-    private static Color colorFromRGB(Descriptor color) {
+    private static Color colorFromsRGB(Descriptor color) {
         return new Color(
                 color.getFloat("Rd  ") / 255.0f,
                 color.getFloat("Grn ") / 255.0f,
@@ -379,26 +379,27 @@ public final class PsdDecoder extends Decoder {
     }
 
     private static Color colorFromHSB(Descriptor color) {
-        return new Color(Color.HSBtoRGB(
+        float[] rgb = Colors.HSBtosRGB(
                 color.getUnitFloat("H   ", 0.0f) / 360.0f,
                 color.getFloat("Strt") / 100.0f,
-                color.getFloat("Brgh") / 100.0f));
+                color.getFloat("Brgh") / 100.0f);
+        return new Color(rgb[0], rgb[1], rgb[2]);
     }
 
     private static Color colorFromCMYK(Descriptor color) {
-        float[] rgb = Colors.linearTosRGB(Colors.CMYKtoRGB(
+        float[] rgb = Colors.CMYKtosRGB(
                 color.getFloat("Cyn "),
                 color.getFloat("Mgnt"),
                 color.getFloat("Ylw "),
-                color.getFloat("Blck")));
+                color.getFloat("Blck"));
         return new Color(rgb[0], rgb[1], rgb[2]);
     }
 
     private static Color colorFromLAB(Descriptor color) {
-        float[] rgb = Colors.linearTosRGB(Colors.LABtoRGB(
+        float[] rgb = Colors.LABtosRGB(
                 color.getFloat("Lmnc"),
                 color.getFloat("A   "),
-                color.getFloat("B   ")));
+                color.getFloat("B   "));
         return new Color(rgb[0], rgb[1], rgb[2]);
     }
 
