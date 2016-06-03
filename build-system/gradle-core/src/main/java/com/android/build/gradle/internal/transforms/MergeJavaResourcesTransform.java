@@ -218,8 +218,10 @@ public class MergeJavaResourcesTransform extends Transform {
     @NonNull
     @Override
     public Map<String, Object> getParameterInputs() {
-        // TODO the inputs that controls the merge.
-        return ImmutableMap.of();
+        return ImmutableMap.of(
+                "exclude", packagingOptions.getExcludes(),
+                "pickFirst", packagingOptions.getPickFirsts(),
+                "merge", packagingOptions.getMerges());
     }
 
     @Override

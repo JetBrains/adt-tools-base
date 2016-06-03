@@ -205,7 +205,6 @@ public class LibraryJarTransform extends Transform {
         jarMerger.setFilter(archivePath -> checkEntry(excludes, archivePath));
 
         for (QualifiedContent content : qualifiedContentList) {
-            System.out.println(content);
             if (content instanceof JarInput) {
                 jarMerger.addJar(content.getFile());
             } else {
