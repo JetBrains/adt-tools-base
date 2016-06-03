@@ -39,12 +39,16 @@ import com.google.common.collect.Lists;
 import org.junit.Test;
 
 import java.io.FileNotFoundException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 
 public class FlowAnalyzerTest {
+
+    private final ArrayList<String> COMPILE_FLAG_C = Lists.newArrayList("-c");
+
     private void assertFlowAnalysisEquals(String string, String expected) {
         ListMultimap<String, List<BuildStepInfo>> io = FlowAnalyzer
                     .analyze(string, true);
@@ -121,8 +125,10 @@ public class FlowAnalyzerTest {
 
     @Test
     public void disallowedTerminal() throws FileNotFoundException {
-        assertFlowAnalysisEquals("g++ a.c -o a.o\ng++ a.o -o a.so",
-                flow().with("a.so"));
+        assertFlowAnalysisEquals("g++ -c a.c -o a.o\ng++ a.o -o a.so",
+                flow().with("a.so",
+                        step().with("g++", COMPILE_FLAG_C, "a.c",
+                                Lists.newArrayList("a.o"), true)));
     }
 
     @Test
@@ -133,16 +139,19 @@ public class FlowAnalyzerTest {
                 "g++ y/a.o -o y/a.so",
                 flow()
                     .with("y/a.so",
-                        step().with("g++", Lists.newArrayList("-c"), "a.c", Lists.newArrayList("y/a.o"), true))
+                        step().with("g++", COMPILE_FLAG_C, "a.c",
+                                Lists.newArrayList("y/a.o"), true))
                     .with("x/a.so",
-                        step().with("g++", Lists.newArrayList("-c"), "a.c", Lists.newArrayList("x/a.o"), true)));
+                        step().with("g++", COMPILE_FLAG_C, "a.c",
+                                Lists.newArrayList("x/a.o"), true)));
     }
 
     @Test
     public void simple() throws FileNotFoundException {
         assertFlowAnalysisEquals("g++ -c a.c -o a.o\ng++ a.o -o a.so",
                 flow().with("a.so",
-                        step().with("g++", Lists.newArrayList("-c"), "a.c", Lists.newArrayList("a.o"), true)
+                        step().with("g++", COMPILE_FLAG_C, "a.c",
+                                Lists.newArrayList("a.o"), true)
                 ));
     }
 }

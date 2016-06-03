@@ -39,6 +39,7 @@ public class NdkSampleTest {
     // Turn this flag to true to regenerate test baselines in the case that output has intentionally
     // changed. Should never be checked in as 'true'.
     private static boolean REGENERATE_TEST_BASELINES = false;
+    private static boolean REGENERATE_TEST_JSON_FROM_TEXT = false;
     private static String THIS_TEST_FOLDER =
             "src/test/java/com/android/build/gradle/external/gnumake/";
     private static boolean isWindows =
@@ -97,7 +98,7 @@ public class NdkSampleTest {
         }
 
         /**
-         * Read an input stream off of the main thread.
+         * Read an input stream off of the main thread
          */
         private static class StreamReaderThread extends Thread {
             final private InputStream is;
@@ -233,7 +234,7 @@ public class NdkSampleTest {
         actualResult = actualResult.replace(testPathString, "{testPath}");
         actualConfig = new Gson().fromJson(actualResult, NativeBuildConfigValue.class);
 
-        if (REGENERATE_TEST_BASELINES) {
+        if (REGENERATE_TEST_BASELINES || !baselineJsonFile.exists() || REGENERATE_TEST_JSON_FROM_TEXT) {
             Files.write(actualResult, baselineJsonFile, Charsets.UTF_8);
         }
 
@@ -251,8 +252,10 @@ public class NdkSampleTest {
                 .that(actualConfig).isEqualTo(baselineConfig);
     }
 
-    // Generated hashcodes below this line. Use REGENERATE_TEST_BASELINES to regenerate if the
-    // change is intentional.
+    @Test
+    public void google_test_example() throws IOException, InterruptedException {
+        checkJson("samples/google-test-example");
+    }
 
     // input: support-files/ndk-sample-baselines/san-angeles.json
     @Test

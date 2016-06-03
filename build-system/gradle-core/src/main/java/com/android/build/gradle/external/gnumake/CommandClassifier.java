@@ -215,16 +215,17 @@ class CommandClassifier {
 
             // Check -o
             if (options.has("o") && options.hasArgument("o")) {
-                outputs.add((String) options.valueOf("o"));
+                String output = (String) options.valueOf("o");
+                outputs.add(output);
             }
 
-            // Figure out whether this command can supply terminal.
+            // Figure out whether this command can supply terminal source file (.cpp, .c).
             // The -c, -S and -E flags indicate this case.
-            boolean canSupplyTerminal = options.has("c")
+            boolean inputsAreSourceFiles = options.has("c")
                 || options.has("S")
                 || options.has("E");
 
-            return new BuildStepInfo(command, inputs, outputs, canSupplyTerminal);
+            return new BuildStepInfo(command, inputs, outputs, inputsAreSourceFiles);
         }
 
         @Override

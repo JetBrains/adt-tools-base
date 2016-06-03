@@ -195,6 +195,33 @@ public class HelloWorldJniApp extends AbstractAndroidTestApp implements AndroidT
                         + "include $(BUILD_SHARED_LIBRARY)");
     }
 
+    public static final TestSourceFile androidMkGoogleTest(String folder) {
+        return new TestSourceFile(
+                folder, "Android.mk",
+                "LOCAL_PATH := $(call my-dir)\n"
+                        + "\n"
+                        + "include $(CLEAR_VARS)\n"
+                        + "LOCAL_MODULE := hello-jni\n"
+                        + "LOCAL_SRC_FILES := hello-jni.cpp\n"
+                        + "include $(BUILD_SHARED_LIBRARY)\n"
+                        + "\n"
+                        + "include $(CLEAR_VARS)\n"
+                        + "\n"
+                        + "# Enable PIE manually. Will get reset on $(CLEAR_VARS). This\n"
+                        + "# is what enabling PIE translates to behind the scenes.\n"
+                        + "\n"
+                        + "LOCAL_CFLAGS += -fPIE\n"
+                        + "LOCAL_LDFLAGS += -fPIE -pie\n"
+                        + "\n"
+                        + "LOCAL_MODULE := sample1_unittest\n"
+                        + "LOCAL_SRC_FILES := hello-jni-unittest.cc\n"
+                        + "LOCAL_SHARED_LIBRARIES := hello-jni\n"
+                        + "LOCAL_STATIC_LIBRARIES := googletest_main\n"
+                        + "include $(BUILD_EXECUTABLE)\n"
+                        + "\n"
+                        + "$(call import-module,third_party/googletest)");
+    }
+
     public static final TestSourceFile applicationMk(String folder) {
         return new TestSourceFile(
                 folder, "Application.mk",
