@@ -396,7 +396,7 @@ public class ClassEmitter {
     }
 
     private void errorReaderNotFound(TypeElement typeElement, FieldChunk chunk) {
-        errorHandler.error(typeElement, "Could not generate code for field %s in class %s", chunk.name);
+        errorHandler.error(typeElement, "Could not generate code for field %s", chunk.name);
     }
 
     private static boolean hasTypeSwitch(FieldChunk chunk, ChunkReader reader) {

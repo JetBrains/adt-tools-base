@@ -380,17 +380,30 @@ public final class Images {
     public static BufferedImage decodeIndexedRaw(byte[] data, int offset, int width, int height,
             ColorMode colorMode, ColorSpace colorSpace, int size, byte[] map, int transparency) {
 
-        if (colorSpace == null) colorSpace = ColorSpace.getInstance(ColorSpace.CS_sRGB);
-        ColorModel colorModel = CsIndexColorModel.create(size, map, transparency, colorSpace);
+        ColorModel colorModel = null;
+        //noinspection EnumSwitchStatementWhichMissesCases
+        switch (colorMode) {
+            case BITMAP:
+                colorModel = CsIndexColorModel.createInvertedBitmap();
+                break;
+            case INDEXED:
+                if (colorSpace == null) colorSpace = ColorSpace.getInstance(ColorSpace.CS_sRGB);
+                colorModel = CsIndexColorModel.createIndexed(size, map, transparency, colorSpace);
+                break;
+        }
+
+        //noinspection ConstantConditions
         WritableRaster raster = colorModel.createCompatibleWritableRaster(width, height);
 
         //noinspection UndesirableClassUsage
         BufferedImage image = new BufferedImage(colorModel, raster, colorModel.isAlphaPremultiplied(), null);
 
-        int pos = offset;
-        for (int y = 0; y < height; y++) {
-            for (int x = 0; x < width; x++) {
-                raster.setSample(x, y, 0, data[pos++] & 0xff);
+        if (colorMode == ColorMode.INDEXED) {
+            raster.setDataElements(0, 0, width, height, data);
+        } else if (colorMode == ColorMode.BITMAP) {
+            DataBuffer buffer = raster.getDataBuffer();
+            for (int pos = offset, dst = 0; pos < data.length; pos++, dst++) {
+                buffer.setElem(dst, data[pos]);
             }
         }
 
@@ -416,8 +429,19 @@ public final class Images {
     public static BufferedImage decodeIndexedRLE(byte[] data, int offset, int width, int height,
             ColorMode colorMode, ColorSpace colorSpace, int size, byte[] map, int transparency) {
 
-        if (colorSpace == null) colorSpace = ColorSpace.getInstance(ColorSpace.CS_sRGB);
-        ColorModel colorModel = CsIndexColorModel.create(size, map, transparency, colorSpace);
+        ColorModel colorModel = null;
+        //noinspection EnumSwitchStatementWhichMissesCases
+        switch (colorMode) {
+            case BITMAP:
+                colorModel = CsIndexColorModel.createInvertedBitmap();
+                break;
+            case INDEXED:
+                if (colorSpace == null) colorSpace = ColorSpace.getInstance(ColorSpace.CS_sRGB);
+                colorModel = CsIndexColorModel.createIndexed(size, map, transparency, colorSpace);
+                break;
+        }
+
+        //noinspection ConstantConditions
         WritableRaster raster = colorModel.createCompatibleWritableRaster(width, height);
 
         //noinspection UndesirableClassUsage
