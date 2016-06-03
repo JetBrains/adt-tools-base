@@ -35,6 +35,8 @@ import java.util.List;
  * it. Invalid images may contain erroneous or meaningless values.
  */
 public class Image {
+    private final String format;
+
     private final int width;
     private final int height;
     private final int depth;
@@ -51,6 +53,8 @@ public class Image {
     private final List<Layer> layers;
 
     Image(Builder builder) {
+        format = builder.format;
+
         width = builder.width;
         height = builder.height;
         depth = builder.depth;
@@ -65,6 +69,13 @@ public class Image {
 
         guides = Lists.immutableCopy(builder.guides);
         layers = Lists.immutableCopy(builder.layers);
+    }
+
+    /**
+     * Returns a string describing the format this image was loaded from.
+     */
+    public String getFormat() {
+        return format;
     }
 
     /**
@@ -153,6 +164,8 @@ public class Image {
     }
 
     public static final class Builder {
+        String format = "Unknown";
+
         int width;
         int height;
         int depth;
@@ -239,7 +252,14 @@ public class Image {
         }
 
         public Builder colorSpace(ColorSpace colorSpace) {
-            this.colorSpace = colorSpace;
+            if (colorSpace != null) {
+                this.colorSpace = colorSpace;
+            }
+            return this;
+        }
+
+        public Builder format(String format) {
+            this.format = format;
             return this;
         }
 
@@ -251,10 +271,12 @@ public class Image {
     @Override
     public String toString() {
         return "Image{" +
-               "width=" + width +
+               "format=" + format +
+               ", width=" + width +
                ", height=" + height +
                ", hRes=" + horizontalResolution +
                ", vRes=" + verticalResolution +
+               ", depth=" + depth +
                ", colorMode=" + colorMode +
                ", guides=" + guides.size() +
                ", layers=" + layers.size() +

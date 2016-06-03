@@ -21,10 +21,16 @@ import com.android.tools.pixelprobe.Image;
 import com.android.tools.pixelprobe.util.Strings;
 
 import javax.imageio.ImageIO;
+import javax.imageio.ImageReadParam;
+import javax.imageio.ImageReader;
+import javax.imageio.stream.ImageInputStream;
+import java.awt.color.ColorSpace;
 import java.awt.image.BufferedImage;
+import java.awt.image.ColorModel;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Locale;
 import java.util.Set;
 
@@ -77,15 +83,50 @@ public abstract class Decoder {
      *         an error occurred during the decoding process.
      */
     public Image decode(InputStream in) throws IOException {
-        Image.Builder builder = new Image.Builder();
-        BufferedImage bitmap = ImageIO.read(in);
+        ImageInputStream stream = ImageIO.createImageInputStream(in);
 
-        return builder
-            .dimensions(bitmap.getWidth(), bitmap.getHeight())
-            .mergedImage(bitmap)
-            .colorMode(ColorMode.RGB)
-            .depth(8)
+        ImageReader reader = getImageReader(stream);
+        ImageReadParam parameters = reader.getDefaultReadParam();
+        reader.setInput(stream, true, true);
+
+        BufferedImage image;
+        try {
+            image = reader.read(0, parameters);
+        } finally {
+            reader.dispose();
+            //noinspection ThrowFromFinallyBlock
+            stream.close();
+        }
+
+        ColorModel colorModel = image.getColorModel();
+        ColorSpace colorSpace = colorModel.getColorSpace();
+
+        return new Image.Builder()
+            .format(reader.getFormatName())
+            .dimensions(image.getWidth(), image.getHeight())
+            .mergedImage(image)
+            .colorMode(getColorMode(colorSpace))
+            .colorSpace(colorSpace)
+            .depth(colorModel.getComponentSize(0))
             .build();
+    }
+
+    private static ImageReader getImageReader(ImageInputStream stream) throws IOException {
+        Iterator readerIterator = ImageIO.getImageReaders(stream);
+        if (!readerIterator.hasNext()) {
+            throw new IOException("Unknown image format");
+        }
+        return (ImageReader) readerIterator.next();
+    }
+
+    private static ColorMode getColorMode(ColorSpace colorSpace) {
+        switch (colorSpace.getType()) {
+            case ColorSpace.TYPE_CMYK: return ColorMode.CMYK;
+            case ColorSpace.TYPE_GRAY: return ColorMode.GRAYSCALE;
+            case ColorSpace.TYPE_Lab: return ColorMode.LAB;
+            case ColorSpace.TYPE_RGB: return ColorMode.RGB;
+        }
+        return ColorMode.UNKNOWN;
     }
 
     @Override
