@@ -1,6 +1,7 @@
 set(UTIL_SOURCES
     file_reader.cc
-    stopwatch.cpp)
+    stopwatch.cpp
+    timestamp.cc)
 
 if (CMAKE_HOST_APPLE)
     set(UTIL_SOURCES ${UTIL_SOURCES} clock.mac.cpp)

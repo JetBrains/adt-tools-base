@@ -13,22 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef PERFD_PROFILER_SERVICE_H_
-#define PERFD_PROFILER_SERVICE_H_
+#ifndef UTILS_TIMESTAMP_H_
+#define UTILS_TIMESTAMP_H_
 
-#include <grpc++/grpc++.h>
-
-#include "proto/profiler_service.grpc.pb.h"
+#include <cstdint>
 
 namespace profiler {
+namespace utils {
 
-class ProfilerServiceImpl final
-    : public profiler::proto::DeviceService::Service {
-  grpc::Status GetVersion(grpc::ServerContext* context,
-                          const profiler::proto::VersionRequest* request,
-                          profiler::proto::VersionResponse* reply) override;
-};
+// Gets a timestamp.
+int64_t GetCurrentTime();
 
+}  // namespace utils
 }  // namespace profiler
 
-#endif  // PERFD_PROFILER_SERVICE_H_
+#endif  // UTILS_TIMESTAMP_H_

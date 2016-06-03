@@ -13,22 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef PERFD_PROFILER_SERVICE_H_
-#define PERFD_PROFILER_SERVICE_H_
+#ifndef PERFA_AGENT_COMPONENT_H_
+#define PERFA_AGENT_COMPONENT_H_
 
 #include <grpc++/grpc++.h>
 
-#include "proto/profiler_service.grpc.pb.h"
-
 namespace profiler {
+namespace perfa {
 
-class ProfilerServiceImpl final
-    : public profiler::proto::DeviceService::Service {
-  grpc::Status GetVersion(grpc::ServerContext* context,
-                          const profiler::proto::VersionRequest* request,
-                          profiler::proto::VersionResponse* reply) override;
-};
+// The interface of a profiler component in perfa.
+// TODO: Fill this placeholder.
+class AgentComponent {};
 
+}  // namespace perfa
 }  // namespace profiler
 
-#endif  // PERFD_PROFILER_SERVICE_H_
+#endif  // PERFA_AGENT_COMPONENT_H_

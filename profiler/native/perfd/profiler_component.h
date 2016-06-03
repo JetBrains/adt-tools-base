@@ -13,22 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef PERFD_PROFILER_SERVICE_H_
-#define PERFD_PROFILER_SERVICE_H_
+#ifndef PERFD_PROFILER_COMPONENT_H_
+#define PERFD_PROFILER_COMPONENT_H_
 
 #include <grpc++/grpc++.h>
 
-#include "proto/profiler_service.grpc.pb.h"
-
 namespace profiler {
 
-class ProfilerServiceImpl final
-    : public profiler::proto::DeviceService::Service {
-  grpc::Status GetVersion(grpc::ServerContext* context,
-                          const profiler::proto::VersionRequest* request,
-                          profiler::proto::VersionResponse* reply) override;
+// The interface of a profiler component in perfd.
+class ProfilerComponent {
+ public:
+  // Ensures a subclass's destructor is called when deleted from a base pointer.
+  virtual ~ProfilerComponent() {}
+
+  // Returns the service that talks to desktop clients (e.g., Studio).
+  virtual grpc::Service* GetPublicService() = 0;
+
+  // Returns the service that talks to device clients (e.g., perfa).
+  virtual grpc::Service* GetInternalService() = 0;
 };
 
 }  // namespace profiler
 
-#endif  // PERFD_PROFILER_SERVICE_H_
+#endif  // PERFD_PROFILER_COMPONENT_H_

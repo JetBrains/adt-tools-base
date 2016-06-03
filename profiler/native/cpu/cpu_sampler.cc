@@ -13,22 +13,37 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef PERFD_PROFILER_SERVICE_H_
-#define PERFD_PROFILER_SERVICE_H_
+#include "cpu_sampler.h"
 
-#include <grpc++/grpc++.h>
-
-#include "proto/profiler_service.grpc.pb.h"
+#include <unistd.h>
+#include <atomic>
+#include <thread>
 
 namespace profiler {
 
-class ProfilerServiceImpl final
-    : public profiler::proto::DeviceService::Service {
-  grpc::Status GetVersion(grpc::ServerContext* context,
-                          const profiler::proto::VersionRequest* request,
-                          profiler::proto::VersionResponse* reply) override;
-};
+CpuSampler::~CpuSampler() {
+  if (is_running_.load()) {
+    Stop();
+  }
+}
+
+void CpuSampler::Start() {
+  if (!is_running_.exchange(true)) {
+    sampler_thread_ = std::thread(&CpuSampler::Collect, this);
+  }
+}
+
+void CpuSampler::Stop() {
+  if (is_running_.exchange(false)) {
+    sampler_thread_.join();
+  }
+}
+
+void CpuSampler::Collect() {
+  while (is_running_.load()) {
+    collector_.Collect();
+    usleep(sampling_interval_in_us_);
+  }
+}
 
 }  // namespace profiler
-
-#endif  // PERFD_PROFILER_SERVICE_H_

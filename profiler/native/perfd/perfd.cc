@@ -19,25 +19,49 @@
 
 #include <grpc++/grpc++.h>
 
+#include "cpu/cpu_profiler_component.h"
 #include "perfd/perfa_service.h"
 #include "perfd/profiler_service.h"
 #include "utils/config.h"
 
+using grpc::Service;
+using grpc::ServerBuilder;
 using namespace profiler;
 using namespace profiler::utils;
 
 namespace {
+
+// Registers profiler |component| to perfd's server |builder|.
+// |component| cannot be 'const &' because we need to call its non-const methods
+// that return 'Service*'.
+// TODO: Refactor the dependency. It should be components depend on perfd; not
+// perfd depends on components.
+void RegisterPerfdComponent(ProfilerComponent* component,
+                            ServerBuilder* builder) {
+  Service* public_service = component->GetPublicService();
+  if (public_service != nullptr) {
+    builder->RegisterService(public_service);
+  }
+  Service* internal_service = component->GetInternalService();
+  if (internal_service != nullptr) {
+    builder->RegisterService(internal_service);
+  }
+}
 
 void RunServer() {
   grpc::ServerBuilder builder;
   // Listen on the given address without any authentication mechanism.
   builder.AddListeningPort(kServerAddress, grpc::InsecureServerCredentials());
 
+  // TODO: Group generic_public_service and perfa_service into a component.
   profiler::ProfilerServiceImpl generic_public_service;
   builder.RegisterService(&generic_public_service);
 
   profiler::PerfaServiceImpl perfa_service;
   builder.RegisterService(&perfa_service);
+
+  profiler::CpuProfilerComponent cpu_component;
+  RegisterPerfdComponent(&cpu_component, &builder);
 
   // Finally assemble the server.
   std::unique_ptr<grpc::Server> server(builder.BuildAndStart());

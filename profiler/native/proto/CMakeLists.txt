@@ -1,4 +1,6 @@
-set(PROTO_FILES network_profiler.proto
+set(PROTO_FILES cpu_profiler_data.proto
+                cpu_profiler_service.proto
+                network_profiler.proto
                 memory_profiler_service.proto
                 perfa_service.proto
                 profiler.proto

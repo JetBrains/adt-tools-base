@@ -15,17 +15,16 @@
  */
 syntax = "proto3";
 
+import "profiler.proto";
+
 package profiler.proto;
 
 // CPU data of a given app process.
-//
-// |CpuProfilerData| is always a field of |ProfilerData| in RPCs.
-// |ProfilerData| includes two fields: (1) the app process ID and (2) a
-// timestamp. Therefore, the two pieces of info are not included here.
 message CpuProfilerData {
+  ProfilerData basic_info = 1;
   oneof data {
-    CpuUsageData cpu_usage = 1;
-    ThreadActivities thread_activities = 2;
+    CpuUsageData cpu_usage = 2;
+    ThreadActivities thread_activities = 3;
   }
 }
 
@@ -83,7 +82,7 @@ message TheadActivity {
   string name = 3;
   // Timestamp when the activity happens (or is detected).
   // Null means the timestamp of this activity is the same as the timestamp
-  // in the |ProfilerData| message that indirectly includes this |TheadActivity|
+  // as the |CpuProfilerData| message that includes this |TheadActivity|
   // message.
   int64 timestamp = 4;
 }
