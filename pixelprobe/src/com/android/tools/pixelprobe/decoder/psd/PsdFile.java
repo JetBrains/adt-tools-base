@@ -734,10 +734,9 @@ final class PsdFile {
 
         @Override
         public String toString() {
-            return "Descriptor{" +
-                    "name=" + name +
-                    ", items=" + Strings.join(items.values(), ", ") +
-                    '}';
+            return "<descriptor name=\"" + name + "\" classId=\"" + classId + "\">" +
+                   Strings.join(items.values(), "\n") +
+                   "</descriptor>";
         }
     }
 
@@ -888,9 +887,7 @@ final class PsdFile {
 
             @Override
             public String toString() {
-                return "ValueList{" +
-                        "items=" + Strings.join(items, ", ") +
-                        '}';
+                return "<list>" + Strings.join(items, "\n") + "</list>";
             }
         }
 
@@ -943,10 +940,7 @@ final class PsdFile {
 
         @Override
         public String toString() {
-            return "DescriptorItem{" +
-                    "key=" + key +
-                    ", value=" + value +
-                    '}';
+            return "<item key=\"" + key + "\">" + value + "</item>";
         }
     }
 

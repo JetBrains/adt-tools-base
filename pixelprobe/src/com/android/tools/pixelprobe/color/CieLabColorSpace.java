@@ -17,7 +17,6 @@
 package com.android.tools.pixelprobe.color;
 
 import java.awt.color.ColorSpace;
-import java.util.Arrays;
 
 /**
  * Implementation of the CIELAB D50 color space.
@@ -57,9 +56,9 @@ public class CieLabColorSpace extends ColorSpace {
         double g = -0.9787684 * xyz[0] +  1.9161415 * xyz[1] +  0.0334540 * xyz[2];
         double b =  0.0719453 * xyz[0] + -0.2289914 * xyz[1] +  1.4052427 * xyz[2];
 
-        xyz[0] = Colors.linearTosRGB(clamp((float) r));
-        xyz[1] = Colors.linearTosRGB(clamp((float) g));
-        xyz[2] = Colors.linearTosRGB(clamp((float) b));
+        xyz[0] = Colors.linearRgbToRgb(clamp((float) r));
+        xyz[1] = Colors.linearRgbToRgb(clamp((float) g));
+        xyz[2] = Colors.linearRgbToRgb(clamp((float) b));
 
         return xyz;
     }
@@ -104,9 +103,9 @@ public class CieLabColorSpace extends ColorSpace {
             double g = -0.9787684 * xyz[0] +  1.9161415 * xyz[1] +  0.0334540 * xyz[2];
             double b =  0.0719453 * xyz[0] + -0.2289914 * xyz[1] +  1.4052427 * xyz[2];
 
-            xyz[0] = Colors.linearTosRGB(clamp((float) r));
-            xyz[1] = Colors.linearTosRGB(clamp((float) g));
-            xyz[2] = Colors.linearTosRGB(clamp((float) b));
+            xyz[0] = Colors.linearRgbToRgb(clamp((float) r));
+            xyz[1] = Colors.linearRgbToRgb(clamp((float) g));
+            xyz[2] = Colors.linearRgbToRgb(clamp((float) b));
 
             float[] fixedXYZ = sRGB.toCIEXYZ(xyz);
             xyz[0] = fixedXYZ[0];

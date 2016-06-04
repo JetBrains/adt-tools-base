@@ -19,7 +19,6 @@ package com.android.tools.pixelprobe.decoder.psd;
 import com.android.tools.chunkio.ChunkIO;
 import com.android.tools.pixelprobe.*;
 import com.android.tools.pixelprobe.Image;
-import com.android.tools.pixelprobe.color.Colors;
 import com.android.tools.pixelprobe.decoder.Decoder;
 import com.android.tools.pixelprobe.effect.Shadow;
 import com.android.tools.pixelprobe.util.Bytes;
@@ -47,7 +46,7 @@ import static com.android.tools.pixelprobe.decoder.psd.PsdFile.*;
  * large images (> 30,000 pixels in either dimension), is currently not
  * supported.
  */
-@SuppressWarnings({ "UseJBColor" })
+@SuppressWarnings("UseJBColor")
 public final class PsdDecoder extends Decoder {
     /**
      * Constant to convert centimeters to inches.
@@ -290,14 +289,12 @@ public final class PsdDecoder extends Decoder {
     }
 
     private static void extractLayerEffects(Image.Builder image, Layer.Builder layer, RawLayer rawLayer) {
-        Map<String, LayerProperty> properties = rawLayer.extras.properties;
+            Map<String, LayerProperty> properties = rawLayer.extras.properties;
 
-        boolean isMultiEffects = true;
         LayerProperty property = properties.get(LayerProperty.KEY_MULTI_EFFECTS);
         if (property == null) {
             property = properties.get(LayerProperty.KEY_EFFECTS);
             if (property == null) return;
-            isMultiEffects = false;
         }
 
         LayerEffects layerEffects = (LayerEffects) property.data;
@@ -305,107 +302,54 @@ public final class PsdDecoder extends Decoder {
 
         boolean effectsEnabled = PsdUtils.get(layerEffects.effects, "masterFXSwitch");
         if (effectsEnabled) {
-            extractShadowEffects(image, effects, layerEffects, isMultiEffects, LayerShadow.INNER);
-            extractShadowEffects(image, effects, layerEffects, isMultiEffects, LayerShadow.OUTER);
+            extractShadowEffects(image, effects, layerEffects, LayerShadow.INNER);
+            extractShadowEffects(image, effects, layerEffects, LayerShadow.OUTER);
         }
 
         layer.effects(effects.build());
     }
 
     private static void extractShadowEffects(Image.Builder image, Effects.Builder effects,
-            LayerEffects layerEffects, boolean isMultiEffects, LayerShadow shadowType) {
-        if (isMultiEffects) {
-            DescriptorItem.ValueList list = PsdUtils.get(layerEffects.effects, shadowType.getMultiName());
-            if (list != null) {
-                for (int i = 0; i < list.count; i++) {
-                    Descriptor descriptor = (Descriptor) list.items.get(i).data;
+            LayerEffects layerEffects, LayerShadow shadowType) {
+
+        Descriptor descriptor = PsdUtils.get(layerEffects.effects, shadowType.getName());
+        if (descriptor != null) {
+            addShadowEffect(image, effects, descriptor, shadowType);
+        }
+
+        DescriptorItem.ValueList list = PsdUtils.get(layerEffects.effects, shadowType.getMultiName());
+        if (list != null) {
+            for (int i = 0; i < list.count; i++) {
+                descriptor = (Descriptor) list.items.get(i).data;
+                if (shadowType.getName().equals(descriptor.classId.toString())) {
                     addShadowEffect(image, effects, descriptor, shadowType);
                 }
-            }
-        } else {
-            Descriptor descriptor = PsdUtils.get(layerEffects.effects, shadowType.getName());
-            if (descriptor != null) {
-                addShadowEffect(image, effects, descriptor, shadowType);
             }
         }
     }
 
     private static void addShadowEffect(Image.Builder image, Effects.Builder effects,
             Descriptor descriptor, LayerShadow type) {
-        float scale = image.verticalResolution() / 72.0f;
+
+        if (!PsdUtils.getBoolean(descriptor, "present") || !PsdUtils.getBoolean(descriptor, "enab")) {
+            return;
+        }
 
         Shadow.Type shadowType = Shadow.Type.INNER;
         if (type == LayerShadow.OUTER) shadowType = Shadow.Type.OUTER;
+
+        float scale = image.verticalResolution() / 72.0f;
 
         Shadow shadow = new Shadow.Builder(shadowType)
                 .blur(PsdUtils.getUnitFloat(descriptor, "blur", scale))
                 .angle(PsdUtils.getUnitFloat(descriptor, "lagl", scale))
                 .distance(PsdUtils.getUnitFloat(descriptor, "Dstn", scale))
                 .opacity(PsdUtils.getUnitFloat(descriptor, "Opct", scale))
-                .color(getColor(descriptor))
                 .blendMode(PsdUtils.getBlendMode(PsdUtils.get(descriptor, "Md  ")))
+                .color(PsdUtils.getColor(descriptor))
                 .build();
 
         effects.addShadow(shadow);
-    }
-
-    private static Color getColor(Descriptor descriptor) {
-        Descriptor color = PsdUtils.get(descriptor, "Clr ");
-        if (color == null) return Color.BLACK;
-
-        String colorType = color.classId.toString();
-
-        switch (colorType) {
-            case Descriptor.CLASS_ID_COLOR_RGB:
-                return colorFromsRGB(color);
-            case Descriptor.CLASS_ID_COLOR_HSB:
-                return colorFromHSB(color);
-            case Descriptor.CLASS_ID_COLOR_CMYK:
-                return colorFromCMYK(color);
-            case Descriptor.CLASS_ID_COLOR_LAB:
-                return colorFromLAB(color);
-            case Descriptor.CLASS_ID_COLOR_GRAY:
-                return colorFromGray(color);
-        }
-
-        return Color.BLACK;
-    }
-
-    private static Color colorFromsRGB(Descriptor color) {
-        return new Color(
-                PsdUtils.getFloat(color, "Rd  ") / 255.0f,
-                PsdUtils.getFloat(color, "Grn ") / 255.0f,
-                PsdUtils.getFloat(color, "Bl  ") / 255.0f);
-    }
-
-    private static Color colorFromHSB(Descriptor color) {
-        float[] rgb = Colors.HSBtosRGB(
-                PsdUtils.getUnitFloat(color, "H   ", 0.0f) / 360.0f,
-                PsdUtils.getFloat(color, "Strt") / 100.0f,
-                PsdUtils.getFloat(color, "Brgh") / 100.0f);
-        return new Color(rgb[0], rgb[1], rgb[2]);
-    }
-
-    private static Color colorFromCMYK(Descriptor color) {
-        float[] rgb = Colors.CMYKtosRGB(
-                PsdUtils.getFloat(color, "Cyn "),
-                PsdUtils.getFloat(color, "Mgnt"),
-                PsdUtils.getFloat(color, "Ylw "),
-                PsdUtils.getFloat(color, "Blck"));
-        return new Color(rgb[0], rgb[1], rgb[2]);
-    }
-
-    private static Color colorFromLAB(Descriptor color) {
-        float[] rgb = Colors.LABtosRGB(
-                PsdUtils.getFloat(color, "Lmnc"),
-                PsdUtils.getFloat(color, "A   "),
-                PsdUtils.getFloat(color, "B   "));
-        return new Color(rgb[0], rgb[1], rgb[2]);
-    }
-
-    private static Color colorFromGray(Descriptor color) {
-        float gray = Colors.linearTosRGB(PsdUtils.getFloat(color, "Gry ") / 255.0f);
-        return new Color(gray, gray, gray);
     }
 
     /**
@@ -564,7 +508,7 @@ public final class PsdDecoder extends Decoder {
         if (properties.containsKey(LayerProperty.KEY_ADJUSTMENT_SOLID_COLOR)) {
             SolidColorAdjustment adjustment = (SolidColorAdjustment)
                     properties.get(LayerProperty.KEY_ADJUSTMENT_SOLID_COLOR).data;
-            layer.pathColor(getColor(adjustment.solidColor));
+            layer.pathColor(PsdUtils.getColor(adjustment.solidColor));
         }
     }
 

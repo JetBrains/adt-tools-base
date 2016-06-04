@@ -17,12 +17,14 @@
 package com.android.tools.pixelprobe.decoder.psd;
 
 import com.android.tools.pixelprobe.BlendMode;
+import com.android.tools.pixelprobe.color.Colors;
 import com.android.tools.pixelprobe.decoder.psd.PsdFile.ColorProfileBlock;
 import com.android.tools.pixelprobe.decoder.psd.PsdFile.Descriptor;
 import com.android.tools.pixelprobe.decoder.psd.PsdFile.PathRecord;
 import com.android.tools.pixelprobe.decoder.psd.PsdFile.VectorMask;
 import com.android.tools.pixelprobe.util.Bytes;
 
+import java.awt.*;
 import java.awt.color.ColorSpace;
 import java.awt.color.ICC_ColorSpace;
 import java.awt.color.ICC_Profile;
@@ -40,6 +42,7 @@ import static com.android.tools.pixelprobe.decoder.psd.PsdFile.PathRecord.*;
 /**
  * Various utilities to decode PSD file data chunks.
  */
+@SuppressWarnings("UseJBColor")
 final class PsdUtils {
     // Used to parse descriptor paths
     private static final Pattern PATH_PATTERN = Pattern.compile("([a-zA-Z0-9]+)\\[([0-9]+)\\]");
@@ -181,8 +184,9 @@ final class PsdUtils {
 
             if (data instanceof Descriptor) {
                 result = currentDescriptor = (Descriptor) data;
-            } else if (data instanceof PsdFile.FixedString || data instanceof PsdFile.UnicodeString ||
-                    data instanceof PsdFile.DescriptorItem.Enumerated) {
+            } else if (data instanceof PsdFile.FixedString ||
+                       data instanceof PsdFile.UnicodeString ||
+                       data instanceof PsdFile.DescriptorItem.Enumerated) {
                 result = data.toString();
             } else if (data instanceof PsdFile.FixedByteArray) {
                 result = ((PsdFile.FixedByteArray) data).value;
@@ -208,6 +212,14 @@ final class PsdUtils {
         }
 
         return (float) value.value;
+    }
+
+    static boolean getBoolean(Descriptor descriptor, String path) {
+        Object value = get(descriptor, path);
+        if (value instanceof Boolean) {
+            return (Boolean) value;
+        }
+        return "true".equalsIgnoreCase(value.toString());
     }
 
     /**
@@ -249,6 +261,69 @@ final class PsdUtils {
     static <T> T get(PsdFile.ImageResources resources, int id) {
         PsdFile.ImageResourceBlock block = resources.blocks.get(id);
         return block == null ? null : (T) block.data;
+    }
+
+   /**
+    * Returns the color present in the specified descriptor.
+    * If no color can be found, this method returns
+    * {@link Color#BLACK}.
+    */
+    static Color getColor(Descriptor descriptor) {
+        Descriptor color = get(descriptor, "Clr ");
+        if (color == null) return Color.BLACK;
+
+        String colorType = color.classId.toString();
+        switch (colorType) {
+            case Descriptor.CLASS_ID_COLOR_RGB:
+                return colorFromRgb(color);
+            case Descriptor.CLASS_ID_COLOR_HSB:
+                return colorFromHsb(color);
+            case Descriptor.CLASS_ID_COLOR_CMYK:
+                return colorFromCmyk(color);
+            case Descriptor.CLASS_ID_COLOR_LAB:
+                return colorFromLab(color);
+            case Descriptor.CLASS_ID_COLOR_GRAY:
+                return colorFromGray(color);
+        }
+
+        return Color.BLACK;
+    }
+
+    private static Color colorFromRgb(Descriptor color) {
+        return new Color(
+            getFloat(color, "Rd  ") / 255.0f,
+            getFloat(color, "Grn ") / 255.0f,
+            getFloat(color, "Bl  ") / 255.0f);
+    }
+
+    private static Color colorFromHsb(Descriptor color) {
+        float[] rgb = Colors.hsbToRgb(
+            getUnitFloat(color, "H   ", 0.0f) / 360.0f,
+            getFloat(color, "Strt") / 100.0f,
+            getFloat(color, "Brgh") / 100.0f);
+        return new Color(rgb[0], rgb[1], rgb[2]);
+    }
+
+    private static Color colorFromCmyk(Descriptor color) {
+        return new Color(Colors.getCmykColorSpace(), new float[] {
+            getFloat(color, "Cyn "),
+            getFloat(color, "Mgnt"),
+            getFloat(color, "Ylw "),
+            getFloat(color, "Blck")
+        }, 1.0f);
+    }
+
+    private static Color colorFromLab(Descriptor color) {
+        return new Color(Colors.getLabColorSpace(), new float[]{
+            getFloat(color, "Lmnc"),
+            getFloat(color, "A   "),
+            getFloat(color, "B   ")
+        }, 1.0f);
+    }
+
+    private static Color colorFromGray(Descriptor color) {
+        float gray = Colors.linearRgbToRgb(getFloat(color, "Gry ") / 255.0f);
+        return new Color(gray, gray, gray);
     }
 
     /**

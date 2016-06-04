@@ -55,10 +55,10 @@ public final class Colors {
      * @return A new array of floats, of the same size as the input array,
      * representing an sRGB color
      */
-    public static float[] linearTosRGB(float[] c) {
+    public static float[] linearRgbToRgb(float[] c) {
         float[] v = new float[c.length];
         for (int i = 0; i < c.length; i++) {
-            v[i] = linearTosRGB(c[i]);
+            v[i] = linearRgbToRgb(c[i]);
         }
         return v;
     }
@@ -72,7 +72,7 @@ public final class Colors {
      *
      * @return An sRGB component between 0.0 and 1.0
      */
-    public static float linearTosRGB(float c) {
+    public static float linearRgbToRgb(float c) {
         return (c <= 0.0031308f) ? c * 12.92f : ((float) Math.pow(c, 1.0f / 2.4f) * 1.055f) - 0.055f;
     }
 
@@ -105,19 +105,18 @@ public final class Colors {
     }
 
     /**
-     * Converts the specified Lab color to sRGB. The conversion
-     * is done using a D50 illuminant. The parameters must be
-     * in the range 0..100 for L, and -128..127 for a and b.
+     * Returns the ICC CMYK color profile used for CMYK to RGB conversions.
+     * The color profile is the standard "U.S. Web Coated v2" profile.
      */
-    public static float[] LABtosRGB(float L, float a, float b) {
-        return getLabColorSpace().toRGB(new float[] { L, a, b });
+    public static ColorSpace getCmykColorSpace() {
+        return ColorSpaceHolder.CMYK_ICC_ColorSpace;
     }
 
     /**
      * Converts the specified HSB color to sRGB. The parameters must
      * be in the range 0..1.
      */
-    public static float[] HSBtosRGB(float H, float S, float B) {
+    public static float[] hsbToRgb(float H, float S, float B) {
         if (S == 0.0f) {
             return new float[] { B, B, B };
         }
@@ -168,22 +167,6 @@ public final class Colors {
         }
 
         return new float[] { (float) r, (float) g, (float) b };
-    }
-
-    /**
-     * Converts the specified CMYK color to sRGB. The conversion
-     * is done using the "U.S. Web Coated v2" ICC color profile.
-     */
-    public static float[] CMYKtosRGB(float C, float M, float Y, float K) {
-        return getCmykColorSpace().toRGB(new float[] { C, M, Y, K });
-    }
-
-    /**
-     * Returns the ICC CMYK color profile used for CMYK to RGB conversions.
-     * The color profile is the standard "U.S. Web Coated v2" profile.
-     */
-    public static ColorSpace getCmykColorSpace() {
-        return ColorSpaceHolder.CMYK_ICC_ColorSpace;
     }
 
     /**
