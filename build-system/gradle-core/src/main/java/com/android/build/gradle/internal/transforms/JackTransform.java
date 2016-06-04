@@ -256,6 +256,7 @@ public class JackTransform extends Transform {
         options.setJavaMaxHeapSize(globalScope.getExtension().getDexOptions().getJavaMaxHeapSize());
         options.setJumboMode(globalScope.getExtension().getDexOptions().getJumboMode());
         boolean isDebuggable = scope.getVariantConfiguration().getBuildType().isDebuggable();
+        options.setDebuggable(isDebuggable);
         options.setDexOptimize(
                 Objects.firstNonNull(
                         globalScope.getExtension().getDexOptions().getOptimize(), !isDebuggable));
