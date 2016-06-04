@@ -17,12 +17,13 @@
 package com.android.tools.pixelprobe.color;
 
 import java.awt.color.ColorSpace;
+import java.util.Arrays;
 
 /**
  * Implementation of the CIELAB D50 color space.
  */
 public class CieLabColorSpace extends ColorSpace {
-    private static final double[] WHITE_POINT_D50 = { 96.4212, 100.0, 82.5188 };
+    private static final double[] WHITE_POINT_D50 = { 0.964212, 1.0, 0.825188 };
     private static final ColorSpace sRGB = ColorSpace.getInstance(ColorSpace.CS_sRGB);
 
     private static final class InstanceHolder {
@@ -49,16 +50,16 @@ public class CieLabColorSpace extends ColorSpace {
 
     @Override
     public float[] toRGB(float[] lab) {
-        float[] xyz = toCIEXYZ(lab);
+        float[] xyz = toCIEXYZ(lab, false);
 
-        // Bradford-adapted D50 XYZ to sRGB matrix
+        // Bradford-adapted D50 XYZ to RGB matrix
         double r =  3.1338561 * xyz[0] + -1.6168667 * xyz[1] + -0.4906146 * xyz[2];
         double g = -0.9787684 * xyz[0] +  1.9161415 * xyz[1] +  0.0334540 * xyz[2];
         double b =  0.0719453 * xyz[0] + -0.2289914 * xyz[1] +  1.4052427 * xyz[2];
 
-        xyz[0] = clamp(Colors.linearTosRGB((float) r));
-        xyz[1] = clamp(Colors.linearTosRGB((float) g));
-        xyz[2] = clamp(Colors.linearTosRGB((float) b));
+        xyz[0] = Colors.linearTosRGB(clamp((float) r));
+        xyz[1] = Colors.linearTosRGB(clamp((float) g));
+        xyz[2] = Colors.linearTosRGB(clamp((float) b));
 
         return xyz;
     }
@@ -74,6 +75,10 @@ public class CieLabColorSpace extends ColorSpace {
 
     @Override
     public float[] toCIEXYZ(float[] lab) {
+        return toCIEXYZ(lab, true);
+    }
+
+    private static float[] toCIEXYZ(float[] lab, boolean fix) {
         double fy = (lab[0] + 16.0) / 116.0;
         double fx = fy + (lab[1] / 500.0);
         double fz = fy - (lab[2] / 200.0);
@@ -82,18 +87,41 @@ public class CieLabColorSpace extends ColorSpace {
         double Y = fy > (6.0 / 29.0) ? fy * fy * fy : (108.0 / 841.0) * (fy - (4.0 / 29.0));
         double Z = fz > (6.0 / 29.0) ? fz * fz * fz : (108.0 / 841.0) * (fz - (4.0 / 29.0));
 
-        return new float[] {
-                (float) (X * WHITE_POINT_D50[0] * 0.01),
-                (float) (Y * WHITE_POINT_D50[1] * 0.01),
-                (float) (Z * WHITE_POINT_D50[2] * 0.01)
-        };
+        float[] xyz = new float[lab.length];
+        xyz[0] = (float) (X * WHITE_POINT_D50[0]);
+        xyz[1] = (float) (Y * WHITE_POINT_D50[1]);
+        xyz[2] = (float) (Z * WHITE_POINT_D50[2]);
+
+        // This is incredibly gross: we do Lab->XYZ->sRGB->XYZ
+        // The reason we do this is because with OpenJDK 8u92 on OSX,
+        // the XYZ we compute from Lab is not interpreted correctly
+        // by the imaging pipeline. The Lab->XYZ conversion we use
+        // is, as far as I can tell by comparing with numerous other
+        // sources - including Lindbloom, Matlab, etc. -, correct.
+        if (fix) {
+            // Bradford-adapted D50 XYZ to RGB matrix
+            double r =  3.1338561 * xyz[0] + -1.6168667 * xyz[1] + -0.4906146 * xyz[2];
+            double g = -0.9787684 * xyz[0] +  1.9161415 * xyz[1] +  0.0334540 * xyz[2];
+            double b =  0.0719453 * xyz[0] + -0.2289914 * xyz[1] +  1.4052427 * xyz[2];
+
+            xyz[0] = Colors.linearTosRGB(clamp((float) r));
+            xyz[1] = Colors.linearTosRGB(clamp((float) g));
+            xyz[2] = Colors.linearTosRGB(clamp((float) b));
+
+            float[] fixedXYZ = sRGB.toCIEXYZ(xyz);
+            xyz[0] = fixedXYZ[0];
+            xyz[1] = fixedXYZ[1];
+            xyz[2] = fixedXYZ[2];
+        }
+
+        return xyz;
     }
 
     @Override
     public float[] fromCIEXYZ(float[] xyz) {
-        double X = xyz[0] * (100.0 / WHITE_POINT_D50[0]);
-        double Y = xyz[1] * (100.0 / WHITE_POINT_D50[1]);
-        double Z = xyz[2] * (100.0 / WHITE_POINT_D50[2]);
+        double X = xyz[0] / WHITE_POINT_D50[0];
+        double Y = xyz[1] / WHITE_POINT_D50[1];
+        double Z = xyz[2] / WHITE_POINT_D50[2];
 
         double fx = X > (216.0 / 24389.0) ? Math.cbrt(X) : (841.0 / 108.0) * X + (4.0 / 29.0);
         double fy = Y > (216.0 / 24389.0) ? Math.cbrt(Y) : (841.0 / 108.0) * Y + (4.0 / 29.0);
@@ -103,6 +131,10 @@ public class CieLabColorSpace extends ColorSpace {
         double a = 500.0 * (fx - fy);
         double b = 200.0 * (fy - fz);
 
-        return new float[] { (float) L, (float) a, (float) b };
+        float[] lab = new float[xyz.length];
+        lab[0] = (float) L;
+        lab[1] = (float) a;
+        lab[2] = (float) b;
+        return lab;
     }
 }

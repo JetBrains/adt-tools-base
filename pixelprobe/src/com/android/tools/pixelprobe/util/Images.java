@@ -19,16 +19,21 @@ package com.android.tools.pixelprobe.util;
 import com.android.tools.pixelprobe.ColorMode;
 import com.android.tools.pixelprobe.color.Colors;
 import com.android.tools.pixelprobe.color.CsIndexColorModel;
-import com.android.tools.pixelprobe.color.InverseColorSpace;
 
 import java.awt.*;
 import java.awt.color.ColorSpace;
 import java.awt.image.*;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Various utilities to create and decode images.
  */
 public final class Images {
+    private static final Map<LutKey, BufferedImageOp> lookupTables = new HashMap<>();
+    private static final ReentrantLock lookupTablesLock = new ReentrantLock();
+
     enum Type {
         INT_RGB,
         INT_ALPHA_RGB,
@@ -110,7 +115,6 @@ public final class Images {
                 if (colorSpace == null || colorSpace.getType() != ColorSpace.TYPE_CMYK) {
                     colorSpace = Colors.getCmykColorSpace();
                 }
-                colorSpace = new InverseColorSpace(colorSpace);
                 colorModel = new ComponentColorModel(colorSpace, new int[] { 8, 8, 8, 8 },
                         false, false, Transparency.OPAQUE, DataBuffer.TYPE_BYTE);
                 raster = Raster.createInterleavedRaster(DataBuffer.TYPE_BYTE,
@@ -120,7 +124,6 @@ public final class Images {
                 if (colorSpace == null || colorSpace.getType() != ColorSpace.TYPE_CMYK) {
                     colorSpace = Colors.getCmykColorSpace();
                 }
-                colorSpace = new InverseColorSpace(colorSpace);
                 colorModel = new ComponentColorModel(colorSpace, new int[] { 8, 8, 8, 8, 8 },
                         true, false, Transparency.TRANSLUCENT, DataBuffer.TYPE_BYTE);
                 raster = Raster.createInterleavedRaster(DataBuffer.TYPE_BYTE,
@@ -283,7 +286,7 @@ public final class Images {
         int height = image.getHeight();
         int band = getBand(channel, image.getColorModel());
 
-        decodeRAWChannel(data, offset, width, height, depth, image, band);
+        decodeRawChannel(data, offset, width, height, depth, image, band);
     }
 
     /**
@@ -305,7 +308,7 @@ public final class Images {
 
         BufferedImage image = create(width, height, colorMode, channels, colorSpace, depth);
         for (int c = 0; c < channels; c++) {
-            offset += decodeRAWChannel(data, offset, width, height, depth, image, c);
+            offset += decodeRawChannel(data, offset, width, height, depth, image, c);
         }
 
         return image;
@@ -415,7 +418,7 @@ public final class Images {
      *
      * @return Returns the number of bytes read from the array
      */
-    private static int decodeRAWChannel(byte[] data, int offset, int width, int height, int depth,
+    private static int decodeRawChannel(byte[] data, int offset, int width, int height, int depth,
             BufferedImage image, int band) {
 
         WritableRaster raster = image.getRaster();
@@ -571,5 +574,73 @@ public final class Images {
         }
 
         throw new IllegalArgumentException("Unsupported color mode/channels count: " + colorMode);
+    }
+
+    /**
+     * Inverts the specified image (ignores the alpha channel if any).
+     */
+    public static BufferedImage invert(BufferedImage image) {
+        BufferedImageOp imageOp;
+        ColorModel colorModel = image.getColorModel();
+        LutKey key = new LutKey(colorModel.getNumComponents(), colorModel.hasAlpha());
+
+        lookupTablesLock.lock();
+        try {
+            imageOp = lookupTables.get(key);
+            if (imageOp == null) {
+                int numColorComponents = colorModel.getNumColorComponents();
+                byte[][] lut = new byte[key.componentCount][256];
+
+                for (int j = 0; j < numColorComponents; j++) {
+                    for (int i = 0; i < 256; i++) {
+                        lut[j][i] = (byte)(255 - i);
+                    }
+                }
+
+                if (key.hasAlpha) {
+                    int a = key.componentCount - 1;
+                    for (int i = 0; i < 256; i++) {
+                        lut[a][i] = (byte)i;
+                    }
+                }
+
+                imageOp = new LookupOp(new ByteLookupTable(0, lut), null);
+                lookupTables.put(key, imageOp);
+            }
+        } finally {
+            lookupTablesLock.unlock();
+        }
+
+        return imageOp.filter(image, null);
+    }
+
+    private static final class LutKey {
+        int componentCount;
+        boolean hasAlpha;
+
+        LutKey(int componentCount, boolean hasAlpha) {
+            this.componentCount = componentCount;
+            this.hasAlpha = hasAlpha;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            LutKey lutKey = (LutKey) o;
+
+            if (componentCount != lutKey.componentCount) return false;
+            if (hasAlpha != lutKey.hasAlpha) return false;
+
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            int result = componentCount;
+            result = 31 * result + (hasAlpha ? 1 : 0);
+            return result;
+        }
     }
 }
