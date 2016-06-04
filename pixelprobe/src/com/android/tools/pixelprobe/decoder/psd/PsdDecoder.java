@@ -720,7 +720,8 @@ public final class PsdDecoder extends Decoder {
         int alphaChannel = 0;
         // When the layer count is negative, the first alpha channel is the
         // merged result's alpha mask
-        if (psd.layersInfo.layers.count < 0) {
+        LayersList layers = psd.layersInfo.layers;
+        if (layers != null && layers.count < 0) {
             alphaChannel = 1;
         }
 
@@ -769,7 +770,7 @@ public final class PsdDecoder extends Decoder {
                 break;
         }
 
-        image.mergedImage(bitmap);
+        image.mergedImage(fixBitmap(image, bitmap));
     }
 
     private static void decodeIndexedImageData(Image.Builder image, PsdFile psd) {
@@ -798,6 +799,15 @@ public final class PsdDecoder extends Decoder {
                 break;
         }
 
-        image.mergedImage(bitmap);
+        image.mergedImage(fixBitmap(image, bitmap));
+    }
+
+    private static BufferedImage fixBitmap(Image.Builder image, BufferedImage bitmap) {
+        // Fun fact: CMYK colors are stored reversed...
+        // Cyan 100% is stored as 0x0 and Cyan 0% is stored as 0xff
+        if (image.colorMode() == ColorMode.CMYK) {
+            bitmap = Images.invert(bitmap);
+        }
+        return bitmap;
     }
 }
