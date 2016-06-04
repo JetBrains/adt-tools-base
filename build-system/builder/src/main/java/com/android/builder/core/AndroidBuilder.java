@@ -114,6 +114,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.lang.management.ManagementFactory;
+import java.lang.management.MemoryPoolMXBean;
+import java.lang.management.MemoryType;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
@@ -1613,6 +1616,32 @@ public class AndroidBuilder {
         }
 
         if (isInProcess) {
+            final long DEFAULT_SUGGESTED_HEAP_SIZE = 1536 * 1024 * 1024; // 1.5 GiB
+            long maxMemory = 0;
+            for (MemoryPoolMXBean mpBean: ManagementFactory.getMemoryPoolMXBeans()) {
+                if (mpBean.getType() == MemoryType.HEAP) {
+                    maxMemory += mpBean.getUsage().getMax();
+                }
+            }
+
+            // Allow a little extra overhead (50M) as in practice the sum of the heap pools is
+            // slightly lower than the Xmx setting specified by the user.
+            final long EXTRA_HEAP_OVERHEAD =  50 * 1024 * 1024;
+            if (DEFAULT_SUGGESTED_HEAP_SIZE > maxMemory + EXTRA_HEAP_OVERHEAD) {
+                mLogger.warning(
+                        "\nA larger heap for the Gradle daemon is recommended for running "
+                                + "jack.\n\n"
+                                + "It currently has approximately %1$d MB.\n"
+                                + "For faster builds, increase the maximum heap size for the "
+                                + "Gradle daemon to more than %2$s MB.\n"
+                                + "To do this set org.gradle.jvmargs=-Xmx%2$sM in the "
+                                + "project gradle.properties.\n"
+                                + "For more information see "
+                                + "https://docs.gradle.org/current/userguide/build_environment.html\n",
+                        maxMemory / (1024 * 1024),
+                        DEFAULT_SUGGESTED_HEAP_SIZE / (1024 * 1024));
+            }
+
             convertByteCodeUsingJackApis(options);
         } else {
             convertByteCodeUsingJackCli(options, new LoggedProcessOutputHandler(getLogger()));
