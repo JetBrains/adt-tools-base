@@ -42,9 +42,6 @@ class ProfilerServerNetwork final {
   // Stops collecting data and wait for thread exit.
   void StopProfile();
 
-  // TODO: Need refactor on how to get time.
-  static uint64_t GetCurrentTime();
-
  private:
   // First reads app uid from file, then creates app network data collectors;
   // collectors are saved into a vector member variable.
