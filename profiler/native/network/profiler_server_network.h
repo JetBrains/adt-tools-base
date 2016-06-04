@@ -30,7 +30,7 @@ namespace network {
 
 // Profiler that repeatedly collects all network data, and connects with
 // profiler server for data saving.
-class ProfilerServerNetwork {
+class ProfilerServerNetwork final {
  public:
   ProfilerServerNetwork(int pid, profiler_server::ProfilerDataService *service)
       : pid_(pid), service_(service) {}
@@ -45,12 +45,11 @@ class ProfilerServerNetwork {
   // TODO: Need refactor on how to get time.
   static uint64_t GetCurrentTime();
 
- protected:
+ private:
   // First reads app uid from file, then creates app network data collectors;
   // collectors are saved into a vector member variable.
   void CreateCollectors();
 
- private:
   // Continually collects data until stopped.
   static void Profile(ProfilerServerNetwork *network_profiler);
 

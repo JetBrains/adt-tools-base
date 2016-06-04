@@ -25,7 +25,7 @@ namespace network {
 
 // Data collector of network traffic information. For example, it provides sent
 // and received bytes of an app.
-class TrafficDataCollector : public NetworkDataCollector {
+class TrafficDataCollector final : public NetworkDataCollector {
  public:
   TrafficDataCollector(const std::string &uid, const std::string &file)
       : kUid(uid), kFile(file) {}
