@@ -21,8 +21,10 @@ import com.android.utils.ILogger;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 
+import org.gradle.api.Action;
 import org.gradle.api.JavaVersion;
 import org.gradle.api.Project;
+import org.gradle.api.Task;
 import org.gradle.api.file.ConfigurableFileTree;
 import org.gradle.api.file.FileCollection;
 
@@ -221,7 +223,6 @@ public class JavaCompileConfigAction implements TaskConfigAction<AndroidJavaComp
             javacTask.getOptions().getCompilerArgs().add("-processorpath");
             javacTask.getOptions().getCompilerArgs().add(FileUtils.joinFilePaths(processorPath));
         }
-
         if (!annotationProcessorOptions.getClassNames().isEmpty()) {
             javacTask.getOptions().getCompilerArgs().add("-processor");
             javacTask.getOptions().getCompilerArgs().add(
@@ -234,5 +235,14 @@ public class JavaCompileConfigAction implements TaskConfigAction<AndroidJavaComp
                         "-A" + arg.getKey() + "=" + arg.getValue());
             }
         }
+
+        // Create directory for output of annotation processor.
+        javacTask.doFirst(task -> {
+            FileUtils.mkdirs(scope.getAnnotationProcessorOutputDir());
+        });
+        javacTask.getOptions().getCompilerArgs().add("-s");
+        javacTask.getOptions().getCompilerArgs().add(
+                scope.getAnnotationProcessorOutputDir().getAbsolutePath());
+
     }
 }

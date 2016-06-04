@@ -51,8 +51,9 @@ class JacocoWithButterKnifeTest {
             project.execute("transformClassesWithJacocoForDebug")
             File javaFile = FileUtils.join(project.getTestDir(),
                     "build",
-                    "intermediates",
-                    "classes",
+                    "generated",
+                    "source",
+                    "apt",
                     "debug",
                     "com",
                     "test",

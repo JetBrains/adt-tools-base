@@ -16,7 +16,8 @@
 
 package com.android.build.gradle.integration.application;
 
-import static com.google.common.truth.Truth.assertThat;
+
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat;
 
 import com.android.build.gradle.integration.common.category.DeviceTests;
 import com.android.build.gradle.integration.common.fixture.Adb;
@@ -28,6 +29,8 @@ import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp;
 import com.android.build.gradle.integration.common.fixture.app.MultiModuleTestProject;
 import com.android.build.gradle.integration.common.fixture.app.TestSourceFile;
 import com.android.build.gradle.integration.common.runner.FilterableParameterized;
+import com.android.build.gradle.integration.common.utils.ModelHelper;
+import com.android.builder.model.AndroidProject;
 import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.io.Files;
@@ -179,6 +182,12 @@ public class AnnotationProcessorTest {
                 + "    compile project(':lib')\n"
                 + "}\n", project.getSubproject(":app").getBuildFile(), Charsets.UTF_8 );
         project.execute("assembleDebug");
+        File aptOutputFolder = project.getSubproject(":app").file("build/generated/source/apt/debug");
+        assertThat(new File(aptOutputFolder, "HelloWorldStringValue.java")).exists();
+
+        AndroidProject model = project.model().getMulti().get(":app");
+        assertThat(ModelHelper.getDebugArtifact(model).getGeneratedSourceFolders())
+                .contains(aptOutputFolder);
     }
 
     /**

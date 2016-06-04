@@ -553,6 +553,7 @@ public class ModelBuilder implements ToolingModelBuilder {
         if (ndkMode == null || !ndkMode) {
             folders.add(scope.getRenderscriptSourceOutputDir());
         }
+        folders.add(scope.getAnnotationProcessorOutputDir());
 
         return folders;
     }
