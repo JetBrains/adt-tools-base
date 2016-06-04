@@ -1,6 +1,6 @@
 #parse("C File Header.h")
-#[[#ifndef]]# ${INCLUDE_GUARD}
-#[[#define]]# ${INCLUDE_GUARD}
+#[[#ifndef]]# ${INCLUDE_GUARD}_
+#[[#define]]# ${INCLUDE_GUARD}_
 
 ${NAMESPACES_OPEN}
 
@@ -12,4 +12,4 @@ class ${NAME} {
 
 ${NAMESPACES_CLOSE}
 
-#[[#endif]]# //${INCLUDE_GUARD}
+#[[#endif]]# //${INCLUDE_GUARD}_
