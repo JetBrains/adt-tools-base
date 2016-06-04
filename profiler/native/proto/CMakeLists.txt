@@ -1,7 +1,6 @@
-set(PROTO_FILES network_profiler.proto
-                memory_profiler_service.proto
+set(PROTO_FILES network_profiler_data.proto
                 perfa_service.proto
-                profiler.proto
+                profiler_data.proto
                 profiler_service.proto)
 
 PROTOBUF_GENERATE_CPP(CPP_PROTO_SRCS CPP_PROTO_HDRS ../../proto ${PROTO_FILES})

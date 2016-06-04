@@ -15,23 +15,18 @@
  */
 syntax = "proto3";
 
-option java_package = "com.android.tools.profiler.proto";
-option java_outer_classname = "Profiler";
-
-import "network_profiler.proto";
-
 package profiler.proto;
 
-// TODO: Refactor the following messages.
-message DefaultProfilerData {}
+message TrafficData {
+  int64 bytes_sent = 1;
+  int64 bytes_received = 2;
+}
 
-// TODO: Add more essential fields.
-message ProfilerData {
-  int32 app_id = 1;
-  int64 end_timestamp = 2;
+message ConnectionData { int32 connection_number = 1; }
 
+message NetworkProfilerData {
   oneof data {
-    DefaultProfilerData default_data = 11;
-    NetworkProfilerData network_data = 12;
+    TrafficData traffic_data = 1;
+    ConnectionData connection_data = 2;
   }
 }
