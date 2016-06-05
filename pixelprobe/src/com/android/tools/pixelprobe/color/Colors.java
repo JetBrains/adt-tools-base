@@ -25,6 +25,10 @@ import java.io.UnsupportedEncodingException;
 
 /**
  * Various utilities to manipulate and convert colors.
+ *
+ * Note: Following java.awt.color.ColorSpace's convention RGB always
+ * means an RGB color in the sRGB space. RGB colors not in the sRGB
+ * space are noted accordingly ("linearRGB" for instance).
  */
 public final class Colors {
     private static final class ColorSpaceHolder {

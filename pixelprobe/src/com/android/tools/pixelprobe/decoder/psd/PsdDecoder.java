@@ -289,7 +289,7 @@ public final class PsdDecoder extends Decoder {
     }
 
     private static void extractLayerEffects(Image.Builder image, Layer.Builder layer, RawLayer rawLayer) {
-            Map<String, LayerProperty> properties = rawLayer.extras.properties;
+        Map<String, LayerProperty> properties = rawLayer.extras.properties;
 
         LayerProperty property = properties.get(LayerProperty.KEY_MULTI_EFFECTS);
         if (property == null) {
