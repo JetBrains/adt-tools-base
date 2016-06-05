@@ -2,17 +2,18 @@
 
 Native (C++) binaries and dependencies used by preformance tools insfrastructure.
 
+**All sections below expect you to start in `.../tools/base/profiler/native`**
+
 ## Initializing gRPC
 
 ```
-# In .../tools/base/profiler/native
 git submodule update --init --recursive
 cd grpc
 git am ../../patches/grpc-android.patch
+cd .. # Return back to .../tools/base/profiler/native 
 ```
 ## To compile all the android and host binaries:
 ```
-cd ..
 ../../../gradlew compileAndroid
 ```
 ## To compile only the host binaries:
