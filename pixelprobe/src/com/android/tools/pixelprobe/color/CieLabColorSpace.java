@@ -19,7 +19,8 @@ package com.android.tools.pixelprobe.color;
 import java.awt.color.ColorSpace;
 
 /**
- * Implementation of the CIELAB D50 color space.
+ * Implementation of the CIELAB D50 color space. The input Lab values
+ * must be in the [0..100] range for L and [-128..127] for a and b.
  */
 public class CieLabColorSpace extends ColorSpace {
     private static final double[] WHITE_POINT_D50 = { 0.964212, 1.0, 0.825188 };
@@ -49,22 +50,7 @@ public class CieLabColorSpace extends ColorSpace {
 
     @Override
     public float[] toRGB(float[] lab) {
-        float[] xyz = toCIEXYZ(lab, false);
-
-        // Bradford-adapted D50 XYZ to RGB matrix
-        double r =  3.1338561 * xyz[0] + -1.6168667 * xyz[1] + -0.4906146 * xyz[2];
-        double g = -0.9787684 * xyz[0] +  1.9161415 * xyz[1] +  0.0334540 * xyz[2];
-        double b =  0.0719453 * xyz[0] + -0.2289914 * xyz[1] +  1.4052427 * xyz[2];
-
-        xyz[0] = Colors.linearRgbToRgb(clamp((float) r));
-        xyz[1] = Colors.linearRgbToRgb(clamp((float) g));
-        xyz[2] = Colors.linearRgbToRgb(clamp((float) b));
-
-        return xyz;
-    }
-
-    private static float clamp(float v) {
-        return Math.max(0.0f, Math.min(v, 1.0f));
+        return CIEXYZtoRGB(toCIEXYZ(lab, false));
     }
 
     @Override
@@ -98,16 +84,10 @@ public class CieLabColorSpace extends ColorSpace {
         // is, as far as I can tell by comparing with numerous other
         // sources - including Lindbloom, Matlab, etc. -, correct.
         if (fix) {
-            // Bradford-adapted D50 XYZ to RGB matrix
-            double r =  3.1338561 * xyz[0] + -1.6168667 * xyz[1] + -0.4906146 * xyz[2];
-            double g = -0.9787684 * xyz[0] +  1.9161415 * xyz[1] +  0.0334540 * xyz[2];
-            double b =  0.0719453 * xyz[0] + -0.2289914 * xyz[1] +  1.4052427 * xyz[2];
-
-            xyz[0] = Colors.linearRgbToRgb(clamp((float) r));
-            xyz[1] = Colors.linearRgbToRgb(clamp((float) g));
-            xyz[2] = Colors.linearRgbToRgb(clamp((float) b));
-
-            float[] fixedXYZ = sRGB.toCIEXYZ(xyz);
+            float[] fixedXYZ = sRGB.toCIEXYZ(CIEXYZtoRGB(xyz));
+            // Don't return the array returned by the sRGB ColorSpace
+            // because it only contains 3 components, which causes issues
+            // with images that contain an alpha channel
             xyz[0] = fixedXYZ[0];
             xyz[1] = fixedXYZ[1];
             xyz[2] = fixedXYZ[2];
@@ -130,10 +110,40 @@ public class CieLabColorSpace extends ColorSpace {
         double a = 500.0 * (fx - fy);
         double b = 200.0 * (fy - fz);
 
+        // Use the input length to preserve the alpha channel if present
         float[] lab = new float[xyz.length];
         lab[0] = (float) L;
         lab[1] = (float) a;
         lab[2] = (float) b;
         return lab;
+    }
+
+    /**
+     * Converts a color defined in the D50 CIEXYZ space to sRGB.
+     *
+     * @param xyz A CIEXYZ array, of length >= 3
+     *
+     * @return The input array for convenience
+     */
+    private static float[] CIEXYZtoRGB(float[] xyz) {
+        // Bradford-adapted D50 XYZ to sRGB matrix
+        // This matrix does not apply the opto-electronic conversion function
+        double linearR =  3.1338561 * xyz[0] + -1.6168667 * xyz[1] + -0.4906146 * xyz[2];
+        double linearG = -0.9787684 * xyz[0] +  1.9161415 * xyz[1] +  0.0334540 * xyz[2];
+        double linearB =  0.0719453 * xyz[0] + -0.2289914 * xyz[1] +  1.4052427 * xyz[2];
+
+        // Apply sRGB's opto-electronic conversion function
+        xyz[0] = Colors.linearRgbToRgb(clamp((float) linearR));
+        xyz[1] = Colors.linearRgbToRgb(clamp((float) linearG));
+        xyz[2] = Colors.linearRgbToRgb(clamp((float) linearB));
+
+        return xyz;
+    }
+
+    /**
+     * Clamps the specified value between 0 and 1 (inclusive).
+     */
+    private static float clamp(float v) {
+        return Math.max(0.0f, Math.min(v, 1.0f));
     }
 }
