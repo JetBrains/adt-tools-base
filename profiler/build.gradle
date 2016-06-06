@@ -56,7 +56,7 @@ def cmake(cl) {
             def normAbi = abi.split("-").collect { it.capitalize() }.join()
             def name = data.name.capitalize() + normAbi;
             def flags = [
-                "-DCMAKE_TOOLCHAIN_FILE=$rootDir/native/cmake/Android.cmake",
+                "-DCMAKE_TOOLCHAIN_FILE=$rootDir/native/cmake/${host}-${abi}.cmake",
                 "-DABI=$abi"
             ]
             createTasks(data, name, abi, cl.owner, flags, host); 
@@ -87,7 +87,6 @@ def createTasks(data, name, dir, project, flags, host) {
           "-DCMAKE_MAKE_PROGRAM=$rootDir/../../../prebuilts/ninja/$host-x86/ninja",
           "-DCMAKE_RUNTIME_OUTPUT_DIRECTORY=$out",
           "-DGO_EXECUTABLE=$rootDir/../../../prebuilts/go/$host-x86/bin/go",
-          "-DPREBUILTS=$rootDir/../../../prebuilts",
           "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON"] + flags + Arrays.asList(data.flags)
       environment GOROOT: "$rootDir/../../../prebuilts/go/$host-x86"
       inputs.file "../cmake/Android.cmake"
