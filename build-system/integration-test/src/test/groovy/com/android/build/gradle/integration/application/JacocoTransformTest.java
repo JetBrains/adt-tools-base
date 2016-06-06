@@ -59,7 +59,7 @@ public class JacocoTransformTest {
                 mProject.getBuildFile(), Charsets.UTF_8);
 
         if (GradleTestProject.USE_JACK) {
-            Files.append("\nandroid.buildToolsVersion \"" + "24.0.0 rc2" + "\"\n",
+            Files.append("\nandroid.buildToolsVersion \"" + GradleTestProject.UPCOMING_BUILD_TOOL_VERSION + "\"\n",
                     mProject.getBuildFile(), Charsets.UTF_8);
 
         }
