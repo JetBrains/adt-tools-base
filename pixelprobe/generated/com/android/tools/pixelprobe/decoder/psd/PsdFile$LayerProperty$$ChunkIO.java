@@ -29,6 +29,8 @@ final class PsdFile$LayerProperty$$ChunkIO {
             layerProperty.data = PsdFile$UnicodeString$$ChunkIO.read(in, stack);
         } else if (layerProperty.key.equals("SoCo")) {
             layerProperty.data = PsdFile$SolidColorAdjustment$$ChunkIO.read(in, stack);
+        } else if (layerProperty.key.equals("iOpa")) {
+            layerProperty.data = ChunkUtils.readByte(in, byteCount);
         } else if (layerProperty.key.equals("TySh")) {
             layerProperty.data = PsdFile$TypeToolObject$$ChunkIO.read(in, stack);
         } else if (layerProperty.key.equals("vmsk")) {
