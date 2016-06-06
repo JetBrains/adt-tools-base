@@ -37,6 +37,7 @@ import java.util.Locale;
  *
  * @param <T> The concrete implementing class.
  */
+@SuppressWarnings("unchecked") // Returning this as <T> in most methods.
 public abstract class BaseGradleExecutor<T extends BaseGradleExecutor> {
 
     private static final String RECORD_BENCHMARK_NAME = "com.android.benchmark.name";
@@ -46,12 +47,11 @@ public abstract class BaseGradleExecutor<T extends BaseGradleExecutor> {
     final ProjectConnection mProjectConnection;
 
     @Nullable
-    String heapSize;
+    private String heapSize;
 
     @NonNull
     final List<String> mArguments = Lists.newArrayList();
 
-    @NonNull
     boolean enableInfoLogging = true;
 
     BaseGradleExecutor(
@@ -90,6 +90,16 @@ public abstract class BaseGradleExecutor<T extends BaseGradleExecutor> {
      */
     public T withArgument(String argument) {
         mArguments.add(argument);
+        return (T) this;
+    }
+
+    public T withProperty(@NonNull String propertyName, @NonNull String value) {
+        withArgument("-P" + propertyName + "=" + value);
+        return (T) this;
+    }
+
+    public T withProperty(@NonNull String propertyName, int value) {
+        withArgument("-P" + propertyName + "=" + value);
         return (T) this;
     }
 

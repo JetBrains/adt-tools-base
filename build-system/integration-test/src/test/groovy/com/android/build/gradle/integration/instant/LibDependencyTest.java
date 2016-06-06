@@ -197,7 +197,7 @@ public class LibDependencyTest {
     }
 
     private static List<String> getInstantRunArgs(OptionalCompilationStep... flags) {
-        String property = "-P" + AndroidProject.OPTIONAL_COMPILATION_STEPS + "=" +
+        String property = "-P" + AndroidProject.PROPERTY_OPTIONAL_COMPILATION_STEPS + "=" +
                 OptionalCompilationStep.INSTANT_DEV + "," + Joiner.on(',').join(flags);
         return Collections.singletonList(property);
     }

@@ -56,6 +56,9 @@ import java.io.IOException;
 @RunWith(MockitoJUnitRunner.class)
 public class HotSwapTest {
 
+    private static final int VERSION_CODE = 17;
+    private static final String VERSION_NAME = "0.0.1";
+
     @Rule
     public final Adb adb = new Adb();
 
@@ -80,11 +83,20 @@ public class HotSwapTest {
         createActivityClass("Original");
     }
 
+    @Before
+    public void setVersionInBuildFile() throws IOException {
+        TestFileUtils.appendToFile(
+                project.getBuildFile(), "android.defaultConfig.versionCode = " + VERSION_CODE);
+        TestFileUtils.appendToFile(
+                project.getBuildFile(),
+                "android.defaultConfig.versionName = '" + VERSION_NAME + "'");
+    }
+
     @Test
     public void buildIncrementallyWithInstantRun() throws Exception {
         project.execute("clean");
-        InstantRun instantRunModel = InstantRunTestUtils
-                .getInstantRunModel(project.model().getSingle());
+        InstantRun instantRunModel =
+                InstantRunTestUtils.getInstantRunModel(project.model().getSingle());
 
         project.executor().withInstantRun(19, COLDSWAP_MODE, OptionalCompilationStep.RESTART_ONLY)
                 .run("assembleDebug");
@@ -98,7 +110,7 @@ public class HotSwapTest {
         apkFile.hasClass("Lcom/android/tools/fd/runtime/BootstrapApplication;",
                 AbstractAndroidSubject.ClassFileScope.MAIN);
 
-        makeBasicHotswapChange();
+        makeHotSwapChange();
 
         project.executor().withInstantRun(19, COLDSWAP_MODE)
                 .run("assembleDebug");
@@ -119,7 +131,8 @@ public class HotSwapTest {
 
         assertTrue(instantRunModel.isSupportedByArtifact());
 
-        TestFileUtils.appendToFile(project.getBuildFile(), "\nandroid.buildTypes.debug.useJack = true");
+        TestFileUtils.appendToFile(
+                project.getBuildFile(), "\nandroid.buildTypes.debug.useJack = true");
 
         instantRunModel = InstantRunTestUtils.getInstantRunModel(
                 project.model().getSingle());
@@ -139,22 +152,26 @@ public class HotSwapTest {
                 logcat,
                 new HotSwapTester.Steps() {
                     @Override
-                    public void verifyOriginalCode(@NonNull InstantRunClient client,
+                    public void verifyOriginalCode(
+                            @NonNull InstantRunClient client,
                             @NonNull Logcat logcat,
-                            @NonNull IDevice device) throws Exception {
+                            @NonNull IDevice device)
+                            throws Exception {
                         assertThat(logcat).containsMessageWithText("Original");
                         assertThat(logcat).doesNotContainMessageWithText("HOT SWAP!");
                     }
 
                     @Override
                     public void makeChange() throws Exception {
-                        makeBasicHotswapChange();
+                        makeHotSwapChange();
                     }
 
                     @Override
-                    public void verifyNewCode(@NonNull InstantRunClient client,
+                    public void verifyNewCode(
+                            @NonNull InstantRunClient client,
                             @NonNull Logcat logcat,
-                            @NonNull IDevice device) throws Exception {
+                            @NonNull IDevice device)
+                            throws Exception {
                         // Should not have restarted activity
                         assertThat(logcat).doesNotContainMessageWithText("Original");
                         assertThat(logcat).doesNotContainMessageWithText("HOT SWAP!");
@@ -165,13 +182,15 @@ public class HotSwapTest {
                         assertThat(logcat).doesNotContainMessageWithText("Original");
                         assertThat(logcat).containsMessageWithText("HOT SWAP!");
                     }
-                }
-        );
+                });
 
     }
 
-    private void makeBasicHotswapChange() throws IOException {
+    private void makeHotSwapChange() throws IOException {
         createActivityClass("HOT SWAP!");
+
+        TestFileUtils.searchAndReplace(project.getBuildFile(), String.valueOf(VERSION_CODE), "42");
+        TestFileUtils.searchAndReplace(project.getBuildFile(), VERSION_NAME, "0.0.2");
     }
 
     private void createActivityClass(String message)
