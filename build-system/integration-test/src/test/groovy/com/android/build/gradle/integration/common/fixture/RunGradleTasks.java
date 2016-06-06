@@ -22,7 +22,6 @@ import static com.google.common.truth.Truth.assertThat;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.internal.incremental.ColdswapMode;
-import com.android.builder.model.AndroidProject;
 import com.android.builder.model.OptionalCompilationStep;
 import com.android.builder.tasks.BooleanLatch;
 import com.android.ddmlib.IDevice;
@@ -81,8 +80,8 @@ public class RunGradleTasks extends BaseGradleExecutor<RunGradleTasks> {
     public RunGradleTasks withInstantRun(int apiLevel,
             @NonNull ColdswapMode coldswapMode,
             @NonNull OptionalCompilationStep... flags) {
-        setInstantRunArgs(
-                new AndroidVersion(apiLevel, null), null /* density */, coldswapMode, flags);
+        setInstantRunArgs(new AndroidVersion(apiLevel, null),
+                null /* density */, coldswapMode, flags);
         return this;
     }
 
@@ -183,7 +182,7 @@ public class RunGradleTasks extends BaseGradleExecutor<RunGradleTasks> {
          * @return null if the build passed, the GradleConnectionException if the build failed.
          */
         @Nullable
-        private GradleConnectionException waitForResult() {
+        GradleConnectionException waitForResult() {
             try {
                 latch.await();
             } catch (InterruptedException e) {
@@ -206,22 +205,21 @@ public class RunGradleTasks extends BaseGradleExecutor<RunGradleTasks> {
     }
 
 
-    private void setInstantRunArgs(
+    private  void setInstantRunArgs(
             @Nullable AndroidVersion androidVersion,
             @Nullable Density density,
             @NonNull ColdswapMode coldswapMode,
             @NonNull OptionalCompilationStep[] flags) {
         if (androidVersion != null) {
-            withProperty(AndroidProject.PROPERTY_BUILD_API, androidVersion.getFeatureLevel());
+            mArguments.add(String.format(
+                    "-Pandroid.injected.build.api=%s", androidVersion.getFeatureLevel()));
         }
-
         if (density != null) {
-            withProperty(AndroidProject.PROPERTY_BUILD_DENSITY, density.getResourceValue());
+            mArguments.add(String.format(
+                    "-Pandroid.injected.build.density=%s", density.getResourceValue()));
         }
 
-        withProperty(AndroidProject.PROPERTY_SIGNING_COLDSWAP_MODE, coldswapMode.name());
-        withProperty(AndroidProject.PROPERTY_VERSION_CODE, AndroidProject.INSTANT_RUN_VERSION_CODE);
-        withProperty(AndroidProject.PROPERTY_VERSION_NAME, AndroidProject.INSTANT_RUN_VERSION_NAME);
+        mArguments.add(String.format("-Pandroid.injected.coldswap.mode=%s", coldswapMode.name()));
 
         StringBuilder optionalSteps = new StringBuilder()
                 .append("-P").append("android.optional.compilation").append('=')
