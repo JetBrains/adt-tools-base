@@ -56,8 +56,8 @@ public class ExternalBuildGlobalScopeTest {
 
     @Test
     public void testIsActive() {
-        when(project.hasProperty(AndroidProject.OPTIONAL_COMPILATION_STEPS)).thenReturn(true);
-        when(project.property(AndroidProject.OPTIONAL_COMPILATION_STEPS)).thenReturn("INSTANT_DEV");
+        when(project.hasProperty(AndroidProject.PROPERTY_OPTIONAL_COMPILATION_STEPS)).thenReturn(true);
+        when(project.property(AndroidProject.PROPERTY_OPTIONAL_COMPILATION_STEPS)).thenReturn("INSTANT_DEV");
         scope = new ExternalBuildGlobalScope(project);
 
         assertThat(scope.isActive(OptionalCompilationStep.INSTANT_DEV)).isTrue();

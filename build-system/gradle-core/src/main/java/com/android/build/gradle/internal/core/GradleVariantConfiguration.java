@@ -21,6 +21,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.AndroidConfig;
+import com.android.build.gradle.AndroidGradleOptions;
 import com.android.build.gradle.TestAndroidConfig;
 import com.android.build.gradle.internal.dsl.CoreBuildType;
 import com.android.build.gradle.internal.dsl.CoreExternalNativeCmakeOptions;
@@ -39,6 +40,8 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
+import org.gradle.api.Project;
+
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -54,6 +57,8 @@ import java.util.function.Function;
  */
 public class GradleVariantConfiguration extends VariantConfiguration<CoreBuildType, CoreProductFlavor, CoreProductFlavor> {
 
+    @NonNull
+    private final Project project;
     @Nullable
     private Boolean enableInstantRunOverride = null;
     @NonNull
@@ -71,7 +76,8 @@ public class GradleVariantConfiguration extends VariantConfiguration<CoreBuildTy
             new MergedJavaCompileOptions();
 
     private GradleVariantConfiguration(
-            @Nullable VariantConfiguration testedConfig,
+            @NonNull Project project,
+            @Nullable VariantConfiguration<CoreBuildType, CoreProductFlavor, CoreProductFlavor> testedConfig,
             @NonNull CoreProductFlavor defaultConfig,
             @NonNull SourceProvider defaultSourceProvider,
             @NonNull CoreBuildType buildType,
@@ -81,6 +87,7 @@ public class GradleVariantConfiguration extends VariantConfiguration<CoreBuildTy
         super(defaultConfig, defaultSourceProvider, buildType, buildTypeSourceProvider, type,
                 testedConfig, signingConfigOverride);
         mergeOptions();
+        this.project = project;
     }
 
     /**
@@ -91,6 +98,7 @@ public class GradleVariantConfiguration extends VariantConfiguration<CoreBuildTy
             @Nullable SourceProvider buildTypeSourceProvider,
             @NonNull VariantType type) {
         return new GradleVariantConfiguration(
+                this.project,
                 this,
                 getDefaultConfig(),
                 defaultSourceProvider,
@@ -107,6 +115,7 @@ public class GradleVariantConfiguration extends VariantConfiguration<CoreBuildTy
         /** Creates a variant configuration */
         @NonNull
         GradleVariantConfiguration create(
+                @NonNull Project project,
                 @NonNull CoreProductFlavor defaultConfig,
                 @NonNull SourceProvider defaultSourceProvider,
                 @NonNull CoreBuildType buildType,
@@ -120,13 +129,15 @@ public class GradleVariantConfiguration extends VariantConfiguration<CoreBuildTy
         @Override
         @NonNull
         public GradleVariantConfiguration create(
+                @NonNull Project project,
                 @NonNull CoreProductFlavor defaultConfig,
                 @NonNull SourceProvider defaultSourceProvider,
                 @NonNull CoreBuildType buildType,
                 @Nullable SourceProvider buildTypeSourceProvider,
                 @NonNull VariantType type,
-                @Nullable CoreSigningConfig signingConfigOverride){
+                @Nullable CoreSigningConfig signingConfigOverride) {
             return new GradleVariantConfiguration(
+                    project,
                     null /*testedConfig*/,
                     defaultConfig,
                     defaultSourceProvider,
@@ -150,6 +161,7 @@ public class GradleVariantConfiguration extends VariantConfiguration<CoreBuildTy
         @NonNull
         @Override
         public GradleVariantConfiguration create(
+                @NonNull Project project,
                 @NonNull CoreProductFlavor defaultConfig,
                 @NonNull SourceProvider defaultSourceProvider,
                 @NonNull CoreBuildType buildType,
@@ -157,6 +169,7 @@ public class GradleVariantConfiguration extends VariantConfiguration<CoreBuildTy
                 @NonNull VariantType type,
                 @Nullable CoreSigningConfig signingConfigOverride) {
             return new GradleVariantConfiguration(
+                    project,
                     null /*testedConfig*/,
                     defaultConfig,
                     defaultSourceProvider,
@@ -489,5 +502,26 @@ public class GradleVariantConfiguration extends VariantConfiguration<CoreBuildTy
         }
 
         return fullOption.substring(0, pos);
+    }
+
+    @Nullable
+    @Override
+    public String getVersionName() {
+        String override = AndroidGradleOptions.getVersionNameOverride(project);
+        if (override != null) {
+            return override;
+        } else {
+            return super.getVersionName();
+        }
+    }
+
+    @Override
+    public int getVersionCode() {
+        Integer override = AndroidGradleOptions.getVersionCodeOverride(project);
+        if (override != null) {
+            return override;
+        } else {
+            return super.getVersionCode();
+        }
     }
 }
