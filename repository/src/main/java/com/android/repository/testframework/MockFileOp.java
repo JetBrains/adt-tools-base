@@ -70,7 +70,7 @@ public class MockFileOp extends FileSystemFileOp {
     }
 
     @Override
-    protected FileSystem getFileSystem() {
+    public FileSystem getFileSystem() {
         return mFileSystem;
     }
 
@@ -304,8 +304,9 @@ public class MockFileOp extends FileSystemFileOp {
         }
     }
 
+    @NonNull
     @Override
     public Path toPath(@NonNull File file) {
-        return getFileSystem().getPath(getAgnosticAbsPath(file));
+        return getFileSystem().getPath(getAgnosticAbsPath(file.getPath()));
     }
 }
