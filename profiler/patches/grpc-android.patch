@@ -68,12 +68,13 @@ index 0000000..7d98f58
 +  set(ZLIB_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/third_party/zlib)
 +endif()
 +
++set(CMAKE_POSITION_INDEPENDENT_CODE TRUE)
++set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c11")
++set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
++
 +add_subdirectory(${BORINGSSL_ROOT_DIR} third_party/boringssl)
 +add_subdirectory(${PROTOBUF_ROOT_DIR}/cmake third_party/protobuf)
 +add_subdirectory(${ZLIB_ROOT_DIR} third_party/zlib)
-+
-+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c11")
-+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 +
 +  
 +add_library(gpr
@@ -831,12 +832,13 @@ index 0000000..8584039
 +    set(ZLIB_ROOT_DIR <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>/third_party/zlib)
 +  endif()
 +
++  set(CMAKE_POSITION_INDEPENDENT_CODE TRUE)
++  set(CMAKE_C_FLAGS "<%text>${CMAKE_C_FLAGS}</%text> -std=c11")
++  set(CMAKE_CXX_FLAGS "<%text>${CMAKE_CXX_FLAGS}</%text> -std=c++11")
++
 +  add_subdirectory(<%text>${BORINGSSL_ROOT_DIR}</%text> third_party/boringssl)
 +  add_subdirectory(<%text>${PROTOBUF_ROOT_DIR}</%text>/cmake third_party/protobuf)
 +  add_subdirectory(<%text>${ZLIB_ROOT_DIR}</%text> third_party/zlib)
-+
-+  set(CMAKE_C_FLAGS "<%text>${CMAKE_C_FLAGS}</%text> -std=c11")
-+  set(CMAKE_CXX_FLAGS "<%text>${CMAKE_CXX_FLAGS}</%text> -std=c++11")
 +
 +  % for lib in libs:
 +  % if lib.build in ["all", "protoc"]:
