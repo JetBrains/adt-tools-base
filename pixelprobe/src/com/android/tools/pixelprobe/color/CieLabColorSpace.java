@@ -50,7 +50,7 @@ public class CieLabColorSpace extends ColorSpace {
 
     @Override
     public float[] toRGB(float[] lab) {
-        return CIEXYZtoRGB(toCIEXYZ(lab, false));
+        return sRGB.fromCIEXYZ(toCIEXYZ(lab));
     }
 
     @Override
@@ -60,10 +60,6 @@ public class CieLabColorSpace extends ColorSpace {
 
     @Override
     public float[] toCIEXYZ(float[] lab) {
-        return toCIEXYZ(lab, true);
-    }
-
-    private static float[] toCIEXYZ(float[] lab, boolean fix) {
         double fy = (lab[0] + 16.0) / 116.0;
         double fx = fy + (lab[1] / 500.0);
         double fz = fy - (lab[2] / 200.0);
@@ -73,26 +69,9 @@ public class CieLabColorSpace extends ColorSpace {
         double Z = fz > (6.0 / 29.0) ? fz * fz * fz : (108.0 / 841.0) * (fz - (4.0 / 29.0));
 
         float[] xyz = new float[lab.length];
-        xyz[0] = (float) (X * WHITE_POINT_D50[0]);
-        xyz[1] = (float) (Y * WHITE_POINT_D50[1]);
-        xyz[2] = (float) (Z * WHITE_POINT_D50[2]);
-
-        // This is incredibly gross: we do Lab->XYZ->sRGB->XYZ
-        // The reason we do this is because with OpenJDK 8u92 on OSX,
-        // the XYZ we compute from Lab is not interpreted correctly
-        // by the imaging pipeline. The Lab->XYZ conversion we use
-        // is, as far as I can tell by comparing with numerous other
-        // sources - including Lindbloom, Matlab, etc. -, correct.
-        if (fix) {
-            float[] fixedXYZ = sRGB.toCIEXYZ(CIEXYZtoRGB(xyz));
-            // Don't return the array returned by the sRGB ColorSpace
-            // because it only contains 3 components, which causes issues
-            // with images that contain an alpha channel
-            xyz[0] = fixedXYZ[0];
-            xyz[1] = fixedXYZ[1];
-            xyz[2] = fixedXYZ[2];
-        }
-
+        xyz[0] = clamp((float) (X * WHITE_POINT_D50[0]), 0.0f, 2.0f);
+        xyz[1] = clamp((float) (Y * WHITE_POINT_D50[1]));
+        xyz[2] = clamp((float) (Z * WHITE_POINT_D50[2]));
         return xyz;
     }
 
@@ -119,31 +98,13 @@ public class CieLabColorSpace extends ColorSpace {
     }
 
     /**
-     * Converts a color defined in the D50 CIEXYZ space to sRGB.
-     *
-     * @param xyz A CIEXYZ array, of length >= 3
-     *
-     * @return The input array for convenience
-     */
-    private static float[] CIEXYZtoRGB(float[] xyz) {
-        // Bradford-adapted D50 XYZ to sRGB matrix
-        // This matrix does not apply the opto-electronic conversion function
-        double linearR =  3.1338561 * xyz[0] + -1.6168667 * xyz[1] + -0.4906146 * xyz[2];
-        double linearG = -0.9787684 * xyz[0] +  1.9161415 * xyz[1] +  0.0334540 * xyz[2];
-        double linearB =  0.0719453 * xyz[0] + -0.2289914 * xyz[1] +  1.4052427 * xyz[2];
-
-        // Apply sRGB's opto-electronic conversion function
-        xyz[0] = Colors.linearRgbToRgb(clamp((float) linearR));
-        xyz[1] = Colors.linearRgbToRgb(clamp((float) linearG));
-        xyz[2] = Colors.linearRgbToRgb(clamp((float) linearB));
-
-        return xyz;
-    }
-
-    /**
      * Clamps the specified value between 0 and 1 (inclusive).
      */
     private static float clamp(float v) {
-        return Math.max(0.0f, Math.min(v, 1.0f));
+        return Math.max(0.0f, Math. min(v, 1.0f));
+    }
+
+    private static float clamp(float v, float min, float max) {
+        return Math.max(min, Math. min(v, max));
     }
 }

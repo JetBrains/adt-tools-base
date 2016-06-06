@@ -317,20 +317,22 @@ final class PsdUtils {
     }
 
     private static Color colorFromCmyk(Descriptor color, float alpha) {
-        return new Color(Colors.getCmykColorSpace(), new float[] {
+        float[] rgb = Colors.getCmykColorSpace().toRGB(new float[] {
             getFloat(color, "Cyn "),
             getFloat(color, "Mgnt"),
             getFloat(color, "Ylw "),
             getFloat(color, "Blck")
-        }, alpha);
+        });
+        return new Color(rgb[0], rgb[1], rgb[2], alpha);
     }
 
     private static Color colorFromLab(Descriptor color, float alpha) {
-        return new Color(Colors.getLabColorSpace(), new float[]{
+        float[] rgb = Colors.getLabColorSpace().toRGB(new float[] {
             getFloat(color, "Lmnc"),
             getFloat(color, "A   "),
             getFloat(color, "B   ")
-        }, alpha);
+        });
+        return new Color(rgb[0], rgb[1], rgb[2], alpha);
     }
 
     private static Color colorFromGray(Descriptor color, float alpha) {
