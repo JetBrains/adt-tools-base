@@ -173,6 +173,7 @@ public final class Layer {
 
     /**
      * Returns this layer's vector color for {@link Type#PATH} layers.
+     * The color may have an alpha value (see {@link Color#getAlpha()}.
      */
     public Color getPathColor() {
         return pathColor;
@@ -219,7 +220,7 @@ public final class Layer {
         private BufferedImage image;
 
         private Path2D path;
-        private Color pathColor = Color.WHITE;
+        private Color pathColor = Color.BLACK;
 
         private TextInfo textInfo;
         private Effects effects;

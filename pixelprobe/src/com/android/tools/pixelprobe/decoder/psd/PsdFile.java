@@ -387,8 +387,15 @@ final class PsdFile {
         static final String KEY_FILL_OPACITY = "iOpa";
         // The property holds the text information (styles, text data, etc.)
         static final String KEY_TEXT = "TySh";
-        // The property holds the vector data
+        // The property holds the vector data (can be "vsms" instead)
         static final String KEY_VECTOR_MASK = "vmsk";
+        // The property holds the vector data (can be "vmsk" instead)
+        // When this key is present, we must also look for "vscg"
+        static final String KEY_SHAPE_MASK = "vsms";
+        // The property holds graphics data for a shape mask defined by "vsms"
+        static final String KEY_SHAPE_GRAPHICS = "vscg";
+        // The property holds the stroke data
+        static final String KEY_STROKE = "vstk";
         // The layer has a depth of 16 bit per channel
         static final String KEY_LAYER_DEPTH_16 = "Lr16";
         // The layer has a depth of 32 bit per channel
@@ -412,7 +419,10 @@ final class PsdFile {
                 @Chunk.Case(test = "layerProperty.key.equals(\"SoCo\")", type = SolidColorAdjustment.class),
                 @Chunk.Case(test = "layerProperty.key.equals(\"iOpa\")", type = byte.class),
                 @Chunk.Case(test = "layerProperty.key.equals(\"TySh\")", type = TypeToolObject.class),
-                @Chunk.Case(test = "layerProperty.key.equals(\"vmsk\")", type = VectorMask.class)
+                @Chunk.Case(test = "layerProperty.key.equals(\"vmsk\")", type = ShapeMask.class),
+                @Chunk.Case(test = "layerProperty.key.equals(\"vsms\")", type = ShapeMask.class),
+                @Chunk.Case(test = "layerProperty.key.equals(\"vscg\")", type = ShapeGraphics.class),
+                @Chunk.Case(test = "layerProperty.key.equals(\"vstk\")", type = ShapeStroke.class)
             }
         )
         Object data;
@@ -565,7 +575,7 @@ final class PsdFile {
      * records, used to descript a path (or vector shape).
      */
     @Chunked
-    static final class VectorMask {
+    static final class ShapeMask {
         @Chunk
         int version;
 
@@ -579,6 +589,34 @@ final class PsdFile {
         @Chunk(dynamicSize = "(int) Math.floor(((($T) stack.get(1)).length - 8) / 26)",
                sizeParams = { LayerProperty.class })
         List<PathRecord> pathRecords;
+    }
+
+    /**
+     * A shape graphics object describes all the graphics properties of
+     * a shape mask (color, gradient, etc.)
+     */
+    @Chunked
+    static final class ShapeGraphics {
+        @Chunk(byteCount =  4)
+        String key;
+
+        @Chunk(byteCount = 4)
+        long version;
+
+        @Chunk
+        Descriptor graphics;
+    }
+
+    /**
+     * Describes a shape layer's stroke properties.
+     */
+    @Chunked
+    static final class ShapeStroke {
+        @Chunk(byteCount = 4)
+        long version;
+
+        @Chunk
+        Descriptor stroke;
     }
 
     /**

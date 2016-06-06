@@ -34,7 +34,13 @@ final class PsdFile$LayerProperty$$ChunkIO {
         } else if (layerProperty.key.equals("TySh")) {
             layerProperty.data = PsdFile$TypeToolObject$$ChunkIO.read(in, stack);
         } else if (layerProperty.key.equals("vmsk")) {
-            layerProperty.data = PsdFile$VectorMask$$ChunkIO.read(in, stack);
+            layerProperty.data = PsdFile$ShapeMask$$ChunkIO.read(in, stack);
+        } else if (layerProperty.key.equals("vsms")) {
+            layerProperty.data = PsdFile$ShapeMask$$ChunkIO.read(in, stack);
+        } else if (layerProperty.key.equals("vscg")) {
+            layerProperty.data = PsdFile$ShapeGraphics$$ChunkIO.read(in, stack);
+        } else if (layerProperty.key.equals("vstk")) {
+            layerProperty.data = PsdFile$ShapeStroke$$ChunkIO.read(in, stack);
         }
         in.popRange();
 

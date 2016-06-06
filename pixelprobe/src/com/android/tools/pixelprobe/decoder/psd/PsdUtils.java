@@ -21,7 +21,7 @@ import com.android.tools.pixelprobe.color.Colors;
 import com.android.tools.pixelprobe.decoder.psd.PsdFile.ColorProfileBlock;
 import com.android.tools.pixelprobe.decoder.psd.PsdFile.Descriptor;
 import com.android.tools.pixelprobe.decoder.psd.PsdFile.PathRecord;
-import com.android.tools.pixelprobe.decoder.psd.PsdFile.VectorMask;
+import com.android.tools.pixelprobe.decoder.psd.PsdFile.ShapeMask;
 import com.android.tools.pixelprobe.util.Bytes;
 
 import java.awt.*;
@@ -351,11 +351,11 @@ final class PsdUtils {
     }
 
     /**
-     * Creates a {@link GeneralPath} from a {@link VectorMask}.
+     * Creates a {@link GeneralPath} from a {@link PsdFile.ShapeMask}.
      *
      * @return A path instance, never null
      */
-    static GeneralPath createPath(VectorMask mask) {
+    static GeneralPath createPath(ShapeMask mask) {
         // Photoshop only uses the even/odd fill rule
         GeneralPath path = new GeneralPath(Path2D.WIND_EVEN_ODD);
 
