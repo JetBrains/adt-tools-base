@@ -114,6 +114,7 @@ public class InstantRunBuildContext {
          * Restart.dex file that can be used for Dalvik to restart applications with minimum set of
          * changes delivered.
          */
+        @Deprecated
         RESTART_DEX,
         /**
          * Shard dex file that can be used to replace originally installed multi-dex shard.
@@ -256,8 +257,7 @@ public class InstantRunBuildContext {
          * deployed on the device.
          */
         public boolean isAccumulative() {
-            return fileType == FileType.DEX || fileType == FileType.SPLIT ||
-                    fileType == FileType.MAIN || fileType == FileType.RESOURCES;
+            return fileType != FileType.RELOAD_DEX;
         }
 
         public void setLocation(@NonNull File location) {
