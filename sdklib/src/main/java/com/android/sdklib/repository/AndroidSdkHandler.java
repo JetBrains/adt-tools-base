@@ -216,6 +216,18 @@ public final class AndroidSdkHandler {
         mLocation = localPath;
     }
 
+  /**
+   * Don't use this either, unless you're in a unit test and need to specify a custom
+   * {@link RepoManager}.
+   * @see #AndroidSdkHandler(File, FileOp)
+   */
+    @VisibleForTesting
+    public AndroidSdkHandler(@Nullable File localPath, @NonNull FileOp fop,
+      @NonNull RepoManager repoManager) {
+        this(localPath, fop);
+        mRepoManager = repoManager;
+    }
+
     /**
      * Fetches {@link RepoManager} set up to interact with android SDK repositories. It should not
      * cached by callers of this method, since any changes to the fundamental properties of the
