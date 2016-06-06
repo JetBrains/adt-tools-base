@@ -12,9 +12,14 @@ buildscript {
 archivesBaseName = 'studio-profiler-grpc'
 version = '1.0'// TODO: Pass in as an argument
 
+ext {
+    protobufVersion = '3.0.0-beta-2'
+    grpcVersion = '0.13.2'
+}
+
 dependencies {
-    compile 'com.google.protobuf:protobuf-java:3.0.0-beta-2'
-    compile 'io.grpc:grpc-all:0.13.2'
+    compile "com.google.protobuf:protobuf-java:$protobufVersion"
+    compile "io.grpc:grpc-all:$grpcVersion"
 }
 
 sourceSets {
@@ -30,11 +35,11 @@ protobuf {
         // The version of protoc must match protobuf-java. If you don't depend on
         // protobuf-java directly, you will be transitively depending on the
         // protobuf-java version that grpc depends on.
-        artifact = 'com.google.protobuf:protoc:3.0.0-beta-2'
+        artifact = "com.google.protobuf:protoc:$protobufVersion"
     }
     plugins {
         grpc {
-            artifact = 'io.grpc:protoc-gen-grpc-java:0.13.2'
+            artifact = "io.grpc:protoc-gen-grpc-java:$grpcVersion"
         }
     }
     generateProtoTasks {
