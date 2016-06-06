@@ -263,67 +263,79 @@ final class PsdUtils {
         return block == null ? null : (T) block.data;
     }
 
-   /**
-    * Returns the color present in the specified descriptor.
-    * If no color can be found, this method returns
-    * {@link Color#BLACK}.
-    */
+    /**
+     * Returns the color present in the specified descriptor.
+     * The returned color always has an alpha of 1.0f.
+     * If no color can be found, this method returns black.
+     */
     static Color getColor(Descriptor descriptor) {
+        return getColor(descriptor, 1.0f);
+    }
+
+    /**
+     * Returns the color present in the specified descriptor.
+     * If no color can be found, this method returns black.
+     */
+    static Color getColor(Descriptor descriptor, float alpha) {
         Descriptor color = get(descriptor, "Clr ");
         if (color == null) return Color.BLACK;
 
         String colorType = color.classId.toString();
         switch (colorType) {
             case Descriptor.CLASS_ID_COLOR_RGB:
-                return colorFromRgb(color);
+                return colorFromRgb(color, alpha);
             case Descriptor.CLASS_ID_COLOR_HSB:
-                return colorFromHsb(color);
+                return colorFromHsb(color, alpha);
             case Descriptor.CLASS_ID_COLOR_CMYK:
-                return colorFromCmyk(color);
+                return colorFromCmyk(color, alpha);
             case Descriptor.CLASS_ID_COLOR_LAB:
-                return colorFromLab(color);
+                return colorFromLab(color, alpha);
             case Descriptor.CLASS_ID_COLOR_GRAY:
-                return colorFromGray(color);
+                return colorFromGray(color, alpha);
         }
 
-        return Color.BLACK;
+        if (alpha == 1.0f) {
+            return Color.BLACK;
+        }
+        return new Color(0.0f, 0.0f, 0.0f, alpha);
     }
 
-    private static Color colorFromRgb(Descriptor color) {
+    private static Color colorFromRgb(Descriptor color, float alpha) {
         return new Color(
             getFloat(color, "Rd  ") / 255.0f,
             getFloat(color, "Grn ") / 255.0f,
-            getFloat(color, "Bl  ") / 255.0f);
+            getFloat(color, "Bl  ") / 255.0f,
+            alpha);
     }
 
-    private static Color colorFromHsb(Descriptor color) {
+    private static Color colorFromHsb(Descriptor color, float alpha) {
         float[] rgb = Colors.hsbToRgb(
             getUnitFloat(color, "H   ", 0.0f) / 360.0f,
             getFloat(color, "Strt") / 100.0f,
             getFloat(color, "Brgh") / 100.0f);
-        return new Color(rgb[0], rgb[1], rgb[2]);
+        return new Color(rgb[0], rgb[1], rgb[2], alpha);
     }
 
-    private static Color colorFromCmyk(Descriptor color) {
+    private static Color colorFromCmyk(Descriptor color, float alpha) {
         return new Color(Colors.getCmykColorSpace(), new float[] {
             getFloat(color, "Cyn "),
             getFloat(color, "Mgnt"),
             getFloat(color, "Ylw "),
             getFloat(color, "Blck")
-        }, 1.0f);
+        }, alpha);
     }
 
-    private static Color colorFromLab(Descriptor color) {
+    private static Color colorFromLab(Descriptor color, float alpha) {
         return new Color(Colors.getLabColorSpace(), new float[]{
             getFloat(color, "Lmnc"),
             getFloat(color, "A   "),
             getFloat(color, "B   ")
-        }, 1.0f);
+        }, alpha);
     }
 
-    private static Color colorFromGray(Descriptor color) {
+    private static Color colorFromGray(Descriptor color, float alpha) {
         float gray = Colors.linearRgbToRgb(getFloat(color, "Gry ") / 255.0f);
-        return new Color(gray, gray, gray);
+        return new Color(gray, gray, gray, alpha);
     }
 
     /**

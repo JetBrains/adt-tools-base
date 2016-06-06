@@ -383,6 +383,8 @@ final class PsdFile {
         static final String KEY_ID = "lyid";
         // The property holds the solid color adjustment information
         static final String KEY_ADJUSTMENT_SOLID_COLOR = "SoCo";
+        // Fill opacity
+        static final String KEY_FILL_OPACITY = "iOpa";
         // The property holds the text information (styles, text data, etc.)
         static final String KEY_TEXT = "TySh";
         // The property holds the vector data
@@ -408,6 +410,7 @@ final class PsdFile {
                 @Chunk.Case(test = "layerProperty.key.equals(\"lsct\")", type = LayerSection.class),
                 @Chunk.Case(test = "layerProperty.key.equals(\"luni\")", type = UnicodeString.class),
                 @Chunk.Case(test = "layerProperty.key.equals(\"SoCo\")", type = SolidColorAdjustment.class),
+                @Chunk.Case(test = "layerProperty.key.equals(\"iOpa\")", type = byte.class),
                 @Chunk.Case(test = "layerProperty.key.equals(\"TySh\")", type = TypeToolObject.class),
                 @Chunk.Case(test = "layerProperty.key.equals(\"vmsk\")", type = VectorMask.class)
             }
@@ -417,6 +420,18 @@ final class PsdFile {
 
     @Chunked
     static final class LayerEffects {
+        // Boolean to toggle effects on/off
+        static final String KEY_MASTER_SWITCH = "masterFXSwitch";
+        static final String KEY_PRESENT = "present";
+        static final String KEY_ENABLED = "enab";
+        // Shadows
+        static final String KEY_INNER_SHADOW = "IrSh";
+        static final String KEY_INNER_SHADOW_MULTI = "innerShadowMulti";
+        static final String KEY_DROP_SHADOW = "DrSh";
+        static final String KEY_DROP_SHADOW_MULTI = "dropShadowMulti";
+        // Shape stroke
+        static final String KEY_STROKE = "FrFX";
+
         @Chunk(match = "0")
         int version;
         @Chunk

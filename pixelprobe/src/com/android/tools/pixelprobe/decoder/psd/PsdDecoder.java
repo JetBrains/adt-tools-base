@@ -256,7 +256,7 @@ public final class PsdDecoder extends Decoder {
             case ADJUSTMENT:
                 return "Adjustment";
             case IMAGE:
-                return "Raster";
+                return "Layer";
             case GROUP:
                 return "Group";
             case PATH:
@@ -268,8 +268,8 @@ public final class PsdDecoder extends Decoder {
     }
 
     private enum LayerShadow {
-        INNER("IrSh", "innerShadowMulti"),
-        OUTER("DrSh", "dropShadowMulti");
+        INNER(LayerEffects.KEY_INNER_SHADOW, LayerEffects.KEY_INNER_SHADOW_MULTI),
+        OUTER(LayerEffects.KEY_DROP_SHADOW, LayerEffects.KEY_DROP_SHADOW_MULTI);
 
         private final String mMultiName;
         private final String mName;
@@ -300,7 +300,7 @@ public final class PsdDecoder extends Decoder {
         LayerEffects layerEffects = (LayerEffects) property.data;
         Effects.Builder effects = new Effects.Builder();
 
-        boolean effectsEnabled = PsdUtils.get(layerEffects.effects, "masterFXSwitch");
+        boolean effectsEnabled = PsdUtils.get(layerEffects.effects, LayerEffects.KEY_MASTER_SWITCH);
         if (effectsEnabled) {
             extractShadowEffects(image, effects, layerEffects, LayerShadow.INNER);
             extractShadowEffects(image, effects, layerEffects, LayerShadow.OUTER);
@@ -331,7 +331,8 @@ public final class PsdDecoder extends Decoder {
     private static void addShadowEffect(Image.Builder image, Effects.Builder effects,
             Descriptor descriptor, LayerShadow type) {
 
-        if (!PsdUtils.getBoolean(descriptor, "present") || !PsdUtils.getBoolean(descriptor, "enab")) {
+        if (!PsdUtils.getBoolean(descriptor, LayerEffects.KEY_PRESENT) ||
+            !PsdUtils.getBoolean(descriptor, LayerEffects.KEY_ENABLED)) {
             return;
         }
 
@@ -505,11 +506,23 @@ public final class PsdDecoder extends Decoder {
         path.transform(transform);
         layer.path(path);
 
-        if (properties.containsKey(LayerProperty.KEY_ADJUSTMENT_SOLID_COLOR)) {
-            SolidColorAdjustment adjustment = (SolidColorAdjustment)
-                    properties.get(LayerProperty.KEY_ADJUSTMENT_SOLID_COLOR).data;
-            layer.pathColor(PsdUtils.getColor(adjustment.solidColor));
+        Color color;
+        int alpha = 255;
+
+        LayerProperty fillOpacity = properties.get(LayerProperty.KEY_FILL_OPACITY);
+        if (fillOpacity != null) {
+            alpha = ((byte) fillOpacity.data) & 0xff;
         }
+
+        LayerProperty solidColor = properties.get(LayerProperty.KEY_ADJUSTMENT_SOLID_COLOR);
+        if (solidColor != null) {
+            SolidColorAdjustment adjustment = (SolidColorAdjustment) solidColor.data;
+            color = PsdUtils.getColor(adjustment.solidColor, alpha / 255.0f);
+        } else {
+            color = new Color(0, 0, 0, alpha);
+        }
+
+        layer.pathColor(color);
     }
 
     /**
