@@ -46,6 +46,7 @@ import com.android.build.gradle.internal.variant.TestedVariantData;
 import com.android.build.gradle.internal.variant.VariantFactory;
 import com.android.builder.core.AndroidBuilder;
 import com.android.builder.core.VariantType;
+import com.android.builder.model.OptionalCompilationStep;
 import com.android.builder.model.ProductFlavor;
 import com.android.builder.model.SigningConfig;
 import com.android.builder.model.SyncIssue;
@@ -522,15 +523,14 @@ public class VariantManager implements VariantModel {
 
 
         GradleVariantConfiguration variantConfig =
-                GradleVariantConfiguration.getBuilderForExtension(extension)
-                        .create(
-                                project,
-                                defaultConfigData.getProductFlavor(),
-                                defaultConfigData.getSourceSet(),
-                                buildTypeData.getBuildType(),
-                                buildTypeData.getSourceSet(),
-                                variantFactory.getVariantConfigurationType(),
-                                signingOverride);
+                GradleVariantConfiguration.getBuilderForExtension(extension).create(
+                        defaultConfigData.getProductFlavor(),
+                        defaultConfigData.getSourceSet(),
+                        buildTypeData.getBuildType(),
+                        buildTypeData.getSourceSet(),
+                        variantFactory.getVariantConfigurationType(),
+                        signingOverride
+                );
 
         if (variantConfig.getType() == LIBRARY && variantConfig.getJackOptions().isEnabled()) {
             project.getLogger().warn(

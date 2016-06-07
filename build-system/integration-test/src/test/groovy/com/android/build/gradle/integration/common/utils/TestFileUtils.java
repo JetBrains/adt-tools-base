@@ -118,7 +118,7 @@ public class TestFileUtils {
     }
 
     public static void appendToFile(@NonNull File file, @NonNull String content) throws IOException {
-        Files.append(System.lineSeparator() + content, file, Charset.defaultCharset());
+        Files.append(content, file, Charset.defaultCharset());
     }
 
     /**
