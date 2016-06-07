@@ -15,15 +15,19 @@
  */
 #include "clock.h"
 
-#include <ctime>
+#include <mach/clock.h>
+#include <mach/mach.h>
 
 namespace profiler {
 namespace utils {
 
 uint64_t SteadyClock::GetCurrentTime() {
-  timespec time;
-  clock_gettime(CLOCK_MONOTONIC, &time);
-  return 1e9 * time.tv_sec + time.tv_nsec;
+  clock_serv_t cclock;
+  mach_timespec_t mach_time;
+  host_get_clock_service(mach_host_self(), SYSTEM_CLOCK, &cclock);
+  clock_get_time(cclock, &mach_time);
+  mach_port_deallocate(mach_task_self(), cclock);
+  return (uint64_t) (1e9 * mach_time.tv_sec + mach_time.tv_nsec);
 }
 
 } // namespace utils

@@ -1,7 +1,15 @@
+set(UTIL_SOURCES
+    file_reader.cc
+    stopwatch.cpp)
+
+if (CMAKE_HOST_APPLE)
+    set(UTIL_SOURCES ${UTIL_SOURCES} clock.mac.cpp)
+else()
+    set(UTIL_SOURCES ${UTIL_SOURCES} clock.cpp)
+endif()
+
 add_library(ProfilerUtils
-            file_reader.cc
-            clock.cpp
-            stopwatch.cpp)
+            ${UTIL_SOURCES})
 
 add_unit_test(profiler-utils-test
               file_reader_test.cc
