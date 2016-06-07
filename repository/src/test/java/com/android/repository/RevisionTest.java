@@ -124,6 +124,61 @@ public class RevisionTest extends TestCase {
         assertEquals("[10, 11, 12, 13]", Arrays.toString(p.toIntArray(true  /*includePreview*/)));
     }
 
+    public final void testParse() {
+        Revision revision = Revision.parseRevision("1");
+        assertNotNull(revision);
+        assertEquals(revision.getMajor(), 1);
+        assertEquals(revision.getMinor(), 0);
+        assertEquals(revision.getMicro(), 0);
+        assertFalse(revision.isPreview());
+
+        revision = Revision.parseRevision("1.2");
+        assertNotNull(revision);
+        assertEquals(revision.getMajor(), 1);
+        assertEquals(revision.getMinor(), 2);
+        assertEquals(revision.getMicro(), 0);
+        assertFalse(revision.isPreview());
+
+        revision = Revision.parseRevision("1.2.3");
+        assertNotNull(revision);
+        assertEquals(revision.getMajor(), 1);
+        assertEquals(revision.getMinor(), 2);
+        assertEquals(revision.getMicro(), 3);
+        assertFalse(revision.isPreview());
+
+        revision = Revision.parseRevision("1.2.3-rc4");
+        assertNotNull(revision);
+        assertEquals(revision.getMajor(), 1);
+        assertEquals(revision.getMinor(), 2);
+        assertEquals(revision.getMicro(), 3);
+        assertTrue(revision.isPreview());
+        assertEquals(revision.getPreview(), 4);
+
+        revision = Revision.parseRevision("1.2.3-alpha5");
+        assertNotNull(revision);
+        assertEquals(revision.getMajor(), 1);
+        assertEquals(revision.getMinor(), 2);
+        assertEquals(revision.getMicro(), 3);
+        assertTrue(revision.isPreview());
+        assertEquals(revision.getPreview(), 5);
+
+        revision = Revision.parseRevision("1.2.3-beta6");
+        assertNotNull(revision);
+        assertEquals(revision.getMajor(), 1);
+        assertEquals(revision.getMinor(), 2);
+        assertEquals(revision.getMicro(), 3);
+        assertTrue(revision.isPreview());
+        assertEquals(revision.getPreview(), 6);
+
+        try {
+            Revision.parseRevision("1.2.3-preview");
+            fail();
+        } catch (NumberFormatException ignored) {}
+
+        revision = Revision.safeParseRevision("1.2.3-preview");
+        assertEquals(revision, Revision.NOT_SPECIFIED);
+    }
+
     public final void testParseError() {
         String errorMsg = null;
         try {

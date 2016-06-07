@@ -16,11 +16,16 @@
 
 package com.android.build.gradle.tasks;
 
+import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.builder.core.AndroidBuilder;
 import com.android.ide.common.process.ProcessInfoBuilder;
+import com.android.repository.api.ConsoleProgressIndicator;
+import com.android.repository.api.LocalPackage;
+import com.android.repository.api.ProgressIndicator;
 import com.android.sdklib.IAndroidTarget;
+import com.android.sdklib.repository.AndroidSdkHandler;
 import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
@@ -131,7 +136,14 @@ class CmakeExternalNativeJsonGenerator extends ExternalNativeJsonGenerator {
 
     @NonNull
     private File getCmakeFolder() {
-        return new File(getSdkFolder(), "cmake");
+        ProgressIndicator progress = new ConsoleProgressIndicator();
+        AndroidSdkHandler sdk = AndroidSdkHandler.getInstance(getSdkFolder());
+        LocalPackage cmakePackage = sdk.getLatestLocalPackageForPrefix(SdkConstants.FD_CMAKE, true,
+                progress);
+        if (cmakePackage != null) {
+            return cmakePackage.getLocation();
+        }
+        return new File(getSdkFolder(), SdkConstants.FD_CMAKE);
     }
 
     @NonNull
