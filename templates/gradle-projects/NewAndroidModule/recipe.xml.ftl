@@ -64,8 +64,8 @@
     <instantiate from="root/res/values/strings.xml.ftl"
                    to="${escapeXmlAttribute(resOut)}/values/strings.xml" />
 
-    <instantiate from="root/test/app_package/ExampleInstrumentationTest.java.ftl"
-                   to="${escapeXmlAttribute(testOut)}/ExampleInstrumentationTest.java" />
+    <instantiate from="root/test/app_package/ExampleInstrumentedTest.java.ftl"
+                   to="${escapeXmlAttribute(testOut)}/ExampleInstrumentedTest.java" />
 
 <#if unitTestsSupported>
     <instantiate from="root/test/app_package/ExampleUnitTest.java.ftl"
