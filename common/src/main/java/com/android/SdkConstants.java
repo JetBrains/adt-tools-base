@@ -1049,6 +1049,10 @@ public final class SdkConstants {
             "textIsSelectable";                                        //$NON-NLS-1$
     public static final String ATTR_IMPORTANT_FOR_ACCESSIBILITY =
             "importantForAccessibility";                               //$NON-NLS-1$
+    public static final String ATTR_ACCESSIBILITY_TRAVERSAL_BEFORE =
+            "accessibilityTraversalBefore";                            //$NON-NLS-1$
+    public static final String ATTR_ACCESSIBILITY_TRAVERSAL_AFTER =
+            "accessibilityTraversalAfter";                             //$NON-NLS-1$
     public static final String ATTR_LIST_PREFERRED_ITEM_PADDING_LEFT =
             "listPreferredItemPaddingLeft";                            //$NON-NLS-1$
     public static final String ATTR_LIST_PREFERRED_ITEM_PADDING_RIGHT =
@@ -1443,6 +1447,7 @@ public final class SdkConstants {
     public static final String TRANSPARENT_COLOR = "@android:color/transparent";      //$NON-NLS-1$
     public static final String REFERENCE_STYLE = "style/";                     //$NON-NLS-1$
     public static final String PREFIX_ANDROID = "android:";                    //$NON-NLS-1$
+    public static final String PREFIX_APP = "app:";                     //$NON-NLS-1$
 
     // Resource Types
     public static final String DRAWABLE_TYPE = "drawable";              //$NON-NLS-1$
