@@ -16,21 +16,17 @@
 
 package com.android.build.gradle.ndk.internal;
 
-import com.android.build.gradle.internal.ndk.NdkHandler;
 import com.android.build.gradle.internal.core.Abi;
 import com.android.build.gradle.internal.core.Toolchain;
+import com.android.build.gradle.internal.ndk.NdkHandler;
 import com.android.build.gradle.managed.NdkAbiOptions;
-import com.google.common.base.Objects;
-import com.google.common.base.Optional;
 
-import org.gradle.api.Action;
 import org.gradle.internal.os.OperatingSystem;
 import org.gradle.model.ModelMap;
 import org.gradle.nativeplatform.platform.NativePlatform;
 import org.gradle.nativeplatform.toolchain.Clang;
 import org.gradle.nativeplatform.toolchain.Gcc;
 import org.gradle.nativeplatform.toolchain.GccCompatibleToolChain;
-import org.gradle.nativeplatform.toolchain.GccPlatformToolChain;
 import org.gradle.nativeplatform.toolchain.NativeToolChainRegistry;
 import org.gradle.nativeplatform.toolchain.internal.gcc.DefaultGccPlatformToolChain;
 import org.gradle.platform.base.PlatformContainer;
@@ -79,15 +75,16 @@ public class ToolchainConfiguration {
                                         .setCanUseCommandFile(false);
                             }
 
-                            if (Toolchain.GCC.equals(ndkToolchain)) {
+                            if (Toolchain.GCC == ndkToolchain) {
                                 String gccPrefix = abi.getGccExecutablePrefix();
                                 targetPlatform.getcCompiler().setExecutable(gccPrefix + "-gcc");
                                 targetPlatform.getCppCompiler().setExecutable(gccPrefix + "-g++");
                                 targetPlatform.getLinker().setExecutable(gccPrefix + "-g++");
                                 targetPlatform.getAssembler().setExecutable(gccPrefix + "-as");
-                                targetPlatform.getStaticLibArchiver()
-                                        .setExecutable(gccPrefix + "-ar");
                             }
+                            // For clang, we use the ar from the GCC toolchain.
+                            targetPlatform.getStaticLibArchiver().setExecutable(
+                                    ndkHandler.getAr(abi).getName());
 
                             // By default, gradle will use -Xlinker to pass arguments to the linker.
                             // Removing it as it prevents -sysroot from being properly set.
@@ -122,7 +119,9 @@ public class ToolchainConfiguration {
                                         });
                             }
                         });
-                        toolchain.path(ndkHandler.getCCompiler(abi).getParentFile());
+                        toolchain.path(
+                                ndkHandler.getCCompiler(abi).getParentFile(),
+                                ndkHandler.getAr(abi).getParentFile());
                     }
                 });
     }
