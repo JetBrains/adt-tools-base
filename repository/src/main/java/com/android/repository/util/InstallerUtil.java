@@ -98,60 +98,61 @@ public class InstallerUtil {
         progress.setText("Unzipping...");
         double fraction = 0;
         ZipFile zipFile = new ZipFile(in);
-        Enumeration entries = zipFile.getEntries();
-        while (entries.hasMoreElements()) {
-            ZipArchiveEntry entry = (ZipArchiveEntry) entries.nextElement();
-            String name = entry.getName();
-            File entryFile = new File(out, name);
-            progress.setSecondaryText(name);
-            if (entry.isDirectory()) {
-                if (!fop.exists(entryFile)) {
-                    if (!fop.mkdirs(entryFile)) {
-                        progress.logWarning("failed to mkdirs " + entryFile);
-                    }
-                }
-            } else {
-                if (!fop.exists(entryFile)) {
-                    File parent = entryFile.getParentFile();
-                    if (parent != null && !fop.exists(parent)) {
-                        fop.mkdirs(parent);
-                    }
-                    if (!fop.createNewFile(entryFile)) {
-                        throw new IOException("Failed to create file " + entryFile);
-                    }
-                }
-
-                int size;
-                byte[] buf = new byte[8192];
-                BufferedOutputStream bos = new BufferedOutputStream(
-                        fop.newFileOutputStream(entryFile));
-                InputStream s = new BufferedInputStream(zipFile.getInputStream(entry));
-                try {
-                    while ((size = s.read(buf)) > -1) {
-                        bos.write(buf, 0, size);
-                        fraction += ((double) entry.getCompressedSize() / expectedSize) *
-                                ((double) size / entry.getSize());
-                        progress.setFraction(fraction);
-                        if (progress.isCanceled()) {
-                            return;
+        try {
+            Enumeration entries = zipFile.getEntries();
+            while (entries.hasMoreElements()) {
+                ZipArchiveEntry entry = (ZipArchiveEntry) entries.nextElement();
+                String name = entry.getName();
+                File entryFile = new File(out, name);
+                progress.setSecondaryText(name);
+                if (entry.isDirectory()) {
+                    if (!fop.exists(entryFile)) {
+                        if (!fop.mkdirs(entryFile)) {
+                            progress.logWarning("failed to mkdirs " + entryFile);
                         }
                     }
-                } finally {
-                    bos.close();
-                    s.close();
-                }
-                if (!fop.isWindows()) {
-                    // get the mode and test if it contains the executable bit
-                    int mode = entry.getUnixMode();
-                    //noinspection OctalInteger
-                    if ((mode & 0111) != 0) {
-                        try {
-                            fop.setExecutablePermission(entryFile);
-                        } catch (IOException ignore) {
+                } else {
+                    if (!fop.exists(entryFile)) {
+                        File parent = entryFile.getParentFile();
+                        if (parent != null && !fop.exists(parent)) {
+                            fop.mkdirs(parent);
+                        }
+                        if (!fop.createNewFile(entryFile)) {
+                            throw new IOException("Failed to create file " + entryFile);
+                        }
+                    }
+
+                    int size;
+                    byte[] buf = new byte[8192];
+                    try (BufferedOutputStream bos = new BufferedOutputStream(
+                            fop.newFileOutputStream(entryFile));
+                         InputStream s = new BufferedInputStream(zipFile.getInputStream(entry))) {
+                        while ((size = s.read(buf)) > -1) {
+                            bos.write(buf, 0, size);
+                            fraction += ((double) entry.getCompressedSize() / expectedSize) *
+                                    ((double) size / entry.getSize());
+                            progress.setFraction(fraction);
+                            if (progress.isCanceled()) {
+                                return;
+                            }
+                        }
+                    }
+                    if (!fop.isWindows()) {
+                        // get the mode and test if it contains the executable bit
+                        int mode = entry.getUnixMode();
+                        //noinspection OctalInteger
+                        if ((mode & 0111) != 0) {
+                            try {
+                                fop.setExecutablePermission(entryFile);
+                            } catch (IOException ignore) {
+                            }
                         }
                     }
                 }
             }
+        }
+        finally {
+            ZipFile.closeQuietly(zipFile);
         }
     }
 
