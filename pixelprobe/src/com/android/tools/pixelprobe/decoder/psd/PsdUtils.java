@@ -20,6 +20,7 @@ import com.android.tools.pixelprobe.BlendMode;
 import com.android.tools.pixelprobe.color.Colors;
 import com.android.tools.pixelprobe.decoder.psd.PsdFile.ColorProfileBlock;
 import com.android.tools.pixelprobe.decoder.psd.PsdFile.Descriptor;
+import com.android.tools.pixelprobe.decoder.psd.PsdFile.DescriptorItem.UnitDouble;
 import com.android.tools.pixelprobe.decoder.psd.PsdFile.PathRecord;
 import com.android.tools.pixelprobe.decoder.psd.PsdFile.ShapeMask;
 import com.android.tools.pixelprobe.util.Bytes;
@@ -44,6 +45,15 @@ import static com.android.tools.pixelprobe.decoder.psd.PsdFile.PathRecord.*;
  */
 @SuppressWarnings("UseJBColor")
 final class PsdUtils {
+    /**
+     * Constant to convert centimeters to inches.
+     */
+    static final float CENTIMETER_TO_INCH = 2.54f;
+    /**
+     * Constant to convert millimeters to inches.
+     */
+    static final float MILLIMETER_TO_INCH = 25.4f;
+
     // Used to parse descriptor paths
     private static final Pattern PATH_PATTERN = Pattern.compile("([a-zA-Z0-9]+)\\[([0-9]+)\\]");
 
@@ -203,23 +213,37 @@ final class PsdUtils {
         return (float) v;
     }
 
-    static float getUnitFloat(Descriptor descriptor, String path, float scale) {
-        PsdFile.DescriptorItem.UnitDouble value = get(descriptor, path);
-        if (PsdFile.DescriptorItem.UnitDouble.PERCENT.equals(value.unit)) {
-            return (float) (value.value / 100.0);
-        } else if (PsdFile.DescriptorItem.UnitDouble.POINTS.equals(value.unit)) {
-            return (float) (value.value * scale);
-        }
+    static float getUnitFloat(Descriptor descriptor, String path, float resolution) {
+        return (float) resolveUnit(get(descriptor, path), resolution);
+    }
 
-        return (float) value.value;
+    static double resolveUnit(UnitDouble unitDouble, float resolution) {
+        if (UnitDouble.PIXELS.equals(unitDouble.unit)) {
+            return unitDouble.value;
+        } else if (UnitDouble.POINTS.equals(unitDouble.unit)) {
+            return unitDouble.value * resolution / 72.0;
+        } else if (UnitDouble.INCHES.equals(unitDouble.unit)) {
+            return unitDouble.value * resolution;
+        } else if (UnitDouble.MILLIMETERS.equals(unitDouble.unit)) {
+            return unitDouble.value * MILLIMETER_TO_INCH * resolution;
+        } else if (UnitDouble.CENTIMETERS.equals(unitDouble.unit)) {
+            return unitDouble.value * CENTIMETER_TO_INCH * resolution;
+        } else if (UnitDouble.PERCENT.equals(unitDouble.unit)) {
+            return unitDouble.value / 100.0;
+        } else if (UnitDouble.ANGLE_DEGREES.equals(unitDouble.unit)) {
+            return unitDouble.value / 360.0;
+        }
+        return unitDouble.value;
     }
 
     static boolean getBoolean(Descriptor descriptor, String path) {
         Object value = get(descriptor, path);
         if (value instanceof Boolean) {
             return (Boolean) value;
+        } else if (value == null) {
+            return true;
         }
-        return "true".equalsIgnoreCase(value.toString());
+        return "true".equalsIgnoreCase(String.valueOf(value));
     }
 
     /**
@@ -310,7 +334,7 @@ final class PsdUtils {
 
     private static Color colorFromHsb(Descriptor color, float alpha) {
         float[] rgb = Colors.hsbToRgb(
-            getUnitFloat(color, "H   ", 0.0f) / 360.0f,
+            getUnitFloat(color, "H   ", 0.0f),
             getFloat(color, "Strt") / 100.0f,
             getFloat(color, "Brgh") / 100.0f);
         return new Color(rgb[0], rgb[1], rgb[2], alpha);

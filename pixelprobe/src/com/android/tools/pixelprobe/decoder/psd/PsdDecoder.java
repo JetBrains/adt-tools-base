@@ -49,11 +49,6 @@ import static com.android.tools.pixelprobe.decoder.psd.PsdFile.*;
 @SuppressWarnings("UseJBColor")
 public final class PsdDecoder extends Decoder {
     /**
-     * Constant to convert centimeters to inches.
-     */
-    private static final float CENTIMETER_TO_INCH = 2.54f;
-
-    /**
      * Possible text alignments found in text layers. Alignments are encoded as
      * numbers in PSD file. These numbers map to the indices of this array (0 is
      * left, 1 is right, etc.).
@@ -332,19 +327,19 @@ public final class PsdDecoder extends Decoder {
     private static void addShadowEffect(Image.Builder image, Effects.Builder effects,
             Descriptor descriptor, LayerShadow type) {
 
-        if (!PsdUtils.getBoolean(descriptor, LayerEffects.KEY_PRESENT) ||
-            !PsdUtils.getBoolean(descriptor, LayerEffects.KEY_ENABLED)) {
+        if (!PsdUtils.getBoolean(descriptor, LayerEffects.KEY_ENABLED) ||
+            !PsdUtils.getBoolean(descriptor, LayerEffects.KEY_PRESENT)) {
             return;
         }
 
         Shadow.Type shadowType = Shadow.Type.INNER;
         if (type == LayerShadow.OUTER) shadowType = Shadow.Type.OUTER;
 
-        float scale = image.verticalResolution() / 72.0f;
+        float scale = image.verticalResolution();
 
         Shadow shadow = new Shadow.Builder(shadowType)
                 .blur(PsdUtils.getUnitFloat(descriptor, "blur", scale))
-                .angle(PsdUtils.getUnitFloat(descriptor, "lagl", scale))
+                .angle(PsdUtils.getUnitFloat(descriptor, "lagl", scale) * 360.0f)
                 .distance(PsdUtils.getUnitFloat(descriptor, "Dstn", scale))
                 .opacity(PsdUtils.getUnitFloat(descriptor, "Opct", scale))
                 .blendMode(PsdUtils.getBlendMode(PsdUtils.get(descriptor, "Md  ")))
@@ -373,7 +368,7 @@ public final class PsdDecoder extends Decoder {
                 typeTool.tx, typeTool.ty); // translateX, translateY
         info.transform(transform);
 
-        float resolutionScale = image.verticalResolution() / 72.0f;
+        float resolution = image.verticalResolution();
 
         // Retrieves the text's bounding box. The bounding box is required
         // to properly apply alignment properties. The translation found
@@ -387,8 +382,8 @@ public final class PsdDecoder extends Decoder {
 
         if (left != null && top != null && right != null && bottom != null) {
             info.bounds(
-                    left.toPixel(resolutionScale), top.toPixel(resolutionScale),
-                    right.toPixel(resolutionScale), bottom.toPixel(resolutionScale));
+              PsdUtils.resolveUnit(left, resolution), PsdUtils.resolveUnit(top, resolution),
+              PsdUtils.resolveUnit(right, resolution), PsdUtils.resolveUnit(bottom, resolution));
         }
 
         // Retrieves styles from the structured text data
@@ -399,7 +394,7 @@ public final class PsdDecoder extends Decoder {
 
         // Find the list of fonts
         List<TextEngine.Property<?>> fontProperties = ((TextEngine.ListProperty)
-                                                               properties.get("ResourceDict.FontSet")).getValue();
+                properties.get("ResourceDict.FontSet")).getValue();
         List<String> fonts = new ArrayList<>(fontProperties.size());
         fonts.addAll(fontProperties.stream()
                 .map(element -> ((TextEngine.MapProperty) element).get("Name").toString())
@@ -426,7 +421,8 @@ public final class PsdDecoder extends Decoder {
             // Get the typeface, font size and color from each style run
             // If the run does not have a style, fall back to the default stylesheet
             int index = ((TextEngine.IntProperty) getFromMap(sheet, defaultSheet, "Font")).getValue();
-            float size = ((TextEngine.FloatProperty) getFromMap(sheet, defaultSheet, "FontSize")).getValue() / resolutionScale;
+            float size = ((TextEngine.FloatProperty) getFromMap(sheet, defaultSheet, "FontSize")).getValue() /
+                         (resolution / 72.0f);
             float[] rgb = ((TextEngine.ListProperty)
                     getFromMap(sheet, defaultSheet, "FillColor.Values")).toFloatArray();
             int tracking = ((TextEngine.IntProperty) getFromMap(sheet, defaultSheet, "Tracking")).getValue();
@@ -514,6 +510,13 @@ public final class PsdDecoder extends Decoder {
         path.transform(transform);
         layer.path(path);
 
+        extractPathStroke(layer, properties);
+        extractPathColor(layer, properties, property);
+    }
+
+    private static void extractPathColor(Layer.Builder layer, Map<String, LayerProperty> properties,
+            LayerProperty property) {
+
         int alpha = 255;
         LayerProperty fillOpacity = properties.get(LayerProperty.KEY_FILL_OPACITY);
         if (fillOpacity != null) {
@@ -524,6 +527,8 @@ public final class PsdDecoder extends Decoder {
         Color color;
         Descriptor descriptor = null;
 
+        // The color data is not stored in the same place depending on where the
+        // path data itself is stored
         if (LayerProperty.KEY_SHAPE_MASK.equals(property.key)) {
             LayerProperty shapeGraphics = properties.get(LayerProperty.KEY_SHAPE_GRAPHICS);
             if (shapeGraphics != null) {
@@ -546,6 +551,13 @@ public final class PsdDecoder extends Decoder {
         }
 
         layer.pathColor(color);
+    }
+
+    private static void extractPathStroke(Layer.Builder layer, Map<String, LayerProperty> properties) {
+        LayerProperty property = properties.get(LayerProperty.KEY_STROKE);
+        if (property != null) {
+            ShapeStroke shapeStroke = (ShapeStroke) property.data;
+        }
     }
 
     /**
@@ -651,17 +663,13 @@ public final class PsdDecoder extends Decoder {
         if (resolutionBlock == null) return;
 
         float hRes = Bytes.fixed16_16ToFloat(resolutionBlock.horizontalResolution);
-        ResolutionUnit unit = resolutionBlock.horizontalUnit;
-        if (unit == ResolutionUnit.UNKNOWN) unit = ResolutionUnit.PIXEL_PER_INCH;
-        if (unit == ResolutionUnit.PIXEL_PER_CM) {
-            hRes *= CENTIMETER_TO_INCH;
+        if (resolutionBlock.horizontalUnit == ResolutionUnit.PIXEL_PER_CM) {
+            hRes *= PsdUtils.CENTIMETER_TO_INCH;
         }
 
         float vRes = Bytes.fixed16_16ToFloat(resolutionBlock.verticalResolution);
-        unit = resolutionBlock.verticalUnit;
-        if (unit == ResolutionUnit.UNKNOWN) unit = ResolutionUnit.PIXEL_PER_INCH;
-        if (unit == ResolutionUnit.PIXEL_PER_CM) {
-            vRes *= CENTIMETER_TO_INCH;
+        if (resolutionBlock.verticalUnit == ResolutionUnit.PIXEL_PER_CM) {
+            vRes *= PsdUtils.CENTIMETER_TO_INCH;
         }
 
         image.resolution(hRes, vRes);

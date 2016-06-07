@@ -184,8 +184,8 @@ public class Image {
         ColorMode colorMode = ColorMode.UNKNOWN;
         ColorSpace colorSpace = ColorSpace.getInstance(ColorSpace.CS_sRGB);
 
-        float horizontalResolution = 96.0f;
-        float verticalResolution = 96.0f;
+        float horizontalResolution = 72.0f;
+        float verticalResolution = 72.0f;
 
         BufferedImage mergedImage;
         BufferedImage thumbnail;
