@@ -47,8 +47,8 @@ class ProfilerServerNetwork final {
   // collectors are saved into a vector member variable.
   void CreateCollectors();
 
-  // Continually collects data until stopped.
-  static void Profile(ProfilerServerNetwork *network_profiler);
+  // Continually collects data on a background thread until stopped.
+  void ProfileThread();
 
   static const int kSleepMicroseconds = 300 * 1000;
 

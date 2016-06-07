@@ -38,7 +38,7 @@ void ProfilerServerNetwork::StartProfile() {
     CreateCollectors();
   }
   if (!is_running_.exchange(true)) {
-    profiler_thread_ = std::thread(Profile, this);
+    profiler_thread_ = std::thread([this] { this->ProfileThread(); });
   }
 }
 
@@ -48,14 +48,14 @@ void ProfilerServerNetwork::StopProfile() {
   }
 }
 
-void ProfilerServerNetwork::Profile(ProfilerServerNetwork *profiler) {
+void ProfilerServerNetwork::ProfileThread() {
   Stopwatch stopwatch;
-  while (profiler->is_running_.load()) {
-    for (const auto &collector : profiler->collectors_) {
+  while (is_running_.load()) {
+    for (const auto &collector : collectors_) {
       profiler::proto::ProfilerData response;
       collector->GetData(response.mutable_network_data());
       response.set_end_timestamp(stopwatch.GetElapsed());
-      profiler->service_->save(response);
+      service_->save(response);
     }
     usleep(kSleepMicroseconds);
   }
