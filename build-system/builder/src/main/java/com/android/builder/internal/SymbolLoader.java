@@ -97,7 +97,7 @@ public class SymbolLoader {
         }
     }
 
-    Table<String, String, SymbolEntry> getSymbols() {
+    public Table<String, String, SymbolEntry> getSymbols() {
         return mSymbols;
     }
 }
