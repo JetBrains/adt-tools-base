@@ -85,7 +85,7 @@ public class InstantRunBuildContext {
     // new Gradle version and the older version. Whenever we bump this version
     // we should cross check the logic and decide how to handle the isCompatible()
     // method.)
-    static final String CURRENT_FORMAT = "7";
+    static final String CURRENT_FORMAT = "8";
 
     public enum TaskType {
         JAVAC,
