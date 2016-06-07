@@ -822,10 +822,12 @@ final class PsdFile {
         static final class UnitDouble {
             static final String POINTS = "#Pnt";
             static final String MILLIMETERS = "#Mlm";
+            static final String CENTIMETERS = "RrCm";
+            static final String INCHES = "RrIn";
             static final String ANGLE_DEGREES = "#Ang";
-            static final String DENSITY = "#Rsl";
-            static final String RELATIVE = "#Rlt";
-            static final String COERCED = "#Nne";
+            static final String RESOLUTION = "#Rsl"; // base per inch
+            static final String RELATIVE = "#Rlt"; // base 72ppi
+            static final String NONE = "#Nne";
             static final String PERCENT = "#Prc";
             static final String PIXELS = "#Pxl";
 
@@ -837,29 +839,45 @@ final class PsdFile {
 
             @Override
             public String toString() {
-                return Double.toString(value);
-            }
-
-            double toPixel(float resolutionScale) {
-                if (PIXELS.equals(unit)) {
-                    return value;
-                } else if (POINTS.equals(unit)) {
-                    return value * resolutionScale;
+                String s = Double.toString(value);
+                switch (unit) {
+                    case POINTS:
+                        s += "pt";
+                        break;
+                    case MILLIMETERS:
+                        s += "mm";
+                        break;
+                    case CENTIMETERS:
+                        s += "cm";
+                        break;
+                    case INCHES:
+                        s += "in";
+                        break;
+                    case ANGLE_DEGREES:
+                        s += "°";
+                        break;
+                    case RESOLUTION:
+                        s += "dpi";
+                        break;
+                    case RELATIVE:
+                        s += "dpp";
+                        break;
+                    case NONE:
+                        break;
+                    case PERCENT:
+                        s += "%";
+                        break;
+                    case PIXELS:
+                        s += "px";
+                        break;
                 }
-                throw new RuntimeException("Cannot convert from unit: " + unit, null);
+                return s;
             }
         }
 
         /**
-         * A float value with a unit. Possible units:
-         * #Pnt, points
-         * #Mlm, millimeters
-         * #Ang, angle in degrees
-         * #Rsl, density in inch
-         * #Rlt, distance base 72ppi
-         * #Nne, coerced
-         * #Prc, percent
-         * #Pxl, pixels
+         * A float value with a unit.
+         * See {@link UnitDouble} for possible units.
          */
         @Chunked
         static final class UnitFloat {
@@ -940,7 +958,7 @@ final class PsdFile {
 
             @Override
             public String toString() {
-                return "<list>" + Strings.join(items, "\n") + "</list>";
+                return "<list>" + Strings.join(items, ", ") + "</list>";
             }
         }
 
