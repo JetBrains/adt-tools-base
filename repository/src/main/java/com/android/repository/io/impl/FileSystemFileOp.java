@@ -37,6 +37,7 @@ import java.nio.file.attribute.PosixFilePermission;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Stream;
 
 /**
  * Base class for {@link FileOp} implementations based on a {@link java.io.FileSystem}.
@@ -208,8 +209,8 @@ public abstract class FileSystemFileOp implements FileOp {
     @NonNull
     @Override
     public final File[] listFiles(@NonNull File file) {
-        try {
-            return Files.list(toPath(file)).map(path -> new File(path.toString())).toArray(File[]::new);
+        try (Stream<Path> children = Files.list(toPath(file))) {
+            return children.map(path -> new File(path.toString())).toArray(File[]::new);
         }
         catch (IOException e) {
             return new File[0];
