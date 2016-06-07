@@ -86,7 +86,7 @@ $modelBefore
         }
         externalNativeBuild {
           cmake {
-            path "."
+            path "CMakeLists.txt"
           }
         }
     }

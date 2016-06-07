@@ -119,46 +119,6 @@ class NativeModelTest {
                             }
                             """)],
                 true, 4, 2, 7, Compiler.GCC, NativeBuildSystem.NDK_BUILD),
-        ANDROID_MK_FOLDER_C("""
-            apply plugin: 'com.android.application'
-
-            android {
-                compileSdkVersion $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
-                buildToolsVersion "$GradleTestProject.DEFAULT_BUILD_TOOL_VERSION"
-                externalNativeBuild {
-                    ndkBuild {
-                        path file("src/main/cpp")
-                    }
-                }
-                defaultConfig {
-                      ndkBuild {
-                        cFlags "-DTEST_C_FLAG"
-                        cppFlags "-DTEST_CPP_FLAG"
-                      }
-                }
-            }
-            """, [androidMkC("src/main/cpp")],
-                false, 1, 2, 7, Compiler.GCC, NativeBuildSystem.NDK_BUILD),
-        ANDROID_MK_FOLDER_CPP("""
-            apply plugin: 'com.android.application'
-
-            android {
-                compileSdkVersion $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
-                buildToolsVersion "$GradleTestProject.DEFAULT_BUILD_TOOL_VERSION"
-                externalNativeBuild {
-                    ndkBuild {
-                        path file("src/main/cpp")
-                    }
-                }
-                defaultConfig {
-                      ndkBuild {
-                        cFlags "-DTEST_C_FLAG"
-                        cppFlags "-DTEST_CPP_FLAG"
-                      }
-                }
-            }
-            """, [androidMkCpp("src/main/cpp")], true, 1, 2, 7,
-                Compiler.GCC, NativeBuildSystem.NDK_BUILD),
         ANDROID_MK_FILE_CPP_CLANG("""
             apply plugin: 'com.android.application'
 
@@ -200,47 +160,6 @@ class NativeModelTest {
             }
             """, [androidMkCpp("src/main/cpp"), applicationMk("src/main/cpp")],
                 true, 1, 2, 7, Compiler.CLANG, NativeBuildSystem.NDK_BUILD),
-        ANDROID_MK_FOLDER_CPP_CLANG("""
-            apply plugin: 'com.android.application'
-
-            android {
-                compileSdkVersion $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
-                buildToolsVersion "$GradleTestProject.DEFAULT_BUILD_TOOL_VERSION"
-                externalNativeBuild {
-                    ndkBuild {
-                        path file("src/main/cpp")
-                    }
-                }
-                defaultConfig {
-                      ndkBuild {
-                        arguments "NDK_TOOLCHAIN_VERSION:=clang"
-                        cFlags "-DTEST_C_FLAG"
-                        cppFlags "-DTEST_CPP_FLAG"
-                      }
-                }
-            }
-            """, [androidMkCpp("src/main/cpp")], true, 1, 2, 7, Compiler.CLANG,
-                NativeBuildSystem.NDK_BUILD),
-        ANDROID_MK_FOLDER_CPP_CLANG_VIA_APPLICATION_MK("""
-            apply plugin: 'com.android.application'
-
-            android {
-                compileSdkVersion $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
-                buildToolsVersion "$GradleTestProject.DEFAULT_BUILD_TOOL_VERSION"
-                externalNativeBuild {
-                    ndkBuild {
-                        path file("src/main/cpp")
-                    }
-                }
-                defaultConfig {
-                      ndkBuild {
-                        cFlags "-DTEST_C_FLAG"
-                        cppFlags "-DTEST_CPP_FLAG"
-                      }
-                }
-            }
-            """, [androidMkCpp("src/main/cpp"), applicationMk("src/main/cpp")],
-                true, 1, 2, 7, Compiler.CLANG, NativeBuildSystem.NDK_BUILD),
         ANDROID_MK_CUSTOM_BUILD_TYPE("""
             apply plugin: 'com.android.application'
 
@@ -249,7 +168,7 @@ class NativeModelTest {
                 buildToolsVersion "$GradleTestProject.DEFAULT_BUILD_TOOL_VERSION"
                 externalNativeBuild {
                     ndkBuild {
-                        path "src/main/cpp"
+                        path "src/main/cpp/Android.mk"
                     }
                 }
                 defaultConfig {
@@ -277,7 +196,7 @@ class NativeModelTest {
                 buildToolsVersion "$GradleTestProject.DEFAULT_BUILD_TOOL_VERSION"
                 externalNativeBuild {
                     cmake {
-                        path "."
+                        path "CMakeLists.txt"
                     }
                 }
                 defaultConfig {
@@ -297,7 +216,7 @@ class NativeModelTest {
                 buildToolsVersion "$GradleTestProject.DEFAULT_BUILD_TOOL_VERSION"
                 externalNativeBuild {
                     cmake {
-                        path "."
+                        path "CMakeLists.txt"
                     }
                 }
                 defaultConfig {
@@ -319,46 +238,6 @@ class NativeModelTest {
                 externalNativeBuild {
                     cmake {
                         path "CMakeLists.txt"
-                    }
-                }
-                defaultConfig {
-                      cmake {
-                        cFlags "-DTEST_C_FLAG"
-                        cppFlags "-DTEST_CPP_FLAG"
-                      }
-                }
-            }
-            """, [cmakeLists(".")], false, 1, 2, 7, Compiler.GCC,
-                NativeBuildSystem.CMAKE),
-        CMAKELISTS_FOLDER_CPP("""
-            apply plugin: 'com.android.application'
-
-            android {
-                compileSdkVersion $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
-                buildToolsVersion "$GradleTestProject.DEFAULT_BUILD_TOOL_VERSION"
-                externalNativeBuild {
-                    cmake {
-                        path "CMakeLists.txt"
-                    }
-                }
-                defaultConfig {
-                      cmake {
-                        cFlags "-DTEST_C_FLAG"
-                        cppFlags "-DTEST_CPP_FLAG"
-                      }
-                }
-            }
-            """, [cmakeLists(".")], true, 1, 2, 7, Compiler.GCC,
-                NativeBuildSystem.CMAKE),
-        CMAKELISTS_FOLDER_C("""
-            apply plugin: 'com.android.application'
-
-            android {
-                compileSdkVersion $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
-                buildToolsVersion "$GradleTestProject.DEFAULT_BUILD_TOOL_VERSION"
-                externalNativeBuild {
-                    cmake {
-                        path "."
                     }
                 }
                 defaultConfig {
@@ -414,18 +293,12 @@ class NativeModelTest {
                 [Config.ANDROID_MK_FILE_C].toArray(),
                 [Config.ANDROID_MK_FILE_CPP].toArray(),
                 [Config.ANDROID_MK_GOOGLE_TEST].toArray(),
-                [Config.ANDROID_MK_FOLDER_C].toArray(),
-                [Config.ANDROID_MK_FOLDER_CPP].toArray(),
                 [Config.ANDROID_MK_FILE_CPP_CLANG].toArray(),
-                [Config.ANDROID_MK_FOLDER_CPP_CLANG].toArray(),
                 [Config.ANDROID_MK_FILE_CPP_CLANG_VIA_APPLICATION_MK].toArray(),
-                [Config.ANDROID_MK_FOLDER_CPP_CLANG_VIA_APPLICATION_MK].toArray(),
                 [Config.ANDROID_MK_CUSTOM_BUILD_TYPE].toArray(),
                 [Config.CMAKELISTS_FILE_C].toArray(),
                 [Config.CMAKELISTS_FILE_CPP].toArray(),
                 [Config.CMAKELISTS_ARGUMENTS].toArray(),
-                [Config.CMAKELISTS_FOLDER_C].toArray(),
-                [Config.CMAKELISTS_FOLDER_CPP].toArray()
         ];
     }
 

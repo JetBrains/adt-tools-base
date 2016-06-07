@@ -135,10 +135,10 @@ class NdkBuildExternalNativeJsonGenerator extends ExternalNativeJsonGenerator {
      */
     @NonNull
     private File getMakeFile() {
-        if (getMakeFileOrFolder().isDirectory()) {
-            return new File(getMakeFileOrFolder(), "Android.mk");
+        if (getMakefile().isDirectory()) {
+            return new File(getMakefile(), "Android.mk");
         }
-        return getMakeFileOrFolder();
+        return getMakefile();
     }
 
     /**
@@ -220,18 +220,15 @@ class NdkBuildExternalNativeJsonGenerator extends ExternalNativeJsonGenerator {
     @NonNull
     private List<String> getConfigurationErrors() {
         List<String> messages = Lists.newArrayList();
-        if (getMakeFileOrFolder().isDirectory()) {
-            if (!getMakeFile().isFile()) {
-                messages.add(
-                        String.format("Gradle project ndkBuild.path folder is %s but "
-                                + "there is no file named %s there",
-                                getMakeFileOrFolder(),
-                                getMakeFile().getName()));
-            }
-        } else if (!getMakeFileOrFolder().exists()) {
+        if (getMakefile().isDirectory()) {
+            messages.add(
+                    String.format("Gradle project ndkBuild.path %s is a folder. "
+                            + "Only files (like Android.mk) are allowed.",
+                            getMakefile()));
+        } else if (!getMakefile().exists()) {
             messages.add(
                     String.format("Gradle project ndkBuild.path is %s but that file doesn't exist",
-                            getMakeFileOrFolder()));
+                            getMakefile()));
         }
 
         messages.addAll(getBaseConfigurationErrors());
