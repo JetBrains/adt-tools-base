@@ -297,7 +297,22 @@ public class BootstrapApplication extends Application {
 
     @Override
     public void onCreate() {
-
+        // As of Marshmallow, we use APK splits and don't need to rely on
+        // reflection to inject classes and resources for coldswap
+        //noinspection PointlessBooleanExpression
+        if (!AppInfo.usingApkSplits) {
+            MonkeyPatcher.monkeyPatchApplication(
+                    BootstrapApplication.this, BootstrapApplication.this,
+                    realApplication, externalResourcePath);
+            MonkeyPatcher.monkeyPatchExistingResources(BootstrapApplication.this,
+                    externalResourcePath, null);
+        } else {
+            // We still need to set the application instance in the LoadedApk etc
+            // such that getApplication() returns the new application
+            MonkeyPatcher.monkeyPatchApplication(
+                    BootstrapApplication.this, BootstrapApplication.this,
+                    realApplication, null);
+        }
         super.onCreate();
 
         // Start server, unless we're in a multiprocess scenario and this isn't the
