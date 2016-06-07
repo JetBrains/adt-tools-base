@@ -21,16 +21,42 @@ import static com.android.build.gradle.integration.common.truth.TruthHelper.asse
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp;
 import com.android.build.gradle.integration.common.utils.TestFileUtils;
-import com.android.utils.FileUtils;
+import com.google.common.hash.HashCode;
+import com.google.common.hash.Hashing;
 
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 
+import java.nio.charset.StandardCharsets;
+
 /**
  * Tests for all the methods exposed in the so-called variants API.
  */
 public class VariantsApiTest {
+
+    private static final String VARIANTS_API_SNIPPET =
+            //language=groovy
+            "android {\n"
+                    + "    applicationVariants.all { variant ->\n"
+                    + "        assert variant.assemble != null\n"
+                    + "        variant.outputs.each { output -> \n"
+                    + "            assert output.assemble != null\n"
+                    + "        }\n"
+                    + "    }\n"
+                    + "    \n"
+                    + "    testVariants.all { variant ->\n"
+                    + "        assert variant.testedVariant != null\n"
+                    + "        assert variant.assemble != null\n"
+                    + "        variant.outputs.each { output ->\n"
+                    + "            assert output.assemble != null\n"
+                    + "        }\n"
+                    + "    }\n"
+                    + "    \n"
+                    + "    unitTestVariants.all { variant ->\n"
+                    + "        assert variant.testedVariant != null\n"
+                    + "    }\n"
+                    + "}";
 
     @Rule
     public GradleTestProject mProject =
@@ -40,29 +66,7 @@ public class VariantsApiTest {
 
     @Before
     public void setUp() throws Exception {
-        TestFileUtils.appendToFile(
-                mProject.getBuildFile(),
-                //language=groovy
-                "android {\n"
-                        + "    applicationVariants.all { variant ->\n"
-                        + "        assert variant.assemble != null\n"
-                        + "        variant.outputs.each { output -> \n"
-                        + "            assert output.assemble != null\n"
-                        + "        }\n"
-                        + "    }\n"
-                        + "    \n"
-                        + "    testVariants.all { variant ->\n"
-                        + "        assert variant.testedVariant != null\n"
-                        + "        assert variant.assemble != null\n"
-                        + "        variant.outputs.each { output ->\n"
-                        + "            assert output.assemble != null\n"
-                        + "        }\n"
-                        + "    }\n"
-                        + "    \n"
-                        + "    unitTestVariants.all { variant ->\n"
-                        + "        assert variant.testedVariant != null\n"
-                        + "    }\n"
-                        + "}");
+        TestFileUtils.appendToFile(mProject.getBuildFile(), VARIANTS_API_SNIPPET);
     }
 
     @Test
@@ -71,7 +75,7 @@ public class VariantsApiTest {
 
         // ATTENTION Author and Reviewers - please make sure required changes to the build file
         // are backwards compatible before updating this test.
-        assertThat(FileUtils.sha1(mProject.file("build.gradle")))
-                .isEqualTo("9bb80c80cb93a4e132826f9e2fe62e391fb66245");
+        HashCode hashCode = Hashing.sha1().hashString(VARIANTS_API_SNIPPET, StandardCharsets.UTF_8);
+        assertThat(hashCode.toString()).isEqualTo("75b8185482d8eeac313226a285fe50880b8b329c");
     }
 }
