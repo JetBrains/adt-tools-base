@@ -214,8 +214,9 @@ public final class PsdDecoder extends Decoder {
         if (textProperty != null) {
             type = Layer.Type.TEXT;
         } else {
-            LayerProperty pathProperty = properties.get(LayerProperty.KEY_VECTOR_MASK);
-            if (pathProperty != null) {
+            LayerProperty vectorMask = properties.get(LayerProperty.KEY_VECTOR_MASK);
+            LayerProperty shapeMask = properties.get(LayerProperty.KEY_SHAPE_MASK);
+            if (vectorMask != null || shapeMask != null) {
                 type = Layer.Type.PATH;
             } else {
                 for (String key : PsdUtils.getAdjustmentLayerKeys()) {
@@ -487,9 +488,16 @@ public final class PsdDecoder extends Decoder {
      */
     private static void decodePathData(Image.Builder image, Layer.Builder layer,
             Map<String, LayerProperty> properties) {
-        // We are guaranteed to have this property if this method is called
+
+        // Older versions of Photoshop use the vector mask property. This
+        // property is also used by newer versions of Photoshop if the shape
+        // does not use specific features (stroke, etc.)
         LayerProperty property = properties.get(LayerProperty.KEY_VECTOR_MASK);
-        VectorMask mask = (VectorMask) property.data;
+        if (property == null) {
+            property = properties.get(LayerProperty.KEY_SHAPE_MASK);
+        }
+
+        ShapeMask mask = (ShapeMask) property.data;
 
         GeneralPath path = PsdUtils.createPath(mask);
 
@@ -506,18 +514,33 @@ public final class PsdDecoder extends Decoder {
         path.transform(transform);
         layer.path(path);
 
-        Color color;
         int alpha = 255;
-
         LayerProperty fillOpacity = properties.get(LayerProperty.KEY_FILL_OPACITY);
         if (fillOpacity != null) {
             alpha = ((byte) fillOpacity.data) & 0xff;
         }
 
-        LayerProperty solidColor = properties.get(LayerProperty.KEY_ADJUSTMENT_SOLID_COLOR);
-        if (solidColor != null) {
-            SolidColorAdjustment adjustment = (SolidColorAdjustment) solidColor.data;
-            color = PsdUtils.getColor(adjustment.solidColor, alpha / 255.0f);
+        // TODO: use Paint, instead of color, to handle gradients and patterns
+        Color color;
+        Descriptor descriptor = null;
+
+        if (LayerProperty.KEY_SHAPE_MASK.equals(property.key)) {
+            LayerProperty shapeGraphics = properties.get(LayerProperty.KEY_SHAPE_GRAPHICS);
+            if (shapeGraphics != null) {
+                ShapeGraphics graphics = (ShapeGraphics) shapeGraphics.data;
+                if (LayerProperty.KEY_ADJUSTMENT_SOLID_COLOR.equals(graphics.key)) {
+                    descriptor = graphics.graphics;
+                }
+            }
+        } else {
+            LayerProperty solidColor = properties.get(LayerProperty.KEY_ADJUSTMENT_SOLID_COLOR);
+            if (solidColor != null) {
+                descriptor = ((SolidColorAdjustment) solidColor.data).solidColor;
+            }
+        }
+
+        if (descriptor != null) {
+            color = PsdUtils.getColor(descriptor, alpha / 255.0f);
         } else {
             color = new Color(0, 0, 0, alpha);
         }
