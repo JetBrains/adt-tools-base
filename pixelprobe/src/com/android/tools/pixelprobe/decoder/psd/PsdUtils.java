@@ -48,11 +48,11 @@ final class PsdUtils {
     /**
      * Constant to convert centimeters to inches.
      */
-    static final float CENTIMETER_TO_INCH = 2.54f;
+    static final float CENTIMETER_TO_INCH = 1.0f / 2.54f;
     /**
      * Constant to convert millimeters to inches.
      */
-    static final float MILLIMETER_TO_INCH = 25.4f;
+    static final float MILLIMETER_TO_INCH = 1.0f / 25.4f;
 
     // Used to parse descriptor paths
     private static final Pattern PATH_PATTERN = Pattern.compile("([a-zA-Z0-9]+)\\[([0-9]+)\\]");
@@ -209,8 +209,12 @@ final class PsdUtils {
     }
 
     static float getFloat(Descriptor descriptor, String path) {
-        double v = get(descriptor, path);
-        return (float) v;
+        return ((Double) get(descriptor, path)).floatValue();
+    }
+
+    static float getFloat(Descriptor descriptor, String path, float defaultValue) {
+        Double v = get(descriptor, path);
+        return v == null ? defaultValue : v.floatValue();
     }
 
     static float getUnitFloat(Descriptor descriptor, String path, float resolution) {

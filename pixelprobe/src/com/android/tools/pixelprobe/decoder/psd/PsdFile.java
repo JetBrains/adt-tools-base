@@ -1005,13 +1005,9 @@ final class PsdFile {
         @Chunk
         Value value;
 
-        Object getData() {
-            return value.data;
-        }
-
         @Override
         public String toString() {
-            return "<item key=\"" + key + "\">" + value + "</item>";
+            return "<item key=\"" + key + "\">" + String.valueOf(value) + "</item>";
         }
     }
 
