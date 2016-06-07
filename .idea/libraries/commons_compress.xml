@@ -1,11 +1,13 @@
 <component name="libraryTable">
   <library name="commons-compress">
     <CLASSES>
-      <root url="jar://$PROJECT_DIR$/../../prebuilts/tools/common/m2/repository/org/apache/commons/commons-compress/1.0/commons-compress-1.0.jar!/" />
+      <root url="file://$PROJECT_DIR$/../../prebuilts/tools/common/m2/repository/org/apache/commons/commons-compress/1.9" />
     </CLASSES>
     <JAVADOC />
     <SOURCES>
-      <root url="jar://$PROJECT_DIR$/../../prebuilts/tools/common/m2/repository/org/apache/commons/commons-compress/1.0/commons-compress-1.0-sources.jar!/" />
+      <root url="file://$PROJECT_DIR$/../../prebuilts/tools/common/m2/repository/org/apache/commons/commons-compress/1.9" />
     </SOURCES>
+    <jarDirectory url="file://$PROJECT_DIR$/../../prebuilts/tools/common/m2/repository/org/apache/commons/commons-compress/1.9" recursive="false" />
+    <jarDirectory url="file://$PROJECT_DIR$/../../prebuilts/tools/common/m2/repository/org/apache/commons/commons-compress/1.9" recursive="false" type="SOURCES" />
   </library>
 </component>

@@ -22,6 +22,8 @@ import com.android.repository.api.RemotePackage;
 import com.android.repository.api.RepoManager;
 import com.android.repository.impl.manager.RepoManagerImpl;
 import com.android.repository.impl.meta.RepositoryPackages;
+import com.android.repository.io.FileOp;
+import com.android.repository.io.FileOpUtils;
 import com.android.repository.testframework.FakeDependency;
 import com.android.repository.testframework.FakePackage;
 import com.android.repository.testframework.FakeProgressIndicator;
@@ -32,7 +34,13 @@ import com.google.common.collect.Sets;
 
 import junit.framework.TestCase;
 
+import org.apache.commons.compress.archivers.zip.UnixStat;
+import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
+import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
+
 import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -514,6 +522,71 @@ public class InstallerUtilTest extends TestCase {
         mgr.loadSynchronously(0, progress, null, null);
         assertTrue(InstallerUtil.checkValidPath(new File("/sdk/foo2"), mgr, progress));
         progress.assertNoErrorsOrWarnings();
+    }
+
+    public void testUnzip() throws Exception {
+        if (new MockFileOp().isWindows()) {
+            // can't run on windows.
+            return;
+        }
+        // zip needs a real file, so no MockFileOp for us.
+        FileOp fop = FileOpUtils.create();
+
+        Path root = Files.createTempDirectory("InstallerUtilTest");
+        Path outRoot = Files.createTempDirectory("InstallerUtilTest");
+        try {
+            Path file1 = root.resolve("foo");
+            Files.write(file1, "content".getBytes());
+            Path dir1 = root.resolve("bar");
+            Files.createDirectories(dir1);
+            Path file2 = dir1.resolve("baz");
+            Files.write(file2, "content2".getBytes());
+            Files.createSymbolicLink(root.resolve("link1"), dir1);
+            Files.createSymbolicLink(root.resolve("link2"), file2);
+
+            Path outZip = outRoot.resolve("out.zip");
+            try (ZipArchiveOutputStream out = new ZipArchiveOutputStream(outZip.toFile())) {
+                Files.walk(root).forEach(path -> {
+                    try {
+                        ZipArchiveEntry archiveEntry = (ZipArchiveEntry) out
+                                .createArchiveEntry(path.toFile(),
+                                        root.relativize(path).toString());
+                        out.putArchiveEntry(archiveEntry);
+                        if (Files.isSymbolicLink(path)) {
+                            archiveEntry
+                                    .setUnixMode(UnixStat.LINK_FLAG | archiveEntry.getUnixMode());
+                            out.write(path.getParent().relativize(
+                                    Files.readSymbolicLink(path)).toString().getBytes());
+                        } else if (!Files.isDirectory(path)) {
+                            out.write(Files.readAllBytes(path));
+                        }
+                        out.closeArchiveEntry();
+                    } catch (Exception e) {
+                        fail();
+                    }
+                });
+            }
+            Path unzipped = outRoot.resolve("unzipped");
+            Files.createDirectories(unzipped);
+            InstallerUtil.unzip(outZip.toFile(), unzipped.toFile(), fop, 1,
+                    new FakeProgressIndicator());
+            assertEquals("content", new String(Files.readAllBytes(unzipped.resolve("foo"))));
+            Path resultDir = unzipped.resolve("bar");
+            Path resultFile2 = resultDir.resolve("baz");
+            assertEquals("content2", new String(Files.readAllBytes(resultFile2)));
+            Path resultLink = unzipped.resolve("link1");
+            assertTrue(Files.isDirectory(resultLink));
+            assertTrue(Files.isSymbolicLink(resultLink));
+            assertTrue(Files.isSameFile(resultLink, resultDir));
+            Path resultLink2 = unzipped.resolve("link2");
+            assertEquals("content2", new String(Files.readAllBytes(resultLink2)));
+            assertTrue(Files.isSymbolicLink(resultLink2));
+            assertTrue(Files.isSameFile(resultLink2, resultFile2));
+        }
+        finally {
+            fop.deleteFileOrFolder(root.toFile());
+            fop.deleteFileOrFolder(outRoot.toFile());
+        }
     }
 
     private static class RepositoryPackagesBuilder {
