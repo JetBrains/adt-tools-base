@@ -20,6 +20,7 @@ import com.android.tools.chunkio.ChunkIO;
 import com.android.tools.pixelprobe.*;
 import com.android.tools.pixelprobe.Image;
 import com.android.tools.pixelprobe.decoder.Decoder;
+import com.android.tools.pixelprobe.decoder.psd.PsdFile.DescriptorItem.UnitDouble;
 import com.android.tools.pixelprobe.effect.Shadow;
 import com.android.tools.pixelprobe.util.Bytes;
 import com.android.tools.pixelprobe.util.Images;
@@ -48,15 +49,6 @@ import static com.android.tools.pixelprobe.decoder.psd.PsdFile.*;
  */
 @SuppressWarnings("UseJBColor")
 public final class PsdDecoder extends Decoder {
-    /**
-     * Possible text alignments found in text layers. Alignments are encoded as
-     * numbers in PSD file. These numbers map to the indices of this array (0 is
-     * left, 1 is right, etc.).
-     */
-    private static final String[] alignments = new String[] {
-        "LEFT", "RIGHT", "CENTER", "JUSTIFY"
-    };
-
     /**
      * The PsdDecoder only supports .psd files. There is no support for .psb
      * (large Photoshop documents) at the moment.
@@ -178,8 +170,8 @@ public final class PsdDecoder extends Decoder {
                 case GROUP:
                     stack.offerFirst(layer);
                     break;
-                case PATH:
-                    decodePathData(image, layer, properties);
+                case SHAPE:
+                    decodeShapeData(image, layer, properties);
                     break;
                 case TEXT:
                     decodeTextData(image, layer, properties.get(LayerProperty.KEY_TEXT));
@@ -212,7 +204,7 @@ public final class PsdDecoder extends Decoder {
             LayerProperty vectorMask = properties.get(LayerProperty.KEY_VECTOR_MASK);
             LayerProperty shapeMask = properties.get(LayerProperty.KEY_SHAPE_MASK);
             if (vectorMask != null || shapeMask != null) {
-                type = Layer.Type.PATH;
+                type = Layer.Type.SHAPE;
             } else {
                 for (String key : PsdUtils.getAdjustmentLayerKeys()) {
                     if (properties.containsKey(key)) {
@@ -255,7 +247,7 @@ public final class PsdDecoder extends Decoder {
                 return "Layer";
             case GROUP:
                 return "Group";
-            case PATH:
+            case SHAPE:
                 return "Shape";
             case TEXT:
                 return "Text";
@@ -350,6 +342,15 @@ public final class PsdDecoder extends Decoder {
     }
 
     /**
+     * Possible text alignments found in text layers. Alignments are encoded as
+     * numbers in PSD file. These numbers map to the indices of this array (0 is
+     * left, 1 is right, etc.).
+     */
+    private static final String[] alignments = new String[] {
+        "LEFT", "RIGHT", "CENTER", "JUSTIFY"
+    };
+
+    /**
      * Decodes the text data of a text layer.
      */
     private static void decodeTextData(Image.Builder image, Layer.Builder layer, LayerProperty property) {
@@ -375,10 +376,10 @@ public final class PsdDecoder extends Decoder {
         // in the affine transform above gives us the origin for text
         // alignment and the bounding box gives us the actual position of
         // the text box from that origin
-        DescriptorItem.UnitDouble left = PsdUtils.get(typeTool.text, "boundingBox.Left");
-        DescriptorItem.UnitDouble top = PsdUtils.get(typeTool.text, "boundingBox.Top ");
-        DescriptorItem.UnitDouble right = PsdUtils.get(typeTool.text, "boundingBox.Rght");
-        DescriptorItem.UnitDouble bottom = PsdUtils.get(typeTool.text, "boundingBox.Btom");
+        UnitDouble left = PsdUtils.get(typeTool.text, "boundingBox.Left");
+        UnitDouble top = PsdUtils.get(typeTool.text, "boundingBox.Top ");
+        UnitDouble right = PsdUtils.get(typeTool.text, "boundingBox.Rght");
+        UnitDouble bottom = PsdUtils.get(typeTool.text, "boundingBox.Btom");
 
         if (left != null && top != null && right != null && bottom != null) {
             info.bounds(
@@ -482,7 +483,7 @@ public final class PsdDecoder extends Decoder {
      * Decodes the path data for a given layer. The path data is encoded as a
      * series of path records that are fairly straightforward to interpret.
      */
-    private static void decodePathData(Image.Builder image, Layer.Builder layer,
+    private static void decodeShapeData(Image.Builder image, Layer.Builder layer,
             Map<String, LayerProperty> properties) {
 
         // Older versions of Photoshop use the vector mask property. This
@@ -497,7 +498,7 @@ public final class PsdDecoder extends Decoder {
 
         GeneralPath path = PsdUtils.createPath(mask);
 
-        // Vector data is stored in relative coordinates in PSD files
+        // Shape data is stored in relative coordinates in PSD files
         // For instance, a point at 0.5,0.5 is in the center of the document
         // We apply a transform to convert these relative coordinates into
         // absolute pixel coordinates
@@ -506,15 +507,18 @@ public final class PsdDecoder extends Decoder {
         AffineTransform transform = new AffineTransform();
         transform.translate(-bounds.getX(), -bounds.getY());
         transform.scale(image.width(), image.height());
-
         path.transform(transform);
-        layer.path(path);
 
-        extractPathStroke(layer, properties);
-        extractPathColor(layer, properties, property);
+        ShapeInfo.Builder shapeInfo = new ShapeInfo.Builder();
+        shapeInfo.path(path);
+
+        extractShapeStroke(shapeInfo, properties);
+        extractShapeFill(shapeInfo, properties, property);
+
+        layer.shapeInfo(shapeInfo.build());
     }
 
-    private static void extractPathColor(Layer.Builder layer, Map<String, LayerProperty> properties,
+    private static void extractShapeFill(ShapeInfo.Builder shapeInfo, Map<String, LayerProperty> properties,
             LayerProperty property) {
 
         int alpha = 255;
@@ -523,8 +527,8 @@ public final class PsdDecoder extends Decoder {
             alpha = ((byte) fillOpacity.data) & 0xff;
         }
 
-        // TODO: use Paint, instead of color, to handle gradients and patterns
-        Color color;
+        // TODO: support gradients and patterns
+        Paint paint = Color.BLACK;
         Descriptor descriptor = null;
 
         // The color data is not stored in the same place depending on where the
@@ -545,18 +549,81 @@ public final class PsdDecoder extends Decoder {
         }
 
         if (descriptor != null) {
-            color = PsdUtils.getColor(descriptor, alpha / 255.0f);
-        } else {
-            color = new Color(0, 0, 0, alpha);
+            paint = PsdUtils.getColor(descriptor);
         }
 
-        layer.pathColor(color);
+        shapeInfo.fillPaint(paint).fillOpacity(alpha / 255.0f);
     }
 
-    private static void extractPathStroke(Layer.Builder layer, Map<String, LayerProperty> properties) {
+    private static final Map<String, Integer> strokeCapsJoins = new HashMap<>();
+    static {
+        strokeCapsJoins.put("strokeStyleButtCap", BasicStroke.CAP_BUTT);
+        strokeCapsJoins.put("strokeStyleRoundCap", BasicStroke.CAP_ROUND);
+        strokeCapsJoins.put("strokeStyleSquareCap", BasicStroke.CAP_SQUARE);
+        strokeCapsJoins.put("strokeStyleMiterJoin", BasicStroke.JOIN_MITER);
+        strokeCapsJoins.put("strokeStyleBevelJoin", BasicStroke.JOIN_BEVEL);
+        strokeCapsJoins.put("strokeStyleRoundJoin", BasicStroke.JOIN_ROUND);
+    }
+
+    private static final Map<String, ShapeInfo.Alignment> strokeAlignments = new HashMap<>();
+    static {
+        strokeAlignments.put("strokeStyleAlignInside", ShapeInfo.Alignment.INSIDE);
+        strokeAlignments.put("strokeStyleAlignCenter", ShapeInfo.Alignment.CENTER);
+        strokeAlignments.put("strokeStyleAlignOutside", ShapeInfo.Alignment.OUTSIDE);
+    }
+
+    private static void extractShapeStroke(ShapeInfo.Builder shapeInfo, Map<String, LayerProperty> properties) {
         LayerProperty property = properties.get(LayerProperty.KEY_STROKE);
         if (property != null) {
-            ShapeStroke shapeStroke = (ShapeStroke) property.data;
+            Descriptor descriptor = ((ShapeStroke) property.data).stroke;
+
+            boolean fillEnabled = PsdUtils.getBoolean(descriptor, "fillEnabled");
+            boolean strokeEnabled = PsdUtils.getBoolean(descriptor, "strokeEnabled");
+            ShapeInfo.Style style = ShapeInfo.Style.from(fillEnabled, strokeEnabled);
+
+            float resolution = PsdUtils.getFloat(descriptor, "strokeStyleResolution", 72.0f);
+            float opacity = PsdUtils.getUnitFloat(descriptor, "strokeStyleOpacity", resolution);
+            float width = PsdUtils.getUnitFloat(descriptor, "strokeStyleLineWidth", resolution);
+            BlendMode blendMode = PsdUtils.getBlendMode(PsdUtils.get(descriptor, "strokeStyleBlendMode"));
+            int cap = strokeCapsJoins.get(PsdUtils.<String>get(descriptor, "strokeStyleLineCapType"));
+            int join = strokeCapsJoins.get(PsdUtils.<String>get(descriptor, "strokeStyleLineJoinType"));
+            float miterLimit = PsdUtils.getFloat(descriptor, "strokeStyleMiterLimit");
+            float dashOffset = PsdUtils.getUnitFloat(descriptor, "strokeStyleLineDashOffset", resolution);
+            ShapeInfo.Alignment alignment = strokeAlignments.get(
+                    PsdUtils.<String>get(descriptor, "strokeStyleLineAlignment"));
+
+            float[] dash = null;
+            DescriptorItem.ValueList dashSet = PsdUtils.get(descriptor, "strokeStyleLineDashSet");
+            if (dashSet != null && dashSet.count > 0) {
+                dash = new float[dashSet.count];
+                for (int i = 0; i < dashSet.count; i++) {
+                    UnitDouble v = (UnitDouble) dashSet.items.get(i).data;
+                    if (UnitDouble.NONE.equals(v.unit)) {
+                        dash[i] = (float) (v.value * width);
+                    } else {
+                        dash[i] = (float) PsdUtils.resolveUnit(v, resolution);
+                    }
+                }
+            }
+            //noinspection MagicConstant
+            Stroke stroke = new BasicStroke(width, cap, join, miterLimit, dash, dashOffset);
+
+            Paint paint = Color.BLACK;
+            // TODO: handle gradients and patterns
+            Descriptor colorLayer = PsdUtils.get(descriptor, "solidColorLayer");
+            if (colorLayer != null) {
+                paint = PsdUtils.getColor(colorLayer);
+            }
+
+            shapeInfo
+                    .style(style)
+                    .stroke(stroke)
+                    .strokePaint(paint)
+                    .strokeOpacity(opacity)
+                    .strokeBlendMode(blendMode)
+                    .strokeAlignment(alignment);
+        } else {
+            shapeInfo.style(ShapeInfo.Style.FILL);
         }
     }
 
@@ -664,12 +731,12 @@ public final class PsdDecoder extends Decoder {
 
         float hRes = Bytes.fixed16_16ToFloat(resolutionBlock.horizontalResolution);
         if (resolutionBlock.horizontalUnit == ResolutionUnit.PIXEL_PER_CM) {
-            hRes *= PsdUtils.CENTIMETER_TO_INCH;
+            hRes /= PsdUtils.CENTIMETER_TO_INCH;
         }
 
         float vRes = Bytes.fixed16_16ToFloat(resolutionBlock.verticalResolution);
         if (resolutionBlock.verticalUnit == ResolutionUnit.PIXEL_PER_CM) {
-            vRes *= PsdUtils.CENTIMETER_TO_INCH;
+            vRes /= PsdUtils.CENTIMETER_TO_INCH;
         }
 
         image.resolution(hRes, vRes);

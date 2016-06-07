@@ -18,8 +18,6 @@ package com.android.tools.pixelprobe;
 
 import com.android.tools.pixelprobe.util.Lists;
 
-import java.awt.Color;
-import java.awt.geom.Path2D;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
@@ -44,10 +42,9 @@ public final class Layer {
 
     private final BufferedImage image;
 
-    private final Path2D path;
-    private final Color pathColor;
-
+    private final ShapeInfo shapeInfo;
     private final TextInfo textInfo;
+
     private final Effects effects;
 
     private final boolean open;
@@ -70,9 +67,9 @@ public final class Layer {
          */
         GROUP,
         /**
-         * Vector mask or path.
+         * Vector/shape/path layer.
          */
-        PATH,
+        SHAPE,
         /**
          * Text layer.
          */
@@ -92,9 +89,7 @@ public final class Layer {
 
         image = builder.image;
 
-        path = builder.path;
-        pathColor = builder.pathColor;
-
+        shapeInfo = builder.shapeInfo;
         textInfo = builder.textInfo;
 
         open = builder.open;
@@ -165,18 +160,10 @@ public final class Layer {
     }
 
     /**
-     * Returns this layer's vector data for {@link Type#PATH} layers.
+     * Returns this layer's shape information for {@link Type#SHAPE} layers.
      */
-    public Path2D getPath() {
-        return path;
-    }
-
-    /**
-     * Returns this layer's vector color for {@link Type#PATH} layers.
-     * The color may have an alpha value (see {@link Color#getAlpha()}.
-     */
-    public Color getPathColor() {
-        return pathColor;
+    public ShapeInfo getShapeInfo() {
+        return shapeInfo;
     }
 
     /**
@@ -218,11 +205,9 @@ public final class Layer {
         private final List<Layer> children = new ArrayList<>();
 
         private BufferedImage image;
-
-        private Path2D path;
-        private Color pathColor = Color.BLACK;
-
+        private ShapeInfo shapeInfo;
         private TextInfo textInfo;
+
         private Effects effects;
 
         private boolean open = true;
@@ -262,13 +247,8 @@ public final class Layer {
             return this;
         }
 
-        public Builder path(Path2D path) {
-            this.path = path;
-            return this;
-        }
-
-        public Builder pathColor(Color pathColor) {
-            this.pathColor = pathColor;
+        public Builder shapeInfo(ShapeInfo info) {
+            shapeInfo = info;
             return this;
         }
 
