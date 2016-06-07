@@ -61,8 +61,22 @@ public interface AndroidProject {
 
     String PROPERTY_SIGNING_COLDSWAP_MODE = "android.injected.coldswap.mode";
 
-    // InstantDev related properties, must be ',' separated list of OptionalCompilationStep values.
-    String OPTIONAL_COMPILATION_STEPS = "android.optional.compilation";
+    /** Version code to be used in the built APK. */
+    String PROPERTY_VERSION_CODE = "android.injected.version.code";
+
+    /** Version code injected by Android Studio when using Instant Run. */
+    int INSTANT_RUN_VERSION_CODE = Integer.MAX_VALUE;
+
+    /** Version name to be used in the built APK. */
+    String PROPERTY_VERSION_NAME = "android.injected.version.name";
+
+    /** Version name injected by Android Studio when using Instant Run. */
+    String INSTANT_RUN_VERSION_NAME = "INSTANT_RUN";
+
+    /**
+     * Comma-separated list of {@link OptionalCompilationStep} value names, used with Instant Run.
+     */
+    String PROPERTY_OPTIONAL_COMPILATION_STEPS = "android.optional.compilation";
 
     /**
      * Location for APKs. If defined as a relative path, then it is resolved against the

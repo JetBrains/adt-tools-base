@@ -280,7 +280,7 @@ public class AndroidGradleOptions {
     public static EnumSet<OptionalCompilationStep> getOptionalCompilationSteps(
             @NonNull Project project) {
 
-        String values = getString(project, AndroidProject.OPTIONAL_COMPILATION_STEPS);
+        String values = getString(project, AndroidProject.PROPERTY_OPTIONAL_COMPILATION_STEPS);
         if (values != null) {
             List<OptionalCompilationStep> optionalCompilationSteps = new ArrayList<>();
             StringTokenizer st = new StringTokenizer(values, ",");
@@ -294,6 +294,16 @@ public class AndroidGradleOptions {
 
     public static boolean isResourceValidationEnabled(@NonNull Project project) {
         return !getBoolean(project, PROPERTY_DISABLE_RESOURCE_VALIDATION);
+    }
+
+    @Nullable
+    public static Integer getVersionCodeOverride(@NonNull Project project) {
+        return getInteger(project, AndroidProject.PROPERTY_VERSION_CODE);
+    }
+
+    @Nullable
+    public static String getVersionNameOverride(@NonNull Project project) {
+        return getString(project, AndroidProject.PROPERTY_VERSION_NAME);
     }
 
     @Nullable
