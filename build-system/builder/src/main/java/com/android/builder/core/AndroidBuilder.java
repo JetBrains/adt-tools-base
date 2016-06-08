@@ -1486,6 +1486,7 @@ public class AndroidBuilder {
             @NonNull File outFile,
             boolean multiDex,
             @NonNull DexOptions dexOptions,
+            boolean optimize,
             @NonNull ProcessOutputHandler processOutputHandler)
             throws ProcessException, IOException, InterruptedException {
         checkNotNull(inputFile, "inputFile cannot be null.");
@@ -1503,6 +1504,7 @@ public class AndroidBuilder {
 
         builder.setVerbose(mVerboseExec)
                 .setMultiDex(multiDex)
+                .setNoOptimize(!optimize)
                 .addInput(inputFile);
 
         getDexByteCodeConverter().runDexer(builder, dexOptions, processOutputHandler);

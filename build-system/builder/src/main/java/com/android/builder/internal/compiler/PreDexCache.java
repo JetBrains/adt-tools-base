@@ -114,6 +114,7 @@ public class PreDexCache extends PreProcessCache<DxDexKey> {
                         outFile,
                         multiDex,
                         dexOptions,
+                        optimize,
                         processOutputHandler);
 
                 item.getOutputFiles().clear();
