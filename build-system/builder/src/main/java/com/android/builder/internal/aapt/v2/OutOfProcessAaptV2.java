@@ -31,7 +31,6 @@ import com.android.ide.common.process.ProcessOutputHandler;
 import com.android.repository.Revision;
 import com.android.sdklib.BuildToolInfo;
 import com.android.sdklib.IAndroidTarget;
-import com.android.utils.FileUtils;
 import com.android.utils.ILogger;
 import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
@@ -174,6 +173,7 @@ public class OutOfProcessAaptV2 extends AbstractProcessExecutionAapt {
 
         if (config.getSplits() != null) {
             for (String split : config.getSplits()) {
+                // FIXME: Fix when --split is supported (http://b.android.com/212372)
 //                builder.addArgs("--split", split);
             }
         }
