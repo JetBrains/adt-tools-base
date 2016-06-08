@@ -23,6 +23,7 @@ import com.android.tools.pixelprobe.util.Strings;
 import javax.imageio.ImageIO;
 import javax.imageio.ImageReadParam;
 import javax.imageio.ImageReader;
+import javax.imageio.metadata.IIOMetadata;
 import javax.imageio.stream.ImageInputStream;
 import java.awt.color.ColorSpace;
 import java.awt.image.BufferedImage;
@@ -87,7 +88,7 @@ public abstract class Decoder {
 
         ImageReader reader = getImageReader(stream);
         ImageReadParam parameters = reader.getDefaultReadParam();
-        reader.setInput(stream, true, true);
+        reader.setInput(stream, true, false);
 
         BufferedImage image;
         try {
@@ -101,14 +102,30 @@ public abstract class Decoder {
         ColorModel colorModel = image.getColorModel();
         ColorSpace colorSpace = colorModel.getColorSpace();
 
-        return new Image.Builder()
+        Image.Builder builder = new Image.Builder()
                 .format(reader.getFormatName())
                 .dimensions(image.getWidth(), image.getHeight())
                 .mergedImage(image)
                 .colorMode(getColorMode(colorSpace))
                 .colorSpace(colorSpace)
-                .depth(colorModel.getComponentSize(0))
-                .build();
+                .depth(colorModel.getComponentSize(0));
+
+        IIOMetadata metadata = reader.getImageMetadata(0);
+        if (metadata != null) {
+            decodeMetadata(builder, metadata);
+        }
+
+        return builder.build();
+    }
+
+    /**
+     * Invoked by the default {@link #decode(InputStream)} implementation
+     * to let the decoder extract metadata from the image stream.
+     *
+     * @param builder The image builder where to stored decoded metadata
+     * @param metadata The image stream metadata
+     */
+    public void decodeMetadata(Image.Builder builder, IIOMetadata metadata) {
     }
 
     private static ImageReader getImageReader(ImageInputStream stream) throws IOException {
