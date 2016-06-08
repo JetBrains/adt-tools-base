@@ -32,6 +32,7 @@ import java.awt.geom.AffineTransform;
 import java.awt.geom.GeneralPath;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
+import java.awt.image.ColorModel;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -826,6 +827,7 @@ public final class PsdDecoder extends Decoder {
         }
 
         image.mergedImage(fixBitmap(image, bitmap));
+        fixColorSpace(image, bitmap);
     }
 
     private static void decodeIndexedImageData(Image.Builder image, PsdFile psd) {
@@ -855,6 +857,19 @@ public final class PsdDecoder extends Decoder {
         }
 
         image.mergedImage(fixBitmap(image, bitmap));
+        fixColorSpace(image, bitmap);
+    }
+
+    /**
+     * The color space set on the generated image might be different from the one
+     * found in the original PSD file. We write out the color space we actually
+     * use on the decoded image.
+     */
+    private static void fixColorSpace(Image.Builder image, BufferedImage bitmap) {
+        ColorModel colorModel = bitmap.getColorModel();
+        if (colorModel != null) {
+            image.colorSpace(colorModel.getColorSpace());
+        }
     }
 
     private static BufferedImage fixBitmap(Image.Builder image, BufferedImage bitmap) {

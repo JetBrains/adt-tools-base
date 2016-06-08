@@ -186,6 +186,21 @@ public final class ShapeInfo {
         return strokeAlignment;
     }
 
+    @Override
+    public String toString() {
+        return "ShapeInfo{" +
+               "style=" + style +
+               ", path=" + (stroke != null) +
+               ", fillPaint=" + fillPaint +
+               ", fillOpacity=" + fillOpacity +
+               ", stroke=" + (stroke != null) +
+               ", strokePaint=" + strokePaint +
+               ", strokeOpacity=" + strokeOpacity +
+               ", strokeBlendMode=" + strokeBlendMode +
+               ", strokeAlignment=" + strokeAlignment +
+               '}';
+    }
+
     @SuppressWarnings("UseJBColor")
     public static final class Builder {
         private Style style = Style.FILL;
