@@ -163,6 +163,7 @@ model {
         compileSdkVersion $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
         ndk {
             moduleName "getstring2"
+            toolchain "clang"
             stl "stlport_shared"
         }
         sources {
@@ -263,7 +264,8 @@ model {
             assertThat(lib2.file("build/intermediates/binaries/debug/obj/$abi/libgetstring2.so")).doesNotExist()
         }
         for (NativeSettings settings : model.getSettings()) {
-            assertThat(settings.getCompilerFlags()).contains("-I" + lib1.file("src/main/headers"))
+            assertThat(settings.getCompilerFlags())
+                    .contains("-I" + lib1.file("src/main/headers").absolutePath.replace("\\", "\\\\"))
         }
     }
 

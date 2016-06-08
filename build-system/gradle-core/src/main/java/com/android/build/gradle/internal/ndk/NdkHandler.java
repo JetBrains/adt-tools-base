@@ -308,6 +308,15 @@ public class NdkHandler {
     }
 
     /**
+     * Return the static archiver.
+     */
+    @NonNull
+    public File getAr(@NonNull Abi abi) {
+        checkNotNull(ndkInfo);
+        return ndkInfo.getAr(toolchain, toolchainVersion, abi);
+    }
+
+    /**
      * Return the executable for removing debug symbols from a shared object.
      */
     @NonNull

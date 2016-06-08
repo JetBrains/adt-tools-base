@@ -67,6 +67,12 @@ public interface NdkInfo {
             @NonNull String toolchainVersion,
             @NonNull Abi abi);
 
+    @NonNull
+    File getAr(
+            @NonNull Toolchain toolchain,
+            @NonNull String toolchainVersion,
+            @NonNull Abi abi);
+
     /**
      * Return the executable for removing debug symbols from a shared object.
      */

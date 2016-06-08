@@ -199,6 +199,20 @@ public class DefaultNdkInfo implements NdkInfo {
         return new File(getToolchainPath(toolchain, toolchainVersion, abi), "bin/" + compiler);
     }
 
+    @Override
+    @NonNull
+    public File getAr(
+            @NonNull Toolchain toolchain,
+            @NonNull String toolchainVersion,
+            @NonNull Abi abi) {
+        // For clang, we use the ar from the GCC toolchain.
+        String ar = abi.getGccExecutablePrefix()
+                + (toolchain == Toolchain.CLANG ? "-ar" : "-gcc-ar");
+        return new File(
+                getToolchainPath(Toolchain.GCC, getDefaultToolchainVersion(Toolchain.GCC, abi), abi),
+                "bin/" + ar);
+    }
+
     /**
      * Return the executable for removing debug symbols from a shared object.
      */
