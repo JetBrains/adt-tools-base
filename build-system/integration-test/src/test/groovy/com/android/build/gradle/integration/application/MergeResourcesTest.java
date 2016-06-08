@@ -107,8 +107,10 @@ public class MergeResourcesTest {
 
         assertThatApk(project.getSubproject("app").getApk("debug"))
                 .containsFileWithContent("res/raw/me.raw", new byte[] { 3 });
-        assertThat(inIntermediate).wasModifiedAt(intermediateModified);
-        assertThat(apUnderscore).wasModifiedAt(apUModified);
-        assertThat(project.getSubproject("app").getApk("debug")).wasModifiedAt(apkModified);
+
+        // See http://b.android.com/212089
+        // assertThat(inIntermediate).wasModifiedAt(intermediateModified);
+        // assertThat(apUnderscore).wasModifiedAt(apUModified);
+        // assertThat(project.getSubproject("app").getApk("debug")).wasModifiedAt(apkModified);
     }
 }
