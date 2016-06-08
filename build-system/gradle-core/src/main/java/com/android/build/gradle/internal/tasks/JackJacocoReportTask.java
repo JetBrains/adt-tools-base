@@ -25,10 +25,12 @@ import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.variant.TestVariantData;
 import com.android.builder.internal.testing.SimpleTestCallable;
 import com.android.ide.common.process.ProcessException;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.io.Files;
 
 import org.gradle.api.tasks.Input;
+import org.gradle.api.tasks.InputDirectory;
 import org.gradle.api.tasks.InputFile;
 import org.gradle.api.tasks.InputFiles;
 import org.gradle.api.tasks.OutputDirectory;
@@ -55,7 +57,7 @@ public class JackJacocoReportTask extends BaseTask {
 
     private File metadataFile;
 
-    @InputFile
+    @InputDirectory
     public File getCoverageDirectory() {
         return coverageDirectory;
     }
@@ -103,22 +105,22 @@ public class JackJacocoReportTask extends BaseTask {
     @TaskAction
     void createReport() throws ProcessException {
         List<File> coverageFiles = Lists.newArrayList();
-        if (coverageDirectory != null) {
-            Files.fileTreeTraverser().breadthFirstTraversal(coverageDirectory)
+        if (getCoverageDirectory() != null) {
+            Files.fileTreeTraverser().breadthFirstTraversal(getCoverageDirectory())
                     .filter(File::isFile)
                     .copyInto(coverageFiles);
         }
 
         if (coverageFiles.isEmpty()) {
             throw new ProcessException(String.format(
-                    "No coverage data to process in directory '%1$s'", coverageDirectory));
+                    "No coverage data to process in directory '%1$s'", getCoverageDirectory()));
         } else if (coverageFiles.size() > 1) {
             throw new ProcessException(String.format(
                     "More than one coverage file found in directory '%1$s', sharding for test "
-                            + "coverage is not yet supported for Jack", coverageDirectory));
+                            + "coverage is not yet supported for Jack", getCoverageDirectory()));
         }
         getBuilder().createJacocoReportWithJackReporter(
-                getCoverageDirectory(),
+                Iterables.getOnlyElement(coverageFiles),
                 getReportDir(),
                 getSourceDir(),
                 getReportName(),
