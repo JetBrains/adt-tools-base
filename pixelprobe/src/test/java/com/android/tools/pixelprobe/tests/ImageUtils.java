@@ -27,7 +27,7 @@ public final class ImageUtils {
     }
 
     public static Image loadImage(String imageName) throws IOException {
-        try (InputStream in = ImageUtils.class.getResourceAsStream("/resources/" + imageName)) {
+        try (InputStream in = ImageUtils.class.getResourceAsStream("/" + imageName)) {
             return PixelProbe.probe(in);
         }
     }

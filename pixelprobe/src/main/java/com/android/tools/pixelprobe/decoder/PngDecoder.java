@@ -19,7 +19,6 @@ package com.android.tools.pixelprobe.decoder;
 import com.android.tools.pixelprobe.ColorMode;
 import com.android.tools.pixelprobe.Image;
 import com.android.tools.pixelprobe.util.Bytes;
-import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
 import javax.imageio.metadata.IIOMetadata;
@@ -37,6 +36,8 @@ import java.util.zip.InflaterInputStream;
  */
 final class PngDecoder extends Decoder {
     private static final byte[] PNG_HEADER = Bytes.fromHexString("89504e470d0a1a0a");
+
+    private static final float METERS_TO_INCHES = 39.3701f;
 
     PngDecoder() {
         super("png");
@@ -60,12 +61,12 @@ final class PngDecoder extends Decoder {
 
     @Override
     public void decodeMetadata(Image.Builder builder, IIOMetadata metadata) {
-        Element root = (Element) metadata.getAsTree(metadata.getNativeMetadataFormatName());
+        IIOMetadataNode root = (IIOMetadataNode) metadata.getAsTree(metadata.getNativeMetadataFormatName());
 
         // Read the standard header chunk
         NodeList list = root.getElementsByTagName("IHDR");
         if (list.getLength() > 0) {
-            Element header = (Element) list.item(0);
+            IIOMetadataNode header = (IIOMetadataNode) list.item(0);
 
             // Extract color depth
             try {
@@ -76,6 +77,25 @@ final class PngDecoder extends Decoder {
 
             // Convert color type
             builder.colorMode(toColorMode(header.getAttribute("colorType")));
+        }
+
+        // Resolution
+        list = root.getElementsByTagName("pHYs");
+        if (list.getLength() > 0) {
+            IIOMetadataNode phys = (IIOMetadataNode) list.item(0);
+
+            try {
+                int ppuX = Integer.parseInt(phys.getAttribute("pixelsPerUnitXAxis"));
+                int ppuY = Integer.parseInt(phys.getAttribute("pixelsPerUnitXAxis"));
+                String unit = phys.getAttribute("unitSpecifier");
+                if ("meter".equalsIgnoreCase(unit)) {
+                    builder.resolution(ppuX / METERS_TO_INCHES, ppuY / METERS_TO_INCHES);
+                } else {
+                    builder.resolution(ppuX, ppuY);
+                }
+            } catch (NumberFormatException e) {
+                // Ignore, use default value
+            }
         }
 
         // Read the embedded color profile, if any

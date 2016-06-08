@@ -16,7 +16,6 @@
 
 package com.android.tools.pixelprobe.tests.psd;
 
-import com.android.tools.pixelprobe.ColorMode;
 import com.android.tools.pixelprobe.Guide;
 import com.android.tools.pixelprobe.Image;
 import com.android.tools.pixelprobe.Layer;
