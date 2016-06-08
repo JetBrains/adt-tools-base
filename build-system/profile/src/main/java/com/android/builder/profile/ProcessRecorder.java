@@ -27,8 +27,6 @@ import com.google.gson.Gson;
 
 import java.io.IOException;
 import java.io.Writer;
-import java.lang.management.GarbageCollectorMXBean;
-import java.lang.management.ManagementFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -38,9 +36,7 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class ProcessRecorder {
 
-    final long startTime;
-    final long gcCountAtStart;
-    final long gcTimeAtStart;
+    private final MemoryStats.Properties mStartMemoryStats;
 
     private static final AtomicLong lastRecordId = new AtomicLong(0);
 
@@ -91,10 +87,7 @@ public class ProcessRecorder {
     private final WorkQueue<ExecutionRecordWriter> workQueue;
 
     ProcessRecorder(@NonNull ExecutionRecordWriter outWriter, @NonNull ILogger iLogger) {
-        startTime = System.currentTimeMillis();
-        GarbageCollectorMXBean gcMXBean = ManagementFactory.getGarbageCollectorMXBeans().get(0);
-        gcCountAtStart = gcMXBean.getCollectionCount();
-        gcTimeAtStart = gcMXBean.getCollectionTime();
+        mStartMemoryStats = MemoryStats.getCurrentProperties();
         this.singletonJobContext = new JobContext<>(outWriter);
         workQueue = new WorkQueue<>(
                 iLogger, new WorkQueueContext(), "execRecordWriter", 1);
@@ -124,17 +117,15 @@ public class ProcessRecorder {
      * @throws InterruptedException
      */
     void finish() throws InterruptedException {
-        GarbageCollectorMXBean gcMXBean = ManagementFactory.getGarbageCollectorMXBeans().get(0);
+        MemoryStats.Properties memoryStats = MemoryStats.getCurrentProperties();
+        long buildTime = memoryStats.getTimestamp() - mStartMemoryStats.getTimestamp();
+        long gcCount = memoryStats.getGcCount() - mStartMemoryStats.getGcCount();
+        long gcTime = memoryStats.getGcTime() - mStartMemoryStats.getGcTime();
+
         ThreadRecorder.get().record(ExecutionType.FINAL_METADATA, Recorder.EmptyBlock,
-                new Recorder.Property(
-                        "build_time",
-                        Long.toString(System.currentTimeMillis() - startTime)),
-                new Recorder.Property(
-                        "gc_count",
-                        Long.toString(gcMXBean.getCollectionCount() - gcCountAtStart)),
-                new Recorder.Property(
-                        "gc_time",
-                        Long.toString(gcMXBean.getCollectionTime() - gcTimeAtStart)));
+                new Recorder.Property("build_time", Long.toString(buildTime)),
+                new Recorder.Property("gc_count", Long.toString(gcCount)),
+                new Recorder.Property("gc_time", Long.toString(gcTime)));
         workQueue.shutdown();
     }
 
