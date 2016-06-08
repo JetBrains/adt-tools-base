@@ -1267,11 +1267,12 @@ public final class SdkConstants {
     public static final String VALUE_CLAMP = "clamp";                  //$NON-NLS-1$
 
     // Menus
-    public static final String ATTR_SHOW_AS_ACTION = "showAsAction";   //$NON-NLS-1$
-    public static final String ATTR_TITLE = "title";                   //$NON-NLS-1$
-    public static final String ATTR_VISIBLE = "visible";               //$NON-NLS-1$
-    public static final String ATTR_CHECKABLE = "checkable";           //$NON-NLS-1$
-    public static final String ATTR_CHECKABLE_BEHAVIOR = "checkableBehavior"; //$NON-NLS-1$
+    public static final String ATTR_CHECKABLE = "checkable";
+    public static final String ATTR_CHECKABLE_BEHAVIOR = "checkableBehavior";
+    public static final String ATTR_ORDER_IN_CATEGORY = "orderInCategory";
+    public static final String ATTR_SHOW_AS_ACTION = "showAsAction";
+    public static final String ATTR_TITLE = "title";
+    public static final String ATTR_VISIBLE = "visible";
     public static final String VALUE_IF_ROOM = "ifRoom";               //$NON-NLS-1$
     public static final String VALUE_ALWAYS = "always";                //$NON-NLS-1$
 
