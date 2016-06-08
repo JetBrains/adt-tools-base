@@ -74,14 +74,11 @@ class CmakeExternalNativeJsonGenerator extends ExternalNativeJsonGenerator {
     ProcessInfoBuilder getProcessBuilder(@NonNull String abi, @NonNull File outputJson) {
         checkConfiguration();
         ProcessInfoBuilder builder = new ProcessInfoBuilder();
-        File makeFile = getMakeFileOrFolder();
-        if (makeFile.isFile()) {
-            // If a file, trim the CMakeLists.txt so that we have the folder.
-            makeFile = makeFile.getParentFile();
-        }
+        // CMake requires a folder. Trim the filename off.
+        File cmakeListsFolder = getMakefile().getParentFile();
 
         builder.setExecutable(getCmakeExecutable());
-        builder.addArgs(String.format("-H%s", makeFile));
+        builder.addArgs(String.format("-H%s", cmakeListsFolder));
         builder.addArgs(String.format("-B%s", outputJson.getParentFile()));
         builder.addArgs("-GAndroid Gradle - Ninja");
         builder.addArgs(String.format("-DANDROID_ABI=%s", abi));
@@ -186,29 +183,25 @@ class CmakeExternalNativeJsonGenerator extends ExternalNativeJsonGenerator {
         List<String> messages = Lists.newArrayList();
 
         String cmakeListsTxt = "CMakeLists.txt";
-        if (getMakeFileOrFolder().isDirectory()) {
-            File cmakeLists = new File(getMakeFileOrFolder(), cmakeListsTxt);
-            if (!cmakeLists.exists()) {
-                messages.add(String.format(
-                        "Gradle project cmake.path specifies %s but there is"
-                                + " no %s there",
-                        getMakeFileOrFolder(),
-                        cmakeListsTxt));
-            }
-        } else if (getMakeFileOrFolder().isFile()) {
-            String filename = getMakeFileOrFolder().getName();
+        if (getMakefile().isDirectory()) {
+            messages.add(
+                    String.format("Gradle project cmake.path %s is a folder. "
+                                    + "It must be %s",
+                            getMakefile(),
+                            cmakeListsTxt));
+        } else if (getMakefile().isFile()) {
+            String filename = getMakefile().getName();
             if (!filename.equals(cmakeListsTxt)) {
                 messages.add(String.format(
-                        "Gradle project cmake.path specifies %s but there is"
-                                + " it must be %s",
+                        "Gradle project cmake.path specifies %s but it must be %s",
                         filename,
                         cmakeListsTxt));
             }
         } else {
             messages.add(
                     String.format(
-                            "Gradle project cmake.path is %s but that folder or file doesn't exist",
-                            getMakeFileOrFolder()));
+                            "Gradle project cmake.path is %s but that file doesn't exist",
+                            getMakefile()));
         }
 
         File cmakeExecutable = getCmakeExecutable();

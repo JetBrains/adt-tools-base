@@ -114,9 +114,9 @@ class NativeBuildOutputTest {
             """;
 
         check(["cmake.path",
-             "CMakeLists.txt but that folder or file doesn't exist"],
+             "CMakeLists.txt but that file doesn't exist"],
             ["cmake.path",
-             "CMakeLists.txt but that folder or file doesn't exist"], 2);
+             "CMakeLists.txt but that file doesn't exist"], 2);
     }
 
     @Test

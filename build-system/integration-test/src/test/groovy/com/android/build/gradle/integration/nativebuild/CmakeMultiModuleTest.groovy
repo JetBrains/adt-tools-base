@@ -34,7 +34,7 @@ import org.junit.runners.Parameterized
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk
 /**
- * Assemble tests for ndk-build.
+ * Assemble tests for CMake.
  */
 @CompileStatic
 @RunWith(Parameterized.class)
@@ -79,7 +79,7 @@ $modelBefore
         buildToolsVersion "$GradleTestProject.DEFAULT_BUILD_TOOL_VERSION"
         externalNativeBuild {
           cmake {
-            path "."
+            path "CMakeLists.txt"
           }
         }
     }
