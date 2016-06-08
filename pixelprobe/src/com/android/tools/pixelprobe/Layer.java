@@ -189,7 +189,20 @@ public final class Layer {
 
     @Override
     public String toString() {
-        return name;
+        return "Layer{" +
+               "name='" + name + '\'' +
+               ", type=" + type +
+               ", bounds=" + bounds +
+               ", opacity=" + opacity +
+               ", blendMode=" + blendMode +
+               ", children=" + children.size() +
+               ", image=" + (image != null) +
+               ", text=" + (textInfo != null) +
+               ", shape=" + (shapeInfo != null) +
+               ", effects=" + (effects != null) +
+               ", open=" + open +
+               ", visible=" + visible +
+               '}';
     }
 
     @SuppressWarnings("UseJBColor")

@@ -46,7 +46,7 @@ public final class TextInfo {
         private int end;
         private int length;
 
-        private Run(int start, int end) {
+        Run(int start, int end) {
             this.start = start;
             this.end = end;
             length = end - start;
@@ -87,7 +87,7 @@ public final class TextInfo {
         private final Color color;
         private final float tracking;
 
-        private StyleRun(Builder builder) {
+        StyleRun(Builder builder) {
             super(builder.start, builder.end);
 
             font = builder.font;
