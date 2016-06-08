@@ -27,6 +27,17 @@ import java.util.List;
 
 public class LayerTest {
     @Test
+    public void name() throws IOException {
+        Image image = ImageUtils.loadImage("layer_names.psd");
+        List<Layer> layers = image.getLayers();
+
+        // Test ASCII compatible name
+        Assert.assertEquals("Layer", layers.get(0).getName());
+        // Test Unicode only name
+        Assert.assertEquals("レイヤ", layers.get(1).getName());
+    }
+
+    @Test
     public void types() throws IOException {
         Image image = ImageUtils.loadImage("layer_types.psd");
 
