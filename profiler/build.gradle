@@ -35,11 +35,7 @@ def cmake(cl) {
 
     if (data.abis.size() == 0) {
         // Building for the host
-        // TODO: Unify both invokations as they only differ in the toolchain they use.
-        def flags = [
-            "-DCMAKE_TOOLCHAIN_FILE=$rootDir/native/cmake/${host}-${host}.cmake",
-        ]
-        createTasks(data, "Host", "host", cl.owner, flags, host);
+        createTasks(data, "Host", "host", cl.owner, host);
     } else {
         // Building multiple abis for android
         def configure = cl.owner.tasks.create(name: "configure" + data.name.capitalize(), group: "Native build", type: DefaultTask) {}
@@ -52,10 +48,7 @@ def cmake(cl) {
             // Remove them and capitalize instead.
             def normAbi = abi.split("-").collect { it.capitalize() }.join()
             def name = data.name.capitalize() + normAbi;
-            def flags = [
-                "-DCMAKE_TOOLCHAIN_FILE=$rootDir/native/cmake/${host}-${abi}.cmake",
-            ]
-            createTasks(data, name, abi, cl.owner, flags, host); 
+            createTasks(data, name, abi, cl.owner, host); 
             configure.dependsOn cl.owner.tasks.("configure" + name)
             compile.dependsOn cl.owner.tasks.("compile" + name)
             check.dependsOn cl.owner.tasks.("check" + name)
@@ -65,10 +58,10 @@ def cmake(cl) {
     }
 }
 
-def createTasks(data, name, dir, project, flags, host) {
+def createTasks(data, name, abi, project, host) {
   def cmakeBuildDir = "$rootDir/../../../out/studio/${project.name}"
-  def gen = "$cmakeBuildDir/gen/$dir";
-  def out = "$cmakeBuildDir/out/$dir";
+  def gen = "$cmakeBuildDir/gen/$abi";
+  def out = "$cmakeBuildDir/out/$abi";
 
   // TODO: Define different tasks for debug and release and specify
   // -DCMAKE_BUILD_TYPE=[Debug|Release|MinSizeRel]
@@ -80,10 +73,11 @@ def createTasks(data, name, dir, project, flags, host) {
       workingDir gen
       executable "$rootDir/../../../prebuilts/cmake/$host-x86/bin/cmake"
       args = ["-G", "Ninja", data.projectDir,
+          "-DCMAKE_TOOLCHAIN_FILE=$rootDir/native/cmake/${host}-${abi}.cmake",
           "-DCMAKE_MAKE_PROGRAM=$rootDir/../../../prebuilts/ninja/$host-x86/ninja",
           "-DCMAKE_RUNTIME_OUTPUT_DIRECTORY=$out",
           "-DGO_EXECUTABLE=$rootDir/../../../prebuilts/go/$host-x86/bin/go",
-          "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON"] + flags + Arrays.asList(data.flags)
+          "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON"] + Arrays.asList(data.flags)
       environment GOROOT: "$rootDir/../../../prebuilts/go/$host-x86"
       inputs.file "../cmake/Android.cmake"
       outputs.dir gen
