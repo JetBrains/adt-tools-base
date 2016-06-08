@@ -22,7 +22,9 @@
 namespace profiler {
 namespace network {
 
-class NetworkFiles {
+// Utility methods for fetching standard network log files
+// TODO: Make this class instantiatable and mockable
+class NetworkFiles final {
  public:
   // Path of pid status file to get uid from pid.
   static std::string GetPidStatusFilePath(const int pid) {

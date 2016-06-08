@@ -27,7 +27,7 @@ namespace network {
 
 // Data collector of open connection information. For example, it can
 // collect the number of both tcp and udp open connections.
-class ConnectionDataCollector : public NetworkDataCollector {
+class ConnectionDataCollector final : public NetworkDataCollector {
  public:
   ConnectionDataCollector(const std::string &uid,
                           const std::vector<std::string> &files)

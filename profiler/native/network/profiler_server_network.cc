@@ -18,13 +18,11 @@
 #include "network/connection_data_collector.h"
 #include "network/traffic_data_collector.h"
 #include "proto/profiler.pb.h"
+#include "utils/stopwatch.h"
 
 #include <unistd.h>
 
-#ifdef __MACH__
-#include <mach/clock.h>
-#include <mach/mach.h>
-#endif
+using profiler::utils::Stopwatch;
 
 namespace profiler {
 namespace network {
@@ -51,12 +49,12 @@ void ProfilerServerNetwork::StopProfile() {
 }
 
 void ProfilerServerNetwork::Profile(ProfilerServerNetwork *profiler) {
-  uint64_t start_time = GetCurrentTime();
+  Stopwatch stopwatch;
   while (profiler->is_running_.load()) {
     for (const auto &collector : profiler->collectors_) {
       profiler::proto::ProfilerData response;
       collector->GetData(response.mutable_network_data());
-      response.set_end_timestamp(GetCurrentTime());
+      response.set_end_timestamp(stopwatch.GetElapsed());
       profiler->service_->save(response);
     }
     usleep(kSleepMicroseconds);
@@ -75,20 +73,5 @@ void ProfilerServerNetwork::CreateCollectors() {
   }
 }
 
-uint64_t ProfilerServerNetwork::GetCurrentTime() {
-  #ifdef __MACH__ // OS X does not have clock_gettime, use clock_get_time
-    clock_serv_t cclock;
-    mach_timespec_t mach_time;
-    host_get_clock_service(mach_host_self(), CALENDAR_CLOCK, &cclock);
-    clock_get_time(cclock, &mach_time);
-    mach_port_deallocate(mach_task_self(), cclock);
-    return 1e9 * mach_time.tv_sec + mach_time.tv_nsec;
-  #else
-    timespec time;
-    clock_gettime(CLOCK_REALTIME, &time);
-    return 1e9 * time.tv_sec + time.tv_nsec;
-  #endif
-}
-
-}  // namespace network
-}  // namespace profiler
+} // network
+} // profiler
