@@ -32,15 +32,12 @@ def cmake(cl) {
     cl.call();
     def os = System.getProperty("os.name").toLowerCase();
     def host = os.startsWith("linux") ? "linux" : "darwin"
-    def jdkHost = os.startsWith("linux") ? "linux" : "mac/Contents/Home"
 
     if (data.abis.size() == 0) {
         // Building for the host
-        // TODO: Use a toolchain file to set up the compilers and flags
-        def jdk = "$rootDir/../../../prebuilts/studio/jdk/$jdkHost"
+        // TODO: Unify both invokations as they only differ in the toolchain they use.
         def flags = [
-            "-DCMAKE_CXX_FLAGS=-I$jdk/include -I$jdk/include/$host",
-            "-DCMAKE_C_FLAGS=-I$jdk/include -I$jdk/include/$host"
+            "-DCMAKE_TOOLCHAIN_FILE=$rootDir/native/cmake/${host}-${host}.cmake",
         ]
         createTasks(data, "Host", "host", cl.owner, flags, host);
     } else {
@@ -56,8 +53,7 @@ def cmake(cl) {
             def normAbi = abi.split("-").collect { it.capitalize() }.join()
             def name = data.name.capitalize() + normAbi;
             def flags = [
-                "-DCMAKE_TOOLCHAIN_FILE=$rootDir/native/cmake/Android.cmake",
-                "-DABI=$abi"
+                "-DCMAKE_TOOLCHAIN_FILE=$rootDir/native/cmake/${host}-${abi}.cmake",
             ]
             createTasks(data, name, abi, cl.owner, flags, host); 
             configure.dependsOn cl.owner.tasks.("configure" + name)
@@ -87,7 +83,6 @@ def createTasks(data, name, dir, project, flags, host) {
           "-DCMAKE_MAKE_PROGRAM=$rootDir/../../../prebuilts/ninja/$host-x86/ninja",
           "-DCMAKE_RUNTIME_OUTPUT_DIRECTORY=$out",
           "-DGO_EXECUTABLE=$rootDir/../../../prebuilts/go/$host-x86/bin/go",
-          "-DPREBUILTS=$rootDir/../../../prebuilts",
           "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON"] + flags + Arrays.asList(data.flags)
       environment GOROOT: "$rootDir/../../../prebuilts/go/$host-x86"
       inputs.file "../cmake/Android.cmake"

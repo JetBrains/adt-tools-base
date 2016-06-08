@@ -1,3 +1,0 @@
-[submodule "profiler/native/perfd/grpc"]
-	path = profiler/native/grpc
-	url = https://github.com/grpc/grpc.git
