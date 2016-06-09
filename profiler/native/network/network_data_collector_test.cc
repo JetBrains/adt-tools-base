@@ -17,7 +17,7 @@
 
 #include <gtest/gtest.h>
 
-using profiler::network::NetworkDataCollector;
+using profiler::NetworkDataCollector;
 
 TEST(GetUidString, UidFoundAfterPrefix) {
   std::string file_name("uid_found_after_prefix.txt");

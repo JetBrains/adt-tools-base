@@ -18,7 +18,7 @@
 
 #include <gtest/gtest.h>
 
-using profiler::network::TrafficDataCollector;
+using profiler::TrafficDataCollector;
 
 TEST(GetTrafficData, OutputIsFromSingleLineEntry) {
   std::string file_name("traffic_uid_matched_single_entry.txt");

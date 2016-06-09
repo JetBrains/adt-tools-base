@@ -23,7 +23,6 @@
 #include <vector>
 
 namespace profiler {
-namespace network {
 
 // Data collector of open connection information. For example, it can
 // collect the number of both tcp and udp open connections.
@@ -56,7 +55,6 @@ class ConnectionDataCollector final : public NetworkDataCollector {
    const std::vector<std::string> kConnectionFiles;
 };
 
-}  // namespace network
 }  // namespace profiler
 
 #endif // CONNECTION_DATA_COLLECTOR_H_

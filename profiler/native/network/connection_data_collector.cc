@@ -18,7 +18,6 @@
 #include "utils/file_reader.h"
 
 namespace profiler {
-namespace network {
 
 void ConnectionDataCollector::GetData(
     profiler::proto::NetworkProfilerData *data) {
@@ -54,5 +53,4 @@ int ConnectionDataCollector::ReadConnectionNumber(const std::string &uid,
   return result;
 }
 
-}  // namespace network
 }  // namespace profiler

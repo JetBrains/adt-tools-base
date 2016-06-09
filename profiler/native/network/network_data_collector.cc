@@ -24,7 +24,6 @@
 #include <unistd.h>
 
 namespace profiler {
-namespace network {
 
 int NetworkDataCollector::GetUid(const std::string &data_file) {
   std::string uid;
@@ -65,5 +64,4 @@ bool NetworkDataCollector::GetUidString(const std::string &data_file,
   return false;
 }
 
-} // namespace network
 } // namespace profiler

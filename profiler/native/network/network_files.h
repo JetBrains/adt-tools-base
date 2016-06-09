@@ -20,7 +20,6 @@
 #include <vector>
 
 namespace profiler {
-namespace network {
 
 // Utility methods for fetching standard network log files
 // TODO: Make this class instantiatable and mockable
@@ -49,7 +48,6 @@ class NetworkFiles final {
   }
 };
 
-}  // namespace network
 }  // namespace profiler
 
 #endif // NETWORK_FILES_H_

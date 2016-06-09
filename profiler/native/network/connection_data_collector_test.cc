@@ -18,7 +18,7 @@
 
 #include <gtest/gtest.h>
 
-using profiler::network::ConnectionDataCollector;
+using profiler::ConnectionDataCollector;
 
 TEST(GetConnectionData, TwoOpenConnectionsWithUidMatched) {
   std::vector<std::string> file_names = {"open_connection_uid_matched1.txt",

@@ -22,7 +22,6 @@
 #include <vector>
 
 namespace profiler {
-namespace network {
 
 // Abstract network data collector.
 class NetworkDataCollector {
@@ -43,7 +42,6 @@ class NetworkDataCollector {
                            std::string *uid);
 };
 
-}  // namespace network
 }  // namespace profiler
 
 #endif // NETWORK_DATA_COLLECTOR_H_

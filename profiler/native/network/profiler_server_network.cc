@@ -25,7 +25,6 @@
 using profiler::utils::Stopwatch;
 
 namespace profiler {
-namespace network {
 
 ProfilerServerNetwork::~ProfilerServerNetwork() {
   if (is_running_) {
@@ -73,5 +72,4 @@ void ProfilerServerNetwork::CreateCollectors() {
   }
 }
 
-} // network
 } // profiler
