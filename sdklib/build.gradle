@@ -45,7 +45,7 @@ task initSdkForTests(type: JavaExec) {
         if (sdk_home == null) {
             throw new GradleException('Required ANDROID_HOME environment variable not set.')
         }
-        args = [sdk_home,
+        args = [sdk_home, '--channel=3',
                 'tools', 'platform-tools', //'platform-tools-preview',
                 'build-tools;24.0.0-rc4', 'build-tools;23.0.2', 'build-tools;23.0.1',
                 'build-tools;23.0.0', 'build-tools;22.0.1', 'build-tools;21.1.2', 'build-tools;21.1.1',
