@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "network_data_collector.h"
+#include "network_sampler.h"
 
 #include "utils/file_reader.h"
 
@@ -25,7 +25,7 @@
 
 namespace profiler {
 
-int NetworkDataCollector::GetUid(const std::string &data_file) {
+int NetworkSampler::GetUid(const std::string &data_file) {
   std::string uid;
   if (GetUidString(data_file, &uid)) {
     return atoi(uid.c_str());
@@ -33,7 +33,7 @@ int NetworkDataCollector::GetUid(const std::string &data_file) {
   return -1;
 }
 
-bool NetworkDataCollector::GetUidString(const std::string &data_file,
+bool NetworkSampler::GetUidString(const std::string &data_file,
                                         std::string *uid_result) {
   std::string content;
   utils::FileReader::Read(data_file, &content);

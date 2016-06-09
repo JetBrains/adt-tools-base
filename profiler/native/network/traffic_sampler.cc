@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "traffic_data_collector.h"
+#include "traffic_sampler.h"
 
 #include "utils/file_reader.h"
 
@@ -21,7 +21,7 @@
 
 namespace profiler {
 
-void TrafficDataCollector::GetData(profiler::proto::NetworkProfilerData *data) {
+void TrafficSampler::GetData(profiler::proto::NetworkProfilerData *data) {
   int64_t bytes_sent = 0;
   int64_t bytes_received = 0;
 

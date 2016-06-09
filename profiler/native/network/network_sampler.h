@@ -13,8 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef NETWORK_DATA_COLLECTOR_H_
-#define NETWORK_DATA_COLLECTOR_H_
+#ifndef NETWORK_NETWORK_SAMPLER_H_
+#define NETWORK_NETWORK_SAMPLER_H_
 
 #include "proto/network_profiler.pb.h"
 
@@ -24,9 +24,9 @@
 namespace profiler {
 
 // Abstract network data collector.
-class NetworkDataCollector {
+class NetworkSampler {
  public:
-  virtual ~NetworkDataCollector() = default;
+  virtual ~NetworkSampler() = default;
 
   // Run data collection and put result into the given proto.
   virtual void GetData(profiler::proto::NetworkProfilerData *data) = 0;
@@ -44,4 +44,4 @@ class NetworkDataCollector {
 
 }  // namespace profiler
 
-#endif // NETWORK_DATA_COLLECTOR_H_
+#endif // NETWORK_NETWORK_SAMPLER_H_

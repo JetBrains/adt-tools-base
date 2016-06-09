@@ -13,10 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef PROFILER_SERVER_NETWORK_H_
-#define PROFILER_SERVER_NETWORK_H_
+#ifndef NETWORK_NETWORK_COLLECTOR_H_
+#define NETWORK_NETWORK_COLLECTOR_H_
 
-#include "network/network_data_collector.h"
+#include "network/network_sampler.h"
 #include "network/network_files.h"
 #include "profiler_server/profiler_data_service.h"
 
@@ -27,13 +27,12 @@
 
 namespace profiler {
 
-// Profiler that repeatedly collects all network data, and connects with
-// profiler server for data saving.
-class ProfilerServerNetwork final {
+// Class that runs in the background, continuously collecting network data
+class NetworkCollector final {
  public:
-  ProfilerServerNetwork(int pid, profiler_server::ProfilerDataService *service)
+  NetworkCollector(int pid, profiler_server::ProfilerDataService *service)
       : pid_(pid), service_(service) {}
-  ~ProfilerServerNetwork();
+  ~NetworkCollector();
 
   // Creates a thread that collects and saves network data continually.
   void StartProfile();
@@ -42,12 +41,12 @@ class ProfilerServerNetwork final {
   void StopProfile();
 
  private:
-  // First reads app uid from file, then creates app network data collectors;
+  // First reads app uid from file, then creates app network data samplers;
   // collectors are saved into a vector member variable.
-  void CreateCollectors();
+  void CreateSamplers();
 
   // Continually collects data on a background thread until stopped.
-  void ProfileThread();
+  void Collect();
 
   static const int kSleepMicroseconds = 300 * 1000;
 
@@ -60,9 +59,9 @@ class ProfilerServerNetwork final {
   // True if profile operations is running, false otherwise.
   std::atomic_bool is_running_;
   // Vector to hold data collectors which may need some steps to create.
-  std::vector<std::unique_ptr<NetworkDataCollector>> collectors_;
+  std::vector<std::unique_ptr<NetworkSampler>> samplers_;
 };
 
 }  // namespace profiler
 
-#endif // PROFILER_SERVER_NETWORK_H_
+#endif // NETWORK_NETWORK_COLLECTOR_H_

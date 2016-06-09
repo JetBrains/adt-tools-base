@@ -13,10 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "profiler_server_network.h"
+#include "network_collector.h"
 
-#include "network/connection_data_collector.h"
-#include "network/traffic_data_collector.h"
+#include "network/connection_sampler.h"
+#include "network/traffic_sampler.h"
 #include "proto/profiler.pb.h"
 #include "utils/stopwatch.h"
 
@@ -26,33 +26,33 @@ using profiler::utils::Stopwatch;
 
 namespace profiler {
 
-ProfilerServerNetwork::~ProfilerServerNetwork() {
+NetworkCollector::~NetworkCollector() {
   if (is_running_) {
     StopProfile();
   }
 }
 
-void ProfilerServerNetwork::StartProfile() {
-  if (collectors_.empty()) {
-    CreateCollectors();
+void NetworkCollector::StartProfile() {
+  if (samplers_.empty()) {
+    CreateSamplers();
   }
   if (!is_running_.exchange(true)) {
-    profiler_thread_ = std::thread([this] { this->ProfileThread(); });
+    profiler_thread_ = std::thread(&NetworkCollector::Collect, this);
   }
 }
 
-void ProfilerServerNetwork::StopProfile() {
+void NetworkCollector::StopProfile() {
   if (is_running_.exchange(false)) {
     profiler_thread_.join();
   }
 }
 
-void ProfilerServerNetwork::ProfileThread() {
+void NetworkCollector::Collect() {
   Stopwatch stopwatch;
   while (is_running_.load()) {
-    for (const auto &collector : collectors_) {
+    for (const auto &sampler : samplers_) {
       profiler::proto::ProfilerData response;
-      collector->GetData(response.mutable_network_data());
+      sampler->GetData(response.mutable_network_data());
       response.set_end_timestamp(stopwatch.GetElapsed());
       service_->save(response);
     }
@@ -60,14 +60,14 @@ void ProfilerServerNetwork::ProfileThread() {
   }
 }
 
-void ProfilerServerNetwork::CreateCollectors() {
+void NetworkCollector::CreateSamplers() {
   std::string uid;
-  bool has_uid = NetworkDataCollector::GetUidString(
+  bool has_uid = NetworkSampler::GetUidString(
       NetworkFiles::GetPidStatusFilePath(pid_), &uid);
   if (has_uid) {
-    collectors_.emplace_back(
-        new TrafficDataCollector(uid, NetworkFiles::GetTrafficBytesFilePath()));
-    collectors_.emplace_back(new ConnectionDataCollector(
+    samplers_.emplace_back(
+        new TrafficSampler(uid, NetworkFiles::GetTrafficBytesFilePath()));
+    samplers_.emplace_back(new ConnectionSampler(
         uid, NetworkFiles::GetConnectionFilePaths()));
   }
 }

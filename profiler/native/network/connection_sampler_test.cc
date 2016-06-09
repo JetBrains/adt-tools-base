@@ -13,17 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "connection_data_collector.h"
+#include "connection_sampler.h"
 #include "proto/network_profiler.pb.h"
 
 #include <gtest/gtest.h>
 
-using profiler::ConnectionDataCollector;
+using profiler::ConnectionSampler;
 
 TEST(GetConnectionData, TwoOpenConnectionsWithUidMatched) {
   std::vector<std::string> file_names = {"open_connection_uid_matched1.txt",
                                          "open_connection_uid_matched2.txt"};
-  ConnectionDataCollector collector("12345", file_names);
+  ConnectionSampler collector("12345", file_names);
   profiler::proto::NetworkProfilerData data;
   collector.GetData(&data);
   EXPECT_TRUE(data.has_connection_data());
@@ -32,7 +32,7 @@ TEST(GetConnectionData, TwoOpenConnectionsWithUidMatched) {
 
 TEST(GetConnectionData, OpenConnectionWithUidUnmatched) {
   std::vector<std::string> file_names = {"open_connection_uid_unmatched.txt"};
-  ConnectionDataCollector collector("12345", file_names);
+  ConnectionSampler collector("12345", file_names);
   profiler::proto::NetworkProfilerData data;
   collector.GetData(&data);
   EXPECT_TRUE(data.has_connection_data());
@@ -42,7 +42,7 @@ TEST(GetConnectionData, OpenConnectionWithUidUnmatched) {
 TEST(GetConnectionData, OpenConnectionListeningAllInterfaces) {
   std::vector<std::string> file_names = {
       "open_connection_listening_all_interfaces.txt"};
-  ConnectionDataCollector collector("12345", file_names);
+  ConnectionSampler collector("12345", file_names);
   profiler::proto::NetworkProfilerData data;
   collector.GetData(&data);
   EXPECT_TRUE(data.has_connection_data());

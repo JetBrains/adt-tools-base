@@ -13,10 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef TRAFFIC_DATA_COLLECTOR_H_
-#define TRAFFIC_DATA_COLLECTOR_H_
+#ifndef NETWORK_TRAFFIC_SAMPLER_H_
+#define NETWORK_TRAFFIC_SAMPLER_H_
 
-#include "network/network_data_collector.h"
+#include "network/network_sampler.h"
 
 #include <string>
 
@@ -24,9 +24,9 @@ namespace profiler {
 
 // Data collector of network traffic information. For example, it provides sent
 // and received bytes of an app.
-class TrafficDataCollector final : public NetworkDataCollector {
+class TrafficSampler final : public NetworkSampler {
  public:
-  TrafficDataCollector(const std::string &uid, const std::string &file)
+  TrafficSampler(const std::string &uid, const std::string &file)
       : kUid(uid), kFile(file) {}
 
   // Reads traffic bytes sent and received, and store data in given {@code
@@ -47,4 +47,4 @@ class TrafficDataCollector final : public NetworkDataCollector {
 
 }  // namespace profiler
 
-#endif // TRAFFIC_DATA_COLLECTOR_H_
+#endif // NETWORK_TRAFFIC_SAMPLER_H_

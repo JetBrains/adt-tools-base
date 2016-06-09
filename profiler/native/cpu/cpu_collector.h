@@ -13,31 +13,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef CPU_CPU_SAMPLER_H_
-#define CPU_CPU_SAMPLER_H_
+#ifndef CPU_CPU_COLLECTOR_H_
+#define CPU_CPU_COLLECTOR_H_
 
 #include <atomic>
 #include <cstdint>
 #include <thread>
 
-#include "cpu/cpu_usage_data_collector.h"
+#include "cpu/cpu_usage_sampler.h"
 
 namespace profiler {
 
 class CpuCache;
-class CpuUsageDataCollector;
+class CpuUsageSampler;
 
-class CpuSampler {
+class CpuCollector {
  public:
-  // Creates a sampler that will invoke |collector| every |interval_in_microsec|
+  // Creates a collector that will invoke |sampler| every |interval_in_microsec|
   // microseconds.
-  // TODO: Refactor the dependency. The collecor should depend on sampler; not
-  // sampler depends on collector.
-  CpuSampler(const CpuUsageDataCollector& collector,
+  CpuCollector(const CpuUsageSampler& sampler,
              int64_t interval_in_microsec)
-      : collector_(collector), sampling_interval_in_us_(interval_in_microsec) {}
+      : sampler_(sampler), sampling_interval_in_us_(interval_in_microsec) {}
 
-  ~CpuSampler();
+  ~CpuCollector();
 
   // Creates a thread that collects and saves data continually.
   // Assumes |Start()| and |Stop()| are called by the same thread.
@@ -56,11 +54,11 @@ class CpuSampler {
   // True if sampling operations is running.
   std::atomic_bool is_running_{false};
   // Holder of sampler operations.
-  const CpuUsageDataCollector& collector_;
+  const CpuUsageSampler& sampler_;
   // Sampling window size in microseconds.
   int64_t sampling_interval_in_us_;
 };
 
 }  // namespace profiler
 
-#endif  // CPU_CPU_SAMPLER_H_
+#endif  // CPU_CPU_COLLECTOR_H_

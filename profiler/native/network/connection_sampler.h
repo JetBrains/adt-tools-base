@@ -13,10 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef CONNECTION_DATA_COLLECTOR_H_
-#define CONNECTION_DATA_COLLECTOR_H_
+#ifndef NETWORK_CONNECTION_SAMPLER_H
+#define NETWORK_CONNECTION_SAMPLER_H
 
-#include "network/network_data_collector.h"
+#include "network/network_sampler.h"
 
 #include <regex>
 #include <string>
@@ -26,9 +26,9 @@ namespace profiler {
 
 // Data collector of open connection information. For example, it can
 // collect the number of both tcp and udp open connections.
-class ConnectionDataCollector final : public NetworkDataCollector {
+class ConnectionSampler final : public NetworkSampler {
  public:
-  ConnectionDataCollector(const std::string &uid,
+  ConnectionSampler(const std::string &uid,
                           const std::vector<std::string> &files)
       : kUid(uid), kConnectionFiles(files) {}
 
@@ -57,4 +57,4 @@ class ConnectionDataCollector final : public NetworkDataCollector {
 
 }  // namespace profiler
 
-#endif // CONNECTION_DATA_COLLECTOR_H_
+#endif // NETWORK_CONNECTION_SAMPLER_H

@@ -18,7 +18,7 @@
 
 #include "cpu/cpu_cache.h"
 #include "cpu/cpu_profiler_service.h"
-#include "cpu/cpu_sampler.h"
+#include "cpu/cpu_collector.h"
 #include "perfd/profiler_component.h"
 
 namespace profiler {
@@ -26,7 +26,7 @@ namespace profiler {
 class CpuProfilerComponent final : public ProfilerComponent {
  public:
   // Creates a CPU perfd component and starts sampling right away.
-  CpuProfilerComponent() { sampler_.Start(); }
+  CpuProfilerComponent() { collector_.Start(); }
 
   // Returns the service that talks to desktop clients (e.g., Studio).
   grpc::Service* GetPublicService() override { return &public_service_; }
@@ -36,9 +36,9 @@ class CpuProfilerComponent final : public ProfilerComponent {
 
  private:
   CpuCache cache_;
-  CpuUsageDataCollector data_collector_{&cache_};
+  CpuUsageSampler data_sampler_{&cache_};
   // Sampling interval is 100000 microseconds, which equals to 0.1 second.
-  CpuSampler sampler_{data_collector_, 100000};
+  CpuCollector collector_{data_sampler_, 100000};
   CpuProfilerServiceImpl public_service_{&cache_};
 };
 

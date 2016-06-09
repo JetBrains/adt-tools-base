@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "cpu_sampler.h"
+#include "cpu_collector.h"
 
 #include <unistd.h>
 #include <atomic>
@@ -21,27 +21,27 @@
 
 namespace profiler {
 
-CpuSampler::~CpuSampler() {
+CpuCollector::~CpuCollector() {
   if (is_running_.load()) {
     Stop();
   }
 }
 
-void CpuSampler::Start() {
+void CpuCollector::Start() {
   if (!is_running_.exchange(true)) {
-    sampler_thread_ = std::thread(&CpuSampler::Collect, this);
+    sampler_thread_ = std::thread(&CpuCollector::Collect, this);
   }
 }
 
-void CpuSampler::Stop() {
+void CpuCollector::Stop() {
   if (is_running_.exchange(false)) {
     sampler_thread_.join();
   }
 }
 
-void CpuSampler::Collect() {
+void CpuCollector::Collect() {
   while (is_running_.load()) {
-    collector_.Collect();
+    sampler_.Sample();
     usleep(sampling_interval_in_us_);
   }
 }
