@@ -17,7 +17,7 @@
 
 #include <gtest/gtest.h>
 
-using profiler::utils::TimespecMath;
+using profiler::TimespecMath;
 
 TEST(Add, PositiveNanoSecondOverload) {
   // sec are random positive integers, sum of nsec is > 2 * 1e9.

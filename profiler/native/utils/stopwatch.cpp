@@ -16,7 +16,6 @@
 #include "stopwatch.h"
 
 namespace profiler {
-namespace utils {
 
 Stopwatch::Stopwatch()
     : Stopwatch(std::make_shared<SteadyClock>()) {
@@ -34,5 +33,4 @@ uint64_t Stopwatch::GetElapsed() {
   return clock_->GetCurrentTime() - start_time_;
 }
 
-} // utils
 } // profiler

@@ -13,8 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef CPU_CPU_USAGE_DATA_COLLECTOR_H_
-#define CPU_CPU_USAGE_DATA_COLLECTOR_H_
+#ifndef CPU_CPU_USAGE_SAMPLER_H_
+#define CPU_CPU_USAGE_SAMPLER_H_
 
 #include <cstdint>
 #include <mutex>
@@ -24,10 +24,10 @@ namespace profiler {
 
 class CpuCache;
 
-class CpuUsageDataCollector {
+class CpuUsageSampler {
  public:
   // Creates a CPU usage data collector that saves data to |cpu_cache|.
-  CpuUsageDataCollector(CpuCache* cpu_cache) : cache_(*cpu_cache) {}
+  CpuUsageSampler(CpuCache* cpu_cache) : cache_(*cpu_cache) {}
 
   // Starts collecting usage data for process with ID of |pid|, if not already.
   void AddProcess(int32_t pid);
@@ -36,9 +36,9 @@ class CpuUsageDataCollector {
   // if |pid| is not being collected.
   void RemoveProcess(int32_t pid);
 
-  // Collects a snapshot of CPU data when it is called. Saves the data to
+  // Samples a snapshot of CPU data when it is called. Saves the data to
   // |cache_|. Returns true on success.
-  bool Collect() const;
+  bool Sample() const;
 
  private:
   // PIDs of app process that are being profiled.
@@ -50,4 +50,4 @@ class CpuUsageDataCollector {
 
 }  // namespace profiler
 
-#endif  // CPU_CPU_USAGE_DATA_COLLECTOR_H_
+#endif  // CPU_CPU_USAGE_SAMPLER_H_

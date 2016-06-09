@@ -14,15 +14,15 @@
  * limitations under the License.
  */
 #include "proto/network_profiler.pb.h"
-#include "traffic_data_collector.h"
+#include "network/traffic_sampler.h"
 
 #include <gtest/gtest.h>
 
-using profiler::network::TrafficDataCollector;
+using profiler::TrafficSampler;
 
 TEST(GetTrafficData, OutputIsFromSingleLineEntry) {
   std::string file_name("traffic_uid_matched_single_entry.txt");
-  TrafficDataCollector collector("12345", file_name);
+  TrafficSampler collector("12345", file_name);
   profiler::proto::NetworkProfilerData data;
   collector.GetData(&data);
   EXPECT_TRUE(data.has_traffic_data());
@@ -32,7 +32,7 @@ TEST(GetTrafficData, OutputIsFromSingleLineEntry) {
 
 TEST(GetTrafficData, OutputIsSumOfMultiLineEntries) {
   std::string file_name("traffic_uid_matched_multiple_entries.txt");
-  TrafficDataCollector collector("12345", file_name);
+  TrafficSampler collector("12345", file_name);
   profiler::proto::NetworkProfilerData data;
   collector.GetData(&data);
   EXPECT_TRUE(data.has_traffic_data());
@@ -42,7 +42,7 @@ TEST(GetTrafficData, OutputIsSumOfMultiLineEntries) {
 
 TEST(GetTrafficData, OutputIsZeroAsUnmatchUidEntryIsFilteredOut) {
   std::string file_name("traffic_uid_unmatched.txt");
-  TrafficDataCollector collector("12345", file_name);
+  TrafficSampler collector("12345", file_name);
   profiler::proto::NetworkProfilerData data;
   collector.GetData(&data);
   EXPECT_TRUE(data.has_traffic_data());

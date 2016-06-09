@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "cpu_usage_data_collector.h"
+#include "cpu_usage_sampler.h"
 
 #include <fcntl.h>
 #include <inttypes.h>
@@ -133,17 +133,17 @@ bool CollectSystemUsageData(CpuUsageData* data) {
 
 namespace profiler {
 
-void CpuUsageDataCollector::AddProcess(int32_t pid) {
+void CpuUsageSampler::AddProcess(int32_t pid) {
   std::lock_guard<std::mutex> lock(pids_mutex_);
   pids_.insert(pid);
 }
 
-void CpuUsageDataCollector::RemoveProcess(int32_t pid) {
+void CpuUsageSampler::RemoveProcess(int32_t pid) {
   std::lock_guard<std::mutex> lock(pids_mutex_);
   pids_.erase(pid);
 }
 
-bool CpuUsageDataCollector::Collect() const {
+bool CpuUsageSampler::Sample() const {
   CpuProfilerData data;
   data.mutable_basic_info()->set_end_timestamp(
       profiler::utils::GetCurrentTime());

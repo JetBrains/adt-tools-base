@@ -17,11 +17,9 @@
 #define UTILS_CONFIG_H_
 
 namespace profiler {
-namespace utils {
 
 const char* const kServerAddress = "127.0.0.1:12389";
 
-}  // namespace utils
 }  // namespace profiler
 
 #endif // UTILS_CONFIG_H_

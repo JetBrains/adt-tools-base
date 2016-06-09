@@ -20,7 +20,6 @@
 #include <sstream>
 
 namespace profiler {
-namespace utils {
 
 bool FileReader::Read(const std::string& file_path,
                       std::vector<std::string> *lines) {
@@ -78,5 +77,4 @@ bool FileReader::CompareToken(const std::string &line, const std::string &token,
   return is_found && !line.compare(start_pos, token.length(), token);
 }
 
-}  // namespace utils
 }  // namespace profiler

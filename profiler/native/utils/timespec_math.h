@@ -19,7 +19,6 @@
 #include <time.h>
 
 namespace profiler {
-namespace utils {
 
 // Class of Math operations on timespec objects. The operation result is
 // formalized, its nanosecond value should be non-negative and no larger
@@ -71,7 +70,6 @@ class TimespecMath {
   }
 };
 
-}  // namespace network_sampler
 }  // namespace profiler
 
 #endif // TIMESPEC_MATH_H_

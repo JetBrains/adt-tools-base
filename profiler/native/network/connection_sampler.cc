@@ -13,14 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "connection_data_collector.h"
+#include "connection_sampler.h"
 
 #include "utils/file_reader.h"
 
 namespace profiler {
-namespace network {
 
-void ConnectionDataCollector::GetData(
+void ConnectionSampler::GetData(
     profiler::proto::NetworkProfilerData *data) {
   int connection_number = 0;
   for (const std::string &file_name : kConnectionFiles) {
@@ -29,10 +28,10 @@ void ConnectionDataCollector::GetData(
   data->mutable_connection_data()->set_connection_number(connection_number);
 }
 
-int ConnectionDataCollector::ReadConnectionNumber(const std::string &uid,
+int ConnectionSampler::ReadConnectionNumber(const std::string &uid,
                                                   const std::string &file) {
   std::vector<std::string> lines;
-  utils::FileReader::Read(file, &lines);
+  FileReader::Read(file, &lines);
 
   int result = 0;
   for (const std::string &line : lines) {
@@ -47,12 +46,11 @@ int ConnectionDataCollector::ReadConnectionNumber(const std::string &uid,
       continue;
     }
 
-    if (utils::FileReader::CompareToken(line, uid, kUidTokenIndex)) {
+    if (FileReader::CompareToken(line, uid, kUidTokenIndex)) {
       result++;
     }
   }
   return result;
 }
 
-}  // namespace network
 }  // namespace profiler

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "network_data_collector.h"
+#include "network_sampler.h"
 
 #include "utils/file_reader.h"
 
@@ -24,9 +24,8 @@
 #include <unistd.h>
 
 namespace profiler {
-namespace network {
 
-int NetworkDataCollector::GetUid(const std::string &data_file) {
+int NetworkSampler::GetUid(const std::string &data_file) {
   std::string uid;
   if (GetUidString(data_file, &uid)) {
     return atoi(uid.c_str());
@@ -34,10 +33,10 @@ int NetworkDataCollector::GetUid(const std::string &data_file) {
   return -1;
 }
 
-bool NetworkDataCollector::GetUidString(const std::string &data_file,
+bool NetworkSampler::GetUidString(const std::string &data_file,
                                         std::string *uid_result) {
   std::string content;
-  utils::FileReader::Read(data_file, &content);
+  FileReader::Read(data_file, &content);
 
   const char *uid_prefix = "Uid:";
   // Find the uid value start position. It's supposed to be after the prefix,
@@ -65,5 +64,4 @@ bool NetworkDataCollector::GetUidString(const std::string &data_file,
   return false;
 }
 
-} // namespace network
 } // namespace profiler

@@ -18,7 +18,6 @@
 #include <chrono>
 
 namespace profiler {
-namespace utils {
 
 uint64_t SteadyClock::GetCurrentTime() {
   auto now = std::chrono::steady_clock::now();
@@ -26,5 +25,4 @@ uint64_t SteadyClock::GetCurrentTime() {
     now.time_since_epoch()).count();
 }
 
-} // namespace utils
 } // namespace profiler

@@ -17,7 +17,7 @@
 
 #include <gtest/gtest.h>
 
-using profiler::utils::FileReader;
+using profiler::FileReader;
 
 const std::string kTestLine("Twinkle Twinkle Little star !");
 
