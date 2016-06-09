@@ -28,7 +28,6 @@
 extern "C" void InitializePerfa();
 
 namespace profiler {
-namespace perfa {
 
 class Perfa {
  public:
@@ -54,7 +53,6 @@ class Perfa {
   void RunControlThread();
 };
 
-}  // end of namespace perfa
 }  // end of namespace profiler
 
 #endif  // PERFA_PEFA_H_

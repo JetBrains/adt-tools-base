@@ -19,13 +19,11 @@
 #include <grpc++/grpc++.h>
 
 namespace profiler {
-namespace perfa {
 
 // The interface of a profiler component in perfa.
 // TODO: Fill this placeholder.
 class AgentComponent {};
 
-}  // namespace perfa
 }  // namespace profiler
 
 #endif  // PERFA_AGENT_COMPONENT_H_
