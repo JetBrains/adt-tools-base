@@ -56,7 +56,7 @@ task initSdkForTests(type: JavaExec) {
                 'add-ons;addon-google_apis-google-21', 'add-ons;addon-google_apis-google-22',
                 'add-ons;addon-google_apis-google-23',
                 'extras;android;support', 'extras;google;m2repository', 'extras;android;m2repository',
-                'cmake']
+                'cmake;3.4']
     }
 }
 // TODO: needed?
