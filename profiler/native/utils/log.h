@@ -14,11 +14,43 @@
  * limitations under the License.
  */
 
-#ifndef PROFILER_LOG_H
-#define PROFILER_LOG_H
+#ifndef UTILS_LOG_H_
+#define UTILS_LOG_H_
 
-#include <cstdio>
+#include <cstdarg>
 
-#define LOG(...) printf(__VA_ARGS__)
+namespace profiler {
 
-#endif  // PROFILER_LOG_H
+// Logging methods that mimic Android's log library. You do not need to add your
+// own newlines as these logging methods will do that automatically.
+class Log {
+ public:
+  // Log a message at the verbose level
+  static void V(const char *msg, ...)
+      __attribute__ ((format(printf, 1, 2)));
+
+  // Log a message at the debug level
+  static void D(const char *msg, ...)
+      __attribute__ ((format(printf, 1, 2)));
+
+  // Log a message at the info level
+  static void I(const char *msg, ...)
+      __attribute__ ((format(printf, 1, 2)));
+
+  // Log a message at the warning level
+  static void W(const char *msg, ...)
+      __attribute__ ((format(printf, 1, 2)));
+
+  // Log a message at the error level
+  static void E(const char *msg, ...)
+      __attribute__ ((format(printf, 1, 2)));
+
+ private:
+  static void Handle(const char level, const char *fmt, va_list args);
+
+  static constexpr const char *const kTag = "StudioProfiler";
+};
+
+} // namespace profiler
+
+#endif //UTILS_LOG_H_

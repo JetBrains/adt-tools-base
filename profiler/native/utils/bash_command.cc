@@ -1,10 +1,11 @@
 #include "bash_command.h"
 
-#include "log.h"
 #include "profiler_file.h"
 #include "sys/wait.h"
+#include "utils/log.h"
 
 using std::string;
+using profiler::Log;
 
 namespace {
 const char *const kRunAsExecutable = "/system/bin/run-as";
@@ -41,7 +42,7 @@ bool BashCommandRunner::Run(const string &parameters, string *output) const {
 
 bool BashCommandRunner::RunAndReadOutput(const string &cmd,
                                          string *output) const {
-  LOG("Running '%s'.\n", cmd.c_str());
+  Log::I("Running '%s'.\n", cmd.c_str());
   char buffer[1024];
   FILE *pipe = popen(cmd.c_str(), "r");
   while (!feof(pipe)) {

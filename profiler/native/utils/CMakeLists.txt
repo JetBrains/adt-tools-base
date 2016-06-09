@@ -14,6 +14,12 @@ else()
     set(UTILS_SOURCES ${UTILS_SOURCES} clock.cc)
 endif()
 
+if (ANDROID)
+    set(UTILS_SOURCES ${UTILS_SOURCES} log.android.cc)
+else()
+    set(UTILS_SOURCES ${UTILS_SOURCES} log.cc)
+endif()
+
 add_library(ProfilerUtils
             ${UTILS_SOURCES})
 
