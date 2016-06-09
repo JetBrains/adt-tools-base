@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+include(${CMAKE_CURRENT_LIST_DIR}/adb.cmake)
+
 # Create targets for gtest
 if(NOT GTEST_ROOT_DIR)
   message(FATAL_ERROR "GTEST_ROOT_DIR not set.")
@@ -50,10 +52,37 @@ else()
 endif()
 
 # Copy test data files to generated directory.
-add_custom_target(copy-testdata
-                  COMMAND ${CMAKE_COMMAND} -E copy_directory
-                          ${CMAKE_CURRENT_SOURCE_DIR}/testdata
-                          ${CMAKE_CURRENT_BINARY_DIR})
+if(ANDROID)
+  run_adb_command(copy-testdata
+                  push ${CMAKE_CURRENT_SOURCE_DIR}/testdata/* /data/local/tmp)
+else()
+  add_custom_target(copy-testdata
+                    COMMAND ${CMAKE_COMMAND} -E copy_directory
+                            ${CMAKE_CURRENT_SOURCE_DIR}/testdata
+                            ${CMAKE_CURRENT_BINARY_DIR})
+endif()
+
+if(ANDROID)
+  function(run_unit_test name)
+    file(RELATIVE_PATH file_path ${CMAKE_BINARY_DIR} ${CMAKE_CURRENT_BINARY_DIR})
+
+    # Copy the test file to the android device
+    run_adb_command(push-${name}
+                    push ${CMAKE_CURRENT_BINARY_DIR}/${name} /data/local/tmp/${file_path}/${name})
+    add_dependencies(push-${name} ${name})
+
+    # Run the test on the android device
+    run_adb_command(check-${name}
+                    shell 'cd /data/local/tmp/${file_path} && /data/local/tmp/${file_path}/${name}')
+    add_dependencies(check-${name} push-${name})
+  endfunction()
+else()
+  function(run_unit_test name)
+    add_custom_target(check-${name}
+                      COMMAND ${name})
+    add_dependencies(check-${name} ${name})
+  endfunction()
+endif()
 
 # Cretae target to run all unit test
 add_custom_target(check)
@@ -64,11 +93,12 @@ function(add_unit_test name)
   add_executable(${name} ${ARGN})
   target_include_directories(${name} PUBLIC ${GTEST_ROOT_DIR}/include
                                             ${GMOCK_ROOT_DIR}/include)
+  set_target_properties(${name} PROPERTIES
+                        RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 
   # Create custome target for running the test and set it as a dependency of
   # check so it is included in it
-  add_custom_target(check-${name}
-                    COMMAND ${name})
+  run_unit_test(${name})
   add_dependencies(check-${name} copy-testdata)
   add_dependencies(check check-${name})
 endfunction()
