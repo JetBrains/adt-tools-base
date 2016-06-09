@@ -31,7 +31,7 @@ def cmake(cl) {
     cl.delegate = data;
     cl.call();
     def os = System.getProperty("os.name").toLowerCase();
-    def host = os.startsWith("linux") ? "linux" : "darwin"
+    def host = os.startsWith("linux") ? "linux" : (os.startsWith("win") ? "windows" : "darwin")
 
     if (data.abis.size() == 0) {
         // Building for the host
@@ -65,7 +65,7 @@ def createTasks(data, name, abi, project, host) {
 
   // TODO: Define different tasks for debug and release and specify
   // -DCMAKE_BUILD_TYPE=[Debug|Release|MinSizeRel]
-  def configureAbi = project.tasks.create(name: "configure" + name, type: Exec) {
+  def configureAbi = createTask(project, host, "configure" + name) {
       doFirst {
           file(gen).deleteDir();
           file(gen).mkdirs();
@@ -79,30 +79,38 @@ def createTasks(data, name, abi, project, host) {
           "-DGO_EXECUTABLE=$rootDir/../../../prebuilts/go/$host-x86/bin/go",
           "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON"] + Arrays.asList(data.flags)
       environment GOROOT: "$rootDir/../../../prebuilts/go/$host-x86"
-      inputs.file "../cmake/Android.cmake"
-      outputs.dir gen
+      inputs.dir "$rootDir/native/cmake"
+      outputs.file "$gen/CMakeCache.txt"
   }
 
-  def compileAbi = project.tasks.create(name: "compile" + name, group: "Native build", type: Exec) {
+  def compileAbi = createTask(project, host, "compile" + name) {
       workingDir gen
       args = ["--build", "$gen"]
       executable "$rootDir/../../../prebuilts/cmake/$host-x86/bin/cmake"
       environment GOROOT: "$rootDir/../../../prebuilts/go/$host-x86"
-      inputs.dir data.projectDir
-      inputs.dir gen
-      outputs.dir out
+      // Always run this task as ninja's super fast dependency check takes care of it
+      outputs.upToDateWhen { return false; }
   }
   compileAbi.dependsOn configureAbi
 
-  def checkAbi = project.tasks.create(name: "check" + name, group: "Native build", type: Exec) {
+  def checkAbi = createTask(project, host, "check" + name) {
       workingDir gen
       args = ["--build", "$gen", "--target", "check"]
       executable "$rootDir/../../../prebuilts/cmake/$host-x86/bin/cmake"
       environment GOROOT: "$rootDir/../../../prebuilts/go/$host-x86"
-      inputs.dir data.projectDir
-      inputs.dir gen
+      // Always run this task as ninja's super fast dependency check takes care of it
+      outputs.upToDateWhen { return false; }
   }
   checkAbi.dependsOn configureAbi
+}
+
+def createTask(project, host, name, cl) {
+  if (host == "windows") {
+    // Do not build anything on windows yet, but create the tasks to keep the correct dependencies.
+    return project.tasks.create(name: name, group: "Native build", type: DefaultTask) {};
+  } else {
+    return project.tasks.create(name: name, group: "Native build", type: Exec, cl);
+  }
 }
 
 def requiredVersion = JavaVersion.VERSION_1_8

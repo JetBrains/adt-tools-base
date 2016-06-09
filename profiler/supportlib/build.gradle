@@ -39,8 +39,7 @@ compileJava {
 
 dependencies {
     provided files(androidJar)
-//  TODO: Uncomment to include the jni libraries once they compile from source tree
-//    jni project(path: ":native", configuration: "perfa")
+    jni project(path: ":native", configuration: "perfa")
 }
 
 sourceSets {
@@ -62,9 +61,7 @@ task assembleAar(type:Zip, dependsOn: jar) {
 
     from "src/aar"
     from jar
-
-//  TODO: Uncomment to include the jni libraries once they compile from source tree
-//  from configurations.jni
+    from configurations.jni
 
     extension "aar"
 }

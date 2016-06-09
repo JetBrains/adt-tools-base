@@ -18,9 +18,11 @@ cmake {
 precompileAndroid.dependsOn compileHost
 
 task assemblePerfa(type: Copy, dependsOn: compileAndroid) {
-    into "$buildDir/artifacts"
-    into("jni/armeabi-v7a") { from "$buildDir/gen/armeabi-v7a/perfa/libperfa.so" }
-    into("jni/arm64-v8a") { from "$buildDir/gen/arm64-v8a/perfa/libperfa.so" }
+    into "$buildDir/artifacts/jni"
+    from("$buildDir/out") {
+        include "*/libperfa.so"
+        exclude "host/**"
+    }
 }
 
 artifacts {
