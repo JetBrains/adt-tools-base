@@ -20,6 +20,7 @@ import static com.android.build.gradle.integration.common.truth.TruthHelper.asse
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
+import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.utils.FileUtils;
@@ -85,6 +86,14 @@ public class TestFileUtils {
         String content = Files.toString(file, Charset.defaultCharset());
         String newContent = content.replaceAll(search, replace);
         assertNotEquals("No match in file", content, newContent);
+
+        // Gradle has a bug, where it may not notice rapid changes to build.gradle if the length of
+        // the file has not changed. Work around this by appending a new line at the end.
+        if (file.getName().equals(SdkConstants.FN_BUILD_GRADLE)
+                && content.length() == newContent.length()) {
+            newContent += System.lineSeparator();
+        }
+
         Files.write(newContent, file, Charset.defaultCharset());
     }
 
