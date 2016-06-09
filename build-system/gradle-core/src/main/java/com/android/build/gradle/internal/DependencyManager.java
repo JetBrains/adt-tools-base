@@ -506,7 +506,7 @@ public class DependencyManager {
                 // Adding the updated local maven repositories to the project in order to
                 // bypass the fact that the old repositories contain the unresolved
                 // resolution result.
-                for (File updatedRepository : sdkHandler.getSdkLoader().getRepositories()) {
+                for (File updatedRepository : updatedRepositories) {
                     project.getRepositories().maven(newRepo -> {
                         newRepo.setName("Updated " + updatedRepository.getPath());
                         newRepo.setUrl(updatedRepository.toURI());
