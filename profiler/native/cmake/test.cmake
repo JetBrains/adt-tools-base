@@ -50,7 +50,10 @@ else()
 endif()
 
 # Copy test data files to generated directory.
-file(COPY "testdata/" DESTINATION ".")
+add_custom_target(copy-testdata
+                  COMMAND ${CMAKE_COMMAND} -E copy_directory
+                          ${CMAKE_CURRENT_SOURCE_DIR}/testdata
+                          ${CMAKE_CURRENT_BINARY_DIR})
 
 # Cretae target to run all unit test
 add_custom_target(check)
@@ -66,6 +69,7 @@ function(add_unit_test name)
   # check so it is included in it
   add_custom_target(check-${name}
                     COMMAND ${name})
+  add_dependencies(check-${name} copy-testdata)
   add_dependencies(check check-${name})
 endfunction()
 
