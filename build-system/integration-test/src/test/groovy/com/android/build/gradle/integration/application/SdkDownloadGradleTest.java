@@ -50,6 +50,10 @@ import java.nio.charset.Charset;
 @SuppressWarnings("ThrowableResultOfMethodCallIgnored")
 @Category(OnlineTests.class)
 public class SdkDownloadGradleTest {
+    private static final String OLD_BUILD_TOOLS = "19.1.0";
+    private static final String NEW_BUILD_TOOLS = "23.0.1";
+    private static final String OLD_PLATFORM = "22";
+    private static final String NEW_PLATFORM = "23";
 
     @Rule
     public GradleTestProject project =
@@ -64,6 +68,7 @@ public class SdkDownloadGradleTest {
 
     @Before
     public void setUp() throws Exception {
+        // TODO: Set System property {@code AndroidSdkHandler.SDK_TEST_BASE_URL_PROPERTY}.
         mSdkHome = project.file("local-sdk-for-test");
         FileUtils.mkdirs(mSdkHome);
 
@@ -83,6 +88,22 @@ public class SdkDownloadGradleTest {
                         + SdkConstants.SDK_DIR_PROPERTY
                         + " = "
                         + mSdkHome.getAbsolutePath());
+
+        // Copy one version of build tools and one platform from the real SDK, so we have something
+        // to start with.
+        File realAndroidHome = new File(System.getenv(SdkConstants.ANDROID_HOME_ENV));
+
+        FileUtils.copyDirectoryToDirectory(
+                FileUtils.join(
+                        realAndroidHome, SdkConstants.FD_PLATFORMS, "android-" + OLD_PLATFORM),
+                FileUtils.join(mSdkHome, SdkConstants.FD_PLATFORMS));
+
+        FileUtils.copyDirectoryToDirectory(
+                FileUtils.join(realAndroidHome, SdkConstants.FD_BUILD_TOOLS, OLD_BUILD_TOOLS),
+                FileUtils.join(mSdkHome, SdkConstants.FD_BUILD_TOOLS));
+
+        TestFileUtils.appendToFile(
+                project.getBuildFile(), "android.defaultConfig.minSdkVersion = 19");
     }
 
     /**
@@ -94,9 +115,12 @@ public class SdkDownloadGradleTest {
         TestFileUtils.appendToFile(
                 project.getBuildFile(),
                 System.lineSeparator()
-                        + "android.compileSdkVersion 23"
+                        + "android.compileSdkVersion "
+                        + NEW_PLATFORM
                         + System.lineSeparator()
-                        + "android.buildToolsVersion \"19.1.0\"");
+                        + "android.buildToolsVersion \""
+                        + OLD_BUILD_TOOLS
+                        + "\"");
 
         project.executor().run("assembleDebug");
 
@@ -116,16 +140,19 @@ public class SdkDownloadGradleTest {
         TestFileUtils.appendToFile(
                 project.getBuildFile(),
                 System.lineSeparator()
-                        + "android.compileSdkVersion 23"
+                        + "android.compileSdkVersion "
+                        + OLD_PLATFORM
                         + System.lineSeparator()
-                        + "android.buildToolsVersion \"19.1.0\"");
+                        + "android.buildToolsVersion \""
+                        + NEW_BUILD_TOOLS
+                        + "\"");
 
         project.executor().run("assembleDebug");
 
-        File buildTools = FileUtils.join(mSdkHome, SdkConstants.FD_BUILD_TOOLS, "19.1.0");
+        File buildTools = FileUtils.join(mSdkHome, SdkConstants.FD_BUILD_TOOLS, OLD_BUILD_TOOLS);
         assertThat(buildTools).isDirectory();
 
-        File dxFile = FileUtils.join(mSdkHome, SdkConstants.FD_BUILD_TOOLS, "19.1.0", "dx");
+        File dxFile = FileUtils.join(mSdkHome, SdkConstants.FD_BUILD_TOOLS, OLD_BUILD_TOOLS, "dx");
         assertThat(dxFile).exists();
     }
 
@@ -141,7 +168,9 @@ public class SdkDownloadGradleTest {
                 System.lineSeparator()
                         + "android.compileSdkVersion \"Google Inc.:Google APIs:23\""
                         + System.lineSeparator()
-                        + "android.buildToolsVersion \"19.1.0\"");
+                        + "android.buildToolsVersion \""
+                        + OLD_BUILD_TOOLS
+                        + "\"");
 
         project.executor().run("assembleDebug");
 
@@ -158,7 +187,12 @@ public class SdkDownloadGradleTest {
         TestFileUtils.appendToFile(
                 project.getBuildFile(),
                 System.lineSeparator()
-                        + "android.defaultConfig.minSdkVersion = 21"
+                        + "android.compileSdkVersion "
+                        + OLD_PLATFORM
+                        + System.lineSeparator()
+                        + "android.buildToolsVersion \""
+                        + OLD_BUILD_TOOLS
+                        + "\""
                         + System.lineSeparator()
                         + "dependencies { compile 'com.android.support:support-v4:23.0.0' }");
 
@@ -176,14 +210,46 @@ public class SdkDownloadGradleTest {
         TestFileUtils.appendToFile(
                 project.getBuildFile(),
                 System.lineSeparator()
-                        + "android.defaultConfig.minSdkVersion = 21"
+                        + "android.compileSdkVersion "
+                        + OLD_PLATFORM
                         + System.lineSeparator()
-                        + "dependencies { compile 'com.google.android.support:wearable:1.4.0' }");
+                        + "android.buildToolsVersion \""
+                        + OLD_BUILD_TOOLS
+                        + "\""
+                        + System.lineSeparator()
+                        + "dependencies { compile 'com.google.android.gms:play-services:8.1.0' }");
 
         project.executor().run("assembleDebug");
 
         checkForLibrary(
-                SdkMavenRepository.GOOGLE, "com.google.android.support", "wearable", "1.4.0");
+                SdkMavenRepository.GOOGLE, "com.google.android.gms", "play-services", "8.1.0");
+    }
+
+    @Test
+    public void checkDependencies_individualRepository() throws Exception {
+        TestFileUtils.appendToFile(
+                project.getBuildFile(),
+                System.lineSeparator()
+                        + "android.compileSdkVersion "
+                        + OLD_PLATFORM
+                        + System.lineSeparator()
+                        + "android.buildToolsVersion \""
+                        + OLD_BUILD_TOOLS
+                        + "\""
+                        + System.lineSeparator()
+                        + "dependencies { compile 'com.android.support.constraint:constraint-layout-solver:1.0.0-alpha2' }");
+
+        project.executor().run("assembleDebug");
+
+        checkForLibrary(
+                SdkMavenRepository.ANDROID,
+                "com.android.support.constraint",
+                "constraint-layout-solver",
+                "1.0.0-alpha2");
+
+        assertThat(SdkMavenRepository.GOOGLE.isInstalled(mSdkHome, FileOpUtils.create())).isFalse();
+        assertThat(SdkMavenRepository.ANDROID.isInstalled(mSdkHome, FileOpUtils.create()))
+                .isFalse();
     }
 
     private void checkForLibrary(
@@ -217,7 +283,15 @@ public class SdkDownloadGradleTest {
     public void checkDependencies_invalidDependency() throws Exception {
         TestFileUtils.appendToFile(
                 project.getBuildFile(),
-                System.lineSeparator() + "dependencies { compile 'foo:bar:baz' }");
+                System.lineSeparator()
+                        + "android.compileSdkVersion "
+                        + OLD_PLATFORM
+                        + System.lineSeparator()
+                        + "android.buildToolsVersion \""
+                        + OLD_BUILD_TOOLS
+                        + "\""
+                        + System.lineSeparator()
+                        + "dependencies { compile 'foo:bar:baz' }");
 
         GradleBuildResult result = project.executor().expectFailure().run("assembleDebug");
         assertNotNull(result.getException());
@@ -233,9 +307,12 @@ public class SdkDownloadGradleTest {
         TestFileUtils.appendToFile(
                 project.getBuildFile(),
                 System.lineSeparator()
-                        + "android.compileSdkVersion 23"
+                        + "android.compileSdkVersion "
+                        + NEW_PLATFORM
                         + System.lineSeparator()
-                        + "android.buildToolsVersion \"19.1.0\"");
+                        + "android.buildToolsVersion \""
+                        + OLD_BUILD_TOOLS
+                        + "\"");
 
         GradleBuildResult result = project.executor().expectFailure().run("assembleDebug");
         assertNotNull(result.getException());
@@ -254,7 +331,9 @@ public class SdkDownloadGradleTest {
                 System.lineSeparator()
                         + "android.compileSdkVersion \"Google Inc.:Google APIs:23\""
                         + System.lineSeparator()
-                        + "android.buildToolsVersion \"19.1.0\"");
+                        + "android.buildToolsVersion \""
+                        + OLD_BUILD_TOOLS
+                        + "\"");
 
         GradleBuildResult result = project.executor().expectFailure().run("assembleDebug");
         assertNotNull(result.getException());
@@ -271,15 +350,18 @@ public class SdkDownloadGradleTest {
         TestFileUtils.appendToFile(
                 project.getBuildFile(),
                 System.lineSeparator()
-                        + "android.compileSdkVersion 23"
+                        + "android.compileSdkVersion "
+                        + OLD_PLATFORM
                         + System.lineSeparator()
-                        + "android.buildToolsVersion \"19.1.0\"");
+                        + "android.buildToolsVersion \""
+                        + NEW_BUILD_TOOLS
+                        + "\"");
 
         GradleBuildResult result = project.executor().expectFailure().run("assembleDebug");
         assertNotNull(result.getException());
 
         assertThat(Throwables.getRootCause(result.getException()).getMessage())
-                .contains("Android SDK Build-Tools 19.1");
+                .contains("Android SDK Build-Tools 23.0.1");
         assertThat(Throwables.getRootCause(result.getException()).getMessage())
                 .contains("missing components");
     }
@@ -292,15 +374,21 @@ public class SdkDownloadGradleTest {
                 System.lineSeparator()
                         + "android.compileSdkVersion \"Google Inc.:Google APIs:23\""
                         + System.lineSeparator()
-                        + "android.buildToolsVersion \"23.0.3\"");
+                        + "android.buildToolsVersion \""
+                        + NEW_BUILD_TOOLS
+                        + "\"");
 
         GradleBuildResult result = project.executor().expectFailure().run("assembleDebug");
         assertNotNull(result.getException());
 
         assertThat(Throwables.getRootCause(result.getException()).getMessage())
-                .contains("[Android SDK Build-Tools 23.0.3, Android SDK Platform 23, Google APIs]");
-        assertThat(Throwables.getRootCause(result.getException()).getMessage())
                 .contains("missing components");
+        assertThat(Throwables.getRootCause(result.getException()).getMessage())
+                .contains("Android SDK Build-Tools 23.0.1");
+        assertThat(Throwables.getRootCause(result.getException()).getMessage())
+                .contains("Android SDK Platform 23");
+        assertThat(Throwables.getRootCause(result.getException()).getMessage())
+                .contains("Google APIs");
     }
 
     private File getPlatformFolder() {
