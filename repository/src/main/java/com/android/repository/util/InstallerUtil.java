@@ -34,7 +34,6 @@ import com.android.repository.impl.manager.LocalRepoLoaderImpl;
 import com.android.repository.impl.meta.Archive;
 import com.android.repository.impl.meta.CommonFactory;
 import com.android.repository.impl.meta.LocalPackageImpl;
-import com.android.repository.impl.meta.RemotePackageImpl;
 import com.android.repository.impl.meta.RepositoryPackages;
 import com.android.repository.impl.meta.RevisionType;
 import com.android.repository.impl.meta.SchemaModuleUtil;
@@ -49,12 +48,15 @@ import org.apache.commons.compress.archivers.zip.ZipFile;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Collection;
 import java.util.Enumeration;
 import java.util.List;
@@ -96,16 +98,22 @@ public class InstallerUtil {
         in = fop.ensureRealFile(in);
 
         progress.setText("Unzipping...");
-        double fraction = 0;
         ZipFile zipFile = new ZipFile(in);
         try {
             Enumeration entries = zipFile.getEntries();
+            progress.setFraction(0);
             while (entries.hasMoreElements()) {
                 ZipArchiveEntry entry = (ZipArchiveEntry) entries.nextElement();
                 String name = entry.getName();
                 File entryFile = new File(out, name);
                 progress.setSecondaryText(name);
-                if (entry.isDirectory()) {
+                if (entry.isUnixSymlink()) {
+                    ByteArrayOutputStream targetByteStream = new ByteArrayOutputStream();
+                    readZipEntry(zipFile, entry, targetByteStream, expectedSize, progress);
+                    Path linkPath = fop.toPath(entryFile);
+                    Path linkTarget = fop.toPath(new File(targetByteStream.toString()));
+                    Files.createSymbolicLink(linkPath, linkTarget);
+                } else if (entry.isDirectory()) {
                     if (!fop.exists(entryFile)) {
                         if (!fop.mkdirs(entryFile)) {
                             progress.logWarning("failed to mkdirs " + entryFile);
@@ -122,20 +130,9 @@ public class InstallerUtil {
                         }
                     }
 
-                    int size;
-                    byte[] buf = new byte[8192];
-                    try (BufferedOutputStream bos = new BufferedOutputStream(
-                            fop.newFileOutputStream(entryFile));
-                         InputStream s = new BufferedInputStream(zipFile.getInputStream(entry))) {
-                        while ((size = s.read(buf)) > -1) {
-                            bos.write(buf, 0, size);
-                            fraction += ((double) entry.getCompressedSize() / expectedSize) *
-                                    ((double) size / entry.getSize());
-                            progress.setFraction(fraction);
-                            if (progress.isCanceled()) {
-                                return;
-                            }
-                        }
+                    OutputStream unzippedOutput = fop.newFileOutputStream(entryFile);
+                    if (readZipEntry(zipFile, entry, unzippedOutput, expectedSize, progress)) {
+                        return;
                     }
                     if (!fop.isWindows()) {
                         // get the mode and test if it contains the executable bit
@@ -154,6 +151,26 @@ public class InstallerUtil {
         finally {
             ZipFile.closeQuietly(zipFile);
         }
+    }
+
+    private static boolean readZipEntry(ZipFile zipFile, ZipArchiveEntry entry, OutputStream dest,
+            long expectedSize, @NonNull ProgressIndicator progress) throws IOException {
+        int size;
+        byte[] buf = new byte[8192];
+        double fraction = progress.getFraction();
+        try (BufferedOutputStream bufferedDest = new BufferedOutputStream(dest);
+             InputStream s = new BufferedInputStream(zipFile.getInputStream(entry))) {
+            while ((size = s.read(buf)) > -1) {
+                bufferedDest.write(buf, 0, size);
+                fraction += ((double) entry.getCompressedSize() / expectedSize) *
+                        ((double) size / entry.getSize());
+                progress.setFraction(fraction);
+                if (progress.isCanceled()) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     public static void writePendingPackageXml(@NonNull RepoPackage p, @NonNull File packageRoot,
