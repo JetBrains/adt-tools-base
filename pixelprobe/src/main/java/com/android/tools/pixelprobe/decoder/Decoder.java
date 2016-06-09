@@ -20,6 +20,7 @@ import com.android.tools.pixelprobe.ColorMode;
 import com.android.tools.pixelprobe.Image;
 import com.android.tools.pixelprobe.util.Strings;
 
+import javax.imageio.IIOException;
 import javax.imageio.ImageIO;
 import javax.imageio.ImageReadParam;
 import javax.imageio.ImageReader;
@@ -93,10 +94,8 @@ public abstract class Decoder {
         BufferedImage image;
         try {
             image = reader.read(0, parameters);
-        } finally {
-            reader.dispose();
-            //noinspection ThrowFromFinallyBlock
-            stream.close();
+        } catch (IIOException e) {
+            throw new IOException(e);
         }
 
         ColorModel colorModel = image.getColorModel();
@@ -114,6 +113,9 @@ public abstract class Decoder {
         if (metadata != null) {
             decodeMetadata(builder, metadata);
         }
+
+        reader.dispose();
+        stream.close();
 
         return builder.build();
     }

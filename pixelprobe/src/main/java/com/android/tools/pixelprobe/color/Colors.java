@@ -36,7 +36,7 @@ public final class Colors {
         static ICC_ColorSpace CMYK_ICC_ColorSpace;
 
         static {
-            try (InputStream in = Colors.class.getResourceAsStream("USWebCoatedSWOP.icc")) {
+            try (InputStream in = Colors.class.getResourceAsStream("/icc/cmyk/USWebCoatedSWOP.icc")) {
                 CMYK_ICC_Profile = ICC_Profile.getInstance(in);
                 CMYK_ICC_ColorSpace = new ICC_ColorSpace(CMYK_ICC_Profile);
             } catch (IOException e) {

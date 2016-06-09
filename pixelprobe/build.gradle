@@ -25,5 +25,4 @@ dependencies {
 
 sourceSets {
     main.java.srcDir      'src/main/generated'
-    test.resources.srcDir 'src/test/java'
 }
