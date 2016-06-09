@@ -19,12 +19,10 @@
 #include <cstdint>
 
 namespace profiler {
-namespace utils {
 
 // Gets a timestamp.
 int64_t GetCurrentTime();
 
-}  // namespace utils
 }  // namespace profiler
 
 #endif  // UTILS_TIMESTAMP_H_

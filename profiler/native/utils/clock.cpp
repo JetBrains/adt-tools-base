@@ -18,7 +18,6 @@
 #include <ctime>
 
 namespace profiler {
-namespace utils {
 
 uint64_t SteadyClock::GetCurrentTime() {
   timespec time;
@@ -26,5 +25,4 @@ uint64_t SteadyClock::GetCurrentTime() {
   return 1e9 * time.tv_sec + time.tv_nsec;
 }
 
-} // namespace utils
 } // namespace profiler

@@ -19,7 +19,6 @@
 #include <cstdint>
 
 namespace profiler {
-namespace utils {
 
 // A mockable clock class for getting the current epoch time, in nanoseconds.
 // Example:
@@ -50,7 +49,6 @@ class SteadyClock final : public Clock {
   virtual uint64_t GetCurrentTime() override;
 };
 
-}
-}
+} // namespace profiler
 
 #endif //CLOCK_H_

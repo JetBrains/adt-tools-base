@@ -18,8 +18,8 @@
 
 #include <gtest/gtest.h>
 
-using profiler::utils::Clock;
-using profiler::utils::Stopwatch;
+using profiler::Clock;
+using profiler::Stopwatch;
 using std::shared_ptr;
 
 class MockClock final : public Clock {

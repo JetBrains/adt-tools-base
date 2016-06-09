@@ -22,7 +22,6 @@
 #include "clock.h"
 
 namespace profiler {
-namespace utils {
 
 // Class for measuring elapsed time
 // Example:
@@ -54,7 +53,6 @@ class Stopwatch final {
   uint64_t start_time_;
 };
 
-}
-}
+} // namespace profiler
 
 #endif //STOPWATCH_H_

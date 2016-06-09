@@ -31,7 +31,7 @@ void ConnectionSampler::GetData(
 int ConnectionSampler::ReadConnectionNumber(const std::string &uid,
                                                   const std::string &file) {
   std::vector<std::string> lines;
-  utils::FileReader::Read(file, &lines);
+  FileReader::Read(file, &lines);
 
   int result = 0;
   for (const std::string &line : lines) {
@@ -46,7 +46,7 @@ int ConnectionSampler::ReadConnectionNumber(const std::string &uid,
       continue;
     }
 
-    if (utils::FileReader::CompareToken(line, uid, kUidTokenIndex)) {
+    if (FileReader::CompareToken(line, uid, kUidTokenIndex)) {
       result++;
     }
   }

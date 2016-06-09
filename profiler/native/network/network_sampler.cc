@@ -36,7 +36,7 @@ int NetworkSampler::GetUid(const std::string &data_file) {
 bool NetworkSampler::GetUidString(const std::string &data_file,
                                         std::string *uid_result) {
   std::string content;
-  utils::FileReader::Read(data_file, &content);
+  FileReader::Read(data_file, &content);
 
   const char *uid_prefix = "Uid:";
   // Find the uid value start position. It's supposed to be after the prefix,

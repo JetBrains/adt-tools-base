@@ -22,7 +22,7 @@
 
 #include <unistd.h>
 
-using profiler::utils::Stopwatch;
+using profiler::Stopwatch;
 
 namespace profiler {
 

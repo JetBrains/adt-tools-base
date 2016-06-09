@@ -26,18 +26,18 @@ void TrafficSampler::GetData(profiler::proto::NetworkProfilerData *data) {
   int64_t bytes_received = 0;
 
   std::vector<std::string> lines;
-  utils::FileReader::Read(kFile, &lines);
+  FileReader::Read(kFile, &lines);
 
   for (const std::string &line : lines) {
 
-    if (utils::FileReader::CompareToken(line, kUid, kUidTokenIndex)) {
+    if (FileReader::CompareToken(line, kUid, kUidTokenIndex)) {
       size_t receive_token_start = 0;
-      if (!utils::FileReader::FindTokenPosition(line, kReceiveBytesTokenIndex,
+      if (!FileReader::FindTokenPosition(line, kReceiveBytesTokenIndex,
                                                 &receive_token_start)) {
         continue;
       }
       size_t send_token_start = receive_token_start;
-      if (!utils::FileReader::FindTokenPosition(
+      if (!FileReader::FindTokenPosition(
               line, kSendBytesTokenIndex - kReceiveBytesTokenIndex,
               &send_token_start)) {
         continue;

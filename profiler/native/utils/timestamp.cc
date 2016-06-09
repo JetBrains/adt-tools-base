@@ -25,7 +25,6 @@
 #endif
 
 namespace profiler {
-namespace utils {
 
 // TODO: Move #ifdef out of .cc files.
 int64_t GetCurrentTime() {
@@ -43,7 +42,6 @@ int64_t GetCurrentTime() {
 #endif
 }
 
-}  // namespace utils
 }  // namespace profiler
 
 #endif  // UTILS_TIMESTAMP_H_

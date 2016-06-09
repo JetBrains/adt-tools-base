@@ -24,7 +24,6 @@
 #include "timespec_math.h"
 
 namespace profiler {
-namespace utils {
 
 // Data per sample. The time field indicates a independent time point when
 // value is collected.
@@ -93,7 +92,6 @@ template <typename T> class TimeValueBuffer {
   size_t start_ = 0;
 };
 
-}  // namespace utils
 }  // namespace profiler
 
 #endif // TIME_VALUE_BUFFER_H_
