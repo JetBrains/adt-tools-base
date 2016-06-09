@@ -22,13 +22,24 @@ package profiler.proto;
 service CpuProfilerService {
   rpc GetData(CpuDataRequest) returns (CpuDataResponse) {
   }
+
+  // Starts collecting execution metrics of a running app, such as usage info
+  // and thread states. Does nothing if the app is already being monitored.
+  // TODO(b/29258733): Support configuring sampling details.
+  rpc StartMonitoringApp(CpuStartRequest) returns (CpuStartResponse) {
+  }
+
+  // Stops monitoring a running app. Does nothing if the app is not being
+  // monitored, or is not running.
+  rpc StopMonitoringApp(CpuStopRequest) returns (CpuStopResponse) {
+  }
 }
 
 // Requests profiler data from the app with ID being |app_id|, in the time range
 // from |start_timestamp| (exclusive) to |end_timestamp| (inclusive), or
 // mathematically written as in interval (start_timestamp, end_timestamp].
 message CpuDataRequest {
-  enum SpeicalValues {
+  enum SpecialValues {
     // Protobuf requires the first enum value to be zero.
     UNSPECIFIED = 0;
     // A speical value used in |app_id| field to indicate the data of all apps
@@ -42,4 +53,31 @@ message CpuDataRequest {
 
 message CpuDataResponse {
   repeated CpuProfilerData data = 1;
+}
+
+message CpuStartRequest {
+  int32 app_id = 1;
+}
+
+message CpuStartResponse {
+  enum Status {
+    UNSPECIFICED = 0;
+    SUCCESS = 1;
+    FAILURE_APP_NOT_RUNNING = 2;
+    FAILURE_UNKNOWN = 3;
+  }
+  Status status = 1;
+}
+
+message CpuStopRequest {
+  int32 app_id = 1;
+}
+
+message CpuStopResponse {
+  enum Status {
+    UNSPECIFICED = 0;
+    SUCCESS = 1;
+    FAILURE_UNKNOWN = 2;
+  }
+  Status status = 1;
 }

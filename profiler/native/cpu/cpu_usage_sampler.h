@@ -20,6 +20,9 @@
 #include <mutex>
 #include <unordered_set>
 
+#include "proto/cpu_profiler_service.grpc.pb.h"
+#include "utils/clock.h"
+
 namespace profiler {
 
 class CpuCache;
@@ -30,22 +33,29 @@ class CpuUsageSampler {
   CpuUsageSampler(CpuCache* cpu_cache) : cache_(*cpu_cache) {}
 
   // Starts collecting usage data for process with ID of |pid|, if not already.
-  void AddProcess(int32_t pid);
+  profiler::proto::CpuStartResponse::Status AddProcess(int32_t pid);
 
   // Stops collecting usage data for process specified by ID |pid|. Does nothing
-  // if |pid| is not being collected.
-  void RemoveProcess(int32_t pid);
+  // if |pid| is not being monitored.
+  profiler::proto::CpuStopResponse::Status RemoveProcess(int32_t pid);
 
-  // Samples a snapshot of CPU data when it is called. Saves the data to
-  // |cache_|. Returns true on success.
-  bool Sample() const;
+  // Samples CPU data of all processes that need monitoring. Saves the data to
+  // |cache_|. Returns true if successfully sampling all processes.
+  bool Sample();
 
  private:
+  // Samples the CPU data of a process, including the system-wide usage as a
+  // context for this process' usage percentage. Returns true on success.
+  // TODO: Handle the case if there is no running process of |pid|.
+  bool SampleAProcess(int32_t pid);
+
   // PIDs of app process that are being profiled.
   std::unordered_set<int32_t> pids_{};
   std::mutex pids_mutex_;
   // Cache where collected data will be saved.
   CpuCache& cache_;
+  // Clock that timestamps sample data.
+  profiler::SteadyClock clock_;
 };
 
 }  // namespace profiler
