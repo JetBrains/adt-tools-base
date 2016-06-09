@@ -93,6 +93,8 @@ public class ExternalNativeComponentModelPlugin implements Plugin<Project> {
 
     @Override
     public void apply(Project project) {
+        AndroidComponentModelPlugin.checkPluginVersion();
+
         project.getPlugins().apply(LifecycleBasePlugin.class);
         project.getPlugins().apply(ComponentModelBasePlugin.class);
 
