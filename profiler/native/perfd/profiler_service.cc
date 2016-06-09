@@ -28,7 +28,7 @@ namespace profiler {
 Status ProfilerServiceImpl::GetVersion(
     ServerContext* context, const profiler::proto::VersionRequest* request,
     profiler::proto::VersionResponse* response) {
-  response->set_version(profiler::utils::kAndroidStudioVersion);
+  response->set_version(profiler::kAndroidStudioVersion);
   return Status::OK;
 }
 

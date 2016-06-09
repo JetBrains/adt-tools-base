@@ -23,7 +23,6 @@
 using namespace profiler;
 using namespace profiler::perfa;
 using namespace profiler::proto;
-using namespace profiler::utils;
 
 extern "C" void InitializePerfa() {
   static Perfa* s_perfa = nullptr;

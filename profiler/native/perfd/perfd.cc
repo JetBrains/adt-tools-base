@@ -27,7 +27,6 @@
 using grpc::Service;
 using grpc::ServerBuilder;
 using namespace profiler;
-using namespace profiler::utils;
 
 namespace {
 

@@ -33,7 +33,7 @@
 using profiler::proto::CpuProfilerData;
 using profiler::proto::CpuUsageData;
 using profiler::proto::ProfilerData;
-using profiler::utils::FileReader;
+using profiler::FileReader;
 
 namespace {
 
@@ -146,7 +146,7 @@ void CpuUsageSampler::RemoveProcess(int32_t pid) {
 bool CpuUsageSampler::Sample() const {
   CpuProfilerData data;
   data.mutable_basic_info()->set_end_timestamp(
-      profiler::utils::GetCurrentTime());
+      profiler::GetCurrentTime());
   if (CollectSystemUsageData(data.mutable_cpu_usage())) {
     cache_.Add(data);
     return true;
