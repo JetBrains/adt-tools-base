@@ -68,6 +68,9 @@ public class ExternalBuildManifestLoaderTest {
         File dx = new File(mTemporaryFolder.getRoot(), "dx.jar");
         when(mProject.file("dx.jar")).thenReturn(dx);
 
+        File aapt = new File(mTemporaryFolder.getRoot(), "aapt");
+        when(mProject.file("aapt")).thenReturn(aapt);
+
         File jarOne = new File(mTemporaryFolder.getRoot(), "tmp/one");
         when(mProject.file("tmp/one")).thenReturn(jarOne);
 
@@ -79,7 +82,7 @@ public class ExternalBuildManifestLoaderTest {
             ExternalBuildApkManifest.ApkManifest.newBuilder()
                     .setAndroidSdk(ExternalBuildApkManifest.AndroidSdk.newBuilder()
                             .setDx("dx.jar")
-                            .setAapt("/path/to/aapt"))
+                            .setAapt("aapt"))
                     .addJars(ExternalBuildApkManifest.Artifact.newBuilder()
                             .setExecRootPath("tmp/one"))
                     .addJars(ExternalBuildApkManifest.Artifact.newBuilder()
@@ -98,7 +101,7 @@ public class ExternalBuildManifestLoaderTest {
                 .getBuildManifest();
 
         assertThat(buildManifest.getJarsCount()).isEqualTo(2);
-        assertThat(buildManifest.getAndroidSdk().getAapt()).isEqualTo("/path/to/aapt");
+        assertThat(buildManifest.getAndroidSdk().getAapt()).isEqualTo("aapt");
         assertThat(externalBuildContext.getInputJarFiles()).containsAllOf(
                 new File(mTemporaryFolder.getRoot(), "tmp/one"),
                 new File(mTemporaryFolder.getRoot(), "tmp/two"));

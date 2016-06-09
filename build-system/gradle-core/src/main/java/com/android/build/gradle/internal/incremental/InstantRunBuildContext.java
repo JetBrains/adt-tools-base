@@ -484,7 +484,7 @@ public class InstantRunBuildContext {
     }
 
     @VisibleForTesting
-    Collection<Build> getPreviousBuilds() {
+    public Collection<Build> getPreviousBuilds() {
         return previousBuilds.values();
     }
 

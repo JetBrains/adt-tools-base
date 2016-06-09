@@ -22,8 +22,10 @@ import com.android.build.gradle.internal.ExtraModelInfo;
 import com.android.build.gradle.internal.InstantRunTaskManager;
 import com.android.build.gradle.internal.TaskContainerAdaptor;
 import com.android.build.gradle.internal.dsl.DexOptions;
+import com.android.build.gradle.internal.dsl.SigningConfig;
 import com.android.build.gradle.internal.incremental.BuildInfoLoaderTask;
 import com.android.build.gradle.internal.incremental.InstantRunPatchingPolicy;
+import com.android.build.gradle.internal.incremental.InstantRunWrapperTask;
 import com.android.build.gradle.internal.model.AaptOptionsImpl;
 import com.android.build.gradle.internal.pipeline.ExtendedContentType;
 import com.android.build.gradle.internal.pipeline.OriginalStream;
@@ -39,6 +41,7 @@ import com.android.build.gradle.internal.transforms.DexTransform;
 import com.android.build.gradle.internal.transforms.ExtractJarsTransform;
 import com.android.build.gradle.internal.transforms.InstantRunSplitApkBuilder;
 import com.android.build.gradle.tasks.PackageApplication;
+import com.android.builder.core.BuilderConstants;
 import com.android.builder.core.DefaultDexOptions;
 import com.android.builder.core.DefaultManifestParser;
 import com.android.utils.FileUtils;
@@ -142,17 +145,18 @@ class ExternalBuildTaskManager {
 
         instantRunTaskManager.createPreColdswapTask(project);
 
-        if (variantScope.getInstantRunBuildContext().getPatchingPolicy() != InstantRunPatchingPolicy.PRE_LOLLIPOP) {
+        if (variantScope.getInstantRunBuildContext().getPatchingPolicy()
+                != InstantRunPatchingPolicy.PRE_LOLLIPOP) {
             instantRunTaskManager.createSlicerTask();
         }
 
-
-        // TODO: support multi-dex.
+        boolean multiDex =
+                variantScope.getInstantRunBuildContext().getPatchingPolicy().useMultiDex();
         DexTransform dexTransform =
                 new DexTransform(
                         new DefaultDexOptions(),
                         true,
-                        false,
+                        multiDex,
                         null,
                         variantScope.getPreDexOutputDir(),
                         externalBuildContext.getAndroidBuilder(),
@@ -162,9 +166,13 @@ class ExternalBuildTaskManager {
         AndroidTask<TransformTask> dexTask =
                 transformManager.addTransform(tasks, variantScope, dexTransform);
 
+        // for now always use the debug key.
+        SigningConfig debugSigningConfig = new SigningConfig(BuilderConstants.DEBUG);
+
         PackagingScope packagingScope =
                 new ExternalBuildPackagingScope(
-                        project, externalBuildContext, variantScope, transformManager);
+                        project, externalBuildContext, variantScope, transformManager,
+                        debugSigningConfig);
 
         // TODO: Where should assets come from?
         AndroidTask<Task> createAssetsDirectory =
@@ -191,7 +199,6 @@ class ExternalBuildTaskManager {
                             }
                         });
 
-        // TODO: create a buildInfoGeneratorTask that will only be invoked if a assembleVARIANT is called.
         // TODO: dependencies
 
         AndroidTask<InstantRunSplitApkBuilder> splitApk =
@@ -222,8 +229,11 @@ class ExternalBuildTaskManager {
             packageApp.dependsOn(tasks, stream.getDependencies());
         }
 
-        externalBuildAnchorTask.dependsOn(tasks, packageApp);
+        // finally, generate the build-info.xml
+        AndroidTask<InstantRunWrapperTask> buildInfoGeneratorTask =
+                instantRunTaskManager.createBuildInfoGeneratorTask(packageApp);
 
-        // TODO: build info?
+        buildInfoGeneratorTask.dependsOn(tasks, packageApp);
+        externalBuildAnchorTask.dependsOn(tasks, buildInfoGeneratorTask);
     }
 }

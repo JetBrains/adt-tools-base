@@ -23,6 +23,7 @@ import com.android.build.gradle.internal.incremental.BuildInfoLoaderTask;
 import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
 import com.android.build.gradle.internal.incremental.InstantRunBuildMode;
 import com.android.build.gradle.internal.incremental.InstantRunVerifierStatus;
+import com.android.build.gradle.internal.incremental.InstantRunWrapperTask;
 import com.android.build.gradle.internal.pipeline.ExtendedContentType;
 import com.android.build.gradle.internal.pipeline.OriginalStream;
 import com.android.build.gradle.internal.pipeline.TransformManager;
@@ -58,6 +59,7 @@ import java.util.function.Supplier;
 public class InstantRunTaskManager {
 
     private AndroidTask<TransformTask> verifierTask;
+    private AndroidTask<TransformTask> reloadDexTask;
 
     @NonNull
     private final Logger logger;
@@ -150,6 +152,7 @@ public class InstantRunTaskManager {
 
         AndroidTask<FastDeployRuntimeExtractorTask> extractorTask = androidTasks.create(
                 tasks, new FastDeployRuntimeExtractorTask.ConfigAction(variantScope));
+        extractorTask.dependsOn(tasks, buildInfoLoaderTask);
 
         // also add a new stream for the extractor task output.
         transformManager.addStream(OriginalStream.builder()
@@ -186,10 +189,10 @@ public class InstantRunTaskManager {
                 dexOptions,
                 logger);
 
-        AndroidTask<TransformTask> reloadDexing = transformManager
+        reloadDexTask = transformManager
                 .addTransform(tasks, transformVariantScope, reloadDexTransform);
 
-        anchorTask.dependsOn(tasks, reloadDexing);
+        anchorTask.dependsOn(tasks, reloadDexTask);
 
         return buildInfoLoaderTask;
     }
@@ -232,6 +235,7 @@ public class InstantRunTaskManager {
     /**
      * If we are at API 21 or above, we generate multi-dexes.
      */
+    @NonNull
     public void createSlicerTask() {
         TransformVariantScope transformVariantScope = variantScope.getTransformVariantScope();
         //
@@ -239,6 +243,25 @@ public class InstantRunTaskManager {
         AndroidTask<TransformTask> slicing = transformManager
                 .addTransform(tasks, transformVariantScope, slicer);
         variantScope.addColdSwapBuildTask(slicing);
+    }
+
+    /**
+     * Creates the task to save the build-info.xml and sets its dependencies.
+     * @return the task instance.
+     */
+    @NonNull
+    public AndroidTask<InstantRunWrapperTask> createBuildInfoGeneratorTask(
+            AndroidTask<?>... dependencies) {
+        AndroidTask<InstantRunWrapperTask> buildInfoGeneratorTask =
+                androidTasks.create(tasks,
+                        new InstantRunWrapperTask.ConfigAction(variantScope, logger));
+        buildInfoGeneratorTask.dependsOn(tasks, reloadDexTask);
+        if (dependencies != null) {
+            for (AndroidTask<?> dependency : dependencies) {
+                buildInfoGeneratorTask.dependsOn(tasks, dependency);
+            }
+        }
+        return buildInfoGeneratorTask;
     }
 
 }

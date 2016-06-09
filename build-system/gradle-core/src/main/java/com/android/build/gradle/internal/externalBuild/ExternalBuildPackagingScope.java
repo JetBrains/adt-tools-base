@@ -21,6 +21,7 @@ import com.android.annotations.Nullable;
 import com.android.build.gradle.api.ApkOutputFile;
 import com.android.build.gradle.internal.dsl.CoreSigningConfig;
 import com.android.build.gradle.internal.dsl.PackagingOptions;
+import com.android.build.gradle.internal.dsl.SigningConfig;
 import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
 import com.android.build.gradle.internal.pipeline.StreamFilter;
 import com.android.build.gradle.internal.pipeline.TransformManager;
@@ -53,17 +54,21 @@ public class ExternalBuildPackagingScope implements PackagingScope {
     private final TransformManager mTransformManager;
     private InstantRunBuildContext
             mInstantRunBuildContext;
+    @Nullable
+    private final SigningConfig mSigningConfig;
 
     public ExternalBuildPackagingScope(
             @NonNull Project project,
             @NonNull ExternalBuildContext externalBuildContext,
             @NonNull ExternalBuildVariantScope variantScope,
-            @NonNull TransformManager transformManager) {
+            @NonNull TransformManager transformManager,
+            @Nullable SigningConfig signingConfig) {
         mProject = project;
         mExternalBuildContext = externalBuildContext;
         mBuildManifest = externalBuildContext.getBuildManifest();
         mVariantScope = variantScope;
         mTransformManager = transformManager;
+        mSigningConfig = signingConfig;
         mInstantRunBuildContext = mVariantScope.getInstantRunBuildContext();
     }
 
@@ -165,7 +170,7 @@ public class ExternalBuildPackagingScope implements PackagingScope {
     @Nullable
     @Override
     public CoreSigningConfig getSigningConfig() {
-        return null;
+        return mSigningConfig;
     }
 
     @NonNull
