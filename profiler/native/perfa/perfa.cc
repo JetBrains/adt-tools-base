@@ -21,7 +21,6 @@
 #include "utils/config.h"
 
 using namespace profiler;
-using namespace profiler;
 using namespace profiler::proto;
 
 extern "C" void InitializePerfa() {
