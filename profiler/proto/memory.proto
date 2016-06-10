@@ -31,10 +31,11 @@ message MemoryData {
     uint64 timestamp = 1;
     int64 java_mem = 2;
     int64 native_mem = 3;
-    int64 graphics_mem = 4;
-    int64 code_mem = 5;
-    int64 others_mem = 6;
-    int64 total_mem = 7;
+    int64 stack_mem = 4;
+    int64 graphics_mem = 5;
+    int64 code_mem = 6;
+    int64 others_mem = 7;
+    int64 total_mem = 8;
   }
 
   message InstanceCountSample {
