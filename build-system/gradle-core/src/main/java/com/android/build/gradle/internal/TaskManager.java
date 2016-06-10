@@ -137,13 +137,13 @@ import com.android.build.gradle.tasks.RenderscriptCompile;
 import com.android.build.gradle.tasks.ShaderCompile;
 import com.android.build.gradle.tasks.SplitZipAlign;
 import com.android.build.gradle.tasks.ZipAlign;
+import com.android.build.gradle.tasks.factory.AndroidUnitTest;
 import com.android.build.gradle.tasks.factory.IncrementalSafeguard;
 import com.android.build.gradle.tasks.factory.JacocoAgentConfigAction;
 import com.android.build.gradle.tasks.factory.JavaCompileConfigAction;
 import com.android.build.gradle.tasks.factory.PackageJarArtifactConfigAction;
 import com.android.build.gradle.tasks.factory.ProcessJavaResConfigAction;
 import com.android.build.gradle.tasks.factory.TestServerTaskConfigAction;
-import com.android.build.gradle.tasks.factory.UnitTestConfigAction;
 import com.android.builder.core.AndroidBuilder;
 import com.android.builder.core.DefaultDexOptions;
 import com.android.builder.core.VariantConfiguration;
@@ -183,7 +183,6 @@ import org.gradle.api.tasks.Copy;
 import org.gradle.api.tasks.Sync;
 import org.gradle.api.tasks.bundling.Jar;
 import org.gradle.api.tasks.compile.JavaCompile;
-import org.gradle.api.tasks.testing.Test;
 import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry;
 
 import android.databinding.tool.DataBindingBuilder;
@@ -1519,11 +1518,11 @@ public abstract class TaskManager {
     private void createRunUnitTestTask(
             @NonNull TaskFactory tasks,
             @NonNull final VariantScope variantScope) {
-        final AndroidTask<Test> runtTestsTask =
-                androidTasks.create(tasks, new UnitTestConfigAction(variantScope));
-        runtTestsTask.dependsOn(tasks, variantScope.getAssembleTask());
+        final AndroidTask<AndroidUnitTest> runTestsTask =
+                androidTasks.create(tasks, new AndroidUnitTest.ConfigAction(variantScope));
+        runTestsTask.dependsOn(tasks, variantScope.getAssembleTask());
 
-        tasks.named(JavaPlugin.TEST_TASK_NAME, test -> test.dependsOn(runtTestsTask.getName()));
+        tasks.named(JavaPlugin.TEST_TASK_NAME, test -> test.dependsOn(runTestsTask.getName()));
     }
 
     public void createTopLevelTestTasks(final TaskFactory tasks, boolean hasFlavors) {
