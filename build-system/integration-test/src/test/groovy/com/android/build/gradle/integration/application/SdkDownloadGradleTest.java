@@ -237,7 +237,7 @@ public class SdkDownloadGradleTest {
                         + OLD_BUILD_TOOLS
                         + "\""
                         + System.lineSeparator()
-                        + "dependencies { compile 'com.android.support.constraint:constraint-layout-solver:1.0.0-alpha2' }");
+                        + "dependencies { compile 'com.android.support.constraint:constraint-layout-solver:1.0.0-alpha3' }");
 
         project.executor().run("assembleDebug");
 
@@ -245,7 +245,7 @@ public class SdkDownloadGradleTest {
                 SdkMavenRepository.ANDROID,
                 "com.android.support.constraint",
                 "constraint-layout-solver",
-                "1.0.0-alpha2");
+                "1.0.0-alpha3");
 
         assertThat(SdkMavenRepository.GOOGLE.isInstalled(mSdkHome, FileOpUtils.create())).isFalse();
         assertThat(SdkMavenRepository.ANDROID.isInstalled(mSdkHome, FileOpUtils.create()))
