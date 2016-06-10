@@ -1,4 +1,9 @@
 set(UTIL_SOURCES
+    activity_manager.cc
+    bash_command.cc
+    installer.cc
+    package_manager.cc
+    profiler_file.cc
     file_reader.cc
     stopwatch.cpp
     timestamp.cc)
