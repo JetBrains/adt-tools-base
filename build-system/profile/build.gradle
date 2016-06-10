@@ -6,6 +6,7 @@ dependencies {
     compile project(':base:common')
     compile 'com.google.guava:guava:17.0'
     compile 'com.google.code.gson:gson:2.2.4'
+    compile project(':analytics-library:tracker')
 
     testCompile 'junit:junit:4.12'
     testCompile 'org.mockito:mockito-all:1.9.5'

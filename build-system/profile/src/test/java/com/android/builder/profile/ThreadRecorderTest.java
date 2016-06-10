@@ -17,9 +17,9 @@
 package com.android.builder.profile;
 
 import com.android.annotations.NonNull;
+import com.google.wireless.android.sdk.stats.AndroidStudioStats.GradleBuildProfileSpan.ExecutionType;
 
 import org.junit.Assert;
-
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
@@ -43,7 +43,7 @@ public class ThreadRecorderTest {
     @Test
     public void testBasicTracing() {
         Integer value = ThreadRecorder.get().record(ExecutionType.SOME_RANDOM_PROCESSING,
-                new Recorder.Block<Integer>() {
+                ":projectName", null, new Recorder.Block<Integer>() {
                     @Override
                     public Integer call() throws Exception{
                         return 10;
@@ -58,7 +58,7 @@ public class ThreadRecorderTest {
     public void testBasicNoExceptionHandling() {
         final AtomicBoolean handlerCalled = new AtomicBoolean(false);
         Integer value = ThreadRecorder.get().record(ExecutionType.SOME_RANDOM_PROCESSING,
-                new Recorder.Block<Integer>() {
+                ":projectName", null, new Recorder.Block<Integer>() {
                     @Override
                     public Integer call() throws Exception{
                         return 10;
@@ -81,7 +81,7 @@ public class ThreadRecorderTest {
         final Exception toBeThrown = new Exception("random");
         final AtomicBoolean handlerCalled = new AtomicBoolean(false);
         Integer value = ThreadRecorder.get().record(ExecutionType.SOME_RANDOM_PROCESSING,
-                new Recorder.Block<Integer>() {
+                ":projectName", null, new Recorder.Block<Integer>() {
                     @Override
                     public Integer call() throws Exception {
                         throw toBeThrown;
@@ -101,11 +101,11 @@ public class ThreadRecorderTest {
     @Test
     public void testBlocks() {
         Integer value = ThreadRecorder.get().record(ExecutionType.SOME_RANDOM_PROCESSING,
-                new Recorder.Block<Integer>() {
+                ":projectName", null, new Recorder.Block<Integer>() {
                     @Override
                     public Integer call() throws Exception {
                         return ThreadRecorder.get().record(ExecutionType.SOME_RANDOM_PROCESSING,
-                                new Recorder.Block<Integer>() {
+                                ":projectName", null, new Recorder.Block<Integer>() {
                                     @Override
                                     public Integer call() throws Exception {
                                         return 10;
@@ -123,11 +123,11 @@ public class ThreadRecorderTest {
         final Exception toBeThrown = new Exception("random");
         final AtomicBoolean handlerCalled = new AtomicBoolean(false);
         Integer value = ThreadRecorder.get().record(ExecutionType.SOME_RANDOM_PROCESSING,
-                new Recorder.Block<Integer>() {
+                ":projectName", null, new Recorder.Block<Integer>() {
                     @Override
                     public Integer call() throws Exception {
                         return ThreadRecorder.get().record(ExecutionType.SOME_RANDOM_PROCESSING,
-                                new Recorder.Block<Integer>() {
+                                ":projectName", null, new Recorder.Block<Integer>() {
                                     @Override
                                     public Integer call() throws Exception {
                                         throw toBeThrown;
@@ -150,11 +150,11 @@ public class ThreadRecorderTest {
         final Exception toBeThrown = new Exception("random");
         final AtomicBoolean handlerCalled = new AtomicBoolean(false);
         Integer value = ThreadRecorder.get().record(ExecutionType.SOME_RANDOM_PROCESSING,
-                new Recorder.Block<Integer>() {
+                ":projectName", null, new Recorder.Block<Integer>() {
                     @Override
                     public Integer call() throws Exception {
                         ThreadRecorder.get().record(ExecutionType.SOME_RANDOM_PROCESSING,
-                                new Recorder.Block<Integer>() {
+                                ":projectName", null, new Recorder.Block<Integer>() {
                                     @Override
                                     public Integer call() throws Exception {
                                         return 10;
@@ -178,11 +178,11 @@ public class ThreadRecorderTest {
         final Exception toBeThrown = new Exception("random");
         final AtomicBoolean handlerCalled = new AtomicBoolean(false);
         Integer value = ThreadRecorder.get().record(ExecutionType.SOME_RANDOM_PROCESSING,
-                new Recorder.Block<Integer>() {
+                ":projectName", null, new Recorder.Block<Integer>() {
                     @Override
                     public Integer call() throws Exception {
                         return ThreadRecorder.get().record(ExecutionType.SOME_RANDOM_PROCESSING,
-                                new Recorder.Block<Integer>() {
+                                ":projectName", null, new Recorder.Block<Integer>() {
                                     @Override
                                     public Integer call() throws Exception {
                                         throw toBeThrown;
@@ -202,23 +202,23 @@ public class ThreadRecorderTest {
     }
 
     @Test
-    public void testWithMulipleInnerBlocksWithExceptionRepackaged() {
+    public void testWithMultipleInnerBlocksWithExceptionRepackaged() {
         final Exception toBeThrown = new Exception("random");
         final AtomicBoolean handlerCalled = new AtomicBoolean(false);
         // make three layers and throw an exception from the bottom layer, ensure the exception
         // is not repackaged in a RuntimeException several time as it makes its way back up
         // to the handler.
         Integer value = ThreadRecorder.get().record(ExecutionType.SOME_RANDOM_PROCESSING,
-                new Recorder.Block<Integer>() {
+                ":projectName", null, new Recorder.Block<Integer>() {
                     @Override
                     public Integer call() throws Exception {
                         return ThreadRecorder.get().record(ExecutionType.SOME_RANDOM_PROCESSING,
-                                new Recorder.Block<Integer>() {
+                                ":projectName", null, new Recorder.Block<Integer>() {
                                     @Override
                                     public Integer call() throws Exception {
                                         return ThreadRecorder.get().record(
                                                 ExecutionType.SOME_RANDOM_PROCESSING,
-                                                new Recorder.Block<Integer>() {
+                                                ":projectName", null, new Recorder.Block<Integer>() {
                                                     @Override
                                                     public Integer call() throws Exception {
                                                         throw toBeThrown;
@@ -244,7 +244,7 @@ public class ThreadRecorderTest {
         final Exception toBeThrown = new Exception("random");
         try {
             ThreadRecorder.get().record(ExecutionType.SOME_RANDOM_PROCESSING,
-                    new Recorder.Block<Integer>() {
+                    ":projectName", null, new Recorder.Block<Integer>() {
                         @Override
                         public Integer call() throws Exception {
                             throw toBeThrown;

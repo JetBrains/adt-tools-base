@@ -18,6 +18,10 @@ dependencies {
     compile project(':base:jack:jack-api')
     compile project(':base:jack:jill-api')
 
+    compile project(':analytics-library:protos')
+    compile project(':analytics-library:shared')
+    compile project(':analytics-library:tracker')
+
     compile 'com.squareup:javawriter:2.5.0'
     compile 'org.bouncycastle:bcpkix-jdk15on:1.48'
     compile 'org.bouncycastle:bcprov-jdk15on:1.48'

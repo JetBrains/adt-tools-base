@@ -17,17 +17,12 @@
 package com.android.build.gradle.internal.profile;
 
 import com.android.annotations.NonNull;
-import com.android.annotations.concurrency.Immutable;
-import com.android.builder.profile.ExecutionType;
+import com.android.annotations.Nullable;
+import com.google.wireless.android.sdk.stats.AndroidStudioStats.GradleBuildProfileSpan.ExecutionType;
 import com.android.builder.profile.Recorder;
 import com.android.builder.profile.ThreadRecorder;
-import com.google.common.collect.ImmutableList;
 
 import org.gradle.api.Project;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 
 /**
  * Helper to record execution spans.
@@ -41,13 +36,11 @@ public class SpanRecorders {
     /**
      * Records an execution span, using a Java {@link Recorder.Block}
      */
-    public static <T> T record(@NonNull Project project,
+    public static <T> T record(
+            @NonNull Project project,
+            @Nullable String variant,
             @NonNull ExecutionType executionType,
-            @NonNull Recorder.Block<T> block,
-            Recorder.Property... properties) {
-        Recorder.Property[] mergedProperties = new Recorder.Property[properties.length + 1];
-        mergedProperties[0] = new Recorder.Property(PROJECT, project.getName());
-        System.arraycopy(properties, 0, mergedProperties, 1, properties.length);
-        return (T) ThreadRecorder.get().record(executionType, block, mergedProperties);
+            @NonNull Recorder.Block<T> block) {
+        return (T) ThreadRecorder.get().record(executionType, project.getPath(), variant, block);
     }
 }

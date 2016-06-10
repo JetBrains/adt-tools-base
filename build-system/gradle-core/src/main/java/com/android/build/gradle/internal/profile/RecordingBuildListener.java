@@ -17,17 +17,18 @@
 
 package com.android.build.gradle.internal.profile;
 
+import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.build.gradle.internal.tasks.DefaultAndroidTask;
-import com.android.builder.profile.ExecutionRecord;
-import com.android.builder.profile.ExecutionType;
 import com.android.builder.profile.Recorder;
 import com.google.common.base.CaseFormat;
+import com.google.wireless.android.sdk.stats.AndroidStudioStats.GradleBuildProfileSpan;
+import com.google.wireless.android.sdk.stats.AndroidStudioStats.GradleBuildProfileSpan.ExecutionType;
+
 import org.gradle.api.Task;
 import org.gradle.api.execution.TaskExecutionListener;
 import org.gradle.api.tasks.TaskState;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -37,71 +38,70 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class RecordingBuildListener implements TaskExecutionListener {
 
-    private static final class TaskRecord {
-
-        private final long recordId;
-        private final long startTime;
-
-        TaskRecord(long recordId, long startTime) {
-            this.startTime = startTime;
-            this.recordId = recordId;
-        }
-    }
-
+    @NonNull
+    private final String mProject;
+    @NonNull
     private final Recorder mRecorder;
+    // map of outstanding tasks executing, keyed by their name.
+    @NonNull
+    private final Map<String, GradleBuildProfileSpan.Builder> mTaskRecords =
+            new ConcurrentHashMap<>();
 
-    public RecordingBuildListener(Recorder recorder) {
+    public RecordingBuildListener(@NonNull String project, @NonNull Recorder recorder) {
+        mProject = project;
         mRecorder = recorder;
     }
 
-    // map of outstanding tasks executing, keyed by their name.
-    final Map<String, TaskRecord> taskRecords = new ConcurrentHashMap<>();
-
     @Override
-    public void beforeExecute(Task task) {
-        taskRecords.put(task.getName(), new TaskRecord(
-                mRecorder.allocationRecordId(), System.currentTimeMillis()));
+    public void beforeExecute(@NonNull Task task) {
+        GradleBuildProfileSpan.Builder builder = GradleBuildProfileSpan.newBuilder();
+
+        builder.setType(getExecutionType(task.getClass()));
+        builder.setId(mRecorder.allocationRecordId());
+        builder.setStartTimeInMs(System.currentTimeMillis());
+
+        mTaskRecords.put(task.getName(), builder);
     }
 
     @Override
-    public void afterExecute(Task task, TaskState taskState) {
+    public void afterExecute(@NonNull Task task, @NonNull TaskState taskState) {
+        GradleBuildProfileSpan.Builder record = mTaskRecords.get(task.getName());
 
+        record.setDurationInMs(System.currentTimeMillis() - record.getStartTimeInMs());
+        //TODO: record task state.
+
+        mRecorder.closeRecord(mProject, getVariantName(task), record);
+    }
+
+    @NonNull
+    private static ExecutionType getExecutionType(@NonNull Class<?> taskClass) {
         // find the right ExecutionType.
-        String taskImpl = task.getClass().getSimpleName();
+        String taskImpl = taskClass.getSimpleName();
         if (taskImpl.endsWith("_Decorated")) {
             taskImpl = taskImpl.substring(0, taskImpl.length() - "_Decorated".length());
         }
         String potentialExecutionTypeName = "TASK_" +
                 CaseFormat.LOWER_CAMEL.to(CaseFormat.UPPER_UNDERSCORE, taskImpl);
-        ExecutionType executionType;
         try {
-            executionType = ExecutionType.valueOf(potentialExecutionTypeName);
+            return ExecutionType.valueOf(potentialExecutionTypeName);
         } catch (IllegalArgumentException ignored) {
-            executionType = ExecutionType.GENERIC_TASK_EXECUTION;
+            return ExecutionType.GENERIC_TASK_EXECUTION;
         }
+    }
 
-        List<Recorder.Property> properties = new ArrayList<>();
-        properties.add(new Recorder.Property("project", task.getProject().getName()));
-        properties.add(new Recorder.Property("task", task.getName()));
-
-        if (task instanceof DefaultAndroidTask) {
-            String variantName = ((DefaultAndroidTask) task).getVariantName();
-            if (variantName == null) {
-                throw new IllegalStateException("Task with type " + task.getClass().getName() +
-                        " does not include a variantName");
-            }
-            if (!variantName.isEmpty()) {
-                properties.add(new Recorder.Property("variant", variantName));
-            }
+    @Nullable
+    private static String getVariantName(@NonNull Task task) {
+        if (!(task instanceof DefaultAndroidTask)) {
+            return null;
         }
-
-        TaskRecord taskRecord = taskRecords.get(task.getName());
-        mRecorder.closeRecord(new ExecutionRecord(
-                taskRecord.recordId,
-                0 /* parentId */,
-                taskRecord.startTime,
-                System.currentTimeMillis() - taskRecord.startTime,
-                executionType,
-                properties));
+        String variantName = ((DefaultAndroidTask) task).getVariantName();
+        if (variantName == null) {
+            throw new IllegalStateException("Task with type " + task.getClass().getName() +
+                    " does not include a variantName");
+        }
+        if (variantName.isEmpty()) {
+            return null;
+        }
+        return variantName;
     }
 }

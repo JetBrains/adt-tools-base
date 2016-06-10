@@ -25,10 +25,13 @@ import com.android.build.gradle.internal.ExtraModelInfo;
 import com.android.build.gradle.internal.SdkHandler;
 import com.android.build.gradle.internal.TaskManager;
 import com.android.build.gradle.internal.ndk.NdkHandler;
+import com.android.build.gradle.internal.profile.ProfilerInitializer;
 import com.android.build.gradle.internal.variant.ApplicationVariantFactory;
 import com.android.build.gradle.internal.variant.VariantFactory;
+import com.android.builder.Version;
 import com.android.builder.core.AndroidBuilder;
-import com.android.builder.sdk.SdkLibData;
+import com.android.builder.profile.ProcessRecorder;
+import com.google.wireless.android.sdk.stats.AndroidStudioStats;
 
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
@@ -47,7 +50,16 @@ public class AppComponentModelPlugin implements Plugin<Project> {
 
     @Override
     public void apply(Project project) {
+        ProfilerInitializer.init(project);
+        ProcessRecorder.getProject(project.getPath())
+                .setAndroidPluginVersion(Version.ANDROID_GRADLE_PLUGIN_VERSION)
+                .setAndroidPlugin(
+                        AndroidStudioStats.GradleBuildProject.PluginType.APPLICATION)
+                .setPluginGeneration(
+                        AndroidStudioStats.GradleBuildProject.PluginGeneration.COMPONENT_MODEL);
+
         project.getPluginManager().apply(BaseComponentModelPlugin.class);
+
         project.getPluginManager().apply(AndroidComponentModelTestPlugin.class);
     }
 

@@ -50,6 +50,7 @@ import com.android.build.gradle.internal.ndk.NdkHandler;
 import com.android.build.gradle.internal.pipeline.TransformTask;
 import com.android.build.gradle.internal.process.GradleJavaProcessExecutor;
 import com.android.build.gradle.internal.process.GradleProcessExecutor;
+import com.android.build.gradle.internal.profile.ProfilerInitializer;
 import com.android.build.gradle.internal.profile.RecordingBuildListener;
 import com.android.build.gradle.internal.transforms.DexTransform;
 import com.android.build.gradle.internal.variant.BaseVariantData;
@@ -64,7 +65,9 @@ import com.android.builder.internal.compiler.JackConversionCache;
 import com.android.builder.internal.compiler.PreDexCache;
 import com.android.builder.model.AndroidProject;
 import com.android.builder.model.SyncIssue;
-import com.android.builder.profile.ExecutionType;
+import com.android.builder.profile.ProcessRecorder;
+import com.google.wireless.android.sdk.stats.AndroidStudioStats;
+import com.google.wireless.android.sdk.stats.AndroidStudioStats.GradleBuildProfileSpan.ExecutionType;
 import com.android.builder.profile.ProcessRecorderFactory;
 import com.android.builder.profile.Recorder;
 import com.android.builder.profile.ThreadRecorder;
@@ -84,7 +87,6 @@ import com.google.common.base.CharMatcher;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Lists;
 
 import org.gradle.BuildListener;
 import org.gradle.BuildResult;
@@ -304,58 +306,59 @@ public abstract class BasePlugin {
         checkPathForErrors();
         checkModulesForErrors();
 
-        List<Recorder.Property> propertyList = Lists.newArrayList(
-                new Recorder.Property("plugin_version", Version.ANDROID_GRADLE_PLUGIN_VERSION),
-                new Recorder.Property("next_gen_plugin", "false"),
-                new Recorder.Property("gradle_version", project.getGradle().getGradleVersion())
-        );
+        ProfilerInitializer.init(project);
+
         String benchmarkName = AndroidGradleOptions.getBenchmarkName(project);
-        if (benchmarkName != null) {
-            propertyList.add(new Recorder.Property("benchmark_name", benchmarkName));
-        }
         String benchmarkMode = AndroidGradleOptions.getBenchmarkMode(project);
-        if (benchmarkMode != null) {
-            propertyList.add(new Recorder.Property("benchmark_mode", benchmarkMode));
+        if (benchmarkName != null && benchmarkMode != null) {
+            ProcessRecorder.setBenchmark(benchmarkName, benchmarkMode);
         }
 
-        try {
-            ProcessRecorderFactory.initialize(
-                    getLogger(),
-                    project.getRootProject().file("profiler" + System.currentTimeMillis() + ".json"),
-                    propertyList);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+        project.getGradle().addListener(
+                new RecordingBuildListener(project.getPath(), ThreadRecorder.get()));
+
+        AndroidStudioStats.GradleBuildProject.PluginType pluginType =
+                AndroidStudioStats.GradleBuildProject.PluginType.UNKNOWN_PLUGIN_TYPE;
+        if (this instanceof AppPlugin) {
+            pluginType = AndroidStudioStats.GradleBuildProject.PluginType.APPLICATION;
+        } else if (this instanceof LibraryPlugin) {
+            pluginType = AndroidStudioStats.GradleBuildProject.PluginType.LIBRARY;
+        } else if (this instanceof TestPlugin) {
+            pluginType = AndroidStudioStats.GradleBuildProject.PluginType.TEST;
         }
 
-        project.getGradle().addListener(new RecordingBuildListener(ThreadRecorder.get()));
-
+        ProcessRecorder.getProject(project.getPath())
+                .setAndroidPluginVersion(Version.ANDROID_GRADLE_PLUGIN_VERSION)
+                .setAndroidPlugin(pluginType)
+                .setPluginGeneration(
+                        AndroidStudioStats.GradleBuildProject.PluginGeneration.FIRST);
 
         ThreadRecorder.get().record(ExecutionType.BASE_PLUGIN_PROJECT_CONFIGURE,
-                new Recorder.Block<Void>() {
+                project.getPath(), null /*variantName*/, new Recorder.Block<Void>() {
                     @Override
                     public Void call() throws Exception {
                         configureProject();
                         return null;
                     }
-                }, new Recorder.Property("project", project.getName()));
+                });
 
         ThreadRecorder.get().record(ExecutionType.BASE_PLUGIN_PROJECT_BASE_EXTENSION_CREATION,
-                new Recorder.Block<Void>() {
+                project.getPath(), null /*variantName*/, new Recorder.Block<Void>() {
                     @Override
                     public Void call() throws Exception {
                         createExtension();
                         return null;
                     }
-                }, new Recorder.Property("project", project.getName()));
+                });
 
         ThreadRecorder.get().record(ExecutionType.BASE_PLUGIN_PROJECT_TASKS_CREATION,
-                new Recorder.Block<Void>() {
+                project.getPath(), null /*variantName*/, new Recorder.Block<Void>() {
                     @Override
                     public Void call() throws Exception {
                         createTasks();
                         return null;
                     }
-                }, new Recorder.Property("project", project.getName()));
+                });
 
         // Apply additional plugins
         for (String plugin : AndroidGradleOptions.getAdditionalPlugins(project)) {
@@ -422,7 +425,7 @@ public abstract class BasePlugin {
                 ExecutorSingleton.shutdown();
                 sdkHandler.unload();
                 ThreadRecorder.get().record(ExecutionType.BASE_PLUGIN_BUILD_FINISHED,
-                        new Recorder.Block() {
+                        project.getPath(), null, new Recorder.Block() {
                             @Override
                             public Void call() throws Exception {
                                 PreDexCache.getCache().clear(
@@ -437,7 +440,7 @@ public abstract class BasePlugin {
                                 Main.clearInternTables();
                                 return null;
                             }
-                        }, new Recorder.Property("project", project.getName()));
+                        });
 
                 try {
                     ProcessRecorderFactory.shutdown();
@@ -594,6 +597,7 @@ public abstract class BasePlugin {
 
     private void createTasks() {
         ThreadRecorder.get().record(ExecutionType.TASK_MANAGER_CREATE_TASKS,
+                project.getPath(), null,
                 new Recorder.Block<Void>() {
                     @Override
                     public Void call() throws Exception {
@@ -601,19 +605,18 @@ public abstract class BasePlugin {
                                 new TaskContainerAdaptor(project.getTasks()));
                         return null;
                     }
-                },
-                new Recorder.Property("project", project.getName()));
+                });
 
         project.afterEvaluate(project -> {
             ThreadRecorder.get().record(ExecutionType.BASE_PLUGIN_CREATE_ANDROID_TASKS,
+                    project.getPath(), null,
                     new Recorder.Block<Void>() {
                         @Override
                         public Void call() throws Exception {
                             createAndroidTasks(false);
                             return null;
                         }
-                    },
-                    new Recorder.Property("project", project.getName()));
+                    });
         });
     }
 
@@ -679,17 +682,15 @@ public abstract class BasePlugin {
 
         extension.disableWrite();
 
-        ThreadRecorder.get().record(
-                ExecutionType.GENERAL_CONFIG,
-                Recorder.EmptyBlock,
-                new Recorder.Property("build_tools_version",
-                        extension.getBuildToolsRevision().toString()));
+        ProcessRecorder.getProject(project.getPath())
+                .setBuildToolsVersion(extension.getBuildToolsRevision().toString());
 
         // setup SDK repositories.
         sdkHandler.addLocalRepositories(project);
 
         taskManager.addDataBindingDependenciesIfNecessary(extension.getDataBinding());
         ThreadRecorder.get().record(ExecutionType.VARIANT_MANAGER_CREATE_ANDROID_TASKS,
+                project.getPath(), null,
                 new Recorder.Block<Void>() {
                     @Override
                     public Void call() throws Exception {
@@ -701,7 +702,7 @@ public abstract class BasePlugin {
                         }
                         return null;
                     }
-                }, new Recorder.Property("project", project.getName()));
+                });
 
         // Create and read external native build JSON files depending on what's happening right
         // now.
@@ -729,6 +730,7 @@ public abstract class BasePlugin {
 
         if (ExternalNativeBuildTaskUtils.shouldRegenerateOutOfDateJsons(project)) {
             ThreadRecorder.get().record(ExecutionType.VARIANT_MANAGER_EXTERNAL_NATIVE_CONFIG_VALUES,
+                    project.getPath(), null,
                     new Recorder.Block<Void>() {
                         @Override
                         public Void call() throws Exception {
@@ -748,7 +750,7 @@ public abstract class BasePlugin {
                             }
                             return null;
                         }
-                    }, new Recorder.Property("project", project.getName()));
+                    });
         }
     }
 

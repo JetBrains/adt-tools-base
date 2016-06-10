@@ -16,6 +16,8 @@
 
 package com.android.build.gradle.internal.externalBuild;
 
+import com.android.build.gradle.internal.profile.ProfilerInitializer;
+
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 
@@ -34,6 +36,8 @@ public class ExternalBuildPlugin implements Plugin<Project> {
     public void apply(Project project) {
         final ExternalBuildExtension externalBuildExtension =
                 project.getExtensions().create("externalBuild", ExternalBuildExtension.class);
+
+        ProfilerInitializer.init(project);
 
         ExternalBuildTaskManager taskManager =
                 new ExternalBuildTaskManager(project);

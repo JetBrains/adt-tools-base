@@ -49,7 +49,8 @@ import com.android.builder.core.VariantType;
 import com.android.builder.model.ProductFlavor;
 import com.android.builder.model.SigningConfig;
 import com.android.builder.model.SyncIssue;
-import com.android.builder.profile.ExecutionType;
+import com.android.builder.profile.ProcessRecorder;
+import com.google.wireless.android.sdk.stats.AndroidStudioStats.GradleBuildProfileSpan.ExecutionType;
 import com.android.builder.profile.Recorder;
 import com.android.builder.profile.ThreadRecorder;
 import com.android.utils.StringHelper;
@@ -262,7 +263,7 @@ public class VariantManager implements VariantModel {
         final TaskFactory tasks = new TaskContainerAdaptor(project.getTasks());
         if (variantDataList.isEmpty()) {
             ThreadRecorder.get().record(ExecutionType.VARIANT_MANAGER_CREATE_VARIANTS,
-                    new Recorder.Block<Void>() {
+                    project.getPath(), null /*variantName*/, new Recorder.Block<Void>() {
                         @Override
                         public Void call() throws Exception {
                             populateVariantDataList();
@@ -273,7 +274,7 @@ public class VariantManager implements VariantModel {
 
         // Create top level test tasks.
         ThreadRecorder.get().record(ExecutionType.VARIANT_MANAGER_CREATE_TESTS_TASKS,
-                new Recorder.Block<Void>() {
+                project.getPath(), null /*variantName*/, new Recorder.Block<Void>() {
                     @Override
                     public Void call() throws Exception {
                         taskManager.createTopLevelTestTasks(tasks, !productFlavors.isEmpty());
@@ -282,16 +283,17 @@ public class VariantManager implements VariantModel {
                 });
 
         for (final BaseVariantData<? extends BaseVariantOutputData> variantData : variantDataList) {
-
-            SpanRecorders.record(project, ExecutionType.VARIANT_MANAGER_CREATE_TASKS_FOR_VARIANT,
+            SpanRecorders.record(
+                    project,
+                    variantData.getName(),
+                    ExecutionType.VARIANT_MANAGER_CREATE_TASKS_FOR_VARIANT,
                     new Recorder.Block<Void>() {
                         @Override
                         public Void call() throws Exception {
                             createTasksForVariantData(tasks, variantData);
                             return null;
                         }
-                    },
-                    new Recorder.Property(SpanRecorders.VARIANT, variantData.getName()));
+                    });
         }
 
         taskManager.createReportTasks(tasks, variantDataList);
@@ -452,7 +454,9 @@ public class VariantManager implements VariantModel {
                         variantDep.getPackageConfiguration().getName(), COM_ANDROID_SUPPORT_MULTIDEX_INSTRUMENTATION);
             }
 
-            SpanRecorders.record(project, ExecutionType.RESOLVE_DEPENDENCIES,
+            SpanRecorders.record(project,
+                    testVariantConfig.getFullName(),
+                    ExecutionType.RESOLVE_DEPENDENCIES,
                     new Recorder.Block<Void>() {
                         @Override
                         public Void call() {
@@ -463,8 +467,7 @@ public class VariantManager implements VariantModel {
                                     null /*testedProjectPath*/);
                             return null;
                         }
-                    },
-                    new Recorder.Property(SpanRecorders.VARIANT, testVariantConfig.getFullName()));
+                    });
             testVariantConfig.setDependencies(
                     variantDep.getCompileDependencies(),
                     variantDep.getPackageDependencies());
@@ -623,7 +626,10 @@ public class VariantManager implements VariantModel {
                 ((TestAndroidConfig) extension).getTargetProjectPath() :
                 null;
 
-        SpanRecorders.record(project, ExecutionType.RESOLVE_DEPENDENCIES,
+        SpanRecorders.record(
+                project,
+                variantConfig.getFullName(),
+                ExecutionType.RESOLVE_DEPENDENCIES,
                 new Recorder.Block<Void>() {
                     @Override
                     public Void call() {
@@ -633,7 +639,7 @@ public class VariantManager implements VariantModel {
                                 testedProjectPath);
                         return null;
                     }
-                }, new Recorder.Property(SpanRecorders.VARIANT, variantConfig.getFullName()));
+                });
 
         variantConfig.setDependencies(
                 variantDep.getCompileDependencies(),
@@ -820,27 +826,12 @@ public class VariantManager implements VariantModel {
                 variantDataList.add(variantData);
 
                 GradleVariantConfiguration variantConfig = variantData.getVariantConfiguration();
-                ThreadRecorder.get().record(
-                        ExecutionType.VARIANT_CONFIG,
-                        Recorder.EmptyBlock,
-                        new Recorder.Property(
-                                "project",
-                                project.getName()),
-                        new Recorder.Property(
-                                "variant",
-                                variantData.getName()),
-                        new Recorder.Property(
-                                "use_jack",
-                                Boolean.toString(variantConfig.getJackOptions().isEnabled())),
-                        new Recorder.Property(
-                                "use_minify",
-                                Boolean.toString(variantConfig.isMinifyEnabled())),
-                        new Recorder.Property(
-                                "use_multi_dex",
-                                Boolean.toString(variantConfig.isMultiDexEnabled())),
-                        new Recorder.Property(
-                                "multi_dex_legacy",
-                                Boolean.toString(variantConfig.isLegacyMultiDexMode())));
+                ProcessRecorder.addVariant(project.getPath(), variantData.getName())
+                        .setIsDebug(variantConfig.getBuildType().isDebuggable())
+                        .setUseJack(variantConfig.getJackOptions().isEnabled())
+                        .setMinifyEnabled(variantConfig.isMinifyEnabled())
+                        .setUseMultidex(variantConfig.isMultiDexEnabled())
+                        .setUseLegacyMultidex(variantConfig.isLegacyMultiDexMode());
 
 
                 if (variantFactory.hasTestScope()) {

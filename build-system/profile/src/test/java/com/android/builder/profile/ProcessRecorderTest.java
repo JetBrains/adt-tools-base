@@ -21,6 +21,8 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import com.android.annotations.NonNull;
+import com.google.wireless.android.sdk.stats.AndroidStudioStats;
+import com.google.wireless.android.sdk.stats.AndroidStudioStats.GradleBuildProfileSpan.ExecutionType;
 
 import org.junit.After;
 import org.junit.Assert;
@@ -31,8 +33,8 @@ import java.io.IOException;
 import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Tests for the {@link ProcessRecorder} class
@@ -58,7 +60,7 @@ public class ProcessRecorderTest {
                 new ProcessRecorder.JsonRecordWriter(stringWriter);
         ProcessRecorderFactory.initializeForTests(jsonRecordWriter);
         ThreadRecorder.get().record(ExecutionType.SOME_RANDOM_PROCESSING,
-                new Recorder.Block<Integer>() {
+                ":projectName", null, new Recorder.Block<Integer>() {
                     @Override
                     public Integer call() throws Exception {
                         return 10;
@@ -81,42 +83,42 @@ public class ProcessRecorderTest {
                 new ProcessRecorder.JsonRecordWriter(stringWriter);
         ProcessRecorderFactory.initializeForTests(jsonRecordWriter);
         ThreadRecorder.get().record(ExecutionType.SOME_RANDOM_PROCESSING,
-                new Recorder.Block<Integer>() {
+                ":projectName", "foo", new Recorder.Block<Integer>() {
                     @Override
                     public Integer call() throws Exception {
                         return 10;
                     }
-                },
-                new Recorder.Property("variant", "foo"));
+                });
         ProcessRecorder.get().finish();
         String jsonText = stringWriter.toString();
-        assertTrue(jsonText.contains("[{\"name\":\"variant\",\"value\":\"foo\"}]"));
+        assertTrue(jsonText.contains("{\"name\":\"variant\",\"value\":\"foo\"}]"));
     }
 
     @Test
     public void testRecordsOrder() throws InterruptedException {
-        final List<ExecutionRecord> records = new ArrayList<>();
+        final List<AndroidStudioStats.GradleBuildProfileSpan> records = new ArrayList<>();
         ProcessRecorder.ExecutionRecordWriter recorderWriter =
                 new ProcessRecorder.ExecutionRecordWriter() {
+                    @Override
+                    public void write(
+                            @NonNull AndroidStudioStats.GradleBuildProfileSpan executionRecord,
+                            @NonNull Map<String, String> properties)
+                            throws IOException {
+                        records.add(executionRecord);
+                    }
 
-            @Override
-            public void write(@NonNull ExecutionRecord executionRecord) {
-                records.add(executionRecord);
-            }
-
-            @Override
-            public void close() throws IOException {
-
-            }
-        };
+                    @Override
+                    public void close() throws IOException {
+                    }
+                };
 
         ProcessRecorderFactory.initializeForTests(recorderWriter);
         ThreadRecorder.get().record(ExecutionType.SOME_RANDOM_PROCESSING,
-                new Recorder.Block<Integer>() {
+                "projectName", null, new Recorder.Block<Integer>() {
                     @Override
                     public Integer call() throws Exception {
                         return ThreadRecorder.get().record(ExecutionType.SOME_RANDOM_PROCESSING,
-                                new Recorder.Block<Integer>() {
+                                "projectName", null, new Recorder.Block<Integer>() {
                                     @Override
                                     public Integer call() throws Exception {
                                         return 10;
@@ -126,43 +128,44 @@ public class ProcessRecorderTest {
                 });
 
         ProcessRecorder.get().finish();
-        setExecutionRecords(records);
+        sortExecutionRecords(records);
         // delete the metadata records.
-        assertEquals(ExecutionType.INITIAL_METADATA, records.remove(0).type);
-        assertEquals(ExecutionType.FINAL_METADATA, records.remove(records.size() - 1).type);
+        assertEquals(ExecutionType.INITIAL_METADATA, records.remove(0).getType());
+        assertEquals(ExecutionType.FINAL_METADATA,
+                records.remove(records.size() - 1).getType());
         assertEquals(2, records.size());
-        assertTrue(records.get(1).parentId == records.get(0).id);
+        assertTrue(records.get(1).getParentId() == records.get(0).getId());
     }
 
     @Test
     public void testMultipleSpans() throws InterruptedException {
-        final List<ExecutionRecord> records = new ArrayList<>();
+        final List<AndroidStudioStats.GradleBuildProfileSpan> records = new ArrayList<>();
         ProcessRecorder.ExecutionRecordWriter recorderWriter =
                 new ProcessRecorder.ExecutionRecordWriter() {
+                    @Override
+                    public void write(
+                            @NonNull AndroidStudioStats.GradleBuildProfileSpan executionRecord,
+                            @NonNull Map<String, String> attributes) throws IOException {
+                        records.add(executionRecord);
+                    }
 
-            @Override
-            public void write(@NonNull ExecutionRecord executionRecord) {
-                records.add(executionRecord);
-            }
-
-            @Override
-            public void close() throws IOException {
-
-            }
-        };
+                    @Override
+                    public void close() throws IOException {
+                    }
+                };
         ProcessRecorderFactory.initializeForTests(recorderWriter);
 
         Integer value = ThreadRecorder.get().record(ExecutionType.SOME_RANDOM_PROCESSING,
-                new Recorder.Block<Integer>() {
+                ":projectName", null, new Recorder.Block<Integer>() {
                     @Override
                     public Integer call() throws Exception {
                         return ThreadRecorder.get().record(ExecutionType.SOME_RANDOM_PROCESSING,
-                                new Recorder.Block<Integer>() {
+                                ":projectName", null, new Recorder.Block<Integer>() {
                                     @Override
                                     public Integer call() throws Exception {
                                         Integer first = ThreadRecorder.get().record(
                                                 ExecutionType.SOME_RANDOM_PROCESSING,
-                                                new Recorder.Block<Integer>() {
+                                                ":projectName", null, new Recorder.Block<Integer>() {
                                                     @Override
                                                     public Integer call() throws Exception {
                                                         return 1;
@@ -170,7 +173,7 @@ public class ProcessRecorderTest {
                                                 });
                                         Integer second = ThreadRecorder.get().record(
                                                 ExecutionType.SOME_RANDOM_PROCESSING,
-                                                new Recorder.Block<Integer>() {
+                                                ":projectName", null, new Recorder.Block<Integer>() {
                                                     @Override
                                                     public Integer call() throws Exception {
                                                         return 3;
@@ -178,11 +181,12 @@ public class ProcessRecorderTest {
                                                 });
                                         Integer third = ThreadRecorder.get().record(
                                                 ExecutionType.SOME_RANDOM_PROCESSING,
-                                                new Recorder.Block<Integer>() {
+                                                ":projectName", null, new Recorder.Block<Integer>() {
                                                     @Override
                                                     public Integer call() throws Exception {
                                                         Integer value = ThreadRecorder.get().record(
                                                                 ExecutionType.SOME_RANDOM_PROCESSING,
+                                                                ":projectName", null,
                                                                 new Recorder.Block<Integer>() {
                                                                     @Override
                                                                     public Integer call()
@@ -207,32 +211,28 @@ public class ProcessRecorderTest {
         assertEquals(16, value.intValue());
         ProcessRecorder.get().finish();
         // delete the metadata records.
-        assertEquals(ExecutionType.INITIAL_METADATA, records.remove(0).type);
-        assertEquals(ExecutionType.FINAL_METADATA, records.remove(records.size() - 1).type);
+        assertEquals(ExecutionType.INITIAL_METADATA, records.remove(0).getType());
+        assertEquals(ExecutionType.FINAL_METADATA, records.remove(records.size() - 1).getType());
         assertEquals(6, records.size());
         // re-order by event id.
-        setExecutionRecords(records);
-        assertEquals(records.get(0).id, records.get(1).parentId);
-        assertEquals(records.get(1).id, records.get(2).parentId);
-        assertEquals(records.get(1).id, records.get(3).parentId);
-        assertEquals(records.get(1).id, records.get(4).parentId);
-        assertEquals(records.get(4).id, records.get(5).parentId);
+        sortExecutionRecords(records);
+        assertEquals(records.get(0).getId(), records.get(1).getParentId());
+        assertEquals(records.get(1).getId(), records.get(2).getParentId());
+        assertEquals(records.get(1).getId(), records.get(3).getParentId());
+        assertEquals(records.get(1).getId(), records.get(4).getParentId());
+        assertEquals(records.get(4).getId(), records.get(5).getParentId());
 
         assertTrue(
-                records.get(1).durationInMs >=
-                        records.get(2).durationInMs
-                                + records.get(3).durationInMs
-                                + records.get(4).durationInMs);
+                records.get(1).getDurationInMs() >=
+                        records.get(2).getDurationInMs()
+                                + records.get(3).getDurationInMs()
+                                + records.get(4).getDurationInMs());
 
-        assertTrue(records.get(4).durationInMs >= records.get(5).durationInMs);
+        assertTrue(records.get(4).getDurationInMs() >= records.get(5).getDurationInMs());
     }
 
-    private static void setExecutionRecords(List<ExecutionRecord> records) {
-        Collections.sort(records, new Comparator<ExecutionRecord>() {
-            @Override
-            public int compare(ExecutionRecord o1, ExecutionRecord o2) {
-                return new Long(o1.id).compareTo(o2.id);
-            }
-        });
+    private static void sortExecutionRecords(
+            @NonNull List<AndroidStudioStats.GradleBuildProfileSpan> records) {
+        Collections.sort(records, (o1, o2) -> new Long(o1.getId()).compareTo(o2.getId()));
     }
 }

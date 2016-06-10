@@ -26,7 +26,9 @@ import com.android.build.api.transform.Transform;
 import com.android.build.api.transform.TransformException;
 import com.android.build.api.transform.TransformInput;
 import com.android.build.gradle.internal.scope.TaskConfigAction;
-import com.android.builder.profile.ExecutionType;
+import com.google.common.base.CaseFormat;
+import com.google.wireless.android.sdk.stats.AndroidStudioStats;
+import com.google.wireless.android.sdk.stats.AndroidStudioStats.GradleBuildProfileSpan.ExecutionType;
 import com.android.builder.profile.Recorder;
 import com.android.builder.profile.ThreadRecorder;
 import com.android.ide.common.util.ReferenceHolder;
@@ -103,13 +105,18 @@ public class TransformTask extends StreamBasedTask implements Context {
         final ReferenceHolder<Collection<SecondaryInput>> changedSecondaryInputs =
                 ReferenceHolder.empty();
 
-        ThreadRecorder.get().record(ExecutionType.TASK_TRANSFORM_PREPARATION,
-                new Recorder.Block<Void>() {
+        isIncremental.setValue(transform.isIncremental() && incrementalTaskInputs.isIncremental());
+
+        AndroidStudioStats.GradleTransformExecution preExecutionInfo =
+                AndroidStudioStats.GradleTransformExecution.newBuilder()
+                        .setType(getTransformType(transform.getClass()))
+                        .setIsIncremental(isIncremental.getValue())
+                .build();
+
+        ThreadRecorder.get().record(ExecutionType.TASK_TRANSFORM_PREPARATION, preExecutionInfo,
+                getProject().getPath(), getVariantName(), new Recorder.Block<Void>() {
                     @Override
                     public Void call() throws Exception {
-
-                        isIncremental.setValue( transform.isIncremental() &&
-                                incrementalTaskInputs.isIncremental());
 
                         Map<File, Status> changedMap = Maps.newHashMap();
                         Set<File> removedFiles = Sets.newHashSet();
@@ -157,13 +164,13 @@ public class TransformTask extends StreamBasedTask implements Context {
 
                         return null;
                     }
-                },
-                new Recorder.Property("project", getProject().getName()),
-                new Recorder.Property("transform", transform.getName()),
-                new Recorder.Property("incremental", Boolean.toString(transform.isIncremental())));
+                });
 
-        ThreadRecorder.get().record(ExecutionType.TASK_TRANSFORM,
-                new Recorder.Block<Void>() {
+        AndroidStudioStats.GradleTransformExecution executionInfo =
+                preExecutionInfo.toBuilder().setIsIncremental(isIncremental.getValue()).build();
+
+        ThreadRecorder.get().record(ExecutionType.TASK_TRANSFORM, executionInfo,
+                getProject().getPath(), getVariantName(), new Recorder.Block<Void>() {
                     @Override
                     public Void call() throws Exception {
 
@@ -178,10 +185,24 @@ public class TransformTask extends StreamBasedTask implements Context {
                                 .build());
                         return null;
                     }
-                },
-                new Recorder.Property("project", getProject().getName()),
-                new Recorder.Property("transform", transform.getName()),
-                new Recorder.Property("incremental", Boolean.toString(transform.isIncremental())));
+                });
+    }
+
+    private static AndroidStudioStats.GradleTransformExecution.Type getTransformType(
+            @NonNull Class<? extends Transform> taskClass) {
+        String taskImpl = taskClass.getSimpleName();
+        if (taskImpl.endsWith("Transform")) {
+            taskImpl = taskImpl.substring(0, taskImpl.length() - "Transform".length());
+        }
+        String potentialExecutionTypeName =
+                CaseFormat.LOWER_CAMEL.to(CaseFormat.UPPER_UNDERSCORE, taskImpl);
+
+        try {
+            return AndroidStudioStats.GradleTransformExecution.Type.valueOf(
+                    potentialExecutionTypeName);
+        } catch (IllegalArgumentException ignored) {
+            return AndroidStudioStats.GradleTransformExecution.Type.UNKNOWN_TRANSFORM_TYPE;
+        }
     }
 
     private Collection<SecondaryInput> gatherSecondaryInputChanges(

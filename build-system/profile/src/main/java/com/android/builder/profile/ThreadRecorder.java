@@ -18,12 +18,11 @@ package com.android.builder.profile;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.google.common.collect.ImmutableList;
+import com.google.wireless.android.sdk.stats.AndroidStudioStats;
+import com.google.wireless.android.sdk.stats.AndroidStudioStats.GradleBuildProfileSpan.ExecutionType;
 
 import java.util.ArrayDeque;
-import java.util.Collections;
 import java.util.Deque;
-import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -40,17 +39,11 @@ public class ThreadRecorder implements Recorder {
 
     // Dummy implementation that records nothing but comply to the overall recording contracts.
     protected static final Recorder dummyRecorder = new Recorder() {
-        @Nullable
-        @Override
-        public <T> T record(@NonNull ExecutionType executionType, @NonNull Block<T> block,
-                Property... properties) {
-            return record(executionType, block, Collections.<Property>emptyList());
-        }
 
         @Nullable
         @Override
-        public <T> T record(@NonNull ExecutionType executionType, @NonNull Block<T> block,
-                @NonNull List<Property> properties) {
+        public <T> T record(@NonNull ExecutionType executionType, @NonNull String project,
+                @Nullable String variant, @NonNull Block<T> block) {
             try {
                 return block.call();
             } catch (Exception e) {
@@ -59,13 +52,24 @@ public class ThreadRecorder implements Recorder {
             return null;
         }
 
+        @Nullable
+        @Override
+        public <T> T record(
+                @NonNull ExecutionType executionType,
+                @Nullable AndroidStudioStats.GradleTransformExecution transform,
+                @NonNull String project, @Nullable String variant, @NonNull Block<T> block) {
+            return record(executionType, project, variant, block);
+        }
+
         @Override
         public long allocationRecordId() {
             return 0;
         }
 
+
         @Override
-        public void closeRecord(ExecutionRecord record) {
+        public void closeRecord(@NonNull String project, @Nullable String variant,
+                @NonNull AndroidStudioStats.GradleBuildProfileSpan.Builder executionRecord) {
         }
     };
 
@@ -74,27 +78,6 @@ public class ThreadRecorder implements Recorder {
 
     public static Recorder get() {
         return ProcessRecorderFactory.getFactory().isInitialized() ? recorder : dummyRecorder;
-    }
-
-    private static  class PartialRecord {
-        final ExecutionType executionType;
-        final long recordId;
-        final long parentRecordId;
-        final long startTimeInMs;
-
-        final List<Recorder.Property> extraArgs;
-
-        PartialRecord(ExecutionType executionType,
-                long recordId,
-                long parentId,
-                long startTimeInMs,
-                List<Recorder.Property> extraArgs) {
-            this.executionType = executionType;
-            this.recordId = recordId;
-            this.parentRecordId = parentId;
-            this.startTimeInMs = startTimeInMs;
-            this.extraArgs = extraArgs;
-        }
     }
 
     /**
@@ -118,40 +101,55 @@ public class ThreadRecorder implements Recorder {
     }
 
     @Override
-    public void closeRecord(ExecutionRecord executionRecord) {
-        if (recordStacks.get().pop() != executionRecord.id) {
+    public void closeRecord(
+            @NonNull String project,
+            @Nullable String variant,
+            @NonNull AndroidStudioStats.GradleBuildProfileSpan.Builder executionRecord) {
+        if (recordStacks.get().pop() != executionRecord.getId()) {
             logger.severe("Internal Error : mixed records in profiling stack");
         }
-        ProcessRecorder.get().writeRecord(executionRecord);
+        ProcessRecorder.get().writeRecord(project, variant, executionRecord);
+    }
+
+
+    @Nullable
+    @Override
+    public <T> T record(
+            @NonNull ExecutionType executionType,
+            @NonNull String project, @Nullable String variant, @NonNull Block<T> block) {
+        return record(executionType, null, project, variant, block);
     }
 
     @Nullable
     @Override
-    public <T> T record(@NonNull ExecutionType executionType, @NonNull Block<T> block,
-            Property... properties) {
-
-        List<Recorder.Property> propertyList = properties == null
-                ? ImmutableList.<Recorder.Property>of()
-                : ImmutableList.copyOf(properties);
-
-        return record(executionType, block, propertyList);
-    }
-
-    @Nullable
-    @Override
-    public <T> T record(@NonNull ExecutionType executionType, @NonNull Block<T> block,
-            @NonNull List<Property> properties) {
+    public <T> T record(
+            @NonNull ExecutionType executionType,
+            @Nullable AndroidStudioStats.GradleTransformExecution transform,
+            @NonNull String project,
+            @Nullable String variant,
+            @NonNull Block<T> block) {
 
         long thisRecordId = ProcessRecorder.allocateRecordId();
 
         // am I a child ?
+        @Nullable
         Long parentId = recordStacks.get().peek();
 
         long startTimeInMs = System.currentTimeMillis();
 
-        final PartialRecord currentRecord = new PartialRecord(executionType,
-                thisRecordId, parentId == null ? 0 : parentId,
-                startTimeInMs, properties);
+        final AndroidStudioStats.GradleBuildProfileSpan.Builder currentRecord =
+                AndroidStudioStats.GradleBuildProfileSpan.newBuilder()
+                        .setId(thisRecordId)
+                        .setType(executionType)
+                        .setStartTimeInMs(startTimeInMs);
+
+        if (transform != null) {
+            currentRecord.setTransform(transform);
+        }
+
+        if (parentId != null) {
+            currentRecord.setParentId(parentId);
+        }
 
         recordStacks.get().push(thisRecordId);
         try {
@@ -160,16 +158,12 @@ public class ThreadRecorder implements Recorder {
             block.handleException(e);
         } finally {
             // pop this record from the stack.
-            if (recordStacks.get().pop() != currentRecord.recordId) {
+            if (recordStacks.get().pop() != currentRecord.getId()) {
                 logger.log(Level.SEVERE, "Profiler stack corrupted");
             }
-            ProcessRecorder.get().writeRecord(
-                    new ExecutionRecord(currentRecord.recordId,
-                            currentRecord.parentRecordId,
-                            currentRecord.startTimeInMs,
-                            System.currentTimeMillis() - currentRecord.startTimeInMs,
-                            currentRecord.executionType,
-                            currentRecord.extraArgs));
+            currentRecord.setDurationInMs(
+                    System.currentTimeMillis() - currentRecord.getStartTimeInMs());
+            ProcessRecorder.get().writeRecord(project, variant, currentRecord);
         }
         // we always return null when an exception occurred and was not rethrown.
         return null;

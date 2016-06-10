@@ -18,13 +18,13 @@ package com.android.builder.profile;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.google.common.base.Objects;
+import com.google.wireless.android.sdk.stats.AndroidStudioStats;
+import com.google.wireless.android.sdk.stats.AndroidStudioStats.GradleBuildProfileSpan.ExecutionType;
 
-import java.util.List;
 import java.util.concurrent.Callable;
 
 /**
- * A {@link ExecutionRecord} recorder for a block execution.
+ * A {@link AndroidStudioStats.GradleBuildProfileSpan} recorder for a block execution.
  *
  * A block is some code that produces a result and may throw exceptions.
  */
@@ -44,7 +44,7 @@ public interface Recorder {
          * Notification that an exception was raised during the {@link #call()} method invocation.
          * Default behavior is to repackage as a {@link RuntimeException}, subclasses can choose
          * differently including swallowing the exception. Swallowing the exception will make the
-         * {@link Recorder#record(ExecutionType, Block, Property...)} return null.
+         * {@link Recorder#record(ExecutionType, String, String, Block)} return null.
          *
          * @param e the exception raised during the {@link #call()} execution.
          */
@@ -55,7 +55,7 @@ public interface Recorder {
         }
     }
 
-    Block<Void> EmptyBlock = new Block<Void>() {
+    Block<Void> EMPTY_BLOCK = new Block<Void>() {
         @Override
         public Void call() throws Exception {
             return null;
@@ -63,79 +63,48 @@ public interface Recorder {
     };
 
     /**
-     * Free formed name/value property pair that will be saved along the execution record for a
-     * particular block.
-     */
-    final class Property {
-
-        @NonNull
-        final String name;
-
-        @NonNull
-        final String value;
-
-        public Property(@NonNull String name, @NonNull String value) {
-            this.name = name;
-            this.value = value;
-        }
-
-        @NonNull
-        public String getName() {
-            return name;
-        }
-
-        @NonNull
-        public String getValue() {
-            return value;
-        }
-
-        @Override
-        public String toString() {
-            return Objects.toStringHelper(this)
-                    .add("name", name)
-                    .add("value", value)
-                    .toString();
-        }
-    }
-
-    /**
      * Records the time elapsed while executing a {@link Block} and saves the resulting {@link
-     * ExecutionRecord} to {@link ProcessRecorder}.
-     *
+     * AndroidStudioStats.GradleBuildProfileSpan} to {@link ProcessRecorder}.
+     *  @param <T>           the type of the returned value from the block.
      * @param executionType the task type, so aggregation can be performed.
+     * @param project       the project that contains this span.
+     * @param variant       the variant that contains this span.
      * @param block         the block of code to execution and measure.
-     * @param properties    optional list of free formed properties to save in the {@link
-     *                      ExecutionRecord}
-     * @param <T>           the type of the returned value from the block.
      * @return the value returned from the block (including null) or null if the block execution
      * raised an exception which was subsequently swallowed by {@link Block#handleException(Exception)}
      */
     @Nullable
-    <T> T record(@NonNull ExecutionType executionType, @NonNull Block<T> block,
-            Property... properties);
-
+    <T> T record(
+            @NonNull ExecutionType executionType,
+            @NonNull String project,
+            @Nullable String variant,
+            @NonNull Block<T> block);
 
     /**
      * Records the time elapsed while executing a {@link Block} and saves the resulting {@link
-     * ExecutionRecord} to {@link ProcessRecorder}.
-     *
+     * AndroidStudioStats.GradleBuildProfileSpan} to {@link ProcessRecorder}.
+     *  @param <T>           the type of the returned value from the block.
      * @param executionType the task type, so aggregation can be performed.
+     * @param project       the project that contains this span.
+     * @param variant       the variant that contains this span.
      * @param block         the block of code to execution and measure.
-     * @param properties    optional list of free formed properties to save in the {@link
-     *                      ExecutionRecord}
-     * @param <T>           the type of the returned value from the block.
      * @return the value returned from the block (including null) or null if the block execution
      * raised an exception which was subsequently swallowed by {@link Block#handleException(Exception)}
      */
     @Nullable
-    <T> T record(@NonNull ExecutionType executionType, @NonNull Block<T> block,
-            @NonNull List<Property> properties);
+    <T> T record(
+            @NonNull ExecutionType executionType,
+            @Nullable AndroidStudioStats.GradleTransformExecution transform,
+            @NonNull String project,
+            @Nullable String variant,
+            @NonNull Block<T> block);
 
     /**
-     * Allocate a new recordId that can be used to create a {@link ExecutionRecord} and record
-     * an execution span. This method is useful when the code span to measure cannot be expressed
+     * Allocate a new recordId that can be used to create an
+     * {@link AndroidStudioStats.GradleBuildProfileSpan}.
+     * This method is useful when the code span to measure cannot be expressed
      * as a {@link Block} and therefore cannot directly use the
-     * {@link #record(ExecutionType, Block, Property...)} method.
+     * {@link #record(ExecutionType, String, String, Block)} method.
      *
      * @return the unique record id for this process.
      */
@@ -144,8 +113,9 @@ public interface Recorder {
     /**
      * Closes an execution span measurement using the allocated record id obtained from
      * {@link #allocationRecordId()} method.
-     *
-     * @param record the span execution record, fully populated.
      */
-    void closeRecord(ExecutionRecord record);
+    void closeRecord(
+            @NonNull String project,
+            @Nullable String variant,
+            @NonNull AndroidStudioStats.GradleBuildProfileSpan.Builder executionRecord);
 }

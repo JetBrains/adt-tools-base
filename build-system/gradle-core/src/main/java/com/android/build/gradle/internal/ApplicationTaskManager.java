@@ -40,9 +40,9 @@ import com.android.build.gradle.internal.variant.SplitHandlingPolicy;
 import com.android.build.gradle.tasks.AndroidJarTask;
 import com.android.builder.core.AndroidBuilder;
 import com.android.builder.model.SyncIssue;
-import com.android.builder.profile.ExecutionType;
 import com.android.builder.profile.Recorder;
 import com.android.builder.profile.ThreadRecorder;
+import com.google.wireless.android.sdk.stats.AndroidStudioStats.GradleBuildProfileSpan.ExecutionType;
 
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.Configuration;
@@ -86,6 +86,9 @@ public class ApplicationTaskManager extends TaskManager {
             @NonNull final BaseVariantData<? extends BaseVariantOutputData> variantData) {
         assert variantData instanceof ApplicationVariantData;
 
+        final String projectPath = project.getPath();
+        final String variantName = variantData.getName();
+
         final VariantScope variantScope = variantData.getScope();
 
         createAnchorTasks(tasks, variantScope);
@@ -98,7 +101,7 @@ public class ApplicationTaskManager extends TaskManager {
 
         // Add a task to process the manifest(s)
         ThreadRecorder.get().record(ExecutionType.APP_TASK_MANAGER_CREATE_MERGE_MANIFEST_TASK,
-                new Recorder.Block<Void>() {
+                projectPath, variantName, new Recorder.Block<Void>() {
                     @Override
                     public Void call() {
                         createMergeAppManifestsTask(tasks, variantScope);
@@ -108,7 +111,7 @@ public class ApplicationTaskManager extends TaskManager {
 
         // Add a task to create the res values
         ThreadRecorder.get().record(ExecutionType.APP_TASK_MANAGER_CREATE_GENERATE_RES_VALUES_TASK,
-                new Recorder.Block<Void>() {
+                projectPath, variantName, new Recorder.Block<Void>() {
                     @Override
                     public Void call() {
                         createGenerateResValuesTask(tasks, variantScope);
@@ -118,7 +121,7 @@ public class ApplicationTaskManager extends TaskManager {
 
         // Add a task to compile renderscript files.
         ThreadRecorder.get().record(ExecutionType.APP_TASK_MANAGER_CREATE_CREATE_RENDERSCRIPT_TASK,
-                new Recorder.Block<Void>() {
+                projectPath, variantName, new Recorder.Block<Void>() {
                     @Override
                     public Void call() {
                         createRenderscriptTask(tasks, variantScope);
@@ -128,7 +131,7 @@ public class ApplicationTaskManager extends TaskManager {
 
         // Add a task to merge the resource folders
         ThreadRecorder.get().record(ExecutionType.APP_TASK_MANAGER_CREATE_MERGE_RESOURCES_TASK,
-                new Recorder.Block<Void>() {
+                projectPath, variantName, new Recorder.Block<Void>() {
                     @Override
                     public Void call() {
                         createMergeResourcesTask(tasks, variantScope);
@@ -138,7 +141,7 @@ public class ApplicationTaskManager extends TaskManager {
 
         // Add a task to merge the asset folders
         ThreadRecorder.get().record(ExecutionType.APP_TASK_MANAGER_CREATE_MERGE_ASSETS_TASK,
-                new Recorder.Block<Void>() {
+                projectPath, variantName, new Recorder.Block<Void>() {
                     @Override
                     public Void call() {
                         createMergeAssetsTask(tasks, variantScope);
@@ -148,7 +151,7 @@ public class ApplicationTaskManager extends TaskManager {
 
         // Add a task to create the BuildConfig class
         ThreadRecorder.get().record(ExecutionType.APP_TASK_MANAGER_CREATE_BUILD_CONFIG_TASK,
-                new Recorder.Block<Void>() {
+                projectPath, variantName, new Recorder.Block<Void>() {
                     @Override
                     public Void call() {
                         createBuildConfigTask(tasks, variantScope);
@@ -157,7 +160,7 @@ public class ApplicationTaskManager extends TaskManager {
                 });
 
         ThreadRecorder.get().record(ExecutionType.APP_TASK_MANAGER_CREATE_PROCESS_RES_TASK,
-                new Recorder.Block<Void>() {
+                projectPath, variantName, new Recorder.Block<Void>() {
                     @Override
                     public Void call() {
                         // Add a task to process the Android Resources and generate source files
@@ -170,7 +173,7 @@ public class ApplicationTaskManager extends TaskManager {
                 });
 
         ThreadRecorder.get().record(ExecutionType.APP_TASK_MANAGER_CREATE_AIDL_TASK,
-                new Recorder.Block<Void>() {
+                projectPath, variantName, new Recorder.Block<Void>() {
                     @Override
                     public Void call() {
                         createAidlTask(tasks, variantScope);
@@ -179,7 +182,7 @@ public class ApplicationTaskManager extends TaskManager {
                 });
 
         ThreadRecorder.get().record(ExecutionType.APP_TASK_MANAGER_CREATE_SHADER_TASK,
-                new Recorder.Block<Void>() {
+                projectPath, variantName, new Recorder.Block<Void>() {
                     @Override
                     public Void call() {
                         createShaderTask(tasks, variantScope);
@@ -190,7 +193,7 @@ public class ApplicationTaskManager extends TaskManager {
         // Add NDK tasks
         if (!isComponentModelPlugin) {
             ThreadRecorder.get().record(ExecutionType.APP_TASK_MANAGER_CREATE_NDK_TASK,
-                    new Recorder.Block<Void>() {
+                    projectPath, variantName, new Recorder.Block<Void>() {
                         @Override
                         public Void call() {
                             createNdkTasks(variantScope);
@@ -209,7 +212,7 @@ public class ApplicationTaskManager extends TaskManager {
         // Add external native build tasks
         ThreadRecorder.get().record(
                 ExecutionType.APP_TASK_MANAGER_CREATE_EXTERNAL_NATIVE_BUILD_TASK,
-                new Recorder.Block<Void>() {
+                projectPath, variantName, new Recorder.Block<Void>() {
                     @Override
                     public Void call() {
                         createExternalNativeBuildJsonGenerators(tasks, variantScope);
@@ -220,17 +223,20 @@ public class ApplicationTaskManager extends TaskManager {
         );
 
         // Add a task to merge the jni libs folders
-        ThreadRecorder.get().record(ExecutionType.APP_TASK_MANAGER_CREATE_MERGE_JNILIBS_FOLDERS_TASK,
-                new Recorder.Block<Void>() {
-                    @Override
-                    public Void call() {
-                        createMergeJniLibFoldersTasks(tasks, variantScope);
-                        return null;
-                    }
-                });
+        ThreadRecorder.get()
+                .record(ExecutionType.APP_TASK_MANAGER_CREATE_MERGE_JNILIBS_FOLDERS_TASK,
+                        projectPath, variantName, new Recorder.Block<Void>() {
+                            @Override
+                            public Void call() {
+                                createMergeJniLibFoldersTasks(tasks, variantScope);
+                                return null;
+                            }
+                        });
 
         // Add a compile task
-        ThreadRecorder.get().record(ExecutionType.APP_TASK_MANAGER_CREATE_COMPILE_TASK,
+        ThreadRecorder.get().record(
+                ExecutionType.APP_TASK_MANAGER_CREATE_COMPILE_TASK,
+                projectPath, variantName,
                 new Recorder.Block<Void>() {
                     @Override
                     public Void call() {
@@ -284,7 +290,9 @@ public class ApplicationTaskManager extends TaskManager {
                 throw new RuntimeException("Pure splits can only be used with buildtools 21 and later");
             }
 
-            ThreadRecorder.get().record(ExecutionType.APP_TASK_MANAGER_CREATE_SPLIT_TASK,
+            ThreadRecorder.get().record(
+                    ExecutionType.APP_TASK_MANAGER_CREATE_SPLIT_TASK,
+                    projectPath, variantName,
                     new Recorder.Block<Void>() {
                         @Override
                         public Void call() {
@@ -294,8 +302,10 @@ public class ApplicationTaskManager extends TaskManager {
                     });
         }
 
-        ThreadRecorder.get().record(ExecutionType.APP_TASK_MANAGER_CREATE_PACKAGING_TASK,
-                new Recorder.Block<Void>() {
+        ThreadRecorder.get().record(
+                ExecutionType.APP_TASK_MANAGER_CREATE_PACKAGING_TASK,
+                projectPath, variantName,
+                new Recorder.Block<Void>(){
                     @Override
                     public Void call() {
                         @Nullable
@@ -308,8 +318,10 @@ public class ApplicationTaskManager extends TaskManager {
                 });
 
         // create the lint tasks.
-        ThreadRecorder.get().record(ExecutionType.APP_TASK_MANAGER_CREATE_LINT_TASK,
-                new Recorder.Block<Void>() {
+        ThreadRecorder.get().record(
+                ExecutionType.APP_TASK_MANAGER_CREATE_LINT_TASK,
+                projectPath, variantName,
+                new Recorder.Block<Void>(){
                     @Override
                     public Void call() {
                         createLintTasks(tasks, variantScope);

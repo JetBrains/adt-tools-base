@@ -27,14 +27,11 @@ import com.android.build.gradle.internal.scope.PackagingScope;
 import com.android.build.gradle.internal.transforms.InstantRunSlicer;
 import com.android.builder.packaging.DuplicateFileException;
 import com.android.builder.packaging.NativeLibrariesPackagingMode;
-import com.android.builder.profile.ExecutionType;
-import com.android.builder.profile.Recorder;
-import com.android.builder.profile.ThreadRecorder;
+import com.android.builder.profile.ProcessRecorder;
 import com.android.ide.common.res2.FileStatus;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Lists;
 import com.google.common.io.Files;
 
 import org.gradle.api.logging.Logger;
@@ -47,7 +44,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -226,29 +222,31 @@ public class PackageApplication extends PackageAndroidArtifact {
 
     private void recordMetrics() {
         long metricsStartTime = System.nanoTime();
-        List<Recorder.Property> propertyList = Lists.newArrayListWithCapacity(3);
-        String apkSize = getSize(getOutputFile());
+        AndroidStudioStats.GradleBuildProjectMetrics.Builder metrics =
+                AndroidStudioStats.GradleBuildProjectMetrics.newBuilder();
+
+        Long apkSize = getSize(getOutputFile());
         if (apkSize != null) {
-            propertyList.add(new Recorder.Property("apk_size", apkSize));
+            metrics.setApkSize(apkSize);
         }
 
-        String resourcesApSize = getSize(getResourceFile());
+        Long resourcesApSize = getSize(getResourceFile());
         if (resourcesApSize != null) {
-            propertyList.add(new Recorder.Property("resources_ap_size", resourcesApSize));
+            metrics.setResourcesApSize(resourcesApSize);
         }
 
-        propertyList.add(new Recorder.Property("apk_metrics_collection_time_ns",
-                Long.toString(System.nanoTime() - metricsStartTime)));
-        ThreadRecorder.get().record(ExecutionType.APK_METRICS, Recorder.EmptyBlock, propertyList);
+        metrics.setMetricsTimeNs(System.nanoTime() - metricsStartTime);
+
+        ProcessRecorder.getProject(getProject().getPath()).setMetrics(metrics);
     }
 
     @Nullable
-    private static String getSize(@Nullable File file) {
+    private static Long getSize(@Nullable File file) {
         if (file == null) {
             return null;
         }
         try {
-            return Long.toString(java.nio.file.Files.size(file.toPath()));
+            return java.nio.file.Files.size(file.toPath());
         } catch (IOException e) {
             return null;
         }

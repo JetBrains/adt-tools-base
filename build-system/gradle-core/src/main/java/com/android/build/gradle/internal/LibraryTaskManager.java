@@ -54,13 +54,13 @@ import com.android.builder.core.BuilderConstants;
 import com.android.builder.dependency.LibraryDependency;
 import com.android.builder.dependency.MavenCoordinatesImpl;
 import com.android.builder.model.SyncIssue;
-import com.android.builder.profile.ExecutionType;
 import com.android.builder.profile.Recorder;
 import com.android.builder.profile.ThreadRecorder;
 import com.android.utils.FileUtils;
 import com.android.utils.StringHelper;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Sets;
+import com.google.wireless.android.sdk.stats.AndroidStudioStats.GradleBuildProfileSpan.ExecutionType;
 
 import org.gradle.api.Action;
 import org.gradle.api.Project;
@@ -127,6 +127,9 @@ public class LibraryTaskManager extends TaskManager {
         final Collection<String> variantDirectorySegments = variantConfig.getDirectorySegments();
         final File variantBundleDir = variantScope.getBaseBundleDir();
 
+        final String projectPath = project.getPath();
+        final String variantName = variantData.getName();
+
         createAnchorTasks(tasks, variantScope);
 
         // Create all current streams (dependencies mostly at this point)
@@ -136,7 +139,7 @@ public class LibraryTaskManager extends TaskManager {
 
         // Add a task to create the res values
         ThreadRecorder.get().record(ExecutionType.LIB_TASK_MANAGER_CREATE_GENERATE_RES_VALUES_TASK,
-                new Recorder.Block<Void>() {
+                projectPath, variantName, new Recorder.Block<Void>() {
                     @Override
                     public Void call() throws Exception {
                         createGenerateResValuesTask(tasks, variantScope);
@@ -146,7 +149,7 @@ public class LibraryTaskManager extends TaskManager {
 
         // Add a task to process the manifest(s)
         ThreadRecorder.get().record(ExecutionType.LIB_TASK_MANAGER_CREATE_MERGE_MANIFEST_TASK,
-                new Recorder.Block<Void>() {
+                projectPath, variantName, new Recorder.Block<Void>() {
                     @Override
                     public Void call() throws Exception {
                         createMergeLibManifestsTask(tasks, variantScope);
@@ -156,7 +159,7 @@ public class LibraryTaskManager extends TaskManager {
 
         // Add a task to compile renderscript files.
         ThreadRecorder.get().record(ExecutionType.LIB_TASK_MANAGER_CREATE_CREATE_RENDERSCRIPT_TASK,
-                new Recorder.Block<Void>() {
+                projectPath, variantName, new Recorder.Block<Void>() {
                     @Override
                     public Void call() throws Exception {
                         createRenderscriptTask(tasks, variantScope);
@@ -166,6 +169,7 @@ public class LibraryTaskManager extends TaskManager {
 
         AndroidTask<MergeResources> packageRes = ThreadRecorder.get().record(
                 ExecutionType.LIB_TASK_MANAGER_CREATE_MERGE_RESOURCES_TASK,
+                projectPath, variantName,
                 new Recorder.Block<AndroidTask<MergeResources>>() {
                     @Override
                     public AndroidTask<MergeResources> call() throws Exception {
@@ -205,7 +209,7 @@ public class LibraryTaskManager extends TaskManager {
 
         // Add a task to merge the assets folders
         ThreadRecorder.get().record(ExecutionType.LIB_TASK_MANAGER_CREATE_MERGE_ASSETS_TASK,
-                new Recorder.Block<Void>() {
+                projectPath, variantName, new Recorder.Block<Void>() {
                     @Override
                     public Void call() {
                         createMergeAssetsTask(tasks, variantScope);
@@ -215,7 +219,7 @@ public class LibraryTaskManager extends TaskManager {
 
         // Add a task to create the BuildConfig class
         ThreadRecorder.get().record(ExecutionType.LIB_TASK_MANAGER_CREATE_BUILD_CONFIG_TASK,
-                new Recorder.Block<Void>() {
+                projectPath, variantName, new Recorder.Block<Void>() {
                     @Override
                     public Void call() throws Exception {
                         createBuildConfigTask(tasks, variantScope);
@@ -224,7 +228,7 @@ public class LibraryTaskManager extends TaskManager {
                 });
 
         ThreadRecorder.get().record(ExecutionType.LIB_TASK_MANAGER_CREATE_PROCESS_RES_TASK,
-                new Recorder.Block<Void>() {
+                projectPath, variantName, new Recorder.Block<Void>() {
                     @Override
                     public Void call() throws Exception {
                         // Add a task to generate resource source files, directing the location
@@ -239,7 +243,7 @@ public class LibraryTaskManager extends TaskManager {
                 });
 
         ThreadRecorder.get().record(ExecutionType.LIB_TASK_MANAGER_CREATE_AIDL_TASK,
-                new Recorder.Block<Void>() {
+                projectPath, variantName, new Recorder.Block<Void>() {
                     @Override
                     public Void call() throws Exception {
                         createAidlTask(tasks, variantScope);
@@ -248,7 +252,7 @@ public class LibraryTaskManager extends TaskManager {
                 });
 
         ThreadRecorder.get().record(ExecutionType.LIB_TASK_MANAGER_CREATE_SHADER_TASK,
-                new Recorder.Block<Void>() {
+                projectPath, variantName, new Recorder.Block<Void>() {
                     @Override
                     public Void call() {
                         createShaderTask(tasks, variantScope);
@@ -258,7 +262,7 @@ public class LibraryTaskManager extends TaskManager {
 
         // Add a compile task
         ThreadRecorder.get().record(ExecutionType.LIB_TASK_MANAGER_CREATE_COMPILE_TASK,
-                new Recorder.Block<Void>() {
+                projectPath, variantName, new Recorder.Block<Void>() {
                     @Override
                     public Void call() throws Exception {
                         AndroidTask<? extends JavaCompile> javacTask =
@@ -278,7 +282,7 @@ public class LibraryTaskManager extends TaskManager {
         if (!isComponentModelPlugin) {
             // Add NDK tasks
             ThreadRecorder.get().record(ExecutionType.LIB_TASK_MANAGER_CREATE_NDK_TASK,
-                    new Recorder.Block<Void>() {
+                    projectPath, variantName, new Recorder.Block<Void>() {
                         @Override
                         public Void call() throws Exception {
                             createNdkTasks(variantScope);
@@ -291,7 +295,7 @@ public class LibraryTaskManager extends TaskManager {
         // External native build
         ThreadRecorder.get().record(
                 ExecutionType.LIB_TASK_MANAGER_CREATE_EXTERNAL_NATIVE_BUILD_TASK,
-                new Recorder.Block<Void>() {
+                projectPath, variantName, new Recorder.Block<Void>() {
                     @Override
                     public Void call() throws Exception {
                         createExternalNativeBuildJsonGenerators(tasks, variantScope);
@@ -305,7 +309,7 @@ public class LibraryTaskManager extends TaskManager {
 
         Sync packageRenderscript = ThreadRecorder.get().record(
                 ExecutionType.LIB_TASK_MANAGER_CREATE_PACKAGING_TASK,
-                new Recorder.Block<Sync>() {
+                projectPath, variantName, new Recorder.Block<Sync>() {
                     @Override
                     public Sync call() throws Exception {
                         // package the renderscript header files files into the bundle folder
@@ -322,7 +326,7 @@ public class LibraryTaskManager extends TaskManager {
         // merge consumer proguard files from different build types and flavors
         MergeFileTask mergeProGuardFileTask = ThreadRecorder.get().record(
                 ExecutionType.LIB_TASK_MANAGER_CREATE_MERGE_PROGUARD_FILE_TASK,
-                new Recorder.Block<MergeFileTask>() {
+                projectPath, variantName, new Recorder.Block<MergeFileTask>() {
                     @Override
                     public MergeFileTask call() throws Exception {
                         MergeFileTask mergeProGuardFileTask = project.getTasks().create(
@@ -361,7 +365,7 @@ public class LibraryTaskManager extends TaskManager {
 
         ThreadRecorder.get().record(
                 ExecutionType.LIB_TASK_MANAGER_CREATE_POST_COMPILATION_TASK,
-                new Recorder.Block<Void>() {
+                projectPath, variantName, new Recorder.Block<Void>() {
                     @Override
                     public Void call() throws Exception {
                         TransformManager transformManager = variantScope.getTransformManager();
@@ -512,7 +516,7 @@ public class LibraryTaskManager extends TaskManager {
                 false /*isProvided*/));
 
         ThreadRecorder.get().record(ExecutionType.LIB_TASK_MANAGER_CREATE_LINT_TASK,
-                new Recorder.Block<Void>() {
+                projectPath, variantName, new Recorder.Block<Void>() {
                     @Override
                     public Void call() throws Exception {
                         createLintTasks(tasks, variantScope);

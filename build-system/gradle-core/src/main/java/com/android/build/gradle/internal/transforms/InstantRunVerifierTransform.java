@@ -29,7 +29,6 @@ import com.android.build.api.transform.TransformException;
 import com.android.build.api.transform.TransformInput;
 import com.android.build.api.transform.TransformInvocation;
 import com.android.build.gradle.internal.scope.InstantRunVariantScope;
-import com.android.build.gradle.internal.scope.TransformVariantScope;
 import com.android.builder.model.OptionalCompilationStep;
 import com.android.build.gradle.internal.LoggerWrapper;
 import com.android.build.gradle.internal.incremental.InstantRunVerifierStatus;
@@ -37,7 +36,7 @@ import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
 import com.android.build.gradle.internal.incremental.InstantRunVerifier;
 import com.android.build.gradle.internal.incremental.InstantRunVerifier.ClassBytesJarEntryProvider;
 import com.android.build.gradle.internal.pipeline.TransformManager;
-import com.android.builder.profile.ExecutionType;
+import com.google.wireless.android.sdk.stats.AndroidStudioStats.GradleBuildProfileSpan.ExecutionType;
 import com.android.builder.profile.Recorder;
 import com.android.builder.profile.ThreadRecorder;
 import com.android.utils.FileUtils;
@@ -306,14 +305,16 @@ public class InstantRunVerifierTransform extends Transform {
         }
         InstantRunVerifierStatus status = ThreadRecorder.get().record(
                 ExecutionType.TASK_FILE_VERIFICATION,
+                variantScope.getGlobalScope().getProject().getPath(),
+                variantScope.getFullVariantName(),
                 new Recorder.Block<InstantRunVerifierStatus>() {
                     @Override
                     @NonNull
                     public InstantRunVerifierStatus call() throws Exception {
                         return InstantRunVerifier.run(originalClass, updatedClass);
                     }
-                }, new Recorder.Property("target", name)
-        );
+                });
+        // TODO: re-add approximation of target.
         if (status == null) {
             LOGGER.warning("No verifier result provided for %1$s", name);
             return InstantRunVerifierStatus.NOT_RUN;

@@ -84,6 +84,7 @@ import com.android.builder.Version;
 import com.android.builder.core.AndroidBuilder;
 import com.android.builder.internal.compiler.JackConversionCache;
 import com.android.builder.internal.compiler.PreDexCache;
+import com.android.builder.profile.ProcessRecorder;
 import com.android.builder.profile.ProcessRecorderFactory;
 import com.android.builder.profile.Recorder;
 import com.android.builder.profile.ThreadRecorder;
@@ -100,6 +101,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
+import com.google.wireless.android.sdk.stats.AndroidStudioStats;
 
 import org.gradle.api.Action;
 import org.gradle.api.Plugin;
@@ -159,30 +161,16 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
     @Override
     public void apply(Project project) {
         ExecutionConfigurationUtil.setThreadPoolSize(project);
-        try {
-            List<Recorder.Property> propertyList = Lists.newArrayList(
-                    new Recorder.Property("plugin_version", Version.ANDROID_GRADLE_PLUGIN_VERSION),
-                    new Recorder.Property("next_gen_plugin", "true"),
-                    new Recorder.Property("gradle_version", project.getGradle().getGradleVersion())
-            );
-            String benchmarkName = AndroidGradleOptions.getBenchmarkName(project);
-            if (benchmarkName != null) {
-                propertyList.add(new Recorder.Property("benchmark_name", benchmarkName));
-            }
-            String benchmarkMode = AndroidGradleOptions.getBenchmarkMode(project);
-            if (benchmarkMode != null) {
-                propertyList.add(new Recorder.Property("benchmark_mode", benchmarkMode));
-            }
 
-            ProcessRecorderFactory.initialize(
-                    new LoggerWrapper(project.getLogger()),
-                    project.getRootProject()
-                            .file("profiler" + System.currentTimeMillis() + ".json"),
-                    propertyList);
-        } catch (IOException e) {
-            throw new RuntimeException("Unable to initialize ProcessRecorderFactory");
+
+        String benchmarkName = AndroidGradleOptions.getBenchmarkName(project);
+        String benchmarkMode = AndroidGradleOptions.getBenchmarkMode(project);
+        if (benchmarkName != null && benchmarkMode != null) {
+            ProcessRecorder.setBenchmark(benchmarkName, benchmarkMode);
         }
-        project.getGradle().addListener(new RecordingBuildListener(ThreadRecorder.get()));
+
+        project.getGradle().addListener(
+                new RecordingBuildListener(project.getPath(), ThreadRecorder.get()));
 
         project.getPlugins().apply(AndroidComponentModelPlugin.class);
         project.getPlugins().apply(JavaBasePlugin.class);
