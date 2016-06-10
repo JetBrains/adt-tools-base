@@ -18,11 +18,8 @@ package com.android.build.gradle.internal.tasks;
 
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
-import com.android.build.api.transform.SecondaryInput;
 import com.android.build.api.transform.TransformInvocation;
 import com.android.build.gradle.internal.pipeline.TransformManager;
-import com.android.build.api.transform.Context;
 import com.android.build.api.transform.DirectoryInput;
 import com.android.build.api.transform.JarInput;
 import com.android.build.api.transform.QualifiedContent.ContentType;
@@ -30,7 +27,6 @@ import com.android.build.api.transform.QualifiedContent.Scope;
 import com.android.build.api.transform.Transform;
 import com.android.build.api.transform.TransformException;
 import com.android.build.api.transform.TransformInput;
-import com.android.build.api.transform.TransformOutputProvider;
 import com.android.utils.FileUtils;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
@@ -40,7 +36,6 @@ import com.google.common.io.Files;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Enumeration;
@@ -129,12 +124,8 @@ public class LibraryJniLibsTransform extends Transform {
 
     private void copyFromFolder(@NonNull File from, @NonNull List<String> pathSegments)
             throws IOException {
-        File[] children = from.listFiles(new FilenameFilter() {
-            @Override
-            public boolean accept(File file, String name) {
-                return file.isDirectory() || name.endsWith(SdkConstants.DOT_NATIVE_LIBS);
-            }
-        });
+        File[] children = from.listFiles(
+                (file, name) -> file.isDirectory() || name.endsWith(SdkConstants.DOT_NATIVE_LIBS));
 
         if (children != null) {
             for (File child : children) {
@@ -174,7 +165,9 @@ public class LibraryJniLibsTransform extends Transform {
                 ByteStreams.copy(zipFile.getInputStream(entry), buffer);
 
                 // get the output file and write to it.
-                Files.write(buffer.toByteArray(), computeFile(jniLibsFolder, entryPath));
+                final File to = computeFile(jniLibsFolder, entryPath);
+                FileUtils.mkdirs(to.getParentFile());
+                Files.write(buffer.toByteArray(), to);
             }
         }
     }
@@ -186,7 +179,8 @@ public class LibraryJniLibsTransform extends Transform {
      * @return the File
      */
     private static File computeFile(@NonNull File rootFolder, @NonNull String path) {
-        path = FileUtils.toSystemDependentPath(path);
+        // remove the lib/ part of the path and convert.
+        path = FileUtils.toSystemDependentPath(path.substring(4));
         return new File(rootFolder, path);
     }
 }
