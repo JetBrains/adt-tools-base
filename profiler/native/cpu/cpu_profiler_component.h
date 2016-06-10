@@ -17,8 +17,8 @@
 #define CPU_CPU_PROFILER_COMPONENT_H_
 
 #include "cpu/cpu_cache.h"
-#include "cpu/cpu_profiler_service.h"
 #include "cpu/cpu_collector.h"
+#include "cpu/cpu_profiler_service.h"
 #include "perfd/profiler_component.h"
 
 namespace profiler {
@@ -38,8 +38,8 @@ class CpuProfilerComponent final : public ProfilerComponent {
   CpuCache cache_;
   CpuUsageSampler data_sampler_{&cache_};
   // Sampling interval is 100000 microseconds, which equals to 0.1 second.
-  CpuCollector collector_{data_sampler_, 100000};
-  CpuProfilerServiceImpl public_service_{&cache_};
+  CpuCollector collector_{100000, &data_sampler_};
+  CpuProfilerServiceImpl public_service_{&cache_, &data_sampler_};
 };
 
 }  // namespace profiler

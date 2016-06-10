@@ -18,25 +18,39 @@
 
 #include <grpc++/grpc++.h>
 
+#include "cpu/cpu_cache.h"
+#include "cpu/cpu_usage_sampler.h"
 #include "proto/cpu_profiler_service.grpc.pb.h"
 
 namespace profiler {
-
-class CpuCache;
 
 // CPU profiler specific service for desktop clients (e.g., Android Studio).
 class CpuProfilerServiceImpl final
     : public profiler::proto::CpuProfilerService::Service {
  public:
-  CpuProfilerServiceImpl(CpuCache* cpu_cache) : cache_(*cpu_cache) {}
+  CpuProfilerServiceImpl(CpuCache* cpu_cache, CpuUsageSampler* monitor)
+      : cache_(*cpu_cache), monitor_(*monitor) {}
 
   grpc::Status GetData(grpc::ServerContext* context,
                        const profiler::proto::CpuDataRequest* request,
                        profiler::proto::CpuDataResponse* response) override;
 
+  // TODO: Handle the case if there is no such a running process.
+  grpc::Status StartMonitoringApp(
+      grpc::ServerContext* context,
+      const profiler::proto::CpuStartRequest* request,
+      profiler::proto::CpuStartResponse* response) override;
+
+  grpc::Status StopMonitoringApp(
+      grpc::ServerContext* context,
+      const profiler::proto::CpuStopRequest* request,
+      profiler::proto::CpuStopResponse* response) override;
+
  private:
   // Data cache that will be queried to serve requests.
   CpuCache& cache_;
+  // The monitor that samples CPU usage data and thread states.
+  CpuUsageSampler& monitor_;
 };
 
 }  // namespace profiler

@@ -13,16 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef UTILS_TIMESTAMP_H_
-#define UTILS_TIMESTAMP_H_
+#ifndef UTILS_TOKEN_H_
+#define UTILS_TOKEN_H_
 
-#include <cstdint>
+#include <string>
+#include <vector>
+
+// TODO(b/29272873): Unify tokenization in profiler C++ code base.
 
 namespace profiler {
 
-// Gets a timestamp.
-int64_t GetCurrentTime();
+// Returns the tokens by splitting |input| string by |delimiters|.
+std::vector<std::string> GetTokens(const std::string& input,
+                                   const std::string& delimiters);
 
 }  // namespace profiler
 
-#endif  // UTILS_TIMESTAMP_H_
+#endif  // UTILS_TOKEN_H_

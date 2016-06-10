@@ -6,7 +6,8 @@ set(UTILS_SOURCES
     package_manager.cc
     profiler_file.cc
     stopwatch.cc
-    timestamp.cc)
+    timestamp.cc
+    token.cc)
 
 if (CMAKE_HOST_APPLE AND NOT ANDROID)
     set(UTILS_SOURCES ${UTILS_SOURCES} clock.mac.cc)

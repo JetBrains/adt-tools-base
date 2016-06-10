@@ -18,20 +18,22 @@
 #include <grpc++/grpc++.h>
 #include <vector>
 
-#include "cpu/cpu_cache.h"
 #include "proto/cpu_profiler_data.grpc.pb.h"
-#include "proto/cpu_profiler_service.grpc.pb.h"
 
 using grpc::ServerContext;
 using grpc::Status;
 using profiler::proto::CpuDataRequest;
 using profiler::proto::CpuDataResponse;
 using profiler::proto::CpuProfilerData;
+using profiler::proto::CpuStartRequest;
+using profiler::proto::CpuStartResponse;
+using profiler::proto::CpuStopRequest;
+using profiler::proto::CpuStopResponse;
 using std::vector;
 
 namespace profiler {
 
-Status CpuProfilerServiceImpl::GetData(grpc::ServerContext* context,
+Status CpuProfilerServiceImpl::GetData(ServerContext* context,
                                        const CpuDataRequest* request,
                                        CpuDataResponse* response) {
   int64_t id_in_request = request->app_id();
@@ -42,6 +44,22 @@ Status CpuProfilerServiceImpl::GetData(grpc::ServerContext* context,
   for (const auto& datum : data) {
     *(response->add_data()) = datum;
   }
+  return Status::OK;
+}
+
+grpc::Status CpuProfilerServiceImpl::StartMonitoringApp(
+    ServerContext* context, const CpuStartRequest* request,
+    CpuStartResponse* response) {
+  auto status = monitor_.AddProcess(request->app_id());
+  response->set_status(status);
+  return Status::OK;
+}
+
+grpc::Status CpuProfilerServiceImpl::StopMonitoringApp(
+    ServerContext* context, const CpuStopRequest* request,
+    CpuStopResponse* response) {
+  auto status = monitor_.RemoveProcess(request->app_id());
+  response->set_status(status);
   return Status::OK;
 }
 

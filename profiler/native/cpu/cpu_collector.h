@@ -29,11 +29,10 @@ class CpuUsageSampler;
 
 class CpuCollector {
  public:
-  // Creates a collector that will invoke |sampler| every |interval_in_microsec|
+  // Creates a collector that will invoke |sampler| every |interval_in_us|
   // microseconds.
-  CpuCollector(const CpuUsageSampler& sampler,
-             int64_t interval_in_microsec)
-      : sampler_(sampler), sampling_interval_in_us_(interval_in_microsec) {}
+  CpuCollector(int64_t interval_in_us, CpuUsageSampler* sampler)
+      : sampling_interval_in_us_(interval_in_us), sampler_(*sampler) {}
 
   ~CpuCollector();
 
@@ -54,7 +53,7 @@ class CpuCollector {
   // True if sampling operations is running.
   std::atomic_bool is_running_{false};
   // Holder of sampler operations.
-  const CpuUsageSampler& sampler_;
+  CpuUsageSampler& sampler_;
   // Sampling window size in microseconds.
   int64_t sampling_interval_in_us_;
 };
