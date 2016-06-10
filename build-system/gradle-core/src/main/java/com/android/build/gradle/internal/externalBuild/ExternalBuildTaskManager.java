@@ -42,6 +42,7 @@ import com.android.build.gradle.internal.transforms.DexTransform;
 import com.android.build.gradle.internal.transforms.ExtractJarsTransform;
 import com.android.build.gradle.internal.transforms.InstantRunSplitApkBuilder;
 import com.android.build.gradle.tasks.PackageApplication;
+import com.android.build.gradle.tasks.PreColdSwapTask;
 import com.android.builder.core.BuilderConstants;
 import com.android.builder.core.DefaultDexOptions;
 import com.android.builder.core.DefaultManifestParser;
@@ -49,6 +50,7 @@ import com.android.utils.FileUtils;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.io.Files;
 
+import org.gradle.api.DefaultTask;
 import org.gradle.api.Project;
 import org.gradle.api.Task;
 
@@ -135,7 +137,7 @@ class ExternalBuildTaskManager {
         AndroidTask<BuildInfoLoaderTask> buildInfoLoaderTask =
                 instantRunTaskManager.createInstantRunAllTasks(
                         new DexOptions(modelInfo),
-                        () -> null,
+                        externalBuildContext.getAndroidBuilder()::getDexByteCodeConverter,
                         extractJarsTask,
                         externalBuildAnchorTask,
                         EnumSet.of(QualifiedContent.Scope.PROJECT),
@@ -144,7 +146,8 @@ class ExternalBuildTaskManager {
 
         extractJarsTask.dependsOn(tasks, buildInfoLoaderTask);
 
-        instantRunTaskManager.createPreColdswapTask(project);
+        AndroidTask<PreColdSwapTask> preColdswapTask = instantRunTaskManager
+                .createPreColdswapTask(project);
 
         if (variantScope.getInstantRunBuildContext().getPatchingPolicy()
                 != InstantRunPatchingPolicy.PRE_LOLLIPOP) {
@@ -219,6 +222,7 @@ class ExternalBuildTaskManager {
                                 packagingScope,
                                 variantScope.getInstantRunBuildContext().getPatchingPolicy()));
 
+        variantScope.setPackageApplicationTask(packageApp);
         packageApp.dependsOn(tasks, createAssetsDirectory);
 
         for (TransformStream stream : transformManager.getStreams(StreamFilter.DEX)) {
@@ -238,5 +242,9 @@ class ExternalBuildTaskManager {
 
         buildInfoGeneratorTask.dependsOn(tasks, packageApp);
         externalBuildAnchorTask.dependsOn(tasks, buildInfoGeneratorTask);
+
+        for (AndroidTask<? extends DefaultTask> task : variantScope.getColdSwapBuildTasks()) {
+            task.dependsOn(tasks, preColdswapTask);
+        }
     }
 }
