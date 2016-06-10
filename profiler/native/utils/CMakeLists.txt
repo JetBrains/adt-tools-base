@@ -1,21 +1,21 @@
-set(UTIL_SOURCES
+set(UTILS_SOURCES
     activity_manager.cc
     bash_command.cc
+    file_reader.cc
     installer.cc
     package_manager.cc
     profiler_file.cc
-    file_reader.cc
-    stopwatch.cpp
+    stopwatch.cc
     timestamp.cc)
 
 if (CMAKE_HOST_APPLE AND NOT ANDROID)
-    set(UTIL_SOURCES ${UTIL_SOURCES} clock.mac.cpp)
+    set(UTILS_SOURCES ${UTILS_SOURCES} clock.mac.cc)
 else()
-    set(UTIL_SOURCES ${UTIL_SOURCES} clock.cpp)
+    set(UTILS_SOURCES ${UTILS_SOURCES} clock.cc)
 endif()
 
 add_library(ProfilerUtils
-            ${UTIL_SOURCES})
+            ${UTILS_SOURCES})
 
 add_unit_test(profiler-utils-test
               file_reader_test.cc
