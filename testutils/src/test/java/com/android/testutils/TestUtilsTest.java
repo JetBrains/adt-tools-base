@@ -16,19 +16,22 @@
 
 package com.android.testutils;
 
-import junit.framework.TestCase;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
 
 @SuppressWarnings("javadoc")
-public class SdkTestCaseTest extends TestCase {
+public class TestUtilsTest {
+    @Test
     public void testDiff() throws Exception {
         assertEquals(
                 "",
-                SdkTestCase.getDiff(
+                TestUtils.getDiff(
                     "",
                     ""));
         assertEquals(
                 "",
-                SdkTestCase.getDiff(
+                TestUtils.getDiff(
                     "aaa",
                     "aaa"));
         assertEquals(
@@ -36,7 +39,7 @@ public class SdkTestCaseTest extends TestCase {
                 "- aaa\n" +
                 "@@ -2 +1\n" +
                 "+ bbb\n",
-                SdkTestCase.getDiff(
+                TestUtils.getDiff(
                     "aaa",
                     "bbb"));
         assertEquals(
@@ -44,7 +47,7 @@ public class SdkTestCaseTest extends TestCase {
                 "- this\n" +
                 "@@ -4 +3\n" +
                 "+ new\n",
-                SdkTestCase.getDiff(
+                TestUtils.getDiff(
                     "this\n" +
                     "is\n" +
                     "a\n" +
@@ -61,7 +64,7 @@ public class SdkTestCaseTest extends TestCase {
                 "@@ -8 +6\n" +
                 "- line8\n" +
                 "+ line7.5\n",
-                SdkTestCase.getDiff(
+                TestUtils.getDiff(
                     "line1\n" +
                     "line2\n" +
                     "line3\n" +
@@ -89,7 +92,7 @@ public class SdkTestCaseTest extends TestCase {
                 "+         android:layout_alignLeft=\"@+id/output\"\n" +
                 "+         android:layout_below=\"@+id/output\"\n",
 
-                SdkTestCase.getDiff(
+                TestUtils.getDiff(
                 "<RelativeLayout xmlns:android=\"http://schemas.android.com/apk/res/android\"\n" +
                 "    xmlns:tools=\"http://schemas.android.com/tools\"\n" +
                 "    android:layout_width=\"match_parent\"\n" +

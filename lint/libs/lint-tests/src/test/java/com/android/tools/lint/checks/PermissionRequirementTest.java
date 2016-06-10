@@ -29,6 +29,7 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.sdklib.AndroidVersion;
 import com.android.testutils.SdkTestCase;
+import com.android.testutils.TestUtils;
 import com.android.tools.lint.checks.PermissionHolder.SetPermissionLookup;
 import com.android.tools.lint.client.api.JavaParser.ResolvedAnnotation;
 import com.android.utils.XmlUtils;
@@ -252,7 +253,7 @@ public class PermissionRequirementTest extends TestCase {
             fail("List of revocable permissions has changed:\n" +
                 // Make the diff show what it take to bring the actual results into the
                 // expected results
-                SdkTestCase.getDiff(Joiner.on('\n').join(actual),
+                TestUtils.getDiff(Joiner.on('\n').join(actual),
                     Joiner.on('\n').join(expected)));
         }
     }
