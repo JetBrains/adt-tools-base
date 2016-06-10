@@ -220,7 +220,7 @@ public final class InstantRunTestUtils {
 
     static void waitForAppStart(
             @NonNull InstantRunClient client, @NonNull IDevice device)
-            throws InterruptedException {
+            throws InterruptedException, IOException {
         AppState appState = null;
         int times = 0;
         while (appState != AppState.FOREGROUND) {

@@ -53,10 +53,9 @@ import java.io.DataOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.net.Socket;
-import java.net.SocketException;
-import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 
 public class InstantRunClient {
@@ -81,9 +80,6 @@ public class InstantRunClient {
     public static final boolean USE_BUILD_ID_TEMP_FILE =
             !Boolean.getBoolean("instantrun.use_datadir");
 
-    @Nullable
-    private final UserFeedback mUserFeedback;
-
     @NonNull
     private final ILogger mLogger;
 
@@ -95,21 +91,18 @@ public class InstantRunClient {
 
     public InstantRunClient(
             @NonNull String packageName,
-            @Nullable UserFeedback userFeedback,
             @NonNull ILogger logger,
             long token) {
-        this(packageName, userFeedback, logger, token, DEFAULT_LOCAL_PORT);
+        this(packageName, logger, token, DEFAULT_LOCAL_PORT);
     }
 
     @VisibleForTesting
     public InstantRunClient(
             @NonNull String packageName,
-            @Nullable UserFeedback userFeedback,
             @NonNull ILogger logger,
             long token,
             int port) {
         mPackageName = packageName;
-        mUserFeedback = userFeedback;
         mLogger = logger;
         mToken = token;
         mLocalPort = port;
@@ -175,133 +168,104 @@ public class InstantRunClient {
      * there.
      */
     @NonNull
-    public AppState getAppState(@NonNull IDevice device) {
-        try {
-            return talkToApp(device,
-                    new Communicator<AppState>() {
-                        @Override
-                        public AppState communicate(@NonNull DataInputStream input,
-                                @NonNull DataOutputStream output) throws
-                                IOException {
-                            output.writeInt(MESSAGE_PING);
-                            // Wait for "pong"
-                            boolean foreground = input.readBoolean();
-                            mLogger.info(
-                                    "Ping sent and replied successfully, application seems to be running. Foreground="
-                                            + foreground);
-                            return foreground ? AppState.FOREGROUND : AppState.BACKGROUND;
-                        }
-                    }, AppState.NOT_RUNNING);
-        } catch (Throwable e) {
-            return AppState.NOT_RUNNING;
-        }
+    public AppState getAppState(@NonNull IDevice device) throws IOException {
+        return talkToApp(device,
+                new Communicator<AppState>() {
+                    @Override
+                    public AppState communicate(@NonNull DataInputStream input,
+                            @NonNull DataOutputStream output) throws
+                            IOException {
+                        output.writeInt(MESSAGE_PING);
+                        boolean foreground = input.readBoolean(); // Wait for "pong"
+                        mLogger.info(
+                                "Ping sent and replied successfully, application seems to be running. Foreground="
+                                        + foreground);
+                        return foreground ? AppState.FOREGROUND : AppState.BACKGROUND;
+                    }
+                });
     }
 
     @NonNull
-    private <T> T talkToApp(@NonNull IDevice device,
-            @NonNull Communicator<T> communicator,
-            @NonNull T errorValue) {
+    private <T> T talkToApp(@NonNull IDevice device, @NonNull Communicator<T> communicator)
+            throws IOException {
 
         try {
             device.createForward(mLocalPort, mPackageName,
-                                 IDevice.DeviceUnixSocketNamespace.ABSTRACT);
+                    IDevice.DeviceUnixSocketNamespace.ABSTRACT);
+        }
+        catch (TimeoutException | AdbCommandRejectedException e) {
+            throw new IOException(e);
+        }
+
+        try {
+            return talkToAppWithinPortForward(communicator, mLocalPort);
+        } finally {
             try {
-                return talkToAppWithinPortForward(communicator, errorValue, mLocalPort);
-            } catch (UnknownHostException e) {
-                mLogger.warning("%s", Throwables.getStackTraceAsString(e));
-            } catch (SocketException e) {
-                if (e.getMessage().equals("Broken pipe")) {
-                    if (mUserFeedback != null) {
-                        mUserFeedback.error("No connection to app; cannot sync changes");
-                    }
-                    return errorValue;
-                }
-                mLogger.warning("%s", Throwables.getStackTraceAsString(e));
-            } catch (IOException e) {
-                mLogger.warning("%s", Throwables.getStackTraceAsString(e));
-            } catch (Throwable e) {
-                mLogger.warning("%s", Throwables.getStackTraceAsString(e));
-                return errorValue;
-            } finally {
                 device.removeForward(mLocalPort, mPackageName,
                                      IDevice.DeviceUnixSocketNamespace.ABSTRACT);
             }
-        } catch (TimeoutException e) {
-            mLogger.warning("%s", Throwables.getStackTraceAsString(e));
-        } catch (AdbCommandRejectedException e) {
-            mLogger.warning("%s", Throwables.getStackTraceAsString(e));
-        } catch (Throwable e) {
-            mLogger.warning("%s", Throwables.getStackTraceAsString(e));
+            catch (IOException | TimeoutException | AdbCommandRejectedException e) {
+                // we don't worry that much about failures while removing port forwarding
+                mLogger.warning("Exception while removing port forward: " + e);
+            }
         }
-
-        return errorValue;
     }
 
     private static <T> T talkToAppWithinPortForward(@NonNull Communicator<T> communicator,
-      @NonNull T errorValue, int localPort) throws IOException {
-        Socket socket = new Socket(LOCAL_HOST, localPort);
-        try {
-            socket.setSoTimeout(8 * 1000); // Allow up to 8 second before timing out
-            DataOutputStream output = new DataOutputStream(socket.getOutputStream());
-            try {
-                DataInputStream input = new DataInputStream(socket.getInputStream());
-                try {
-                    output.writeLong(PROTOCOL_IDENTIFIER);
-                    output.writeInt(PROTOCOL_VERSION);
+            int localPort) throws IOException {
+        try (Socket socket = new Socket(LOCAL_HOST, localPort)) {
+            try (DataInputStream input = new DataInputStream(socket.getInputStream());
+                 DataOutputStream output = new DataOutputStream(socket.getOutputStream())) {
+                output.writeLong(PROTOCOL_IDENTIFIER);
+                output.writeInt(PROTOCOL_VERSION);
 
-                    int version = input.readInt();
-                    if (version != PROTOCOL_VERSION) {
-                        return errorValue;
-                    }
-
-                    socket.setSoTimeout(communicator.getTimeout());
-                    T value = communicator.communicate(input, output);
-
-                    output.writeInt(MESSAGE_EOF);
-
-                    return value;
-                } finally {
-                    input.close();
+                socket.setSoTimeout(2 * 1000); // Allow up to 2 seconds before timing out
+                int version = input.readInt();
+                if (version != PROTOCOL_VERSION) {
+                    String msg = String.format(Locale.US,
+                            "Client and server protocol versions don't match (%1$d != %2$d)",
+                            version, PROTOCOL_VERSION);
+                    throw new IOException(msg);
                 }
-            } finally {
-                output.close();
+
+                socket.setSoTimeout(communicator.getTimeout());
+                T value = communicator.communicate(input, output);
+
+                output.writeInt(MESSAGE_EOF);
+
+                return value;
             }
-        } finally {
-            socket.close();
         }
     }
 
-    public void showToast(@NonNull IDevice device, @NonNull final String message) {
-        try {
-            talkToApp(device, new Communicator<Boolean>() {
-                @Override
-                public Boolean communicate(@NonNull DataInputStream input,
-                        @NonNull DataOutputStream output) throws IOException {
-                    output.writeInt(MESSAGE_SHOW_TOAST);
-                    output.writeUTF(message);
-                    return false;
-                }
-            }, true);
-        } catch (Throwable e) {
-            mLogger.warning("%s", Throwables.getStackTraceAsString(e));
-        }
+    public void showToast(@NonNull IDevice device, @NonNull final String message)
+            throws IOException {
+        talkToApp(device, new Communicator<Boolean>() {
+            @Override
+            public Boolean communicate(@NonNull DataInputStream input,
+                    @NonNull DataOutputStream output) throws IOException {
+                output.writeInt(MESSAGE_SHOW_TOAST);
+                output.writeUTF(message);
+                return false;
+            }
+        });
     }
 
     /**
      * Restart the activity on this device, if it's running and is in the foreground.
      */
-    public void restartActivity(@NonNull IDevice device) {
+    public void restartActivity(@NonNull IDevice device) throws IOException {
         AppState appState = getAppState(device);
         if (appState == AppState.FOREGROUND || appState == AppState.BACKGROUND) {
-            talkToApp(device, new Communicator<Boolean>() {
+            talkToApp(device, new Communicator<Void>() {
                 @Override
-                public Boolean communicate(@NonNull DataInputStream input,
+                public Void communicate(@NonNull DataInputStream input,
                         @NonNull DataOutputStream output) throws IOException {
                     output.writeInt(MESSAGE_RESTART_ACTIVITY);
                     writeToken(output);
-                    return false;
+                    return null;
                 }
-            }, true);
+            });
         }
     }
 
@@ -309,7 +273,7 @@ public class InstantRunClient {
             @NonNull final InstantRunBuildInfo buildInfo,
             @NonNull UpdateMode updateMode,
             final boolean isRestartActivity,
-            final boolean isShowToastEnabled) throws InstantRunPushFailedException {
+            final boolean isShowToastEnabled) throws InstantRunPushFailedException, IOException {
         if (!buildInfo.canHotswap()) {
             updateMode = updateMode.combine(UpdateMode.COLD_SWAP);
         }
@@ -374,7 +338,8 @@ public class InstantRunClient {
                     throw new InstantRunPushFailedException("Could not read file " + file);
                 }
             }
-            pushPatches(device, buildInfo.getTimeStamp(), changes, updateMode, isRestartActivity, isShowToastEnabled);
+            pushPatches(device, buildInfo.getTimeStamp(), changes, updateMode, isRestartActivity,
+                    isShowToastEnabled);
 
             needRestart = false;
             if (!appInForeground || !buildInfo.canHotswap()) {
@@ -397,65 +362,56 @@ public class InstantRunClient {
         return updateMode;
     }
 
-    public void pushPatches(@Nullable IDevice device,
+    public UpdateMode pushPatches(@NonNull IDevice device,
             @NonNull final String buildId,
             @NonNull final List<ApplicationPatch> changes,
             @NonNull UpdateMode updateMode,
             final boolean isRestartActivity,
-            final boolean isShowToastEnabled) {
+            final boolean isShowToastEnabled) throws IOException {
         if (changes.isEmpty() || updateMode == UpdateMode.NO_CHANGES) {
             // Sync the build id to the device; Gradle might rev the build id even when there are no changes,
             // and we need to make sure that the device id reflects this new build id, or the next
             // build will discover different id's and will conclude that it needs to do a full rebuild
-            if (device != null) {
-                transferLocalIdToDeviceId(device, buildId);
-            }
+            transferLocalIdToDeviceId(device, buildId);
 
-            if (mUserFeedback != null) {
-                mUserFeedback.noChanges();
-            }
-            return;
+            return UpdateMode.NO_CHANGES;
         }
 
         if (updateMode == UpdateMode.HOT_SWAP && isRestartActivity) {
             updateMode = updateMode.combine(UpdateMode.WARM_SWAP);
         }
 
-        if (device != null) {
-            final UpdateMode updateMode1 = updateMode;
-            talkToApp(device, new Communicator<Boolean>() {
-                @Override
-                public Boolean communicate(@NonNull DataInputStream input,
-                        @NonNull DataOutputStream output) throws IOException {
-                    output.writeInt(MESSAGE_PATCHES);
-                    writeToken(output);
-                    ApplicationPatchUtil.write(output, changes, updateMode1);
+        final UpdateMode updateMode1 = updateMode;
+        talkToApp(device, new Communicator<Boolean>() {
+            @Override
+            public Boolean communicate(@NonNull DataInputStream input,
+                    @NonNull DataOutputStream output) throws IOException {
+                output.writeInt(MESSAGE_PATCHES);
+                writeToken(output);
+                ApplicationPatchUtil.write(output, changes, updateMode1);
 
-                    // Let the app know whether it should show toasts
-                    output.writeBoolean(isShowToastEnabled);
+                // Let the app know whether it should show toasts
+                output.writeBoolean(isShowToastEnabled);
 
-                    // Finally read a boolean back from the other side; this has the net effect of
-                    // waiting until applying/verifying code on the other side is done. (It doesn't
-                    // count the actual restart time, but for activity restarts it's typically instant,
-                    // and for cold starts we have no easy way to handle it (the process will die and a
-                    // new process come up; to measure that we'll need to work a lot harder.)
-                    input.readBoolean();
+                // Finally read a boolean back from the other side; this has the net effect of
+                // waiting until applying/verifying code on the other side is done. (It doesn't
+                // count the actual restart time, but for activity restarts it's typically instant,
+                // and for cold starts we have no easy way to handle it (the process will die and a
+                // new process come up; to measure that we'll need to work a lot harder.)
+                input.readBoolean();
 
-                    return false;
-                }
+                return false;
+            }
 
-                @Override
-                int getTimeout() {
-                    return 8000; // allow up to 8 seconds for resource push
-                }
-            }, true);
+            @Override
+            int getTimeout() {
+                return 8000; // allow up to 8 seconds for resource push
+            }
+        });
 
-            transferLocalIdToDeviceId(device, buildId);
-        }
+        transferLocalIdToDeviceId(device, buildId);
 
-        if (mUserFeedback != null) {
-            mUserFeedback.notifyEnd(updateMode);
-        }
+        return updateMode;
     }
 
     /**
@@ -506,13 +462,7 @@ public class InstantRunClient {
             }
         } catch (IOException ioe) {
             logger.warning("Couldn't write build id file: %s", ioe);
-        } catch (AdbCommandRejectedException e) {
-            logger.warning("%s", Throwables.getStackTraceAsString(e));
-        } catch (TimeoutException e) {
-            logger.warning("%s", Throwables.getStackTraceAsString(e));
-        } catch (ShellCommandUnresponsiveException e) {
-            logger.warning("%s", Throwables.getStackTraceAsString(e));
-        } catch (SyncException e) {
+        } catch (AdbCommandRejectedException | TimeoutException | SyncException | ShellCommandUnresponsiveException e) {
             logger.warning("%s", Throwables.getStackTraceAsString(e));
         }
     }
