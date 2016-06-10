@@ -29,10 +29,9 @@ import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.color.ColorSpace;
 import java.awt.geom.AffineTransform;
-import java.awt.geom.GeneralPath;
+import java.awt.geom.Path2D;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
-import java.awt.image.ColorModel;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -155,6 +154,7 @@ public final class PsdDecoder extends Decoder {
                     rawLayer.right - rawLayer.left, rawLayer.bottom - rawLayer.top)
                     .opacity(rawLayer.opacity / 255.0f)
                     .blendMode(PsdUtils.getBlendMode(rawLayer.blendMode))
+                    .clipBase(rawLayer.clipping == 0)
                     .open(isOpen)
                     .visible((rawLayer.flags & RawLayer.INVISIBLE) == 0);
 
@@ -497,7 +497,7 @@ public final class PsdDecoder extends Decoder {
 
         ShapeMask mask = (ShapeMask) property.data;
 
-        GeneralPath path = PsdUtils.createPath(mask);
+        Path2D path = PsdUtils.createPath(mask);
 
         // Shape data is stored in relative coordinates in PSD files
         // For instance, a point at 0.5,0.5 is in the center of the document

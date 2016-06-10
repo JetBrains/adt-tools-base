@@ -111,10 +111,10 @@ public final class ShapeInfo {
     }
 
     /**
-     * Returns the path representing this shape.
+     * Returns a copy of the path representing this shape.
      */
     public Path2D getPath() {
-        return path;
+        return (Path2D) path.clone();
     }
 
     /**

@@ -26,8 +26,8 @@ import java.util.List;
 
 /**
  * A layer can hold different data depending on its type.
- * Make sure to query {@link #getType()} before you call type
- * specific getters ({@link #getTextInfo()} for instance).
+ * Make sure to query {@link #getType()} before you call
+ * type-specific getters {@link #getTextInfo()} for instance).
  */
 public final class Layer {
     private final String name;
@@ -37,6 +37,7 @@ public final class Layer {
 
     private final float opacity;
     private final BlendMode blendMode;
+    private final boolean clipBase;
 
     private final List<Layer> children;
 
@@ -84,6 +85,7 @@ public final class Layer {
 
         opacity = builder.opacity;
         blendMode = builder.blendMode;
+        clipBase = builder.clipBase;
 
         children = Lists.immutableCopy(builder.children);
 
@@ -92,10 +94,10 @@ public final class Layer {
         shapeInfo = builder.shapeInfo;
         textInfo = builder.textInfo;
 
+        effects = builder.effects;
+
         open = builder.open;
         visible = builder.visible;
-
-        effects = builder.effects;
     }
 
     /**
@@ -139,6 +141,15 @@ public final class Layer {
      */
     public BlendMode getBlendMode() {
         return blendMode;
+    }
+
+    /**
+     * Returns whether this layer is a clipping base or not. Layers
+     * that are not clipping bases are clipped by the first clipping
+     * base layer under them, as long as it is within the same group.
+     */
+    public boolean isClipBase() {
+        return clipBase;
     }
 
     /**
@@ -202,6 +213,7 @@ public final class Layer {
                ", effects=" + (effects != null) +
                ", open=" + open +
                ", visible=" + visible +
+               ", clipBase=" + clipBase +
                '}';
     }
 
@@ -214,6 +226,7 @@ public final class Layer {
 
         private float opacity = 1.0f;
         private BlendMode blendMode = BlendMode.NORMAL;
+        private boolean clipBase = true;
 
         private final List<Layer> children = new ArrayList<>();
 
@@ -247,6 +260,11 @@ public final class Layer {
 
         public Builder blendMode(BlendMode blendMode) {
             this.blendMode = blendMode;
+            return this;
+        }
+
+        public Builder clipBase(boolean clipBase) {
+            this.clipBase = clipBase;
             return this;
         }
 

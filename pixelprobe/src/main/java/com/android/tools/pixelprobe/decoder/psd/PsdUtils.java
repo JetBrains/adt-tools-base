@@ -383,9 +383,9 @@ final class PsdUtils {
      *
      * @return A path instance, never null
      */
-    static GeneralPath createPath(ShapeMask mask) {
+    static Path2D createPath(ShapeMask mask) {
         // Photoshop only uses the even/odd fill rule
-        GeneralPath path = new GeneralPath(Path2D.WIND_EVEN_ODD);
+        Path2D.Float path = new Path2D.Float(Path2D.WIND_EVEN_ODD, mask.pathRecords.size());
 
         // Each Bézier knot in a PSD is made of three points:
         //   - the anchor (the know or point itself)
@@ -456,13 +456,20 @@ final class PsdUtils {
         return path;
     }
 
-    private static void addToPath(GeneralPath path, BezierKnot firstKnot, BezierKnot lastKnot) {
-        path.curveTo(
-                Bytes.fixed8_24ToFloat(lastKnot.controlExitX),
-                Bytes.fixed8_24ToFloat(lastKnot.controlExitY),
-                Bytes.fixed8_24ToFloat(firstKnot.controlEnterX),
-                Bytes.fixed8_24ToFloat(firstKnot.controlEnterY),
-                Bytes.fixed8_24ToFloat(firstKnot.anchorX),
-                Bytes.fixed8_24ToFloat(firstKnot.anchorY));
+    private static void addToPath(Path2D.Float path, BezierKnot toKnot, BezierKnot lastKnot) {
+        float fromX = Bytes.fixed8_24ToFloat(lastKnot.anchorX);
+        float fromY = Bytes.fixed8_24ToFloat(lastKnot.anchorY);
+        float exitX = Bytes.fixed8_24ToFloat(lastKnot.controlExitX);
+        float exitY = Bytes.fixed8_24ToFloat(lastKnot.controlExitY);
+        float enterX = Bytes.fixed8_24ToFloat(toKnot.controlEnterX);
+        float enterY = Bytes.fixed8_24ToFloat(toKnot.controlEnterY);
+        float toX = Bytes.fixed8_24ToFloat(toKnot.anchorX);
+        float toY = Bytes.fixed8_24ToFloat(toKnot.anchorY);
+
+        if (exitX == fromX && exitY == fromY && enterX == toX && enterY == toY) {
+            path.lineTo(toX, toY);
+        } else {
+            path.curveTo(exitX, exitY, enterX, enterY, toX, toY);
+        }
     }
 }
