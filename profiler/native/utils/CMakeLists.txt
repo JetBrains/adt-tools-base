@@ -8,7 +8,7 @@ set(UTIL_SOURCES
     stopwatch.cpp
     timestamp.cc)
 
-if (CMAKE_HOST_APPLE)
+if (CMAKE_HOST_APPLE AND NOT ANDROID)
     set(UTIL_SOURCES ${UTIL_SOURCES} clock.mac.cpp)
 else()
     set(UTIL_SOURCES ${UTIL_SOURCES} clock.cpp)
