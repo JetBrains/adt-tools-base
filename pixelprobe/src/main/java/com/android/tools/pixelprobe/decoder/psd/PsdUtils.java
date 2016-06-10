@@ -411,6 +411,7 @@ final class PsdUtils {
                     if (currentSubpath == Subpath.CLOSED) {
                         // If the previous subpath is of the closed type, close it now
                         addToPath(path, firstKnot, lastKnot);
+                        path.closePath();
                     }
                     currentSubpath = Subpath.CLOSED;
                     firstKnot = lastKnot = null;
@@ -420,6 +421,7 @@ final class PsdUtils {
                     if (currentSubpath == Subpath.CLOSED) {
                         // Close the previous subpath if needed
                         addToPath(path, firstKnot, lastKnot);
+                        path.closePath();
                     }
                     currentSubpath = Subpath.OPEN;
                     firstKnot = lastKnot = null;
@@ -451,6 +453,7 @@ final class PsdUtils {
         // Close the subpath if needed
         if (currentSubpath == Subpath.CLOSED) {
             addToPath(path, firstKnot, lastKnot);
+            path.closePath();
         }
 
         return path;
