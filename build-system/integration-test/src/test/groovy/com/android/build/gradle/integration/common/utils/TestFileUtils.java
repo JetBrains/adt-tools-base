@@ -50,12 +50,9 @@ public class TestFileUtils {
 
         List<String> fileList = Lists.newArrayList();
         for (File file : Files.fileTreeTraverser().preOrderTraversal(base).filter(
-                new Predicate<File>() {
-                    @Override
-                    public boolean apply(@Nullable File file) {
-                        // we want to skip directories and symlinks, so isFile is the best check.
-                        return file != null && file.isFile();
-                    }
+                f -> {
+                    // we want to skip directories and symlinks, so isFile is the best check.
+                    return f != null && f.isFile();
                 })) {
             assertThat(file.toString()).startsWith(base.toString());
             String fileName = file.toString().substring(base.toString().length());
