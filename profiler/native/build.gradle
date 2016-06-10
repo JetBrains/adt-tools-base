@@ -11,7 +11,10 @@ cmake {
 
 cmake {
     name 'android'
-    abis 'armeabi-v7a', 'arm64-v8a'
+    // x86 disabled for now; may be useful for local development if you want to
+    // target emulators. TODO: Enable when we're more confident with this new
+    // build step affecting the whole team.
+    abis 'armeabi-v7a', 'arm64-v8a' //, 'x86'
     projectDir "$rootDir/native"
     flags "-DHOST_BUILD_DIR=$buildDir/out/host"
 }
