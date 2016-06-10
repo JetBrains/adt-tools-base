@@ -76,7 +76,8 @@ void MemoryLevelsSampler::GetProcessMemoryLevels(int pid) {
 
 void MemoryLevelsSampler::ParseMemoryLevels(const std::string& memory_info_string,
                                               proto::MemoryData_MemorySample* sample) {
-  std::unique_ptr<char> delimited_memory_info(strdup(memory_info_string.c_str()));
+  std::unique_ptr<char, void(*)(void*)> delimited_memory_info(strdup(memory_info_string.c_str()),
+                                                              std::free);
   char* temp_memory_info_ptr = delimited_memory_info.get();
   char* result;
 
