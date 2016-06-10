@@ -21,7 +21,6 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
-import com.android.testutils.TestUtils;
 import com.google.common.base.Charsets;
 import com.google.common.io.Files;
 
@@ -42,10 +41,8 @@ public class CachedFileContentsTest {
 
         Object cache = new Object();
 
-        CachedFileContents<Object> cachedFile = new CachedFileContents<Object>(f);
+        CachedFileContents<Object> cachedFile = new CachedFileContents<>(f);
         cachedFile.closed(cache);
-
-        TestUtils.waitFilesystemTime();
 
         assertTrue(cachedFile.isValid());
         assertSame(cache, cachedFile.getCache());
@@ -58,10 +55,8 @@ public class CachedFileContentsTest {
 
         Object cache = new Object();
 
-        CachedFileContents<Object> cachedFile = new CachedFileContents<Object>(f);
+        CachedFileContents<Object> cachedFile = new CachedFileContents<>(f);
         cachedFile.closed(cache);
-
-        TestUtils.waitFilesystemTime();
 
         Files.write("def", f, Charsets.US_ASCII);
 
@@ -76,10 +71,8 @@ public class CachedFileContentsTest {
 
         Object cache = new Object();
 
-        CachedFileContents<Object> cachedFile = new CachedFileContents<Object>(f);
+        CachedFileContents<Object> cachedFile = new CachedFileContents<>(f);
         cachedFile.closed(cache);
-
-        TestUtils.waitFilesystemTime();
 
         Files.write("def", f, Charsets.US_ASCII);
         cachedFile.closed(cache);
@@ -93,7 +86,7 @@ public class CachedFileContentsTest {
         File f = mTemporaryFolder.newFile("foo");
         Files.write("bar", f, Charsets.US_ASCII);
 
-        CachedFileContents<Object> cachedFile = new CachedFileContents<Object>(f);
+        CachedFileContents<Object> cachedFile = new CachedFileContents<>(f);
         cachedFile.closed(null);
 
         Files.write("xpto", f, Charsets.US_ASCII);
@@ -105,7 +98,7 @@ public class CachedFileContentsTest {
         File f = mTemporaryFolder.newFile("foo");
         Files.write("bar", f, Charsets.US_ASCII);
 
-        CachedFileContents<Object> cachedFile = new CachedFileContents<Object>(f);
+        CachedFileContents<Object> cachedFile = new CachedFileContents<>(f);
         cachedFile.closed(null);
         long lastTs = f.lastModified();
 
@@ -119,7 +112,7 @@ public class CachedFileContentsTest {
         File f = mTemporaryFolder.newFile("foo");
         Files.write("bar", f, Charsets.US_ASCII);
 
-        CachedFileContents<Object> cachedFile = new CachedFileContents<Object>(f);
+        CachedFileContents<Object> cachedFile = new CachedFileContents<>(f);
         cachedFile.closed(null);
         long lastTs = f.lastModified();
 
