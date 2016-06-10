@@ -78,6 +78,9 @@ android {
 
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
+    androidTestCompile('com.android.support.test.espresso:espresso-core:2.2.2', {
+      exclude group: 'com.android.support', module: 'support-annotations'
+    })
 <#if WearprojectName?has_content && NumberOfEnabledFormFactors?has_content && NumberOfEnabledFormFactors gt 1 && Wearincluded>
     wearApp project(':${WearprojectName}')
     compile 'com.google.android.gms:play-services:+'

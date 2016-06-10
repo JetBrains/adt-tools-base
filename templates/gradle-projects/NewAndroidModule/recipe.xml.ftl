@@ -9,15 +9,6 @@
     <dependency mavenUrl="junit:junit:4.12" gradleConfiguration="testCompile" />
 </#if>
 
-<dependency mavenUrl="com.android.support.test.espresso:espresso-core:+"
-            gradleConfiguration="androidTestCompile" />
-<dependency mavenUrl="com.android.support.test:runner:+"
-            gradleConfiguration="androidTestCompile" />
-
-<!-- We need an explicit dependency on the same version of support annotations as the main APK. -->
-<dependency mavenUrl="com.android.support:support-annotations:${buildApi}.+"
-            gradleConfiguration="androidTestCompile" />
-
 <#if !createActivity>
     <mkdir at="${escapeXmlAttribute(srcOut)}" />
 </#if>
