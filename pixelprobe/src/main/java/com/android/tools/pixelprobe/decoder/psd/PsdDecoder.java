@@ -611,7 +611,7 @@ public final class PsdDecoder extends Decoder {
 
             Paint paint = Color.BLACK;
             // TODO: handle gradients and patterns
-            Descriptor colorLayer = PsdUtils.get(descriptor, "solidColorLayer");
+            Descriptor colorLayer = PsdUtils.get(descriptor, "strokeStyleContent.solidColorLayer");
             if (colorLayer != null) {
                 paint = PsdUtils.getColor(colorLayer);
             }
