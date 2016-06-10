@@ -5,4 +5,8 @@ add_executable(perfd
 
 target_link_libraries(perfd
                       profiler_cpu
+                      profiler_memory
                       ProfilerProtos)
+
+# Add perfd profiler components
+add_subdirectory(memory)

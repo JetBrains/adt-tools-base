@@ -20,8 +20,10 @@
 #include <grpc++/grpc++.h>
 
 #include "cpu/cpu_profiler_component.h"
+#include "memory/memory_profiler_component.h"
 #include "perfd/perfa_service.h"
 #include "perfd/profiler_service.h"
+#include "perfd/memory/memory_service.h"
 #include "utils/config.h"
 
 using grpc::Service;
@@ -62,8 +64,12 @@ void RunServer() {
   profiler::CpuProfilerComponent cpu_component;
   RegisterPerfdComponent(&cpu_component, &builder);
 
+  profiler::MemoryProfilerComponent memory_component;
+  RegisterPerfdComponent(&memory_component, &builder);
+
   // Finally assemble the server.
   std::unique_ptr<grpc::Server> server(builder.BuildAndStart());
+
   std::cout << "Server listening on " << kServerAddress << std::endl;
 
   // Wait for the server to shutdown. Note that some other thread must be
