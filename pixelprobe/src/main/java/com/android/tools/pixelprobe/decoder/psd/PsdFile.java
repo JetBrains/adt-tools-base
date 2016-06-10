@@ -572,7 +572,7 @@ final class PsdFile {
 
     /**
      * A vector mask is a layer property that contains a list of path
-     * records, used to descript a path (or vector shape).
+     * records, used to describe a path (or vector shape).
      */
     @Chunked
     static final class ShapeMask {
