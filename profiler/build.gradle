@@ -48,7 +48,7 @@ def cmake(cl) {
             // Remove them and capitalize instead.
             def normAbi = abi.split("-").collect { it.capitalize() }.join()
             def name = data.name.capitalize() + normAbi;
-            createTasks(data, name, abi, cl.owner, host); 
+            createTasks(data, name, abi, cl.owner, host);
             configure.dependsOn cl.owner.tasks.("configure" + name)
             compile.dependsOn cl.owner.tasks.("compile" + name)
             check.dependsOn cl.owner.tasks.("check" + name)
@@ -103,4 +103,10 @@ def createTasks(data, name, abi, project, host) {
       inputs.dir gen
   }
   checkAbi.dependsOn configureAbi
+}
+
+def requiredVersion = JavaVersion.VERSION_1_8
+def jvmVersion = JavaVersion.current()
+if (requiredVersion != jvmVersion) {
+    throw new RuntimeException("Profiler tools need to be compiled with Java $requiredVersion you are using Java $jvmVersion.")
 }
