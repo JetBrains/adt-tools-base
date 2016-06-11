@@ -388,7 +388,7 @@ final class PsdUtils {
         Path2D.Float path = new Path2D.Float(Path2D.WIND_EVEN_ODD, mask.pathRecords.size());
 
         // Each Bézier knot in a PSD is made of three points:
-        //   - the anchor (the know or point itself)
+        //   - the anchor (the knot or point itself)
         //   - the control point before the anchor
         //   - the control point after the anchor
         //
