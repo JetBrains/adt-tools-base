@@ -47,6 +47,7 @@ import java.lang.management.MemoryPoolMXBean;
 import java.lang.management.MemoryType;
 import java.util.Collection;
 import java.util.Enumeration;
+import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -264,27 +265,31 @@ public class DexByteCodeConverter {
                     DexProcessBuilder.FIXED_DX_MERGER.toShortString());
             mIsDexInProcess = false;
             return false;
-
         }
 
         // Requested memory for dex.
-        long requestedHeapSize = parseHeapSize(dexOptions.getJavaMaxHeapSize(), mLogger);
+        long requestedHeapSize;
+        if (dexOptions.getJavaMaxHeapSize() != null) {
+            Optional<Long> heapSize = parseSizeToBytes(dexOptions.getJavaMaxHeapSize());
+            if (heapSize.isPresent()) {
+                requestedHeapSize = heapSize.get();
+            } else {
+                mLogger.warning(
+                        "Unable to parse dex options size parameter '%1$s', assuming %2$s bytes.",
+                        dexOptions.getJavaMaxHeapSize(),
+                        DEFAULT_DEX_HEAP_SIZE);
+                requestedHeapSize = DEFAULT_DEX_HEAP_SIZE;
+            }
+        } else {
+            requestedHeapSize = DEFAULT_DEX_HEAP_SIZE;
+        }
         // Approximate heap size requested.
         long requiredHeapSizeHeuristic = requestedHeapSize + NON_DEX_HEAP_SIZE;
-        // Get the approximate heap size that was specified by the user.
-        // It is important that this be close to the -Xmx value specified, as is is compared with
-        // the requiredHeapSizeHeuristic, which we suggest the user sets in their gradle.properties.
-        long maxMemory = 0;
-        for (MemoryPoolMXBean mpBean: ManagementFactory.getMemoryPoolMXBeans()) {
-            if (mpBean.getType() == MemoryType.HEAP) {
-                maxMemory += mpBean.getUsage().getMax();
-            }
-        }
+        // Get the heap size defined by the user. This value will be compared with
+        // requiredHeapSizeHeuristic, which we suggest the user set in their gradle.properties file.
+        long maxMemory = getUserDefinedHeapSize();
 
-        // Allow a little extra overhead (50M) as in practice the sum of the heap pools is
-        // slightly lower than the Xmx setting specified by the user.
-        final long EXTRA_HEAP_OVERHEAD =  50 * 1024 * 1024;
-        if (requiredHeapSizeHeuristic > maxMemory + EXTRA_HEAP_OVERHEAD) {
+        if (requiredHeapSizeHeuristic > maxMemory) {
             String dexOptionsComment = "";
             if (dexOptions.getJavaMaxHeapSize() != null) {
                 dexOptionsComment = String.format(
@@ -294,15 +299,16 @@ public class DexByteCodeConverter {
 
             mLogger.warning("\nRunning dex as a separate process.\n\n"
                             + "To run dex in process, the Gradle daemon needs a larger heap.\n"
-                            + "It currently has approximately %1$d MB.\n"
+                            + "It currently has %1$d MB.\n"
                             + "For faster builds, increase the maximum heap size for the "
-                            + "Gradle daemon to more than %2$s MB%3$s.\n"
+                            + "Gradle daemon to at least %2$s MB%3$s.\n"
                             + "To do this set org.gradle.jvmargs=-Xmx%2$sM in the "
                             + "project gradle.properties.\n"
                             + "For more information see "
                             + "https://docs.gradle.org/current/userguide/build_environment.html\n",
                     maxMemory / (1024 * 1024),
-                    requiredHeapSizeHeuristic / (1024 * 1024),
+                    // Add -1 and + 1 to round up the division
+                    ((requiredHeapSizeHeuristic - 1) / (1024 * 1024)) + 1,
                     dexOptionsComment);
             mIsDexInProcess = false;
             return false;
@@ -312,11 +318,39 @@ public class DexByteCodeConverter {
 
     }
 
-    @VisibleForTesting
-    static long parseHeapSize(@Nullable String sizeParameter, @NonNull ILogger logger) {
-        if (sizeParameter == null) {
-            return DEFAULT_DEX_HEAP_SIZE;
+    /**
+     * Returns the heap size that was specified by the -Xmx value from the user, or an approximated
+     * value if the -Xmx value was not set or was set improperly.
+     */
+    static long getUserDefinedHeapSize() {
+        for (String arg : ManagementFactory.getRuntimeMXBean().getInputArguments()) {
+            if (arg.startsWith("-Xmx")) {
+                Optional<Long> heapSize = parseSizeToBytes(arg.substring("-Xmx".length()));
+                if (heapSize.isPresent()) {
+                    return heapSize.get();
+                }
+                break;
+            }
         }
+
+        // If the -Xmx value was not set or was set improperly, get an approximation of the
+        // heap size
+        long heapSize = 0;
+        for (MemoryPoolMXBean mpBean : ManagementFactory.getMemoryPoolMXBeans()) {
+            if (mpBean.getType() == MemoryType.HEAP) {
+                heapSize += mpBean.getUsage().getMax();
+            }
+        }
+        return heapSize;
+    }
+
+    /**
+     * Returns an Optional<Long> that is present when the size can be parsed successfully, and
+     * empty otherwise.
+     */
+    @VisibleForTesting
+    @NonNull
+    static Optional<Long> parseSizeToBytes(@NonNull String sizeParameter) {
         long multiplier = 1;
         if (SdkUtils.endsWithIgnoreCase(sizeParameter, "k")) {
             multiplier = 1024;
@@ -331,13 +365,9 @@ public class DexByteCodeConverter {
         }
 
         try {
-            return multiplier * Long.parseLong(sizeParameter);
+            return Optional.of(multiplier * Long.parseLong(sizeParameter));
         } catch (NumberFormatException e) {
-            logger.warning(
-                    "Unable to parse dex options size parameter '%1$s', assuming %2$s bytes.",
-                    sizeParameter,
-                    DEFAULT_DEX_HEAP_SIZE);
-            return DEFAULT_DEX_HEAP_SIZE;
+            return Optional.empty();
         }
     }
 

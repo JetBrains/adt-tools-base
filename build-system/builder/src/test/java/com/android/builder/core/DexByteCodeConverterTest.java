@@ -16,7 +16,6 @@
 
 package com.android.builder.core;
 
-import static com.android.builder.core.DexByteCodeConverter.parseHeapSize;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -61,13 +60,14 @@ public class DexByteCodeConverterTest {
     }
 
     @Test
-    public void checkHeapSizeParser() {
-        assertEquals(123L, parseHeapSize("123", logger));
-        assertEquals(2048L, parseHeapSize("2k", logger));
-        assertEquals(2048L, parseHeapSize("2K", logger));
-        assertEquals(1024L * 1024L * 7L, parseHeapSize("7M", logger));
-        assertEquals(1024L * 1024L * 1024L * 17L, parseHeapSize("17g", logger));
-        assertEquals(DexByteCodeConverter.DEFAULT_DEX_HEAP_SIZE, parseHeapSize("foo", logger));
+    public void checkSizeParser() {
+        assertEquals(123L, (long) DexByteCodeConverter.parseSizeToBytes("123").get());
+        assertEquals(2048L, (long) DexByteCodeConverter.parseSizeToBytes("2k").get());
+        assertEquals(2048L, (long) DexByteCodeConverter.parseSizeToBytes("2K").get());
+        assertEquals(1024L * 1024L * 7L, (long) DexByteCodeConverter.parseSizeToBytes("7M").get());
+        assertEquals(1024L * 1024L * 1024L * 17L,
+                (long) DexByteCodeConverter.parseSizeToBytes("17g").get());
+        assertFalse(DexByteCodeConverter.parseSizeToBytes("foo").isPresent());
     }
 
     @Test

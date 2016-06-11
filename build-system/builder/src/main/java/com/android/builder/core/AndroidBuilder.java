@@ -1621,29 +1621,22 @@ public class AndroidBuilder {
 
         if (isInProcess) {
             final long DEFAULT_SUGGESTED_HEAP_SIZE = 1536 * 1024 * 1024; // 1.5 GiB
-            long maxMemory = 0;
-            for (MemoryPoolMXBean mpBean: ManagementFactory.getMemoryPoolMXBeans()) {
-                if (mpBean.getType() == MemoryType.HEAP) {
-                    maxMemory += mpBean.getUsage().getMax();
-                }
-            }
+            long maxMemory = DexByteCodeConverter.getUserDefinedHeapSize();
 
-            // Allow a little extra overhead (50M) as in practice the sum of the heap pools is
-            // slightly lower than the Xmx setting specified by the user.
-            final long EXTRA_HEAP_OVERHEAD =  50 * 1024 * 1024;
-            if (DEFAULT_SUGGESTED_HEAP_SIZE > maxMemory + EXTRA_HEAP_OVERHEAD) {
+            if (DEFAULT_SUGGESTED_HEAP_SIZE > maxMemory) {
                 mLogger.warning(
                         "\nA larger heap for the Gradle daemon is recommended for running "
                                 + "jack.\n\n"
-                                + "It currently has approximately %1$d MB.\n"
+                                + "It currently has %1$d MB.\n"
                                 + "For faster builds, increase the maximum heap size for the "
-                                + "Gradle daemon to more than %2$s MB.\n"
+                                + "Gradle daemon to at least %2$s MB.\n"
                                 + "To do this set org.gradle.jvmargs=-Xmx%2$sM in the "
                                 + "project gradle.properties.\n"
                                 + "For more information see "
                                 + "https://docs.gradle.org/current/userguide/build_environment.html\n",
                         maxMemory / (1024 * 1024),
-                        DEFAULT_SUGGESTED_HEAP_SIZE / (1024 * 1024));
+                        // Add -1 and + 1 to round up the division
+                        ((DEFAULT_SUGGESTED_HEAP_SIZE - 1) / (1024 * 1024)) + 1);
             }
 
             convertByteCodeUsingJackApis(options);
