@@ -17,15 +17,16 @@
 package com.android.build.gradle.integration.instant;
 
 import static com.android.build.gradle.integration.common.utils.AndroidVersionMatcher.thatUsesArt;
+import static org.junit.Assert.assertEquals;
 
 import com.android.annotations.NonNull;
-import com.android.builder.model.OptionalCompilationStep;
 import com.android.build.gradle.integration.common.fixture.Adb;
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.common.fixture.Logcat;
 import com.android.build.gradle.internal.incremental.ColdswapMode;
 import com.android.builder.model.AndroidProject;
 import com.android.builder.model.InstantRun;
+import com.android.builder.model.OptionalCompilationStep;
 import com.android.ddmlib.IDevice;
 import com.android.ide.common.packaging.PackagingUtils;
 import com.android.tools.fd.client.InstantRunArtifact;
@@ -33,7 +34,6 @@ import com.android.tools.fd.client.InstantRunBuildInfo;
 import com.android.tools.fd.client.InstantRunClient;
 import com.android.tools.fd.client.InstantRunClient.FileTransfer;
 import com.android.tools.fd.client.UpdateMode;
-import com.android.tools.fd.client.UserFeedback;
 import com.android.utils.ILogger;
 import com.google.common.collect.ImmutableList;
 
@@ -81,12 +81,11 @@ public class HotSwapTester {
                     device,
                     String.format("%s/.%s", packageName, activityName));
 
-            UserFeedback userFeedback = Mockito.mock(UserFeedback.class);
             ILogger iLogger = Mockito.mock(ILogger.class);
 
             //Connect to device
             InstantRunClient client =
-                    new InstantRunClient(packageName, userFeedback, iLogger, token, 8125);
+                    new InstantRunClient(packageName, iLogger, token, 8125);
 
             // Give the app a chance to start
             InstantRunTestUtils.waitForAppStart(client, device);
@@ -106,7 +105,7 @@ public class HotSwapTester {
 
             logcat.clearFiltered();
 
-            client.pushPatches(
+            UpdateMode updateMode = client.pushPatches(
                     device,
                     info.getTimeStamp(),
                     ImmutableList.of(fileTransfer.getPatch()),
@@ -114,8 +113,7 @@ public class HotSwapTester {
                     false /*restartActivity*/,
                     true /*showToast*/);
 
-            Mockito.verify(userFeedback).notifyEnd(UpdateMode.HOT_SWAP);
-            Mockito.verifyNoMoreInteractions(userFeedback);
+            assertEquals(UpdateMode.HOT_SWAP, updateMode);
 
             InstantRunTestUtils.waitForAppStart(client, device);
 

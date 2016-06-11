@@ -21,7 +21,6 @@ import static com.android.build.gradle.integration.common.utils.AndroidVersionMa
 import static com.android.build.gradle.integration.common.utils.AndroidVersionMatcher.thatUsesDalvik;
 
 import com.android.annotations.NonNull;
-import com.android.builder.model.OptionalCompilationStep;
 import com.android.build.gradle.integration.common.category.DeviceTests;
 import com.android.build.gradle.integration.common.fixture.Adb;
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
@@ -30,13 +29,13 @@ import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp;
 import com.android.build.gradle.internal.incremental.ColdswapMode;
 import com.android.builder.model.AndroidProject;
 import com.android.builder.model.InstantRun;
+import com.android.builder.model.OptionalCompilationStep;
 import com.android.ddmlib.IDevice;
 import com.android.ide.common.packaging.PackagingUtils;
 import com.android.tools.fd.client.AppState;
 import com.android.tools.fd.client.InstantRunBuildInfo;
 import com.android.tools.fd.client.InstantRunClient;
 import com.android.tools.fd.client.UpdateMode;
-import com.android.tools.fd.client.UserFeedback;
 import com.android.utils.ILogger;
 import com.google.common.base.Charsets;
 import com.google.common.io.Files;
@@ -50,7 +49,6 @@ import org.junit.rules.TestWatcher;
 import org.junit.runner.Description;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.runners.MockitoJUnitRunner;
 
 import java.io.IOException;
@@ -82,9 +80,6 @@ public class ConnectedColdSwapTest {
             InstantRunTestUtils.printBuildInfoFile(instantRunModel);
         }
     };
-
-    @Mock
-    UserFeedback userFeedback;
 
     @Mock
     ILogger iLogger;
@@ -132,7 +127,7 @@ public class ConnectedColdSwapTest {
 
         //Connect to device
         InstantRunClient client =
-                new InstantRunClient("com.example.helloworld", userFeedback, iLogger, token, 8125);
+                new InstantRunClient("com.example.helloworld", iLogger, token, 8125);
 
         // Give the app a chance to start
         messageListener.await();
@@ -160,9 +155,7 @@ public class ConnectedColdSwapTest {
                             true /*showToast*/);
 
             assertThat(updateMode).named("updateMode").isEqualTo(UpdateMode.COLD_SWAP);
-            Mockito.verify(userFeedback).notifyEnd(UpdateMode.COLD_SWAP);
         }
-        Mockito.verifyNoMoreInteractions(userFeedback);
 
         Logcat.MessageListener afterMessageListener = logcat.listenForMessage("coldswaptest_after");
 
