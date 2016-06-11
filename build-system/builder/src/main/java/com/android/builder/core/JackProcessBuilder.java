@@ -147,6 +147,13 @@ public class JackProcessBuilder extends ProcessEnvBuilder<JackProcessBuilder> {
                     .collect(Collectors.joining(","));
             builder.addArgs("-D", "jack.annotation-processor.options=" + processorOptions);
         }
+        if (options.getAnnotationProcessorOutputDirectory() != null) {
+            FileUtils.mkdirs(options.getAnnotationProcessorOutputDirectory());
+            builder.addArgs(
+                    "-D",
+                    "jack.annotation-processor.source.output="
+                            + options.getAnnotationProcessorOutputDirectory().getAbsolutePath());
+        }
 
         if (!options.getInputFiles().isEmpty()) {
             if (options.getEcjOptionFile() != null) {

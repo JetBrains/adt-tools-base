@@ -279,6 +279,7 @@ public class JackTransform extends Transform {
                                         androidBuilder.getErrorReporter())));
         options.setAnnotationProcessorNames(annotationProcessorOptions.getClassNames());
         options.setAnnotationProcessorOptions(annotationProcessorOptions.getArguments());
+        options.setAnnotationProcessorOutputDirectory(scope.getAnnotationProcessorOutputDir());
         options.setEcjOptionFile(scope.getJackEcjOptionsFile());
         options.setAdditionalParameters(config.getJackOptions().getAdditionalParameters());
 

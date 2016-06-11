@@ -71,6 +71,8 @@ public class JackProcessOptions {
     private List<String> mAnnotationProcessorNames = ImmutableList.of();
     @NonNull
     private List<File> mAnnotationProcessorClassPath = ImmutableList.of();
+    @Nullable
+    private File mAnnotationProcessorOutputDirectory = null;
     @NonNull
     private Map<String, String> mAnnotationProcessorOptions = ImmutableMap.of();
     @Nullable
@@ -271,6 +273,16 @@ public class JackProcessOptions {
     public void setAnnotationProcessorOptions(
             @NonNull Map<String, String> annotationProcessorOptions) {
         mAnnotationProcessorOptions = annotationProcessorOptions;
+    }
+
+    @Nullable
+    public File getAnnotationProcessorOutputDirectory() {
+        return mAnnotationProcessorOutputDirectory;
+    }
+
+    public void setAnnotationProcessorOutputDirectory(
+            @Nullable File annotationProcessorOutputDirectory) {
+        mAnnotationProcessorOutputDirectory = annotationProcessorOutputDirectory;
     }
 
     @NonNull

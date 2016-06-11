@@ -855,6 +855,16 @@ public class VariantScopeImpl extends GenericVariantScopeImpl implements Variant
                 DIR_BUNDLES, getVariantConfiguration().getDirName());
     }
 
+    @NonNull
+    @Override
+    public File getAnnotationProcessorOutputDir() {
+        return FileUtils.join(
+                globalScope.getGeneratedDir(),
+                "source",
+                "apt",
+                getVariantConfiguration().getDirName());
+    }
+
     // Tasks getters/setters.
 
     @Override

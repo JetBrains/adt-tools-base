@@ -47,7 +47,7 @@ public class VariantHelper {
         File apk = new File(build, "outputs/apk/" + outputFileName);
 
         Collection<File> sourceFolders = artifact.getGeneratedSourceFolders();
-        assertEquals("Gen src Folder count", 4, sourceFolders.size());
+        assertEquals("Gen src Folder count", 5, sourceFolders.size());
 
         Collection<AndroidArtifactOutput> outputs = artifact.getOutputs();
         assertNotNull(outputs);

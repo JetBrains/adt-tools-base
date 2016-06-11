@@ -203,6 +203,11 @@ public class ModelHelper {
         return getVariant(project.getVariants(), "debug");
     }
 
+    @NonNull
+    public static AndroidArtifact getDebugArtifact(@NonNull AndroidProject project) {
+        return getDebugVariant(project).getMainArtifact();
+    }
+
     @Nullable
     public static AndroidArtifact getAndroidArtifact(
             @NonNull Collection<AndroidArtifact> items,

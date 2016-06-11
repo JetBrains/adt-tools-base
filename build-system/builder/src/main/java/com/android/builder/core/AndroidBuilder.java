@@ -1732,6 +1732,12 @@ public class AndroidBuilder {
                 if (!options.getAnnotationProcessorNames().isEmpty()) {
                     config.setProcessorNames(options.getAnnotationProcessorNames());
                 }
+                if (options.getAnnotationProcessorOutputDirectory() != null) {
+                    FileUtils.mkdirs(options.getAnnotationProcessorOutputDirectory());
+                    config.setProperty(
+                            "jack.annotation-processor.source.output",
+                            options.getAnnotationProcessorOutputDirectory().getAbsolutePath());
+                }
                 try {
                     config.setProcessorPath(options.getAnnotationProcessorClassPath());
                 } catch (Exception e) {
