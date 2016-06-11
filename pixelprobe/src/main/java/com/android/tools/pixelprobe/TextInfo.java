@@ -18,11 +18,10 @@ package com.android.tools.pixelprobe;
 
 import com.android.tools.pixelprobe.util.Lists;
 
-import java.awt.Color;
+import java.awt.*;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -249,7 +248,7 @@ public final class TextInfo {
      * baseline of this text element.
      */
     public AffineTransform getTransform() {
-        return transform;
+        return new AffineTransform(transform);
     }
 
     /**
@@ -264,7 +263,7 @@ public final class TextInfo {
      * describes the style of a range of the text String.
      */
     public List<StyleRun> getStyleRuns() {
-        return Collections.unmodifiableList(styleRuns);
+        return styleRuns;
     }
 
     /**
@@ -273,7 +272,7 @@ public final class TextInfo {
      * by a character range.
      */
     public List<ParagraphRun> getParagraphRuns() {
-        return Collections.unmodifiableList(paragraphRuns);
+        return paragraphRuns;
     }
 
     /**
@@ -281,7 +280,7 @@ public final class TextInfo {
      * relative to the translation transform returned by {@link #getTransform()}.
      */
     public Rectangle2D getBounds() {
-        return bounds;
+        return new Rectangle2D.Double(bounds.x, bounds.y, bounds.width, bounds.height);
     }
 
     @Override

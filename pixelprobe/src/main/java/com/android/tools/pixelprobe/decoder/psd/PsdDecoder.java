@@ -384,8 +384,10 @@ public final class PsdDecoder extends Decoder {
 
         if (left != null && top != null && right != null && bottom != null) {
             info.bounds(
-              PsdUtils.resolveUnit(left, resolution), PsdUtils.resolveUnit(top, resolution),
-              PsdUtils.resolveUnit(right, resolution), PsdUtils.resolveUnit(bottom, resolution));
+                PsdUtils.resolveUnit(left, resolution),
+                PsdUtils.resolveUnit(top, resolution),
+                PsdUtils.resolveUnit(right, resolution),
+                PsdUtils.resolveUnit(bottom, resolution));
         }
 
         // Retrieves styles from the structured text data

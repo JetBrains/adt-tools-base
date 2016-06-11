@@ -126,7 +126,7 @@ public final class Layer {
      * absolute image coordinates.
      */
     public Rectangle2D getBounds() {
-        return bounds;
+        return new Rectangle2D.Float(bounds.x, bounds.y, bounds.width, bounds.height);
     }
 
     /**
