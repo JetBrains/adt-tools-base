@@ -667,6 +667,29 @@ final class PsdFile {
             int controlExitX;
         }
 
+        /**
+         * Marks the start of a sub-path. The first command of a
+         * sub-path is always a "move to". While sub-paths could
+         * all be recorded in a single path, we must take into
+         * account Photoshop's operators: merge, subtract,
+         * intersect and XOR). We therefore record the sub-paths
+         * individually to be able to apply the operators
+         * properly later on.
+         */
+        @Chunked
+        static final class SubPath {
+            static final int OP_XOR = 0;
+            static final int OP_MERGE = 1;
+            static final int OP_SUBTRACT = 2;
+            static final int OP_INTERSECT = 3;
+
+            @Chunk(byteCount = 2)
+            int knotCount;
+
+            @Chunk(byteCount = 2)
+            int op;
+        }
+
         // Indicates the path record type
         @Chunk
         short selector;
@@ -674,11 +697,11 @@ final class PsdFile {
         @Chunk(byteCount = 24,
             switchType = {
                 @Chunk.Case(test = "pathRecord.selector == 0 || pathRecord.selector == 3",
-                            type = int.class),
+                            type = SubPath.class),
                 @Chunk.Case(test = "pathRecord.selector == 1 || pathRecord.selector == 2 || " +
                                    "pathRecord.selector == 4 || pathRecord.selector == 5",
                             type = BezierKnot.class)
-                }
+            }
         )
         Object data;
     }
