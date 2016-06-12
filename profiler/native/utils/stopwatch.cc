@@ -29,7 +29,7 @@ void Stopwatch::Start() {
   start_time_ = clock_->GetCurrentTime();
 }
 
-uint64_t Stopwatch::GetElapsed() {
+uint64_t Stopwatch::GetElapsed() const {
   return clock_->GetCurrentTime() - start_time_;
 }
 

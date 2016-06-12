@@ -27,7 +27,7 @@ class MockClock final : public Clock {
 
   MockClock(uint64_t mockTime = 0) : mockTime_(mockTime) { }
 
-  virtual uint64_t GetCurrentTime() override {
+  virtual uint64_t GetCurrentTime() const override {
     return mockTime_;
   }
 
