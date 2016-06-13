@@ -18,6 +18,7 @@ package com.android.sdklib.repository.targets;
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.repository.api.ConsoleProgressIndicator;
 import com.android.repository.api.LocalPackage;
 import com.android.repository.api.ProgressIndicator;
 import com.android.repository.api.RepoManager;
@@ -28,7 +29,6 @@ import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.IAndroidTarget;
 import com.android.sdklib.repository.AndroidSdkHandler;
 import com.android.sdklib.repository.meta.DetailsTypes;
-import com.google.common.collect.ComparisonChain;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
 import com.google.common.collect.Maps;
@@ -56,7 +56,12 @@ public class AndroidTargetManager {
      */
     private Map<String, String> mLoadErrors;
 
-    private Comparator<LocalPackage> TARGET_COMPARATOR;
+    private static final Comparator<LocalPackage> TARGET_COMPARATOR =
+      Comparator
+        .<LocalPackage, AndroidVersion>comparing(localPackage ->
+          ((DetailsTypes.ApiDetailsType) localPackage.getTypeDetails()).getAndroidVersion())
+        .thenComparing(LocalPackage::getPath)
+        .thenComparing(localPackage -> localPackage.getTypeDetails().getClass().getName());
 
     /**
      * Create a manager using the new {@link AndroidSdkHandler}/{@link RepoManager} mechanism for
@@ -80,22 +85,6 @@ public class AndroidTargetManager {
     private Map<LocalPackage, IAndroidTarget> getTargetMap(@NonNull ProgressIndicator progress) {
         if (mTargets == null) {
             Map<String, String> newErrors = Maps.newHashMap();
-            TARGET_COMPARATOR = new Comparator<LocalPackage>() {
-                @Override
-                public int compare(LocalPackage o1, LocalPackage o2) {
-                    DetailsTypes.ApiDetailsType details1 = (DetailsTypes.ApiDetailsType) o1
-                            .getTypeDetails();
-                    DetailsTypes.ApiDetailsType details2 = (DetailsTypes.ApiDetailsType) o2
-                            .getTypeDetails();
-                    AndroidVersion version1 = details1.getAndroidVersion();
-                    AndroidVersion version2 = details2.getAndroidVersion();
-                    return ComparisonChain.start()
-                            .compare(version1, version2)
-                            .compare(o1.getPath(), o2.getPath())
-                            .compare(details1.getClass().getName(), details2.getClass().getName())
-                            .result();
-                }
-            };
             RepoManager manager = mSdkHandler.getSdkManager(progress);
             Map<AndroidVersion, PlatformTarget> platformTargets = Maps.newHashMap();
             BiMap<IAndroidTarget, LocalPackage> tempTargetToPackage = HashBiMap.create();
@@ -132,11 +121,12 @@ public class AndroidTargetManager {
                     PlatformTarget baseTarget = platformTargets.get(addonVersion);
                     if (baseTarget != null) {
                         result.put(p, new AddonTarget(p, baseTarget,
-                                                      mSdkHandler.getSystemImageManager(progress), progress, mFop));
+                                mSdkHandler.getSystemImageManager(progress), progress, mFop));
                     }
                 }
             }
-            for (LocalPackage p : manager.getPackages().getLocalPackagesForPrefix(SdkConstants.FD_ANDROID_SOURCES)) {
+            for (LocalPackage p :
+              manager.getPackages().getLocalPackagesForPrefix(SdkConstants.FD_ANDROID_SOURCES)) {
                 TypeDetails details = p.getTypeDetails();
                 if (details instanceof DetailsTypes.ApiDetailsType) {
                     PlatformTarget target = platformTargets.get(
@@ -193,11 +183,17 @@ public class AndroidTargetManager {
      */
     @Nullable
     public String getErrorForPackage(@NonNull String path) {
+        // We assume we're in here because it's known that there's some error. If mLoadErrors
+        // is null we must reload, so we can say exactly what the problem was (if it persists).
+        if (mLoadErrors == null) {
+            getTargetMap(new ConsoleProgressIndicator());
+        }
         return mLoadErrors.get(path);
     }
 
     @Nullable
-    public IAndroidTarget getTargetFromPackage(@NonNull LocalPackage p, @NonNull ProgressIndicator progress) {
+    public IAndroidTarget getTargetFromPackage(@NonNull LocalPackage p,
+      @NonNull ProgressIndicator progress) {
         return getTargetMap(progress).get(p);
     }
 }
