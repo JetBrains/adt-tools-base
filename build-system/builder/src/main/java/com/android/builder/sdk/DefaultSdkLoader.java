@@ -50,12 +50,15 @@ import com.android.utils.ILogger;
 import com.android.utils.StdLogger;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Maps;
 
 import java.io.File;
+import java.nio.file.Files;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -142,7 +145,7 @@ public class DefaultSdkLoader implements SdkLoader {
                             installTarget(targetHash, repoManager, downloader, stdOutputProgress));
                 }
 
-                checkUnlicensed(installResults);
+                checkResults(installResults);
 
                 repoManager.loadSynchronously(0, progress, null, null);
 
@@ -297,29 +300,32 @@ public class DefaultSdkLoader implements SdkLoader {
         List<RemotePackage> remotePackages =
                 InstallerUtil.computeRequiredPackages(
                         requestPackages, repoManager.getPackages(), progress);
-        Map<RemotePackage, InstallResultType> installResults = new HashMap<>();
 
         if (remotePackages == null) {
-            requestPackages.forEach(p -> installResults.put(p, InstallResultType.INSTALL_FAIL));
+            return Maps.toMap(requestPackages, p -> InstallResultType.INSTALL_FAIL);
+        }
 
-        } else {
-            for (RemotePackage p : remotePackages) {
-                if (p.getLicense() != null && !p.getLicense()
-                        .checkAccepted(repoManager.getLocalPath(), mSdkHandler.getFileOp())) {
-                    progress.setText(
-                            "The license for package " + p.getDisplayName() + " was not accepted. "
-                                    + "Please install this package through Android Studio SDK "
-                                    + "Manager.");
-                    installResults.put(p, InstallResultType.LICENSE_FAIL);
+        Map<RemotePackage, InstallResultType> installResults = new HashMap<>();
+        for (RemotePackage p : remotePackages) {
+            if (p.getLicense() != null
+                    && !p.getLicense()
+                            .checkAccepted(repoManager.getLocalPath(), mSdkHandler.getFileOp())) {
+                progress.setText(
+                        "The license for package "
+                                + p.getDisplayName()
+                                + " was not accepted. "
+                                + "Please install this package through Android Studio SDK "
+                                + "Manager.");
+                installResults.put(p, InstallResultType.LICENSE_FAIL);
+            } else {
+                Installer installer =
+                        SdkInstallerUtil.findBestInstallerFactory(p, mSdkHandler)
+                                .createInstaller(
+                                        p, repoManager, downloader, mSdkHandler.getFileOp());
+                if (installer.prepare(progress) && installer.complete(progress)) {
+                    installResults.put(p, InstallResultType.SUCCESS);
                 } else {
-                    Installer installer = SdkInstallerUtil
-                            .findBestInstallerFactory(p, mSdkHandler)
-                            .createInstaller(p, repoManager, downloader, mSdkHandler.getFileOp());
-                    if (installer.prepare(progress) && installer.complete(progress)) {
-                        installResults.put(p, InstallResultType.SUCCESS);
-                    } else {
-                        installResults.put(p, InstallResultType.INSTALL_FAIL);
-                    }
+                    installResults.put(p, InstallResultType.INSTALL_FAIL);
                 }
             }
         }
@@ -410,7 +416,7 @@ public class DefaultSdkLoader implements SdkLoader {
         }
 
         // Check to see if we failed because of some license not being accepted.
-        checkUnlicensed(installResults);
+        checkResults(installResults);
 
         // If we can't find some of the remote packages or some install failed
         // we resort to installing/updating the old big repositories.
@@ -481,27 +487,31 @@ public class DefaultSdkLoader implements SdkLoader {
                     repositoriesBuilder.add(androidRepo);
                 }
             }
-            checkUnlicensed(installResults);
+            checkResults(installResults);
         }
 
         return repositoriesBuilder.build();
     }
 
     /**
-     * Checks if any of the installation attempts failed due to the license file missing.
+     * Checks if any of the installation attempts failed and prints out the appropriate error
+     * message.
      *
-     * @throws IllegalArgumentException if some packages could not be installed.
+     * @throws RuntimeException if some packages could not be installed.
      */
-    private static void checkUnlicensed(Map<RemotePackage, InstallResultType> installResults) {
-        List<String> unlicensedPackages =
-                installResults
-                        .entrySet()
-                        .stream()
-                        .filter(p -> p.getValue() == InstallResultType.LICENSE_FAIL)
-                        .map(p -> p.getKey().getDisplayName())
-                        .collect(Collectors.toList());
+    private void checkResults(Map<RemotePackage, InstallResultType> installResults) {
+        Function<InstallResultType, List<String>> find =
+                resultType ->
+                        installResults
+                                .entrySet()
+                                .stream()
+                                .filter(p -> p.getValue() == resultType)
+                                .map(p -> p.getKey().getDisplayName())
+                                .collect(Collectors.toList());
+
+        List<String> unlicensedPackages = find.apply(InstallResultType.LICENSE_FAIL);
         if (!unlicensedPackages.isEmpty()) {
-            throw new IllegalStateException(
+            throw new RuntimeException(
                     "You have not accepted the license agreements of the following SDK components:\n"
                             + unlicensedPackages.toString()
                             + ".\nBefore building your project, you need to accept the license agreements "
@@ -509,9 +519,31 @@ public class DefaultSdkLoader implements SdkLoader {
                             + "Alternatively, to learn how to transfer the license agreements from one "
                             + "workstation to another, go to http://d.android.com/r/studio-ui/export-licenses.html");
         }
+
+        List<String> failedPackages = find.apply(InstallResultType.INSTALL_FAIL);
+        if (!failedPackages.isEmpty()) {
+            String message =
+                    String.format(
+                            "Failed to install the following SDK components:%n%s%n",
+                            failedPackages);
+
+            // Use NIO to check permissions, which seems to work across platform better.
+            if (!Files.isWritable(mSdkLocation.toPath())) {
+                message +=
+                        String.format(
+                                "The SDK directory (%s) is not writeable,%n"
+                                        + "please update the directory permissions.",
+                                mSdkLocation.getAbsolutePath());
+            } else {
+                message +=
+                        "Please install the missing components using the SDK manager in Android Studio.";
+            }
+
+            throw new RuntimeException(message);
+        }
     }
 
-    public ProgressIndicator getNewDownloadProgress() {
+    private static ProgressIndicator getNewDownloadProgress() {
         return new LoggerProgressIndicatorWrapper(new StdLogger(StdLogger.Level.VERBOSE));
     }
 }

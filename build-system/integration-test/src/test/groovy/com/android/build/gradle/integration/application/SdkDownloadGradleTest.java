@@ -34,15 +34,22 @@ import com.android.repository.io.FileOp;
 import com.android.repository.io.FileOpUtils;
 import com.android.utils.FileUtils;
 import com.google.common.base.Throwables;
-import com.google.common.io.Files;
+import com.google.common.collect.ImmutableSet;
 
+import org.apache.commons.lang.SystemUtils;
+import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
 import java.io.File;
-import java.nio.charset.Charset;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.attribute.PosixFilePermission;
+import java.util.Set;
 
 /**
  * Tests for automatic SDK download from Gradle.
@@ -81,7 +88,7 @@ public class SdkDownloadGradleTest {
                         + System.lineSeparator()
                         + "8933bad161af4178b1185d1a37fbf41ea5269c55";
 
-        Files.write(licensesHash, licenseFile, Charset.defaultCharset());
+        Files.write(licenseFile.toPath(), licensesHash.getBytes(StandardCharsets.UTF_8));
         TestFileUtils.appendToFile(
                 project.getLocalProp(),
                 System.lineSeparator()
@@ -389,6 +396,60 @@ public class SdkDownloadGradleTest {
                 .contains("Android SDK Platform 23");
         assertThat(Throwables.getRootCause(result.getException()).getMessage())
                 .contains("Google APIs");
+    }
+
+    @Test
+    public void checkPermissions_BuildTools() throws Exception {
+        Assume.assumeFalse(SystemUtils.IS_OS_WINDOWS);
+
+        // Change the permissions.
+        Path sdkHomePath = mSdkHome.toPath();
+        Set<PosixFilePermission> readOnlyDir =
+                ImmutableSet.of(PosixFilePermission.OWNER_READ, PosixFilePermission.OWNER_EXECUTE);
+
+        Files.walk(sdkHomePath).forEach(path -> {
+            try {
+                Files.setPosixFilePermissions(path, readOnlyDir);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        });
+
+        try {
+            // Request a new version of build tools.
+            TestFileUtils.appendToFile(
+                    project.getBuildFile(),
+                    System.lineSeparator()
+                            + "android.compileSdkVersion "
+                            + OLD_PLATFORM
+                            + System.lineSeparator()
+                            + "android.buildToolsVersion \""
+                            + NEW_BUILD_TOOLS
+                            + "\"");
+
+            GradleBuildResult result = project.executor().expectFailure().run("assembleDebug");
+            assertNotNull(result.getException());
+
+            assertThat(Throwables.getRootCause(result.getException()).getMessage())
+                    .contains("Android SDK Build-Tools 23.0.1");
+            assertThat(Throwables.getRootCause(result.getException()).getMessage())
+                    .contains("not writeable");
+        } finally {
+            Set<PosixFilePermission> readWriteDir =
+                    ImmutableSet.of(
+                            PosixFilePermission.OWNER_READ,
+                            PosixFilePermission.OWNER_WRITE,
+                            PosixFilePermission.OWNER_EXECUTE);
+
+            //noinspection ThrowFromFinallyBlock
+            Files.walk(sdkHomePath).forEach(path -> {
+                try {
+                    Files.setPosixFilePermissions(path, readWriteDir);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            });
+        }
     }
 
     private File getPlatformFolder() {
