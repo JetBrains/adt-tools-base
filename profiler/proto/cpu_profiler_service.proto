@@ -17,7 +17,7 @@ syntax = "proto3";
 
 package profiler.proto;
 option java_package = "com.android.tools.profiler.proto";
-option java_outer_classname = "CpuProfilerService";
+option java_outer_classname = "CpuProfiler";
 
 import "cpu_profiler_data.proto";
 
