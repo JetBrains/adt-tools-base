@@ -410,16 +410,6 @@ public class InstantRunBuildContext {
                     if (fileType != FileType.SPLIT) {
                         return;
                     }
-                    // let's work around the Lollipop and Marshmallow issue that cannot deal with
-                    // just changing a split APK, we forcefully add again the MAIN apk so it is
-                    // automatically enrolled.
-                    Artifact splitMain = currentBuild.getArtifactForType(FileType.SPLIT_MAIN);
-                    if (splitMain == null) {
-                        splitMain = getPastBuildsArtifactForType(FileType.SPLIT_MAIN);
-                        if (splitMain != null) {
-                            currentBuild.artifacts.add(splitMain);
-                        }
-                    }
             }
         }
         if (fileType == FileType.MAIN) {

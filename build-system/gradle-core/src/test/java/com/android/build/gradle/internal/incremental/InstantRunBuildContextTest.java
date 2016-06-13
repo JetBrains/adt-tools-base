@@ -162,18 +162,14 @@ public class InstantRunBuildContextTest {
         // check the most recent build (called second) records :
         List<Element> secondArtifacts = getElementsByName(instantRun,
                 InstantRunBuildContext.TAG_ARTIFACT);
-        assertThat(secondArtifacts).hasSize(3);
+        assertThat(secondArtifacts).hasSize(2);
         assertThat(secondArtifacts.get(0).getAttribute(InstantRunBuildContext.ATTR_TYPE))
-                .isEqualTo("SPLIT_MAIN");
-        assertThat(secondArtifacts.get(0).getAttribute(InstantRunBuildContext.ATTR_LOCATION))
-                .endsWith("main.apk");
-        assertThat(secondArtifacts.get(1).getAttribute(InstantRunBuildContext.ATTR_TYPE))
                 .isEqualTo("SPLIT");
-        assertThat(secondArtifacts.get(1).getAttribute(InstantRunBuildContext.ATTR_LOCATION))
+        assertThat(secondArtifacts.get(0).getAttribute(InstantRunBuildContext.ATTR_LOCATION))
                 .endsWith("other.apk");
-        assertThat(secondArtifacts.get(2).getAttribute(InstantRunBuildContext.ATTR_TYPE))
+        assertThat(secondArtifacts.get(1).getAttribute(InstantRunBuildContext.ATTR_TYPE))
                 .isEqualTo("RELOAD_DEX");
-        assertThat(secondArtifacts.get(2).getAttribute(InstantRunBuildContext.ATTR_LOCATION))
+        assertThat(secondArtifacts.get(1).getAttribute(InstantRunBuildContext.ATTR_LOCATION))
                 .endsWith("reload.dex");
 
         boolean foundFirst = false;
@@ -397,13 +393,11 @@ public class InstantRunBuildContextTest {
         assertThat(builds.get(2).getAttribute(InstantRunBuildContext.ATTR_TIMESTAMP)).isEqualTo(
                 String.valueOf(third.getBuildId()));
         artifacts = getElementsByName(builds.get(2), InstantRunBuildContext.TAG_ARTIFACT);
-        assertThat(artifacts).hasSize(3);
+        assertThat(artifacts).hasSize(2);
         // split-2 changes on first build is overlapped by third change.
         assertThat(artifacts.get(0).getAttribute(InstantRunBuildContext.ATTR_LOCATION))
-                .isEqualTo(new File("/tmp/main.apk").getAbsolutePath());
-        assertThat(artifacts.get(1).getAttribute(InstantRunBuildContext.ATTR_LOCATION))
                 .isEqualTo(new File("/tmp/split-2.apk").getAbsolutePath());
-        assertThat(artifacts.get(2).getAttribute(InstantRunBuildContext.ATTR_LOCATION))
+        assertThat(artifacts.get(1).getAttribute(InstantRunBuildContext.ATTR_LOCATION))
                 .isEqualTo(new File("/tmp/split-3.apk").getAbsolutePath());
     }
 
