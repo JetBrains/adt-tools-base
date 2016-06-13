@@ -23,7 +23,6 @@ import static com.android.builder.model.AndroidProject.FD_OUTPUTS;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.build.gradle.AndroidGradleOptions;
 import com.android.build.gradle.external.gson.NativeBuildConfigValue;
 import com.android.build.gradle.internal.InstantRunTaskManager;
 import com.android.build.gradle.internal.LoggerWrapper;
@@ -57,13 +56,9 @@ import com.android.build.gradle.tasks.RenderscriptCompile;
 import com.android.build.gradle.tasks.ShaderCompile;
 import com.android.builder.core.AndroidBuilder;
 import com.android.builder.core.BootClasspathBuilder;
-import com.android.builder.core.VariantType;
 import com.android.builder.model.ApiVersion;
 import com.android.repository.api.ProgressIndicator;
-import com.android.sdklib.AndroidTargetHash;
-import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.IAndroidTarget;
-import com.android.sdklib.SdkVersionInfo;
 import com.android.sdklib.repository.AndroidSdkHandler;
 import com.android.sdklib.repository.LoggerProgressIndicatorWrapper;
 import com.android.utils.FileUtils;
@@ -1149,44 +1144,7 @@ public class VariantScopeImpl extends GenericVariantScopeImpl implements Variant
 
         File annotationsJar = sdkHandler.getSdkLoader().getSdkInfo(LOGGER).getAnnotationsJar();
 
-        int targetDeviceFeatureLevel =
-                AndroidGradleOptions.getTargetFeatureLevel(getGlobalScope().getProject());
-
-        if (androidBuilderTarget.getVersion().getFeatureLevel() == targetDeviceFeatureLevel) {
-            // Compile SDK and the target device match, re-use the target that we have already
-            // found earlier.
-            return BootClasspathBuilder.computeFullBootClasspath(
-                    androidBuilderTarget, annotationsJar);
-        }
-
-        // Try treating it as a stable version
-        IAndroidTarget targetToUse = getAndroidTarget(
-                sdkHandler,
-                AndroidTargetHash.getPlatformHashString(
-                        new AndroidVersion(targetDeviceFeatureLevel, null)));
-
-        // Otherwise try a preview version
-        if (targetToUse == null) {
-            // Currently AS always sets the injected api level to a number, so the target hash above
-            // is something like "android-24". We failed to find it, so let's try "android-N".
-            String buildCode = SdkVersionInfo.getBuildCode(targetDeviceFeatureLevel);
-            if (buildCode != null) {
-                AndroidVersion versionFromBuildCode =
-                        new AndroidVersion(targetDeviceFeatureLevel - 1, buildCode);
-
-                targetToUse = getAndroidTarget(
-                        sdkHandler,
-                        AndroidTargetHash.getPlatformHashString(versionFromBuildCode));
-            }
-        }
-
-        if (targetToUse == null) {
-            // The device platform is not installed, let's carry on with the compile SDK.
-            // TODO: What to do here? fail? log a warning? download the missing package?
-            targetToUse = androidBuilderTarget;
-        }
-
-        return BootClasspathBuilder.computeFullBootClasspath(targetToUse, annotationsJar);
+        return BootClasspathBuilder.computeFullBootClasspath(androidBuilderTarget, annotationsJar);
     }
 
     /**
