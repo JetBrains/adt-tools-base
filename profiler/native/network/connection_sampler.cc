@@ -19,8 +19,7 @@
 
 namespace profiler {
 
-void ConnectionSampler::GetData(
-    profiler::proto::NetworkProfilerData *data) {
+void ConnectionSampler::GetData(profiler::proto::NetworkProfilerData *data) {
   int connection_number = 0;
   for (const std::string &file_name : kConnectionFiles) {
     connection_number += ReadConnectionNumber(kUid, file_name);
@@ -29,28 +28,83 @@ void ConnectionSampler::GetData(
 }
 
 int ConnectionSampler::ReadConnectionNumber(const std::string &uid,
-                                                  const std::string &file) {
+                                            const std::string &file) {
   std::vector<std::string> lines;
   FileReader::Read(file, &lines);
 
   int result = 0;
   for (const std::string &line : lines) {
-
-    // Filters out the connection listening to all local interfaces, input
-    // line should look like " 0: 00000000000000000000000000000000:13B4
-    // 00000000000000000000000000000000:0000 0A ...".
-    static const std::basic_regex<char> kRegexListeningAllInterfaces =
-        std::regex(
-            "^[ ]*[0-9]+:[ ]+0+:[0-9A-Fa-f]{4}[ ]+0+:[0-9A-Fa-f]{4}[ ]+0A.+$");
-    if (regex_match(line, kRegexListeningAllInterfaces)) {
-      continue;
-    }
-
-    if (FileReader::CompareToken(line, uid, kUidTokenIndex)) {
+    if (!IsLocalInterface(line) &&
+        FileReader::CompareToken(line, uid, kUidTokenIndex)) {
       result++;
     }
   }
   return result;
 }
 
-}  // namespace profiler
+bool ConnectionSampler::IsLocalInterface(const std::string &connection) {
+  std::string::const_iterator it = connection.begin();
+  // It's possible to have empty space in the beginning, for example, " 1:" has
+  // empty space and "100:" does not have empty space.
+  EatSpace(connection, &it);
+  bool match =
+      IsValidHeading(connection, &it) && EatSpace(connection, &it) &&
+      IsAllZerosIpAddress(connection, &it) && EatSpace(connection, &it) &&
+      IsAllZerosIpAddress(connection, &it) && EatSpace(connection, &it);
+  if (match) {
+    if ((connection.end() - it > 2) && (*it) == '0') {
+      it++;
+      return (*it) == 'A' || (*it) == 'a';
+    }
+  }
+  return false;
+}
+
+bool ConnectionSampler::IsValidHeading(const std::string &connection,
+                                       std::string::const_iterator *it) {
+  if (*it != connection.end() && isdigit(**it)) {
+    (*it)++;
+    while (*it != connection.end() && isdigit(**it)) {
+      (*it)++;
+    }
+    if (*it != connection.end() && **it == ':') {
+      (*it)++;
+      return true;
+    }
+  }
+  return false;
+}
+
+bool ConnectionSampler::IsAllZerosIpAddress(const std::string &connection,
+                                            std::string::const_iterator *it) {
+  if (*it != connection.end() && **it == '0') {
+    (*it)++;
+    while (*it != connection.end() && **it == '0') {
+      (*it)++;
+    }
+    if (*it != connection.end() && **it == ':') {
+      (*it)++;
+      int count = 0;
+      while ((*it != connection.end()) && (isdigit(**it) || isalpha(**it))) {
+        count++;
+        (*it)++;
+      }
+      return count == 4;
+    }
+  }
+  return false;
+}
+
+bool ConnectionSampler::EatSpace(const std::string &connection,
+                                 std::string::const_iterator *it) {
+  bool has_empty_space = false;
+  while (*it != connection.end() && isspace(**it)) {
+    (*it)++;
+    if (!has_empty_space) {
+      has_empty_space = true;
+    }
+  }
+  return has_empty_space;
+}
+
+} // namespace profiler
