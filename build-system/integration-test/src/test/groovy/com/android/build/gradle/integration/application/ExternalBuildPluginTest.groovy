@@ -128,7 +128,7 @@ externalBuild {
         assertThat(instantRunBuildContext.getPreviousBuilds()).hasSize(1);
         assertThat(instantRunBuildContext.getLastBuild().artifacts).hasSize(1);
         InstantRunBuildContext.Build fullBuild  = instantRunBuildContext.getLastBuild();
-        assertThat(fullBuild.verifierStatus).hasValue(InstantRunVerifierStatus.INITIAL_BUILD);
+        assertThat(fullBuild.verifierStatus.get()).isEqualTo(InstantRunVerifierStatus.INITIAL_BUILD);
         assertThat(fullBuild.artifacts).hasSize(1);
         InstantRunBuildContext.Artifact artifact = fullBuild.artifacts.get(0);
         assertThat(artifact.type).is(InstantRunBuildContext.FileType.MAIN);
@@ -189,7 +189,6 @@ externalBuild {
         instantRunBuildContext = loadFromBuildInfo();
         assertThat(instantRunBuildContext.getPreviousBuilds()).hasSize(2);
         InstantRunBuildContext.Build lastBuild = instantRunBuildContext.getLastBuild();
-        assertThat(lastBuild.getVerifierStatus()).isPresent();
         assertThat(lastBuild.getVerifierStatus()).is(InstantRunVerifierStatus.COMPATIBLE);
         assertThat(lastBuild.artifacts).hasSize(1);
         artifact = lastBuild.artifacts.get(0);

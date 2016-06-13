@@ -24,7 +24,6 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.CaseFormat;
 import com.google.common.base.Charsets;
 import com.google.common.base.Objects;
-import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 import com.google.common.collect.Sets;
@@ -41,11 +40,11 @@ import org.xml.sax.SAXException;
 
 import java.io.File;
 import java.io.IOException;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicLong;
@@ -191,7 +190,7 @@ public class InstantRunBuildContext {
                     verifierAttribute != null
                         ? Optional.of(InstantRunVerifierStatus.valueOf(
                             verifierAttribute.getNodeValue()))
-                        : Optional.<InstantRunVerifierStatus>absent());
+                        : Optional.<InstantRunVerifierStatus>empty());
             NodeList childNodes = buildNode.getChildNodes();
             for (int i=0; i< childNodes.getLength(); i++) {
                 Node artifactNode = childNodes.item(i);
@@ -287,7 +286,7 @@ public class InstantRunBuildContext {
     private String density = null;
     private String abi = null;
     private final Build currentBuild = new Build(
-            System.nanoTime(), Optional.<InstantRunVerifierStatus>absent());
+            System.nanoTime(), Optional.<InstantRunVerifierStatus>empty());
     private final TreeMap<Long, Build> previousBuilds = new TreeMap<>();
     private File tmpBuildInfo = null;
     private boolean isInstantRunMode = false;
