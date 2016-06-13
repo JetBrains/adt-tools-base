@@ -146,9 +146,6 @@ public class JackPreDexTransform extends Transform {
             options.setJavaMaxHeapSize(javaMaxHeapSize);
             options.setAdditionalParameters(coreJackOptions.getAdditionalParameters());
 
-            // Remove debug information due to b/27319022.
-            options.getAdditionalParameters().put("jack.import.jar.debug-info", "false");
-
             JackConversionCache.getCache().convertLibrary(
                     androidBuilder,
                     file,
