@@ -79,6 +79,7 @@ import com.android.jack.api.JackProvider;
 import com.android.jack.api.v01.Api01CompilationTask;
 import com.android.jack.api.v01.CompilationException;
 import com.android.jack.api.v01.ConfigurationException;
+import com.android.jack.api.v01.DebugInfoLevel;
 import com.android.jack.api.v01.MultiDexKind;
 import com.android.jack.api.v01.ReporterKind;
 import com.android.jack.api.v01.UnrecoverableException;
@@ -1672,6 +1673,9 @@ public class AndroidBuilder {
             // Get configuration object
             try {
                 config = jackProvider.get().createConfig(Api02Config.class);
+
+                config.setDebugInfoLevel(
+                        options.isDebuggable() ? DebugInfoLevel.FULL : DebugInfoLevel.NONE);
 
                 config.setClasspath(options.getClasspaths());
                 if (options.getDexOutputDirectory() != null) {

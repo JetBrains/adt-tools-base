@@ -37,6 +37,7 @@ public class JackProcessOptions {
 
     private boolean mDebugLog = false;
     private boolean mVerbose = false;
+    private boolean mDebuggable = true;
     @NonNull
     private List<File> mClasspaths = ImmutableList.of();
     @Nullable
@@ -95,6 +96,14 @@ public class JackProcessOptions {
 
     public void setVerbose(boolean verbose) {
         mVerbose = verbose;
+    }
+
+    public boolean isDebuggable() {
+        return mDebuggable;
+    }
+
+    public void setDebuggable(boolean debuggable) {
+        mDebuggable = debuggable;
     }
 
     @NonNull
