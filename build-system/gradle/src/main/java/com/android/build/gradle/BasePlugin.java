@@ -72,6 +72,7 @@ import com.android.builder.sdk.SdkLibData;
 import com.android.builder.sdk.TargetInfo;
 import com.android.dx.command.dexer.Main;
 import com.android.ide.common.internal.ExecutorSingleton;
+import com.android.ide.common.repository.GradleVersion;
 import com.android.repository.api.Channel;
 import com.android.repository.api.Downloader;
 import com.android.repository.api.SettingsController;
@@ -114,27 +115,21 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.jar.Manifest;
-import java.util.regex.Pattern;
 
 /**
  * Base class for all Android plugins
  */
 public abstract class BasePlugin {
 
-    private static final String GRADLE_MIN_VERSION = "2.10";
-    public static final Pattern GRADLE_ACCEPTABLE_VERSIONS = Pattern.compile("2\\.\\d{2,}.*");
-    private static final String GRADLE_VERSION_CHECK_OVERRIDE_PROPERTY =
-            "com.android.build.gradle.overrideVersionCheck";
-    private static final String SKIP_PATH_CHECK_PROPERTY =
-            "com.android.build.gradle.overridePathCheck";
+    private static final GradleVersion GRADLE_MIN_VERSION = GradleVersion.parse("2.10");
     /** default retirement age in days since its inception date for RC or beta versions. */
     private static final int DEFAULT_RETIREMENT_AGE_FOR_NON_RELEASE_IN_DAYS = 40;
 
@@ -623,23 +618,29 @@ public abstract class BasePlugin {
     }
 
     private void checkGradleVersion() {
-        if (!GRADLE_ACCEPTABLE_VERSIONS.matcher(project.getGradle().getGradleVersion()).matches()) {
-            boolean allowNonMatching = Boolean.getBoolean(GRADLE_VERSION_CHECK_OVERRIDE_PROPERTY);
+        String currentVersion = project.getGradle().getGradleVersion();
+        if (GRADLE_MIN_VERSION.compareTo(currentVersion) > 0 || !currentVersion.startsWith("2")) {
             File file = new File("gradle" + separator + "wrapper" + separator +
                     "gradle-wrapper.properties");
-            String errorMessage = String.format(
-                    "Gradle version %s is required. Current version is %s. " +
-                            "If using the gradle wrapper, try editing the distributionUrl in %s " +
-                            "to gradle-%s-all.zip",
-                    GRADLE_MIN_VERSION, project.getGradle().getGradleVersion(), file.getAbsolutePath(),
-                    GRADLE_MIN_VERSION);
-            if (allowNonMatching) {
+            String errorMessage =
+                    String.format(
+                            "Minimum supported Gradle version is %s, Gradle 3.x is not supported yet. "
+                                    + "Current version is %s. "
+                                    + "If using the gradle wrapper, try editing the distributionUrl in %s "
+                                    + "to gradle-%s-all.zip",
+                            GRADLE_MIN_VERSION,
+                            currentVersion,
+                            file.getAbsolutePath(),
+                            GRADLE_MIN_VERSION);
+            if (AndroidGradleOptions.overrideGradleVersionCheck(project)) {
                 getLogger().warning(errorMessage);
-                getLogger().warning("As %s is set, continuing anyways.",
-                        GRADLE_VERSION_CHECK_OVERRIDE_PROPERTY);
+                getLogger()
+                        .warning(
+                                "As %s is set, continuing anyways.",
+                                AndroidGradleOptions.GRADLE_VERSION_CHECK_OVERRIDE_PROPERTY);
             } else {
                 extraModelInfo.handleSyncError(
-                        GRADLE_MIN_VERSION, SyncIssue.TYPE_GRADLE_TOO_OLD, errorMessage);
+                        GRADLE_MIN_VERSION.toString(), SyncIssue.TYPE_GRADLE_TOO_OLD, errorMessage);
             }
         }
     }
@@ -819,19 +820,13 @@ public abstract class BasePlugin {
     }
 
     private void checkPathForErrors() {
-        // See if the user disabled the check:
-        if (Boolean.getBoolean(SKIP_PATH_CHECK_PROPERTY)) {
-            return;
-        }
-
-        if (project.hasProperty(SKIP_PATH_CHECK_PROPERTY)
-                && project.property(SKIP_PATH_CHECK_PROPERTY) instanceof String
-                && Boolean.valueOf((String) project.property(SKIP_PATH_CHECK_PROPERTY))) {
-            return;
-        }
-
         // See if we're on Windows:
-        if (!System.getProperty("os.name").toLowerCase().contains("windows")) {
+        if (System.getProperty("os.name").toLowerCase(Locale.US).contains("windows")) {
+            return;
+        }
+
+        // See if the user disabled the check:
+        if (AndroidGradleOptions.overridePathCheck(project)) {
             return;
         }
 
@@ -840,13 +835,13 @@ public abstract class BasePlugin {
             return;
         }
 
-        String message = "Your project path contains non-ASCII characters. This will most likely " +
-                "cause the build to fail on Windows. Please move your project to a different " +
-                "directory. See http://b.android.com/95744 for details. " +
-                "This warning can be disabled by using the command line flag -D" +
-                SKIP_PATH_CHECK_PROPERTY + "=true, or adding the line " +
-                SKIP_PATH_CHECK_PROPERTY + "=true' to gradle.properties file " +
-                "in the project directory.";
+        String message =
+                "Your project path contains non-ASCII characters. This will most likely "
+                        + "cause the build to fail on Windows. Please move your project to a different "
+                        + "directory. See http://b.android.com/95744 for details. "
+                        + "This warning can be disabled by adding the line '"
+                        + AndroidGradleOptions.OVERRIDE_PATH_CHECK_PROPERTY
+                        + "=true' to gradle.properties file in the project directory.";
 
         throw new StopExecutionException(message);
     }

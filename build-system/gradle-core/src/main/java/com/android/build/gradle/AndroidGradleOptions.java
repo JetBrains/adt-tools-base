@@ -80,8 +80,18 @@ public class AndroidGradleOptions {
 
     private static final String PROPERTY_ENABLE_USER_CACHE = "android.enableUserCache";
 
+    public static final String GRADLE_VERSION_CHECK_OVERRIDE_PROPERTY =
+            "android.overrideVersionCheck";
 
-    @NonNull
+    private static final String OLD_GRADLE_VERSION_CHECK_OVERRIDE_PROPERTY =
+            "com.android.build.gradle.overrideVersionCheck";
+
+    public static final String OVERRIDE_PATH_CHECK_PROPERTY = "android.overridePathCheck";
+
+    private static final String OLD_OVERRIDE_PATH_CHECK_PROPERTY =
+            "com.android.build.gradle.overridePathCheck";
+
+
     public static boolean getUseSdkDownload(@NonNull Project project) {
         return getBoolean(project, PROPERTY_USE_SDK_DOWNLOAD, true) && !invokedFromIde(project);
     }
@@ -330,19 +340,6 @@ public class AndroidGradleOptions {
         return null;
     }
 
-    @Nullable
-    private static Float getFloat(@NonNull Project project, String propertyName) {
-        if (project.hasProperty(propertyName)) {
-            try {
-                return Float.parseFloat(project.property(propertyName).toString());
-            } catch (NumberFormatException e) {
-                throw new RuntimeException("Property " + propertyName + " needs to be a float.");
-            }
-        }
-
-        return null;
-    }
-
     private static boolean getBoolean(
             @NonNull Project project,
             @NonNull String propertyName) {
@@ -388,6 +385,23 @@ public class AndroidGradleOptions {
         return getBoolean(project, PROPERTY_ENABLE_USER_CACHE, DEFAULT_ENABLE_USER_CACHE);
     }
 
+    public static boolean overrideGradleVersionCheck(@NonNull Project project) {
+        if (project.hasProperty(GRADLE_VERSION_CHECK_OVERRIDE_PROPERTY)) {
+            return getBoolean(project, GRADLE_VERSION_CHECK_OVERRIDE_PROPERTY);
+        } else {
+            return Boolean.getBoolean(OLD_GRADLE_VERSION_CHECK_OVERRIDE_PROPERTY);
+        }
+    }
+
+    public static boolean overridePathCheck(@NonNull Project project) {
+        if (project.hasProperty(OVERRIDE_PATH_CHECK_PROPERTY)) {
+            return getBoolean(project, OVERRIDE_PATH_CHECK_PROPERTY);
+        } else if (project.hasProperty(OLD_OVERRIDE_PATH_CHECK_PROPERTY)) {
+            return getBoolean(project, OLD_OVERRIDE_PATH_CHECK_PROPERTY);
+        } else {
+            return Boolean.getBoolean(OLD_OVERRIDE_PATH_CHECK_PROPERTY);
+        }
+    }
 
     public static class SigningOptions {
         @NonNull public final String storeFile;
