@@ -15,9 +15,11 @@
  */
 syntax = "proto3";
 
-import "cpu_profiler_data.proto";
-
 package profiler.proto;
+option java_package = "com.android.tools.profiler.proto";
+option java_outer_classname = "CpuProfilerService";
+
+import "cpu_profiler_data.proto";
 
 service CpuProfilerService {
   rpc GetData(CpuDataRequest) returns (CpuDataResponse) {

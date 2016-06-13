@@ -15,10 +15,9 @@
  */
 syntax = "proto3";
 
+package profiler.proto;
 option java_package = "com.android.tools.profiler.proto";
 option java_outer_classname = "MemoryProfilerService";
-
-package profiler.proto;
 
 import "profiler.proto";
 

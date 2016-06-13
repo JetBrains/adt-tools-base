@@ -15,12 +15,11 @@
  */
 syntax = "proto3";
 
+package profiler.proto;
 option java_package = "com.android.tools.profiler.proto";
 option java_outer_classname = "Profiler";
 
 import "network_profiler.proto";
-
-package profiler.proto;
 
 // TODO: Refactor the following messages.
 message DefaultProfilerData {}

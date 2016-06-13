@@ -15,9 +15,11 @@
  */
 syntax = "proto3";
 
-import "profiler.proto";
-
 package profiler.proto;
+option java_package = "com.android.tools.profiler.proto";
+option java_outer_classname = "CpuProfilerData";
+
+import "profiler.proto";
 
 // CPU data of a given app process.
 message CpuProfilerData {
