@@ -3,18 +3,20 @@
 
 #include "android_studio_version.h"
 #include "bash_command.h"
-#include "log.h"
 #include "package_manager.h"
 #include "profiler_file.h"
+#include "utils/log.h"
+
 
 using std::string;
+using profiler::Log;
 
 namespace profiler {
 Installer::Installer(const char *app_package_name)
     : app_package_name_(app_package_name) {}
 
 bool Installer::Install(const string &src_path, string *error_string) const {
-  LOG("Request to install sampler in app '%s\n'", app_package_name_.c_str());
+  Log::I("Request to install sampler in app '%s\n'", app_package_name_.c_str());
 
   // Check if the sampler is already there.
   string dst_path;
@@ -25,12 +27,12 @@ bool Installer::Install(const string &src_path, string *error_string) const {
 
   ProfilerFile dst = ProfilerFile(dst_path);
   if (dst.Exists()) {
-    LOG("'%s' executable is already installed (found at '%s').\n",
+    Log::I("'%s' executable is already installed (found at '%s').\n",
         app_package_name_.c_str(), dst_path.c_str());
     return true;
   }
 
-  LOG("'%s' executable requires installation (missing from '%s').\n",
+  Log::I("'%s' executable requires installation (missing from '%s').\n",
       app_package_name_.c_str(), dst_path.c_str());
   // We need to copy sampler to the app folder.
 
@@ -45,7 +47,7 @@ bool Installer::Install(const string &src_path, string *error_string) const {
     return false;
   }
 
-  LOG("Copying...\n");
+  Log::I("Copying...\n");
   // sh -c \"cat /data/local/tmp/foo.so | run-as com.google.android.calendar sh
   // -c 'cat > foo.so ; chmod 700 foo.so'
   // TODO: Implement this in a clean way. With fork, execv and pipes?

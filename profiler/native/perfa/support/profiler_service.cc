@@ -17,17 +17,12 @@
 #include <string.h>
 #include <jni.h>
 
-// TODO when compiling on host provide mock implementations for testing
-#ifdef __ANDROID__
-#include <android/log.h>
-#endif
+#include "utils/log.h"
 
-#define STUDIO_PROFILER "StudioProfiler"
+using profiler::Log;
 
 extern "C" JNIEXPORT void JNICALL
 Java_com_android_tools_profiler_support_ProfilerService_nativeInitialize( JNIEnv* env, jobject thiz )
 {
-#ifdef __ANDROID__
-    __android_log_print(ANDROID_LOG_VERBOSE, STUDIO_PROFILER, "Initializing advanced profiling.", 1);
-#endif
+  Log::V("Initializing advanced profiling.");
 }
