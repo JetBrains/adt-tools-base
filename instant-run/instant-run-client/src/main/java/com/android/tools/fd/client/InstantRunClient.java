@@ -338,7 +338,7 @@ public class InstantRunClient {
                     throw new InstantRunPushFailedException("Could not read file " + file);
                 }
             }
-            pushPatches(device, buildInfo.getTimeStamp(), changes, updateMode, isRestartActivity,
+            updateMode = pushPatches(device, buildInfo.getTimeStamp(), changes, updateMode, isRestartActivity,
                     isShowToastEnabled);
 
             needRestart = false;
