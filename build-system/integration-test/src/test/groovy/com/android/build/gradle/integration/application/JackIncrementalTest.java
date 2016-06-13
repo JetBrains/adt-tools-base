@@ -48,8 +48,8 @@ public class JackIncrementalTest {
     @Before
     public void setUp() throws IOException {
         TestFileUtils.appendToFile(project.getBuildFile(), "\n"
-                + "android.buildToolsVersion '" + GradleTestProject.UPCOMING_BUILD_TOOL_VERSION + "'\n"
-                + "android.compileOptions.incremental true\n");
+                + "android.buildToolsVersion '" + GradleTestProject.UPCOMING_BUILD_TOOL_VERSION
+                + "'\n");
     }
 
     @Test
