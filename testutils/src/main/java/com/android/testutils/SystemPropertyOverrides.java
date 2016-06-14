@@ -25,7 +25,7 @@ import java.util.Map;
  * Utility to make it easier for tests to override system properties (instead of directly using
  * {@link System#setProperty(String, String)}). By using this class within try-with-resources,
  * the test can be assured that any property set will be restored to its initial state after the
- * test completes (success & failure).
+ * test completes (success &amp; failure).
  */
 public class SystemPropertyOverrides implements AutoCloseable {
     private final Map<String, String> mOriginals = new HashMap<>();
