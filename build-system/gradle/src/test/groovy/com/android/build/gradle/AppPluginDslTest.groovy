@@ -846,10 +846,17 @@ public class AppPluginDslTest extends BaseTest {
             for (BaseVariantOutput baseVariantOutput : variant.outputs) {
                 ApkVariantOutput apkVariantOutput = (ApkVariantOutput) baseVariantOutput
 
-                /*
-                 * We never generate zipAlign tasks by default.
-                 */
-                assertNull(apkVariantOutput.zipAlign)
+                // Check if we did the right thing, depending on the default value of the flag.
+                if (!AndroidGradleOptions.DEFAULT_USE_OLD_PACKAGING) {
+                    assertNull(apkVariantOutput.zipAlign)
+                } else {
+                    // tested variant are never zipAligned.
+                    if (!isTestVariant && variant.buildType.zipAlignEnabled) {
+                        assertNotNull(apkVariantOutput.zipAlign)
+                    } else {
+                        assertNull(apkVariantOutput.zipAlign)
+                    }
+                }
             }
         } else {
             assertNull(variant.install)

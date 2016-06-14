@@ -20,7 +20,6 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.AndroidGradleOptions;
 import com.android.build.gradle.api.ApkOutputFile;
-import com.android.build.gradle.internal.TaskManager;
 import com.android.build.gradle.internal.variant.ApkVariantData;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.build.gradle.tasks.CompatibleScreensManifest;
@@ -125,7 +124,7 @@ public class VariantOutputScope implements TransformVariantScope {
         boolean signedApk = apkVariantData.isSigned();
         String apkName = signedApk ?
                 getGlobalScope().getProjectBaseName() + "-" + variantOutputData.getBaseName()
-                        + (useOldPackaging? "-unaligned.apk" : ".apk"):
+                        + (useOldPackaging ? "-unaligned.apk" : ".apk"):
                 getGlobalScope().getProjectBaseName() + "-" + variantOutputData.getBaseName()
                         + "-unsigned.apk";
 

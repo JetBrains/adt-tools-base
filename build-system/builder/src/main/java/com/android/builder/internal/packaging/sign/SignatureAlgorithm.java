@@ -63,8 +63,8 @@ public enum SignatureAlgorithm {
      * @param minSdkVersion minimum SDK version that allows this signature
      * @param signatureAlgorithmSuffix suffix for signature name with used with a digest
      */
-    SignatureAlgorithm(@NonNull String keyAlgorithm, int minSdkVersion,
-            @NonNull String signatureAlgorithmSuffix) {
+    SignatureAlgorithm(
+            @NonNull String keyAlgorithm, int minSdkVersion, @NonNull String signatureAlgorithmSuffix) {
         this.keyAlgorithm = keyAlgorithm;
         this.minSdkVersion = minSdkVersion;
         this.signatureAlgorithmSuffix = signatureAlgorithmSuffix;

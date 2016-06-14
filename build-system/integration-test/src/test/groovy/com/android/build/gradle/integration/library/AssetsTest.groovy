@@ -15,43 +15,61 @@
  */
 
 package com.android.build.gradle.integration.library
+
 import com.android.build.gradle.integration.common.category.DeviceTests
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
+import com.android.build.gradle.integration.common.fixture.RunGradleTasks
+import com.android.build.gradle.integration.common.runner.FilterableParameterized
 import com.google.common.io.Files
 import com.google.common.io.Resources
 import groovy.transform.CompileStatic
-import org.junit.AfterClass
-import org.junit.BeforeClass
-import org.junit.ClassRule
+import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
 import org.junit.experimental.categories.Category
+import org.junit.runner.RunWith
+import org.junit.runners.Parameterized
 
 import java.nio.charset.Charset
 
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk
 import static com.android.builder.core.BuilderConstants.DEBUG
+
 /**
  * Assemble tests for assets.
  */
 @CompileStatic
+@RunWith(FilterableParameterized)
 class AssetsTest {
-    static byte[] simpleJarDataA
-    static byte[] simpleJarDataB
-    static byte[] simpleJarDataC
-    static byte[] simpleJarDataD
-    static File assetsDir;
-    static File resRawDir;
-    static File resourcesDir;
-    static File libsDir;
+    byte[] simpleJarDataA
+    byte[] simpleJarDataB
+    byte[] simpleJarDataC
+    byte[] simpleJarDataD
+    File assetsDir;
+    File resRawDir;
+    File resourcesDir;
+    File libsDir;
 
-    @ClassRule
-    static public GradleTestProject project = GradleTestProject.builder()
+    @Parameterized.Parameters
+    public static Collection<Object[]> data() {
+        return RunGradleTasks.Packaging.getParameters();
+    }
+
+    @Parameterized.Parameter
+    public RunGradleTasks.Packaging mPackaging;
+
+    @Rule
+    public GradleTestProject project = GradleTestProject.builder()
             .fromTestProject("assets")
             .create()
 
-    @BeforeClass
-    static void setUp() {
+    private void execute(String... tasks) {
+        project.executor().withPackaging(mPackaging).run(tasks)
+    }
+
+    @Before
+    public void setUp() {
         simpleJarDataA = Resources.toByteArray(Resources.getResource(AssetsTest.class,
                 "/jars/simple-jar-with-A_DoIExist-class.jar"))
         simpleJarDataB = Resources.toByteArray(Resources.getResource(AssetsTest.class,
@@ -83,12 +101,7 @@ class AssetsTest {
         Files.write(simpleJarDataD, new File(resRawDir, "d1.jar"))
 
         // Run the project.
-        project.execute("clean", "assembleDebug")
-    }
-
-    @AfterClass
-    static void cleanUp() {
-        project = null
+        execute("clean", "assembleDebug")
     }
 
     @Test
@@ -115,13 +128,8 @@ class AssetsTest {
     }
 
     @Test
-    void lint() {
-        project.execute("lint")
-    }
-
-    @Test
     @Category(DeviceTests.class)
     void connectedCheck() {
-        project.executeConnectedCheck()
+        project.executor().withPackaging(mPackaging).executeConnectedCheck()
     }
 }

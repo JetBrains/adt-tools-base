@@ -19,7 +19,9 @@ package com.android.build.gradle.integration.packaging;
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk;
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
+import com.android.build.gradle.integration.common.fixture.RunGradleTasks;
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldAppWithJavaLibs;
+import com.android.build.gradle.integration.common.runner.FilterableParameterized;
 import com.android.build.gradle.integration.common.utils.TestFileUtils;
 import com.android.ide.common.process.ProcessException;
 import com.android.utils.FileUtils;
@@ -27,14 +29,26 @@ import com.android.utils.FileUtils;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Collection;
 
 /**
  * Testing the merging of the java resources
  */
+@RunWith(FilterableParameterized.class)
 public class JavaResMergePackagingTest {
+
+    @Parameterized.Parameters(name = "{0}")
+    public static Collection<Object[]> data() {
+        return RunGradleTasks.Packaging.getParameters();
+    }
+
+    @Parameterized.Parameter
+    public RunGradleTasks.Packaging mPackaging;
 
     @Rule
     public GradleTestProject project = GradleTestProject.builder()
@@ -68,7 +82,7 @@ public class JavaResMergePackagingTest {
 
     @Test
     public void checkMergeAppWithLibs() throws IOException, ProcessException {
-        project.execute("clean", ":app:assembleDebug");
+        assembleDebug();
         File apk = project.getSubproject(":app").getApk("debug");
 
         // in tests, newline is standardized on \n
@@ -91,7 +105,7 @@ public class JavaResMergePackagingTest {
 
         FileUtils.delete(appProject.file("src/main/resources/" + META_INF_SERVICES));
 
-        project.execute("clean", ":app:assembleDebug");
+        assembleDebug();
         File apk = project.getSubproject(":app").getApk("debug");
 
         // in tests, newline is standardized on \n
@@ -110,7 +124,7 @@ public class JavaResMergePackagingTest {
         GradleTestProject libProject = project.getSubproject(":lib1");
         FileUtils.createFile(libProject.file("src/main/resources/" + resPath), "lib1Data");
 
-        project.execute("clean", ":app:assembleDebug");
+        assembleDebug();
         File apk = appProject.getApk("debug");
 
         assertThatApk(apk).containsJavaResourceWithContent(resPath, "appData");
@@ -128,7 +142,7 @@ public class JavaResMergePackagingTest {
                 "    }\n" +
                 "}\n");
 
-        project.execute("clean", ":app:assembleDebug");
+        assembleDebug();
         File apk = project.getSubproject(":app").getApk("debug");
 
         assertThatApk(apk).containsFileWithMatch(META_INF_SERVICES, APP_IMPL);
@@ -152,13 +166,15 @@ public class JavaResMergePackagingTest {
         GradleTestProject lib2Project = project.getSubproject(":lib2");
         FileUtils.createFile(lib2Project.file("src/main/resources/" + resPath), "lib2Data");
 
-        project.execute("clean", ":app:assembleDebug");
+        assembleDebug();
         File apk = appProject.getApk("debug");
 
         assertThatApk(apk).containsJavaResource(resPath);
         assertThatApk(apk).containsFileWithMatch(resPath, "[^(\n)]");
     }
 
-
+    private void assembleDebug() {
+        project.executor().withPackaging(mPackaging).run("clean", ":app:assembleDebug");
+    }
 }
 

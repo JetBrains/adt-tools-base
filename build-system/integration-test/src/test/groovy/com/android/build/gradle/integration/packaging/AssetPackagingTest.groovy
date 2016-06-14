@@ -19,7 +19,9 @@ package com.android.build.gradle.integration.packaging
 import com.android.annotations.NonNull
 import com.android.annotations.Nullable
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
+import com.android.build.gradle.integration.common.fixture.RunGradleTasks
 import com.android.build.gradle.integration.common.fixture.TemporaryProjectModification
+import com.android.build.gradle.integration.common.runner.FilterableParameterized
 import com.android.build.gradle.integration.common.truth.AbstractAndroidSubject
 import com.android.utils.FileUtils
 import groovy.transform.CompileStatic
@@ -27,6 +29,8 @@ import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.junit.runners.Parameterized
 
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatAar
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk
@@ -34,7 +38,16 @@ import static com.android.build.gradle.integration.common.truth.TruthHelper.asse
  * test for packaging of asset files.
  */
 @CompileStatic
+@RunWith(FilterableParameterized.class)
 class AssetPackagingTest {
+
+    @Parameterized.Parameters(name = "{0}")
+    public static Collection<Object[]> data() {
+        return RunGradleTasks.Packaging.getParameters();
+    }
+
+    @Parameterized.Parameter
+    public RunGradleTasks.Packaging mPackaging;
 
     @Rule
     public GradleTestProject project = GradleTestProject.builder()
@@ -112,6 +125,10 @@ android {
         libProject2 = null
     }
 
+    private void execute(String... tasks) {
+        project.executor().withPackaging(mPackaging).run(tasks)
+    }
+
     private static void createOriginalAsset(
             @NonNull File projectFolder,
             @NonNull String dimension,
@@ -124,7 +141,7 @@ android {
 
     @Test
     void "test non incremental packaging"() {
-        project.execute("clean", "assembleDebug", "assembleAndroidTest")
+        execute("clean", "assembleDebug", "assembleAndroidTest")
 
         // chek the files are there. Start from the bottom of the dependency graph
         checkAar(    libProject2, "filelib2.txt",     "library2:abcd")
@@ -155,11 +172,11 @@ android {
 
     @Test
     void "test app project with new asset file"() {
-        project.execute("app:clean", "app:assembleDebug")
+        execute("app:clean", "app:assembleDebug")
 
         TemporaryProjectModification.doTest(appProject) {
             it.addFile("src/main/assets/newfile.txt", "newfile content");
-            project.execute("app:assembleDebug")
+            execute("app:assembleDebug")
 
             checkApk(appProject, "newfile.txt", "newfile content")
         }
@@ -167,11 +184,11 @@ android {
 
     @Test
     void "test app project with removed asset file"() {
-        project.execute("app:clean", "app:assembleDebug")
+        execute("app:clean", "app:assembleDebug")
 
         TemporaryProjectModification.doTest(appProject) {
             it.removeFile("src/main/assets/file.txt")
-            project.execute("app:assembleDebug")
+            execute("app:assembleDebug")
 
             checkApk(appProject, "file.txt", null)
         }
@@ -179,11 +196,11 @@ android {
 
     @Test
     void "test app project with modified asset file"() {
-        project.execute("app:clean", "app:assembleDebug")
+        execute("app:clean", "app:assembleDebug")
 
         TemporaryProjectModification.doTest(appProject) {
             it.replaceFile("src/main/assets/file.txt", "new content")
-            project.execute("app:assembleDebug")
+            execute("app:assembleDebug")
 
             checkApk(appProject, "file.txt", "new content")
         }
@@ -191,59 +208,59 @@ android {
 
     @Test
     void "test app project with new debug asset file overriding main"() {
-        project.execute("app:clean", "app:assembleDebug")
+        execute("app:clean", "app:assembleDebug")
 
         TemporaryProjectModification.doTest(appProject) {
             it.addFile("src/debug/assets/file.txt", "new content")
-            project.execute("app:assembleDebug")
+            execute("app:assembleDebug")
 
             checkApk(appProject, "file.txt", "new content")
         }
 
         // file's been removed, checking in the other direction.
-        project.execute("app:assembleDebug")
+        execute("app:assembleDebug")
         checkApk(appProject, "file.txt", "app:abcd")
     }
 
     @Test
     void "test app project with new asset file overriding dependency"() {
-        project.execute("app:clean", "app:assembleDebug")
+        execute("app:clean", "app:assembleDebug")
 
         TemporaryProjectModification.doTest(appProject) {
             it.addFile("src/main/assets/filelib.txt", "new content")
-            project.execute("app:assembleDebug")
+            execute("app:assembleDebug")
 
             checkApk(appProject, "filelib.txt", "new content")
         }
 
         // file's been removed, checking in the other direction.
-        project.execute("app:assembleDebug")
+        execute("app:assembleDebug")
         checkApk(appProject, "filelib.txt", "library:abcd")
     }
 
     @Test
     void "test app project with new asset file in debug source set"() {
-        project.execute("app:clean", "app:assembleDebug")
+        execute("app:clean", "app:assembleDebug")
 
         TemporaryProjectModification.doTest(appProject) {
             it.addFile("src/debug/assets/file.txt", "new content")
-            project.execute("app:assembleDebug")
+            execute("app:assembleDebug")
 
             checkApk(appProject, "file.txt", "new content")
         }
 
         // file's been removed, checking in the other direction.
-        project.execute("app:assembleDebug")
+        execute("app:assembleDebug")
         checkApk(appProject, "file.txt", "app:abcd")
     }
 
     @Test
     void "test app project with modified asset in dependency"() {
-        project.execute("app:clean", "library:clean", "app:assembleDebug")
+        execute("app:clean", "library:clean", "app:assembleDebug")
 
         TemporaryProjectModification.doTest(libProject) {
             it.replaceFile("src/main/assets/filelib.txt", "new content")
-            project.execute("app:assembleDebug")
+            execute("app:assembleDebug")
 
             checkApk(appProject, "filelib.txt", "new content")
         }
@@ -251,11 +268,11 @@ android {
 
     @Test
     void "test app project with added asset in dependency"() {
-        project.execute("app:clean", "library:clean", "app:assembleDebug")
+        execute("app:clean", "library:clean", "app:assembleDebug")
 
         TemporaryProjectModification.doTest(libProject) {
             it.addFile("src/main/assets/new_lib_file.txt", "new content")
-            project.execute("app:assembleDebug")
+            execute("app:assembleDebug")
 
             checkApk(appProject, "new_lib_file.txt", "new content")
         }
@@ -263,11 +280,11 @@ android {
 
     @Test
     void "test app project with removed asset in dependency"() {
-        project.execute("app:clean", "library:clean", "app:assembleDebug")
+        execute("app:clean", "library:clean", "app:assembleDebug")
 
         TemporaryProjectModification.doTest(libProject) {
             it.removeFile("src/main/assets/filelib.txt")
-            project.execute("app:assembleDebug")
+            execute("app:assembleDebug")
 
             checkApk(appProject, "filelib.txt", null)
         }
@@ -277,11 +294,11 @@ android {
 
     @Test
     void "test app project test with new asset file"() {
-        project.execute("app:clean", "app:assembleAT")
+        execute("app:clean", "app:assembleAT")
 
         TemporaryProjectModification.doTest(appProject) {
             it.addFile("src/androidTest/assets/newfile.txt", "new file content");
-            project.execute("app:assembleAT")
+            execute("app:assembleAT")
 
             checkTestApk(appProject, "newfile.txt", "new file content")
         }
@@ -289,11 +306,11 @@ android {
 
     @Test
     void "test app project test with removed asset file"() {
-        project.execute("app:clean", "app:assembleAT")
+        execute("app:clean", "app:assembleAT")
 
         TemporaryProjectModification.doTest(appProject) {
             it.removeFile("src/androidTest/assets/filetest.txt")
-            project.execute("app:assembleAT")
+            execute("app:assembleAT")
 
             checkTestApk(appProject, "filetest.txt", null)
         }
@@ -301,11 +318,11 @@ android {
 
     @Test
     void "test app project test with modified asset file"() {
-        project.execute("app:clean", "app:assembleAT")
+        execute("app:clean", "app:assembleAT")
 
         TemporaryProjectModification.doTest(appProject) {
             it.replaceFile("src/androidTest/assets/filetest.txt", "new content")
-            project.execute("app:assembleAT")
+            execute("app:assembleAT")
 
             checkTestApk(appProject, "filetest.txt", "new content")
         }
@@ -315,11 +332,11 @@ android {
 
     @Test
     void "test lib project with new asset file"() {
-        project.execute("library:clean", "library:assembleDebug")
+        execute("library:clean", "library:assembleDebug")
 
         TemporaryProjectModification.doTest(libProject) {
             it.addFile("src/main/assets/newfile.txt", "newfile content");
-            project.execute("library:assembleDebug")
+            execute("library:assembleDebug")
 
             checkAar(libProject, "newfile.txt", "newfile content")
         }
@@ -327,11 +344,11 @@ android {
 
     @Test
     void "test lib project with removed asset file"() {
-        project.execute("library:clean", "library:assembleDebug")
+        execute("library:clean", "library:assembleDebug")
 
         TemporaryProjectModification.doTest(libProject) {
             it.removeFile("src/main/assets/filelib.txt")
-            project.execute("library:assembleDebug")
+            execute("library:assembleDebug")
 
             checkAar(libProject, "filelib.txt", null)
         }
@@ -339,11 +356,11 @@ android {
 
     @Test
     void "test lib project with modified asset file"() {
-        project.execute("library:clean", "library:assembleDebug")
+        execute("library:clean", "library:assembleDebug")
 
         TemporaryProjectModification.doTest(libProject) {
             it.replaceFile("src/main/assets/filelib.txt", "new content")
-            project.execute("library:assembleDebug")
+            execute("library:assembleDebug")
 
             checkAar(libProject, "filelib.txt", "new content")
         }
@@ -351,17 +368,17 @@ android {
 
     @Test
     void "test lib project with new asset file in debug source set"() {
-        project.execute("library:clean", "library:assembleDebug")
+        execute("library:clean", "library:assembleDebug")
 
         TemporaryProjectModification.doTest(libProject) {
             it.addFile("src/debug/assets/filelib.txt", "new content")
-            project.execute("library:assembleDebug")
+            execute("library:assembleDebug")
 
             checkAar(libProject, "filelib.txt", "new content")
         }
 
         // file's been removed, checking in the other direction.
-        project.execute("library:assembleDebug")
+        execute("library:assembleDebug")
         checkAar(libProject, "filelib.txt", "library:abcd")
     }
 
@@ -369,11 +386,11 @@ android {
 
     @Test
     void "test lib project test with new asset file"() {
-        project.execute("library:clean", "library:assembleAT")
+        execute("library:clean", "library:assembleAT")
 
         TemporaryProjectModification.doTest(libProject) {
             it.addFile("src/androidTest/assets/newfile.txt", "new file content");
-            project.execute("library:assembleAT")
+            execute("library:assembleAT")
 
             checkTestApk(libProject, "newfile.txt", "new file content")
         }
@@ -381,11 +398,11 @@ android {
 
     @Test
     void "test lib project test with removed asset file"() {
-        project.execute("library:clean", "library:assembleAT")
+        execute("library:clean", "library:assembleAT")
 
         TemporaryProjectModification.doTest(libProject) {
             it.removeFile("src/androidTest/assets/filelibtest.txt")
-            project.execute("library:assembleAT")
+            execute("library:assembleAT")
 
             checkTestApk(libProject, "filelibtest.txt", null)
         }
@@ -393,11 +410,11 @@ android {
 
     @Test
     void "test lib project test with modified asset file"() {
-        project.execute("library:clean", "library:assembleAT")
+        execute("library:clean", "library:assembleAT")
 
         TemporaryProjectModification.doTest(libProject) {
             it.replaceFile("src/androidTest/assets/filelibtest.txt", "new content")
-            project.execute("library:assembleAT")
+            execute("library:assembleAT")
 
             checkTestApk(libProject, "filelibtest.txt", "new content")
         }
@@ -405,34 +422,34 @@ android {
 
     @Test
     void "test lib project test with new asset file overriding tested lib"() {
-        project.execute("library:clean", "library:assembleAT")
+        execute("library:clean", "library:assembleAT")
 
         TemporaryProjectModification.doTest(libProject) {
             it.addFile("src/androidTest/assets/filelib.txt", "new content")
-            project.execute("library:assembleAT")
+            execute("library:assembleAT")
 
             checkTestApk(libProject, "filelib.txt", "new content")
         }
 
         // file's been removed, checking in the other direction.
-        project.execute("library:assembleAT")
+        execute("library:assembleAT")
         checkTestApk(libProject, "filelib.txt", "library:abcd")
 
     }
 
     @Test
     void "test lib project test with new asset file overriding dependency"() {
-        project.execute("library:clean", "library:assembleAT")
+        execute("library:clean", "library:assembleAT")
 
         TemporaryProjectModification.doTest(libProject) {
             it.addFile("src/androidTest/assets/filelib2.txt", "new content")
-            project.execute("library:assembleAT")
+            execute("library:assembleAT")
 
             checkTestApk(libProject, "filelib2.txt", "new content")
         }
 
         // file's been removed, checking in the other direction.
-        project.execute("library:assembleAT")
+        execute("library:assembleAT")
         checkTestApk(libProject, "filelib2.txt", "library2:abcd")
     }
 
@@ -440,11 +457,11 @@ android {
 
     @Test
     void "test test-project with new asset file"() {
-        project.execute("test:clean", "test:assembleDebug")
+        execute("test:clean", "test:assembleDebug")
 
         TemporaryProjectModification.doTest(testProject) {
             it.addFile("src/main/assets/newfile.txt", "newfile content");
-            project.execute("test:assembleDebug")
+            execute("test:assembleDebug")
 
             checkApk(testProject, "newfile.txt", "newfile content")
         }
@@ -452,11 +469,11 @@ android {
 
     @Test
     void "test test-project with removed asset file"() {
-        project.execute("test:clean", "test:assembleDebug")
+        execute("test:clean", "test:assembleDebug")
 
         TemporaryProjectModification.doTest(testProject) {
             it.removeFile("src/main/assets/file.txt")
-            project.execute("test:assembleDebug")
+            execute("test:assembleDebug")
 
             checkApk(testProject, "file.txt", null)
         }
@@ -464,11 +481,11 @@ android {
 
     @Test
     void "test test-project with modified asset file"() {
-        project.execute("test:clean", "test:assembleDebug")
+        execute("test:clean", "test:assembleDebug")
 
         TemporaryProjectModification.doTest(testProject) {
             it.replaceFile("src/main/assets/file.txt", "new content")
-            project.execute("test:assembleDebug")
+            execute("test:assembleDebug")
 
             checkApk(testProject, "file.txt", "new content")
         }
@@ -503,11 +520,11 @@ android {
      * @param filename the filename
      * @param content the content
      */
-    private static void checkTestApk(
+    private void checkTestApk(
             @NonNull GradleTestProject project,
             @NonNull String filename,
             @Nullable String content) {
-        check(assertThatApk(project.getTestApk("debug")), filename, content)
+        check(assertThatApk(project.getTestApk(mPackaging, "debug")), filename, content)
     }
 
     /**

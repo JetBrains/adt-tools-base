@@ -15,18 +15,20 @@
  */
 
 package com.android.build.gradle.integration.packaging
+
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
+import com.android.build.gradle.integration.common.fixture.RunGradleTasks
+import com.android.build.gradle.integration.common.runner.FilterableParameterized
 import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.google.common.base.Charsets
 import com.google.common.io.Files
 import groovy.transform.CompileStatic
-import org.junit.After
-import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.junit.runners.Parameterized
 
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk
-
 /**
  * test for incremental code change.
  *
@@ -40,21 +42,21 @@ import static com.android.build.gradle.integration.common.truth.TruthHelper.asse
  * - legacy multi-dex
  */
 @CompileStatic
+@RunWith(FilterableParameterized)
 class IncrementalCodeChangeTest {
+
+    @Parameterized.Parameters(name = "{0}")
+    public static Collection<Object[]> data() {
+        return RunGradleTasks.Packaging.getParameters();
+    }
+
+    @Parameterized.Parameter
+    public RunGradleTasks.Packaging mPackaging;
 
     @Rule
     public GradleTestProject project = GradleTestProject.builder()
             .fromTestProject("projectWithModules")
             .create()
-
-    @Before
-    void setUp() {
-    }
-
-    @After
-    void cleanUp() {
-        project = null
-    }
 
     @Test
     void "check non-multi-dex"() {
@@ -65,14 +67,14 @@ dependencies {
     compile project(':library')
 }
 """
-        project.execute("clean", ":app:assembleDebug")
+        project.executor().withPackaging(mPackaging).run("clean", ":app:assembleDebug")
 
         TestFileUtils.replaceLine(
                 project.file("library/src/main/java/com/example/android/multiproject/library/PersonView.java"),
                 9,
                 "        setTextSize(30);")
 
-        project.execute(":app:assembleDebug")
+        project.executor().withPackaging(mPackaging).run(":app:assembleDebug")
 
         // class from :library
         assertThatApk(project.getSubproject('app').getApk("debug"))
@@ -97,14 +99,14 @@ dependencies {
     compile project(':library')
 }
 """
-        project.execute("clean", ":app:assembleDebug")
+        project.executor().withPackaging(mPackaging).run("clean", ":app:assembleDebug")
 
         TestFileUtils.replaceLine(
                 project.file("library/src/main/java/com/example/android/multiproject/library/PersonView.java"),
                 9,
                 "        setTextSize(30);")
 
-        project.execute(":app:assembleDebug")
+        project.executor().withPackaging(mPackaging).run(":app:assembleDebug")
 
         // class from :library
         assertThatApk(project.getSubproject('app').getApk("debug"))
@@ -134,14 +136,14 @@ dependencies {
     compile project(':library')
 }
 """
-        project.execute("clean", ":app:assembleDebug")
+        project.executor().withPackaging(mPackaging).run("clean", ":app:assembleDebug")
 
         TestFileUtils.replaceLine(
                 project.file("library/src/main/java/com/example/android/multiproject/library/PersonView.java"),
                 9,
                 "        setTextSize(30);")
 
-        project.execute(":app:assembleDebug")
+        project.executor().withPackaging(mPackaging).run(":app:assembleDebug")
 
         // class from :library
         assertThatApk(project.getSubproject('app').getApk("debug"))

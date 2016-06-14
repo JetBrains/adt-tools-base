@@ -16,19 +16,27 @@
 
 package com.android.build.gradle.integration.packaging;
 
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatAar;
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk;
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatZip;
+
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
+import com.android.build.gradle.integration.common.fixture.RunGradleTasks;
+import com.android.build.gradle.integration.common.runner.FilterableParameterized;
 import com.android.build.gradle.integration.common.truth.AbstractAndroidSubject;
 import com.android.build.gradle.integration.common.utils.TestFileUtils;
 import com.android.build.gradle.integration.common.utils.ZipHelper;
 import com.android.utils.FileUtils;
 import com.google.common.base.Charsets;
-import com.google.common.io.Closer;
 import com.google.common.io.Files;
+
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.FieldVisitor;
@@ -38,19 +46,25 @@ import org.objectweb.asm.Opcodes;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.Collection;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
-
-import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatAar;
-import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk;
-import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatZip;
 
 /**
  * test for packaging of asset files.
  */
+@RunWith(FilterableParameterized.class)
 public class NativeSoPackagingFromJarTest {
     private static final String LIB_X86_LIBHELLO_SO = "lib/x86/libhello.so";
     private static final String COM_FOO_FOO_CLASS = "com/foo/Foo.class";
+
+    @Parameterized.Parameters(name = "{0}")
+    public static Collection<Object[]> data() {
+        return RunGradleTasks.Packaging.getParameters();
+    }
+
+    @Parameterized.Parameter
+    public RunGradleTasks.Packaging mPackaging;
 
     @ClassRule
     public static GradleTestProject project = GradleTestProject.builder()
@@ -88,8 +102,6 @@ public class NativeSoPackagingFromJarTest {
 
         File libDir = libProject.getTestDir();
         createJarWithNativeLib(new File(libDir, "libs"), "bar.jar", true);
-
-        project.execute("clean");
     }
 
     private static void createJarWithNativeLib(
@@ -115,13 +127,13 @@ public class NativeSoPackagingFromJarTest {
 
     @Test
     public void testAppPackaging() throws IOException {
-        project.execute("app:assembleDebug");
+        project.executor().withPackaging(mPackaging).run("app:assembleDebug");
         checkApk(appProject, "libhello.so", "hello");
     }
 
     @Test
     public void testLibraryPackaging() throws IOException {
-        project.execute("library:assembleDebug");
+        project.executor().withPackaging(mPackaging).run("library:assembleDebug");
         checkAar(libProject, "libhello.so", "hello");
 
         // also check that the bar.jar is also present as a local jar with a the class
@@ -149,23 +161,6 @@ public class NativeSoPackagingFromJarTest {
             @NonNull String filename,
             @Nullable String content) throws IOException {
         check(assertThatApk(project.getApk("debug")), "lib", filename, content);
-    }
-
-    /**
-     * check a test apk has (or not) the given asset file name.
-     *
-     * If the content is non-null the file is expected to be there with the same content. If the
-     * content is null the file is not expected to be there.
-     *
-     * @param project the project
-     * @param filename the filename
-     * @param content the content
-     */
-    private static void checkTestApk(
-            @NonNull GradleTestProject project,
-            @NonNull String filename,
-            @Nullable String content) throws IOException {
-        check(assertThatApk(project.getTestApk("debug")), "lib", filename, content);
     }
 
     /**

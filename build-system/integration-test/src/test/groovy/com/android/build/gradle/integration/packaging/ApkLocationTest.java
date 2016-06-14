@@ -16,23 +16,35 @@
 
 package com.android.build.gradle.integration.packaging;
 
-import static org.junit.Assert.assertEquals;
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
+import com.android.build.gradle.integration.common.fixture.RunGradleTasks;
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp;
+import com.android.build.gradle.integration.common.runner.FilterableParameterized;
 import com.android.builder.model.AndroidProject;
-import com.google.common.collect.ImmutableList;
 
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
 import java.io.File;
-import java.util.List;
+import java.util.Collection;
 
+@RunWith(FilterableParameterized.class)
 public class ApkLocationTest {
+
+    @Parameterized.Parameters(name = "{0}")
+    public static Collection<Object[]> data() {
+        return RunGradleTasks.Packaging.getParameters();
+    }
+
+    @Parameterized.Parameter
+    public RunGradleTasks.Packaging mPackaging;
+
     @Rule
     public GradleTestProject project = GradleTestProject.builder()
             .fromTestApp(HelloWorldApp.forPlugin("com.android.application"))
@@ -43,14 +55,27 @@ public class ApkLocationTest {
 
     @Test
     public void outputToInjectedLocation() throws Exception {
-        List<String> args = ImmutableList.of(
-                "-P" + AndroidProject.PROPERTY_APK_LOCATION + "=" + mTemporaryFolder.getRoot());
-
-        project.execute(args, "assembleDebug");
+        project.executor()
+                .withPackaging(mPackaging)
+                .withProperty(
+                        AndroidProject.PROPERTY_APK_LOCATION,
+                        mTemporaryFolder.getRoot().getAbsolutePath())
+                .run("assembleDebug");
 
         File[] files = mTemporaryFolder.getRoot().listFiles();
         assertNotNull(files);
-        assertEquals(1, files.length);
-        assertTrue(files[0].getName().endsWith(".apk"));
+
+        // There can be one or two APKs in the directory, depending on whether we use old or new
+        // packaging.
+        if (mPackaging == RunGradleTasks.Packaging.NEW_PACKAGING) {
+            assertThat(files).hasLength(1);
+        } else {
+            assertThat(files).hasLength(2);
+        }
+
+        for (File file : files) {
+            assertThat(file).isFile();
+            assertThat(file.getName()).endsWith(".apk");
+        }
     }
 }
