@@ -25,9 +25,11 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import java.awt.*;
+import java.awt.geom.PathIterator;
 import java.io.IOException;
-import java.util.*;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class ShapeTest {
     @SuppressWarnings("InspectionUsingGrayColors")
@@ -66,7 +68,7 @@ public class ShapeTest {
     }
 
     @Test
-    public void testStroke() throws IOException {
+    public void stroke() throws IOException {
         Image image = ImageUtils.loadImage("stroked_shape.psd");
 
         List<Layer> layers = image.getLayers();
@@ -134,5 +136,69 @@ public class ShapeTest {
         Assert.assertTrue(shape.getStroke() instanceof BasicStroke);
         stroke = (BasicStroke) shape.getStroke();
         Assert.assertEquals(3.0f, stroke.getLineWidth(), 0.01f);
+    }
+
+    @Test
+    public void pathOps() throws IOException {
+        Image image = ImageUtils.loadImage("path_ops.psd");
+
+        List<Layer> layers = image.getLayers();
+
+        Layer layer = layers.get(0);
+        Assert.assertEquals("Merge", layer.getName());
+        List<ShapeInfo.SubPath> paths = layer.getShapeInfo().getPaths();
+        Assert.assertEquals(ShapeInfo.PathOp.ADD, paths.get(0).getOp());
+        Assert.assertEquals(ShapeInfo.PathOp.ADD, paths.get(1).getOp());
+
+        layer = layers.get(1);
+        Assert.assertEquals("Subtract", layer.getName());
+        paths = layer.getShapeInfo().getPaths();
+        Assert.assertEquals(ShapeInfo.PathOp.ADD, paths.get(0).getOp());
+        Assert.assertEquals(ShapeInfo.PathOp.SUBTRACT, paths.get(1).getOp());
+
+        layer = layers.get(2);
+        Assert.assertEquals("XOR", layer.getName());
+        paths = layer.getShapeInfo().getPaths();
+        Assert.assertEquals(ShapeInfo.PathOp.EXCLUSIVE_OR, paths.get(0).getOp());
+        Assert.assertEquals(ShapeInfo.PathOp.EXCLUSIVE_OR, paths.get(1).getOp());
+
+        layer = layers.get(4);
+        Assert.assertEquals("Intersect", layer.getName());
+        paths = layer.getShapeInfo().getPaths();
+        Assert.assertEquals(ShapeInfo.PathOp.INTERSECT, paths.get(0).getOp());
+        Assert.assertEquals(ShapeInfo.PathOp.INTERSECT, paths.get(1).getOp());
+    }
+
+    @Test
+    public void pathTypes() throws IOException {
+        Image image = ImageUtils.loadImage("path_type.psd");
+
+        List<Layer> layers = image.getLayers();
+
+        Layer layer = layers.get(0);
+        Assert.assertEquals("Closed", layer.getName());
+        List<ShapeInfo.SubPath> paths = layer.getShapeInfo().getPaths();
+        Assert.assertEquals(ShapeInfo.PathType.CLOSED, paths.get(0).getType());
+        Assert.assertTrue(isClosed(paths));
+
+        layer = layers.get(1);
+        Assert.assertEquals("Open", layer.getName());
+        paths = layer.getShapeInfo().getPaths();
+        Assert.assertEquals(ShapeInfo.PathType.OPEN, paths.get(0).getType());
+        Assert.assertFalse(isClosed(paths));
+    }
+
+    private static boolean isClosed(List<ShapeInfo.SubPath> paths) {
+        PathIterator iterator = paths.get(0).getPath().getPathIterator(null);
+        boolean isClosed = false;
+        float[] coords = new float[6];
+        while (!iterator.isDone()) {
+            if (iterator.currentSegment(coords) == PathIterator.SEG_CLOSE) {
+                isClosed = true;
+                break;
+            }
+            iterator.next();
+        }
+        return isClosed;
     }
 }

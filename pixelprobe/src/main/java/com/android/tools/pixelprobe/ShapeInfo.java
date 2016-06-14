@@ -16,17 +16,26 @@
 
 package com.android.tools.pixelprobe;
 
+import com.android.tools.pixelprobe.util.Lists;
+import com.android.tools.pixelprobe.util.Strings;
+
 import java.awt.*;
 import java.awt.geom.GeneralPath;
 import java.awt.geom.Path2D;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * The shape information for an image's shape layer.
- * Contains information about the data (path) as well as styling.
+ * A shape can be made of one or more sub-paths. Each sub-path
+ * contains a geometry (a {@link Path2D}, as well as an operator
+ * that describes how to combine that sub-path with the previous
+ * sub-paths that comprise the shape.
  */
 public final class ShapeInfo {
     private final Style style;
-    private final Path2D path;
+
+    private final List<SubPath> paths;
 
     private final Paint fillPaint;
     private final float fillOpacity;
@@ -89,9 +98,129 @@ public final class ShapeInfo {
         OUTSIDE
     }
 
+    /**
+     * A path operation defines how a {@link Path2D} must be combined with
+     * the previous {@link Path2D} instances of a shape to create the final
+     * path representation of the shape.
+     */
+    public enum PathOp {
+        /**
+         * The path is added to (merged with) the previous paths.
+         */
+        ADD,
+        /**
+         * The path is subtracted from the previous paths.
+         */
+        SUBTRACT,
+        /**
+         * The final path is the intersection of the path and the previous paths.
+         */
+        INTERSECT,
+        /**
+         * The final path is the exclusive or of the path and the previous paths.
+         */
+        EXCLUSIVE_OR
+    }
+
+    /**
+     * Indicates whether a sub-path is open or closed.
+     */
+    public enum PathType {
+        /**
+         * Open path, the last point is not connected to the first point.
+         */
+        OPEN,
+        /**
+         * Closed path, the last point is connected to the first point.
+         */
+        CLOSED,
+        /**
+         * The path contains multiple move commands and must be inspected
+         * to determine whether each sub-sequence is open or closed.
+         */
+        NONE
+    }
+
+    /**
+     * A sub-path contains a path and an operator that defines how to
+     * combine that path with other paths contained in a shape.
+     */
+    public static final class SubPath {
+        private final Path2D path;
+        private final PathOp op;
+        private final PathType type;
+
+        SubPath(Builder builder) {
+            path = builder.path;
+            op = builder.op;
+            type = builder.type;
+        }
+
+        /**
+         * Returns the path contained in this sub-path. This path must be
+         * combined with the shape's other sub-paths according to its operator.
+         *
+         * @see #getOp()
+         */
+        public Path2D getPath() {
+            return (Path2D) path.clone();
+        }
+
+        /**
+         * Describes how the path contained in this sub-path must be combined
+         * with the shape's other sub-paths.
+         *
+         * @see #getPath()
+         */
+        public PathOp getOp() {
+            return op;
+        }
+
+        /**
+         * Returns whether the path contained in this sub-path is open or closed.
+         */
+        public PathType getType() {
+            return type;
+        }
+
+        @Override
+        public String toString() {
+            return "SubPath{" +
+                   "path=" + path +
+                   ", type=" + type +
+                   ", op=" + op +
+                   '}';
+        }
+
+        public static final class Builder {
+            private Path2D path = new GeneralPath();
+            private PathOp op = PathOp.ADD;
+            private PathType type = PathType.CLOSED;
+
+            public Builder type(PathType type) {
+                this.type = type;
+                return this;
+            }
+
+            public Builder op(PathOp op) {
+                this.op = op;
+                return this;
+            }
+
+            public Builder path(Path2D path) {
+                this.path = path;
+                return this;
+            }
+
+            public SubPath build() {
+                return new SubPath(this);
+            }
+        }
+    }
+
     ShapeInfo(Builder builder) {
         style = builder.style;
-        path = builder.path;
+        paths = Lists.immutableCopy(builder.paths);
 
         fillPaint = builder.fillPaint;
         fillOpacity = builder.fillOpacity;
@@ -111,10 +240,10 @@ public final class ShapeInfo {
     }
 
     /**
-     * Returns a copy of the path representing this shape.
+     * Returns the list of sub-paths representing this shape.
      */
-    public Path2D getPath() {
-        return (Path2D) path.clone();
+    public List<SubPath> getPaths() {
+        return paths;
     }
 
     /**
@@ -190,7 +319,7 @@ public final class ShapeInfo {
     public String toString() {
         return "ShapeInfo{" +
                "style=" + style +
-               ", path=" + (stroke != null) +
+               ", subPaths={" + Strings.join(paths, ",") + "}" +
                ", fillPaint=" + fillPaint +
                ", fillOpacity=" + fillOpacity +
                ", stroke=" + (stroke != null) +
@@ -203,25 +332,25 @@ public final class ShapeInfo {
 
     @SuppressWarnings("UseJBColor")
     public static final class Builder {
-        private Style style = Style.FILL;
-        private Path2D path = new GeneralPath();
+        Style style = Style.FILL;
+        final List<SubPath> paths = new ArrayList<>();
 
-        private Paint fillPaint = Color.BLACK;
-        private float fillOpacity = 1.0f;
+        Paint fillPaint = Color.BLACK;
+        float fillOpacity = 1.0f;
 
-        private Stroke stroke = new BasicStroke(0.0f);
-        private Paint strokePaint = Color.BLACK;
-        private float strokeOpacity = 1.0f;
-        private BlendMode strokeBlendMode = BlendMode.NORMAL;
-        private Alignment strokeAlignment = Alignment.CENTER;
+        Stroke stroke = new BasicStroke(0.0f);
+        Paint strokePaint = Color.BLACK;
+        float strokeOpacity = 1.0f;
+        BlendMode strokeBlendMode = BlendMode.NORMAL;
+        Alignment strokeAlignment = Alignment.CENTER;
 
         public Builder style(Style style) {
             this.style = style;
             return this;
         }
 
-        public Builder path(Path2D path) {
-            this.path = path;
+        public Builder addSubPath(SubPath subPath) {
+            paths.add(subPath);
             return this;
         }
 
