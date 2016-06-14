@@ -114,8 +114,10 @@ public class ViewConstructorDetector extends Detector implements JavaPsiScanner 
     public void checkClass(@NonNull JavaContext context, @NonNull PsiClass declaration) {
         // Only applies to concrete classes
         JavaEvaluator evaluator = context.getEvaluator();
-        if (evaluator.isAbstract(declaration) || declaration instanceof PsiAnonymousClass) {
-            // Ignore abstract classes
+        if (evaluator.isAbstract(declaration)
+                || evaluator.isPrivate(declaration)
+                || declaration instanceof PsiAnonymousClass) {
+            // Ignore abstract, private and anonymous classes
             return;
         }
 
