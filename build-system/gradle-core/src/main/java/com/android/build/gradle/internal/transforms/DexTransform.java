@@ -124,7 +124,7 @@ public class DexTransform extends Transform {
             @NonNull AndroidBuilder androidBuilder,
             @NonNull Logger logger,
             @NonNull InstantRunBuildContext instantRunBuildContext,
-            boolean userCacheEnabled) {
+            @NonNull FileCache userCache) {
         this.dexOptions = dexOptions;
         this.debugMode = debugMode;
         this.multiDex = multiDex;
@@ -133,12 +133,7 @@ public class DexTransform extends Transform {
         this.androidBuilder = androidBuilder;
         this.logger = new LoggerWrapper(logger);
         this.instantRunBuildContext = instantRunBuildContext;
-        this.userCache = userCacheEnabled
-                ? new FileCache(
-                        FileUtils.join(new File(System.getProperty("user.home")),
-                                ".android-studio", "user-cache"),
-                        true)
-                : FileCache.NO_CACHE;
+        this.userCache = userCache;
     }
 
     @NonNull

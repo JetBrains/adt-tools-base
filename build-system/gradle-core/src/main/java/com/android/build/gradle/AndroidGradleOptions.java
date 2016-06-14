@@ -19,9 +19,11 @@ package com.android.build.gradle;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
+import com.android.builder.internal.utils.FileCache;
 import com.android.builder.model.AndroidProject;
 import com.android.builder.model.OptionalCompilationStep;
 import com.android.sdklib.AndroidVersion;
+import com.android.utils.FileUtils;
 import com.google.common.collect.Maps;
 
 import org.gradle.api.Project;
@@ -80,6 +82,8 @@ public class AndroidGradleOptions {
 
     private static final String PROPERTY_ENABLE_USER_CACHE = "android.enableUserCache";
 
+    private static final String PROPERTY_USER_CACHE_DIR = "android.userCacheDir";
+
     public static final String GRADLE_VERSION_CHECK_OVERRIDE_PROPERTY =
             "android.overrideVersionCheck";
 
@@ -90,7 +94,6 @@ public class AndroidGradleOptions {
 
     private static final String OLD_OVERRIDE_PATH_CHECK_PROPERTY =
             "com.android.build.gradle.overridePathCheck";
-
 
     public static boolean getUseSdkDownload(@NonNull Project project) {
         return getBoolean(project, PROPERTY_USE_SDK_DOWNLOAD, true) && !invokedFromIde(project);
@@ -246,7 +249,6 @@ public class AndroidGradleOptions {
         }
     }
 
-
     @Nullable
     public static String getColdswapMode(@NonNull Project project) {
         return getString(project, AndroidProject.PROPERTY_SIGNING_COLDSWAP_MODE);
@@ -386,6 +388,26 @@ public class AndroidGradleOptions {
 
     public static boolean isUserCacheEnabled(@NonNull Project project) {
         return getBoolean(project, PROPERTY_ENABLE_USER_CACHE, DEFAULT_ENABLE_USER_CACHE);
+    }
+
+    @NonNull
+    public static File getUserCacheDir(@NonNull Project project) {
+        String userCacheDir = getString(project, PROPERTY_USER_CACHE_DIR);
+        if (userCacheDir != null) {
+            return new File(userCacheDir);
+        } else {
+            // Use a directory under the user home directory if the user cache directory is not set
+            return new File(
+                    FileUtils.join(
+                            System.getProperty("user.home"), ".android-studio", "user-cache"));
+        }
+    }
+
+    @NonNull
+    public static FileCache getUserCache(@NonNull Project project) {
+        return isUserCacheEnabled(project)
+                ? FileCache.withInterProcessLocking(getUserCacheDir(project))
+                : FileCache.NO_CACHE;
     }
 
     public static boolean overrideGradleVersionCheck(@NonNull Project project) {
