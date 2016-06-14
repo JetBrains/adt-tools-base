@@ -1047,6 +1047,6 @@
         <SOURCES />
       </library>
     </orderEntry>
-    <orderEntry type="library" name="protobuf-java-2.6.1" level="project" />
+    <orderEntry type="library" name="protobuf" level="project" />
   </component>
 </module>

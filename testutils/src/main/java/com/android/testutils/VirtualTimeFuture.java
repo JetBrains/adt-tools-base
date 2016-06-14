@@ -23,7 +23,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * Future used by the {@link VirtualTimeScheduler} to track the actions scheduled on it.
  * Allows for introspection of the scheduled action through various helper methods.
  */
-class VirtualTimeFuture<T> implements ScheduledFuture<T> {
+public class VirtualTimeFuture<T> implements ScheduledFuture<T> {
 
     private static final AtomicLong sCounter = new AtomicLong();
 

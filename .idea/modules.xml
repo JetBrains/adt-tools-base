@@ -3,6 +3,11 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/adt.iml" filepath="$PROJECT_DIR$/adt.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../analytics-library/inspector/analytics-inspector.iml" filepath="$PROJECT_DIR$/../analytics-library/inspector/analytics-inspector.iml" group="analytics-library" />
+      <module fileurl="file://$PROJECT_DIR$/../analytics-library/protos/analytics-protos.iml" filepath="$PROJECT_DIR$/../analytics-library/protos/analytics-protos.iml" group="analytics-library" />
+      <module fileurl="file://$PROJECT_DIR$/../analytics-library/publisher/analytics-publisher.iml" filepath="$PROJECT_DIR$/../analytics-library/publisher/analytics-publisher.iml" group="analytics-library" />
+      <module fileurl="file://$PROJECT_DIR$/../analytics-library/shared/analytics-shared.iml" filepath="$PROJECT_DIR$/../analytics-library/shared/analytics-shared.iml" group="analytics-library" />
+      <module fileurl="file://$PROJECT_DIR$/../analytics-library/tracker/analytics-tracker.iml" filepath="$PROJECT_DIR$/../analytics-library/tracker/analytics-tracker.iml" group="analytics-library" />
       <module fileurl="file://$PROJECT_DIR$/annotations/android-annotations.iml" filepath="$PROJECT_DIR$/annotations/android-annotations.iml" />
       <module fileurl="file://$PROJECT_DIR$/asset-studio/assetstudio-base.iml" filepath="$PROJECT_DIR$/asset-studio/assetstudio-base.iml" />
       <module fileurl="file://$PROJECT_DIR$/../buildSrc/buildSrc.iml" filepath="$PROJECT_DIR$/../buildSrc/buildSrc.iml" />
