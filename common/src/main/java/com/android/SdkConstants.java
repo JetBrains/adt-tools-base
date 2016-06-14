@@ -1758,7 +1758,7 @@ public final class SdkConstants {
     public static final String GRADLE_MINIMUM_VERSION = "2.2.1";
     public static final String GRADLE_LATEST_VERSION = "2.10";
     public static final String GRADLE_PLUGIN_MINIMUM_VERSION = "1.0.0";
-    public static final String GRADLE_PLUGIN_RECOMMENDED_VERSION = "2.2.0-alpha3";
+    public static final String GRADLE_PLUGIN_RECOMMENDED_VERSION = "2.2.0-alpha4";
     public static final String GRADLE_PLUGIN_LATEST_VERSION = GRADLE_PLUGIN_RECOMMENDED_VERSION;
     public static final String GRADLE_COMPILE_CONFIGURATION = "compile";
     public static final String GRADLE_TEST_COMPILE_CONFIGURATION = "testCompile";
