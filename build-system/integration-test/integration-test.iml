@@ -17,6 +17,6 @@
     <orderEntry type="library" scope="TEST" name="mockito" level="project" />
     <orderEntry type="module" module-name="instant-run-common" scope="TEST" />
     <orderEntry type="module" module-name="device-provider" scope="TEST" />
-    <orderEntry type="library" name="protobuf-java-2.6.1" level="project" />
+    <orderEntry type="library" name="protobuf" level="project" />
   </component>
 </module>
