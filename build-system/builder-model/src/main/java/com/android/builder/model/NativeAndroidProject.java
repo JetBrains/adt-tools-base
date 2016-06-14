@@ -29,7 +29,7 @@ public interface NativeAndroidProject {
    String BUILD_SYSTEM_UNKNOWN = "unknown";
    String BUILD_SYSTEM_GRADLE = "gradle";
    String BUILD_SYSTEM_CMAKE = "cmake";
-   String BUILD_SYSTEM_NDK_BUILD = "ndk-build";
+   String BUILD_SYSTEM_NDK_BUILD = "ndkBuild";
 
    /**
     * Returns the model version. This is a string in the format X.Y.Z
