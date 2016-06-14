@@ -64,7 +64,7 @@ import java.util.stream.Collectors;
  */
 @SuppressWarnings("SingleCharacterStringConcatenation")
 public class NativeBuildConfigValueBuilder {
-    private static final List<String> STRIP_FLAGS = Arrays.asList("-I", "-MF", "-c", "-o");
+    private static final List<String> STRIP_FLAGS = Arrays.asList("-MF", "-c", "-o");
 
     private final Map<String, String> toolChainToCCompiler = new HashMap<>();
     private final Map<String, String> toolChainToCppCompiler = new HashMap<>();

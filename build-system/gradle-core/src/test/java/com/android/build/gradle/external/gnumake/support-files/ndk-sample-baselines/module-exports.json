@@ -14,13 +14,13 @@
           "src": {
             "path": "{ndkPath}/samples/module-exports/jni/bar/bar.c"
           },
-          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-fno-strict-aliasing\" \"-finline-functions\" \"-ffunction-sections\" \"-funwind-tables\" \"-fmessage-length\u003d0\" \"-fno-inline-functions-called-once\" \"-fgcse-after-reload\" \"-frerun-cse-after-loop\" \"-frename-registers\" \"-no-canonical-prefixes\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-DANDROID\" \"-DFOO\u003d1\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-fno-strict-aliasing\" \"-finline-functions\" \"-ffunction-sections\" \"-funwind-tables\" \"-fmessage-length\u003d0\" \"-fno-inline-functions-called-once\" \"-fgcse-after-reload\" \"-frerun-cse-after-loop\" \"-frename-registers\" \"-no-canonical-prefixes\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-I{ndkPath}/samples/module-exports/jni/foo\" \"-I{ndkPath}/samples/module-exports/jni\" \"-DANDROID\" \"-DFOO\u003d1\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-21/arch-mips64/usr/include\""
         },
         {
           "src": {
             "path": "{ndkPath}/samples/module-exports/jni/foo/foo.c"
           },
-          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-fno-strict-aliasing\" \"-finline-functions\" \"-ffunction-sections\" \"-funwind-tables\" \"-fmessage-length\u003d0\" \"-fno-inline-functions-called-once\" \"-fgcse-after-reload\" \"-frerun-cse-after-loop\" \"-frename-registers\" \"-no-canonical-prefixes\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-DANDROID\" \"-DFOO\u003d2\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-fno-strict-aliasing\" \"-finline-functions\" \"-ffunction-sections\" \"-funwind-tables\" \"-fmessage-length\u003d0\" \"-fno-inline-functions-called-once\" \"-fgcse-after-reload\" \"-frerun-cse-after-loop\" \"-frename-registers\" \"-no-canonical-prefixes\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-I{ndkPath}/samples/module-exports/jni\" \"-DANDROID\" \"-DFOO\u003d2\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-21/arch-mips64/usr/include\""
         }
       ],
       "output": {
@@ -36,19 +36,19 @@
           "src": {
             "path": "{ndkPath}/samples/module-exports/jni/bar/bar.c"
           },
-          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector\" \"-no-canonical-prefixes\" \"-march\u003darmv5te\" \"-mtune\u003dxscale\" \"-msoft-float\" \"-mthumb\" \"-Os\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fno-strict-aliasing\" \"-finline-limit\u003d64\" \"-O0\" \"-UNDEBUG\" \"-marm\" \"-fno-omit-frame-pointer\" \"-DANDROID\" \"-DFOO\u003d1\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector\" \"-no-canonical-prefixes\" \"-march\u003darmv5te\" \"-mtune\u003dxscale\" \"-msoft-float\" \"-mthumb\" \"-Os\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fno-strict-aliasing\" \"-finline-limit\u003d64\" \"-O0\" \"-UNDEBUG\" \"-marm\" \"-fno-omit-frame-pointer\" \"-I{ndkPath}/samples/module-exports/jni/foo\" \"-I{ndkPath}/samples/module-exports/jni\" \"-DANDROID\" \"-DFOO\u003d1\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-3/arch-arm/usr/include\""
         },
         {
           "src": {
             "path": "{ndkPath}/samples/module-exports/jni/foo/foo.c"
           },
-          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector\" \"-no-canonical-prefixes\" \"-march\u003darmv5te\" \"-mtune\u003dxscale\" \"-msoft-float\" \"-mthumb\" \"-Os\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fno-strict-aliasing\" \"-finline-limit\u003d64\" \"-O0\" \"-UNDEBUG\" \"-marm\" \"-fno-omit-frame-pointer\" \"-DANDROID\" \"-DFOO\u003d2\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector\" \"-no-canonical-prefixes\" \"-march\u003darmv5te\" \"-mtune\u003dxscale\" \"-msoft-float\" \"-mthumb\" \"-Os\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fno-strict-aliasing\" \"-finline-limit\u003d64\" \"-O0\" \"-UNDEBUG\" \"-marm\" \"-fno-omit-frame-pointer\" \"-I{ndkPath}/samples/module-exports/jni\" \"-DANDROID\" \"-DFOO\u003d2\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-3/arch-arm/usr/include\""
         },
         {
           "src": {
             "path": "{ndkPath}/samples/module-exports/jni/zoo/zoo.c"
           },
-          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector\" \"-no-canonical-prefixes\" \"-march\u003darmv5te\" \"-mtune\u003dxscale\" \"-msoft-float\" \"-mthumb\" \"-Os\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fno-strict-aliasing\" \"-finline-limit\u003d64\" \"-O0\" \"-UNDEBUG\" \"-marm\" \"-fno-omit-frame-pointer\" \"-DANDROID\" \"-DFOO\u003d1\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector\" \"-no-canonical-prefixes\" \"-march\u003darmv5te\" \"-mtune\u003dxscale\" \"-msoft-float\" \"-mthumb\" \"-Os\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fno-strict-aliasing\" \"-finline-limit\u003d64\" \"-O0\" \"-UNDEBUG\" \"-marm\" \"-fno-omit-frame-pointer\" \"-I{ndkPath}/samples/module-exports/jni/bar\" \"-I{ndkPath}/samples/module-exports/jni/foo\" \"-I{ndkPath}/samples/module-exports/jni\" \"-DANDROID\" \"-DFOO\u003d1\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-3/arch-arm/usr/include\""
         }
       ],
       "output": {
@@ -64,19 +64,19 @@
           "src": {
             "path": "{ndkPath}/samples/module-exports/jni/bar/bar.c"
           },
-          "flags": "\"-MMD\" \"-MP\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-DANDROID\" \"-DFOO\u003d1\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+          "flags": "\"-MMD\" \"-MP\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-I{ndkPath}/samples/module-exports/jni/foo\" \"-I{ndkPath}/samples/module-exports/jni\" \"-DANDROID\" \"-DFOO\u003d1\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-21/arch-x86_64/usr/include\""
         },
         {
           "src": {
             "path": "{ndkPath}/samples/module-exports/jni/foo/foo.c"
           },
-          "flags": "\"-MMD\" \"-MP\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-DANDROID\" \"-DFOO\u003d2\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+          "flags": "\"-MMD\" \"-MP\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-I{ndkPath}/samples/module-exports/jni\" \"-DANDROID\" \"-DFOO\u003d2\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-21/arch-x86_64/usr/include\""
         },
         {
           "src": {
             "path": "{ndkPath}/samples/module-exports/jni/zoo/zoo.c"
           },
-          "flags": "\"-MMD\" \"-MP\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-DANDROID\" \"-DFOO\u003d1\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+          "flags": "\"-MMD\" \"-MP\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-I{ndkPath}/samples/module-exports/jni/bar\" \"-I{ndkPath}/samples/module-exports/jni/foo\" \"-I{ndkPath}/samples/module-exports/jni\" \"-DANDROID\" \"-DFOO\u003d1\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-21/arch-x86_64/usr/include\""
         }
       ],
       "output": {
@@ -92,7 +92,7 @@
           "src": {
             "path": "{ndkPath}/samples/module-exports/jni/foo/foo.c"
           },
-          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector\" \"-no-canonical-prefixes\" \"-march\u003darmv5te\" \"-mtune\u003dxscale\" \"-msoft-float\" \"-mthumb\" \"-Os\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fno-strict-aliasing\" \"-finline-limit\u003d64\" \"-DANDROID\" \"-DFOO\u003d2\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector\" \"-no-canonical-prefixes\" \"-march\u003darmv5te\" \"-mtune\u003dxscale\" \"-msoft-float\" \"-mthumb\" \"-Os\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fno-strict-aliasing\" \"-finline-limit\u003d64\" \"-I{ndkPath}/samples/module-exports/jni\" \"-DANDROID\" \"-DFOO\u003d2\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-3/arch-arm/usr/include\""
         }
       ],
       "output": {
@@ -108,19 +108,19 @@
           "src": {
             "path": "{ndkPath}/samples/module-exports/jni/bar/bar.c"
           },
-          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-fno-strict-aliasing\" \"-finline-functions\" \"-ffunction-sections\" \"-funwind-tables\" \"-fmessage-length\u003d0\" \"-fno-inline-functions-called-once\" \"-fgcse-after-reload\" \"-frerun-cse-after-loop\" \"-frename-registers\" \"-no-canonical-prefixes\" \"-O0\" \"-g\" \"-fno-omit-frame-pointer\" \"-DANDROID\" \"-DFOO\u003d1\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-fno-strict-aliasing\" \"-finline-functions\" \"-ffunction-sections\" \"-funwind-tables\" \"-fmessage-length\u003d0\" \"-fno-inline-functions-called-once\" \"-fgcse-after-reload\" \"-frerun-cse-after-loop\" \"-frename-registers\" \"-no-canonical-prefixes\" \"-O0\" \"-g\" \"-fno-omit-frame-pointer\" \"-I{ndkPath}/samples/module-exports/jni/foo\" \"-I{ndkPath}/samples/module-exports/jni\" \"-DANDROID\" \"-DFOO\u003d1\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-9/arch-mips/usr/include\""
         },
         {
           "src": {
             "path": "{ndkPath}/samples/module-exports/jni/foo/foo.c"
           },
-          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-fno-strict-aliasing\" \"-finline-functions\" \"-ffunction-sections\" \"-funwind-tables\" \"-fmessage-length\u003d0\" \"-fno-inline-functions-called-once\" \"-fgcse-after-reload\" \"-frerun-cse-after-loop\" \"-frename-registers\" \"-no-canonical-prefixes\" \"-O0\" \"-g\" \"-fno-omit-frame-pointer\" \"-DANDROID\" \"-DFOO\u003d2\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-fno-strict-aliasing\" \"-finline-functions\" \"-ffunction-sections\" \"-funwind-tables\" \"-fmessage-length\u003d0\" \"-fno-inline-functions-called-once\" \"-fgcse-after-reload\" \"-frerun-cse-after-loop\" \"-frename-registers\" \"-no-canonical-prefixes\" \"-O0\" \"-g\" \"-fno-omit-frame-pointer\" \"-I{ndkPath}/samples/module-exports/jni\" \"-DANDROID\" \"-DFOO\u003d2\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-9/arch-mips/usr/include\""
         },
         {
           "src": {
             "path": "{ndkPath}/samples/module-exports/jni/zoo/zoo.c"
           },
-          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-fno-strict-aliasing\" \"-finline-functions\" \"-ffunction-sections\" \"-funwind-tables\" \"-fmessage-length\u003d0\" \"-fno-inline-functions-called-once\" \"-fgcse-after-reload\" \"-frerun-cse-after-loop\" \"-frename-registers\" \"-no-canonical-prefixes\" \"-O0\" \"-g\" \"-fno-omit-frame-pointer\" \"-DANDROID\" \"-DFOO\u003d1\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-fno-strict-aliasing\" \"-finline-functions\" \"-ffunction-sections\" \"-funwind-tables\" \"-fmessage-length\u003d0\" \"-fno-inline-functions-called-once\" \"-fgcse-after-reload\" \"-frerun-cse-after-loop\" \"-frename-registers\" \"-no-canonical-prefixes\" \"-O0\" \"-g\" \"-fno-omit-frame-pointer\" \"-I{ndkPath}/samples/module-exports/jni/bar\" \"-I{ndkPath}/samples/module-exports/jni/foo\" \"-I{ndkPath}/samples/module-exports/jni\" \"-DANDROID\" \"-DFOO\u003d1\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-9/arch-mips/usr/include\""
         }
       ],
       "output": {
@@ -136,13 +136,13 @@
           "src": {
             "path": "{ndkPath}/samples/module-exports/jni/bar/bar.c"
           },
-          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-fno-strict-aliasing\" \"-finline-functions\" \"-ffunction-sections\" \"-funwind-tables\" \"-fmessage-length\u003d0\" \"-fno-inline-functions-called-once\" \"-fgcse-after-reload\" \"-frerun-cse-after-loop\" \"-frename-registers\" \"-no-canonical-prefixes\" \"-O0\" \"-g\" \"-fno-omit-frame-pointer\" \"-DANDROID\" \"-DFOO\u003d1\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-fno-strict-aliasing\" \"-finline-functions\" \"-ffunction-sections\" \"-funwind-tables\" \"-fmessage-length\u003d0\" \"-fno-inline-functions-called-once\" \"-fgcse-after-reload\" \"-frerun-cse-after-loop\" \"-frename-registers\" \"-no-canonical-prefixes\" \"-O0\" \"-g\" \"-fno-omit-frame-pointer\" \"-I{ndkPath}/samples/module-exports/jni/foo\" \"-I{ndkPath}/samples/module-exports/jni\" \"-DANDROID\" \"-DFOO\u003d1\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-9/arch-mips/usr/include\""
         },
         {
           "src": {
             "path": "{ndkPath}/samples/module-exports/jni/foo/foo.c"
           },
-          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-fno-strict-aliasing\" \"-finline-functions\" \"-ffunction-sections\" \"-funwind-tables\" \"-fmessage-length\u003d0\" \"-fno-inline-functions-called-once\" \"-fgcse-after-reload\" \"-frerun-cse-after-loop\" \"-frename-registers\" \"-no-canonical-prefixes\" \"-O0\" \"-g\" \"-fno-omit-frame-pointer\" \"-DANDROID\" \"-DFOO\u003d2\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-fno-strict-aliasing\" \"-finline-functions\" \"-ffunction-sections\" \"-funwind-tables\" \"-fmessage-length\u003d0\" \"-fno-inline-functions-called-once\" \"-fgcse-after-reload\" \"-frerun-cse-after-loop\" \"-frename-registers\" \"-no-canonical-prefixes\" \"-O0\" \"-g\" \"-fno-omit-frame-pointer\" \"-I{ndkPath}/samples/module-exports/jni\" \"-DANDROID\" \"-DFOO\u003d2\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-9/arch-mips/usr/include\""
         }
       ],
       "output": {
@@ -158,13 +158,13 @@
           "src": {
             "path": "{ndkPath}/samples/module-exports/jni/bar/bar.c"
           },
-          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector\" \"-no-canonical-prefixes\" \"-march\u003darmv7-a\" \"-mfpu\u003dvfpv3-d16\" \"-mfloat-abi\u003dsoftfp\" \"-mthumb\" \"-Os\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fno-strict-aliasing\" \"-finline-limit\u003d64\" \"-DANDROID\" \"-DFOO\u003d1\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector\" \"-no-canonical-prefixes\" \"-march\u003darmv7-a\" \"-mfpu\u003dvfpv3-d16\" \"-mfloat-abi\u003dsoftfp\" \"-mthumb\" \"-Os\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fno-strict-aliasing\" \"-finline-limit\u003d64\" \"-I{ndkPath}/samples/module-exports/jni/foo\" \"-I{ndkPath}/samples/module-exports/jni\" \"-DANDROID\" \"-DFOO\u003d1\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-3/arch-arm/usr/include\""
         },
         {
           "src": {
             "path": "{ndkPath}/samples/module-exports/jni/foo/foo.c"
           },
-          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector\" \"-no-canonical-prefixes\" \"-march\u003darmv7-a\" \"-mfpu\u003dvfpv3-d16\" \"-mfloat-abi\u003dsoftfp\" \"-mthumb\" \"-Os\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fno-strict-aliasing\" \"-finline-limit\u003d64\" \"-DANDROID\" \"-DFOO\u003d2\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector\" \"-no-canonical-prefixes\" \"-march\u003darmv7-a\" \"-mfpu\u003dvfpv3-d16\" \"-mfloat-abi\u003dsoftfp\" \"-mthumb\" \"-Os\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fno-strict-aliasing\" \"-finline-limit\u003d64\" \"-I{ndkPath}/samples/module-exports/jni\" \"-DANDROID\" \"-DFOO\u003d2\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-3/arch-arm/usr/include\""
         }
       ],
       "output": {
@@ -180,7 +180,7 @@
           "src": {
             "path": "{ndkPath}/samples/module-exports/jni/foo/foo.c"
           },
-          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector\" \"-no-canonical-prefixes\" \"-march\u003darmv7-a\" \"-mfpu\u003dvfpv3-d16\" \"-mfloat-abi\u003dsoftfp\" \"-mthumb\" \"-Os\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fno-strict-aliasing\" \"-finline-limit\u003d64\" \"-O0\" \"-UNDEBUG\" \"-marm\" \"-fno-omit-frame-pointer\" \"-DANDROID\" \"-DFOO\u003d2\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector\" \"-no-canonical-prefixes\" \"-march\u003darmv7-a\" \"-mfpu\u003dvfpv3-d16\" \"-mfloat-abi\u003dsoftfp\" \"-mthumb\" \"-Os\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fno-strict-aliasing\" \"-finline-limit\u003d64\" \"-O0\" \"-UNDEBUG\" \"-marm\" \"-fno-omit-frame-pointer\" \"-I{ndkPath}/samples/module-exports/jni\" \"-DANDROID\" \"-DFOO\u003d2\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-3/arch-arm/usr/include\""
         }
       ],
       "output": {
@@ -196,7 +196,7 @@
           "src": {
             "path": "{ndkPath}/samples/module-exports/jni/foo/foo.c"
           },
-          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-O0\" \"-UNDEBUG\" \"-fno-omit-frame-pointer\" \"-fno-strict-aliasing\" \"-DANDROID\" \"-DFOO\u003d2\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-O0\" \"-UNDEBUG\" \"-fno-omit-frame-pointer\" \"-fno-strict-aliasing\" \"-I{ndkPath}/samples/module-exports/jni\" \"-DANDROID\" \"-DFOO\u003d2\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-21/arch-arm64/usr/include\""
         }
       ],
       "output": {
@@ -212,7 +212,7 @@
           "src": {
             "path": "{ndkPath}/samples/module-exports/jni/foo/foo.c"
           },
-          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector\" \"-no-canonical-prefixes\" \"-march\u003darmv7-a\" \"-mfpu\u003dvfpv3-d16\" \"-mfloat-abi\u003dsoftfp\" \"-mthumb\" \"-Os\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fno-strict-aliasing\" \"-finline-limit\u003d64\" \"-DANDROID\" \"-DFOO\u003d2\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector\" \"-no-canonical-prefixes\" \"-march\u003darmv7-a\" \"-mfpu\u003dvfpv3-d16\" \"-mfloat-abi\u003dsoftfp\" \"-mthumb\" \"-Os\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fno-strict-aliasing\" \"-finline-limit\u003d64\" \"-I{ndkPath}/samples/module-exports/jni\" \"-DANDROID\" \"-DFOO\u003d2\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-3/arch-arm/usr/include\""
         }
       ],
       "output": {
@@ -228,13 +228,13 @@
           "src": {
             "path": "{ndkPath}/samples/module-exports/jni/bar/bar.c"
           },
-          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-DANDROID\" \"-DFOO\u003d1\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-I{ndkPath}/samples/module-exports/jni/foo\" \"-I{ndkPath}/samples/module-exports/jni\" \"-DANDROID\" \"-DFOO\u003d1\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-21/arch-arm64/usr/include\""
         },
         {
           "src": {
             "path": "{ndkPath}/samples/module-exports/jni/foo/foo.c"
           },
-          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-DANDROID\" \"-DFOO\u003d2\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-I{ndkPath}/samples/module-exports/jni\" \"-DANDROID\" \"-DFOO\u003d2\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-21/arch-arm64/usr/include\""
         }
       ],
       "output": {
@@ -250,13 +250,13 @@
           "src": {
             "path": "{ndkPath}/samples/module-exports/jni/bar/bar.c"
           },
-          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-fno-strict-aliasing\" \"-finline-functions\" \"-ffunction-sections\" \"-funwind-tables\" \"-fmessage-length\u003d0\" \"-fno-inline-functions-called-once\" \"-fgcse-after-reload\" \"-frerun-cse-after-loop\" \"-frename-registers\" \"-no-canonical-prefixes\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-DANDROID\" \"-DFOO\u003d1\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-fno-strict-aliasing\" \"-finline-functions\" \"-ffunction-sections\" \"-funwind-tables\" \"-fmessage-length\u003d0\" \"-fno-inline-functions-called-once\" \"-fgcse-after-reload\" \"-frerun-cse-after-loop\" \"-frename-registers\" \"-no-canonical-prefixes\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-I{ndkPath}/samples/module-exports/jni/foo\" \"-I{ndkPath}/samples/module-exports/jni\" \"-DANDROID\" \"-DFOO\u003d1\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-9/arch-mips/usr/include\""
         },
         {
           "src": {
             "path": "{ndkPath}/samples/module-exports/jni/foo/foo.c"
           },
-          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-fno-strict-aliasing\" \"-finline-functions\" \"-ffunction-sections\" \"-funwind-tables\" \"-fmessage-length\u003d0\" \"-fno-inline-functions-called-once\" \"-fgcse-after-reload\" \"-frerun-cse-after-loop\" \"-frename-registers\" \"-no-canonical-prefixes\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-DANDROID\" \"-DFOO\u003d2\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-fno-strict-aliasing\" \"-finline-functions\" \"-ffunction-sections\" \"-funwind-tables\" \"-fmessage-length\u003d0\" \"-fno-inline-functions-called-once\" \"-fgcse-after-reload\" \"-frerun-cse-after-loop\" \"-frename-registers\" \"-no-canonical-prefixes\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-I{ndkPath}/samples/module-exports/jni\" \"-DANDROID\" \"-DFOO\u003d2\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-9/arch-mips/usr/include\""
         }
       ],
       "output": {
@@ -272,13 +272,13 @@
           "src": {
             "path": "{ndkPath}/samples/module-exports/jni/bar/bar.c"
           },
-          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-fno-strict-aliasing\" \"-finline-functions\" \"-ffunction-sections\" \"-funwind-tables\" \"-fmessage-length\u003d0\" \"-fno-inline-functions-called-once\" \"-fgcse-after-reload\" \"-frerun-cse-after-loop\" \"-frename-registers\" \"-no-canonical-prefixes\" \"-O0\" \"-g\" \"-fno-omit-frame-pointer\" \"-DANDROID\" \"-DFOO\u003d1\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-fno-strict-aliasing\" \"-finline-functions\" \"-ffunction-sections\" \"-funwind-tables\" \"-fmessage-length\u003d0\" \"-fno-inline-functions-called-once\" \"-fgcse-after-reload\" \"-frerun-cse-after-loop\" \"-frename-registers\" \"-no-canonical-prefixes\" \"-O0\" \"-g\" \"-fno-omit-frame-pointer\" \"-I{ndkPath}/samples/module-exports/jni/foo\" \"-I{ndkPath}/samples/module-exports/jni\" \"-DANDROID\" \"-DFOO\u003d1\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-21/arch-mips64/usr/include\""
         },
         {
           "src": {
             "path": "{ndkPath}/samples/module-exports/jni/foo/foo.c"
           },
-          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-fno-strict-aliasing\" \"-finline-functions\" \"-ffunction-sections\" \"-funwind-tables\" \"-fmessage-length\u003d0\" \"-fno-inline-functions-called-once\" \"-fgcse-after-reload\" \"-frerun-cse-after-loop\" \"-frename-registers\" \"-no-canonical-prefixes\" \"-O0\" \"-g\" \"-fno-omit-frame-pointer\" \"-DANDROID\" \"-DFOO\u003d2\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-fno-strict-aliasing\" \"-finline-functions\" \"-ffunction-sections\" \"-funwind-tables\" \"-fmessage-length\u003d0\" \"-fno-inline-functions-called-once\" \"-fgcse-after-reload\" \"-frerun-cse-after-loop\" \"-frename-registers\" \"-no-canonical-prefixes\" \"-O0\" \"-g\" \"-fno-omit-frame-pointer\" \"-I{ndkPath}/samples/module-exports/jni\" \"-DANDROID\" \"-DFOO\u003d2\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-21/arch-mips64/usr/include\""
         }
       ],
       "output": {
@@ -294,19 +294,19 @@
           "src": {
             "path": "{ndkPath}/samples/module-exports/jni/bar/bar.c"
           },
-          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-fno-strict-aliasing\" \"-finline-functions\" \"-ffunction-sections\" \"-funwind-tables\" \"-fmessage-length\u003d0\" \"-fno-inline-functions-called-once\" \"-fgcse-after-reload\" \"-frerun-cse-after-loop\" \"-frename-registers\" \"-no-canonical-prefixes\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-DANDROID\" \"-DFOO\u003d1\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-fno-strict-aliasing\" \"-finline-functions\" \"-ffunction-sections\" \"-funwind-tables\" \"-fmessage-length\u003d0\" \"-fno-inline-functions-called-once\" \"-fgcse-after-reload\" \"-frerun-cse-after-loop\" \"-frename-registers\" \"-no-canonical-prefixes\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-I{ndkPath}/samples/module-exports/jni/foo\" \"-I{ndkPath}/samples/module-exports/jni\" \"-DANDROID\" \"-DFOO\u003d1\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-21/arch-mips64/usr/include\""
         },
         {
           "src": {
             "path": "{ndkPath}/samples/module-exports/jni/foo/foo.c"
           },
-          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-fno-strict-aliasing\" \"-finline-functions\" \"-ffunction-sections\" \"-funwind-tables\" \"-fmessage-length\u003d0\" \"-fno-inline-functions-called-once\" \"-fgcse-after-reload\" \"-frerun-cse-after-loop\" \"-frename-registers\" \"-no-canonical-prefixes\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-DANDROID\" \"-DFOO\u003d2\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-fno-strict-aliasing\" \"-finline-functions\" \"-ffunction-sections\" \"-funwind-tables\" \"-fmessage-length\u003d0\" \"-fno-inline-functions-called-once\" \"-fgcse-after-reload\" \"-frerun-cse-after-loop\" \"-frename-registers\" \"-no-canonical-prefixes\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-I{ndkPath}/samples/module-exports/jni\" \"-DANDROID\" \"-DFOO\u003d2\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-21/arch-mips64/usr/include\""
         },
         {
           "src": {
             "path": "{ndkPath}/samples/module-exports/jni/zoo/zoo.c"
           },
-          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-fno-strict-aliasing\" \"-finline-functions\" \"-ffunction-sections\" \"-funwind-tables\" \"-fmessage-length\u003d0\" \"-fno-inline-functions-called-once\" \"-fgcse-after-reload\" \"-frerun-cse-after-loop\" \"-frename-registers\" \"-no-canonical-prefixes\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-DANDROID\" \"-DFOO\u003d1\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-fno-strict-aliasing\" \"-finline-functions\" \"-ffunction-sections\" \"-funwind-tables\" \"-fmessage-length\u003d0\" \"-fno-inline-functions-called-once\" \"-fgcse-after-reload\" \"-frerun-cse-after-loop\" \"-frename-registers\" \"-no-canonical-prefixes\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-I{ndkPath}/samples/module-exports/jni/bar\" \"-I{ndkPath}/samples/module-exports/jni/foo\" \"-I{ndkPath}/samples/module-exports/jni\" \"-DANDROID\" \"-DFOO\u003d1\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-21/arch-mips64/usr/include\""
         }
       ],
       "output": {
@@ -322,7 +322,7 @@
           "src": {
             "path": "{ndkPath}/samples/module-exports/jni/foo/foo.c"
           },
-          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector\" \"-no-canonical-prefixes\" \"-march\u003darmv5te\" \"-mtune\u003dxscale\" \"-msoft-float\" \"-mthumb\" \"-Os\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fno-strict-aliasing\" \"-finline-limit\u003d64\" \"-O0\" \"-UNDEBUG\" \"-marm\" \"-fno-omit-frame-pointer\" \"-DANDROID\" \"-DFOO\u003d2\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector\" \"-no-canonical-prefixes\" \"-march\u003darmv5te\" \"-mtune\u003dxscale\" \"-msoft-float\" \"-mthumb\" \"-Os\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fno-strict-aliasing\" \"-finline-limit\u003d64\" \"-O0\" \"-UNDEBUG\" \"-marm\" \"-fno-omit-frame-pointer\" \"-I{ndkPath}/samples/module-exports/jni\" \"-DANDROID\" \"-DFOO\u003d2\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-3/arch-arm/usr/include\""
         }
       ],
       "output": {
@@ -338,7 +338,7 @@
           "src": {
             "path": "{ndkPath}/samples/module-exports/jni/foo/foo.c"
           },
-          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-fno-strict-aliasing\" \"-finline-functions\" \"-ffunction-sections\" \"-funwind-tables\" \"-fmessage-length\u003d0\" \"-fno-inline-functions-called-once\" \"-fgcse-after-reload\" \"-frerun-cse-after-loop\" \"-frename-registers\" \"-no-canonical-prefixes\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-DANDROID\" \"-DFOO\u003d2\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-fno-strict-aliasing\" \"-finline-functions\" \"-ffunction-sections\" \"-funwind-tables\" \"-fmessage-length\u003d0\" \"-fno-inline-functions-called-once\" \"-fgcse-after-reload\" \"-frerun-cse-after-loop\" \"-frename-registers\" \"-no-canonical-prefixes\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-I{ndkPath}/samples/module-exports/jni\" \"-DANDROID\" \"-DFOO\u003d2\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-9/arch-mips/usr/include\""
         }
       ],
       "output": {
@@ -354,7 +354,7 @@
           "src": {
             "path": "{ndkPath}/samples/module-exports/jni/foo/foo.c"
           },
-          "flags": "\"-MMD\" \"-MP\" \"-ffunction-sections\" \"-funwind-tables\" \"-no-canonical-prefixes\" \"-fstack-protector\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-O0\" \"-UNDEBUG\" \"-fno-omit-frame-pointer\" \"-fno-strict-aliasing\" \"-DANDROID\" \"-DFOO\u003d2\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+          "flags": "\"-MMD\" \"-MP\" \"-ffunction-sections\" \"-funwind-tables\" \"-no-canonical-prefixes\" \"-fstack-protector\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-O0\" \"-UNDEBUG\" \"-fno-omit-frame-pointer\" \"-fno-strict-aliasing\" \"-I{ndkPath}/samples/module-exports/jni\" \"-DANDROID\" \"-DFOO\u003d2\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-9/arch-x86/usr/include\""
         }
       ],
       "output": {
@@ -370,7 +370,7 @@
           "src": {
             "path": "{ndkPath}/samples/module-exports/jni/foo/foo.c"
           },
-          "flags": "\"-MMD\" \"-MP\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-O0\" \"-UNDEBUG\" \"-fno-omit-frame-pointer\" \"-fno-strict-aliasing\" \"-DANDROID\" \"-DFOO\u003d2\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+          "flags": "\"-MMD\" \"-MP\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-O0\" \"-UNDEBUG\" \"-fno-omit-frame-pointer\" \"-fno-strict-aliasing\" \"-I{ndkPath}/samples/module-exports/jni\" \"-DANDROID\" \"-DFOO\u003d2\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-21/arch-x86_64/usr/include\""
         }
       ],
       "output": {
@@ -386,19 +386,19 @@
           "src": {
             "path": "{ndkPath}/samples/module-exports/jni/bar/bar.c"
           },
-          "flags": "\"-MMD\" \"-MP\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-O0\" \"-UNDEBUG\" \"-fno-omit-frame-pointer\" \"-fno-strict-aliasing\" \"-DANDROID\" \"-DFOO\u003d1\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+          "flags": "\"-MMD\" \"-MP\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-O0\" \"-UNDEBUG\" \"-fno-omit-frame-pointer\" \"-fno-strict-aliasing\" \"-I{ndkPath}/samples/module-exports/jni/foo\" \"-I{ndkPath}/samples/module-exports/jni\" \"-DANDROID\" \"-DFOO\u003d1\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-21/arch-x86_64/usr/include\""
         },
         {
           "src": {
             "path": "{ndkPath}/samples/module-exports/jni/foo/foo.c"
           },
-          "flags": "\"-MMD\" \"-MP\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-O0\" \"-UNDEBUG\" \"-fno-omit-frame-pointer\" \"-fno-strict-aliasing\" \"-DANDROID\" \"-DFOO\u003d2\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+          "flags": "\"-MMD\" \"-MP\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-O0\" \"-UNDEBUG\" \"-fno-omit-frame-pointer\" \"-fno-strict-aliasing\" \"-I{ndkPath}/samples/module-exports/jni\" \"-DANDROID\" \"-DFOO\u003d2\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-21/arch-x86_64/usr/include\""
         },
         {
           "src": {
             "path": "{ndkPath}/samples/module-exports/jni/zoo/zoo.c"
           },
-          "flags": "\"-MMD\" \"-MP\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-O0\" \"-UNDEBUG\" \"-fno-omit-frame-pointer\" \"-fno-strict-aliasing\" \"-DANDROID\" \"-DFOO\u003d1\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+          "flags": "\"-MMD\" \"-MP\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-O0\" \"-UNDEBUG\" \"-fno-omit-frame-pointer\" \"-fno-strict-aliasing\" \"-I{ndkPath}/samples/module-exports/jni/bar\" \"-I{ndkPath}/samples/module-exports/jni/foo\" \"-I{ndkPath}/samples/module-exports/jni\" \"-DANDROID\" \"-DFOO\u003d1\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-21/arch-x86_64/usr/include\""
         }
       ],
       "output": {
@@ -414,13 +414,13 @@
           "src": {
             "path": "{ndkPath}/samples/module-exports/jni/bar/bar.c"
           },
-          "flags": "\"-MMD\" \"-MP\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-O0\" \"-UNDEBUG\" \"-fno-omit-frame-pointer\" \"-fno-strict-aliasing\" \"-DANDROID\" \"-DFOO\u003d1\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+          "flags": "\"-MMD\" \"-MP\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-O0\" \"-UNDEBUG\" \"-fno-omit-frame-pointer\" \"-fno-strict-aliasing\" \"-I{ndkPath}/samples/module-exports/jni/foo\" \"-I{ndkPath}/samples/module-exports/jni\" \"-DANDROID\" \"-DFOO\u003d1\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-21/arch-x86_64/usr/include\""
         },
         {
           "src": {
             "path": "{ndkPath}/samples/module-exports/jni/foo/foo.c"
           },
-          "flags": "\"-MMD\" \"-MP\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-O0\" \"-UNDEBUG\" \"-fno-omit-frame-pointer\" \"-fno-strict-aliasing\" \"-DANDROID\" \"-DFOO\u003d2\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+          "flags": "\"-MMD\" \"-MP\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-O0\" \"-UNDEBUG\" \"-fno-omit-frame-pointer\" \"-fno-strict-aliasing\" \"-I{ndkPath}/samples/module-exports/jni\" \"-DANDROID\" \"-DFOO\u003d2\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-21/arch-x86_64/usr/include\""
         }
       ],
       "output": {
@@ -436,7 +436,7 @@
           "src": {
             "path": "{ndkPath}/samples/module-exports/jni/foo/foo.c"
           },
-          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-DANDROID\" \"-DFOO\u003d2\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-I{ndkPath}/samples/module-exports/jni\" \"-DANDROID\" \"-DFOO\u003d2\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-21/arch-arm64/usr/include\""
         }
       ],
       "output": {
@@ -452,13 +452,13 @@
           "src": {
             "path": "{ndkPath}/samples/module-exports/jni/bar/bar.c"
           },
-          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector\" \"-no-canonical-prefixes\" \"-march\u003darmv7-a\" \"-mfpu\u003dvfpv3-d16\" \"-mfloat-abi\u003dsoftfp\" \"-mthumb\" \"-Os\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fno-strict-aliasing\" \"-finline-limit\u003d64\" \"-O0\" \"-UNDEBUG\" \"-marm\" \"-fno-omit-frame-pointer\" \"-DANDROID\" \"-DFOO\u003d1\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector\" \"-no-canonical-prefixes\" \"-march\u003darmv7-a\" \"-mfpu\u003dvfpv3-d16\" \"-mfloat-abi\u003dsoftfp\" \"-mthumb\" \"-Os\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fno-strict-aliasing\" \"-finline-limit\u003d64\" \"-O0\" \"-UNDEBUG\" \"-marm\" \"-fno-omit-frame-pointer\" \"-I{ndkPath}/samples/module-exports/jni/foo\" \"-I{ndkPath}/samples/module-exports/jni\" \"-DANDROID\" \"-DFOO\u003d1\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-3/arch-arm/usr/include\""
         },
         {
           "src": {
             "path": "{ndkPath}/samples/module-exports/jni/foo/foo.c"
           },
-          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector\" \"-no-canonical-prefixes\" \"-march\u003darmv7-a\" \"-mfpu\u003dvfpv3-d16\" \"-mfloat-abi\u003dsoftfp\" \"-mthumb\" \"-Os\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fno-strict-aliasing\" \"-finline-limit\u003d64\" \"-O0\" \"-UNDEBUG\" \"-marm\" \"-fno-omit-frame-pointer\" \"-DANDROID\" \"-DFOO\u003d2\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector\" \"-no-canonical-prefixes\" \"-march\u003darmv7-a\" \"-mfpu\u003dvfpv3-d16\" \"-mfloat-abi\u003dsoftfp\" \"-mthumb\" \"-Os\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fno-strict-aliasing\" \"-finline-limit\u003d64\" \"-O0\" \"-UNDEBUG\" \"-marm\" \"-fno-omit-frame-pointer\" \"-I{ndkPath}/samples/module-exports/jni\" \"-DANDROID\" \"-DFOO\u003d2\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-3/arch-arm/usr/include\""
         }
       ],
       "output": {
@@ -474,19 +474,19 @@
           "src": {
             "path": "{ndkPath}/samples/module-exports/jni/bar/bar.c"
           },
-          "flags": "\"-MMD\" \"-MP\" \"-ffunction-sections\" \"-funwind-tables\" \"-no-canonical-prefixes\" \"-fstack-protector\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-O0\" \"-UNDEBUG\" \"-fno-omit-frame-pointer\" \"-fno-strict-aliasing\" \"-DANDROID\" \"-DFOO\u003d1\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+          "flags": "\"-MMD\" \"-MP\" \"-ffunction-sections\" \"-funwind-tables\" \"-no-canonical-prefixes\" \"-fstack-protector\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-O0\" \"-UNDEBUG\" \"-fno-omit-frame-pointer\" \"-fno-strict-aliasing\" \"-I{ndkPath}/samples/module-exports/jni/foo\" \"-I{ndkPath}/samples/module-exports/jni\" \"-DANDROID\" \"-DFOO\u003d1\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-9/arch-x86/usr/include\""
         },
         {
           "src": {
             "path": "{ndkPath}/samples/module-exports/jni/foo/foo.c"
           },
-          "flags": "\"-MMD\" \"-MP\" \"-ffunction-sections\" \"-funwind-tables\" \"-no-canonical-prefixes\" \"-fstack-protector\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-O0\" \"-UNDEBUG\" \"-fno-omit-frame-pointer\" \"-fno-strict-aliasing\" \"-DANDROID\" \"-DFOO\u003d2\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+          "flags": "\"-MMD\" \"-MP\" \"-ffunction-sections\" \"-funwind-tables\" \"-no-canonical-prefixes\" \"-fstack-protector\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-O0\" \"-UNDEBUG\" \"-fno-omit-frame-pointer\" \"-fno-strict-aliasing\" \"-I{ndkPath}/samples/module-exports/jni\" \"-DANDROID\" \"-DFOO\u003d2\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-9/arch-x86/usr/include\""
         },
         {
           "src": {
             "path": "{ndkPath}/samples/module-exports/jni/zoo/zoo.c"
           },
-          "flags": "\"-MMD\" \"-MP\" \"-ffunction-sections\" \"-funwind-tables\" \"-no-canonical-prefixes\" \"-fstack-protector\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-O0\" \"-UNDEBUG\" \"-fno-omit-frame-pointer\" \"-fno-strict-aliasing\" \"-DANDROID\" \"-DFOO\u003d1\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+          "flags": "\"-MMD\" \"-MP\" \"-ffunction-sections\" \"-funwind-tables\" \"-no-canonical-prefixes\" \"-fstack-protector\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-O0\" \"-UNDEBUG\" \"-fno-omit-frame-pointer\" \"-fno-strict-aliasing\" \"-I{ndkPath}/samples/module-exports/jni/bar\" \"-I{ndkPath}/samples/module-exports/jni/foo\" \"-I{ndkPath}/samples/module-exports/jni\" \"-DANDROID\" \"-DFOO\u003d1\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-9/arch-x86/usr/include\""
         }
       ],
       "output": {
@@ -502,19 +502,19 @@
           "src": {
             "path": "{ndkPath}/samples/module-exports/jni/bar/bar.c"
           },
-          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-DANDROID\" \"-DFOO\u003d1\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-I{ndkPath}/samples/module-exports/jni/foo\" \"-I{ndkPath}/samples/module-exports/jni\" \"-DANDROID\" \"-DFOO\u003d1\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-21/arch-arm64/usr/include\""
         },
         {
           "src": {
             "path": "{ndkPath}/samples/module-exports/jni/foo/foo.c"
           },
-          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-DANDROID\" \"-DFOO\u003d2\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-I{ndkPath}/samples/module-exports/jni\" \"-DANDROID\" \"-DFOO\u003d2\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-21/arch-arm64/usr/include\""
         },
         {
           "src": {
             "path": "{ndkPath}/samples/module-exports/jni/zoo/zoo.c"
           },
-          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-DANDROID\" \"-DFOO\u003d1\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-I{ndkPath}/samples/module-exports/jni/bar\" \"-I{ndkPath}/samples/module-exports/jni/foo\" \"-I{ndkPath}/samples/module-exports/jni\" \"-DANDROID\" \"-DFOO\u003d1\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-21/arch-arm64/usr/include\""
         }
       ],
       "output": {
@@ -530,19 +530,19 @@
           "src": {
             "path": "{ndkPath}/samples/module-exports/jni/bar/bar.c"
           },
-          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-O0\" \"-UNDEBUG\" \"-fno-omit-frame-pointer\" \"-fno-strict-aliasing\" \"-DANDROID\" \"-DFOO\u003d1\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-O0\" \"-UNDEBUG\" \"-fno-omit-frame-pointer\" \"-fno-strict-aliasing\" \"-I{ndkPath}/samples/module-exports/jni/foo\" \"-I{ndkPath}/samples/module-exports/jni\" \"-DANDROID\" \"-DFOO\u003d1\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-21/arch-arm64/usr/include\""
         },
         {
           "src": {
             "path": "{ndkPath}/samples/module-exports/jni/foo/foo.c"
           },
-          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-O0\" \"-UNDEBUG\" \"-fno-omit-frame-pointer\" \"-fno-strict-aliasing\" \"-DANDROID\" \"-DFOO\u003d2\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-O0\" \"-UNDEBUG\" \"-fno-omit-frame-pointer\" \"-fno-strict-aliasing\" \"-I{ndkPath}/samples/module-exports/jni\" \"-DANDROID\" \"-DFOO\u003d2\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-21/arch-arm64/usr/include\""
         },
         {
           "src": {
             "path": "{ndkPath}/samples/module-exports/jni/zoo/zoo.c"
           },
-          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-O0\" \"-UNDEBUG\" \"-fno-omit-frame-pointer\" \"-fno-strict-aliasing\" \"-DANDROID\" \"-DFOO\u003d1\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-O0\" \"-UNDEBUG\" \"-fno-omit-frame-pointer\" \"-fno-strict-aliasing\" \"-I{ndkPath}/samples/module-exports/jni/bar\" \"-I{ndkPath}/samples/module-exports/jni/foo\" \"-I{ndkPath}/samples/module-exports/jni\" \"-DANDROID\" \"-DFOO\u003d1\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-21/arch-arm64/usr/include\""
         }
       ],
       "output": {
@@ -558,13 +558,13 @@
           "src": {
             "path": "{ndkPath}/samples/module-exports/jni/bar/bar.c"
           },
-          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector\" \"-no-canonical-prefixes\" \"-march\u003darmv5te\" \"-mtune\u003dxscale\" \"-msoft-float\" \"-mthumb\" \"-Os\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fno-strict-aliasing\" \"-finline-limit\u003d64\" \"-DANDROID\" \"-DFOO\u003d1\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector\" \"-no-canonical-prefixes\" \"-march\u003darmv5te\" \"-mtune\u003dxscale\" \"-msoft-float\" \"-mthumb\" \"-Os\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fno-strict-aliasing\" \"-finline-limit\u003d64\" \"-I{ndkPath}/samples/module-exports/jni/foo\" \"-I{ndkPath}/samples/module-exports/jni\" \"-DANDROID\" \"-DFOO\u003d1\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-3/arch-arm/usr/include\""
         },
         {
           "src": {
             "path": "{ndkPath}/samples/module-exports/jni/foo/foo.c"
           },
-          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector\" \"-no-canonical-prefixes\" \"-march\u003darmv5te\" \"-mtune\u003dxscale\" \"-msoft-float\" \"-mthumb\" \"-Os\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fno-strict-aliasing\" \"-finline-limit\u003d64\" \"-DANDROID\" \"-DFOO\u003d2\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector\" \"-no-canonical-prefixes\" \"-march\u003darmv5te\" \"-mtune\u003dxscale\" \"-msoft-float\" \"-mthumb\" \"-Os\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fno-strict-aliasing\" \"-finline-limit\u003d64\" \"-I{ndkPath}/samples/module-exports/jni\" \"-DANDROID\" \"-DFOO\u003d2\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-3/arch-arm/usr/include\""
         }
       ],
       "output": {
@@ -580,19 +580,19 @@
           "src": {
             "path": "{ndkPath}/samples/module-exports/jni/bar/bar.c"
           },
-          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-fno-strict-aliasing\" \"-finline-functions\" \"-ffunction-sections\" \"-funwind-tables\" \"-fmessage-length\u003d0\" \"-fno-inline-functions-called-once\" \"-fgcse-after-reload\" \"-frerun-cse-after-loop\" \"-frename-registers\" \"-no-canonical-prefixes\" \"-O0\" \"-g\" \"-fno-omit-frame-pointer\" \"-DANDROID\" \"-DFOO\u003d1\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-fno-strict-aliasing\" \"-finline-functions\" \"-ffunction-sections\" \"-funwind-tables\" \"-fmessage-length\u003d0\" \"-fno-inline-functions-called-once\" \"-fgcse-after-reload\" \"-frerun-cse-after-loop\" \"-frename-registers\" \"-no-canonical-prefixes\" \"-O0\" \"-g\" \"-fno-omit-frame-pointer\" \"-I{ndkPath}/samples/module-exports/jni/foo\" \"-I{ndkPath}/samples/module-exports/jni\" \"-DANDROID\" \"-DFOO\u003d1\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-21/arch-mips64/usr/include\""
         },
         {
           "src": {
             "path": "{ndkPath}/samples/module-exports/jni/foo/foo.c"
           },
-          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-fno-strict-aliasing\" \"-finline-functions\" \"-ffunction-sections\" \"-funwind-tables\" \"-fmessage-length\u003d0\" \"-fno-inline-functions-called-once\" \"-fgcse-after-reload\" \"-frerun-cse-after-loop\" \"-frename-registers\" \"-no-canonical-prefixes\" \"-O0\" \"-g\" \"-fno-omit-frame-pointer\" \"-DANDROID\" \"-DFOO\u003d2\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-fno-strict-aliasing\" \"-finline-functions\" \"-ffunction-sections\" \"-funwind-tables\" \"-fmessage-length\u003d0\" \"-fno-inline-functions-called-once\" \"-fgcse-after-reload\" \"-frerun-cse-after-loop\" \"-frename-registers\" \"-no-canonical-prefixes\" \"-O0\" \"-g\" \"-fno-omit-frame-pointer\" \"-I{ndkPath}/samples/module-exports/jni\" \"-DANDROID\" \"-DFOO\u003d2\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-21/arch-mips64/usr/include\""
         },
         {
           "src": {
             "path": "{ndkPath}/samples/module-exports/jni/zoo/zoo.c"
           },
-          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-fno-strict-aliasing\" \"-finline-functions\" \"-ffunction-sections\" \"-funwind-tables\" \"-fmessage-length\u003d0\" \"-fno-inline-functions-called-once\" \"-fgcse-after-reload\" \"-frerun-cse-after-loop\" \"-frename-registers\" \"-no-canonical-prefixes\" \"-O0\" \"-g\" \"-fno-omit-frame-pointer\" \"-DANDROID\" \"-DFOO\u003d1\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-fno-strict-aliasing\" \"-finline-functions\" \"-ffunction-sections\" \"-funwind-tables\" \"-fmessage-length\u003d0\" \"-fno-inline-functions-called-once\" \"-fgcse-after-reload\" \"-frerun-cse-after-loop\" \"-frename-registers\" \"-no-canonical-prefixes\" \"-O0\" \"-g\" \"-fno-omit-frame-pointer\" \"-I{ndkPath}/samples/module-exports/jni/bar\" \"-I{ndkPath}/samples/module-exports/jni/foo\" \"-I{ndkPath}/samples/module-exports/jni\" \"-DANDROID\" \"-DFOO\u003d1\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-21/arch-mips64/usr/include\""
         }
       ],
       "output": {
@@ -608,7 +608,7 @@
           "src": {
             "path": "{ndkPath}/samples/module-exports/jni/foo/foo.c"
           },
-          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-fno-strict-aliasing\" \"-finline-functions\" \"-ffunction-sections\" \"-funwind-tables\" \"-fmessage-length\u003d0\" \"-fno-inline-functions-called-once\" \"-fgcse-after-reload\" \"-frerun-cse-after-loop\" \"-frename-registers\" \"-no-canonical-prefixes\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-DANDROID\" \"-DFOO\u003d2\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-fno-strict-aliasing\" \"-finline-functions\" \"-ffunction-sections\" \"-funwind-tables\" \"-fmessage-length\u003d0\" \"-fno-inline-functions-called-once\" \"-fgcse-after-reload\" \"-frerun-cse-after-loop\" \"-frename-registers\" \"-no-canonical-prefixes\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-I{ndkPath}/samples/module-exports/jni\" \"-DANDROID\" \"-DFOO\u003d2\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-21/arch-mips64/usr/include\""
         }
       ],
       "output": {
@@ -624,19 +624,19 @@
           "src": {
             "path": "{ndkPath}/samples/module-exports/jni/bar/bar.c"
           },
-          "flags": "\"-MMD\" \"-MP\" \"-ffunction-sections\" \"-funwind-tables\" \"-no-canonical-prefixes\" \"-fstack-protector\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-DANDROID\" \"-DFOO\u003d1\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+          "flags": "\"-MMD\" \"-MP\" \"-ffunction-sections\" \"-funwind-tables\" \"-no-canonical-prefixes\" \"-fstack-protector\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-I{ndkPath}/samples/module-exports/jni/foo\" \"-I{ndkPath}/samples/module-exports/jni\" \"-DANDROID\" \"-DFOO\u003d1\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-9/arch-x86/usr/include\""
         },
         {
           "src": {
             "path": "{ndkPath}/samples/module-exports/jni/foo/foo.c"
           },
-          "flags": "\"-MMD\" \"-MP\" \"-ffunction-sections\" \"-funwind-tables\" \"-no-canonical-prefixes\" \"-fstack-protector\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-DANDROID\" \"-DFOO\u003d2\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+          "flags": "\"-MMD\" \"-MP\" \"-ffunction-sections\" \"-funwind-tables\" \"-no-canonical-prefixes\" \"-fstack-protector\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-I{ndkPath}/samples/module-exports/jni\" \"-DANDROID\" \"-DFOO\u003d2\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-9/arch-x86/usr/include\""
         },
         {
           "src": {
             "path": "{ndkPath}/samples/module-exports/jni/zoo/zoo.c"
           },
-          "flags": "\"-MMD\" \"-MP\" \"-ffunction-sections\" \"-funwind-tables\" \"-no-canonical-prefixes\" \"-fstack-protector\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-DANDROID\" \"-DFOO\u003d1\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+          "flags": "\"-MMD\" \"-MP\" \"-ffunction-sections\" \"-funwind-tables\" \"-no-canonical-prefixes\" \"-fstack-protector\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-I{ndkPath}/samples/module-exports/jni/bar\" \"-I{ndkPath}/samples/module-exports/jni/foo\" \"-I{ndkPath}/samples/module-exports/jni\" \"-DANDROID\" \"-DFOO\u003d1\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-9/arch-x86/usr/include\""
         }
       ],
       "output": {
@@ -652,19 +652,19 @@
           "src": {
             "path": "{ndkPath}/samples/module-exports/jni/bar/bar.c"
           },
-          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-fno-strict-aliasing\" \"-finline-functions\" \"-ffunction-sections\" \"-funwind-tables\" \"-fmessage-length\u003d0\" \"-fno-inline-functions-called-once\" \"-fgcse-after-reload\" \"-frerun-cse-after-loop\" \"-frename-registers\" \"-no-canonical-prefixes\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-DANDROID\" \"-DFOO\u003d1\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-fno-strict-aliasing\" \"-finline-functions\" \"-ffunction-sections\" \"-funwind-tables\" \"-fmessage-length\u003d0\" \"-fno-inline-functions-called-once\" \"-fgcse-after-reload\" \"-frerun-cse-after-loop\" \"-frename-registers\" \"-no-canonical-prefixes\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-I{ndkPath}/samples/module-exports/jni/foo\" \"-I{ndkPath}/samples/module-exports/jni\" \"-DANDROID\" \"-DFOO\u003d1\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-9/arch-mips/usr/include\""
         },
         {
           "src": {
             "path": "{ndkPath}/samples/module-exports/jni/foo/foo.c"
           },
-          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-fno-strict-aliasing\" \"-finline-functions\" \"-ffunction-sections\" \"-funwind-tables\" \"-fmessage-length\u003d0\" \"-fno-inline-functions-called-once\" \"-fgcse-after-reload\" \"-frerun-cse-after-loop\" \"-frename-registers\" \"-no-canonical-prefixes\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-DANDROID\" \"-DFOO\u003d2\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-fno-strict-aliasing\" \"-finline-functions\" \"-ffunction-sections\" \"-funwind-tables\" \"-fmessage-length\u003d0\" \"-fno-inline-functions-called-once\" \"-fgcse-after-reload\" \"-frerun-cse-after-loop\" \"-frename-registers\" \"-no-canonical-prefixes\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-I{ndkPath}/samples/module-exports/jni\" \"-DANDROID\" \"-DFOO\u003d2\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-9/arch-mips/usr/include\""
         },
         {
           "src": {
             "path": "{ndkPath}/samples/module-exports/jni/zoo/zoo.c"
           },
-          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-fno-strict-aliasing\" \"-finline-functions\" \"-ffunction-sections\" \"-funwind-tables\" \"-fmessage-length\u003d0\" \"-fno-inline-functions-called-once\" \"-fgcse-after-reload\" \"-frerun-cse-after-loop\" \"-frename-registers\" \"-no-canonical-prefixes\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-DANDROID\" \"-DFOO\u003d1\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-fno-strict-aliasing\" \"-finline-functions\" \"-ffunction-sections\" \"-funwind-tables\" \"-fmessage-length\u003d0\" \"-fno-inline-functions-called-once\" \"-fgcse-after-reload\" \"-frerun-cse-after-loop\" \"-frename-registers\" \"-no-canonical-prefixes\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-I{ndkPath}/samples/module-exports/jni/bar\" \"-I{ndkPath}/samples/module-exports/jni/foo\" \"-I{ndkPath}/samples/module-exports/jni\" \"-DANDROID\" \"-DFOO\u003d1\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-9/arch-mips/usr/include\""
         }
       ],
       "output": {
@@ -680,19 +680,19 @@
           "src": {
             "path": "{ndkPath}/samples/module-exports/jni/bar/bar.c"
           },
-          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector\" \"-no-canonical-prefixes\" \"-march\u003darmv7-a\" \"-mfpu\u003dvfpv3-d16\" \"-mfloat-abi\u003dsoftfp\" \"-mthumb\" \"-Os\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fno-strict-aliasing\" \"-finline-limit\u003d64\" \"-DANDROID\" \"-DFOO\u003d1\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector\" \"-no-canonical-prefixes\" \"-march\u003darmv7-a\" \"-mfpu\u003dvfpv3-d16\" \"-mfloat-abi\u003dsoftfp\" \"-mthumb\" \"-Os\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fno-strict-aliasing\" \"-finline-limit\u003d64\" \"-I{ndkPath}/samples/module-exports/jni/foo\" \"-I{ndkPath}/samples/module-exports/jni\" \"-DANDROID\" \"-DFOO\u003d1\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-3/arch-arm/usr/include\""
         },
         {
           "src": {
             "path": "{ndkPath}/samples/module-exports/jni/foo/foo.c"
           },
-          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector\" \"-no-canonical-prefixes\" \"-march\u003darmv7-a\" \"-mfpu\u003dvfpv3-d16\" \"-mfloat-abi\u003dsoftfp\" \"-mthumb\" \"-Os\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fno-strict-aliasing\" \"-finline-limit\u003d64\" \"-DANDROID\" \"-DFOO\u003d2\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector\" \"-no-canonical-prefixes\" \"-march\u003darmv7-a\" \"-mfpu\u003dvfpv3-d16\" \"-mfloat-abi\u003dsoftfp\" \"-mthumb\" \"-Os\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fno-strict-aliasing\" \"-finline-limit\u003d64\" \"-I{ndkPath}/samples/module-exports/jni\" \"-DANDROID\" \"-DFOO\u003d2\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-3/arch-arm/usr/include\""
         },
         {
           "src": {
             "path": "{ndkPath}/samples/module-exports/jni/zoo/zoo.c"
           },
-          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector\" \"-no-canonical-prefixes\" \"-march\u003darmv7-a\" \"-mfpu\u003dvfpv3-d16\" \"-mfloat-abi\u003dsoftfp\" \"-mthumb\" \"-Os\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fno-strict-aliasing\" \"-finline-limit\u003d64\" \"-DANDROID\" \"-DFOO\u003d1\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector\" \"-no-canonical-prefixes\" \"-march\u003darmv7-a\" \"-mfpu\u003dvfpv3-d16\" \"-mfloat-abi\u003dsoftfp\" \"-mthumb\" \"-Os\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fno-strict-aliasing\" \"-finline-limit\u003d64\" \"-I{ndkPath}/samples/module-exports/jni/bar\" \"-I{ndkPath}/samples/module-exports/jni/foo\" \"-I{ndkPath}/samples/module-exports/jni\" \"-DANDROID\" \"-DFOO\u003d1\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-3/arch-arm/usr/include\""
         }
       ],
       "output": {
@@ -708,7 +708,7 @@
           "src": {
             "path": "{ndkPath}/samples/module-exports/jni/foo/foo.c"
           },
-          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-fno-strict-aliasing\" \"-finline-functions\" \"-ffunction-sections\" \"-funwind-tables\" \"-fmessage-length\u003d0\" \"-fno-inline-functions-called-once\" \"-fgcse-after-reload\" \"-frerun-cse-after-loop\" \"-frename-registers\" \"-no-canonical-prefixes\" \"-O0\" \"-g\" \"-fno-omit-frame-pointer\" \"-DANDROID\" \"-DFOO\u003d2\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-fno-strict-aliasing\" \"-finline-functions\" \"-ffunction-sections\" \"-funwind-tables\" \"-fmessage-length\u003d0\" \"-fno-inline-functions-called-once\" \"-fgcse-after-reload\" \"-frerun-cse-after-loop\" \"-frename-registers\" \"-no-canonical-prefixes\" \"-O0\" \"-g\" \"-fno-omit-frame-pointer\" \"-I{ndkPath}/samples/module-exports/jni\" \"-DANDROID\" \"-DFOO\u003d2\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-9/arch-mips/usr/include\""
         }
       ],
       "output": {
@@ -724,7 +724,7 @@
           "src": {
             "path": "{ndkPath}/samples/module-exports/jni/foo/foo.c"
           },
-          "flags": "\"-MMD\" \"-MP\" \"-ffunction-sections\" \"-funwind-tables\" \"-no-canonical-prefixes\" \"-fstack-protector\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-DANDROID\" \"-DFOO\u003d2\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+          "flags": "\"-MMD\" \"-MP\" \"-ffunction-sections\" \"-funwind-tables\" \"-no-canonical-prefixes\" \"-fstack-protector\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-I{ndkPath}/samples/module-exports/jni\" \"-DANDROID\" \"-DFOO\u003d2\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-9/arch-x86/usr/include\""
         }
       ],
       "output": {
@@ -740,19 +740,19 @@
           "src": {
             "path": "{ndkPath}/samples/module-exports/jni/bar/bar.c"
           },
-          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector\" \"-no-canonical-prefixes\" \"-march\u003darmv5te\" \"-mtune\u003dxscale\" \"-msoft-float\" \"-mthumb\" \"-Os\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fno-strict-aliasing\" \"-finline-limit\u003d64\" \"-DANDROID\" \"-DFOO\u003d1\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector\" \"-no-canonical-prefixes\" \"-march\u003darmv5te\" \"-mtune\u003dxscale\" \"-msoft-float\" \"-mthumb\" \"-Os\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fno-strict-aliasing\" \"-finline-limit\u003d64\" \"-I{ndkPath}/samples/module-exports/jni/foo\" \"-I{ndkPath}/samples/module-exports/jni\" \"-DANDROID\" \"-DFOO\u003d1\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-3/arch-arm/usr/include\""
         },
         {
           "src": {
             "path": "{ndkPath}/samples/module-exports/jni/foo/foo.c"
           },
-          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector\" \"-no-canonical-prefixes\" \"-march\u003darmv5te\" \"-mtune\u003dxscale\" \"-msoft-float\" \"-mthumb\" \"-Os\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fno-strict-aliasing\" \"-finline-limit\u003d64\" \"-DANDROID\" \"-DFOO\u003d2\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector\" \"-no-canonical-prefixes\" \"-march\u003darmv5te\" \"-mtune\u003dxscale\" \"-msoft-float\" \"-mthumb\" \"-Os\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fno-strict-aliasing\" \"-finline-limit\u003d64\" \"-I{ndkPath}/samples/module-exports/jni\" \"-DANDROID\" \"-DFOO\u003d2\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-3/arch-arm/usr/include\""
         },
         {
           "src": {
             "path": "{ndkPath}/samples/module-exports/jni/zoo/zoo.c"
           },
-          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector\" \"-no-canonical-prefixes\" \"-march\u003darmv5te\" \"-mtune\u003dxscale\" \"-msoft-float\" \"-mthumb\" \"-Os\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fno-strict-aliasing\" \"-finline-limit\u003d64\" \"-DANDROID\" \"-DFOO\u003d1\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector\" \"-no-canonical-prefixes\" \"-march\u003darmv5te\" \"-mtune\u003dxscale\" \"-msoft-float\" \"-mthumb\" \"-Os\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fno-strict-aliasing\" \"-finline-limit\u003d64\" \"-I{ndkPath}/samples/module-exports/jni/bar\" \"-I{ndkPath}/samples/module-exports/jni/foo\" \"-I{ndkPath}/samples/module-exports/jni\" \"-DANDROID\" \"-DFOO\u003d1\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-3/arch-arm/usr/include\""
         }
       ],
       "output": {
@@ -768,19 +768,19 @@
           "src": {
             "path": "{ndkPath}/samples/module-exports/jni/bar/bar.c"
           },
-          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector\" \"-no-canonical-prefixes\" \"-march\u003darmv7-a\" \"-mfpu\u003dvfpv3-d16\" \"-mfloat-abi\u003dsoftfp\" \"-mthumb\" \"-Os\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fno-strict-aliasing\" \"-finline-limit\u003d64\" \"-O0\" \"-UNDEBUG\" \"-marm\" \"-fno-omit-frame-pointer\" \"-DANDROID\" \"-DFOO\u003d1\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector\" \"-no-canonical-prefixes\" \"-march\u003darmv7-a\" \"-mfpu\u003dvfpv3-d16\" \"-mfloat-abi\u003dsoftfp\" \"-mthumb\" \"-Os\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fno-strict-aliasing\" \"-finline-limit\u003d64\" \"-O0\" \"-UNDEBUG\" \"-marm\" \"-fno-omit-frame-pointer\" \"-I{ndkPath}/samples/module-exports/jni/foo\" \"-I{ndkPath}/samples/module-exports/jni\" \"-DANDROID\" \"-DFOO\u003d1\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-3/arch-arm/usr/include\""
         },
         {
           "src": {
             "path": "{ndkPath}/samples/module-exports/jni/foo/foo.c"
           },
-          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector\" \"-no-canonical-prefixes\" \"-march\u003darmv7-a\" \"-mfpu\u003dvfpv3-d16\" \"-mfloat-abi\u003dsoftfp\" \"-mthumb\" \"-Os\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fno-strict-aliasing\" \"-finline-limit\u003d64\" \"-O0\" \"-UNDEBUG\" \"-marm\" \"-fno-omit-frame-pointer\" \"-DANDROID\" \"-DFOO\u003d2\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector\" \"-no-canonical-prefixes\" \"-march\u003darmv7-a\" \"-mfpu\u003dvfpv3-d16\" \"-mfloat-abi\u003dsoftfp\" \"-mthumb\" \"-Os\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fno-strict-aliasing\" \"-finline-limit\u003d64\" \"-O0\" \"-UNDEBUG\" \"-marm\" \"-fno-omit-frame-pointer\" \"-I{ndkPath}/samples/module-exports/jni\" \"-DANDROID\" \"-DFOO\u003d2\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-3/arch-arm/usr/include\""
         },
         {
           "src": {
             "path": "{ndkPath}/samples/module-exports/jni/zoo/zoo.c"
           },
-          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector\" \"-no-canonical-prefixes\" \"-march\u003darmv7-a\" \"-mfpu\u003dvfpv3-d16\" \"-mfloat-abi\u003dsoftfp\" \"-mthumb\" \"-Os\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fno-strict-aliasing\" \"-finline-limit\u003d64\" \"-O0\" \"-UNDEBUG\" \"-marm\" \"-fno-omit-frame-pointer\" \"-DANDROID\" \"-DFOO\u003d1\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector\" \"-no-canonical-prefixes\" \"-march\u003darmv7-a\" \"-mfpu\u003dvfpv3-d16\" \"-mfloat-abi\u003dsoftfp\" \"-mthumb\" \"-Os\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fno-strict-aliasing\" \"-finline-limit\u003d64\" \"-O0\" \"-UNDEBUG\" \"-marm\" \"-fno-omit-frame-pointer\" \"-I{ndkPath}/samples/module-exports/jni/bar\" \"-I{ndkPath}/samples/module-exports/jni/foo\" \"-I{ndkPath}/samples/module-exports/jni\" \"-DANDROID\" \"-DFOO\u003d1\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-3/arch-arm/usr/include\""
         }
       ],
       "output": {
@@ -796,13 +796,13 @@
           "src": {
             "path": "{ndkPath}/samples/module-exports/jni/bar/bar.c"
           },
-          "flags": "\"-MMD\" \"-MP\" \"-ffunction-sections\" \"-funwind-tables\" \"-no-canonical-prefixes\" \"-fstack-protector\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-O0\" \"-UNDEBUG\" \"-fno-omit-frame-pointer\" \"-fno-strict-aliasing\" \"-DANDROID\" \"-DFOO\u003d1\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+          "flags": "\"-MMD\" \"-MP\" \"-ffunction-sections\" \"-funwind-tables\" \"-no-canonical-prefixes\" \"-fstack-protector\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-O0\" \"-UNDEBUG\" \"-fno-omit-frame-pointer\" \"-fno-strict-aliasing\" \"-I{ndkPath}/samples/module-exports/jni/foo\" \"-I{ndkPath}/samples/module-exports/jni\" \"-DANDROID\" \"-DFOO\u003d1\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-9/arch-x86/usr/include\""
         },
         {
           "src": {
             "path": "{ndkPath}/samples/module-exports/jni/foo/foo.c"
           },
-          "flags": "\"-MMD\" \"-MP\" \"-ffunction-sections\" \"-funwind-tables\" \"-no-canonical-prefixes\" \"-fstack-protector\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-O0\" \"-UNDEBUG\" \"-fno-omit-frame-pointer\" \"-fno-strict-aliasing\" \"-DANDROID\" \"-DFOO\u003d2\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+          "flags": "\"-MMD\" \"-MP\" \"-ffunction-sections\" \"-funwind-tables\" \"-no-canonical-prefixes\" \"-fstack-protector\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-O0\" \"-UNDEBUG\" \"-fno-omit-frame-pointer\" \"-fno-strict-aliasing\" \"-I{ndkPath}/samples/module-exports/jni\" \"-DANDROID\" \"-DFOO\u003d2\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-9/arch-x86/usr/include\""
         }
       ],
       "output": {
@@ -818,13 +818,13 @@
           "src": {
             "path": "{ndkPath}/samples/module-exports/jni/bar/bar.c"
           },
-          "flags": "\"-MMD\" \"-MP\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-DANDROID\" \"-DFOO\u003d1\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+          "flags": "\"-MMD\" \"-MP\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-I{ndkPath}/samples/module-exports/jni/foo\" \"-I{ndkPath}/samples/module-exports/jni\" \"-DANDROID\" \"-DFOO\u003d1\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-21/arch-x86_64/usr/include\""
         },
         {
           "src": {
             "path": "{ndkPath}/samples/module-exports/jni/foo/foo.c"
           },
-          "flags": "\"-MMD\" \"-MP\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-DANDROID\" \"-DFOO\u003d2\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+          "flags": "\"-MMD\" \"-MP\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-I{ndkPath}/samples/module-exports/jni\" \"-DANDROID\" \"-DFOO\u003d2\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-21/arch-x86_64/usr/include\""
         }
       ],
       "output": {
@@ -840,13 +840,13 @@
           "src": {
             "path": "{ndkPath}/samples/module-exports/jni/bar/bar.c"
           },
-          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-O0\" \"-UNDEBUG\" \"-fno-omit-frame-pointer\" \"-fno-strict-aliasing\" \"-DANDROID\" \"-DFOO\u003d1\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-O0\" \"-UNDEBUG\" \"-fno-omit-frame-pointer\" \"-fno-strict-aliasing\" \"-I{ndkPath}/samples/module-exports/jni/foo\" \"-I{ndkPath}/samples/module-exports/jni\" \"-DANDROID\" \"-DFOO\u003d1\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-21/arch-arm64/usr/include\""
         },
         {
           "src": {
             "path": "{ndkPath}/samples/module-exports/jni/foo/foo.c"
           },
-          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-O0\" \"-UNDEBUG\" \"-fno-omit-frame-pointer\" \"-fno-strict-aliasing\" \"-DANDROID\" \"-DFOO\u003d2\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-O0\" \"-UNDEBUG\" \"-fno-omit-frame-pointer\" \"-fno-strict-aliasing\" \"-I{ndkPath}/samples/module-exports/jni\" \"-DANDROID\" \"-DFOO\u003d2\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-21/arch-arm64/usr/include\""
         }
       ],
       "output": {
@@ -862,13 +862,13 @@
           "src": {
             "path": "{ndkPath}/samples/module-exports/jni/bar/bar.c"
           },
-          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector\" \"-no-canonical-prefixes\" \"-march\u003darmv5te\" \"-mtune\u003dxscale\" \"-msoft-float\" \"-mthumb\" \"-Os\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fno-strict-aliasing\" \"-finline-limit\u003d64\" \"-O0\" \"-UNDEBUG\" \"-marm\" \"-fno-omit-frame-pointer\" \"-DANDROID\" \"-DFOO\u003d1\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector\" \"-no-canonical-prefixes\" \"-march\u003darmv5te\" \"-mtune\u003dxscale\" \"-msoft-float\" \"-mthumb\" \"-Os\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fno-strict-aliasing\" \"-finline-limit\u003d64\" \"-O0\" \"-UNDEBUG\" \"-marm\" \"-fno-omit-frame-pointer\" \"-I{ndkPath}/samples/module-exports/jni/foo\" \"-I{ndkPath}/samples/module-exports/jni\" \"-DANDROID\" \"-DFOO\u003d1\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-3/arch-arm/usr/include\""
         },
         {
           "src": {
             "path": "{ndkPath}/samples/module-exports/jni/foo/foo.c"
           },
-          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector\" \"-no-canonical-prefixes\" \"-march\u003darmv5te\" \"-mtune\u003dxscale\" \"-msoft-float\" \"-mthumb\" \"-Os\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fno-strict-aliasing\" \"-finline-limit\u003d64\" \"-O0\" \"-UNDEBUG\" \"-marm\" \"-fno-omit-frame-pointer\" \"-DANDROID\" \"-DFOO\u003d2\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector\" \"-no-canonical-prefixes\" \"-march\u003darmv5te\" \"-mtune\u003dxscale\" \"-msoft-float\" \"-mthumb\" \"-Os\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fno-strict-aliasing\" \"-finline-limit\u003d64\" \"-O0\" \"-UNDEBUG\" \"-marm\" \"-fno-omit-frame-pointer\" \"-I{ndkPath}/samples/module-exports/jni\" \"-DANDROID\" \"-DFOO\u003d2\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-3/arch-arm/usr/include\""
         }
       ],
       "output": {
@@ -884,7 +884,7 @@
           "src": {
             "path": "{ndkPath}/samples/module-exports/jni/foo/foo.c"
           },
-          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-fno-strict-aliasing\" \"-finline-functions\" \"-ffunction-sections\" \"-funwind-tables\" \"-fmessage-length\u003d0\" \"-fno-inline-functions-called-once\" \"-fgcse-after-reload\" \"-frerun-cse-after-loop\" \"-frename-registers\" \"-no-canonical-prefixes\" \"-O0\" \"-g\" \"-fno-omit-frame-pointer\" \"-DANDROID\" \"-DFOO\u003d2\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-fno-strict-aliasing\" \"-finline-functions\" \"-ffunction-sections\" \"-funwind-tables\" \"-fmessage-length\u003d0\" \"-fno-inline-functions-called-once\" \"-fgcse-after-reload\" \"-frerun-cse-after-loop\" \"-frename-registers\" \"-no-canonical-prefixes\" \"-O0\" \"-g\" \"-fno-omit-frame-pointer\" \"-I{ndkPath}/samples/module-exports/jni\" \"-DANDROID\" \"-DFOO\u003d2\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-21/arch-mips64/usr/include\""
         }
       ],
       "output": {
@@ -900,13 +900,13 @@
           "src": {
             "path": "{ndkPath}/samples/module-exports/jni/bar/bar.c"
           },
-          "flags": "\"-MMD\" \"-MP\" \"-ffunction-sections\" \"-funwind-tables\" \"-no-canonical-prefixes\" \"-fstack-protector\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-DANDROID\" \"-DFOO\u003d1\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+          "flags": "\"-MMD\" \"-MP\" \"-ffunction-sections\" \"-funwind-tables\" \"-no-canonical-prefixes\" \"-fstack-protector\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-I{ndkPath}/samples/module-exports/jni/foo\" \"-I{ndkPath}/samples/module-exports/jni\" \"-DANDROID\" \"-DFOO\u003d1\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-9/arch-x86/usr/include\""
         },
         {
           "src": {
             "path": "{ndkPath}/samples/module-exports/jni/foo/foo.c"
           },
-          "flags": "\"-MMD\" \"-MP\" \"-ffunction-sections\" \"-funwind-tables\" \"-no-canonical-prefixes\" \"-fstack-protector\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-DANDROID\" \"-DFOO\u003d2\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+          "flags": "\"-MMD\" \"-MP\" \"-ffunction-sections\" \"-funwind-tables\" \"-no-canonical-prefixes\" \"-fstack-protector\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-I{ndkPath}/samples/module-exports/jni\" \"-DANDROID\" \"-DFOO\u003d2\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-9/arch-x86/usr/include\""
         }
       ],
       "output": {
@@ -922,7 +922,7 @@
           "src": {
             "path": "{ndkPath}/samples/module-exports/jni/foo/foo.c"
           },
-          "flags": "\"-MMD\" \"-MP\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-DANDROID\" \"-DFOO\u003d2\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+          "flags": "\"-MMD\" \"-MP\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-I{ndkPath}/samples/module-exports/jni\" \"-DANDROID\" \"-DFOO\u003d2\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-21/arch-x86_64/usr/include\""
         }
       ],
       "output": {

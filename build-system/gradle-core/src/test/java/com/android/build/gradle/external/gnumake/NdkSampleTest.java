@@ -257,6 +257,11 @@ public class NdkSampleTest {
         checkJson("samples/google-test-example");
     }
 
+    @Test
+    public void missing_include_example() throws IOException, InterruptedException {
+        checkJson("samples/missing-include");
+    }
+
     // input: support-files/ndk-sample-baselines/san-angeles.json
     @Test
     public void san_angeles() throws IOException, InterruptedException {
