@@ -31,6 +31,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 
 import org.gradle.api.GradleException;
+import org.gradle.api.InvalidUserDataException;
 
 import java.io.File;
 import java.io.IOException;
@@ -61,6 +62,17 @@ class CmakeExternalNativeJsonGenerator extends ExternalNativeJsonGenerator {
         super(variantName, abis, androidBuilder, sdkFolder, ndkFolder, soFolder, objFolder,
                 jsonFolder, makeFileOrFolder, debuggable, buildArguments, cFlags, cppFlags);
         Preconditions.checkNotNull(sdkDirectory);
+
+        File cmakeExecutable = getCmakeExecutable();
+        if (!cmakeExecutable.exists()) {
+            // throw InvalidUserDataException directly for "Failed to find CMake" error. Android
+            // Studio doesn't doesn't currently produce Quick Fix UI for SyncIssues.
+            throw new InvalidUserDataException(
+                    String.format("Failed to find CMake.\n"
+                            + "Install from Android Studio under File/Settings/"
+                            + "Appearance & Behavior/System Settings/Android SDK/SDK Tools/CMake.\n"
+                            + "Expected CMake executable at %s.", cmakeExecutable));
+        }
     }
 
     @Override
@@ -202,16 +214,6 @@ class CmakeExternalNativeJsonGenerator extends ExternalNativeJsonGenerator {
                     String.format(
                             "Gradle project cmake.path is %s but that file doesn't exist",
                             getMakefile()));
-        }
-
-        File cmakeExecutable = getCmakeExecutable();
-        if (!cmakeExecutable.exists()) {
-            messages.add(
-                    String.format("Failed to find CMake.\n"
-                                    + "Install from Android Studio under File/Settings/"
-                                    + "Appearance & Behavior/System Settings/Android SDK/SDK Tools/CMake.\n"
-                                    + "Expected CMake executable at %s.",
-                            cmakeExecutable));
         }
         messages.addAll(getBaseConfigurationErrors());
         return messages;
