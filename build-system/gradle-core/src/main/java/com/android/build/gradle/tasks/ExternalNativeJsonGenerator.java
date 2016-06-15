@@ -91,7 +91,7 @@ public abstract class ExternalNativeJsonGenerator {
             @NonNull File soFolder,
             @NonNull File objFolder,
             @NonNull File jsonFolder,
-            @NonNull File makeFileOrFolder,
+            @NonNull File makefile,
             boolean debuggable,
             @Nullable List<String> buildArguments,
             @Nullable List<String> cFlags,
@@ -105,7 +105,7 @@ public abstract class ExternalNativeJsonGenerator {
         this.soFolder = soFolder;
         this.objFolder = objFolder;
         this.jsonFolder = jsonFolder;
-        this.makefile = makeFileOrFolder;
+        this.makefile = makefile;
         this.debuggable = debuggable;
         this.buildArguments = buildArguments == null ? Lists.newArrayList() : buildArguments;
         this.cFlags = cFlags == null ? Lists.newArrayList() : cFlags;
@@ -321,8 +321,9 @@ public abstract class ExternalNativeJsonGenerator {
 
     @NonNull
     public static ExternalNativeJsonGenerator create(
+            @NonNull File projectDir,
             @NonNull NativeBuildSystem buildSystem,
-            @NonNull File projectPath,
+            @NonNull File makefile,
             @NonNull AndroidBuilder androidBuilder,
             @NonNull SdkHandler sdkHandler,
             @NonNull VariantScope scope) {
@@ -338,8 +339,10 @@ public abstract class ExternalNativeJsonGenerator {
 
         File soFolder = new File(intermediates, "lib");
         File objFolder = new File(intermediates, "obj");
-        File jsonFolder = new File(intermediates, "json");
-
+        File jsonFolder = FileUtils.join(projectDir,
+                "externalNativeBuild",
+                buildSystem.getName(),
+                variantData.getName());
         switch(buildSystem) {
             case NDK_BUILD: {
                 return new NdkBuildExternalNativeJsonGenerator(
@@ -352,7 +355,7 @@ public abstract class ExternalNativeJsonGenerator {
                         soFolder,
                         objFolder,
                         jsonFolder,
-                        projectPath,
+                        makefile,
                         variantConfig.getBuildType().isDebuggable(),
                         variantConfig.getExternalNativeNdkBuildOptions().getArguments(),
                         variantConfig.getExternalNativeNdkBuildOptions().getcFlags(),
@@ -370,7 +373,7 @@ public abstract class ExternalNativeJsonGenerator {
                         soFolder,
                         objFolder,
                         jsonFolder,
-                        projectPath,
+                        makefile,
                         variantConfig.getBuildType().isDebuggable(),
                         variantConfig.getExternalNativeCmakeOptions().getArguments(),
                         variantConfig.getExternalNativeCmakeOptions().getcFlags(),

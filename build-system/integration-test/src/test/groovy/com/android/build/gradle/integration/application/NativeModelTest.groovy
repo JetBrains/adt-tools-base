@@ -25,6 +25,7 @@ import com.android.builder.model.AndroidProject
 import com.android.builder.model.NativeAndroidProject
 import com.android.builder.model.NativeArtifact
 import com.android.builder.model.NativeSettings
+import com.android.utils.FileUtils
 import com.google.common.collect.Lists
 import groovy.transform.CompileStatic
 import org.junit.Before
@@ -37,9 +38,9 @@ import java.nio.file.Files
 
 import static com.android.build.gradle.integration.common.fixture.app.HelloWorldJniApp.androidMkC
 import static com.android.build.gradle.integration.common.fixture.app.HelloWorldJniApp.androidMkCpp
+import static com.android.build.gradle.integration.common.fixture.app.HelloWorldJniApp.androidMkGoogleTest
 import static com.android.build.gradle.integration.common.fixture.app.HelloWorldJniApp.applicationMk
 import static com.android.build.gradle.integration.common.fixture.app.HelloWorldJniApp.cmakeLists
-import static com.android.build.gradle.integration.common.fixture.app.HelloWorldJniApp.androidMkGoogleTest
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
 /**
  * General Model tests
@@ -383,6 +384,7 @@ class NativeModelTest {
         // Touch each buildFile and check that JSON is regenerated in response
         assertThat(nativeProject.buildFiles).isNotEmpty();
         for (File buildFile : nativeProject.buildFiles) {
+            assertThat(buildFile).exists();
             spinTouch(buildFile, originalTimeStamp);
             project.model().getSingle(NativeAndroidProject.class);
             long newTimeStamp = getHighestResolutionTimeStamp(jsonFile);
@@ -420,22 +422,13 @@ class NativeModelTest {
                 file.toPath()).toMillis();
     }
 
-    private File getBuildSystemFolder() {
-        return new File(project.getIntermediatesDir(), config.buildSystem.getName());
-    }
-
-    private File getVariantBuildSystemFolder(String variantName) {
-        return new File(getBuildSystemFolder(), variantName);
-    }
-
-    private File getVariantJsonFolder(String variantName) {
-        return new File(getVariantBuildSystemFolder(variantName), "json");
-    }
-
-
     private File getJsonFile(String variantName, String abi) {
-        return ExternalNativeBuildTaskUtils.getOutputJson(
-                getVariantJsonFolder(variantName), abi);
+        return ExternalNativeBuildTaskUtils.getOutputJson(new File(FileUtils.join(
+                project.buildFile.getParent(),
+                "externalNativeBuild",
+                config.buildSystem.name,
+                variantName)),
+                abi);
     }
 
     private static void checkDefaultVariants(NativeAndroidProject model) {

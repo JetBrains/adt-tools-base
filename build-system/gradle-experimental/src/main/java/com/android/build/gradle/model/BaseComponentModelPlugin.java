@@ -653,6 +653,7 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
                 }
                 VariantScope scope = variantData.getScope();
                 ExternalNativeJsonGenerator generator = ExternalNativeJsonGenerator.create(
+                        project.getProjectDir(),
                         pathResolution.buildSystem,
                         pathResolution.makeFile,
                         androidBuilder,
