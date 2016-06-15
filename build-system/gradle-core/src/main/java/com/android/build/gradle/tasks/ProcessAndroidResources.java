@@ -276,6 +276,8 @@ public class ProcessAndroidResources extends IncrementalTask {
             processResources.setAndroidBuilder(scope.getGlobalScope().getAndroidBuilder());
             processResources.setVariantName(config.getFullName());
             processResources.variantScope = scope.getVariantScope();
+            processResources.setIncrementalFolder(
+                    scope.getVariantScope().getIncrementalDir(getName()));
 
             if (variantData.getSplitHandlingPolicy() ==
                     SplitHandlingPolicy.RELEASE_21_AND_AFTER_POLICY) {
