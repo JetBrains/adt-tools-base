@@ -7,7 +7,6 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
 <#if hasAppBar && appBarLayoutName??>
-    app:layout_behavior="@string/appbar_scrolling_view_behavior"
     tools:showIn="@layout/${appBarLayoutName}"
 </#if>
     tools:context="${relativePackage}.${activityClass}">
