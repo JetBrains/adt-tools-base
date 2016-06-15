@@ -37,6 +37,8 @@ public class ExternalNativeCmakeOptions implements CoreExternalNativeCmakeOption
     private final List<String> cppFlags = Lists.newArrayList();
     @NonNull
     private final Set<String> abiFilters = Sets.newHashSet();
+    @NonNull
+    private final Set<String> targets = Sets.newHashSet();
 
     @NonNull
     @Override
@@ -92,6 +94,20 @@ public class ExternalNativeCmakeOptions implements CoreExternalNativeCmakeOption
 
     public void abiFilters(@NonNull String ...abiFilters) {
         Collections.addAll(this.abiFilters, abiFilters);
+    }
+
+    @NonNull
+    @Override
+    public Set<String> getTargets() {
+        return targets;
+    }
+
+    public void setTargets(@NonNull Set<String> targets) {
+        this.targets.addAll(targets);
+    }
+
+    public void targets(@NonNull String ...targets) {
+        Collections.addAll(this.targets, targets);
     }
 }
 

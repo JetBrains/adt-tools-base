@@ -16,11 +16,13 @@
 package com.android.build.gradle.external.gnumake;
 
 
+import com.android.annotations.NonNull;
 import com.android.build.gradle.external.gson.NativeBuildConfigValue;
 import com.android.build.gradle.external.gson.NativeLibraryValue;
 import com.android.build.gradle.external.gson.NativeSourceFileValue;
 import com.android.build.gradle.external.gson.NativeToolchainValue;
 import com.android.utils.NativeSourceFileExtensions;
+import com.android.utils.NdkUtils;
 import com.android.utils.StringHelper;
 import com.google.common.base.Strings;
 import com.google.common.collect.ListMultimap;
@@ -32,7 +34,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -71,6 +72,7 @@ public class NativeBuildConfigValueBuilder {
     private final Set<String> cFileExtensions = new HashSet<>();
     private final Set<String> cppFileExtensions = new HashSet<>();
     private final File projectRootPath;
+    @NonNull
     private final List<Output> outputs;
 
     /**
@@ -87,6 +89,7 @@ public class NativeBuildConfigValueBuilder {
     /**
      * Add commands for a particular variant.
      */
+    @NonNull
     public NativeBuildConfigValueBuilder addCommands(
             String buildCommand,
             String variantName,
@@ -94,7 +97,8 @@ public class NativeBuildConfigValueBuilder {
             boolean isWin32) {
         ListMultimap<String, List<BuildStepInfo>> outputs = FlowAnalyzer.analyze(commands, isWin32);
         for (Map.Entry<String, List<BuildStepInfo>> entry : outputs.entries()) {
-            this.outputs.add(new Output(entry.getKey(), entry.getValue(), buildCommand, variantName));
+            this.outputs.add(new Output(new File(entry.getKey()), entry.getValue(),
+                    buildCommand, variantName));
         }
         return this;
     }
@@ -102,6 +106,7 @@ public class NativeBuildConfigValueBuilder {
     /**
      * Builds the {@link NativeBuildConfigValue} from the given information.
      */
+    @NonNull
     public NativeBuildConfigValue build() {
         findLibraryNames();
         findToolchainNames();
@@ -116,7 +121,7 @@ public class NativeBuildConfigValueBuilder {
         return config;
     }
 
-    private static Collection<String> generateExtensions(Set<String> extensionSet) {
+    private static Collection<String> generateExtensions(@NonNull Set<String> extensionSet) {
         List<String> extensionList = Lists.newArrayList(extensionSet);
         Collections.sort(extensionList);
 
@@ -134,32 +139,14 @@ public class NativeBuildConfigValueBuilder {
         return uniqueNames.size() == outputs.size();
     }
 
-    private static String getParentFolder(String output) {
-        return new File(output).getParentFile().getName();
-    }
-
-    private static String removeFileExtension(String output) {
-        int dotIndex = output.lastIndexOf('.');
-        if (dotIndex == -1) {
-            return output;
-        }
-        return output.substring(0, dotIndex);
-    }
-
-    private static String findLibraryNameByPathFilePattern(String output) {
-        File file = new File(removeFileExtension(output));
-        return getParentFolder(output) + "-" + file.getName();
-    }
-
     private void findLibraryNames() {
         for (Output output : outputs) {
             // This pattern is for standard ndk-build and should give names like:
             //  mips64-test-libstl-release
-            String pattern = findLibraryNameByPathFilePattern(output.outputName);
-            if (!pattern.isEmpty()) {
-                output.libraryName =
-                        pattern + "-" + output.variantName;
-            }
+            String abi = output.outputFile.getParentFile().getName();
+            output.artifactName = NdkUtils.getTargetNameFromBuildOutputFile(output.outputFile);
+            output.libraryName = String.format("%s-%s-%s", output.artifactName,
+                    output.variantName, abi);
         }
 
         if (areLibraryNamesUnique()) {
@@ -228,34 +215,32 @@ public class NativeBuildConfigValueBuilder {
         }
     }
 
-    private static String findToolChainName(String output) {
-        return "toolchain-" + getParentFolder(output);
+    @NonNull
+    private static String findToolChainName(@NonNull File output) {
+        return "toolchain-" + output.getParentFile().getName();
     }
 
     private void findToolchainNames() {
         for (Output output : outputs) {
-            output.toolchain = findToolChainName(output.outputName);
+            output.toolchain = findToolChainName(output.outputFile);
         }
     }
 
+    @NonNull
     private Map<String, NativeLibraryValue> generateLibraries() {
         // Sort by library name so that output is stable
-        Collections.sort(outputs, new Comparator<Output>() {
-            @Override
-            public int compare(Output o1, Output o2) {
-                return o1.libraryName.compareTo(o2.libraryName);
-            }
-        });
+        Collections.sort(outputs, (o1, o2) -> o1.libraryName.compareTo(o2.libraryName));
 
         Map<String, NativeLibraryValue> librariesMap = new HashMap<>();
 
         for (Output output : outputs) {
             NativeLibraryValue value = new NativeLibraryValue();
             librariesMap.put(output.libraryName, value);
-            value.buildCommand = output.buildCommand;
-            value.abi = getParentFolder(output.outputName);
+            value.buildCommand = output.buildCommand + " " + output.artifactName;
+            value.abi = output.outputFile.getParentFile().getName();
+            value.artifactName = output.artifactName;
             value.toolchain = output.toolchain;
-            value.output = new File(output.outputName);
+            value.output = output.outputFile;
             value.files = new ArrayList<>();
 
             for (BuildStepInfo input : output.commandInputs) {
@@ -281,7 +266,7 @@ public class NativeBuildConfigValueBuilder {
         return librariesMap;
     }
 
-    private static boolean startsWithStripFlag(String arg) {
+    private static boolean startsWithStripFlag(@NonNull String arg) {
         for (String flag : STRIP_FLAGS) {
             if (arg.startsWith(flag)) {
                 return true;
@@ -290,6 +275,7 @@ public class NativeBuildConfigValueBuilder {
         return false;
     }
 
+    @NonNull
     private Map<String, NativeToolchainValue> generateToolchains() {
         Set<String> toolchainSet = outputs.stream()
                 .map(output -> output.toolchain)
@@ -314,16 +300,17 @@ public class NativeBuildConfigValueBuilder {
     }
 
     private static class Output {
-        final String outputName;
-        final List<BuildStepInfo> commandInputs;
-        final String buildCommand;
-        final String variantName;
-        String libraryName;
-        String toolchain;
+        private final File outputFile;
+        private final List<BuildStepInfo> commandInputs;
+        private final String buildCommand;
+        private final String variantName;
+        private String artifactName;
+        private String libraryName;
+        private String toolchain;
 
-        Output(String outputName, List<BuildStepInfo> commandInputs,
+        private Output(File outputFile, List<BuildStepInfo> commandInputs,
                 String buildCommand, String variantName) {
-            this.outputName = outputName;
+            this.outputFile = outputFile;
             this.commandInputs = commandInputs;
             this.buildCommand = buildCommand;
             this.variantName = variantName;

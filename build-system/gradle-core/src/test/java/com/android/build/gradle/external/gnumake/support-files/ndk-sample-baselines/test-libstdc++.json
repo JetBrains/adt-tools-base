@@ -5,42 +5,11 @@
     }
   ],
   "libraries": {
-    "mips64-test-libstl-release": {
-      "buildCommand": "echo build command",
-      "toolchain": "toolchain-mips64",
-      "abi": "mips64",
-      "files": [
-        {
-          "src": {
-            "path": "{ndkPath}/samples/test-libstdc++/jni/test-libstl.cpp"
-          },
-          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-fno-strict-aliasing\" \"-finline-functions\" \"-ffunction-sections\" \"-funwind-tables\" \"-fmessage-length\u003d0\" \"-fno-inline-functions-called-once\" \"-fgcse-after-reload\" \"-frerun-cse-after-loop\" \"-frename-registers\" \"-no-canonical-prefixes\" \"-fno-exceptions\" \"-fno-rtti\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-I{ndkPath}/sources/cxx-stl/system/include\" \"-I{ndkPath}/samples/test-libstdc++/jni\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-fPIE\" \"-I{ndkPath}/platforms/android-21/arch-mips64/usr/include\""
-        }
-      ],
-      "output": {
-        "path": "{ndkPath}/samples/test-libstdc++/obj/local/mips64/test-libstl"
-      }
-    },
-    "arm64-v8a-test-libstl-debug": {
-      "buildCommand": "echo build command",
-      "toolchain": "toolchain-arm64-v8a",
-      "abi": "arm64-v8a",
-      "files": [
-        {
-          "src": {
-            "path": "{ndkPath}/samples/test-libstdc++/jni/test-libstl.cpp"
-          },
-          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-fno-exceptions\" \"-fno-rtti\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-O0\" \"-UNDEBUG\" \"-fno-omit-frame-pointer\" \"-fno-strict-aliasing\" \"-I{ndkPath}/sources/cxx-stl/system/include\" \"-I{ndkPath}/samples/test-libstdc++/jni\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-fPIE\" \"-I{ndkPath}/platforms/android-21/arch-arm64/usr/include\""
-        }
-      ],
-      "output": {
-        "path": "{ndkPath}/samples/test-libstdc++/obj/local/arm64-v8a/test-libstl"
-      }
-    },
-    "x86_64-test-libstl-debug": {
-      "buildCommand": "echo build command",
+    "test-libstl-debug-x86_64": {
+      "buildCommand": "echo build command test-libstl",
       "toolchain": "toolchain-x86_64",
       "abi": "x86_64",
+      "artifactName": "test-libstl",
       "files": [
         {
           "src": {
@@ -53,90 +22,28 @@
         "path": "{ndkPath}/samples/test-libstdc++/obj/local/x86_64/test-libstl"
       }
     },
-    "mips64-test-libstl-debug": {
-      "buildCommand": "echo build command",
-      "toolchain": "toolchain-mips64",
-      "abi": "mips64",
-      "files": [
-        {
-          "src": {
-            "path": "{ndkPath}/samples/test-libstdc++/jni/test-libstl.cpp"
-          },
-          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-fno-strict-aliasing\" \"-finline-functions\" \"-ffunction-sections\" \"-funwind-tables\" \"-fmessage-length\u003d0\" \"-fno-inline-functions-called-once\" \"-fgcse-after-reload\" \"-frerun-cse-after-loop\" \"-frename-registers\" \"-no-canonical-prefixes\" \"-fno-exceptions\" \"-fno-rtti\" \"-O0\" \"-g\" \"-fno-omit-frame-pointer\" \"-I{ndkPath}/sources/cxx-stl/system/include\" \"-I{ndkPath}/samples/test-libstdc++/jni\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-fPIE\" \"-I{ndkPath}/platforms/android-21/arch-mips64/usr/include\""
-        }
-      ],
-      "output": {
-        "path": "{ndkPath}/samples/test-libstdc++/obj/local/mips64/test-libstl"
-      }
-    },
-    "arm64-v8a-test-libstl-release": {
-      "buildCommand": "echo build command",
-      "toolchain": "toolchain-arm64-v8a",
-      "abi": "arm64-v8a",
-      "files": [
-        {
-          "src": {
-            "path": "{ndkPath}/samples/test-libstdc++/jni/test-libstl.cpp"
-          },
-          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-fno-exceptions\" \"-fno-rtti\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-I{ndkPath}/sources/cxx-stl/system/include\" \"-I{ndkPath}/samples/test-libstdc++/jni\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-fPIE\" \"-I{ndkPath}/platforms/android-21/arch-arm64/usr/include\""
-        }
-      ],
-      "output": {
-        "path": "{ndkPath}/samples/test-libstdc++/obj/local/arm64-v8a/test-libstl"
-      }
-    },
-    "armeabi-test-libstl-release": {
-      "buildCommand": "echo build command",
-      "toolchain": "toolchain-armeabi",
-      "abi": "armeabi",
-      "files": [
-        {
-          "src": {
-            "path": "{ndkPath}/samples/test-libstdc++/jni/test-libstl.cpp"
-          },
-          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector\" \"-no-canonical-prefixes\" \"-march\u003darmv5te\" \"-mtune\u003dxscale\" \"-msoft-float\" \"-fno-exceptions\" \"-fno-rtti\" \"-mthumb\" \"-Os\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fno-strict-aliasing\" \"-finline-limit\u003d64\" \"-I{ndkPath}/sources/cxx-stl/system/include\" \"-I{ndkPath}/samples/test-libstdc++/jni\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-3/arch-arm/usr/include\""
-        }
-      ],
-      "output": {
-        "path": "{ndkPath}/samples/test-libstdc++/obj/local/armeabi/test-libstl"
-      }
-    },
-    "armeabi-test-libstl-debug": {
-      "buildCommand": "echo build command",
-      "toolchain": "toolchain-armeabi",
-      "abi": "armeabi",
-      "files": [
-        {
-          "src": {
-            "path": "{ndkPath}/samples/test-libstdc++/jni/test-libstl.cpp"
-          },
-          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector\" \"-no-canonical-prefixes\" \"-march\u003darmv5te\" \"-mtune\u003dxscale\" \"-msoft-float\" \"-fno-exceptions\" \"-fno-rtti\" \"-mthumb\" \"-Os\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fno-strict-aliasing\" \"-finline-limit\u003d64\" \"-O0\" \"-UNDEBUG\" \"-marm\" \"-fno-omit-frame-pointer\" \"-I{ndkPath}/sources/cxx-stl/system/include\" \"-I{ndkPath}/samples/test-libstdc++/jni\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-3/arch-arm/usr/include\""
-        }
-      ],
-      "output": {
-        "path": "{ndkPath}/samples/test-libstdc++/obj/local/armeabi/test-libstl"
-      }
-    },
-    "armeabi-v7a-test-libstl-release": {
-      "buildCommand": "echo build command",
-      "toolchain": "toolchain-armeabi-v7a",
-      "abi": "armeabi-v7a",
-      "files": [
-        {
-          "src": {
-            "path": "{ndkPath}/samples/test-libstdc++/jni/test-libstl.cpp"
-          },
-          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector\" \"-no-canonical-prefixes\" \"-march\u003darmv7-a\" \"-mfpu\u003dvfpv3-d16\" \"-mfloat-abi\u003dsoftfp\" \"-fno-exceptions\" \"-fno-rtti\" \"-mthumb\" \"-Os\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fno-strict-aliasing\" \"-finline-limit\u003d64\" \"-I{ndkPath}/sources/cxx-stl/system/include\" \"-I{ndkPath}/samples/test-libstdc++/jni\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-3/arch-arm/usr/include\""
-        }
-      ],
-      "output": {
-        "path": "{ndkPath}/samples/test-libstdc++/obj/local/armeabi-v7a/test-libstl"
-      }
-    },
-    "x86-test-libstl-debug": {
-      "buildCommand": "echo build command",
+    "test-libstl-release-x86": {
+      "buildCommand": "echo build command test-libstl",
       "toolchain": "toolchain-x86",
       "abi": "x86",
+      "artifactName": "test-libstl",
+      "files": [
+        {
+          "src": {
+            "path": "{ndkPath}/samples/test-libstdc++/jni/test-libstl.cpp"
+          },
+          "flags": "\"-MMD\" \"-MP\" \"-ffunction-sections\" \"-funwind-tables\" \"-no-canonical-prefixes\" \"-fstack-protector\" \"-fno-exceptions\" \"-fno-rtti\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-I{ndkPath}/sources/cxx-stl/system/include\" \"-I{ndkPath}/samples/test-libstdc++/jni\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-9/arch-x86/usr/include\""
+        }
+      ],
+      "output": {
+        "path": "{ndkPath}/samples/test-libstdc++/obj/local/x86/test-libstl"
+      }
+    },
+    "test-libstl-debug-x86": {
+      "buildCommand": "echo build command test-libstl",
+      "toolchain": "toolchain-x86",
+      "abi": "x86",
+      "artifactName": "test-libstl",
       "files": [
         {
           "src": {
@@ -149,10 +56,45 @@
         "path": "{ndkPath}/samples/test-libstdc++/obj/local/x86/test-libstl"
       }
     },
-    "mips-test-libstl-debug": {
-      "buildCommand": "echo build command",
+    "test-libstl-release-arm64-v8a": {
+      "buildCommand": "echo build command test-libstl",
+      "toolchain": "toolchain-arm64-v8a",
+      "abi": "arm64-v8a",
+      "artifactName": "test-libstl",
+      "files": [
+        {
+          "src": {
+            "path": "{ndkPath}/samples/test-libstdc++/jni/test-libstl.cpp"
+          },
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-fno-exceptions\" \"-fno-rtti\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-I{ndkPath}/sources/cxx-stl/system/include\" \"-I{ndkPath}/samples/test-libstdc++/jni\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-fPIE\" \"-I{ndkPath}/platforms/android-21/arch-arm64/usr/include\""
+        }
+      ],
+      "output": {
+        "path": "{ndkPath}/samples/test-libstdc++/obj/local/arm64-v8a/test-libstl"
+      }
+    },
+    "test-libstl-release-armeabi-v7a": {
+      "buildCommand": "echo build command test-libstl",
+      "toolchain": "toolchain-armeabi-v7a",
+      "abi": "armeabi-v7a",
+      "artifactName": "test-libstl",
+      "files": [
+        {
+          "src": {
+            "path": "{ndkPath}/samples/test-libstdc++/jni/test-libstl.cpp"
+          },
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector\" \"-no-canonical-prefixes\" \"-march\u003darmv7-a\" \"-mfpu\u003dvfpv3-d16\" \"-mfloat-abi\u003dsoftfp\" \"-fno-exceptions\" \"-fno-rtti\" \"-mthumb\" \"-Os\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fno-strict-aliasing\" \"-finline-limit\u003d64\" \"-I{ndkPath}/sources/cxx-stl/system/include\" \"-I{ndkPath}/samples/test-libstdc++/jni\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-3/arch-arm/usr/include\""
+        }
+      ],
+      "output": {
+        "path": "{ndkPath}/samples/test-libstdc++/obj/local/armeabi-v7a/test-libstl"
+      }
+    },
+    "test-libstl-debug-mips": {
+      "buildCommand": "echo build command test-libstl",
       "toolchain": "toolchain-mips",
       "abi": "mips",
+      "artifactName": "test-libstl",
       "files": [
         {
           "src": {
@@ -165,42 +107,28 @@
         "path": "{ndkPath}/samples/test-libstdc++/obj/local/mips/test-libstl"
       }
     },
-    "x86_64-test-libstl-release": {
-      "buildCommand": "echo build command",
-      "toolchain": "toolchain-x86_64",
-      "abi": "x86_64",
+    "test-libstl-release-armeabi": {
+      "buildCommand": "echo build command test-libstl",
+      "toolchain": "toolchain-armeabi",
+      "abi": "armeabi",
+      "artifactName": "test-libstl",
       "files": [
         {
           "src": {
             "path": "{ndkPath}/samples/test-libstdc++/jni/test-libstl.cpp"
           },
-          "flags": "\"-MMD\" \"-MP\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-fno-exceptions\" \"-fno-rtti\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-I{ndkPath}/sources/cxx-stl/system/include\" \"-I{ndkPath}/samples/test-libstdc++/jni\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-fPIE\" \"-I{ndkPath}/platforms/android-21/arch-x86_64/usr/include\""
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector\" \"-no-canonical-prefixes\" \"-march\u003darmv5te\" \"-mtune\u003dxscale\" \"-msoft-float\" \"-fno-exceptions\" \"-fno-rtti\" \"-mthumb\" \"-Os\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fno-strict-aliasing\" \"-finline-limit\u003d64\" \"-I{ndkPath}/sources/cxx-stl/system/include\" \"-I{ndkPath}/samples/test-libstdc++/jni\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-3/arch-arm/usr/include\""
         }
       ],
       "output": {
-        "path": "{ndkPath}/samples/test-libstdc++/obj/local/x86_64/test-libstl"
+        "path": "{ndkPath}/samples/test-libstdc++/obj/local/armeabi/test-libstl"
       }
     },
-    "armeabi-v7a-test-libstl-debug": {
-      "buildCommand": "echo build command",
-      "toolchain": "toolchain-armeabi-v7a",
-      "abi": "armeabi-v7a",
-      "files": [
-        {
-          "src": {
-            "path": "{ndkPath}/samples/test-libstdc++/jni/test-libstl.cpp"
-          },
-          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector\" \"-no-canonical-prefixes\" \"-march\u003darmv7-a\" \"-mfpu\u003dvfpv3-d16\" \"-mfloat-abi\u003dsoftfp\" \"-fno-exceptions\" \"-fno-rtti\" \"-mthumb\" \"-Os\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fno-strict-aliasing\" \"-finline-limit\u003d64\" \"-O0\" \"-UNDEBUG\" \"-marm\" \"-fno-omit-frame-pointer\" \"-I{ndkPath}/sources/cxx-stl/system/include\" \"-I{ndkPath}/samples/test-libstdc++/jni\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-3/arch-arm/usr/include\""
-        }
-      ],
-      "output": {
-        "path": "{ndkPath}/samples/test-libstdc++/obj/local/armeabi-v7a/test-libstl"
-      }
-    },
-    "mips-test-libstl-release": {
-      "buildCommand": "echo build command",
+    "test-libstl-release-mips": {
+      "buildCommand": "echo build command test-libstl",
       "toolchain": "toolchain-mips",
       "abi": "mips",
+      "artifactName": "test-libstl",
       "files": [
         {
           "src": {
@@ -213,20 +141,106 @@
         "path": "{ndkPath}/samples/test-libstdc++/obj/local/mips/test-libstl"
       }
     },
-    "x86-test-libstl-release": {
-      "buildCommand": "echo build command",
-      "toolchain": "toolchain-x86",
-      "abi": "x86",
+    "test-libstl-debug-arm64-v8a": {
+      "buildCommand": "echo build command test-libstl",
+      "toolchain": "toolchain-arm64-v8a",
+      "abi": "arm64-v8a",
+      "artifactName": "test-libstl",
       "files": [
         {
           "src": {
             "path": "{ndkPath}/samples/test-libstdc++/jni/test-libstl.cpp"
           },
-          "flags": "\"-MMD\" \"-MP\" \"-ffunction-sections\" \"-funwind-tables\" \"-no-canonical-prefixes\" \"-fstack-protector\" \"-fno-exceptions\" \"-fno-rtti\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-I{ndkPath}/sources/cxx-stl/system/include\" \"-I{ndkPath}/samples/test-libstdc++/jni\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-9/arch-x86/usr/include\""
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-fno-exceptions\" \"-fno-rtti\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-O0\" \"-UNDEBUG\" \"-fno-omit-frame-pointer\" \"-fno-strict-aliasing\" \"-I{ndkPath}/sources/cxx-stl/system/include\" \"-I{ndkPath}/samples/test-libstdc++/jni\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-fPIE\" \"-I{ndkPath}/platforms/android-21/arch-arm64/usr/include\""
         }
       ],
       "output": {
-        "path": "{ndkPath}/samples/test-libstdc++/obj/local/x86/test-libstl"
+        "path": "{ndkPath}/samples/test-libstdc++/obj/local/arm64-v8a/test-libstl"
+      }
+    },
+    "test-libstl-release-x86_64": {
+      "buildCommand": "echo build command test-libstl",
+      "toolchain": "toolchain-x86_64",
+      "abi": "x86_64",
+      "artifactName": "test-libstl",
+      "files": [
+        {
+          "src": {
+            "path": "{ndkPath}/samples/test-libstdc++/jni/test-libstl.cpp"
+          },
+          "flags": "\"-MMD\" \"-MP\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-fno-exceptions\" \"-fno-rtti\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-I{ndkPath}/sources/cxx-stl/system/include\" \"-I{ndkPath}/samples/test-libstdc++/jni\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-fPIE\" \"-I{ndkPath}/platforms/android-21/arch-x86_64/usr/include\""
+        }
+      ],
+      "output": {
+        "path": "{ndkPath}/samples/test-libstdc++/obj/local/x86_64/test-libstl"
+      }
+    },
+    "test-libstl-debug-armeabi": {
+      "buildCommand": "echo build command test-libstl",
+      "toolchain": "toolchain-armeabi",
+      "abi": "armeabi",
+      "artifactName": "test-libstl",
+      "files": [
+        {
+          "src": {
+            "path": "{ndkPath}/samples/test-libstdc++/jni/test-libstl.cpp"
+          },
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector\" \"-no-canonical-prefixes\" \"-march\u003darmv5te\" \"-mtune\u003dxscale\" \"-msoft-float\" \"-fno-exceptions\" \"-fno-rtti\" \"-mthumb\" \"-Os\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fno-strict-aliasing\" \"-finline-limit\u003d64\" \"-O0\" \"-UNDEBUG\" \"-marm\" \"-fno-omit-frame-pointer\" \"-I{ndkPath}/sources/cxx-stl/system/include\" \"-I{ndkPath}/samples/test-libstdc++/jni\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-3/arch-arm/usr/include\""
+        }
+      ],
+      "output": {
+        "path": "{ndkPath}/samples/test-libstdc++/obj/local/armeabi/test-libstl"
+      }
+    },
+    "test-libstl-debug-mips64": {
+      "buildCommand": "echo build command test-libstl",
+      "toolchain": "toolchain-mips64",
+      "abi": "mips64",
+      "artifactName": "test-libstl",
+      "files": [
+        {
+          "src": {
+            "path": "{ndkPath}/samples/test-libstdc++/jni/test-libstl.cpp"
+          },
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-fno-strict-aliasing\" \"-finline-functions\" \"-ffunction-sections\" \"-funwind-tables\" \"-fmessage-length\u003d0\" \"-fno-inline-functions-called-once\" \"-fgcse-after-reload\" \"-frerun-cse-after-loop\" \"-frename-registers\" \"-no-canonical-prefixes\" \"-fno-exceptions\" \"-fno-rtti\" \"-O0\" \"-g\" \"-fno-omit-frame-pointer\" \"-I{ndkPath}/sources/cxx-stl/system/include\" \"-I{ndkPath}/samples/test-libstdc++/jni\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-fPIE\" \"-I{ndkPath}/platforms/android-21/arch-mips64/usr/include\""
+        }
+      ],
+      "output": {
+        "path": "{ndkPath}/samples/test-libstdc++/obj/local/mips64/test-libstl"
+      }
+    },
+    "test-libstl-debug-armeabi-v7a": {
+      "buildCommand": "echo build command test-libstl",
+      "toolchain": "toolchain-armeabi-v7a",
+      "abi": "armeabi-v7a",
+      "artifactName": "test-libstl",
+      "files": [
+        {
+          "src": {
+            "path": "{ndkPath}/samples/test-libstdc++/jni/test-libstl.cpp"
+          },
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector\" \"-no-canonical-prefixes\" \"-march\u003darmv7-a\" \"-mfpu\u003dvfpv3-d16\" \"-mfloat-abi\u003dsoftfp\" \"-fno-exceptions\" \"-fno-rtti\" \"-mthumb\" \"-Os\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fno-strict-aliasing\" \"-finline-limit\u003d64\" \"-O0\" \"-UNDEBUG\" \"-marm\" \"-fno-omit-frame-pointer\" \"-I{ndkPath}/sources/cxx-stl/system/include\" \"-I{ndkPath}/samples/test-libstdc++/jni\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-3/arch-arm/usr/include\""
+        }
+      ],
+      "output": {
+        "path": "{ndkPath}/samples/test-libstdc++/obj/local/armeabi-v7a/test-libstl"
+      }
+    },
+    "test-libstl-release-mips64": {
+      "buildCommand": "echo build command test-libstl",
+      "toolchain": "toolchain-mips64",
+      "abi": "mips64",
+      "artifactName": "test-libstl",
+      "files": [
+        {
+          "src": {
+            "path": "{ndkPath}/samples/test-libstdc++/jni/test-libstl.cpp"
+          },
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-fno-strict-aliasing\" \"-finline-functions\" \"-ffunction-sections\" \"-funwind-tables\" \"-fmessage-length\u003d0\" \"-fno-inline-functions-called-once\" \"-fgcse-after-reload\" \"-frerun-cse-after-loop\" \"-frename-registers\" \"-no-canonical-prefixes\" \"-fno-exceptions\" \"-fno-rtti\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-I{ndkPath}/sources/cxx-stl/system/include\" \"-I{ndkPath}/samples/test-libstdc++/jni\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-fPIE\" \"-I{ndkPath}/platforms/android-21/arch-mips64/usr/include\""
+        }
+      ],
+      "output": {
+        "path": "{ndkPath}/samples/test-libstdc++/obj/local/mips64/test-libstl"
       }
     }
   },

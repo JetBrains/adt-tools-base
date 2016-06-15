@@ -150,7 +150,7 @@ public class HelloWorldJniApp extends AbstractAndroidTestApp implements AndroidT
 "}\n");
 
 
-    public static final TestSourceFile libraryCpp(String folder, String file) {
+    public static TestSourceFile libraryCpp(String folder, String file) {
         return new TestSourceFile(folder, file,
                 "#include <string.h>\n"
                 + "#include <jni.h>\n"
@@ -169,7 +169,7 @@ public class HelloWorldJniApp extends AbstractAndroidTestApp implements AndroidT
                 + "}\n");
     }
 
-    public static final TestSourceFile androidMkC(String folder) {
+    public static TestSourceFile androidMkC(String folder) {
         return new TestSourceFile(
                 folder, "Android.mk",
                 "LOCAL_PATH := $(call my-dir)\n"
@@ -182,7 +182,7 @@ public class HelloWorldJniApp extends AbstractAndroidTestApp implements AndroidT
                         + "include $(BUILD_SHARED_LIBRARY)");
     }
 
-    public static final TestSourceFile androidMkCpp(String folder) {
+    public static TestSourceFile androidMkCpp(String folder) {
         return new TestSourceFile(
                 folder, "Android.mk",
                 "LOCAL_PATH := $(call my-dir)\n"
@@ -195,7 +195,7 @@ public class HelloWorldJniApp extends AbstractAndroidTestApp implements AndroidT
                         + "include $(BUILD_SHARED_LIBRARY)");
     }
 
-    public static final TestSourceFile androidMkGoogleTest(String folder) {
+    public static TestSourceFile androidMkGoogleTest(String folder) {
         return new TestSourceFile(
                 folder, "Android.mk",
                 "LOCAL_PATH := $(call my-dir)\n"
@@ -222,13 +222,13 @@ public class HelloWorldJniApp extends AbstractAndroidTestApp implements AndroidT
                         + "$(call import-module,third_party/googletest)");
     }
 
-    public static final TestSourceFile applicationMk(String folder) {
+    public static TestSourceFile applicationMk(String folder) {
         return new TestSourceFile(
                 folder, "Application.mk",
                 "NDK_TOOLCHAIN_VERSION:=clang\n");
     }
 
-    public static final TestSourceFile androidMkMultiModule(String folder) {
+    public static TestSourceFile androidMkMultiModule(String folder) {
         return new TestSourceFile(
                 folder, "Android.mk",
                 "# TOP_PATH refers to the project root dir (MyProject)\n"
@@ -237,7 +237,7 @@ public class HelloWorldJniApp extends AbstractAndroidTestApp implements AndroidT
                 + "# Build library 1\n"
                 + "include $(CLEAR_VARS)\n"
                 + "LOCAL_PATH := $(TOP_PATH)/library1\n"
-                + "LOCAL_MODULE := library1\n"
+                + "LOCAL_MODULE := mylibrary1\n"
                 + "LOCAL_C_INCLUDES := $(LOCAL_PATH)\n"
                 + "LOCAL_SRC_FILES := library1.cpp\n"
                 + "include $(BUILD_SHARED_LIBRARY)\n"
@@ -245,13 +245,13 @@ public class HelloWorldJniApp extends AbstractAndroidTestApp implements AndroidT
                 + "# Build library 2\n"
                 + "include $(CLEAR_VARS)\n"
                 + "LOCAL_PATH := $(TOP_PATH)/library2\n"
-                + "LOCAL_MODULE := library2\n"
+                + "LOCAL_MODULE := mylibrary2\n"
                 + "LOCAL_C_INCLUDES := $(LOCAL_PATH)\n"
                 + "LOCAL_SRC_FILES := library2.cpp\n"
                 + "include $(BUILD_SHARED_LIBRARY)");
     }
 
-    public static final TestSourceFile cmakeLists(String folder) {
+    public static TestSourceFile cmakeLists(String folder) {
         return new TestSourceFile(
                 folder, "CMakeLists.txt",
                 "cmake_minimum_required(VERSION 3.4.1)\n" +
@@ -266,7 +266,7 @@ public class HelloWorldJniApp extends AbstractAndroidTestApp implements AndroidT
                         "target_link_libraries(hello-jni log)");
     }
 
-    public static final TestSourceFile cmakeListsMultiModule(String folder) {
+    public static TestSourceFile cmakeListsMultiModule(String folder) {
         return new TestSourceFile(
                 folder, "CMakeLists.txt",
                 "cmake_minimum_required(VERSION 3.4.1)\n"

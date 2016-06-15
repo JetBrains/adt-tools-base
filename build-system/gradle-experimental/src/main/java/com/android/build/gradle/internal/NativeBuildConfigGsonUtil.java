@@ -16,6 +16,8 @@
 
 package com.android.build.gradle.internal;
 
+import static com.google.common.base.Preconditions.checkState;
+
 import com.android.annotations.NonNull;
 import com.android.build.gradle.external.gson.NativeBuildConfigValue;
 import com.android.build.gradle.external.gson.NativeLibraryValue;
@@ -27,8 +29,8 @@ import com.android.build.gradle.managed.NativeLibrary;
 import com.android.build.gradle.managed.NativeSourceFile;
 import com.android.build.gradle.managed.NativeSourceFolder;
 import com.android.build.gradle.managed.NativeToolchain;
+import com.google.common.base.Strings;
 
-import org.gradle.api.Action;
 import org.gradle.model.internal.core.DuplicateModelException;
 
 import java.util.Map;
@@ -122,6 +124,8 @@ public class NativeBuildConfigGsonUtil {
 
         library.setGroupName(value.groupName);
         library.setAbi(value.abi);
+        checkState(!Strings.isNullOrEmpty(value.artifactName));
+        library.setArtifactName(value.artifactName);
 
         if (value.files != null) {
             for (final NativeSourceFileValue folder : value.files) {

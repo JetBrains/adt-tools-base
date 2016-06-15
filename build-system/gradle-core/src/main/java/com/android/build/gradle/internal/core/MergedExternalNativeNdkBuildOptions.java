@@ -37,18 +37,23 @@ public class MergedExternalNativeNdkBuildOptions implements CoreExternalNativeNd
     private final List<String> cppFlags = Lists.newArrayList();
     @NonNull
     private final Set<String> abiFilters = Sets.newHashSet();
+    @NonNull
+    private final Set<String> targets = Sets.newHashSet();
 
     public void reset() {
         arguments.clear();
         cFlags.clear();
         cppFlags.clear();
         abiFilters.clear();
+        targets.clear();
     }
+
     public void append(@NonNull CoreExternalNativeNdkBuildOptions options) {
         arguments.addAll(options.getArguments());
         cFlags.addAll(options.getcFlags());
         cppFlags.addAll(options.getCppFlags());
         abiFilters.addAll(options.getAbiFilters());
+        targets.addAll(options.getTargets());
     }
 
     @NonNull
@@ -73,5 +78,11 @@ public class MergedExternalNativeNdkBuildOptions implements CoreExternalNativeNd
     @Override
     public Set<String> getAbiFilters() {
         return abiFilters;
+    }
+
+    @NonNull
+    @Override
+    public Set<String> getTargets() {
+        return targets;
     }
 }

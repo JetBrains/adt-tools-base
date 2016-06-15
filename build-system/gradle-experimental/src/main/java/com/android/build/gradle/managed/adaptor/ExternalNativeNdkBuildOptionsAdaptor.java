@@ -58,4 +58,10 @@ public class ExternalNativeNdkBuildOptionsAdaptor implements CoreExternalNativeN
     public Set<String> getAbiFilters() {
         return options.getAbiFilters();
     }
+
+    @NonNull
+    @Override
+    public Set<String> getTargets() {
+        return options.getTargets();
+    }
 }

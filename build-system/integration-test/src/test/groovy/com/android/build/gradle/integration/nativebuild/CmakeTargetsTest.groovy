@@ -33,12 +33,13 @@ import org.junit.runners.Parameterized
 
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk
+
 /**
- * Assemble tests for ndk-build.
+ * Assemble tests for CMake with targets clause.
  */
 @CompileStatic
 @RunWith(Parameterized.class)
-class NdkBuildMultiModuleTest {
+class CmakeTargetsTest {
     @Parameterized.Parameters(name = "model = {0}")
     public static Collection<Object[]> data() {
         return [
@@ -54,13 +55,13 @@ class NdkBuildMultiModuleTest {
             .fromTestApp(HelloWorldJniApp.builder()
                 .withNativeDir("cpp")
                 .build())
-            .addFile(HelloWorldJniApp.androidMkMultiModule("src/main/cpp"))
+            .addFile(HelloWorldJniApp.cmakeListsMultiModule("."))
             .addFile(HelloWorldJniApp.libraryCpp("src/main/cpp/library1", "library1.cpp"))
             .addFile(HelloWorldJniApp.libraryCpp("src/main/cpp/library2", "library2.cpp"))
             .useExperimentalGradleVersion(isModel)
             .create();
 
-    NdkBuildMultiModuleTest(boolean isModel) {
+    CmakeTargetsTest(boolean isModel) {
         this.isModel = isModel;
     }
 
@@ -78,16 +79,13 @@ $modelBefore
         compileSdkVersion $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
         buildToolsVersion "$GradleTestProject.DEFAULT_BUILD_TOOL_VERSION"
         defaultConfig {
-          ndkBuild {
-            arguments.addAll("NDK_TOOLCHAIN_VERSION:=clang")
-            cFlags.addAll("-DTEST_C_FLAG", "-DTEST_C_FLAG_2")
-            cppFlags.addAll("-DTEST_CPP_FLAG")
-            abiFilters.addAll("armeabi-v7a", "armeabi", "x86", "x86_64")
+          cmake {
+            targets.addAll("library2")
           }
         }
         externalNativeBuild {
-          ndkBuild {
-            path "src/main/cpp/Android.mk"
+          cmake {
+            path "CMakeLists.txt"
           }
         }
     }
@@ -99,14 +97,14 @@ $modelAfter
     @Test
     void "check apk content"() {
         assertThatApk(project.getApk("debug")).hasVersionCode(1)
-        assertThatApk(project.getApk("debug")).contains("lib/armeabi-v7a/libmylibrary1.so");
-        assertThatApk(project.getApk("debug")).contains("lib/armeabi/libmylibrary1.so");
-        assertThatApk(project.getApk("debug")).contains("lib/x86/libmylibrary1.so");
-        assertThatApk(project.getApk("debug")).contains("lib/x86_64/libmylibrary1.so");
-        assertThatApk(project.getApk("debug")).contains("lib/armeabi-v7a/libmylibrary2.so");
-        assertThatApk(project.getApk("debug")).contains("lib/armeabi/libmylibrary2.so");
-        assertThatApk(project.getApk("debug")).contains("lib/x86/libmylibrary2.so");
-        assertThatApk(project.getApk("debug")).contains("lib/x86_64/libmylibrary2.so");
+        assertThatApk(project.getApk("debug")).doesNotContain("lib/armeabi-v7a/liblibrary1.so");
+        assertThatApk(project.getApk("debug")).doesNotContain("lib/armeabi/liblibrary1.so");
+        assertThatApk(project.getApk("debug")).doesNotContain("lib/x86/liblibrary1.so");
+        assertThatApk(project.getApk("debug")).doesNotContain("lib/x86_64/liblibrary1.so");
+        assertThatApk(project.getApk("debug")).contains("lib/armeabi-v7a/liblibrary2.so");
+        assertThatApk(project.getApk("debug")).contains("lib/armeabi/liblibrary2.so");
+        assertThatApk(project.getApk("debug")).contains("lib/x86/liblibrary2.so");
+        assertThatApk(project.getApk("debug")).contains("lib/x86_64/liblibrary2.so");
     }
 
     @Test
@@ -114,10 +112,10 @@ $modelAfter
         project.model().getSingle(); // Make sure we can successfully get AndroidProject
         NativeAndroidProject model = project.model().getSingle(NativeAndroidProject.class);
         assertThat(model).isNotNull();
-        assertThat(model.getBuildSystems()).containsExactly(NativeBuildSystem.NDK_BUILD.getName());
+        assertThat(model.getBuildSystems()).containsExactly(NativeBuildSystem.CMAKE.getName());
         assertThat(model.buildFiles).hasSize(1);
         assertThat(model.name).isEqualTo("project");
-        assertThat(model.artifacts).hasSize(16);
+        assertThat(model.artifacts).hasSize(28);
         assertThat(model.fileExtensions).hasSize(1);
 
         for (File file : model.buildFiles) {
@@ -134,6 +132,6 @@ $modelAfter
         }
 
         assertThat(model).hasArtifactGroupsNamed("debug", "release");
-        assertThat(model).hasArtifactGroupsOfSize(8);
+        assertThat(model).hasArtifactGroupsOfSize(14);
     }
 }

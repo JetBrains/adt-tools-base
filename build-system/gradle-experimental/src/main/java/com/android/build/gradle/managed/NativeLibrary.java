@@ -57,6 +57,13 @@ public interface NativeLibrary extends Named {
     void setAbi(String abi);
 
     /**
+     * Target name.
+     */
+    @Nullable
+    String getArtifactName();
+    void setArtifactName(String target);
+
+    /**
      * Name of the toolchain.
      */
     @Nullable

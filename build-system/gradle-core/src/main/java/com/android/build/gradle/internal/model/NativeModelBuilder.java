@@ -16,6 +16,8 @@
 
 package com.android.build.gradle.internal.model;
 
+import static com.google.common.base.Preconditions.checkState;
+
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.external.gson.NativeBuildConfigValue;
@@ -34,6 +36,7 @@ import com.android.builder.model.NativeSettings;
 import com.android.builder.model.NativeToolchain;
 import com.android.utils.StringHelper;
 import com.google.common.base.Preconditions;
+import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
@@ -202,8 +205,9 @@ public class NativeModelBuilder implements ToolingModelBuilder {
             if (library.exportedHeaders != null) {
                 exportedHeaders = ImmutableList.copyOf(library.exportedHeaders);
             }
-            Preconditions.checkNotNull(library.groupName);
-            Preconditions.checkNotNull(library.abi);
+            checkState(!Strings.isNullOrEmpty(library.groupName), "groupName missing");
+            checkState(!Strings.isNullOrEmpty(library.abi), "abi missing");
+            checkState(!Strings.isNullOrEmpty(library.artifactName), "artifactName missing");
             return new NativeArtifactImpl(
                     name,
                     library.toolchain,
@@ -213,7 +217,8 @@ public class NativeModelBuilder implements ToolingModelBuilder {
                     files,
                     exportedHeaders,
                     library.output,
-                    library.abi);
+                    library.abi,
+                    library.artifactName);
         }
 
         @NonNull

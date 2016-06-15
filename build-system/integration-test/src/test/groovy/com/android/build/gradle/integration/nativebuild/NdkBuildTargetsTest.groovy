@@ -34,11 +34,11 @@ import org.junit.runners.Parameterized
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk
 /**
- * Assemble tests for ndk-build.
+ * Assemble tests for ndk-build with targets clause.
  */
 @CompileStatic
 @RunWith(Parameterized.class)
-class NdkBuildMultiModuleTest {
+class NdkBuildTargetsTest {
     @Parameterized.Parameters(name = "model = {0}")
     public static Collection<Object[]> data() {
         return [
@@ -60,7 +60,7 @@ class NdkBuildMultiModuleTest {
             .useExperimentalGradleVersion(isModel)
             .create();
 
-    NdkBuildMultiModuleTest(boolean isModel) {
+    NdkBuildTargetsTest(boolean isModel) {
         this.isModel = isModel;
     }
 
@@ -80,6 +80,7 @@ $modelBefore
         defaultConfig {
           ndkBuild {
             arguments.addAll("NDK_TOOLCHAIN_VERSION:=clang")
+            targets.addAll("mylibrary2")
             cFlags.addAll("-DTEST_C_FLAG", "-DTEST_C_FLAG_2")
             cppFlags.addAll("-DTEST_CPP_FLAG")
             abiFilters.addAll("armeabi-v7a", "armeabi", "x86", "x86_64")
@@ -99,10 +100,12 @@ $modelAfter
     @Test
     void "check apk content"() {
         assertThatApk(project.getApk("debug")).hasVersionCode(1)
-        assertThatApk(project.getApk("debug")).contains("lib/armeabi-v7a/libmylibrary1.so");
-        assertThatApk(project.getApk("debug")).contains("lib/armeabi/libmylibrary1.so");
-        assertThatApk(project.getApk("debug")).contains("lib/x86/libmylibrary1.so");
-        assertThatApk(project.getApk("debug")).contains("lib/x86_64/libmylibrary1.so");
+        // These were filtered out because they weren't in ndkBuild.targets
+        assertThatApk(project.getApk("debug")).doesNotContain("lib/armeabi-v7a/libmylibrary1.so");
+        assertThatApk(project.getApk("debug")).doesNotContain("lib/armeabi/libmylibrary1.so");
+        assertThatApk(project.getApk("debug")).doesNotContain("lib/x86/libmylibrary1.so");
+        assertThatApk(project.getApk("debug")).doesNotContain("lib/x86_64/libmylibrary1.so");
+        // These weren't filtered out because they were in ndkBuild.targets
         assertThatApk(project.getApk("debug")).contains("lib/armeabi-v7a/libmylibrary2.so");
         assertThatApk(project.getApk("debug")).contains("lib/armeabi/libmylibrary2.so");
         assertThatApk(project.getApk("debug")).contains("lib/x86/libmylibrary2.so");
@@ -117,6 +120,8 @@ $modelAfter
         assertThat(model.getBuildSystems()).containsExactly(NativeBuildSystem.NDK_BUILD.getName());
         assertThat(model.buildFiles).hasSize(1);
         assertThat(model.name).isEqualTo("project");
+        // All targets are present in the model, even those not specified in ndkBuild.targets.
+        // This is so the user can view, edit, and navigate between targets in Android Studio.
         assertThat(model.artifacts).hasSize(16);
         assertThat(model.fileExtensions).hasSize(1);
 

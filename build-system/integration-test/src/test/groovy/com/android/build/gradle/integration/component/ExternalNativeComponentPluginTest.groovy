@@ -62,6 +62,7 @@ model {
     "libraries" : {
         "foo" : {
             "buildCommand" : "touch output.txt",
+            "artifactName" : "output",
             "toolchain" : "toolchain1",
             "output" : "build/libfoo.so",
             "abi" : "x86",
@@ -279,6 +280,7 @@ model {
             create("foo") {
                 buildCommand "touch output.txt"
                 abi "x86"
+                artifactName "output"
                 toolchain "toolchain1"
                 output file("build/libfoo.so")
                 folders {

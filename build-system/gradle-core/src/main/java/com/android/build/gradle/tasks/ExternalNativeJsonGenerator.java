@@ -24,6 +24,8 @@ import com.android.annotations.Nullable;
 import com.android.build.gradle.external.gson.NativeBuildConfigValue;
 import com.android.build.gradle.internal.SdkHandler;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
+import com.android.build.gradle.internal.dsl.CoreExternalNativeCmakeOptions;
+import com.android.build.gradle.internal.dsl.CoreExternalNativeNdkBuildOptions;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
@@ -259,6 +261,7 @@ public abstract class ExternalNativeJsonGenerator {
                 diagnostic("JSON '%s' was up-to-date", expectedJson);
             }
         }
+
         diagnostic("build complete");
     }
 
@@ -307,16 +310,24 @@ public abstract class ExternalNativeJsonGenerator {
     @NonNull
     public Collection<NativeBuildConfigValue> readExistingNativeBuildConfigurations()
             throws IOException {
+        List<NativeBuildConfigValue> result = Lists.newArrayList();
         List<File> existing = Lists.newArrayList();
         for(File file : getNativeBuildConfigurationsJsons()) {
             if (file.exists()) {
                 existing.add(file);
+            } else {
+                // If the tool didn't create the JSON file then create fallback with the
+                // information we have so the user can see partial information in the UI.
+                NativeBuildConfigValue fallback = new NativeBuildConfigValue();
+                fallback.buildFiles = Lists.newArrayList(makefile);
+                result.add(fallback);
             }
         }
 
-        return ExternalNativeBuildTaskUtils.getNativeBuildConfigValues(
+        result.addAll(ExternalNativeBuildTaskUtils.getNativeBuildConfigValues(
                 existing,
-                variantName);
+                variantName));
+        return result;
     }
 
     @NonNull
@@ -345,10 +356,11 @@ public abstract class ExternalNativeJsonGenerator {
                 variantData.getName());
         switch(buildSystem) {
             case NDK_BUILD: {
+                CoreExternalNativeNdkBuildOptions options =
+                        variantConfig.getExternalNativeNdkBuildOptions();
                 return new NdkBuildExternalNativeJsonGenerator(
                         variantData.getName(),
-                        ExternalNativeBuildTaskUtils.getAbiFilters(
-                                variantConfig.getExternalNativeNdkBuildOptions().getAbiFilters()),
+                        ExternalNativeBuildTaskUtils.getAbiFilters(options.getAbiFilters()),
                         androidBuilder,
                         sdkHandler.getSdkFolder(),
                         sdkHandler.getNdkFolder(),
@@ -357,16 +369,17 @@ public abstract class ExternalNativeJsonGenerator {
                         jsonFolder,
                         makefile,
                         variantConfig.getBuildType().isDebuggable(),
-                        variantConfig.getExternalNativeNdkBuildOptions().getArguments(),
-                        variantConfig.getExternalNativeNdkBuildOptions().getcFlags(),
-                        variantConfig.getExternalNativeNdkBuildOptions().getCppFlags());
+                        options.getArguments(),
+                        options.getcFlags(),
+                        options.getCppFlags());
             }
             case CMAKE: {
+                CoreExternalNativeCmakeOptions options =
+                        variantConfig.getExternalNativeCmakeOptions();
                 return new CmakeExternalNativeJsonGenerator(
                         sdkHandler.getSdkFolder(),
                         variantData.getName(),
-                        ExternalNativeBuildTaskUtils.getAbiFilters(
-                                variantConfig.getExternalNativeCmakeOptions().getAbiFilters()),
+                        ExternalNativeBuildTaskUtils.getAbiFilters(options.getAbiFilters()),
                         androidBuilder,
                         sdkHandler.getSdkFolder(),
                         sdkHandler.getNdkFolder(),
@@ -375,9 +388,9 @@ public abstract class ExternalNativeJsonGenerator {
                         jsonFolder,
                         makefile,
                         variantConfig.getBuildType().isDebuggable(),
-                        variantConfig.getExternalNativeCmakeOptions().getArguments(),
-                        variantConfig.getExternalNativeCmakeOptions().getcFlags(),
-                        variantConfig.getExternalNativeCmakeOptions().getCppFlags());
+                        options.getArguments(),
+                        options.getcFlags(),
+                        options.getCppFlags());
 
             }
             default:

@@ -5,42 +5,11 @@
     }
   ],
   "libraries": {
-    "armeabi-v7a-libnative-audio-jni-debug": {
-      "buildCommand": "echo build command",
-      "toolchain": "toolchain-armeabi-v7a",
-      "abi": "armeabi-v7a",
-      "files": [
-        {
-          "src": {
-            "path": "{ndkPath}/samples/native-audio/jni/native-audio-jni.c"
-          },
-          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector\" \"-no-canonical-prefixes\" \"-march\u003darmv7-a\" \"-mfpu\u003dvfpv3-d16\" \"-mfloat-abi\u003dsoftfp\" \"-mthumb\" \"-Os\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fno-strict-aliasing\" \"-finline-limit\u003d64\" \"-O0\" \"-UNDEBUG\" \"-marm\" \"-fno-omit-frame-pointer\" \"-I{ndkPath}/samples/native-audio/jni\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-9/arch-arm/usr/include\""
-        }
-      ],
-      "output": {
-        "path": "{ndkPath}/samples/native-audio/obj/local/armeabi-v7a/libnative-audio-jni.so"
-      }
-    },
-    "mips-libnative-audio-jni-release": {
-      "buildCommand": "echo build command",
-      "toolchain": "toolchain-mips",
-      "abi": "mips",
-      "files": [
-        {
-          "src": {
-            "path": "{ndkPath}/samples/native-audio/jni/native-audio-jni.c"
-          },
-          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-fno-strict-aliasing\" \"-finline-functions\" \"-ffunction-sections\" \"-funwind-tables\" \"-fmessage-length\u003d0\" \"-fno-inline-functions-called-once\" \"-fgcse-after-reload\" \"-frerun-cse-after-loop\" \"-frename-registers\" \"-no-canonical-prefixes\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-I{ndkPath}/samples/native-audio/jni\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-9/arch-mips/usr/include\""
-        }
-      ],
-      "output": {
-        "path": "{ndkPath}/samples/native-audio/obj/local/mips/libnative-audio-jni.so"
-      }
-    },
-    "armeabi-libnative-audio-jni-debug": {
-      "buildCommand": "echo build command",
+    "native-audio-jni-debug-armeabi": {
+      "buildCommand": "echo build command native-audio-jni",
       "toolchain": "toolchain-armeabi",
       "abi": "armeabi",
+      "artifactName": "native-audio-jni",
       "files": [
         {
           "src": {
@@ -53,42 +22,11 @@
         "path": "{ndkPath}/samples/native-audio/obj/local/armeabi/libnative-audio-jni.so"
       }
     },
-    "armeabi-v7a-libnative-audio-jni-release": {
-      "buildCommand": "echo build command",
-      "toolchain": "toolchain-armeabi-v7a",
-      "abi": "armeabi-v7a",
-      "files": [
-        {
-          "src": {
-            "path": "{ndkPath}/samples/native-audio/jni/native-audio-jni.c"
-          },
-          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector\" \"-no-canonical-prefixes\" \"-march\u003darmv7-a\" \"-mfpu\u003dvfpv3-d16\" \"-mfloat-abi\u003dsoftfp\" \"-mthumb\" \"-Os\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fno-strict-aliasing\" \"-finline-limit\u003d64\" \"-I{ndkPath}/samples/native-audio/jni\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-9/arch-arm/usr/include\""
-        }
-      ],
-      "output": {
-        "path": "{ndkPath}/samples/native-audio/obj/local/armeabi-v7a/libnative-audio-jni.so"
-      }
-    },
-    "arm64-v8a-libnative-audio-jni-release": {
-      "buildCommand": "echo build command",
-      "toolchain": "toolchain-arm64-v8a",
-      "abi": "arm64-v8a",
-      "files": [
-        {
-          "src": {
-            "path": "{ndkPath}/samples/native-audio/jni/native-audio-jni.c"
-          },
-          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-I{ndkPath}/samples/native-audio/jni\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-21/arch-arm64/usr/include\""
-        }
-      ],
-      "output": {
-        "path": "{ndkPath}/samples/native-audio/obj/local/arm64-v8a/libnative-audio-jni.so"
-      }
-    },
-    "mips64-libnative-audio-jni-debug": {
-      "buildCommand": "echo build command",
+    "native-audio-jni-debug-mips64": {
+      "buildCommand": "echo build command native-audio-jni",
       "toolchain": "toolchain-mips64",
       "abi": "mips64",
+      "artifactName": "native-audio-jni",
       "files": [
         {
           "src": {
@@ -101,26 +39,11 @@
         "path": "{ndkPath}/samples/native-audio/obj/local/mips64/libnative-audio-jni.so"
       }
     },
-    "x86-libnative-audio-jni-debug": {
-      "buildCommand": "echo build command",
-      "toolchain": "toolchain-x86",
-      "abi": "x86",
-      "files": [
-        {
-          "src": {
-            "path": "{ndkPath}/samples/native-audio/jni/native-audio-jni.c"
-          },
-          "flags": "\"-MMD\" \"-MP\" \"-ffunction-sections\" \"-funwind-tables\" \"-no-canonical-prefixes\" \"-fstack-protector\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-O0\" \"-UNDEBUG\" \"-fno-omit-frame-pointer\" \"-fno-strict-aliasing\" \"-I{ndkPath}/samples/native-audio/jni\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-9/arch-x86/usr/include\""
-        }
-      ],
-      "output": {
-        "path": "{ndkPath}/samples/native-audio/obj/local/x86/libnative-audio-jni.so"
-      }
-    },
-    "arm64-v8a-libnative-audio-jni-debug": {
-      "buildCommand": "echo build command",
+    "native-audio-jni-debug-arm64-v8a": {
+      "buildCommand": "echo build command native-audio-jni",
       "toolchain": "toolchain-arm64-v8a",
       "abi": "arm64-v8a",
+      "artifactName": "native-audio-jni",
       "files": [
         {
           "src": {
@@ -133,58 +56,11 @@
         "path": "{ndkPath}/samples/native-audio/obj/local/arm64-v8a/libnative-audio-jni.so"
       }
     },
-    "mips-libnative-audio-jni-debug": {
-      "buildCommand": "echo build command",
-      "toolchain": "toolchain-mips",
-      "abi": "mips",
-      "files": [
-        {
-          "src": {
-            "path": "{ndkPath}/samples/native-audio/jni/native-audio-jni.c"
-          },
-          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-fno-strict-aliasing\" \"-finline-functions\" \"-ffunction-sections\" \"-funwind-tables\" \"-fmessage-length\u003d0\" \"-fno-inline-functions-called-once\" \"-fgcse-after-reload\" \"-frerun-cse-after-loop\" \"-frename-registers\" \"-no-canonical-prefixes\" \"-O0\" \"-g\" \"-fno-omit-frame-pointer\" \"-I{ndkPath}/samples/native-audio/jni\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-9/arch-mips/usr/include\""
-        }
-      ],
-      "output": {
-        "path": "{ndkPath}/samples/native-audio/obj/local/mips/libnative-audio-jni.so"
-      }
-    },
-    "mips64-libnative-audio-jni-release": {
-      "buildCommand": "echo build command",
-      "toolchain": "toolchain-mips64",
-      "abi": "mips64",
-      "files": [
-        {
-          "src": {
-            "path": "{ndkPath}/samples/native-audio/jni/native-audio-jni.c"
-          },
-          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-fno-strict-aliasing\" \"-finline-functions\" \"-ffunction-sections\" \"-funwind-tables\" \"-fmessage-length\u003d0\" \"-fno-inline-functions-called-once\" \"-fgcse-after-reload\" \"-frerun-cse-after-loop\" \"-frename-registers\" \"-no-canonical-prefixes\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-I{ndkPath}/samples/native-audio/jni\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-21/arch-mips64/usr/include\""
-        }
-      ],
-      "output": {
-        "path": "{ndkPath}/samples/native-audio/obj/local/mips64/libnative-audio-jni.so"
-      }
-    },
-    "x86_64-libnative-audio-jni-release": {
-      "buildCommand": "echo build command",
-      "toolchain": "toolchain-x86_64",
-      "abi": "x86_64",
-      "files": [
-        {
-          "src": {
-            "path": "{ndkPath}/samples/native-audio/jni/native-audio-jni.c"
-          },
-          "flags": "\"-MMD\" \"-MP\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-I{ndkPath}/samples/native-audio/jni\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-21/arch-x86_64/usr/include\""
-        }
-      ],
-      "output": {
-        "path": "{ndkPath}/samples/native-audio/obj/local/x86_64/libnative-audio-jni.so"
-      }
-    },
-    "x86-libnative-audio-jni-release": {
-      "buildCommand": "echo build command",
+    "native-audio-jni-release-x86": {
+      "buildCommand": "echo build command native-audio-jni",
       "toolchain": "toolchain-x86",
       "abi": "x86",
+      "artifactName": "native-audio-jni",
       "files": [
         {
           "src": {
@@ -197,10 +73,113 @@
         "path": "{ndkPath}/samples/native-audio/obj/local/x86/libnative-audio-jni.so"
       }
     },
-    "x86_64-libnative-audio-jni-debug": {
-      "buildCommand": "echo build command",
+    "native-audio-jni-release-arm64-v8a": {
+      "buildCommand": "echo build command native-audio-jni",
+      "toolchain": "toolchain-arm64-v8a",
+      "abi": "arm64-v8a",
+      "artifactName": "native-audio-jni",
+      "files": [
+        {
+          "src": {
+            "path": "{ndkPath}/samples/native-audio/jni/native-audio-jni.c"
+          },
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-I{ndkPath}/samples/native-audio/jni\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-21/arch-arm64/usr/include\""
+        }
+      ],
+      "output": {
+        "path": "{ndkPath}/samples/native-audio/obj/local/arm64-v8a/libnative-audio-jni.so"
+      }
+    },
+    "native-audio-jni-release-armeabi-v7a": {
+      "buildCommand": "echo build command native-audio-jni",
+      "toolchain": "toolchain-armeabi-v7a",
+      "abi": "armeabi-v7a",
+      "artifactName": "native-audio-jni",
+      "files": [
+        {
+          "src": {
+            "path": "{ndkPath}/samples/native-audio/jni/native-audio-jni.c"
+          },
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector\" \"-no-canonical-prefixes\" \"-march\u003darmv7-a\" \"-mfpu\u003dvfpv3-d16\" \"-mfloat-abi\u003dsoftfp\" \"-mthumb\" \"-Os\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fno-strict-aliasing\" \"-finline-limit\u003d64\" \"-I{ndkPath}/samples/native-audio/jni\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-9/arch-arm/usr/include\""
+        }
+      ],
+      "output": {
+        "path": "{ndkPath}/samples/native-audio/obj/local/armeabi-v7a/libnative-audio-jni.so"
+      }
+    },
+    "native-audio-jni-release-armeabi": {
+      "buildCommand": "echo build command native-audio-jni",
+      "toolchain": "toolchain-armeabi",
+      "abi": "armeabi",
+      "artifactName": "native-audio-jni",
+      "files": [
+        {
+          "src": {
+            "path": "{ndkPath}/samples/native-audio/jni/native-audio-jni.c"
+          },
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector\" \"-no-canonical-prefixes\" \"-march\u003darmv5te\" \"-mtune\u003dxscale\" \"-msoft-float\" \"-mthumb\" \"-Os\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fno-strict-aliasing\" \"-finline-limit\u003d64\" \"-I{ndkPath}/samples/native-audio/jni\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-9/arch-arm/usr/include\""
+        }
+      ],
+      "output": {
+        "path": "{ndkPath}/samples/native-audio/obj/local/armeabi/libnative-audio-jni.so"
+      }
+    },
+    "native-audio-jni-debug-armeabi-v7a": {
+      "buildCommand": "echo build command native-audio-jni",
+      "toolchain": "toolchain-armeabi-v7a",
+      "abi": "armeabi-v7a",
+      "artifactName": "native-audio-jni",
+      "files": [
+        {
+          "src": {
+            "path": "{ndkPath}/samples/native-audio/jni/native-audio-jni.c"
+          },
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector\" \"-no-canonical-prefixes\" \"-march\u003darmv7-a\" \"-mfpu\u003dvfpv3-d16\" \"-mfloat-abi\u003dsoftfp\" \"-mthumb\" \"-Os\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fno-strict-aliasing\" \"-finline-limit\u003d64\" \"-O0\" \"-UNDEBUG\" \"-marm\" \"-fno-omit-frame-pointer\" \"-I{ndkPath}/samples/native-audio/jni\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-9/arch-arm/usr/include\""
+        }
+      ],
+      "output": {
+        "path": "{ndkPath}/samples/native-audio/obj/local/armeabi-v7a/libnative-audio-jni.so"
+      }
+    },
+    "native-audio-jni-debug-mips": {
+      "buildCommand": "echo build command native-audio-jni",
+      "toolchain": "toolchain-mips",
+      "abi": "mips",
+      "artifactName": "native-audio-jni",
+      "files": [
+        {
+          "src": {
+            "path": "{ndkPath}/samples/native-audio/jni/native-audio-jni.c"
+          },
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-fno-strict-aliasing\" \"-finline-functions\" \"-ffunction-sections\" \"-funwind-tables\" \"-fmessage-length\u003d0\" \"-fno-inline-functions-called-once\" \"-fgcse-after-reload\" \"-frerun-cse-after-loop\" \"-frename-registers\" \"-no-canonical-prefixes\" \"-O0\" \"-g\" \"-fno-omit-frame-pointer\" \"-I{ndkPath}/samples/native-audio/jni\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-9/arch-mips/usr/include\""
+        }
+      ],
+      "output": {
+        "path": "{ndkPath}/samples/native-audio/obj/local/mips/libnative-audio-jni.so"
+      }
+    },
+    "native-audio-jni-release-mips": {
+      "buildCommand": "echo build command native-audio-jni",
+      "toolchain": "toolchain-mips",
+      "abi": "mips",
+      "artifactName": "native-audio-jni",
+      "files": [
+        {
+          "src": {
+            "path": "{ndkPath}/samples/native-audio/jni/native-audio-jni.c"
+          },
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-fno-strict-aliasing\" \"-finline-functions\" \"-ffunction-sections\" \"-funwind-tables\" \"-fmessage-length\u003d0\" \"-fno-inline-functions-called-once\" \"-fgcse-after-reload\" \"-frerun-cse-after-loop\" \"-frename-registers\" \"-no-canonical-prefixes\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-I{ndkPath}/samples/native-audio/jni\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-9/arch-mips/usr/include\""
+        }
+      ],
+      "output": {
+        "path": "{ndkPath}/samples/native-audio/obj/local/mips/libnative-audio-jni.so"
+      }
+    },
+    "native-audio-jni-debug-x86_64": {
+      "buildCommand": "echo build command native-audio-jni",
       "toolchain": "toolchain-x86_64",
       "abi": "x86_64",
+      "artifactName": "native-audio-jni",
       "files": [
         {
           "src": {
@@ -213,20 +192,55 @@
         "path": "{ndkPath}/samples/native-audio/obj/local/x86_64/libnative-audio-jni.so"
       }
     },
-    "armeabi-libnative-audio-jni-release": {
-      "buildCommand": "echo build command",
-      "toolchain": "toolchain-armeabi",
-      "abi": "armeabi",
+    "native-audio-jni-release-mips64": {
+      "buildCommand": "echo build command native-audio-jni",
+      "toolchain": "toolchain-mips64",
+      "abi": "mips64",
+      "artifactName": "native-audio-jni",
       "files": [
         {
           "src": {
             "path": "{ndkPath}/samples/native-audio/jni/native-audio-jni.c"
           },
-          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector\" \"-no-canonical-prefixes\" \"-march\u003darmv5te\" \"-mtune\u003dxscale\" \"-msoft-float\" \"-mthumb\" \"-Os\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fno-strict-aliasing\" \"-finline-limit\u003d64\" \"-I{ndkPath}/samples/native-audio/jni\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-9/arch-arm/usr/include\""
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-fno-strict-aliasing\" \"-finline-functions\" \"-ffunction-sections\" \"-funwind-tables\" \"-fmessage-length\u003d0\" \"-fno-inline-functions-called-once\" \"-fgcse-after-reload\" \"-frerun-cse-after-loop\" \"-frename-registers\" \"-no-canonical-prefixes\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-I{ndkPath}/samples/native-audio/jni\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-21/arch-mips64/usr/include\""
         }
       ],
       "output": {
-        "path": "{ndkPath}/samples/native-audio/obj/local/armeabi/libnative-audio-jni.so"
+        "path": "{ndkPath}/samples/native-audio/obj/local/mips64/libnative-audio-jni.so"
+      }
+    },
+    "native-audio-jni-debug-x86": {
+      "buildCommand": "echo build command native-audio-jni",
+      "toolchain": "toolchain-x86",
+      "abi": "x86",
+      "artifactName": "native-audio-jni",
+      "files": [
+        {
+          "src": {
+            "path": "{ndkPath}/samples/native-audio/jni/native-audio-jni.c"
+          },
+          "flags": "\"-MMD\" \"-MP\" \"-ffunction-sections\" \"-funwind-tables\" \"-no-canonical-prefixes\" \"-fstack-protector\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-O0\" \"-UNDEBUG\" \"-fno-omit-frame-pointer\" \"-fno-strict-aliasing\" \"-I{ndkPath}/samples/native-audio/jni\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-9/arch-x86/usr/include\""
+        }
+      ],
+      "output": {
+        "path": "{ndkPath}/samples/native-audio/obj/local/x86/libnative-audio-jni.so"
+      }
+    },
+    "native-audio-jni-release-x86_64": {
+      "buildCommand": "echo build command native-audio-jni",
+      "toolchain": "toolchain-x86_64",
+      "abi": "x86_64",
+      "artifactName": "native-audio-jni",
+      "files": [
+        {
+          "src": {
+            "path": "{ndkPath}/samples/native-audio/jni/native-audio-jni.c"
+          },
+          "flags": "\"-MMD\" \"-MP\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-I{ndkPath}/samples/native-audio/jni\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-21/arch-x86_64/usr/include\""
+        }
+      ],
+      "output": {
+        "path": "{ndkPath}/samples/native-audio/obj/local/x86_64/libnative-audio-jni.so"
       }
     }
   },

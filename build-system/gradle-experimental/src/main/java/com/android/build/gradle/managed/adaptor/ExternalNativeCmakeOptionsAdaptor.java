@@ -58,5 +58,11 @@ public class ExternalNativeCmakeOptionsAdaptor implements CoreExternalNativeCmak
     public Set<String> getAbiFilters() {
         return options.getAbiFilters();
     }
+
+    @NonNull
+    @Override
+    public Set<String> getTargets() {
+        return options.getTargets();
+    }
 }
 

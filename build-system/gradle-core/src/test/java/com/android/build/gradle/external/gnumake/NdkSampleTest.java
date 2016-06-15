@@ -16,6 +16,8 @@
 package com.android.build.gradle.external.gnumake;
 
 import com.android.SdkConstants;
+import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.build.gradle.external.gson.NativeBuildConfigValue;
 import com.android.build.gradle.truth.NativeBuildConfigValueSubject;
 import com.google.common.base.Charsets;
@@ -38,11 +40,16 @@ import java.util.Map;
 public class NdkSampleTest {
     // Turn this flag to true to regenerate test baselines in the case that output has intentionally
     // changed. Should never be checked in as 'true'.
-    private static boolean REGENERATE_TEST_BASELINES = false;
-    private static boolean REGENERATE_TEST_JSON_FROM_TEXT = false;
-    private static String THIS_TEST_FOLDER =
+    @SuppressWarnings("FieldCanBeLocal")
+    private static final boolean REGENERATE_TEST_BASELINES = false;
+    // Turn this flag to true to regenerate test JSON from preexisting baselines in the case that
+    // output has intentionally changed.
+    @SuppressWarnings("FieldCanBeLocal")
+    private static final boolean REGENERATE_TEST_JSON_FROM_TEXT = false;
+    @NonNull
+    private static final String THIS_TEST_FOLDER =
             "src/test/java/com/android/build/gradle/external/gnumake/";
-    private static boolean isWindows =
+    private static final boolean isWindows =
             SdkConstants.currentPlatform() == SdkConstants.PLATFORM_WINDOWS;
 
     private static class Spawner {
@@ -56,7 +63,8 @@ public class NdkSampleTest {
             }
         }
 
-        public static String spawn(String command) throws IOException, InterruptedException {
+        @NonNull
+        private static String spawn(String command) throws IOException, InterruptedException {
             Process proc = platformExec(command);
 
             // any error message?
@@ -101,14 +109,16 @@ public class NdkSampleTest {
          * Read an input stream off of the main thread
          */
         private static class StreamReaderThread extends Thread {
-            final private InputStream is;
-            final private StringBuilder output = new StringBuilder();
+            private final InputStream is;
+            private final StringBuilder output = new StringBuilder();
+            @Nullable
             IOException ioe = null;
 
             public StreamReaderThread(InputStream is) {
                 this.is = is;
             }
 
+            @NonNull
             public String result() {
                 return output.toString();
             }
@@ -118,10 +128,15 @@ public class NdkSampleTest {
                 try {
                     InputStreamReader streamReader = new InputStreamReader(is);
                     BufferedReader bufferedReader = new BufferedReader(streamReader);
-                    String line;
-                    while ((line = bufferedReader.readLine()) != null) {
-                        output.append(line);
-                        output.append("\n");
+                    try {
+                        String line;
+                        while ((line = bufferedReader.readLine()) != null) {
+                            output.append(line);
+                            output.append("\n");
+                        }
+                    } finally {
+                        //noinspection ThrowFromFinallyBlock
+                        bufferedReader.close();
                     }
                 } catch (IOException ioe) {
                     this.ioe = ioe;
@@ -130,7 +145,7 @@ public class NdkSampleTest {
         }
     }
 
-    private static File getNdkPath() throws IOException, InterruptedException {
+    private static File getNdkPath() {
         String path = System.getenv().get("ANDROID_NDK_HOME");
         if (isWindows) {
             path = path.replace("/", "\\\\");
@@ -145,7 +160,8 @@ public class NdkSampleTest {
                 .build();
     }
 
-    private static File getVariantBuildOutputFile(File testPath, String variant) {
+    @NonNull
+    private static File getVariantBuildOutputFile(@NonNull File testPath, String variant) {
         return new File(
                 THIS_TEST_FOLDER
                         + "support-files/ndk-sample-baselines/"
@@ -153,14 +169,16 @@ public class NdkSampleTest {
                         + "." + variant + ".linux.txt");
     }
 
-    private static File getJsonFile(File testPath) {
+    @NonNull
+    private static File getJsonFile(@NonNull File testPath) {
         return new File(
                 THIS_TEST_FOLDER + "support-files/ndk-sample-baselines/"
                         + testPath.getName() + ".json");
     }
 
+    @NonNull
     private static String getNdkResult(
-            File projectPath, String flags) throws IOException, InterruptedException {
+            @NonNull File projectPath, String flags) throws IOException, InterruptedException {
 
         String command = String.format(getNdkPath() + "/ndk-build -B -n NDK_PROJECT_PATH=%s %s",
                 projectPath.getAbsolutePath(),
@@ -168,11 +186,7 @@ public class NdkSampleTest {
         return Spawner.spawn(command);
     }
 
-    private void checkJson(String path)
-            throws IOException, InterruptedException {
-        checkJson(path, true);
-    }
-    private void checkJson(String path, boolean ndkBuildable)
+    private static void checkJson(String path)
             throws IOException, InterruptedException {
 
         if (isWindows) {
@@ -185,7 +199,7 @@ public class NdkSampleTest {
         // Get the baseline config
         File baselineJsonFile = getJsonFile(testPath);
 
-        if (REGENERATE_TEST_BASELINES && ndkBuildable) {
+        if (REGENERATE_TEST_BASELINES) {
             File directory = new File(THIS_TEST_FOLDER + "support-files/ndk-sample-baselines");
             if (!directory.exists()) {
                 //noinspection ResultOfMethodCallIgnored

@@ -16,6 +16,9 @@
 
 package com.android.build.gradle.tasks;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.checkState;
+
 import com.android.annotations.NonNull;
 import com.android.build.gradle.external.gson.NativeBuildConfigValue;
 import com.android.build.gradle.external.gson.NativeLibraryValue;
@@ -28,8 +31,10 @@ import com.android.builder.core.AndroidBuilder;
 import com.android.ide.common.process.ProcessException;
 import com.android.ide.common.process.ProcessInfoBuilder;
 import com.android.utils.StringHelper;
-import com.google.common.base.Preconditions;
+import com.google.common.base.Joiner;
+import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import com.google.common.io.Files;
 
 import org.gradle.api.GradleException;
@@ -39,6 +44,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Task that takes set of JSON files of type NativeBuildConfigValue and does build steps with them.
@@ -46,45 +52,91 @@ import java.util.List;
 public class ExternalNativeBuildTask extends BaseTask {
 
     private List<File> nativeBuildConfigurationsJsons;
+
     private File soFolder;
+
     private File objFolder;
+
+    private Set<String> targets;
 
     @TaskAction
     void build() throws ProcessException, IOException {
-        diagnostic("starting build\n");
-        diagnostic("bringing jsons up-to-date\n");
-        Preconditions.checkNotNull(getVariantName());
+        diagnostic("starting build");
+        diagnostic("bringing JSON up-to-date");
+        checkNotNull(getVariantName());
         Collection<NativeBuildConfigValue> configValueList = ExternalNativeBuildTaskUtils
                 .getNativeBuildConfigValues(
                         nativeBuildConfigurationsJsons, getVariantName());
         List<String> buildCommands = Lists.newArrayList();
 
-         diagnostic("executing build commands in jsons\n");
+
+        // Check the resulting JSON targets against the targets specified in ndkBuild.targets or
+        // cmake.targets. If a target name specified by the user isn't present then provide an
+        // error to the user that lists
+        if (!targets.isEmpty()) {
+            diagnostic("executing build commands for targets: '%s'", Joiner.on(", ").join(targets));
+
+            // Search libraries for matching targets.
+            Set<String> matchingTargets = Sets.newHashSet();
+            Set<String> unmatchedTargets = Sets.newHashSet();
+            for (NativeBuildConfigValue config : configValueList) {
+                if (config.libraries == null) {
+                    continue;
+                }
+                for (NativeLibraryValue libraryValue : config.libraries.values()) {
+                    if (targets.contains(libraryValue.artifactName)) {
+                        matchingTargets.add(libraryValue.artifactName);
+                    } else {
+                        unmatchedTargets.add(libraryValue.artifactName);
+                    }
+                }
+            }
+
+            // All targets must be found or it's a build error
+            for (String target : targets) {
+                if (!matchingTargets.contains(target)) {
+                    throw new GradleException(
+                            String.format("Unexpected native build target %s. Valid values are: %s",
+                                    target, Joiner.on(", ").join(unmatchedTargets)));
+                }
+            }
+        }
+
         for (NativeBuildConfigValue config : configValueList) {
             if (config.libraries == null) {
                 continue;
             }
             for (String libraryName : config.libraries.keySet()) {
                 NativeLibraryValue libraryValue = config.libraries.get(libraryName);
+                if (!targets.isEmpty() && !targets.contains(libraryValue.artifactName)) {
+                    diagnostic("not building target %s because it isn't in targets set",
+                      libraryValue.artifactName);
+                    continue;
+                }
                 buildCommands.add(libraryValue.buildCommand);
-                diagnostic("About to build %s\n", libraryValue.buildCommand);
+                diagnostic("about to build %s", libraryValue.buildCommand);
             }
         }
         executeProcessBatch(buildCommands);
 
-        diagnostic("copying build outputs from json-defined locations to expected locations\n");
+        diagnostic("copying build outputs from JSON-defined locations to expected locations");
         for (NativeBuildConfigValue config : configValueList) {
             if (config.libraries == null) {
                 continue;
             }
             for (String libraryName : config.libraries.keySet()) {
                 NativeLibraryValue libraryValue = config.libraries.get(libraryName);
-                Preconditions.checkNotNull(libraryValue);
-                Preconditions.checkNotNull(libraryValue.output);
+                checkNotNull(libraryValue);
+                checkNotNull(libraryValue.output);
+                checkState(!Strings.isNullOrEmpty(libraryValue.artifactName));
+                if (!targets.isEmpty() && !targets.contains(libraryValue.artifactName)) {
+                    continue;
+                }
                 if (!libraryValue.output.exists()) {
                     throw new GradleException(
-                            String.format("Expected output file at %s but there was none",
-                                    libraryValue.output));
+                            String.format("Expected output file at %s for target %s"
+                                    + " but there was none",
+                                    libraryValue.output, libraryValue.artifactName));
                 }
                 if (libraryValue.abi == null) {
                     throw new GradleException("Expected NativeLibraryValue to have non-null abi");
@@ -97,19 +149,19 @@ public class ExternalNativeBuildTask extends BaseTask {
                 if (destinationFile.getCanonicalPath().equals(
                         libraryValue.output.getCanonicalPath())) {
                     diagnostic(
-                            "not copying output file because it is already in prescribed location: %s\n",
+                            "not copying output file because it is already in prescribed location: %s",
                             libraryValue.output);
                     continue;
                 }
                 if (destinationFolder.mkdirs()) {
-                    diagnostic("created folder %s\n", destinationFolder);
+                    diagnostic("created folder %s", destinationFolder);
                 }
-                diagnostic("copy from %s to %s\n", libraryValue.output, destinationFile);
+                diagnostic("copy from %s to %s", libraryValue.output, destinationFile);
                 Files.copy(libraryValue.output, destinationFile);
             }
         }
 
-         diagnostic("build complete\n");
+         diagnostic("build complete");
     }
 
     /**
@@ -124,7 +176,7 @@ public class ExternalNativeBuildTask extends BaseTask {
             for (int i = 1; i < tokens.size(); ++i) {
                 processBuilder.addArgs(tokens.get(i));
             }
-            diagnostic("%s\n", processBuilder);
+            diagnostic("%s", processBuilder);
             ExternalNativeBuildTaskUtils.executeBuildProcessAndLogError(
                     getBuilder(),
                     processBuilder.createProcess());
@@ -136,15 +188,20 @@ public class ExternalNativeBuildTask extends BaseTask {
      */
     private void diagnostic(String format, Object... args) {
         getLogger().info(
-                String.format("External native build " + getName() + ":" + format + "\n", args));
+                String.format(getName() + ": " + format, args));
     }
 
+    @NonNull
     public File getSoFolder() {
         return soFolder;
     }
 
-    private void setSoFolder(File soFolder) {
+    private void setSoFolder(@NonNull File soFolder) {
         this.soFolder = soFolder;
+    }
+
+    private void setTargets(@NonNull Set<String> targets) {
+        this.targets = targets;
     }
 
     @NonNull
@@ -153,17 +210,19 @@ public class ExternalNativeBuildTask extends BaseTask {
         return objFolder;
     }
 
-    private void setObjFolder(File objFolder) {
+    private void setObjFolder(@NonNull
+            File objFolder) {
         this.objFolder = objFolder;
     }
 
+    @NonNull
     @SuppressWarnings("unused")
     public List<File> getNativeBuildConfigurationsJsons() {
         return nativeBuildConfigurationsJsons;
     }
 
     private void setNativeBuildConfigurationsJsons(
-            List<File> nativeBuildConfigurationsJsons) {
+            @NonNull List<File> nativeBuildConfigurationsJsons) {
         this.nativeBuildConfigurationsJsons = nativeBuildConfigurationsJsons;
     }
 
@@ -198,7 +257,23 @@ public class ExternalNativeBuildTask extends BaseTask {
 
         @Override
         public void execute(@NonNull ExternalNativeBuildTask task) {
-            final BaseVariantData<? extends BaseVariantOutputData> variantData = scope.getVariantData();
+            final BaseVariantData<? extends BaseVariantOutputData> variantData =
+                    scope.getVariantData();
+            final Set<String> targets;
+            switch (generator.getNativeBuildSystem()) {
+                case CMAKE:
+                    targets = variantData.getVariantConfiguration()
+                            .getExternalNativeCmakeOptions().getTargets();
+                    break;
+                case NDK_BUILD:
+                    targets = variantData.getVariantConfiguration()
+                            .getExternalNativeNdkBuildOptions().getTargets();
+                    break;
+                default:
+                    throw new RuntimeException("Unexpected native build system "
+                            + generator.getNativeBuildSystem().getName());
+            }
+            task.setTargets(targets);
             task.setVariantName(variantData.getName());
             task.setSoFolder(generator.getSoFolder());
             task.setObjFolder(generator.getObjFolder());

@@ -45,7 +45,7 @@ import java.io.FileNotFoundException;
 
 public class NativeBuildConfigValueBuilderTest {
 
-    private void assertThatNativeBuildConfigEquals(String string, String expected) {
+    private static void assertThatNativeBuildConfigEquals(String string, String expected) {
         String projectPath = "/projects/MyProject/jni/Android.mk";
 
         NativeBuildConfigValue actualValue =
@@ -71,20 +71,21 @@ public class NativeBuildConfigValueBuilderTest {
 
     @Test
     public void doubleTarget() throws FileNotFoundException {
-        assertThatNativeBuildConfigEquals("g++ -c a.c -o x/a.o\n" +
-                "g++ x/a.o -o x/a.so\n" +
-                "g++ -c a.c -o y/a.o\n" +
-                "g++ y/a.o -o y/a.so", "{\n"
+        assertThatNativeBuildConfigEquals("g++ -c a.c -o x86_64/a.o\n" +
+                "g++ x86_64/a.o -o x86_64/a.so\n" +
+                "g++ -c a.c -o x86/a.o\n" +
+                "g++ x86/a.o -o x86/a.so", "{\n"
                 + "  \"buildFiles\": [\n"
                 + "    {\n"
                 + "      \"path\": \"/projects/MyProject/jni/Android.mk\"\n"
                 + "    }\n"
                 + "  ],\n"
                 + "  \"libraries\": {\n"
-                + "    \"x-a-debug\": {\n"
-                + "      abi : \"x\","
-                + "      \"buildCommand\": \"echo build command\",\n"
-                + "      \"toolchain\": \"toolchain-x\",\n"
+                + "    \"a-debug-x86_64\": {\n"
+                + "      abi : \"x86_64\","
+                + "      artifactName : \"a\","
+                + "      \"buildCommand\": \"echo build command a\",\n"
+                + "      \"toolchain\": \"toolchain-x86_64\",\n"
                 + "      \"files\": [\n"
                 + "        {\n"
                 + "          \"src\": {\n"
@@ -94,13 +95,14 @@ public class NativeBuildConfigValueBuilderTest {
                 + "        }\n"
                 + "      ],\n"
                 + "      \"output\": {\n"
-                + "        \"path\": \"x/a.so\"\n"
+                + "        \"path\": \"x86_64/a.so\"\n"
                 + "      }\n"
                 + "    },\n"
-                + "    \"y-a-debug\": {\n"
-                + "      abi : \"y\","
-                + "      \"buildCommand\": \"echo build command\",\n"
-                + "      \"toolchain\": \"toolchain-y\",\n"
+                + "    \"a-debug-x86\": {\n"
+                + "      abi : \"x86\","
+                + "      artifactName : \"a\","
+                + "      \"buildCommand\": \"echo build command a\",\n"
+                + "      \"toolchain\": \"toolchain-x86\",\n"
                 + "      \"files\": [\n"
                 + "        {\n"
                 + "          \"src\": {\n"
@@ -110,17 +112,17 @@ public class NativeBuildConfigValueBuilderTest {
                 + "        }\n"
                 + "      ],\n"
                 + "      \"output\": {\n"
-                + "        \"path\": \"y/a.so\"\n"
+                + "        \"path\": \"x86/a.so\"\n"
                 + "      }\n"
                 + "    }\n"
                 + "  },\n"
                 + "  \"toolchains\": {\n"
-                + "    \"toolchain-y\": {\n"
+                + "    \"toolchain-x86\": {\n"
                 + "      \"cCompilerExecutable\": {\n"
                 + "        \"path\": \"g++\"\n"
                 + "      }\n"
                 + "    },\n"
-                + "    \"toolchain-x\": {\n"
+                + "    \"toolchain-x86_64\": {\n"
                 + "      \"cCompilerExecutable\": {\n"
                 + "        \"path\": \"g++\"\n"
                 + "      }\n"
@@ -142,10 +144,11 @@ public class NativeBuildConfigValueBuilderTest {
                 + "    }\n"
                 + "  ],\n"
                 + "  \"libraries\": {\n"
-                + "    \"x-aa-debug\": {\n"
-                + "      \"buildCommand\": \"echo build command\",\n"
+                + "    \"aa-debug-x\": {\n"
+                + "      \"buildCommand\": \"echo build command aa\",\n"
                 + "      \"toolchain\": \"toolchain-x\",\n"
                 + "      \"abi\": \"x\",\n"
+                + "      artifactName : \"aa\","
                 + "      \"files\": [\n"
                 + "        {\n"
                 + "          \"src\": {\n"
@@ -175,19 +178,20 @@ public class NativeBuildConfigValueBuilderTest {
 
     @Test
     public void weirdExtension1() throws FileNotFoundException {
-        assertThatNativeBuildConfigEquals("g++ -c a.c -o x/aa.o\n" +
-                "g++ -c a.S -o x/aS.so\n" +
-                "g++ x/aa.o x/aS.so -o y/a.so", "{\n"
+        assertThatNativeBuildConfigEquals("g++ -c a.c -o x86_64/aa.o\n" +
+                "g++ -c a.S -o x86_64/aS.so\n" +
+                "g++ x86_64/aa.o x86_64/aS.so -o x86/a.so", "{\n"
                 + "  \"buildFiles\": [\n"
                 + "    {\n"
                 + "      \"path\": \"/projects/MyProject/jni/Android.mk\"\n"
                 + "    }\n"
                 + "  ],\n"
                 + "  \"libraries\": {\n"
-                + "    \"y-a-debug\": {\n"
-                + "      abi : \"y\","
-                + "      \"buildCommand\": \"echo build command\",\n"
-                + "      \"toolchain\": \"toolchain-y\",\n"
+                + "    \"a-debug-x86\": {\n"
+                + "      abi : \"x86\","
+                + "      artifactName : \"a\","
+                + "      \"buildCommand\": \"echo build command a\",\n"
+                + "      \"toolchain\": \"toolchain-x86\",\n"
                 + "      \"files\": [\n"
                 + "        {\n"
                 + "          \"src\": {\n"
@@ -203,12 +207,12 @@ public class NativeBuildConfigValueBuilderTest {
                 + "        }\n"
                 + "      ],\n"
                 + "      \"output\": {\n"
-                + "        \"path\": \"y/a.so\"\n"
+                + "        \"path\": \"x86/a.so\"\n"
                 + "      }\n"
                 + "    }\n"
                 + "  },\n"
                 + "  \"toolchains\": {\n"
-                + "    \"toolchain-y\": {\n"
+                + "    \"toolchain-x86\": {\n"
                 + "      \"cCompilerExecutable\": {\n"
                 + "        \"path\": \"g++\"\n"
                 + "      }\n"
@@ -224,19 +228,20 @@ public class NativeBuildConfigValueBuilderTest {
 
     @Test
     public void weirdExtension2() throws FileNotFoundException {
-        assertThatNativeBuildConfigEquals("g++ -c a.S -o x/aS.so\n" +
-                "g++ -c a.c -o x/aa.o\n" +
-                "g++ x/aa.o x/aS.so -o y/a.so", "{\n"
+        assertThatNativeBuildConfigEquals("g++ -c a.S -o x86_64/aS.so\n" +
+                "g++ -c a.c -o x86_64/aa.o\n" +
+                "g++ x86_64/aa.o x86_64/aS.so -o x86/a.so", "{\n"
                 + "  \"buildFiles\": [\n"
                 + "    {\n"
                 + "      \"path\": \"/projects/MyProject/jni/Android.mk\"\n"
                 + "    }\n"
                 + "  ],\n"
                 + "  \"libraries\": {\n"
-                + "    \"y-a-debug\": {\n"
-                + "      abi : \"y\","
-                + "      \"buildCommand\": \"echo build command\",\n"
-                + "      \"toolchain\": \"toolchain-y\",\n"
+                + "    \"a-debug-x86\": {\n"
+                + "      abi : \"x86\","
+                + "      artifactName : \"a\","
+                + "      \"buildCommand\": \"echo build command a\",\n"
+                + "      \"toolchain\": \"toolchain-x86\",\n"
                 + "      \"files\": [\n"
                 + "        {\n"
                 + "          \"src\": {\n"
@@ -252,12 +257,12 @@ public class NativeBuildConfigValueBuilderTest {
                 + "        }\n"
                 + "      ],\n"
                 + "      \"output\": {\n"
-                + "        \"path\": \"y/a.so\"\n"
+                + "        \"path\": \"x86/a.so\"\n"
                 + "      }\n"
                 + "    }\n"
                 + "  },\n"
                 + "  \"toolchains\": {\n"
-                + "    \"toolchain-y\": {\n"
+                + "    \"toolchain-x86\": {\n"
                 + "      \"cCompilerExecutable\": {\n"
                 + "        \"path\": \"g++\"\n"
                 + "      }\n"

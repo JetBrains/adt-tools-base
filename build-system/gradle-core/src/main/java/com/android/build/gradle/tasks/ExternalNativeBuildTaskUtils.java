@@ -16,6 +16,9 @@
 
 package com.android.build.gradle.tasks;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.AndroidGradleOptions;
@@ -32,7 +35,7 @@ import com.android.ide.common.process.ProcessInfo;
 import com.android.utils.ILogger;
 import com.google.common.base.Charsets;
 import com.google.common.base.Joiner;
-import com.google.common.base.Preconditions;
+import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.common.io.Files;
@@ -89,6 +92,8 @@ public class ExternalNativeBuildTaskUtils {
     static NativeBuildConfigValue getNativeBuildConfigValue(
             @NonNull File json,
             @NonNull String groupName) throws IOException {
+        checkArgument(!Strings.isNullOrEmpty(groupName),
+                "group name missing in", json);
 
         Gson gson = new GsonBuilder()
                 .registerTypeAdapter(File.class, new PlainFileGsonTypeAdaptor())
@@ -96,10 +101,9 @@ public class ExternalNativeBuildTaskUtils {
         List<String> lines = Files.readLines(json, Charsets.UTF_8);
         NativeBuildConfigValue config = gson.fromJson(Joiner.on("\n").join(lines),
                 NativeBuildConfigValue.class);
-        if (config.libraries != null) {
-            for (NativeLibraryValue library : config.libraries.values()) {
-                library.groupName = groupName;
-            }
+        checkNotNull(config.libraries);
+        for (NativeLibraryValue library : config.libraries.values()) {
+            library.groupName = groupName;
         }
         return config;
     }
@@ -163,11 +167,11 @@ public class ExternalNativeBuildTaskUtils {
                 @Nullable NativeBuildSystem buildSystem,
                 @Nullable File makeFile,
                 @Nullable String errorText) {
-            Preconditions.checkArgument(makeFile == null || buildSystem != null,
+            checkArgument(makeFile == null || buildSystem != null,
                     "Expected path and buildSystem together, no taskClass");
-            Preconditions.checkArgument(makeFile != null || buildSystem == null,
+            checkArgument(makeFile != null || buildSystem == null,
                     "Expected path and buildSystem together, no path");
-            Preconditions.checkArgument(makeFile == null || errorText == null,
+            checkArgument(makeFile == null || errorText == null,
                     "Expected path or error but both existed");
             this.buildSystem = buildSystem;
             this.makeFile = makeFile;
@@ -259,7 +263,7 @@ public class ExternalNativeBuildTaskUtils {
             this.logger = logger;
         }
 
-        String getOutput() {
+        private String getOutput() {
             return this.output.toString();
         }
 
