@@ -17,6 +17,7 @@
 package com.android.build.gradle.internal.transforms;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import com.android.repository.Revision;
 import com.android.utils.FileUtils;
@@ -37,8 +38,8 @@ public class DexTransformTest {
         Revision buildToolsRevision = Revision.parseRevision("23.0.3");
         String key = DexTransform.getKey(inputFile, buildToolsRevision, true, false, true);
 
-        assertEquals("support-annotations-23.3.0.jar_b6069f782045b0d1d75f482dc7b50ab5a47ca301"
-                + "_build=23.0.3_jumbo=true_multidex=false_optimize=true", key);
+        assertTrue(key.matches("\\Qsupport-annotations-23.3.0.jar_\\E\\w{40}"
+                + "\\Q_build=23.0.3_jumbo=true_multidex=false_optimize=true\\E"));
 
         inputFile = new File("/Users/foo/MyApplication/app/build/intermediates/exploded-aar/"
                 + "com.android.support/design/23.3.0/jars/classes.jar");
@@ -62,9 +63,8 @@ public class DexTransformTest {
         buildToolsRevision = Revision.NOT_SPECIFIED;
         key = DexTransform.getKey(inputFile, buildToolsRevision, false, false, false);
 
-        assertEquals("debug_283caf89dd7987cc2f3b325eb70525d5b717a7b5.jar"
-                + "_9d4331702b6a64028f37c1c802f46d6fb5391ddd"
-                + "_build=0_jumbo=false_multidex=false_optimize=false", key);
+        assertTrue(key.matches("\\Qdebug_283caf89dd7987cc2f3b325eb70525d5b717a7b5.jar_\\E\\w{40}"
+                + "\\Q_build=0_jumbo=false_multidex=false_optimize=false\\E"));
     }
 
 }
