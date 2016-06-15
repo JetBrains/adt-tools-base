@@ -280,9 +280,15 @@ public class InstantRunClient {
 
         List<FileTransfer> files = Lists.newArrayList();
 
-        AppState appState = getAppState(device);
-        boolean appInForeground = appState == AppState.FOREGROUND;
-        boolean appRunning = appState == AppState.FOREGROUND || appState == AppState.BACKGROUND;
+        boolean appInForeground;
+        boolean appRunning;
+        try {
+            AppState appState = getAppState(device);
+            appInForeground = appState == AppState.FOREGROUND;
+            appRunning = appState == AppState.FOREGROUND || appState == AppState.BACKGROUND;
+        } catch (IOException e) {
+            appInForeground = appRunning = false;
+        }
 
         List<InstantRunArtifact> artifacts = buildInfo.getArtifacts();
         for (InstantRunArtifact artifact : artifacts) {
