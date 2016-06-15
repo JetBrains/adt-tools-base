@@ -29,7 +29,6 @@ import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.color.ColorSpace;
 import java.awt.geom.AffineTransform;
-import java.awt.geom.Path2D;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
@@ -499,8 +498,6 @@ public final class PsdDecoder extends Decoder {
 
         ShapeMask mask = (ShapeMask) property.data;
 
-        Path2D path = PsdUtils.createPath(mask);
-
         // Shape data is stored in relative coordinates in PSD files
         // For instance, a point at 0.5,0.5 is in the center of the document
         // We apply a transform to convert these relative coordinates into
@@ -510,10 +507,9 @@ public final class PsdDecoder extends Decoder {
         AffineTransform transform = new AffineTransform();
         transform.translate(-bounds.getX(), -bounds.getY());
         transform.scale(image.width(), image.height());
-        path.transform(transform);
 
         ShapeInfo.Builder shapeInfo = new ShapeInfo.Builder();
-        shapeInfo.path(path);
+        PsdUtils.createPaths(mask, shapeInfo, transform);
 
         extractShapeStroke(shapeInfo, properties);
         extractShapeFill(shapeInfo, properties, property);

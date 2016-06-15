@@ -17,6 +17,8 @@
 package com.android.tools.pixelprobe.decoder.psd;
 
 import com.android.tools.pixelprobe.BlendMode;
+import com.android.tools.pixelprobe.ShapeInfo;
+import com.android.tools.pixelprobe.ShapeInfo.PathType;
 import com.android.tools.pixelprobe.color.Colors;
 import com.android.tools.pixelprobe.decoder.psd.PsdFile.ColorProfileBlock;
 import com.android.tools.pixelprobe.decoder.psd.PsdFile.Descriptor;
@@ -29,7 +31,7 @@ import java.awt.*;
 import java.awt.color.ColorSpace;
 import java.awt.color.ICC_ColorSpace;
 import java.awt.color.ICC_Profile;
-import java.awt.geom.GeneralPath;
+import java.awt.geom.AffineTransform;
 import java.awt.geom.Path2D;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -369,23 +371,12 @@ final class PsdUtils {
     }
 
     /**
-     * Simple enum used to track the state of path records.
-     * See decodePathData().
+     * Creates one or more path from a {@link PsdFile.ShapeMask} and add them to the
+     * specified shape info.
      */
-    private enum Subpath {
-        NONE,
-        CLOSED,
-        OPEN
-    }
-
-    /**
-     * Creates a {@link GeneralPath} from a {@link PsdFile.ShapeMask}.
-     *
-     * @return A path instance, never null
-     */
-    static Path2D createPath(ShapeMask mask) {
-        // Photoshop only uses the even/odd fill rule
-        Path2D.Float path = new Path2D.Float(Path2D.WIND_EVEN_ODD, mask.pathRecords.size());
+    static void createPaths(ShapeMask mask, ShapeInfo.Builder shapeInfo, AffineTransform transform) {
+        Path2D.Float path = null;
+        ShapeInfo.PathOp op = ShapeInfo.PathOp.ADD;
 
         // Each Bézier knot in a PSD is made of three points:
         //   - the anchor (the knot or point itself)
@@ -399,7 +390,7 @@ final class PsdUtils {
         //   - the control point after the previous anchor
         //   - the control point before the next anchor
 
-        Subpath currentSubpath = Subpath.NONE;
+        PathType type = PathType.NONE;
         BezierKnot firstKnot = null;
         BezierKnot lastKnot = null;
 
@@ -408,22 +399,23 @@ final class PsdUtils {
                 // A "LENGTH" record marks the beginning of a new sub-path
                 // Closed subpath needs special handling at the end
                 case CLOSED_SUBPATH_LENGTH:
-                    if (currentSubpath == Subpath.CLOSED) {
+                case OPEN_SUBPATH_LENGTH:
+                    if (type == PathType.CLOSED) {
                         // If the previous subpath is of the closed type, close it now
                         addToPath(path, firstKnot, lastKnot);
                         path.closePath();
                     }
-                    currentSubpath = Subpath.CLOSED;
-                    firstKnot = lastKnot = null;
-                    break;
-                // New subpath
-                case OPEN_SUBPATH_LENGTH:
-                    if (currentSubpath == Subpath.CLOSED) {
-                        // Close the previous subpath if needed
-                        addToPath(path, firstKnot, lastKnot);
-                        path.closePath();
+
+                    if (path != null) {
+                        path.transform(transform);
+                        shapeInfo.addSubPath(new ShapeInfo.SubPath.Builder().path(path).op(op).type(type).build());
                     }
-                    currentSubpath = Subpath.OPEN;
+
+                    SubPath subPath = (SubPath) record.data;
+                    op = getPathOp(subPath.op);
+                    path = new Path2D.Float(Path2D.WIND_EVEN_ODD, subPath.knotCount);
+
+                    type = record.selector == OPEN_SUBPATH_LENGTH ? PathType.OPEN : PathType.CLOSED;
                     firstKnot = lastKnot = null;
                     break;
                 // Open and closed subpath knots can be handled the same way
@@ -433,6 +425,7 @@ final class PsdUtils {
                 case CLOSED_SUBPATH_KNOT_UNLINKED:
                 case OPEN_SUBPATH_KNOT_LINKED:
                 case OPEN_SUBPATH_KNOT_UNLINKED:
+                    if (path == null) continue;
                     BezierKnot knot = (BezierKnot) record.data;
                     if (lastKnot == null) {
                         // If we just started a subpath we need to insert a moveTo()
@@ -451,12 +444,29 @@ final class PsdUtils {
         }
 
         // Close the subpath if needed
-        if (currentSubpath == Subpath.CLOSED) {
+        if (type == PathType.CLOSED) {
             addToPath(path, firstKnot, lastKnot);
             path.closePath();
         }
 
-        return path;
+        if (path != null) {
+            path.transform(transform);
+            shapeInfo.addSubPath(new ShapeInfo.SubPath.Builder().path(path).op(op).type(type).build());
+        }
+    }
+
+    private static ShapeInfo.PathOp getPathOp(int op) {
+        switch (op) {
+            case SubPath.OP_XOR:
+                return ShapeInfo.PathOp.EXCLUSIVE_OR;
+            case SubPath.OP_MERGE:
+                return ShapeInfo.PathOp.ADD;
+            case SubPath.OP_SUBTRACT:
+                return ShapeInfo.PathOp.SUBTRACT;
+            case SubPath.OP_INTERSECT:
+                return ShapeInfo.PathOp.INTERSECT;
+        }
+        return ShapeInfo.PathOp.ADD;
     }
 
     private static void addToPath(Path2D.Float path, BezierKnot toKnot, BezierKnot lastKnot) {

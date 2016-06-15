@@ -219,22 +219,22 @@ public final class Layer {
 
     @SuppressWarnings("UseJBColor")
     public static final class Builder {
-        private final String name;
-        private final Type type;
+        final String name;
+        final Type type;
 
-        private final Rectangle2D.Float bounds = new Rectangle2D.Float();
+        final Rectangle2D.Float bounds = new Rectangle2D.Float();
 
-        private float opacity = 1.0f;
-        private BlendMode blendMode = BlendMode.NORMAL;
-        private boolean clipBase = true;
+        float opacity = 1.0f;
+        BlendMode blendMode = BlendMode.NORMAL;
+        boolean clipBase = true;
 
-        private final List<Layer> children = new ArrayList<>();
+        final List<Layer> children = new ArrayList<>();
 
-        private BufferedImage image;
-        private ShapeInfo shapeInfo;
-        private TextInfo textInfo;
+        BufferedImage image;
+        ShapeInfo shapeInfo;
+        TextInfo textInfo;
 
-        private Effects effects;
+        Effects effects;
 
         private boolean open = true;
         private boolean visible = true;

@@ -127,13 +127,13 @@ public final class TextInfo {
 
         @SuppressWarnings("UseJBColor")
         public static final class Builder {
-            private final int start;
-            private final int end;
+            final int start;
+            final int end;
 
-            private String font = "arial";
-            private float fontSize = 12.0f;
-            private Color color = Color.BLACK;
-            private float tracking = 0.0f;
+            String font = "arial";
+            float fontSize = 12.0f;
+            Color color = Color.BLACK;
+            float tracking = 0.0f;
 
             public Builder(int start, int end) {
                 this.start = start;
@@ -208,8 +208,8 @@ public final class TextInfo {
         }
 
         public static final class Builder {
-            private final int start;
-            private final int end;
+            final int start;
+            final int end;
 
             private Alignment alignment = Alignment.LEFT;
 
