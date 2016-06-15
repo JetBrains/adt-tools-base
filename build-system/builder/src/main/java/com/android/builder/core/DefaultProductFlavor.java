@@ -204,7 +204,10 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
     @Nullable
     @Override
     public ApiVersion getMinSdkVersion() {
-        return mMinSdkVersion;
+        // FIXME once VariantConfiguration reads manifest attrs from all sourcesets, use it instead
+        return VariantConfiguration
+                .getCalculatedApiVersions(mMinSdkVersion, mTargetSdkVersion)
+                .minSdkVersion;
     }
 
     /** Sets the targetSdkVersion to the given value. */
@@ -220,7 +223,10 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
     @Nullable
     @Override
     public ApiVersion getTargetSdkVersion() {
-        return mTargetSdkVersion;
+        // FIXME once VariantConfiguration reads manifest attrs from all sourcesets, use it instead
+        return VariantConfiguration
+                .getCalculatedApiVersions(mMinSdkVersion, mTargetSdkVersion)
+                .targetSdkVersion;
     }
 
     @NonNull

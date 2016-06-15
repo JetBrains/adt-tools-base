@@ -16,48 +16,43 @@
 
 package com.android.build.gradle.integration.application;
 
-import com.android.build.gradle.integration.common.fixture.GradleTestProject;
-import org.junit.AfterClass;
-import org.junit.ClassRule;
-import org.junit.Test;
-
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat;
 import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import com.android.build.gradle.integration.common.fixture.GradleTestProject;
+import com.android.build.gradle.integration.common.utils.TestFileUtils;
+
+import org.junit.Rule;
+import org.junit.Test;
+
 import java.io.File;
 import java.io.FileFilter;
+import java.io.IOException;
 
 /**
  * Integration tests for manifest merging.
  */
 public class ManifestMergingTest {
 
-    @ClassRule
-    static public GradleTestProject simpleManifestMergingTask = GradleTestProject.builder()
+    @Rule
+    public GradleTestProject simpleManifestMergingTask = GradleTestProject.builder()
             .withName("simpleManifestMergingTask")
             .fromTestProject("simpleManifestMergingTask")
             .create();
 
-    @ClassRule
-    static public GradleTestProject libsTest = GradleTestProject.builder()
+    @Rule
+    public GradleTestProject libsTest = GradleTestProject.builder()
             .withName("libsTest")
             .fromTestProject("libsTest")
             .create();
 
-    @ClassRule
-    static public GradleTestProject flavors = GradleTestProject.builder()
+    @Rule
+    public GradleTestProject flavors = GradleTestProject.builder()
             .withName("flavors")
             .fromTestProject("flavors")
             .create();
-
-
-    @AfterClass
-    public static void cleanUp() {
-        libsTest = null;
-        flavors = null;
-        simpleManifestMergingTask = null;
-    }
 
     @Test
     public void simpleManifestMerger() {
@@ -85,6 +80,46 @@ public class ManifestMergingTest {
             }
         });
         assertEquals(8, reports.length);
+    }
+
+    @Test
+    public void checkPreviewTargetUpdatesMinSdkVersion() throws IOException {
+        GradleTestProject appProject = libsTest.getSubproject("app");
+        TestFileUtils.appendToFile(
+                appProject.getBuildFile(),
+                "android{\n"
+                        + "    compileSdkVersion 23\n"
+                        + "    defaultConfig{\n"
+                        + "        minSdkVersion 15\n"
+                        + "        targetSdkVersion 'N'\n"
+                        + "    }\n"
+                        + "}");
+        libsTest.execute("clean", ":app:build");
+        assertThat(
+                appProject.file("build/intermediates/manifests/full/debug/AndroidManifest.xml"))
+                .containsAllOf(
+                        "android:targetSdkVersion=\"N\"",
+                        "android:minSdkVersion=\"N\"");
+    }
+
+    @Test
+    public void checkPreviewMinUpdatesTargetSdkVersion() throws IOException {
+        GradleTestProject appProject = libsTest.getSubproject("app");
+        TestFileUtils.appendToFile(
+                appProject.getBuildFile(),
+                "android{\n"
+                        + "    compileSdkVersion 23\n"
+                        + "    defaultConfig{\n"
+                        + "        minSdkVersion 'N'\n"
+                        + "        targetSdkVersion 15\n"
+                        + "    }\n"
+                        + "}");
+        libsTest.execute("clean", ":app:assembleDebug");
+        assertThat(
+                appProject.file("build/intermediates/manifests/full/debug/AndroidManifest.xml"))
+                .containsAllOf(
+                        "android:targetSdkVersion=\"N\"",
+                        "android:minSdkVersion=\"N\"");
     }
 
 }
