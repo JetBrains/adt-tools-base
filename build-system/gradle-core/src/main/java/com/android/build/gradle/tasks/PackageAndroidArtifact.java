@@ -338,14 +338,14 @@ public abstract class PackageAndroidArtifact extends IncrementalTask implements 
                  * as dex archives for packaging. We will package some of the dex files as
                  * resources.
                  *
-                 * All dex files in directories whose name contains INSTANT_RUN_PACKAGES_PREFIX
+                 * All dex files in directories whose name contains InstantRunSlicer.MAIN_SLICE_NAME
                  * are kept in the apk as dex files. All other dex files are placed as
                  * resources as defined by makeInstantRunResourcesFromDex.
                  */
                 ;
                 instantRunDexBaseFiles = getDexFolders()
                         .stream()
-                        .filter(input -> input.getName().contains(INSTANT_RUN_PACKAGES_PREFIX))
+                        .filter(input -> input.getName().contains(InstantRunSlicer.MAIN_SLICE_NAME))
                         .collect(Collectors.toSet());
                 Iterable<File> nonInstantRunDexBaseFiles = getDexFolders()
                         .stream()

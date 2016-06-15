@@ -24,6 +24,7 @@ import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
 import com.android.build.gradle.internal.incremental.InstantRunPatchingPolicy;
 import com.android.build.gradle.internal.scope.ConventionMappingHelper;
 import com.android.build.gradle.internal.scope.PackagingScope;
+import com.android.build.gradle.internal.transforms.InstantRunSlicer;
 import com.android.builder.packaging.DuplicateFileException;
 import com.android.builder.profile.ExecutionType;
 import com.android.builder.profile.Recorder;
@@ -107,7 +108,7 @@ public class PackageApplication extends PackageAndroidArtifact {
                     break;
                 case INSTANT_RUN_MULTI_APK:
                     for (File dexFolder : getDexFolders()) {
-                        if (dexFolder.getName().contains(INSTANT_RUN_PACKAGES_PREFIX)) {
+                        if (dexFolder.getName().contains(InstantRunSlicer.MAIN_SLICE_NAME)) {
                             dexFoldersForApk.add(dexFolder);
                         }
                     }
