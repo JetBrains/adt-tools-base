@@ -14,7 +14,7 @@
           "src": {
             "path": "{ndkPath}/samples/hello-gl2/jni/gl_code.cpp"
           },
-          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector\" \"-no-canonical-prefixes\" \"-march\u003darmv5te\" \"-mtune\u003dxscale\" \"-msoft-float\" \"-fno-exceptions\" \"-fno-rtti\" \"-mthumb\" \"-Os\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fno-strict-aliasing\" \"-finline-limit\u003d64\" \"-DANDROID\" \"-Werror\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector\" \"-no-canonical-prefixes\" \"-march\u003darmv5te\" \"-mtune\u003dxscale\" \"-msoft-float\" \"-fno-exceptions\" \"-fno-rtti\" \"-mthumb\" \"-Os\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fno-strict-aliasing\" \"-finline-limit\u003d64\" \"-I{ndkPath}/sources/cxx-stl/system/include\" \"-I{ndkPath}/samples/hello-gl2/jni\" \"-DANDROID\" \"-Werror\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-5/arch-arm/usr/include\""
         }
       ],
       "output": {
@@ -30,7 +30,7 @@
           "src": {
             "path": "{ndkPath}/samples/hello-gl2/jni/gl_code.cpp"
           },
-          "flags": "\"-MMD\" \"-MP\" \"-ffunction-sections\" \"-funwind-tables\" \"-no-canonical-prefixes\" \"-fstack-protector\" \"-fno-exceptions\" \"-fno-rtti\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-DANDROID\" \"-Werror\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+          "flags": "\"-MMD\" \"-MP\" \"-ffunction-sections\" \"-funwind-tables\" \"-no-canonical-prefixes\" \"-fstack-protector\" \"-fno-exceptions\" \"-fno-rtti\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-I{ndkPath}/sources/cxx-stl/system/include\" \"-I{ndkPath}/samples/hello-gl2/jni\" \"-DANDROID\" \"-Werror\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-9/arch-x86/usr/include\""
         }
       ],
       "output": {
@@ -46,7 +46,7 @@
           "src": {
             "path": "{ndkPath}/samples/hello-gl2/jni/gl_code.cpp"
           },
-          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-fno-exceptions\" \"-fno-rtti\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-O0\" \"-UNDEBUG\" \"-fno-omit-frame-pointer\" \"-fno-strict-aliasing\" \"-DANDROID\" \"-Werror\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-fno-exceptions\" \"-fno-rtti\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-O0\" \"-UNDEBUG\" \"-fno-omit-frame-pointer\" \"-fno-strict-aliasing\" \"-I{ndkPath}/sources/cxx-stl/system/include\" \"-I{ndkPath}/samples/hello-gl2/jni\" \"-DANDROID\" \"-Werror\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-21/arch-arm64/usr/include\""
         }
       ],
       "output": {
@@ -62,7 +62,7 @@
           "src": {
             "path": "{ndkPath}/samples/hello-gl2/jni/gl_code.cpp"
           },
-          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-fno-strict-aliasing\" \"-finline-functions\" \"-ffunction-sections\" \"-funwind-tables\" \"-fmessage-length\u003d0\" \"-fno-inline-functions-called-once\" \"-fgcse-after-reload\" \"-frerun-cse-after-loop\" \"-frename-registers\" \"-no-canonical-prefixes\" \"-fno-exceptions\" \"-fno-rtti\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-DANDROID\" \"-Werror\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-fno-strict-aliasing\" \"-finline-functions\" \"-ffunction-sections\" \"-funwind-tables\" \"-fmessage-length\u003d0\" \"-fno-inline-functions-called-once\" \"-fgcse-after-reload\" \"-frerun-cse-after-loop\" \"-frename-registers\" \"-no-canonical-prefixes\" \"-fno-exceptions\" \"-fno-rtti\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-I{ndkPath}/sources/cxx-stl/system/include\" \"-I{ndkPath}/samples/hello-gl2/jni\" \"-DANDROID\" \"-Werror\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-9/arch-mips/usr/include\""
         }
       ],
       "output": {
@@ -78,7 +78,7 @@
           "src": {
             "path": "{ndkPath}/samples/hello-gl2/jni/gl_code.cpp"
           },
-          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector\" \"-no-canonical-prefixes\" \"-march\u003darmv7-a\" \"-mfpu\u003dvfpv3-d16\" \"-mfloat-abi\u003dsoftfp\" \"-fno-exceptions\" \"-fno-rtti\" \"-mthumb\" \"-Os\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fno-strict-aliasing\" \"-finline-limit\u003d64\" \"-DANDROID\" \"-Werror\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector\" \"-no-canonical-prefixes\" \"-march\u003darmv7-a\" \"-mfpu\u003dvfpv3-d16\" \"-mfloat-abi\u003dsoftfp\" \"-fno-exceptions\" \"-fno-rtti\" \"-mthumb\" \"-Os\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fno-strict-aliasing\" \"-finline-limit\u003d64\" \"-I{ndkPath}/sources/cxx-stl/system/include\" \"-I{ndkPath}/samples/hello-gl2/jni\" \"-DANDROID\" \"-Werror\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-5/arch-arm/usr/include\""
         }
       ],
       "output": {
@@ -94,7 +94,7 @@
           "src": {
             "path": "{ndkPath}/samples/hello-gl2/jni/gl_code.cpp"
           },
-          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector\" \"-no-canonical-prefixes\" \"-march\u003darmv7-a\" \"-mfpu\u003dvfpv3-d16\" \"-mfloat-abi\u003dsoftfp\" \"-fno-exceptions\" \"-fno-rtti\" \"-mthumb\" \"-Os\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fno-strict-aliasing\" \"-finline-limit\u003d64\" \"-O0\" \"-UNDEBUG\" \"-marm\" \"-fno-omit-frame-pointer\" \"-DANDROID\" \"-Werror\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector\" \"-no-canonical-prefixes\" \"-march\u003darmv7-a\" \"-mfpu\u003dvfpv3-d16\" \"-mfloat-abi\u003dsoftfp\" \"-fno-exceptions\" \"-fno-rtti\" \"-mthumb\" \"-Os\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fno-strict-aliasing\" \"-finline-limit\u003d64\" \"-O0\" \"-UNDEBUG\" \"-marm\" \"-fno-omit-frame-pointer\" \"-I{ndkPath}/sources/cxx-stl/system/include\" \"-I{ndkPath}/samples/hello-gl2/jni\" \"-DANDROID\" \"-Werror\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-5/arch-arm/usr/include\""
         }
       ],
       "output": {
@@ -110,7 +110,7 @@
           "src": {
             "path": "{ndkPath}/samples/hello-gl2/jni/gl_code.cpp"
           },
-          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-fno-strict-aliasing\" \"-finline-functions\" \"-ffunction-sections\" \"-funwind-tables\" \"-fmessage-length\u003d0\" \"-fno-inline-functions-called-once\" \"-fgcse-after-reload\" \"-frerun-cse-after-loop\" \"-frename-registers\" \"-no-canonical-prefixes\" \"-fno-exceptions\" \"-fno-rtti\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-DANDROID\" \"-Werror\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-fno-strict-aliasing\" \"-finline-functions\" \"-ffunction-sections\" \"-funwind-tables\" \"-fmessage-length\u003d0\" \"-fno-inline-functions-called-once\" \"-fgcse-after-reload\" \"-frerun-cse-after-loop\" \"-frename-registers\" \"-no-canonical-prefixes\" \"-fno-exceptions\" \"-fno-rtti\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-I{ndkPath}/sources/cxx-stl/system/include\" \"-I{ndkPath}/samples/hello-gl2/jni\" \"-DANDROID\" \"-Werror\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-21/arch-mips64/usr/include\""
         }
       ],
       "output": {
@@ -126,7 +126,7 @@
           "src": {
             "path": "{ndkPath}/samples/hello-gl2/jni/gl_code.cpp"
           },
-          "flags": "\"-MMD\" \"-MP\" \"-ffunction-sections\" \"-funwind-tables\" \"-no-canonical-prefixes\" \"-fstack-protector\" \"-fno-exceptions\" \"-fno-rtti\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-O0\" \"-UNDEBUG\" \"-fno-omit-frame-pointer\" \"-fno-strict-aliasing\" \"-DANDROID\" \"-Werror\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+          "flags": "\"-MMD\" \"-MP\" \"-ffunction-sections\" \"-funwind-tables\" \"-no-canonical-prefixes\" \"-fstack-protector\" \"-fno-exceptions\" \"-fno-rtti\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-O0\" \"-UNDEBUG\" \"-fno-omit-frame-pointer\" \"-fno-strict-aliasing\" \"-I{ndkPath}/sources/cxx-stl/system/include\" \"-I{ndkPath}/samples/hello-gl2/jni\" \"-DANDROID\" \"-Werror\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-9/arch-x86/usr/include\""
         }
       ],
       "output": {
@@ -142,7 +142,7 @@
           "src": {
             "path": "{ndkPath}/samples/hello-gl2/jni/gl_code.cpp"
           },
-          "flags": "\"-MMD\" \"-MP\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-fno-exceptions\" \"-fno-rtti\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-O0\" \"-UNDEBUG\" \"-fno-omit-frame-pointer\" \"-fno-strict-aliasing\" \"-DANDROID\" \"-Werror\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+          "flags": "\"-MMD\" \"-MP\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-fno-exceptions\" \"-fno-rtti\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-O0\" \"-UNDEBUG\" \"-fno-omit-frame-pointer\" \"-fno-strict-aliasing\" \"-I{ndkPath}/sources/cxx-stl/system/include\" \"-I{ndkPath}/samples/hello-gl2/jni\" \"-DANDROID\" \"-Werror\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-21/arch-x86_64/usr/include\""
         }
       ],
       "output": {
@@ -158,7 +158,7 @@
           "src": {
             "path": "{ndkPath}/samples/hello-gl2/jni/gl_code.cpp"
           },
-          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-fno-exceptions\" \"-fno-rtti\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-DANDROID\" \"-Werror\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-fno-exceptions\" \"-fno-rtti\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-I{ndkPath}/sources/cxx-stl/system/include\" \"-I{ndkPath}/samples/hello-gl2/jni\" \"-DANDROID\" \"-Werror\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-21/arch-arm64/usr/include\""
         }
       ],
       "output": {
@@ -174,7 +174,7 @@
           "src": {
             "path": "{ndkPath}/samples/hello-gl2/jni/gl_code.cpp"
           },
-          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-fno-strict-aliasing\" \"-finline-functions\" \"-ffunction-sections\" \"-funwind-tables\" \"-fmessage-length\u003d0\" \"-fno-inline-functions-called-once\" \"-fgcse-after-reload\" \"-frerun-cse-after-loop\" \"-frename-registers\" \"-no-canonical-prefixes\" \"-fno-exceptions\" \"-fno-rtti\" \"-O0\" \"-g\" \"-fno-omit-frame-pointer\" \"-DANDROID\" \"-Werror\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-fno-strict-aliasing\" \"-finline-functions\" \"-ffunction-sections\" \"-funwind-tables\" \"-fmessage-length\u003d0\" \"-fno-inline-functions-called-once\" \"-fgcse-after-reload\" \"-frerun-cse-after-loop\" \"-frename-registers\" \"-no-canonical-prefixes\" \"-fno-exceptions\" \"-fno-rtti\" \"-O0\" \"-g\" \"-fno-omit-frame-pointer\" \"-I{ndkPath}/sources/cxx-stl/system/include\" \"-I{ndkPath}/samples/hello-gl2/jni\" \"-DANDROID\" \"-Werror\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-9/arch-mips/usr/include\""
         }
       ],
       "output": {
@@ -190,7 +190,7 @@
           "src": {
             "path": "{ndkPath}/samples/hello-gl2/jni/gl_code.cpp"
           },
-          "flags": "\"-MMD\" \"-MP\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-fno-exceptions\" \"-fno-rtti\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-DANDROID\" \"-Werror\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+          "flags": "\"-MMD\" \"-MP\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-fno-exceptions\" \"-fno-rtti\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-I{ndkPath}/sources/cxx-stl/system/include\" \"-I{ndkPath}/samples/hello-gl2/jni\" \"-DANDROID\" \"-Werror\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-21/arch-x86_64/usr/include\""
         }
       ],
       "output": {
@@ -206,7 +206,7 @@
           "src": {
             "path": "{ndkPath}/samples/hello-gl2/jni/gl_code.cpp"
           },
-          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector\" \"-no-canonical-prefixes\" \"-march\u003darmv5te\" \"-mtune\u003dxscale\" \"-msoft-float\" \"-fno-exceptions\" \"-fno-rtti\" \"-mthumb\" \"-Os\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fno-strict-aliasing\" \"-finline-limit\u003d64\" \"-O0\" \"-UNDEBUG\" \"-marm\" \"-fno-omit-frame-pointer\" \"-DANDROID\" \"-Werror\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector\" \"-no-canonical-prefixes\" \"-march\u003darmv5te\" \"-mtune\u003dxscale\" \"-msoft-float\" \"-fno-exceptions\" \"-fno-rtti\" \"-mthumb\" \"-Os\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fno-strict-aliasing\" \"-finline-limit\u003d64\" \"-O0\" \"-UNDEBUG\" \"-marm\" \"-fno-omit-frame-pointer\" \"-I{ndkPath}/sources/cxx-stl/system/include\" \"-I{ndkPath}/samples/hello-gl2/jni\" \"-DANDROID\" \"-Werror\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-5/arch-arm/usr/include\""
         }
       ],
       "output": {
@@ -222,7 +222,7 @@
           "src": {
             "path": "{ndkPath}/samples/hello-gl2/jni/gl_code.cpp"
           },
-          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-fno-strict-aliasing\" \"-finline-functions\" \"-ffunction-sections\" \"-funwind-tables\" \"-fmessage-length\u003d0\" \"-fno-inline-functions-called-once\" \"-fgcse-after-reload\" \"-frerun-cse-after-loop\" \"-frename-registers\" \"-no-canonical-prefixes\" \"-fno-exceptions\" \"-fno-rtti\" \"-O0\" \"-g\" \"-fno-omit-frame-pointer\" \"-DANDROID\" \"-Werror\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-fno-strict-aliasing\" \"-finline-functions\" \"-ffunction-sections\" \"-funwind-tables\" \"-fmessage-length\u003d0\" \"-fno-inline-functions-called-once\" \"-fgcse-after-reload\" \"-frerun-cse-after-loop\" \"-frename-registers\" \"-no-canonical-prefixes\" \"-fno-exceptions\" \"-fno-rtti\" \"-O0\" \"-g\" \"-fno-omit-frame-pointer\" \"-I{ndkPath}/sources/cxx-stl/system/include\" \"-I{ndkPath}/samples/hello-gl2/jni\" \"-DANDROID\" \"-Werror\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-21/arch-mips64/usr/include\""
         }
       ],
       "output": {

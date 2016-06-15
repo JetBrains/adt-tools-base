@@ -35,6 +35,7 @@ import com.android.build.gradle.external.gson.NativeBuildConfigValue;
 import com.android.build.gradle.truth.NativeBuildConfigValueSubject;
 import com.google.common.truth.Truth;
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
 import org.junit.Test;
 
@@ -51,6 +52,11 @@ public class NativeBuildConfigValueBuilderTest {
                 new NativeBuildConfigValueBuilder(new File(projectPath))
                         .addCommands("echo build command", "debug", string, true)
                         .build();
+        String actualResult = new GsonBuilder()
+                .setPrettyPrinting()
+                .create()
+                .toJson(actualValue);
+        System.err.println(actualResult);
 
         if (SdkConstants.currentPlatform() == SdkConstants.PLATFORM_WINDOWS) {
             expected = expected.replace("/", "\\\\");
@@ -114,6 +120,46 @@ public class NativeBuildConfigValueBuilderTest {
                 + "        \"path\": \"g++\"\n"
                 + "      }\n"
                 + "    },\n"
+                + "    \"toolchain-x\": {\n"
+                + "      \"cCompilerExecutable\": {\n"
+                + "        \"path\": \"g++\"\n"
+                + "      }\n"
+                + "    }\n"
+                + "  },\n"
+                + "  \"cFileExtensions\": [\n"
+                + "    \"c\"\n"
+                + "  ],\n"
+                + "  \"cppFileExtensions\": []\n"
+                + "}");
+    }
+
+    @Test
+    public void includeInSource() throws FileNotFoundException {
+        assertThatNativeBuildConfigEquals("g++ -c a.c -o x/aa.o -Isome-include-path\n", "{\n"
+                + "  \"buildFiles\": [\n"
+                + "    {\n"
+                + "      \"path\": \"/projects/MyProject/jni/Android.mk\"\n"
+                + "    }\n"
+                + "  ],\n"
+                + "  \"libraries\": {\n"
+                + "    \"x-aa-debug\": {\n"
+                + "      \"buildCommand\": \"echo build command\",\n"
+                + "      \"toolchain\": \"toolchain-x\",\n"
+                + "      \"abi\": \"x\",\n"
+                + "      \"files\": [\n"
+                + "        {\n"
+                + "          \"src\": {\n"
+                + "            \"path\": \"a.c\"\n"
+                + "          },\n"
+                + "          \"flags\": \"\\\"-Isome-include-path\\\"\"\n"
+                + "        }\n"
+                + "      ],\n"
+                + "      \"output\": {\n"
+                + "        \"path\": \"x/aa.o\"\n"
+                + "      }\n"
+                + "    }\n"
+                + "  },\n"
+                + "  \"toolchains\": {\n"
                 + "    \"toolchain-x\": {\n"
                 + "      \"cCompilerExecutable\": {\n"
                 + "        \"path\": \"g++\"\n"
