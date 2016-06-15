@@ -32,7 +32,7 @@ import com.android.builder.model.AndroidProject;
 import com.android.builder.model.OptionalCompilationStep;
 import com.android.utils.FileUtils;
 import com.google.common.base.CharMatcher;
-import com.google.common.base.Objects;
+import com.google.common.base.MoreObjects;
 
 import org.gradle.api.Project;
 import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry;
@@ -221,7 +221,7 @@ public class GlobalScope implements TransformGlobalScope {
      */
     @NonNull
     public File getApkLocation() {
-        return Objects.firstNonNull(
+        return MoreObjects.firstNonNull(
                 AndroidGradleOptions.getApkLocation(project),
                 getDefaultApkLocation());
     }

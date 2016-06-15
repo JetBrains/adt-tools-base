@@ -15,19 +15,23 @@
  */
 
 package com.android.build.gradle.integration.packaging
+
 import com.android.annotations.NonNull
 import com.android.annotations.Nullable
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
+import com.android.build.gradle.integration.common.fixture.RunGradleTasks
 import com.android.build.gradle.integration.common.fixture.TemporaryProjectModification
+import com.android.build.gradle.integration.common.runner.FilterableParameterized
 import com.android.build.gradle.integration.common.truth.AbstractAndroidSubject
 import com.android.utils.FileUtils
 import com.google.common.base.Charsets
-import com.google.common.collect.ImmutableList
 import com.google.common.io.Files
 import groovy.transform.CompileStatic
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.junit.runners.Parameterized
 
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatAar
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk
@@ -35,7 +39,16 @@ import static com.android.build.gradle.integration.common.truth.TruthHelper.asse
  * test for packaging of asset files.
  */
 @CompileStatic
+@RunWith(FilterableParameterized)
 class NativeSoPackagingFromRemoteAarTest {
+
+    @Parameterized.Parameters(name = "{0}")
+    public static Collection<Object[]> data() {
+        return RunGradleTasks.Packaging.getParameters();
+    }
+
+    @Parameterized.Parameter
+    public RunGradleTasks.Packaging mPackaging;
 
     @Rule
     public GradleTestProject project = GradleTestProject.builder()
@@ -44,6 +57,10 @@ class NativeSoPackagingFromRemoteAarTest {
 
     private GradleTestProject appProject
     private GradleTestProject libProject
+
+    private void execute(String... tasks) {
+        project.executor().withPackaging(mPackaging).run(tasks)
+    }
 
     @Before
     void setUp() {
@@ -90,8 +107,11 @@ uploadArchives {
         createOriginalSoFile(libDir,  "main",        "liblibrary2.so",     "library2:abcdef")
 
         // build and deploy the library
-        project.execute(ImmutableList.of("--configure-on-demand"), "library:clean", "library:uploadArchives" )
-        project.execute("app:clean", "app:assembleDebug")
+        project.executor()
+                .withArgument("--configure-on-demand")
+                .run("library:clean", "library:uploadArchives")
+
+        execute("app:clean", "app:assembleDebug")
     }
 
     private static void createOriginalSoFile(
@@ -117,8 +137,8 @@ uploadArchives {
             // must be two calls as it's a single project that includes both modules and
             // dependency is resolved at evaluation time, before the library published its new
             // versions.
-            project.execute("library:uploadArchives")
-            project.execute("app:assembleDebug")
+            execute("library:uploadArchives")
+            execute("app:assembleDebug")
 
             checkApk(appProject, "libnewapp.so", "newfile content")
         }
@@ -131,8 +151,8 @@ uploadArchives {
             // must be two calls as it's a single project that includes both modules and
             // dependency is resolved at evaluation time, before the library published its new
             // versions.
-            project.execute("library:uploadArchives")
-            project.execute("app:assembleDebug")
+            execute("library:uploadArchives")
+            execute("app:assembleDebug")
 
             checkApk(appProject, "liblibrary2.so", null)
         }
@@ -145,8 +165,8 @@ uploadArchives {
             // must be two calls as it's a single project that includes both modules and
             // dependency is resolved at evaluation time, before the library published its new
             // versions.
-            project.execute("library:uploadArchives")
-            project.execute("app:assembleDebug")
+            execute("library:uploadArchives")
+            execute("app:assembleDebug")
 
             checkApk(appProject, "liblibrary2.so", "new content")
         }
@@ -167,23 +187,6 @@ uploadArchives {
             @NonNull String filename,
             @Nullable String content) {
         check(assertThatApk(project.getApk("debug")), "lib", filename, content)
-    }
-
-    /**
-     * check a test apk has (or not) the given asset file name.
-     *
-     * If the content is non-null the file is expected to be there with the same content. If the
-     * content is null the file is not expected to be there.
-     *
-     * @param project the project
-     * @param filename the filename
-     * @param content the content
-     */
-    private static void checkTestApk(
-            @NonNull GradleTestProject project,
-            @NonNull String filename,
-            @Nullable String content) {
-        check(assertThatApk(project.getTestApk("debug")), "lib", filename, content)
     }
 
     /**

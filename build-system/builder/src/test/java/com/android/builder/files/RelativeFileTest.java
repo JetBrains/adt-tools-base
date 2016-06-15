@@ -24,7 +24,6 @@ import static org.junit.Assert.assertTrue;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.google.common.base.Predicate;
-import com.google.common.io.Files;
 
 import org.junit.Rule;
 import org.junit.Test;
@@ -109,8 +108,8 @@ public class RelativeFileTest {
         mTemporaryFolder.newFolder("dir");
         mTemporaryFolder.newFile("dir" + File.separator + "bar");
 
-        Set<RelativeFile> files = RelativeFiles.fromDirectory(mTemporaryFolder.getRoot(),
-                RelativeFiles.fromFilePredicate(Files.isFile()));
+        Set<RelativeFile> files =
+                RelativeFiles.fromDirectory(mTemporaryFolder.getRoot(), RelativeFiles.IS_FILE);
         assertEquals(2, files.size());
 
         assertNotNull(findFile(files, "foo"));
@@ -123,8 +122,10 @@ public class RelativeFileTest {
         mTemporaryFolder.newFolder("dir");
         mTemporaryFolder.newFile("dir" + File.separator + "bar");
 
-        Set<RelativeFile> files = RelativeFiles.fromDirectory(mTemporaryFolder.getRoot(),
-                RelativeFiles.fromFilePredicate(Files.isDirectory()));
+        Set<RelativeFile> files =
+                RelativeFiles.fromDirectory(
+                        mTemporaryFolder.getRoot(),
+                        relativeFile -> relativeFile.getFile().isDirectory());
         assertEquals(1, files.size());
 
         assertNotNull(findFile(files, "dir"));

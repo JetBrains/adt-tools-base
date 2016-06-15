@@ -32,14 +32,10 @@ import java.util.Set;
  */
 public final class RelativeFiles {
 
-    /**
-     * Utility class: no constructor.
-     */
-    private RelativeFiles() {
-        /*
-         * Nothing to do.
-         */
-    }
+    public static final Predicate<RelativeFile> IS_FILE =
+            relativeFile -> relativeFile.getFile().isFile();
+
+    private RelativeFiles() {}
 
     /**
      * Loads all files in a directory recursively.
@@ -76,6 +72,7 @@ public final class RelativeFiles {
      * @param directory the directory to get files from, must exist and be a readable directory
      * @return all files in the directory, sub-directories included
      */
+    @NonNull
     private static ImmutableSet<RelativeFile> fromDirectory(@NonNull File base,
             @NonNull File directory) {
         Preconditions.checkArgument(base.isDirectory(), "!base.isDirectory()");
@@ -93,18 +90,6 @@ public final class RelativeFiles {
         }
 
         return ImmutableSet.copyOf(files);
-    }
-
-    /**
-     * Constructs a predicate over relative files from a predicate over files, applying it to the
-     * file contained in the relative file.
-     *
-     * @param predicate the file predicate
-     * @return the relative file predicate built upon {@code predicate}
-     */
-    @NonNull
-    public static Predicate<RelativeFile> fromFilePredicate(@NonNull Predicate<File> predicate) {
-        return Predicates.compose(predicate, RelativeFile.EXTRACT_FILE);
     }
 
     /**

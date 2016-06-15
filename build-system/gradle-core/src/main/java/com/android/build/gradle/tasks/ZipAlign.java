@@ -12,17 +12,15 @@ import com.android.build.gradle.internal.tasks.FileSupplier;
 import com.android.build.gradle.internal.variant.ApkVariantOutputData;
 import com.google.common.base.Preconditions;
 
-import org.gradle.api.Action;
 import org.gradle.api.DefaultTask;
 import org.gradle.api.Task;
 import org.gradle.api.tasks.InputFile;
+import org.gradle.api.tasks.OutputFile;
 import org.gradle.api.tasks.ParallelizableTask;
 import org.gradle.api.tasks.TaskAction;
-import org.gradle.process.ExecSpec;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.concurrent.Callable;
 
 @ParallelizableTask
 public class ZipAlign extends DefaultTask implements FileSupplier {
@@ -33,7 +31,7 @@ public class ZipAlign extends DefaultTask implements FileSupplier {
      * Resulting zip file.
      * @return the resulting zip file; may be the same as the input file
      */
-    //@OutputFile
+    @OutputFile
     public File getOutputFile() {
         return outputFile;
     }
@@ -102,20 +100,17 @@ public class ZipAlign extends DefaultTask implements FileSupplier {
                     + "' exists but is not a file.");
         }
 
-        getProject().exec(new Action<ExecSpec>() {
-            @Override
-            public void execute(ExecSpec execSpec) {
-                execSpec.executable(getZipAlignExe());
-                execSpec.args("-f", "4");
-                execSpec.args(getInputFile());
-                execSpec.args(getOutputFile());
-            }
+        getProject().exec(execSpec -> {
+            execSpec.executable(getZipAlignExe());
+            execSpec.args("-f", "4");
+            execSpec.args(getInputFile());
+            execSpec.args(getOutputFile());
         });
 
         // mark this APK production, this will eventually be saved when instant-run is enabled.
         try {
-            instantRunBuildContext.addChangedFile(InstantRunBuildContext.FileType.MAIN,
-                    getOutputFile());
+            instantRunBuildContext.addChangedFile(
+                    InstantRunBuildContext.FileType.MAIN, getOutputFile());
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -161,37 +156,37 @@ public class ZipAlign extends DefaultTask implements FileSupplier {
             ApkVariantOutputData variantData = (ApkVariantOutputData) scope.getVariantOutputData();
             variantData.zipAlignTask = zipAlign;
 
-            ConventionMappingHelper.map(zipAlign, "inputFile", new Callable<File>() {
-                @Override
-                public File call() throws Exception {
-                    // wire to the output of the package task.
-                    PackageAndroidArtifact packageAndroidArtifactTask =
-                            scope.getVariantOutputData().packageAndroidArtifactTask;
-                    return packageAndroidArtifactTask == null
-                            ? scope.getPackageApk()
-                            : packageAndroidArtifactTask.getOutputFile();
-                }
+            ConventionMappingHelper.map(zipAlign, "inputFile", () -> {
+                // wire to the output of the package task.
+                PackageAndroidArtifact packageAndroidArtifactTask =
+                        scope.getVariantOutputData().packageAndroidArtifactTask;
+                return packageAndroidArtifactTask == null
+                        ? scope.getPackageApk()
+                        : packageAndroidArtifactTask.getOutputFile();
             });
-            ConventionMappingHelper.map(zipAlign, "outputFile", new Callable<File>() {
-                @Override
-                public File call() throws Exception {
-                    return scope.getGlobalScope().getProject().file(
-                            scope.getGlobalScope().getApkLocation() + "/" +
-                                    scope.getGlobalScope().getProjectBaseName() + "-" +
-                                    scope.getVariantOutputData().getBaseName() + ".apk");
-                }
-            });
-            ConventionMappingHelper.map(zipAlign, "zipAlignExe", new Callable<File>() {
-                @Override
-                public File call() throws Exception {
-                    String path = scope.getGlobalScope().getAndroidBuilder().getTargetInfo()
-                            .getBuildTools().getPath(ZIP_ALIGN);
-                    if (path != null) {
-                        return new File(path);
-                    }
+
+            ConventionMappingHelper.map(
+                    zipAlign,
+                    "outputFile",
+                    () -> scope.getGlobalScope().getProject().file(
+                            scope.getGlobalScope().getApkLocation() + "/"
+                                    + scope.getGlobalScope().getProjectBaseName() + "-"
+                                    + scope.getVariantOutputData().getBaseName() + ".apk"));
+
+            ConventionMappingHelper.map(zipAlign, "zipAlignExe", () -> {
+                String zipAlignPath =
+                        scope.getGlobalScope()
+                                .getAndroidBuilder()
+                                .getTargetInfo()
+                                .getBuildTools()
+                                .getPath(ZIP_ALIGN);
+                if (zipAlignPath != null) {
+                    return new File(zipAlignPath);
+                } else {
                     return null;
                 }
             });
+
             zipAlign.instantRunBuildContext = scope.getVariantScope().getInstantRunBuildContext();
         }
     }

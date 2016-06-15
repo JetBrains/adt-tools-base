@@ -135,7 +135,6 @@ externalBuild {
         assertThat(artifact.getLocation().exists()).isTrue();
 
         ApkSubject apkSubject = expect.about(ApkSubject.FACTORY).that(artifact.getLocation());
-        assertThat(apkSubject.containsApkSigningBlock());
         assertThat(apkSubject.contains("instant-run.zip"));
         assertThat(apkSubject.hasMainDexFile());
 

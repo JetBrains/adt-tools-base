@@ -18,6 +18,7 @@ package com.android.build.gradle;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.annotations.VisibleForTesting;
 import com.android.builder.model.AndroidProject;
 import com.android.builder.model.OptionalCompilationStep;
 import com.android.sdklib.AndroidVersion;
@@ -37,7 +38,8 @@ import java.util.StringTokenizer;
  */
 public class AndroidGradleOptions {
 
-    private static final boolean DEFAULT_USE_OLD_PACKAGING = false;
+    @VisibleForTesting
+    public static final boolean DEFAULT_USE_OLD_PACKAGING = false;
 
     private static final boolean DEFAULT_ENABLE_AAPT2 = false;
 
@@ -61,7 +63,7 @@ public class AndroidGradleOptions {
     public static final String PROPERTY_INCREMENTAL_JAVA_COMPILE =
             "android.incrementalJavaCompile";
 
-    private static final String PROPERTY_USE_OLD_PACKAGING = "android.useOldPackaging";
+    public static final String PROPERTY_USE_OLD_PACKAGING = "android.useOldPackaging";
 
     private static final String PROPERTY_KEEP_TIMESTAMPS_IN_APK = "android.keepTimestampsInApk";
 

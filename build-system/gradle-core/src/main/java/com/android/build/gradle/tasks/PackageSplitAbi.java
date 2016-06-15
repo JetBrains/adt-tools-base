@@ -145,9 +145,10 @@ public class PackageSplitAbi extends SplitRelatedTask {
                 File outFile = new File(getOutputDirectory(), apkName);
                 getBuilder().oldPackageApk(
                         file.getAbsolutePath(),
-                        ImmutableSet.<File>of(), /* dexFolders */
-                        ImmutableList.<File>of(), /* getJavaResourceDir */
+                        ImmutableSet.of(), /* dexFolders */
+                        ImmutableList.of(), /* getJavaResourceDir */
                         getJniFolders(),
+                        null,
                         ImmutableSet.of(matcher.group(1)),
                         isJniDebuggable(),
                         getSigningConfig(),

@@ -125,6 +125,7 @@ public class PackageApplication extends PackageAndroidArtifact {
                     dexFoldersForApk.build(),
                     javaResourcesForApk.build(),
                     getJniFolders(),
+                    getAssets(),
                     getAbiFilters(),
                     getJniDebugBuild(),
                     getSigningConfig(),

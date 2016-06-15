@@ -23,6 +23,7 @@ import static org.junit.Assert.fail;
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.build.gradle.AndroidGradleOptions;
 import com.android.build.gradle.integration.common.fixture.app.AbstractAndroidTestApp;
 import com.android.build.gradle.integration.common.fixture.app.AndroidTestApp;
 import com.android.build.gradle.integration.common.fixture.app.TestSourceFile;
@@ -41,6 +42,7 @@ import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.io.Files;
 
@@ -566,7 +568,7 @@ public class GradleTestProject implements TestRule {
      *   - build type
      *   - other modifiers (e.g. "unsigned", "aligned")
      */
-    public File getApk(String ... dimensions) {
+    public File getApk(String... dimensions) {
         List<String> dimensionList = Lists.newArrayListWithExpectedSize(1 + dimensions.length);
         dimensionList.add(getName());
         dimensionList.addAll(Arrays.asList(dimensions));
@@ -574,23 +576,24 @@ public class GradleTestProject implements TestRule {
                 "apk/" + Joiner.on("-").join(dimensionList) + SdkConstants.DOT_ANDROID_PACKAGE);
     }
 
-    public File getTestApk(String ... dimensions) {
-        return getTestApkNewPackaging(dimensions);
+    public File getTestApk(RunGradleTasks.Packaging packaging, String... dimensions) {
+        List<String> dimensionList = Lists.newArrayList(dimensions);
+        dimensionList.add("androidTest");
+        if (packaging == RunGradleTasks.Packaging.OLD_PACKAGING) {
+            dimensionList.add("unaligned");
+        }
+
+        return getApk(Iterables.toArray(dimensionList, String.class));
     }
 
-    private File getTestApkOldPackaging(String ... dimensions) {
-        String[] allDimensions = new String[dimensions.length + 2];
-        System.arraycopy(dimensions, 0, allDimensions, 0, dimensions.length);
-        allDimensions[allDimensions.length - 2] = "androidTest";
-        allDimensions[allDimensions.length - 1] = "unaligned";
-        return getApk(allDimensions);
-    }
+    public File getTestApk(String... dimensions) {
+        @SuppressWarnings("ConstantConditions")
+        RunGradleTasks.Packaging packaging =
+                AndroidGradleOptions.DEFAULT_USE_OLD_PACKAGING
+                        ? RunGradleTasks.Packaging.OLD_PACKAGING
+                        : RunGradleTasks.Packaging.NEW_PACKAGING;
 
-    private File getTestApkNewPackaging(String ... dimensions) {
-        String[] allDimensions = new String[dimensions.length + 1];
-        System.arraycopy(dimensions, 0, allDimensions, 0, dimensions.length);
-        allDimensions[allDimensions.length - 1] = "androidTest";
-        return getApk(allDimensions);
+        return getTestApk(packaging, dimensions);
     }
 
     /**
@@ -601,7 +604,7 @@ public class GradleTestProject implements TestRule {
      *   - build type
      *   - other modifiers (e.g. "unsigned", "aligned")
      */
-    public File getAar(String ... dimensions) {
+    public File getAar(String... dimensions) {
         List<String> dimensionList = Lists.newArrayListWithExpectedSize(1 + dimensions.length);
         dimensionList.add(getName());
         dimensionList.addAll(Arrays.asList(dimensions));

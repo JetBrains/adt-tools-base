@@ -16,11 +16,11 @@
 
 package com.android.builder.signing;
 
-import static com.google.common.base.Preconditions.checkArgument;
-
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.builder.internal.packaging.sign.DigestAlgorithm;
+import com.android.builder.internal.packaging.sign.SignatureAlgorithm;
 import com.android.builder.packaging.ApkCreator;
 import com.android.builder.packaging.ApkCreatorFactory;
 import com.android.builder.packaging.ManifestAttributes;
@@ -29,7 +29,6 @@ import com.android.builder.packaging.ZipEntryFilter;
 import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Predicate;
-import com.google.common.io.Closer;
 
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.DEROutputStream;
@@ -112,9 +111,8 @@ public class SignedJarApkCreator implements ApkCreator {
     private PrivateKey mKey;
     private X509Certificate mCertificate;
     private Manifest mManifest;
-    private String mDigestAttributeName;
-    private String mDigestManifestAttributeName;
-    private String mMessageDigestAlgorithm;
+    private DigestAlgorithm mDigestAlgorithm;
+    private SignatureAlgorithm mSignatureAlgorithm;
     private MessageDigest mMessageDigest;
 
     private byte[] mBuffer = new byte[4096];
@@ -149,39 +147,22 @@ public class SignedJarApkCreator implements ApkCreator {
                 main.putValue(ManifestAttributes.CREATED_BY, creationData.getCreatedBy());
             }
 
-            String digestAttributeDigestAlgorithm;
-            if (mMinSdkVersion < 18) {
-                // Android 2.3 (API Level 9) to 4.2 (API Level 17) (inclusive) do not support SHA-2
-                // JAR signatures.
-                mMessageDigestAlgorithm = "SHA-1";
-                // Moreover, platforms prior to API Level 18, without the additional
-                // Digest-Algorithms attribute, only support SHA or SHA1 algorithm names in .SF and
-                // MANIFEST.MF attributes.
-                digestAttributeDigestAlgorithm = "SHA1";
-            } else {
-                mMessageDigestAlgorithm = "SHA-256";
-                digestAttributeDigestAlgorithm = mMessageDigestAlgorithm;
-            }
-            mDigestAttributeName = digestAttributeDigestAlgorithm + "-Digest";
-            mDigestManifestAttributeName = digestAttributeDigestAlgorithm + "-Digest-Manifest";
-            mMessageDigest = MessageDigest.getInstance(mMessageDigestAlgorithm);
+            mSignatureAlgorithm =
+                    SignatureAlgorithm.fromKeyAlgorithm(mKey.getAlgorithm(), mMinSdkVersion);
+            mDigestAlgorithm = DigestAlgorithm.findBest(mMinSdkVersion, mSignatureAlgorithm);
+            mMessageDigest = MessageDigest.getInstance(mDigestAlgorithm.messageDigestName);
         }
     }
 
     @Override
     public void writeFile(@NonNull File inputFile, @NonNull String apkPath) throws IOException {
         // Get an input stream on the file.
-        FileInputStream fis = new FileInputStream(inputFile);
-        try {
-
+        try (FileInputStream fis = new FileInputStream(inputFile)) {
             // create the zip entry
             JarEntry entry = new JarEntry(apkPath);
             entry.setTime(inputFile.lastModified());
 
             writeEntry(fis, entry);
-        } finally {
-            // close the file stream used to read the file
-            fis.close();
         }
     }
 
@@ -202,10 +183,7 @@ public class SignedJarApkCreator implements ApkCreator {
         Preconditions.checkArgument(transform == null, "SignedJarApkCreator does not support "
                 + "name transforms");
 
-        Closer closer = Closer.create();
-        ZipInputStream zis = closer.register(new ZipInputStream(new FileInputStream(zip)));
-
-        try {
+        try (ZipInputStream zis = new ZipInputStream(new FileInputStream(zip))) {
             // loop on the entries of the intermediary package and put them in the final package.
             ZipEntry entry;
             while ((entry = zis.getNextEntry()) != null) {
@@ -260,10 +238,6 @@ public class SignedJarApkCreator implements ApkCreator {
 
                 zis.closeEntry();
             }
-        } catch (Throwable e) {
-            throw closer.rethrow(e);
-        } finally {
-            closer.close();
         }
     }
 
@@ -289,7 +263,7 @@ public class SignedJarApkCreator implements ApkCreator {
 
                 // CERT.*
                 mOutputJar.putNextEntry(new JarEntry("META-INF/CERT." + mKey.getAlgorithm()));
-                writeSignatureBlock(new CMSProcessableByteArray(signedData), mCertificate, mKey);
+                writeSignatureBlock(new CMSProcessableByteArray(signedData), mCertificate);
             } catch (Exception e) {
                 throw new IOException(e);
             }
@@ -330,7 +304,7 @@ public class SignedJarApkCreator implements ApkCreator {
                 attr = new Attributes();
                 mManifest.getEntries().put(entry.getName(), attr);
             }
-            attr.putValue(mDigestAttributeName,
+            attr.putValue(mDigestAlgorithm.entryAttributeName,
                           new String(Base64.encode(mMessageDigest.digest()), "ASCII"));
         }
     }
@@ -343,7 +317,7 @@ public class SignedJarApkCreator implements ApkCreator {
         main.putValue("Signature-Version", "1.0");
         main.putValue("Created-By", "1.0 (Android)");
 
-        MessageDigest md = MessageDigest.getInstance(mMessageDigestAlgorithm);
+        MessageDigest md = MessageDigest.getInstance(mDigestAlgorithm.messageDigestName);
         PrintStream print = new PrintStream(
                 new DigestOutputStream(new ByteArrayOutputStream(), md),
                 true, SdkConstants.UTF_8);
@@ -351,7 +325,7 @@ public class SignedJarApkCreator implements ApkCreator {
         // Digest of the entire manifest
         mManifest.write(print);
         print.flush();
-        main.putValue(mDigestManifestAttributeName,
+        main.putValue(mDigestAlgorithm.manifestAttributeName,
                 new String(Base64.encode(md.digest()), "ASCII"));
 
         Map<String, Attributes> entries = mManifest.getEntries();
@@ -365,7 +339,9 @@ public class SignedJarApkCreator implements ApkCreator {
             print.flush();
 
             Attributes sfAttr = new Attributes();
-            sfAttr.putValue(mDigestAttributeName, new String(Base64.encode(md.digest()), "ASCII"));
+            sfAttr.putValue(
+                    mDigestAlgorithm.entryAttributeName,
+                    new String(Base64.encode(md.digest()), "ASCII"));
             sf.getEntries().put(entry.getKey(), sfAttr);
         }
         CountOutputStream cout = new CountOutputStream(out);
@@ -382,12 +358,8 @@ public class SignedJarApkCreator implements ApkCreator {
     }
 
     /** Write the certificate file with a digital signature. */
-    private void writeSignatureBlock(CMSTypedData data, X509Certificate publicKey,
-            PrivateKey privateKey)
-                        throws IOException,
-                        CertificateEncodingException,
-                        OperatorCreationException,
-                        CMSException {
+    private void writeSignatureBlock(CMSTypedData data, X509Certificate publicKey)
+            throws IOException, CertificateEncodingException, OperatorCreationException, CMSException {
 
         ArrayList<X509Certificate> certList = new ArrayList<X509Certificate>();
         certList.add(publicKey);
@@ -395,7 +367,8 @@ public class SignedJarApkCreator implements ApkCreator {
 
         CMSSignedDataGenerator gen = new CMSSignedDataGenerator();
         ContentSigner sha1Signer =
-                new JcaContentSignerBuilder(getSignatureAlgorithm(privateKey)).build(privateKey);
+                new JcaContentSignerBuilder(
+                        mSignatureAlgorithm.signatureAlgorithmName(mDigestAlgorithm)).build(mKey);
         gen.addSignerInfoGenerator(
             new JcaSignerInfoGeneratorBuilder(
                 new JcaDigestCalculatorProviderBuilder()
@@ -405,8 +378,7 @@ public class SignedJarApkCreator implements ApkCreator {
         gen.addCertificates(certs);
         CMSSignedData sigData = gen.generate(data, false);
 
-        ASN1InputStream asn1 = new ASN1InputStream(sigData.getEncoded());
-        try {
+        try (ASN1InputStream asn1 = new ASN1InputStream(sigData.getEncoded())) {
             DEROutputStream dos = new DEROutputStream(mOutputJar);
             try {
                 dos.writeObject(asn1.readObject());
@@ -414,30 +386,6 @@ public class SignedJarApkCreator implements ApkCreator {
                 dos.flush();
                 dos.close();
             }
-        } finally {
-            asn1.close();
-        }
-    }
-
-    private String getSignatureAlgorithm(PrivateKey privateKey) {
-        String keyAlgorithm = privateKey.getAlgorithm();
-        String digestAlgorithm = mMessageDigestAlgorithm.replace("-", "");
-
-        if ("RSA".equalsIgnoreCase(keyAlgorithm)) {
-            // Digest algorithms in JCA Signature algorithms do not use the hyphen.
-            // For example, SHA-256 becomes SHA256withRSA.
-            return digestAlgorithm + "withRSA";
-        } else if ("EC".equalsIgnoreCase(keyAlgorithm)) {
-            checkArgument(
-                    mMinSdkVersion >= 18,
-                    "ECDSA signatures are not supported on API levels older than 18. Please increase "
-                            + "your minSdkVersion or use RSA.");
-            return digestAlgorithm + "withECDSA";
-        } else if ("DSA".equalsIgnoreCase(keyAlgorithm)) {
-            return digestAlgorithm + "withDSA";
-        } else {
-            throw new IllegalArgumentException(
-                "Unsupported key algorithm for signing: " + keyAlgorithm);
         }
     }
 
