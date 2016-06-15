@@ -116,10 +116,13 @@ public final class PsdDecoder extends Decoder {
             Layer.Type type = Layer.Type.IMAGE;
             boolean isOpen = true;
 
+            BlendMode blendMode;
+
             // If the section property is set, the layer is either the beginning
             // or the end of a group of layers
             if (sectionProperty != null) {
-                LayerSection.Type groupType = ((LayerSection) sectionProperty.data).type;
+                LayerSection section = (LayerSection) sectionProperty.data;
+                LayerSection.Type groupType = section.type;
                 switch (groupType) {
                     case OTHER:
                         continue;
@@ -141,7 +144,9 @@ public final class PsdDecoder extends Decoder {
                         }
                         continue;
                 }
+                blendMode = PsdUtils.getBlendMode(section.blendMode);
             } else {
+                blendMode = PsdUtils.getBlendMode(rawLayer.blendMode);
                 type = getLayerType(rawLayer);
             }
 
@@ -152,7 +157,7 @@ public final class PsdDecoder extends Decoder {
             layer.bounds(rawLayer.left, rawLayer.top,
                     rawLayer.right - rawLayer.left, rawLayer.bottom - rawLayer.top)
                     .opacity(rawLayer.opacity / 255.0f)
-                    .blendMode(PsdUtils.getBlendMode(rawLayer.blendMode))
+                    .blendMode(blendMode)
                     .clipBase(rawLayer.clipping == 0)
                     .open(isOpen)
                     .visible((rawLayer.flags & RawLayer.INVISIBLE) == 0);

@@ -16,12 +16,14 @@
 
 package com.android.tools.pixelprobe.tests.psd;
 
+import com.android.tools.pixelprobe.BlendMode;
 import com.android.tools.pixelprobe.Image;
 import com.android.tools.pixelprobe.Layer;
 import com.android.tools.pixelprobe.tests.ImageUtils;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.awt.geom.Rectangle2D;
 import java.io.IOException;
 import java.util.List;
 
@@ -83,5 +85,49 @@ public class LayerTest {
 
         Assert.assertEquals("Visible", layers.get(1).getName());
         Assert.assertTrue(layers.get(1).isVisible());
+    }
+
+    @Test
+    public void blendModes() throws IOException {
+        Image image = ImageUtils.loadImage("blend_modes.psd");
+
+        List<Layer> layers = image.getLayers();
+        BlendMode[] modes = BlendMode.values();
+        for (int i = 0; i < modes.length; i++) {
+            Assert.assertEquals(modes[i], layers.get(i).getBlendMode());
+        }
+    }
+
+    @Test
+    public void opacity() throws IOException {
+        Image image = ImageUtils.loadImage("opacity.psd");
+
+        List<Layer> layers = image.getLayers();
+        float[] opacities = { 0.25f, 0.50f, 0.75f, 1.0f };
+        for (int i = 0; i < opacities.length; i++) {
+            Assert.assertEquals(opacities[i], layers.get(i).getOpacity(), 0.01f);
+        }
+    }
+
+    @Test
+    public void clipBase() throws IOException {
+        Image image = ImageUtils.loadImage("clip_base.psd");
+
+        List<Layer> layers = image.getLayers();
+
+        Assert.assertFalse(layers.get(0).isClipBase());
+        Assert.assertFalse(layers.get(1).isClipBase());
+        Assert.assertTrue(layers.get(2).isClipBase());
+    }
+
+    @Test
+    public void bounds() throws IOException {
+        Image image = ImageUtils.loadImage("bounds.psd");
+
+        List<Layer> layers = image.getLayers();
+
+        Assert.assertEquals(new Rectangle2D.Float(200.0f, 200.0f, 56.0f, 56.0f), layers.get(0).getBounds());
+        Assert.assertEquals(new Rectangle2D.Float(-24.0f, -24.0f, 96.0f, 96.0f), layers.get(1).getBounds());
+        Assert.assertEquals(new Rectangle2D.Float(0.0f, 0.0f, 96.0f, 96.0f), layers.get(2).getBounds());
     }
 }

@@ -402,14 +402,14 @@ final class PsdUtils {
                 // Closed subpath needs special handling at the end
                 case CLOSED_SUBPATH_LENGTH:
                 case OPEN_SUBPATH_LENGTH:
-                    if (type == PathType.CLOSED && path != null) {
+                    if (type == PathType.CLOSED) {
                         // If the previous subpath is of the closed type, close it now
                         addToPath(path, firstKnot, lastKnot);
                         path.closePath();
                     }
 
                     SubPath subPath = (SubPath) record.data;
-                    if (subPath.tag == SubPath.OP) {
+                    if (subPath.tag != SubPath.NO_OP) {
                         if (path != null) {
                             path.transform(transform);
                             if (moveCount > 1) type = PathType.UNKNOWN;
@@ -417,6 +417,10 @@ final class PsdUtils {
                         }
 
                         op = getPathOp(subPath.op);
+                        path = new Path2D.Float(Path2D.WIND_EVEN_ODD, subPath.knotCount);
+                        moveCount = 0;
+                    } else if (path == null) {
+                        op = ShapeInfo.PathOp.ADD;
                         path = new Path2D.Float(Path2D.WIND_EVEN_ODD, subPath.knotCount);
                         moveCount = 0;
                     }
@@ -451,7 +455,7 @@ final class PsdUtils {
         }
 
         // Close the subpath if needed
-        if (type == PathType.CLOSED && path != null) {
+        if (type == PathType.CLOSED) {
             addToPath(path, firstKnot, lastKnot);
             path.closePath();
         }

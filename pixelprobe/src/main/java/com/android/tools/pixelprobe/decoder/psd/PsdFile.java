@@ -379,8 +379,6 @@ final class PsdFile {
         static final String KEY_SECTION = "lsct";
         // The property holds the Unicode name of the layer
         static final String KEY_NAME = "luni";
-        // The property holds the layer's ID
-        static final String KEY_ID = "lyid";
         // The property holds the solid color adjustment information
         static final String KEY_ADJUSTMENT_SOLID_COLOR = "SoCo";
         // Fill opacity
@@ -679,9 +677,9 @@ final class PsdFile {
         @Chunked
         static final class SubPath {
             // If the tag equals this value, then the subpath is
-            // a path operation, otherwise it must be added to the
+            // not a path operation and must be added to the
             // current path
-            static final int OP = 0x1;
+            static final int NO_OP = 0x0;
             static final int OP_XOR = 0x0;
             static final int OP_MERGE = 0x1;
             static final int OP_SUBTRACT = 0x2;
