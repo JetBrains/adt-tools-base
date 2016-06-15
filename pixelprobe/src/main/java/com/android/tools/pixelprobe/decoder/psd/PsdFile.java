@@ -678,16 +678,23 @@ final class PsdFile {
          */
         @Chunked
         static final class SubPath {
-            static final int OP_XOR = 0;
-            static final int OP_MERGE = 1;
-            static final int OP_SUBTRACT = 2;
-            static final int OP_INTERSECT = 3;
+            // If the tag equals this value, then the subpath is
+            // a path operation, otherwise it must be added to the
+            // current path
+            static final int OP = 0x1;
+            static final int OP_XOR = 0x0;
+            static final int OP_MERGE = 0x1;
+            static final int OP_SUBTRACT = 0x2;
+            static final int OP_INTERSECT = 0x3;
 
             @Chunk(byteCount = 2)
             int knotCount;
 
             @Chunk(byteCount = 2)
             int op;
+
+            @Chunk(byteCount = 2)
+            int tag;
         }
 
         // Indicates the path record type

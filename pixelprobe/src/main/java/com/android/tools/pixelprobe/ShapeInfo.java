@@ -20,22 +20,20 @@ import com.android.tools.pixelprobe.util.Lists;
 import com.android.tools.pixelprobe.util.Strings;
 
 import java.awt.*;
-import java.awt.geom.GeneralPath;
 import java.awt.geom.Path2D;
 import java.util.ArrayList;
 import java.util.List;
 
 /**
  * The shape information for an image's shape layer.
- * A shape can be made of one or more sub-paths. Each sub-path
- * contains a geometry (a {@link Path2D}, as well as an operator
- * that describes how to combine that sub-path with the previous
- * sub-paths that comprise the shape.
+ * A shape can be made of one or more paths. Each path contains a
+ * a {@link Path2D}, as well as an operator that describes how to
+ * combine that path with the previous paths that comprise the shape.
  */
 public final class ShapeInfo {
     private final Style style;
 
-    private final List<SubPath> paths;
+    private final List<Path> paths;
 
     private final Paint fillPaint;
     private final float fillOpacity;
@@ -123,42 +121,44 @@ public final class ShapeInfo {
     }
 
     /**
-     * Indicates whether a sub-path is open or closed.
+     * Indicates whether a path is open or closed.
      */
     public enum PathType {
         /**
          * Open path, the last point is not connected to the first point.
+         * The path contains only one sub-path.
          */
         OPEN,
         /**
          * Closed path, the last point is connected to the first point.
+         * The path contains only one sub-path.
          */
         CLOSED,
         /**
-         * The path contains multiple move commands and must be inspected
-         * to determine whether each sub-sequence is open or closed.
+         * The path contains multiple sub-paths and must be inspected
+         * to determine whether each sub-path is open or closed.
          */
-        NONE
+        UNKNOWN
     }
 
     /**
-     * A sub-path contains a path and an operator that defines how to
-     * combine that path with other paths contained in a shape.
+     * A path has an operator that defines how to combine that path with
+     * other paths contained in a shape.
      */
-    public static final class SubPath {
+    public static final class Path {
         private final Path2D path;
         private final PathOp op;
         private final PathType type;
 
-        SubPath(Builder builder) {
+        Path(Builder builder) {
             path = builder.path;
             op = builder.op;
             type = builder.type;
         }
 
         /**
-         * Returns the path contained in this sub-path. This path must be
-         * combined with the shape's other sub-paths according to its operator.
+         * Returns this path's geometry. This path must be combined with the
+         * shape's other paths according to its operator.
          *
          * @see #getOp()
          */
@@ -167,8 +167,7 @@ public final class ShapeInfo {
         }
 
         /**
-         * Describes how the path contained in this sub-path must be combined
-         * with the shape's other sub-paths.
+         * Describes how this path must be combined with the shape's other paths.
          *
          * @see #getPath()
          */
@@ -177,7 +176,7 @@ public final class ShapeInfo {
         }
 
         /**
-         * Returns whether the path contained in this sub-path is open or closed.
+         * Returns whether this path is open or closed.
          */
         public PathType getType() {
             return type;
@@ -185,7 +184,7 @@ public final class ShapeInfo {
 
         @Override
         public String toString() {
-            return "SubPath{" +
+            return "Path{" +
                    "path=" + path +
                    ", type=" + type +
                    ", op=" + op +
@@ -193,7 +192,7 @@ public final class ShapeInfo {
         }
 
         public static final class Builder {
-            private Path2D path = new GeneralPath();
+            private Path2D path = new Path2D.Float();
             private PathOp op = PathOp.ADD;
             private PathType type = PathType.CLOSED;
 
@@ -212,8 +211,8 @@ public final class ShapeInfo {
                 return this;
             }
 
-            public SubPath build() {
-                return new SubPath(this);
+            public Path build() {
+                return new Path(this);
             }
         }
     }
@@ -240,9 +239,9 @@ public final class ShapeInfo {
     }
 
     /**
-     * Returns the list of sub-paths representing this shape.
+     * Returns the list of paths representing this shape.
      */
-    public List<SubPath> getPaths() {
+    public List<Path> getPaths() {
         return paths;
     }
 
@@ -319,7 +318,7 @@ public final class ShapeInfo {
     public String toString() {
         return "ShapeInfo{" +
                "style=" + style +
-               ", subPaths={" + Strings.join(paths, ",") + "}" +
+               ", paths={" + Strings.join(paths, ",") + "}" +
                ", fillPaint=" + fillPaint +
                ", fillOpacity=" + fillOpacity +
                ", stroke=" + (stroke != null) +
@@ -333,7 +332,7 @@ public final class ShapeInfo {
     @SuppressWarnings("UseJBColor")
     public static final class Builder {
         Style style = Style.FILL;
-        final List<SubPath> paths = new ArrayList<>();
+        final List<Path> paths = new ArrayList<>();
 
         Paint fillPaint = Color.BLACK;
         float fillOpacity = 1.0f;
@@ -349,8 +348,8 @@ public final class ShapeInfo {
             return this;
         }
 
-        public Builder addSubPath(SubPath subPath) {
-            paths.add(subPath);
+        public Builder addPath(Path path) {
+            paths.add(path);
             return this;
         }
 

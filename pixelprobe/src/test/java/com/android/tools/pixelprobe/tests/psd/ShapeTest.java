@@ -146,7 +146,7 @@ public class ShapeTest {
 
         Layer layer = layers.get(0);
         Assert.assertEquals("Merge", layer.getName());
-        List<ShapeInfo.SubPath> paths = layer.getShapeInfo().getPaths();
+        List<ShapeInfo.Path> paths = layer.getShapeInfo().getPaths();
         Assert.assertEquals(ShapeInfo.PathOp.ADD, paths.get(0).getOp());
         Assert.assertEquals(ShapeInfo.PathOp.ADD, paths.get(1).getOp());
 
@@ -177,7 +177,7 @@ public class ShapeTest {
 
         Layer layer = layers.get(0);
         Assert.assertEquals("Closed", layer.getName());
-        List<ShapeInfo.SubPath> paths = layer.getShapeInfo().getPaths();
+        List<ShapeInfo.Path> paths = layer.getShapeInfo().getPaths();
         Assert.assertEquals(ShapeInfo.PathType.CLOSED, paths.get(0).getType());
         Assert.assertTrue(isClosed(paths));
 
@@ -186,9 +186,19 @@ public class ShapeTest {
         paths = layer.getShapeInfo().getPaths();
         Assert.assertEquals(ShapeInfo.PathType.OPEN, paths.get(0).getType());
         Assert.assertFalse(isClosed(paths));
+
+        image = ImageUtils.loadImage("layer_effect_single_shadow.psd");
+
+        layers = image.getLayers();
+
+        layer = layers.get(1);
+        Assert.assertEquals("Inner", layer.getName());
+        paths = layer.getShapeInfo().getPaths();
+        Assert.assertEquals(ShapeInfo.PathType.UNKNOWN, paths.get(0).getType());
+        Assert.assertTrue(isClosed(paths));
     }
 
-    private static boolean isClosed(List<ShapeInfo.SubPath> paths) {
+    private static boolean isClosed(List<ShapeInfo.Path> paths) {
         PathIterator iterator = paths.get(0).getPath().getPathIterator(null);
         boolean isClosed = false;
         float[] coords = new float[6];

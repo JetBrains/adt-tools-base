@@ -18,6 +18,7 @@ package com.android.tools.pixelprobe.decoder.psd;
 
 import com.android.tools.pixelprobe.BlendMode;
 import com.android.tools.pixelprobe.ShapeInfo;
+import com.android.tools.pixelprobe.ShapeInfo.Path;
 import com.android.tools.pixelprobe.ShapeInfo.PathType;
 import com.android.tools.pixelprobe.color.Colors;
 import com.android.tools.pixelprobe.decoder.psd.PsdFile.ColorProfileBlock;
@@ -390,9 +391,10 @@ final class PsdUtils {
         //   - the control point after the previous anchor
         //   - the control point before the next anchor
 
-        PathType type = PathType.NONE;
+        PathType type = PathType.UNKNOWN;
         BezierKnot firstKnot = null;
         BezierKnot lastKnot = null;
+        int moveCount = 0;
 
         for (PathRecord record : mask.pathRecords) {
             switch (record.selector) {
@@ -400,20 +402,24 @@ final class PsdUtils {
                 // Closed subpath needs special handling at the end
                 case CLOSED_SUBPATH_LENGTH:
                 case OPEN_SUBPATH_LENGTH:
-                    if (type == PathType.CLOSED) {
+                    if (type == PathType.CLOSED && path != null) {
                         // If the previous subpath is of the closed type, close it now
                         addToPath(path, firstKnot, lastKnot);
                         path.closePath();
                     }
 
-                    if (path != null) {
-                        path.transform(transform);
-                        shapeInfo.addSubPath(new ShapeInfo.SubPath.Builder().path(path).op(op).type(type).build());
-                    }
-
                     SubPath subPath = (SubPath) record.data;
-                    op = getPathOp(subPath.op);
-                    path = new Path2D.Float(Path2D.WIND_EVEN_ODD, subPath.knotCount);
+                    if (subPath.tag == SubPath.OP) {
+                        if (path != null) {
+                            path.transform(transform);
+                            if (moveCount > 1) type = PathType.UNKNOWN;
+                            shapeInfo.addPath(new Path.Builder().path(path).op(op).type(type).build());
+                        }
+
+                        op = getPathOp(subPath.op);
+                        path = new Path2D.Float(Path2D.WIND_EVEN_ODD, subPath.knotCount);
+                        moveCount = 0;
+                    }
 
                     type = record.selector == OPEN_SUBPATH_LENGTH ? PathType.OPEN : PathType.CLOSED;
                     firstKnot = lastKnot = null;
@@ -434,6 +440,7 @@ final class PsdUtils {
                                 Bytes.fixed8_24ToFloat(knot.anchorX),
                                 Bytes.fixed8_24ToFloat(knot.anchorY));
                         firstKnot = knot;
+                        moveCount++;
                     } else {
                         // Otherwise let's curve to the new anchor
                         addToPath(path, knot, lastKnot);
@@ -444,14 +451,15 @@ final class PsdUtils {
         }
 
         // Close the subpath if needed
-        if (type == PathType.CLOSED) {
+        if (type == PathType.CLOSED && path != null) {
             addToPath(path, firstKnot, lastKnot);
             path.closePath();
         }
 
         if (path != null) {
             path.transform(transform);
-            shapeInfo.addSubPath(new ShapeInfo.SubPath.Builder().path(path).op(op).type(type).build());
+            if (moveCount > 1) type = PathType.UNKNOWN;
+            shapeInfo.addPath(new Path.Builder().path(path).op(op).type(type).build());
         }
     }
 

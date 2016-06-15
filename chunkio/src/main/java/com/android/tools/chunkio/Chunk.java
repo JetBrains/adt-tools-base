@@ -113,8 +113,8 @@ public @interface Chunk {
     /**
      * Can be used to change the type of the field based on
      * conditions. This parameter only makes sense when the field's
-     * type is set to Object. If all the cases fail, the field is
-     * decoded as a byte[]. This value is optional.
+     * type is set to Object. If all the cases fail, the appropriate
+     * number of bytes is skipped. This value is optional.
      */
     Case[] switchType() default { };
 
