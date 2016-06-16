@@ -14,6 +14,7 @@ final class PsdFile$PathRecord$SubPath$$ChunkIO {
 
         subPath.knotCount = in.readUnsignedShort();
         subPath.op = in.readUnsignedShort();
+        subPath.tag = in.readUnsignedShort();
 
         stack.removeFirst();
         return subPath;
