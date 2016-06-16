@@ -1214,16 +1214,10 @@ public class ApiDetectorTest extends AbstractCheckTest {
         // Type annotations are not supported
         //noinspection ClassNameDiffersFromFileName
         assertEquals(""
-                + "src/test/pkg/MyAnnotation.java:9: Error: Type annotations are not supported in Android: TYPE_PARAMETER [NewApi]\n"
-                + "@Target({METHOD, PARAMETER, FIELD, LOCAL_VARIABLE, TYPE_PARAMETER, TYPE_USE})\n"
-                + "                                                   ~~~~~~~~~~~~~~\n"
-                + "src/test/pkg/MyAnnotation.java:9: Error: Type annotations are not supported in Android: TYPE_USE [NewApi]\n"
-                + "@Target({METHOD, PARAMETER, FIELD, LOCAL_VARIABLE, TYPE_PARAMETER, TYPE_USE})\n"
-                + "                                                                   ~~~~~~~~\n"
                 + "src/test/pkg/MyAnnotation2.java:9: Error: Type annotations are not supported in Android: TYPE_PARAMETER [NewApi]\n"
                 + "@Target(TYPE_PARAMETER)\n"
                 + "        ~~~~~~~~~~~~~~\n"
-                + "3 errors, 0 warnings\n",
+                + "1 errors, 0 warnings\n",
                 lintProject(
                         manifest().minSdk(15),
                         java("src/test/pkg/MyAnnotation.java", ""
