@@ -35,6 +35,13 @@ public class JackProcessOptions {
 
     public static final Revision JACK_MIN_REV = new Revision(24, 0, 0);
 
+    // Revision that Jack version Douarn is released.
+    public static final Revision DOUARN_REV = new Revision(24, 0, 0);
+
+    // Class name of the code coverage plugin.
+    public static final String COVERAGE_PLUGIN_NAME =
+            "com.android.jack.coverage.CodeCoveragePlugin";
+
     private boolean mDebugLog = false;
     private boolean mVerbose = false;
     private boolean mDebuggable = true;

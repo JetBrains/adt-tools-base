@@ -25,6 +25,7 @@ import static com.android.SdkConstants.FN_DEXDUMP;
 import static com.android.SdkConstants.FN_DX;
 import static com.android.SdkConstants.FN_DX_JAR;
 import static com.android.SdkConstants.FN_JACK;
+import static com.android.SdkConstants.FN_JACK_COVERAGE_PLUGIN;
 import static com.android.SdkConstants.FN_JACK_JACOCO_REPORTER;
 import static com.android.SdkConstants.FN_JILL;
 import static com.android.SdkConstants.FN_LD_ARM;
@@ -47,6 +48,7 @@ import static com.android.sdklib.BuildToolInfo.PathId.DEXDUMP;
 import static com.android.sdklib.BuildToolInfo.PathId.DX;
 import static com.android.sdklib.BuildToolInfo.PathId.DX_JAR;
 import static com.android.sdklib.BuildToolInfo.PathId.JACK;
+import static com.android.sdklib.BuildToolInfo.PathId.JACK_COVERAGE_PLUGIN;
 import static com.android.sdklib.BuildToolInfo.PathId.JACK_JACOCO_REPORTER;
 import static com.android.sdklib.BuildToolInfo.PathId.JILL;
 import static com.android.sdklib.BuildToolInfo.PathId.LD_ARM;
@@ -131,6 +133,7 @@ public class BuildToolInfo {
 
         // --- NEW IN 24.0.0 ---
         JACK_JACOCO_REPORTER("24.0.0"),
+        JACK_COVERAGE_PLUGIN("24.0.0"),
 
         /** OS Path to the ARM64 linker. */
         LD_X86_64("24.0.0"),
@@ -305,6 +308,7 @@ public class BuildToolInfo {
         add(JACK, FN_JACK);
         add(JILL, FN_JILL);
         add(JACK_JACOCO_REPORTER, FN_JACK_JACOCO_REPORTER);
+        add(JACK_COVERAGE_PLUGIN, FN_JACK_COVERAGE_PLUGIN);
         add(SPLIT_SELECT, FN_SPLIT_SELECT);
     }
 

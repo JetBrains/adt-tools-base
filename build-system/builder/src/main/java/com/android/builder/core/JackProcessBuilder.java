@@ -174,11 +174,22 @@ public class JackProcessBuilder extends ProcessEnvBuilder<JackProcessBuilder> {
         }
 
         if (options.getCoverageMetadataFile() != null) {
-            builder.addArgs("-D", "jack.coverage=true");
-            builder.addArgs(
-                    "-D",
-                    "jack.coverage.metadata.file="
-                            + options.getCoverageMetadataFile().getAbsolutePath());
+            if (buildToolInfo.getRevision().compareTo(JackProcessOptions.DOUARN_REV) >= 0) {
+                String coveragePluginPath = buildToolInfo.getPath(
+                        BuildToolInfo.PathId.JACK_COVERAGE_PLUGIN);
+                builder.addArgs("--pluginpath", coveragePluginPath);
+                builder.addArgs("--plugin", JackProcessOptions.COVERAGE_PLUGIN_NAME);
+                builder.addArgs(
+                        "-D",
+                        "jack.coverage.metadata.file="
+                                + options.getCoverageMetadataFile().getAbsolutePath());
+            } else {
+                builder.addArgs("-D", "jack.coverage=true");
+                builder.addArgs(
+                        "-D",
+                        "jack.coverage.metadata.file="
+                                + options.getCoverageMetadataFile().getAbsolutePath());
+            };
         }
 
         // apply all additional params
