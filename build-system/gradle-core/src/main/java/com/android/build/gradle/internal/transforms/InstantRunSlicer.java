@@ -363,13 +363,22 @@ public class InstantRunSlicer extends Transform {
                         case ADDED:
                         case CHANGED:
                             Files.createParentDirs(outputFile);
-                            Files.copy(fileToProcess, outputFile);
+                            if (fileToProcess.isDirectory()) {
+                                FileUtils.copyDirectoryToDirectory(fileToProcess, outputFile);
+                            } else {
+                                Files.copy(fileToProcess, outputFile);
+                            }
                             break;
                         case REMOVED:
-                            if (!outputFile.delete()) {
-                                throw new TransformException(
-                                        String.format("Cannot delete file %1$s",
-                                                outputFile.getAbsolutePath()));
+                            if (outputFile.exists()) {
+                                if (outputFile.isDirectory()) {
+                                    FileUtils.deleteDirectoryContents(outputFile);
+                                }
+                                if (!outputFile.delete()) {
+                                    throw new TransformException(
+                                            String.format("Cannot delete file %1$s",
+                                                    outputFile.getAbsolutePath()));
+                                }
                             }
                             break;
                         default:

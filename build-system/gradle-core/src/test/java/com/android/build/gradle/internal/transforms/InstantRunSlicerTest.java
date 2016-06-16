@@ -38,8 +38,6 @@ import com.android.build.gradle.internal.incremental.InstantRunPatchingPolicy;
 import com.android.build.gradle.internal.pipeline.TransformInvocationBuilder;
 import com.android.build.gradle.internal.scope.InstantRunVariantScope;
 import com.android.utils.FileUtils;
-import com.google.common.base.Charsets;
-import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -60,6 +58,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -93,7 +92,7 @@ public class InstantRunSlicerTest {
     @Rule
     public TemporaryFolder jarOutputDir = new TemporaryFolder();
 
-    File jarOutput;
+    private File jarOutput;
 
     @Before
     public void beforeTest() throws IOException {
@@ -233,7 +232,7 @@ public class InstantRunSlicerTest {
 
         Optional<Integer> sliceForFile =
                 findSliceForFile(getOutputDir(), getInputDir(), singleClassFile);
-        assertThat(sliceForFile).isPresent();
+        assertThat(sliceForFile.isPresent());
         int slot = sliceForFile.get();
 
         File outputSlice = outputSlices[slot];
@@ -275,7 +274,7 @@ public class InstantRunSlicerTest {
         // call with an empty input directory.
         slicer.transform(new TransformInvocationBuilder(context)
                 .addInputs(ImmutableList.of(
-                        getInput(getInputDir(), ImmutableMap.<File, Status>of())))
+                        getInput(getInputDir(), ImmutableMap.of())))
                 .addOutputProvider(getOutputProvider(getOutputDir(), jarOutput))
                 .build());
 
@@ -292,22 +291,84 @@ public class InstantRunSlicerTest {
         }
     }
 
+    @Test
+    public void testAddingDirectory() throws IOException, TransformException, InterruptedException {
+        InstantRunSlicer slicer = new InstantRunSlicer(logger, variantScope);
+
+        String packagePath = "com/foo/bar";
+        File folder = new File(getInputDir(), packagePath);
+        File singleClassFile = createFile(folder, "file0.class");
+        Map<File, Status> changedFiles = ImmutableMap.of(folder, Status.ADDED);
+
+        slicer.transform(new TransformInvocationBuilder(context)
+                .addInputs(ImmutableList.of(getInput(getInputDir(), changedFiles)))
+                .addOutputProvider(getOutputProvider(getOutputDir(), jarOutput))
+                .build());
+
+        File[] outputSlices = getOutputDir().listFiles();
+        assertThat(outputSlices).isNotNull();
+        assertThat(outputSlices).hasLength(InstantRunSlicer.NUMBER_OF_SLICES_FOR_PROJECT_CLASSES);
+
+        Optional<Integer> sliceForFile =
+                findSliceForFile(getOutputDir(), getInputDir(), singleClassFile);
+        assertThat(sliceForFile.isPresent());
+        int slot = sliceForFile.get();
+
+        File outputSlice = outputSlices[slot];
+        File outputFile = new File(new File(outputSlice, packagePath), "file0.class");
+        assertThat(outputFile.exists()).isTrue();
+    }
+
+    @Test
+    public void testRemovingDirectory() throws IOException, TransformException,
+            InterruptedException {
+        InstantRunSlicer slicer = new InstantRunSlicer(logger, variantScope);
+
+        String packagePath = "com/foo/bar";
+        File folder = new File(getInputDir(), packagePath);
+        File singleClassFile = createFile(folder, "file0.class");
+        Map<File, Status> changedFiles = ImmutableMap.of(folder, Status.ADDED);
+
+        slicer.transform(new TransformInvocationBuilder(context)
+                .addInputs(ImmutableList.of(getInput(getInputDir(), changedFiles)))
+                .addOutputProvider(getOutputProvider(getOutputDir(), jarOutput))
+                .build());
+
+        // now delete the input.
+        FileUtils.deleteDirectoryContents(folder);
+        assertTrue(folder.delete());
+        changedFiles = ImmutableMap.of(folder, Status.REMOVED);
+
+        slicer.transform(new TransformInvocationBuilder(context)
+                .addInputs(ImmutableList.of(getInput(getInputDir(), changedFiles)))
+                .addOutputProvider(getOutputProvider(getOutputDir(), jarOutput))
+                .build());
+
+        File[] outputSlices = getOutputDir().listFiles();
+        assertThat(outputSlices).isNotNull();
+        assertThat(outputSlices).hasLength(InstantRunSlicer.NUMBER_OF_SLICES_FOR_PROJECT_CLASSES);
+
+        Optional<Integer> sliceForFile =
+                findSliceForFile(getOutputDir(), getInputDir(), singleClassFile);
+        assertThat(!sliceForFile.isPresent());
+    }
+
     private static Optional<Integer> findSliceForFile(
             @NonNull File outputDir, @NonNull  File inputDir, File file) {
 
         File[] slices = outputDir.listFiles();
         if (slices == null) {
-            return Optional.absent();
+            return Optional.empty();
         }
 
-        String relativePath = FileUtils.relativePath(file, inputDir);
+        String relativePath = FileUtils.relativePossiblyNonExistingPath(file, inputDir);
         for (int i=0; i<slices.length; i++) {
             File potentialMatch = new File(slices[i], relativePath);
             if (potentialMatch.exists()) {
                 return Optional.of(i);
             }
         }
-        return Optional.absent();
+        return Optional.empty();
     }
 
     @Nullable
@@ -334,7 +395,7 @@ public class InstantRunSlicerTest {
             @NonNull
             @Override
             public Collection<DirectoryInput> getDirectoryInputs() {
-                return ImmutableList.<DirectoryInput>of(
+                return ImmutableList.of(
                         new DirectoryInputForTests() {
                             @NonNull
                             @Override
@@ -385,7 +446,7 @@ public class InstantRunSlicerTest {
         @NonNull
         @Override
         public Set<ContentType> getContentTypes() {
-            return ImmutableSet.<ContentType>of(DefaultContentType.CLASSES);
+            return ImmutableSet.of(DefaultContentType.CLASSES);
         }
 
         @NonNull
