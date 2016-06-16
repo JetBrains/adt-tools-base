@@ -737,9 +737,15 @@ public class ZFileTest {
         File zipWithOffsetFile = new File(mTemporaryFolder.getRoot(), "b.zip");
 
         int cdSize;
-        try (
-                ZFile zipNoOffset = new ZFile(zipNoOffsetFile);
-            ZFile zipWithOffset = new ZFile(zipWithOffsetFile)) {
+
+        // The byte arrays below are larger when compressed, so we end up storing them uncompressed,
+        // which would normally cause them to be 4-aligned. Disable that, to make calculations
+        // easier.
+        ZFileOptions options = new ZFileOptions();
+        options.setAlignmentRule(AlignmentRules.constant(AlignmentRule.NO_ALIGNMENT));
+
+        try (ZFile zipNoOffset = new ZFile(zipNoOffsetFile, options);
+                ZFile zipWithOffset = new ZFile(zipWithOffsetFile, options)) {
             zipWithOffset.setExtraDirectoryOffset(37);
 
             zipNoOffset.add("x", new ByteArrayInputStream(new byte[]{1, 2}));

@@ -16,6 +16,8 @@
 
 package com.android.build.gradle.tasks;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
@@ -42,6 +44,7 @@ import com.android.builder.internal.utils.CachedFileContents;
 import com.android.builder.internal.utils.IOExceptionWrapper;
 import com.android.builder.model.ApiVersion;
 import com.android.builder.packaging.ApkCreatorFactory;
+import com.android.builder.packaging.NativeLibrariesPackagingMode;
 import com.android.builder.packaging.PackagerException;
 import com.android.ide.common.res2.FileStatus;
 import com.android.ide.common.signing.CertificateInfo;
@@ -49,7 +52,6 @@ import com.android.ide.common.signing.KeystoreHelper;
 import com.android.ide.common.signing.KeytoolException;
 import com.android.utils.FileUtils;
 import com.google.common.base.Functions;
-import com.google.common.base.Preconditions;
 import com.google.common.base.Predicates;
 import com.google.common.base.Verify;
 import com.google.common.collect.ImmutableMap;
@@ -188,6 +190,11 @@ public abstract class PackageAndroidArtifact extends IncrementalTask implements 
 
     protected File instantRunSupportDir;
 
+    protected DexPackagingPolicy dexPackagingPolicy;
+
+    protected NativeLibrariesPackagingMode nativeLibrariesPackagingMode;
+
+
     /**
      * Name of directory, inside the intermediate directory, where zip caches are kept.
      */
@@ -244,11 +251,14 @@ public abstract class PackageAndroidArtifact extends IncrementalTask implements 
         this.minSdkVersion = version;
     }
 
-    protected DexPackagingPolicy dexPackagingPolicy;
-
     @Input
     String getDexPackagingPolicy() {
         return dexPackagingPolicy.toString();
+    }
+
+    @Input
+    public String getNativeLibrariesPackagingModeName() {
+        return nativeLibrariesPackagingMode.name();
     }
 
     @Override
@@ -397,12 +407,13 @@ public abstract class PackageAndroidArtifact extends IncrementalTask implements 
 
         try {
             if (signingConfig != null && signingConfig.isSigningReady()) {
-                CertificateInfo certificateInfo = KeystoreHelper.getCertificateInfo(
-                        signingConfig.getStoreType(),
-                        Preconditions.checkNotNull(signingConfig.getStoreFile()),
-                        Preconditions.checkNotNull(signingConfig.getStorePassword()),
-                        Preconditions.checkNotNull(signingConfig.getKeyPassword()),
-                        Preconditions.checkNotNull(signingConfig.getKeyAlias()));
+                CertificateInfo certificateInfo =
+                        KeystoreHelper.getCertificateInfo(
+                                signingConfig.getStoreType(),
+                                checkNotNull(signingConfig.getStoreFile()),
+                                checkNotNull(signingConfig.getStorePassword()),
+                                checkNotNull(signingConfig.getKeyPassword()),
+                                checkNotNull(signingConfig.getKeyAlias()));
                 key = certificateInfo.getKey();
                 certificate = certificateInfo.getCertificate();
                 v1SigningEnabled = signingConfig.isV1SigningEnabled();
@@ -421,9 +432,10 @@ public abstract class PackageAndroidArtifact extends IncrementalTask implements 
                             certificate,
                             v1SigningEnabled,
                             v2SigningEnabled,
-                            null,   // BuiltBy
+                            null, // BuiltBy
                             getBuilder().getCreatedBy(),
-                            getMinSdkVersion());
+                            getMinSdkVersion(),
+                            nativeLibrariesPackagingMode);
 
             try (IncrementalPackager packager = createPackager(creationData)) {
                 packager.updateDex(changedDex);
@@ -485,7 +497,7 @@ public abstract class PackageAndroidArtifact extends IncrementalTask implements 
 
     @Override
     protected void doIncrementalTaskAction(Map<File, FileStatus> changedInputs) throws IOException {
-        Preconditions.checkNotNull(changedInputs, "changedInputs == null");
+        checkNotNull(changedInputs, "changedInputs == null");
 
         super.doIncrementalTaskAction(changedInputs);
 
@@ -1038,11 +1050,14 @@ public abstract class PackageAndroidArtifact extends IncrementalTask implements 
 
         protected final PackagingScope packagingScope;
         protected final DexPackagingPolicy dexPackagingPolicy;
+        protected final NativeLibrariesPackagingMode nativeLibrariesPackagingMode;
 
         public ConfigAction(
                 @NonNull PackagingScope packagingScope,
-                @Nullable InstantRunPatchingPolicy patchingPolicy) {
-            this.packagingScope = packagingScope;
+                @Nullable InstantRunPatchingPolicy patchingPolicy,
+                @NonNull NativeLibrariesPackagingMode nativeLibrariesPackagingMode) {
+            this.packagingScope = checkNotNull(packagingScope);
+            this.nativeLibrariesPackagingMode = checkNotNull(nativeLibrariesPackagingMode);
             dexPackagingPolicy = patchingPolicy == null
                     ? DexPackagingPolicy.STANDARD
                     : patchingPolicy.getDexPatchingPolicy();
@@ -1060,6 +1075,7 @@ public abstract class PackageAndroidArtifact extends IncrementalTask implements 
                     packagingScope.getInstantRunSupportDir();
             packageAndroidArtifact.setIncrementalFolder(
                     packagingScope.getIncrementalDir(packageAndroidArtifact.getName()));
+            packageAndroidArtifact.nativeLibrariesPackagingMode = nativeLibrariesPackagingMode;
 
             File cacheByPathDir = new File(packageAndroidArtifact.getIncrementalFolder(),
                     ZIP_DIFF_CACHE_DIR);

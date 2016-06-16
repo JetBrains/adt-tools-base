@@ -42,12 +42,8 @@ public class ZFiles {
     /**
      * Resource table files are aligned on a 4 byte boundary.
      */
-    private static final AlignmentRule ARSC_RULE = AlignmentRules.constantForSuffix(".arsc", 4);
-
-    /**
-     * SOs are aligned at 4096-byte boundaries and identified as files ending with {@code .so}.
-     */
-    private static final AlignmentRule SO_RULE = AlignmentRules.constantForSuffix(".so", 4096);
+    private static final AlignmentRule ARSC_RULE =
+            AlignmentRules.constantForSuffix(".arsc", AlignmentRule.DEFAULT_ALIGNMENT);
 
     /**
      * Default build by string.
@@ -71,10 +67,8 @@ public class ZFiles {
      */
     @NonNull
     public static ZFile apk(@NonNull File f, @NonNull ZFileOptions options) throws IOException {
-        ZFile zfile = new ZFile(f, options);
-        options.setAlignmentRule(
-                AlignmentRules.compose(options.getAlignmentRule(), SO_RULE, ARSC_RULE));
-        return zfile;
+        setAlignmentRules(options);
+        return new ZFile(f, options);
     }
 
     /**
@@ -103,8 +97,6 @@ public class ZFiles {
             boolean v1SigningEnabled, boolean v2SigningEnabled,
             @Nullable String builtBy, @Nullable String createdBy, int minSdkVersion)
             throws IOException {
-        options.setAlignmentRule(
-                AlignmentRules.compose(options.getAlignmentRule(), SO_RULE, ARSC_RULE));
         ZFile zfile = apk(f, options);
 
         if (builtBy == null) {
@@ -156,5 +148,9 @@ public class ZFiles {
         }
 
         return zfile;
+    }
+
+    private static void setAlignmentRules(@NonNull ZFileOptions options) {
+        options.setAlignmentRule(AlignmentRules.compose(options.getAlignmentRule(), ARSC_RULE));
     }
 }

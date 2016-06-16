@@ -15,6 +15,7 @@
  */
 
 package com.android.build.gradle.integration.packaging
+
 import com.android.annotations.NonNull
 import com.android.annotations.Nullable
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
@@ -499,7 +500,9 @@ android {
             @NonNull GradleTestProject project,
             @NonNull String filename,
             @Nullable String content) {
-        check(assertThatApk(project.getApk("debug")), "lib", filename, content)
+        File apk = project.getApk("debug")
+        check(assertThatApk(apk), "lib", filename, content)
+        PackagingTests.checkZipAlign(apk)
     }
 
     /**

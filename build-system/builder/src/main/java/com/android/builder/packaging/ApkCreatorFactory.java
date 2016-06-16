@@ -89,6 +89,8 @@ public interface ApkCreatorFactory {
          */
         private final int mMinSdkVersion;
 
+        private final NativeLibrariesPackagingMode mNativeLibrariesPackagingMode;
+
         /**
          *
          * @param apkPath the path where the APK should be located. May already exist or not (if it
@@ -105,11 +107,18 @@ public interface ApkCreatorFactory {
          * @param createdBy created-by information for the APK, if any; if {@code null} then the
          * default should be used
          * @param minSdkVersion minimum SDK version that will run the APK
+         * @param nativeLibrariesPackagingMode packaging mode for native libraries
          */
-        public CreationData(@NonNull File apkPath, @Nullable PrivateKey key,
-                @Nullable X509Certificate certificate, boolean v1SigningEnabled,
+        public CreationData(
+                @NonNull File apkPath,
+                @Nullable PrivateKey key,
+                @Nullable X509Certificate certificate,
+                boolean v1SigningEnabled,
                 boolean v2SigningEnabled,
-                @Nullable String builtBy, @Nullable String createdBy, int minSdkVersion) {
+                @Nullable String builtBy,
+                @Nullable String createdBy,
+                int minSdkVersion,
+                @NonNull NativeLibrariesPackagingMode nativeLibrariesPackagingMode) {
             Preconditions.checkArgument((key == null) == (certificate == null),
                     "(key == null) != (certificate == null)");
             Preconditions.checkArgument(minSdkVersion >= 0, "minSdkVersion < 0");
@@ -122,6 +131,8 @@ public interface ApkCreatorFactory {
             mBuiltBy = builtBy;
             mCreatedBy = createdBy;
             mMinSdkVersion = minSdkVersion;
+            mNativeLibrariesPackagingMode =
+                    Preconditions.checkNotNull(nativeLibrariesPackagingMode);
         }
 
         /**
@@ -199,6 +210,14 @@ public interface ApkCreatorFactory {
          */
         public int getMinSdkVersion() {
             return mMinSdkVersion;
+        }
+
+        /**
+         * Returns the packaging policy that the {@link ApkCreator} should use for native libraries.
+         */
+        @NonNull
+        public NativeLibrariesPackagingMode getNativeLibrariesPackagingMode() {
+            return mNativeLibrariesPackagingMode;
         }
     }
 }

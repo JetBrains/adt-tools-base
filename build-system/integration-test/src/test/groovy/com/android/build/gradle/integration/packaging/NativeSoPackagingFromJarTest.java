@@ -45,7 +45,6 @@ import org.objectweb.asm.Opcodes;
 
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.util.Collection;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
@@ -76,7 +75,7 @@ public class NativeSoPackagingFromJarTest {
 
 
     @BeforeClass
-    public static void setUp() throws IOException {
+    public static void setUp() throws Exception {
         appProject = project.getSubproject("app");
 
         // rewrite settings.gradle to remove un-needed modules
@@ -105,9 +104,7 @@ public class NativeSoPackagingFromJarTest {
     }
 
     private static void createJarWithNativeLib(
-            @NonNull File folder,
-            @NonNull String fileName,
-            boolean includeClass) throws IOException {
+            @NonNull File folder, @NonNull String fileName, boolean includeClass) throws Exception {
         FileUtils.mkdirs(folder);
         File jarFile = new File(folder, fileName);
 
@@ -126,13 +123,13 @@ public class NativeSoPackagingFromJarTest {
     }
 
     @Test
-    public void testAppPackaging() throws IOException {
+    public void testAppPackaging() throws Exception {
         project.executor().withPackaging(mPackaging).run("app:assembleDebug");
         checkApk(appProject, "libhello.so", "hello");
     }
 
     @Test
-    public void testLibraryPackaging() throws IOException {
+    public void testLibraryPackaging() throws Exception {
         project.executor().withPackaging(mPackaging).run("library:assembleDebug");
         checkAar(libProject, "libhello.so", "hello");
 
@@ -157,10 +154,11 @@ public class NativeSoPackagingFromJarTest {
      * @param content the content
      */
     private static void checkApk(
-            @NonNull GradleTestProject project,
-            @NonNull String filename,
-            @Nullable String content) throws IOException {
-        check(assertThatApk(project.getApk("debug")), "lib", filename, content);
+            @NonNull GradleTestProject project, @NonNull String filename, @Nullable String content)
+            throws Exception {
+        File apk = project.getApk("debug");
+        check(assertThatApk(apk), "lib", filename, content);
+        PackagingTests.checkZipAlign(apk);
     }
 
     /**
@@ -174,9 +172,8 @@ public class NativeSoPackagingFromJarTest {
      * @param content the content
      */
     private static void checkAar(
-            @NonNull GradleTestProject project,
-            @NonNull String filename,
-            @Nullable String content) throws IOException {
+            @NonNull GradleTestProject project, @NonNull String filename, @Nullable String content)
+            throws Exception {
         check(assertThatAar(project.getAar("debug")), "jni", filename, content);
     }
 
@@ -184,7 +181,8 @@ public class NativeSoPackagingFromJarTest {
             @NonNull AbstractAndroidSubject subject,
             @NonNull String folderName,
             @NonNull String filename,
-            @Nullable String content) throws IOException {
+            @Nullable String content)
+            throws Exception {
         if (content != null) {
             subject.containsFileWithContent(folderName + "/x86/" + filename, content);
         } else {

@@ -186,7 +186,9 @@ uploadArchives {
             @NonNull GradleTestProject project,
             @NonNull String filename,
             @Nullable String content) {
-        check(assertThatApk(project.getApk("debug")), "lib", filename, content)
+        File apk = project.getApk("debug");
+        check(assertThatApk(apk), "lib", filename, content);
+        PackagingTests.checkZipAlign(apk);
     }
 
     /**

@@ -153,6 +153,7 @@ import com.android.builder.internal.aapt.Aapt;
 import com.android.builder.model.DataBindingOptions;
 import com.android.builder.model.OptionalCompilationStep;
 import com.android.builder.model.SyncIssue;
+import com.android.builder.packaging.NativeLibrariesPackagingMode;
 import com.android.builder.sdk.TargetInfo;
 import com.android.builder.testing.ConnectedDeviceProvider;
 import com.android.builder.testing.api.DeviceProvider;
@@ -2142,10 +2143,15 @@ public abstract class TaskManager {
             InstantRunPatchingPolicy patchingPolicy =
                     variantScope.getInstantRunBuildContext().getPatchingPolicy();
 
+            // TODO: choose this based on the flag in the manifest/DSL.
+            NativeLibrariesPackagingMode nativeLibrariesPackagingMode =
+                    NativeLibrariesPackagingMode.COMPRESSED;
+
             DefaultGradlePackagingScope packagingScope =
                     new DefaultGradlePackagingScope(variantOutputScope);
             PackageApplication.ConfigAction packageConfigAction =
-                    new PackageApplication.ConfigAction(packagingScope, patchingPolicy);
+                    new PackageApplication.ConfigAction(
+                            packagingScope, patchingPolicy, nativeLibrariesPackagingMode);
             AndroidTask<PackageApplication> packageApp =
                     androidTasks.create(tasks, packageConfigAction);
 

@@ -22,6 +22,8 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+import com.android.builder.internal.packaging.zfile.ZFiles;
+import com.android.builder.packaging.NativeLibrariesPackagingMode;
 import com.android.utils.FileUtils;
 import com.google.common.base.Charsets;
 
@@ -39,6 +41,13 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 public class AlignmentTest {
+
+    private static final AlignmentRule SUFFIX_ALIGNMENT_RULES =
+            AlignmentRules.compose(
+                    // Disable 4-aligning of uncompressed *.u files, so we can more easily
+                    // calculate offsets for testing.
+                    AlignmentRules.constantForSuffix(".u", 1),
+                    AlignmentRules.constantForSuffix(".a", 1024));
     @Rule
     public TemporaryFolder mTemporaryFolder = new TemporaryFolder();
 
@@ -205,7 +214,6 @@ public class AlignmentTest {
 
             StoredEntry se0 = zf.get("file0.txt");
             assertNotNull(se0);
-            assertEquals(0, se0.getCentralDirectoryHeader().getOffset());
 
             StoredEntry se1 = zf.get("file1.txt");
             assertNotNull(se1);
@@ -240,7 +248,7 @@ public class AlignmentTest {
     }
 
     @Test
-    public void alignForcesUncompression() throws Exception {
+    public void extensionsAffectCompression() throws Exception {
         File zipFile = new File(mTemporaryFolder.getRoot(), "test.zip");
 
         byte[] recognizable1 = new byte[] { 4, 3, 2, 1, 1, 2, 3, 4, 5, 4, 3, 3, 4, 5 };
@@ -251,30 +259,32 @@ public class AlignmentTest {
         System.arraycopy(recognizable1, 0, compressibleData1, 0, recognizable1.length);
         System.arraycopy(recognizable2, 0, compressibleData2, 0, recognizable2.length);
 
-        int compressedFiles = 5;
+        int imageFiles = 5;
         int uncompressedFiles = 5;
         int align = 1000;
 
         ZFileOptions options = new ZFileOptions();
         options.setAlignmentRule(AlignmentRules.constant(align));
         try (ZFile zf = new ZFile(zipFile, options)) {
-            for (int i = 0; i < compressedFiles; i++) {
-                zf.add("comp" + i, new ByteArrayInputStream(compressibleData1));
+            // These files could be compressed, but extension forces them to be uncompressed.
+            for (int i = 0; i < imageFiles; i++) {
+                zf.add("image" + i + ".png", new ByteArrayInputStream(compressibleData1));
             }
 
+            // Here we just force the lack of compression with "false".
             for (int i = 0; i < uncompressedFiles; i++) {
                 zf.add("unc" + i, new ByteArrayInputStream(compressibleData2), false);
             }
         }
 
-        for (int i = 0; i < compressedFiles; i++) {
+        for (int i = 0; i < imageFiles; i++) {
             long start = align * (i + 1);
             byte[] read = FileUtils.readSegment(zipFile, start, compressibleData1.length);
             assertArrayEquals(compressibleData1, read);
         }
 
         for (int i = 0; i < uncompressedFiles; i++) {
-            long start = align * (compressedFiles + i + 1);
+            long start = align * (imageFiles + i + 1);
             byte[] read = FileUtils.readSegment(zipFile, start, compressibleData2.length);
             assertArrayEquals(compressibleData2, read);
         }
@@ -344,11 +354,11 @@ public class AlignmentTest {
 
         ZFileOptions options = new ZFileOptions();
         options.setCoverEmptySpaceUsingExtraField(true);
-        options.setAlignmentRule(AlignmentRules.constantForSuffix(".a", 1024));
+        options.setAlignmentRule(SUFFIX_ALIGNMENT_RULES);
         try (ZFile zf = new ZFile(zipFile, options)) {
-            zf.add("bar1", new ByteArrayInputStream(new byte[1024]), false);
-            zf.add("foo.a", new ByteArrayInputStream(recognizable), false);
-            zf.add("bar2", new ByteArrayInputStream(new byte[1024]), false);
+            zf.add("first.u", new ByteArrayInputStream(new byte[1024]), false);
+            zf.add("middle.a", new ByteArrayInputStream(recognizable), false);
+            zf.add("last.u", new ByteArrayInputStream(new byte[1024]), false);
         }
 
         /*
@@ -357,14 +367,14 @@ public class AlignmentTest {
         assertArrayEquals(recognizable, FileUtils.readSegment(zipFile, 2048, recognizable.length));
 
         /*
-         * But local header should be in LOCAL_HEADER_SIZE + 4 + 1024.
+         * But local header should be right after the first entry.
          */
         try (ZFile zf = new ZFile(zipFile)) {
-            StoredEntry entry = zf.get("foo.a");
-            assertNotNull(entry);
+            StoredEntry middleEntry = zf.get("middle.a");
+            assertNotNull(middleEntry);
             assertEquals(
-                    ZFileTestConstants.LOCAL_HEADER_SIZE + 4 + 1024,
-                    entry.getCentralDirectoryHeader().getOffset());
+                    ZFileTestConstants.LOCAL_HEADER_SIZE + "first.u".length() + 1024,
+                    middleEntry.getCentralDirectoryHeader().getOffset());
         }
     }
 
@@ -447,10 +457,10 @@ public class AlignmentTest {
 
         ZFileOptions options = new ZFileOptions();
         options.setCoverEmptySpaceUsingExtraField(true);
-        options.setAlignmentRule(AlignmentRules.constantForSuffix(".a", 1024));
+        options.setAlignmentRule(SUFFIX_ALIGNMENT_RULES);
         try (ZFile zf = new ZFile(zipFile, options)) {
             zf.add("f.a", new ByteArrayInputStream(recognizable1), false);
-            zf.add("f.b", new ByteArrayInputStream(recognizable2), false);
+            zf.add("f.u", new ByteArrayInputStream(recognizable2), false);
         }
 
         assertArrayEquals(
@@ -460,7 +470,7 @@ public class AlignmentTest {
                 recognizable2,
                 FileUtils.readSegment(
                         zipFile,
-                        ZFileTestConstants.LOCAL_HEADER_SIZE + "f.b".length(),
+                        ZFileTestConstants.LOCAL_HEADER_SIZE + "f.u".length(),
                         recognizable2.length));
     }
 
@@ -503,13 +513,14 @@ public class AlignmentTest {
 
         ZFileOptions options = new ZFileOptions();
         options.setCoverEmptySpaceUsingExtraField(true);
+        options.setAlignmentRule(SUFFIX_ALIGNMENT_RULES);
         try (ZFile zf = new ZFile(zipFile, options)) {
-            zf.add("first", new ByteArrayInputStream(recognizable1), false);
-            zf.add("second", new ByteArrayInputStream(recognizable2), false);
+            zf.add("first.u", new ByteArrayInputStream(recognizable1), false);
+            zf.add("second.u", new ByteArrayInputStream(recognizable2), false);
 
             zf.update();
 
-            StoredEntry firstEntry = zf.get("first");
+            StoredEntry firstEntry = zf.get("first.u");
             assertNotNull(firstEntry);
             firstEntry.delete();
         }
@@ -519,10 +530,12 @@ public class AlignmentTest {
             assertEquals(1, entries.size());
 
             StoredEntry entry = entries.iterator().next();
-            assertEquals("second", entry.getCentralDirectoryHeader().getName());
+            assertEquals("second.u", entry.getCentralDirectoryHeader().getName());
             assertEquals(0, entry.getCentralDirectoryHeader().getOffset());
             assertEquals(
-                    ZFileTestConstants.LOCAL_HEADER_SIZE + "first".length() + recognizable1.length,
+                    ZFileTestConstants.LOCAL_HEADER_SIZE
+                            + "first.u".length()
+                            + recognizable1.length,
                     entry.getLocalExtra().length);
         }
     }
@@ -537,14 +550,15 @@ public class AlignmentTest {
 
         ZFileOptions options = new ZFileOptions();
         options.setCoverEmptySpaceUsingExtraField(true);
+        options.setAlignmentRule(SUFFIX_ALIGNMENT_RULES);
         try (ZFile zf = new ZFile(zipFile, options)) {
-            zf.add("begin", new ByteArrayInputStream(recognizable1), false);
-            zf.add("middle", new ByteArrayInputStream(bigEmpty), false);
-            zf.add("end", new ByteArrayInputStream(recognizable2), false);
+            zf.add("begin.u", new ByteArrayInputStream(recognizable1), false);
+            zf.add("middle.u", new ByteArrayInputStream(bigEmpty), false);
+            zf.add("end.u", new ByteArrayInputStream(recognizable2), false);
 
             zf.update();
 
-            StoredEntry middleEntry = zf.get("middle");
+            StoredEntry middleEntry = zf.get("middle.u");
             assertNotNull(middleEntry);
             middleEntry.delete();
         }
@@ -552,15 +566,40 @@ public class AlignmentTest {
         /*
          * Find the two recognizable files.
          */
-        int recognizable1Start = ZFileTestConstants.LOCAL_HEADER_SIZE + "begin".length();
+        int recognizable1Start = ZFileTestConstants.LOCAL_HEADER_SIZE + "begin.u".length();
         assertArrayEquals(
                 recognizable1,
                 FileUtils.readSegment(zipFile, recognizable1Start, recognizable1.length));
 
-        int recognizable2Start = 3 * ZFileTestConstants.LOCAL_HEADER_SIZE + "begin".length()
-                + "middle".length() + "end".length() + recognizable1.length + bigEmpty.length;
+        int recognizable2Start =
+                3 * ZFileTestConstants.LOCAL_HEADER_SIZE
+                        + "begin.u".length()
+                        + "middle.u".length()
+                        + "end.u".length()
+                        + recognizable1.length
+                        + bigEmpty.length;
         assertArrayEquals(
                 recognizable2,
                 FileUtils.readSegment(zipFile, recognizable2Start, recognizable2.length));
+    }
+
+    @Test
+    public void soFiles() throws Exception {
+        File apkWithSo = new File(mTemporaryFolder.getRoot(), "release.apk");
+
+        // Make sure compression actually decreases size, otherwise we will discard it.
+        byte[] contents = "cooooooooooooooooooooooooooooooooooooooooooooooooompressible".getBytes();
+
+        ZFileOptions options = new ZFileOptions();
+        options.setNativeLibrariesPackagingMode(
+                NativeLibrariesPackagingMode.UNCOMPRESSED_AND_ALIGNED);
+
+        try (ZFile zf = ZFiles.apk(apkWithSo, options)) {
+            zf.add("some_other_file", new ByteArrayInputStream(contents));
+            zf.add("libfoo.so", new ByteArrayInputStream(contents));
+        }
+
+        // Make sure the so file is uncompressed and aligned.
+        assertArrayEquals(contents, FileUtils.readSegment(apkWithSo, 4096, contents.length));
     }
 }

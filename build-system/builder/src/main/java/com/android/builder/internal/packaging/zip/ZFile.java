@@ -16,6 +16,9 @@
 
 package com.android.builder.internal.packaging.zip;
 
+import static com.android.builder.packaging.NativeLibrariesPackagingMode.UNCOMPRESSED_AND_ALIGNED;
+
+import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.builder.internal.packaging.zip.utils.ByteTracker;
@@ -25,11 +28,13 @@ import com.android.builder.internal.packaging.zip.utils.RandomAccessFileUtils;
 import com.android.builder.internal.utils.CachedFileContents;
 import com.android.builder.internal.utils.IOExceptionFunction;
 import com.android.builder.internal.utils.IOExceptionRunnable;
+import com.android.builder.packaging.NativeLibrariesPackagingMode;
 import com.android.utils.FileUtils;
 import com.google.common.base.Charsets;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 import com.google.common.base.Verify;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -254,6 +259,16 @@ public class ZFile implements Closeable {
     private static final int MAX_LOCAL_EXTRA_FIELD_CONTENTS_SIZE = (1 << 16);
 
     /**
+     * Set of file formats which are already compressed, or don't compress well, same as the one
+     * used by aapt.
+     */
+    private static final ImmutableSet<String> DONT_COMPRESS_EXTENSIONS =
+            ImmutableSet.of(
+                    "jpg", "jpeg", "png", "gif", "wav", "mp2", "mp3", "ogg", "aac", "mpg", "mpeg",
+                    "mid", "midi", "smf", "jet", "rtttl", "imy", "xmf", "mp4", "m4a", "m4v", "3gp",
+                    "3gpp", "3g2", "3gpp2", "amr", "awb", "wma", "wmv", "webm", "mkv");
+
+    /**
      * File zip file.
      */
     @NonNull
@@ -390,6 +405,8 @@ public class ZFile implements Closeable {
      */
     private boolean mAutoSortFiles;
 
+    private final NativeLibrariesPackagingMode mNativeLibrariesPackagingMode;
+
 
     /**
      * Creates a new zip file. If the zip file does not exist, then no file is created at this
@@ -431,6 +448,7 @@ public class ZFile implements Closeable {
         mCompressor = options.getCompressor();
         mCoverEmptySpaceUsingExtraField = options.getCoverEmptySpaceUsingExtraField();
         mAutoSortFiles = options.getAutoSortFiles();
+        mNativeLibrariesPackagingMode = options.getNativeLibrariesPackagingMode();
 
         /*
          * These two values will be overwritten by openReadOnly() below if the file exists.
@@ -907,9 +925,8 @@ public class ZFile implements Closeable {
                     mMap.remove(entry);
                     Verify.verify(entry == mEntries.remove(name));
 
-                    storedEntry.setLocalExtra(makeExtraAlignmentBlock(localExtraSize,
-                            mAlignmentRule.alignment(
-                                    storedEntry.getCentralDirectoryHeader().getName())));
+                    storedEntry.setLocalExtra(
+                            makeExtraAlignmentBlock(localExtraSize, chooseAlignment(storedEntry)));
                     mEntries.put(name, mMap.add(newStart, newStart + newSize, storedEntry));
 
                     /*
@@ -1361,11 +1378,13 @@ public class ZFile implements Closeable {
             @NonNull InputStream stream,
             boolean mayCompress)
             throws IOException {
-        /*
-         * We cannot compress if we need to align because it is pointless ot align a compressed
-         * file.
-         */
-        if (mAlignmentRule.alignment(name) != AlignmentRule.NO_ALIGNMENT) {
+        String extension = Files.getFileExtension(name);
+        if (DONT_COMPRESS_EXTENSIONS.contains(extension)) {
+            mayCompress = false;
+        }
+
+        if (SdkConstants.EXT_NATIVE_LIB.equalsIgnoreCase(extension)
+                && mNativeLibrariesPackagingMode == UNCOMPRESSED_AND_ALIGNED) {
             mayCompress = false;
         }
 
@@ -1604,15 +1623,7 @@ public class ZFile implements Closeable {
         deleteDirectoryAndEocd();
         long size = entry.getInFileSize();
         int localHeaderSize = entry.getLocalHeaderSize();
-        boolean isCompressed =
-                entry.getCentralDirectoryHeader().getCompressionInfoWithWait().getMethod() !=
-                        CompressionMethod.STORE;
-        int alignment;
-        if (isCompressed) {
-            alignment = AlignmentRule.NO_ALIGNMENT;
-        } else {
-            alignment = mAlignmentRule.alignment(entry.getCentralDirectoryHeader().getName());
-        }
+        int alignment = chooseAlignment(entry);
 
         long newOffset = mMap.locateFree(size, localHeaderSize, alignment);
         long newEnd = newOffset + entry.getInFileSize();
@@ -1621,6 +1632,20 @@ public class ZFile implements Closeable {
         }
 
         return mMap.add(newOffset, newEnd, entry);
+    }
+
+    private int chooseAlignment(@NonNull StoredEntry entry) throws IOException {
+        CentralDirectoryHeader cdh = entry.getCentralDirectoryHeader();
+        Future<CentralDirectoryHeaderCompressInfo> compressionInfo = cdh.getCompressionInfo();
+
+        boolean isCompressed =
+                !compressionInfo.isDone()
+                        || cdh.getCompressionInfoWithWait().getMethod() != CompressionMethod.STORE;
+        if (isCompressed) {
+            return AlignmentRule.NO_ALIGNMENT;
+        } else {
+            return mAlignmentRule.alignment(cdh.getName()).orElse(AlignmentRule.DEFAULT_ALIGNMENT);
+        }
     }
 
     /**
@@ -1777,21 +1802,13 @@ public class ZFile implements Closeable {
      * file
      */
     boolean realign(@NonNull StoredEntry entry) throws IOException {
-        CentralDirectoryHeader cdh = entry.getCentralDirectoryHeader();
-        CompressionMethod compMethod = cdh.getCompressionInfoWithWait().getMethod();
-
-        int expectedAlignment;
-        if (compMethod == CompressionMethod.STORE) {
-            expectedAlignment = mAlignmentRule.alignment(cdh.getName());
-        } else {
-            expectedAlignment = AlignmentRule.NO_ALIGNMENT;
-        }
 
         FileUseMapEntry<StoredEntry> mapEntry = mEntries.get(
                 entry.getCentralDirectoryHeader().getName());
         Verify.verify(entry == mapEntry.getStore());
         long currentDataOffset = mapEntry.getStart() + entry.getLocalHeaderSize();
 
+        int expectedAlignment = chooseAlignment(entry);
         long misalignment = currentDataOffset % expectedAlignment;
         if (misalignment == 0) {
             /*

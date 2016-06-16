@@ -80,7 +80,7 @@ public class ZFileSortTest {
 
         mZFile = new ZFile(mFile, options);
 
-        mZFile.add("Mary.so", new ByteArrayInputStream(new byte[] { 1, 2, 3 }));
+        mZFile.add("Mary.xml", new ByteArrayInputStream(new byte[] { 1, 2, 3 }));
         mZFile.add("Andrew.txt", new ByteArrayInputStream(new byte[] { 4, 5 }));
         mZFile.add("Beth.png", new ByteArrayInputStream(new byte[] { 6, 7, 8, 9 }));
         mZFile.add("Peter.html", new ByteArrayInputStream(new byte[] { 10 }));
@@ -88,7 +88,7 @@ public class ZFileSortTest {
     }
 
     private void readEntries() throws Exception {
-        mMaryEntry = mZFile.get("Mary.so");
+        mMaryEntry = mZFile.get("Mary.xml");
         assertNotNull(mMaryEntry);
         mMaryOffset = mMaryEntry.getCentralDirectoryHeader().getOffset();
         assertArrayEquals(new byte[] { 1, 2, 3 }, mMaryEntry.read());
@@ -191,7 +191,7 @@ public class ZFileSortTest {
         mZFile.close();
 
         ZFileOptions options = new ZFileOptions();
-        options.setAlignmentRule(AlignmentRules.constantForSuffix(".so", 1024));
+        options.setAlignmentRule(AlignmentRules.constantForSuffix(".xml", 1024));
         mZFile = new ZFile(mFile, options);
 
         mZFile.sortZipContents();

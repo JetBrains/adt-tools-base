@@ -19,8 +19,11 @@ package com.android.builder.internal.packaging.sign;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertNotNull;
 
+import com.android.builder.internal.packaging.zip.AlignmentRule;
+import com.android.builder.internal.packaging.zip.AlignmentRules;
 import com.android.builder.internal.packaging.zip.StoredEntry;
 import com.android.builder.internal.packaging.zip.ZFile;
+import com.android.builder.internal.packaging.zip.ZFileOptions;
 import com.android.builder.internal.packaging.zip.ZFileTestConstants;
 import com.android.utils.FileUtils;
 import com.android.utils.Pair;
@@ -51,10 +54,16 @@ public class FullApkSignTest {
 
         Pair<PrivateKey, X509Certificate> signData = SignatureTestUtils.generateSignaturePre18();
 
+        // The byte arrays below are larger when compressed, so we end up storing them uncompressed,
+        // which would normally cause them to be 4-aligned. Disable that, to make calculations
+        // easier.
+        ZFileOptions options = new ZFileOptions();
+        options.setAlignmentRule(AlignmentRules.constant(AlignmentRule.NO_ALIGNMENT));
+
         /*
          * Generate a signed zip.
          */
-        ZFile zf = new ZFile(out);
+        ZFile zf = new ZFile(out, options);
         FullApkSignExtension signExtension = new FullApkSignExtension(zf, 13, signData.getSecond(),
                 signData.getFirst());
         signExtension.register();

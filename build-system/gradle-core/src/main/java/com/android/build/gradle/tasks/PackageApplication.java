@@ -26,6 +26,7 @@ import com.android.build.gradle.internal.scope.ConventionMappingHelper;
 import com.android.build.gradle.internal.scope.PackagingScope;
 import com.android.build.gradle.internal.transforms.InstantRunSlicer;
 import com.android.builder.packaging.DuplicateFileException;
+import com.android.builder.packaging.NativeLibrariesPackagingMode;
 import com.android.builder.profile.ExecutionType;
 import com.android.builder.profile.Recorder;
 import com.android.builder.profile.ThreadRecorder;
@@ -260,8 +261,9 @@ public class PackageApplication extends PackageAndroidArtifact {
 
         public ConfigAction(
                 @NonNull PackagingScope scope,
-                @Nullable InstantRunPatchingPolicy patchingPolicy) {
-            super(scope, patchingPolicy);
+                @Nullable InstantRunPatchingPolicy patchingPolicy,
+                @NonNull NativeLibrariesPackagingMode nativeLibrariesPackagingMode) {
+            super(scope, patchingPolicy, nativeLibrariesPackagingMode);
         }
 
         @NonNull

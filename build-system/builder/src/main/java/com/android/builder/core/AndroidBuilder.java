@@ -51,6 +51,7 @@ import com.android.builder.internal.packaging.OldPackager;
 import com.android.builder.model.AndroidLibrary;
 import com.android.builder.model.SigningConfig;
 import com.android.builder.packaging.ApkCreatorFactory;
+import com.android.builder.packaging.NativeLibrariesPackagingMode;
 import com.android.builder.packaging.PackagerException;
 import com.android.builder.packaging.SealedPackageException;
 import com.android.builder.packaging.SigningException;
@@ -116,9 +117,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.lang.management.ManagementFactory;
-import java.lang.management.MemoryPoolMXBean;
-import java.lang.management.MemoryType;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
@@ -1982,9 +1980,10 @@ public class AndroidBuilder {
                         certificate,
                         v1SigningEnabled,
                         v2SigningEnabled,
-                        null,   // BuiltBy
+                        null, // BuiltBy
                         mCreatedBy,
-                        minSdkVersion);
+                        minSdkVersion,
+                        NativeLibrariesPackagingMode.COMPRESSED);
         try (OldPackager packager = new OldPackager(creationData, androidResPkgLocation, mLogger)) {
             // add dex folder to the apk root.
             if (!dexFolders.isEmpty()) {
@@ -2055,10 +2054,17 @@ public class AndroidBuilder {
             v2SigningEnabled = false;
         }
 
-        ApkCreatorFactory.CreationData
-                creationData = new ApkCreatorFactory.CreationData(outApkLocation,
-                key, certificate, v1SigningEnabled, v2SigningEnabled,
-                null, mCreatedBy, API_LEVEL_SPLIT_APK);
+        ApkCreatorFactory.CreationData creationData =
+                new ApkCreatorFactory.CreationData(
+                        outApkLocation,
+                        key,
+                        certificate,
+                        v1SigningEnabled,
+                        v2SigningEnabled,
+                        null,
+                        mCreatedBy,
+                        API_LEVEL_SPLIT_APK,
+                        NativeLibrariesPackagingMode.COMPRESSED);
 
         try (OldPackager packager = new OldPackager(creationData, androidResPkgLocation, mLogger)) {
             packager.addFile(dexFile, "classes.dex");
@@ -2111,10 +2117,17 @@ public class AndroidBuilder {
             v2SigningEnabled = false;
         }
 
-        ApkCreatorFactory.CreationData
-                creationData = new ApkCreatorFactory.CreationData(out,
-                key, certificate, v1SigningEnabled, v2SigningEnabled,
-                null, null, 1);
+        ApkCreatorFactory.CreationData creationData =
+                new ApkCreatorFactory.CreationData(
+                        out,
+                        key,
+                        certificate,
+                        v1SigningEnabled,
+                        v2SigningEnabled,
+                        null,
+                        null,
+                        1,
+                        NativeLibrariesPackagingMode.COMPRESSED);
 
         try (SignedJarApkCreator signedJarBuilder = new SignedJarApkCreator(creationData)) {
             signedJarBuilder.writeZip(in);

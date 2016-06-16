@@ -19,6 +19,8 @@ package com.android.builder.internal.packaging.zip;
 import com.android.annotations.NonNull;
 import com.google.common.base.Preconditions;
 
+import java.util.Optional;
+
 /**
  * Factory for instances of {@link AlignmentRule}.
  */
@@ -35,7 +37,7 @@ public final class AlignmentRules {
     public static AlignmentRule constant(int alignment) {
         Preconditions.checkArgument(alignment > 0, "alignment <= 0");
 
-        return (String path) -> alignment;
+        return (String path) -> Optional.of(alignment);
     }
 
     /**
@@ -50,11 +52,11 @@ public final class AlignmentRules {
         Preconditions.checkArgument(!suffix.isEmpty(), "suffix.isEmpty()");
         Preconditions.checkArgument(alignment > 0, "alignment <= 0");
 
-        return (String path) -> path.endsWith(suffix)? alignment : AlignmentRule.NO_ALIGNMENT;
+        return (String path) -> path.endsWith(suffix) ? Optional.of(alignment) : Optional.empty();
     }
 
     /**
-     * A rule that composes other rules in order.
+     * A rule that applies other rules in order.
      *
      * @param rules all rules to be tried; the first rule that does not return
      * {@link AlignmentRule#NO_ALIGNMENT} will define the alignment for a path; if there are no
@@ -65,13 +67,13 @@ public final class AlignmentRules {
     public static AlignmentRule compose(@NonNull AlignmentRule... rules) {
         return (String path) -> {
             for (AlignmentRule r : rules) {
-                int align = r.alignment(path);
-                if (align != AlignmentRule.NO_ALIGNMENT) {
+                Optional<Integer> align = r.alignment(path);
+                if (align.isPresent()) {
                     return align;
                 }
             }
 
-            return AlignmentRule.NO_ALIGNMENT;
+            return Optional.empty();
         };
     }
 }
