@@ -14,44 +14,31 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.internal.dsl;
+package com.android.utils;
 
 import com.android.annotations.NonNull;
 
-import java.util.List;
-import java.util.Set;
+import java.io.File;
 
 /**
- * Base interface for CMake per-variant info.
+ * Utility methods for native build
  */
-public interface CoreExternalNativeCmakeOptions {
-    /**
-     * The ndk-build build system Flags
-     */
-    @NonNull
-    List<String> getArguments();
+public class NdkUtils {
 
-    /**
-     * The C Flags
-     */
-    @NonNull
-    List<String> getcFlags();
+    private static String removeFileExtension(String output) {
+        int dotIndex = output.lastIndexOf('.');
+        if (dotIndex == -1) {
+            return output;
+        }
+        return output.substring(0, dotIndex);
+    }
 
-    /**
-     * The CPP Flags
-     */
     @NonNull
-    List<String> getCppFlags();
-
-    /**
-     * The ABI Filters
-     */
-    @NonNull
-    Set<String> getAbiFilters();
-
-    /**
-     * The build targets
-     */
-    @NonNull
-    Set<String> getTargets();
+    public static String getTargetNameFromBuildOutputFile(@NonNull File output) {
+        String artifactName = removeFileExtension(output.getName());
+        if (artifactName.startsWith("lib")) {
+            artifactName = artifactName.substring(3);
+        }
+        return artifactName;
+    }
 }

@@ -20,7 +20,6 @@ import com.android.annotations.Nullable;
 
 import java.io.File;
 import java.util.Collection;
-import java.util.List;
 
 /**
  * Value type to be used with Gson.
@@ -36,6 +35,8 @@ public class NativeLibraryValue {
     public String groupName;
     @Nullable
     public String abi;
+    @Nullable
+    public String artifactName;
     @Nullable
     public Collection<NativeSourceFolderValue> folders;
     @Nullable

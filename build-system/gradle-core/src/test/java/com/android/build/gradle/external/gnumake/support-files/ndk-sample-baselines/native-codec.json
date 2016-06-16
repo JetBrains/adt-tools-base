@@ -5,208 +5,11 @@
     }
   ],
   "libraries": {
-    "x86_64-libnative-codec-jni-release": {
-      "buildCommand": "echo build command",
+    "native-codec-jni-debug-x86_64": {
+      "buildCommand": "echo build command native-codec-jni",
       "toolchain": "toolchain-x86_64",
       "abi": "x86_64",
-      "files": [
-        {
-          "src": {
-            "path": "{ndkPath}/samples/native-codec/jni/looper.cpp"
-          },
-          "flags": "\"-MMD\" \"-MP\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-fno-exceptions\" \"-fno-rtti\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-I{ndkPath}/sources/cxx-stl/system/include\" \"-I{ndkPath}/samples/native-codec/jni\" \"-DANDROID\" \"-UNDEBUG\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-21/arch-x86_64/usr/include\""
-        },
-        {
-          "src": {
-            "path": "{ndkPath}/samples/native-codec/jni/native-codec-jni.cpp"
-          },
-          "flags": "\"-MMD\" \"-MP\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-fno-exceptions\" \"-fno-rtti\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-I{ndkPath}/sources/cxx-stl/system/include\" \"-I{ndkPath}/samples/native-codec/jni\" \"-DANDROID\" \"-UNDEBUG\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-21/arch-x86_64/usr/include\""
-        }
-      ],
-      "output": {
-        "path": "{ndkPath}/samples/native-codec/obj/local/x86_64/libnative-codec-jni.so"
-      }
-    },
-    "x86-libnative-codec-jni-release": {
-      "buildCommand": "echo build command",
-      "toolchain": "toolchain-x86",
-      "abi": "x86",
-      "files": [
-        {
-          "src": {
-            "path": "{ndkPath}/samples/native-codec/jni/looper.cpp"
-          },
-          "flags": "\"-MMD\" \"-MP\" \"-ffunction-sections\" \"-funwind-tables\" \"-no-canonical-prefixes\" \"-fstack-protector\" \"-fno-exceptions\" \"-fno-rtti\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-I{ndkPath}/sources/cxx-stl/system/include\" \"-I{ndkPath}/samples/native-codec/jni\" \"-DANDROID\" \"-UNDEBUG\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-21/arch-x86/usr/include\""
-        },
-        {
-          "src": {
-            "path": "{ndkPath}/samples/native-codec/jni/native-codec-jni.cpp"
-          },
-          "flags": "\"-MMD\" \"-MP\" \"-ffunction-sections\" \"-funwind-tables\" \"-no-canonical-prefixes\" \"-fstack-protector\" \"-fno-exceptions\" \"-fno-rtti\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-I{ndkPath}/sources/cxx-stl/system/include\" \"-I{ndkPath}/samples/native-codec/jni\" \"-DANDROID\" \"-UNDEBUG\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-21/arch-x86/usr/include\""
-        }
-      ],
-      "output": {
-        "path": "{ndkPath}/samples/native-codec/obj/local/x86/libnative-codec-jni.so"
-      }
-    },
-    "armeabi-v7a-libnative-codec-jni-debug": {
-      "buildCommand": "echo build command",
-      "toolchain": "toolchain-armeabi-v7a",
-      "abi": "armeabi-v7a",
-      "files": [
-        {
-          "src": {
-            "path": "{ndkPath}/samples/native-codec/jni/looper.cpp"
-          },
-          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector\" \"-no-canonical-prefixes\" \"-march\u003darmv7-a\" \"-mfpu\u003dvfpv3-d16\" \"-mfloat-abi\u003dsoftfp\" \"-fno-exceptions\" \"-fno-rtti\" \"-mthumb\" \"-Os\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fno-strict-aliasing\" \"-finline-limit\u003d64\" \"-O0\" \"-UNDEBUG\" \"-marm\" \"-fno-omit-frame-pointer\" \"-I{ndkPath}/sources/cxx-stl/system/include\" \"-I{ndkPath}/samples/native-codec/jni\" \"-DANDROID\" \"-UNDEBUG\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-21/arch-arm/usr/include\""
-        },
-        {
-          "src": {
-            "path": "{ndkPath}/samples/native-codec/jni/native-codec-jni.cpp"
-          },
-          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector\" \"-no-canonical-prefixes\" \"-march\u003darmv7-a\" \"-mfpu\u003dvfpv3-d16\" \"-mfloat-abi\u003dsoftfp\" \"-fno-exceptions\" \"-fno-rtti\" \"-mthumb\" \"-Os\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fno-strict-aliasing\" \"-finline-limit\u003d64\" \"-O0\" \"-UNDEBUG\" \"-marm\" \"-fno-omit-frame-pointer\" \"-I{ndkPath}/sources/cxx-stl/system/include\" \"-I{ndkPath}/samples/native-codec/jni\" \"-DANDROID\" \"-UNDEBUG\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-21/arch-arm/usr/include\""
-        }
-      ],
-      "output": {
-        "path": "{ndkPath}/samples/native-codec/obj/local/armeabi-v7a/libnative-codec-jni.so"
-      }
-    },
-    "x86-libnative-codec-jni-debug": {
-      "buildCommand": "echo build command",
-      "toolchain": "toolchain-x86",
-      "abi": "x86",
-      "files": [
-        {
-          "src": {
-            "path": "{ndkPath}/samples/native-codec/jni/looper.cpp"
-          },
-          "flags": "\"-MMD\" \"-MP\" \"-ffunction-sections\" \"-funwind-tables\" \"-no-canonical-prefixes\" \"-fstack-protector\" \"-fno-exceptions\" \"-fno-rtti\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-O0\" \"-UNDEBUG\" \"-fno-omit-frame-pointer\" \"-fno-strict-aliasing\" \"-I{ndkPath}/sources/cxx-stl/system/include\" \"-I{ndkPath}/samples/native-codec/jni\" \"-DANDROID\" \"-UNDEBUG\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-21/arch-x86/usr/include\""
-        },
-        {
-          "src": {
-            "path": "{ndkPath}/samples/native-codec/jni/native-codec-jni.cpp"
-          },
-          "flags": "\"-MMD\" \"-MP\" \"-ffunction-sections\" \"-funwind-tables\" \"-no-canonical-prefixes\" \"-fstack-protector\" \"-fno-exceptions\" \"-fno-rtti\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-O0\" \"-UNDEBUG\" \"-fno-omit-frame-pointer\" \"-fno-strict-aliasing\" \"-I{ndkPath}/sources/cxx-stl/system/include\" \"-I{ndkPath}/samples/native-codec/jni\" \"-DANDROID\" \"-UNDEBUG\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-21/arch-x86/usr/include\""
-        }
-      ],
-      "output": {
-        "path": "{ndkPath}/samples/native-codec/obj/local/x86/libnative-codec-jni.so"
-      }
-    },
-    "armeabi-libnative-codec-jni-release": {
-      "buildCommand": "echo build command",
-      "toolchain": "toolchain-armeabi",
-      "abi": "armeabi",
-      "files": [
-        {
-          "src": {
-            "path": "{ndkPath}/samples/native-codec/jni/looper.cpp"
-          },
-          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector\" \"-no-canonical-prefixes\" \"-march\u003darmv5te\" \"-mtune\u003dxscale\" \"-msoft-float\" \"-fno-exceptions\" \"-fno-rtti\" \"-mthumb\" \"-Os\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fno-strict-aliasing\" \"-finline-limit\u003d64\" \"-I{ndkPath}/sources/cxx-stl/system/include\" \"-I{ndkPath}/samples/native-codec/jni\" \"-DANDROID\" \"-UNDEBUG\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-21/arch-arm/usr/include\""
-        },
-        {
-          "src": {
-            "path": "{ndkPath}/samples/native-codec/jni/native-codec-jni.cpp"
-          },
-          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector\" \"-no-canonical-prefixes\" \"-march\u003darmv5te\" \"-mtune\u003dxscale\" \"-msoft-float\" \"-fno-exceptions\" \"-fno-rtti\" \"-mthumb\" \"-Os\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fno-strict-aliasing\" \"-finline-limit\u003d64\" \"-I{ndkPath}/sources/cxx-stl/system/include\" \"-I{ndkPath}/samples/native-codec/jni\" \"-DANDROID\" \"-UNDEBUG\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-21/arch-arm/usr/include\""
-        }
-      ],
-      "output": {
-        "path": "{ndkPath}/samples/native-codec/obj/local/armeabi/libnative-codec-jni.so"
-      }
-    },
-    "arm64-v8a-libnative-codec-jni-release": {
-      "buildCommand": "echo build command",
-      "toolchain": "toolchain-arm64-v8a",
-      "abi": "arm64-v8a",
-      "files": [
-        {
-          "src": {
-            "path": "{ndkPath}/samples/native-codec/jni/looper.cpp"
-          },
-          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-fno-exceptions\" \"-fno-rtti\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-I{ndkPath}/sources/cxx-stl/system/include\" \"-I{ndkPath}/samples/native-codec/jni\" \"-DANDROID\" \"-UNDEBUG\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-21/arch-arm64/usr/include\""
-        },
-        {
-          "src": {
-            "path": "{ndkPath}/samples/native-codec/jni/native-codec-jni.cpp"
-          },
-          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-fno-exceptions\" \"-fno-rtti\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-I{ndkPath}/sources/cxx-stl/system/include\" \"-I{ndkPath}/samples/native-codec/jni\" \"-DANDROID\" \"-UNDEBUG\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-21/arch-arm64/usr/include\""
-        }
-      ],
-      "output": {
-        "path": "{ndkPath}/samples/native-codec/obj/local/arm64-v8a/libnative-codec-jni.so"
-      }
-    },
-    "mips-libnative-codec-jni-release": {
-      "buildCommand": "echo build command",
-      "toolchain": "toolchain-mips",
-      "abi": "mips",
-      "files": [
-        {
-          "src": {
-            "path": "{ndkPath}/samples/native-codec/jni/looper.cpp"
-          },
-          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-fno-strict-aliasing\" \"-finline-functions\" \"-ffunction-sections\" \"-funwind-tables\" \"-fmessage-length\u003d0\" \"-fno-inline-functions-called-once\" \"-fgcse-after-reload\" \"-frerun-cse-after-loop\" \"-frename-registers\" \"-no-canonical-prefixes\" \"-fno-exceptions\" \"-fno-rtti\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-I{ndkPath}/sources/cxx-stl/system/include\" \"-I{ndkPath}/samples/native-codec/jni\" \"-DANDROID\" \"-UNDEBUG\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-21/arch-mips/usr/include\""
-        },
-        {
-          "src": {
-            "path": "{ndkPath}/samples/native-codec/jni/native-codec-jni.cpp"
-          },
-          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-fno-strict-aliasing\" \"-finline-functions\" \"-ffunction-sections\" \"-funwind-tables\" \"-fmessage-length\u003d0\" \"-fno-inline-functions-called-once\" \"-fgcse-after-reload\" \"-frerun-cse-after-loop\" \"-frename-registers\" \"-no-canonical-prefixes\" \"-fno-exceptions\" \"-fno-rtti\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-I{ndkPath}/sources/cxx-stl/system/include\" \"-I{ndkPath}/samples/native-codec/jni\" \"-DANDROID\" \"-UNDEBUG\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-21/arch-mips/usr/include\""
-        }
-      ],
-      "output": {
-        "path": "{ndkPath}/samples/native-codec/obj/local/mips/libnative-codec-jni.so"
-      }
-    },
-    "arm64-v8a-libnative-codec-jni-debug": {
-      "buildCommand": "echo build command",
-      "toolchain": "toolchain-arm64-v8a",
-      "abi": "arm64-v8a",
-      "files": [
-        {
-          "src": {
-            "path": "{ndkPath}/samples/native-codec/jni/looper.cpp"
-          },
-          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-fno-exceptions\" \"-fno-rtti\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-O0\" \"-UNDEBUG\" \"-fno-omit-frame-pointer\" \"-fno-strict-aliasing\" \"-I{ndkPath}/sources/cxx-stl/system/include\" \"-I{ndkPath}/samples/native-codec/jni\" \"-DANDROID\" \"-UNDEBUG\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-21/arch-arm64/usr/include\""
-        },
-        {
-          "src": {
-            "path": "{ndkPath}/samples/native-codec/jni/native-codec-jni.cpp"
-          },
-          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-fno-exceptions\" \"-fno-rtti\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-O0\" \"-UNDEBUG\" \"-fno-omit-frame-pointer\" \"-fno-strict-aliasing\" \"-I{ndkPath}/sources/cxx-stl/system/include\" \"-I{ndkPath}/samples/native-codec/jni\" \"-DANDROID\" \"-UNDEBUG\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-21/arch-arm64/usr/include\""
-        }
-      ],
-      "output": {
-        "path": "{ndkPath}/samples/native-codec/obj/local/arm64-v8a/libnative-codec-jni.so"
-      }
-    },
-    "armeabi-libnative-codec-jni-debug": {
-      "buildCommand": "echo build command",
-      "toolchain": "toolchain-armeabi",
-      "abi": "armeabi",
-      "files": [
-        {
-          "src": {
-            "path": "{ndkPath}/samples/native-codec/jni/looper.cpp"
-          },
-          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector\" \"-no-canonical-prefixes\" \"-march\u003darmv5te\" \"-mtune\u003dxscale\" \"-msoft-float\" \"-fno-exceptions\" \"-fno-rtti\" \"-mthumb\" \"-Os\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fno-strict-aliasing\" \"-finline-limit\u003d64\" \"-O0\" \"-UNDEBUG\" \"-marm\" \"-fno-omit-frame-pointer\" \"-I{ndkPath}/sources/cxx-stl/system/include\" \"-I{ndkPath}/samples/native-codec/jni\" \"-DANDROID\" \"-UNDEBUG\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-21/arch-arm/usr/include\""
-        },
-        {
-          "src": {
-            "path": "{ndkPath}/samples/native-codec/jni/native-codec-jni.cpp"
-          },
-          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector\" \"-no-canonical-prefixes\" \"-march\u003darmv5te\" \"-mtune\u003dxscale\" \"-msoft-float\" \"-fno-exceptions\" \"-fno-rtti\" \"-mthumb\" \"-Os\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fno-strict-aliasing\" \"-finline-limit\u003d64\" \"-O0\" \"-UNDEBUG\" \"-marm\" \"-fno-omit-frame-pointer\" \"-I{ndkPath}/sources/cxx-stl/system/include\" \"-I{ndkPath}/samples/native-codec/jni\" \"-DANDROID\" \"-UNDEBUG\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-21/arch-arm/usr/include\""
-        }
-      ],
-      "output": {
-        "path": "{ndkPath}/samples/native-codec/obj/local/armeabi/libnative-codec-jni.so"
-      }
-    },
-    "x86_64-libnative-codec-jni-debug": {
-      "buildCommand": "echo build command",
-      "toolchain": "toolchain-x86_64",
-      "abi": "x86_64",
+      "artifactName": "native-codec-jni",
       "files": [
         {
           "src": {
@@ -225,32 +28,11 @@
         "path": "{ndkPath}/samples/native-codec/obj/local/x86_64/libnative-codec-jni.so"
       }
     },
-    "mips64-libnative-codec-jni-debug": {
-      "buildCommand": "echo build command",
+    "native-codec-jni-release-mips64": {
+      "buildCommand": "echo build command native-codec-jni",
       "toolchain": "toolchain-mips64",
       "abi": "mips64",
-      "files": [
-        {
-          "src": {
-            "path": "{ndkPath}/samples/native-codec/jni/looper.cpp"
-          },
-          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-fno-strict-aliasing\" \"-finline-functions\" \"-ffunction-sections\" \"-funwind-tables\" \"-fmessage-length\u003d0\" \"-fno-inline-functions-called-once\" \"-fgcse-after-reload\" \"-frerun-cse-after-loop\" \"-frename-registers\" \"-no-canonical-prefixes\" \"-fno-exceptions\" \"-fno-rtti\" \"-O0\" \"-g\" \"-fno-omit-frame-pointer\" \"-I{ndkPath}/sources/cxx-stl/system/include\" \"-I{ndkPath}/samples/native-codec/jni\" \"-DANDROID\" \"-UNDEBUG\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-21/arch-mips64/usr/include\""
-        },
-        {
-          "src": {
-            "path": "{ndkPath}/samples/native-codec/jni/native-codec-jni.cpp"
-          },
-          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-fno-strict-aliasing\" \"-finline-functions\" \"-ffunction-sections\" \"-funwind-tables\" \"-fmessage-length\u003d0\" \"-fno-inline-functions-called-once\" \"-fgcse-after-reload\" \"-frerun-cse-after-loop\" \"-frename-registers\" \"-no-canonical-prefixes\" \"-fno-exceptions\" \"-fno-rtti\" \"-O0\" \"-g\" \"-fno-omit-frame-pointer\" \"-I{ndkPath}/sources/cxx-stl/system/include\" \"-I{ndkPath}/samples/native-codec/jni\" \"-DANDROID\" \"-UNDEBUG\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-21/arch-mips64/usr/include\""
-        }
-      ],
-      "output": {
-        "path": "{ndkPath}/samples/native-codec/obj/local/mips64/libnative-codec-jni.so"
-      }
-    },
-    "mips64-libnative-codec-jni-release": {
-      "buildCommand": "echo build command",
-      "toolchain": "toolchain-mips64",
-      "abi": "mips64",
+      "artifactName": "native-codec-jni",
       "files": [
         {
           "src": {
@@ -269,10 +51,172 @@
         "path": "{ndkPath}/samples/native-codec/obj/local/mips64/libnative-codec-jni.so"
       }
     },
-    "armeabi-v7a-libnative-codec-jni-release": {
-      "buildCommand": "echo build command",
+    "native-codec-jni-debug-mips": {
+      "buildCommand": "echo build command native-codec-jni",
+      "toolchain": "toolchain-mips",
+      "abi": "mips",
+      "artifactName": "native-codec-jni",
+      "files": [
+        {
+          "src": {
+            "path": "{ndkPath}/samples/native-codec/jni/looper.cpp"
+          },
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-fno-strict-aliasing\" \"-finline-functions\" \"-ffunction-sections\" \"-funwind-tables\" \"-fmessage-length\u003d0\" \"-fno-inline-functions-called-once\" \"-fgcse-after-reload\" \"-frerun-cse-after-loop\" \"-frename-registers\" \"-no-canonical-prefixes\" \"-fno-exceptions\" \"-fno-rtti\" \"-O0\" \"-g\" \"-fno-omit-frame-pointer\" \"-I{ndkPath}/sources/cxx-stl/system/include\" \"-I{ndkPath}/samples/native-codec/jni\" \"-DANDROID\" \"-UNDEBUG\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-21/arch-mips/usr/include\""
+        },
+        {
+          "src": {
+            "path": "{ndkPath}/samples/native-codec/jni/native-codec-jni.cpp"
+          },
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-fno-strict-aliasing\" \"-finline-functions\" \"-ffunction-sections\" \"-funwind-tables\" \"-fmessage-length\u003d0\" \"-fno-inline-functions-called-once\" \"-fgcse-after-reload\" \"-frerun-cse-after-loop\" \"-frename-registers\" \"-no-canonical-prefixes\" \"-fno-exceptions\" \"-fno-rtti\" \"-O0\" \"-g\" \"-fno-omit-frame-pointer\" \"-I{ndkPath}/sources/cxx-stl/system/include\" \"-I{ndkPath}/samples/native-codec/jni\" \"-DANDROID\" \"-UNDEBUG\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-21/arch-mips/usr/include\""
+        }
+      ],
+      "output": {
+        "path": "{ndkPath}/samples/native-codec/obj/local/mips/libnative-codec-jni.so"
+      }
+    },
+    "native-codec-jni-debug-x86": {
+      "buildCommand": "echo build command native-codec-jni",
+      "toolchain": "toolchain-x86",
+      "abi": "x86",
+      "artifactName": "native-codec-jni",
+      "files": [
+        {
+          "src": {
+            "path": "{ndkPath}/samples/native-codec/jni/looper.cpp"
+          },
+          "flags": "\"-MMD\" \"-MP\" \"-ffunction-sections\" \"-funwind-tables\" \"-no-canonical-prefixes\" \"-fstack-protector\" \"-fno-exceptions\" \"-fno-rtti\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-O0\" \"-UNDEBUG\" \"-fno-omit-frame-pointer\" \"-fno-strict-aliasing\" \"-I{ndkPath}/sources/cxx-stl/system/include\" \"-I{ndkPath}/samples/native-codec/jni\" \"-DANDROID\" \"-UNDEBUG\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-21/arch-x86/usr/include\""
+        },
+        {
+          "src": {
+            "path": "{ndkPath}/samples/native-codec/jni/native-codec-jni.cpp"
+          },
+          "flags": "\"-MMD\" \"-MP\" \"-ffunction-sections\" \"-funwind-tables\" \"-no-canonical-prefixes\" \"-fstack-protector\" \"-fno-exceptions\" \"-fno-rtti\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-O0\" \"-UNDEBUG\" \"-fno-omit-frame-pointer\" \"-fno-strict-aliasing\" \"-I{ndkPath}/sources/cxx-stl/system/include\" \"-I{ndkPath}/samples/native-codec/jni\" \"-DANDROID\" \"-UNDEBUG\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-21/arch-x86/usr/include\""
+        }
+      ],
+      "output": {
+        "path": "{ndkPath}/samples/native-codec/obj/local/x86/libnative-codec-jni.so"
+      }
+    },
+    "native-codec-jni-debug-arm64-v8a": {
+      "buildCommand": "echo build command native-codec-jni",
+      "toolchain": "toolchain-arm64-v8a",
+      "abi": "arm64-v8a",
+      "artifactName": "native-codec-jni",
+      "files": [
+        {
+          "src": {
+            "path": "{ndkPath}/samples/native-codec/jni/looper.cpp"
+          },
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-fno-exceptions\" \"-fno-rtti\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-O0\" \"-UNDEBUG\" \"-fno-omit-frame-pointer\" \"-fno-strict-aliasing\" \"-I{ndkPath}/sources/cxx-stl/system/include\" \"-I{ndkPath}/samples/native-codec/jni\" \"-DANDROID\" \"-UNDEBUG\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-21/arch-arm64/usr/include\""
+        },
+        {
+          "src": {
+            "path": "{ndkPath}/samples/native-codec/jni/native-codec-jni.cpp"
+          },
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-fno-exceptions\" \"-fno-rtti\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-O0\" \"-UNDEBUG\" \"-fno-omit-frame-pointer\" \"-fno-strict-aliasing\" \"-I{ndkPath}/sources/cxx-stl/system/include\" \"-I{ndkPath}/samples/native-codec/jni\" \"-DANDROID\" \"-UNDEBUG\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-21/arch-arm64/usr/include\""
+        }
+      ],
+      "output": {
+        "path": "{ndkPath}/samples/native-codec/obj/local/arm64-v8a/libnative-codec-jni.so"
+      }
+    },
+    "native-codec-jni-debug-mips64": {
+      "buildCommand": "echo build command native-codec-jni",
+      "toolchain": "toolchain-mips64",
+      "abi": "mips64",
+      "artifactName": "native-codec-jni",
+      "files": [
+        {
+          "src": {
+            "path": "{ndkPath}/samples/native-codec/jni/looper.cpp"
+          },
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-fno-strict-aliasing\" \"-finline-functions\" \"-ffunction-sections\" \"-funwind-tables\" \"-fmessage-length\u003d0\" \"-fno-inline-functions-called-once\" \"-fgcse-after-reload\" \"-frerun-cse-after-loop\" \"-frename-registers\" \"-no-canonical-prefixes\" \"-fno-exceptions\" \"-fno-rtti\" \"-O0\" \"-g\" \"-fno-omit-frame-pointer\" \"-I{ndkPath}/sources/cxx-stl/system/include\" \"-I{ndkPath}/samples/native-codec/jni\" \"-DANDROID\" \"-UNDEBUG\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-21/arch-mips64/usr/include\""
+        },
+        {
+          "src": {
+            "path": "{ndkPath}/samples/native-codec/jni/native-codec-jni.cpp"
+          },
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-fno-strict-aliasing\" \"-finline-functions\" \"-ffunction-sections\" \"-funwind-tables\" \"-fmessage-length\u003d0\" \"-fno-inline-functions-called-once\" \"-fgcse-after-reload\" \"-frerun-cse-after-loop\" \"-frename-registers\" \"-no-canonical-prefixes\" \"-fno-exceptions\" \"-fno-rtti\" \"-O0\" \"-g\" \"-fno-omit-frame-pointer\" \"-I{ndkPath}/sources/cxx-stl/system/include\" \"-I{ndkPath}/samples/native-codec/jni\" \"-DANDROID\" \"-UNDEBUG\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-21/arch-mips64/usr/include\""
+        }
+      ],
+      "output": {
+        "path": "{ndkPath}/samples/native-codec/obj/local/mips64/libnative-codec-jni.so"
+      }
+    },
+    "native-codec-jni-release-arm64-v8a": {
+      "buildCommand": "echo build command native-codec-jni",
+      "toolchain": "toolchain-arm64-v8a",
+      "abi": "arm64-v8a",
+      "artifactName": "native-codec-jni",
+      "files": [
+        {
+          "src": {
+            "path": "{ndkPath}/samples/native-codec/jni/looper.cpp"
+          },
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-fno-exceptions\" \"-fno-rtti\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-I{ndkPath}/sources/cxx-stl/system/include\" \"-I{ndkPath}/samples/native-codec/jni\" \"-DANDROID\" \"-UNDEBUG\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-21/arch-arm64/usr/include\""
+        },
+        {
+          "src": {
+            "path": "{ndkPath}/samples/native-codec/jni/native-codec-jni.cpp"
+          },
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-fno-exceptions\" \"-fno-rtti\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-I{ndkPath}/sources/cxx-stl/system/include\" \"-I{ndkPath}/samples/native-codec/jni\" \"-DANDROID\" \"-UNDEBUG\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-21/arch-arm64/usr/include\""
+        }
+      ],
+      "output": {
+        "path": "{ndkPath}/samples/native-codec/obj/local/arm64-v8a/libnative-codec-jni.so"
+      }
+    },
+    "native-codec-jni-release-armeabi": {
+      "buildCommand": "echo build command native-codec-jni",
+      "toolchain": "toolchain-armeabi",
+      "abi": "armeabi",
+      "artifactName": "native-codec-jni",
+      "files": [
+        {
+          "src": {
+            "path": "{ndkPath}/samples/native-codec/jni/looper.cpp"
+          },
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector\" \"-no-canonical-prefixes\" \"-march\u003darmv5te\" \"-mtune\u003dxscale\" \"-msoft-float\" \"-fno-exceptions\" \"-fno-rtti\" \"-mthumb\" \"-Os\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fno-strict-aliasing\" \"-finline-limit\u003d64\" \"-I{ndkPath}/sources/cxx-stl/system/include\" \"-I{ndkPath}/samples/native-codec/jni\" \"-DANDROID\" \"-UNDEBUG\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-21/arch-arm/usr/include\""
+        },
+        {
+          "src": {
+            "path": "{ndkPath}/samples/native-codec/jni/native-codec-jni.cpp"
+          },
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector\" \"-no-canonical-prefixes\" \"-march\u003darmv5te\" \"-mtune\u003dxscale\" \"-msoft-float\" \"-fno-exceptions\" \"-fno-rtti\" \"-mthumb\" \"-Os\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fno-strict-aliasing\" \"-finline-limit\u003d64\" \"-I{ndkPath}/sources/cxx-stl/system/include\" \"-I{ndkPath}/samples/native-codec/jni\" \"-DANDROID\" \"-UNDEBUG\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-21/arch-arm/usr/include\""
+        }
+      ],
+      "output": {
+        "path": "{ndkPath}/samples/native-codec/obj/local/armeabi/libnative-codec-jni.so"
+      }
+    },
+    "native-codec-jni-release-x86_64": {
+      "buildCommand": "echo build command native-codec-jni",
+      "toolchain": "toolchain-x86_64",
+      "abi": "x86_64",
+      "artifactName": "native-codec-jni",
+      "files": [
+        {
+          "src": {
+            "path": "{ndkPath}/samples/native-codec/jni/looper.cpp"
+          },
+          "flags": "\"-MMD\" \"-MP\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-fno-exceptions\" \"-fno-rtti\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-I{ndkPath}/sources/cxx-stl/system/include\" \"-I{ndkPath}/samples/native-codec/jni\" \"-DANDROID\" \"-UNDEBUG\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-21/arch-x86_64/usr/include\""
+        },
+        {
+          "src": {
+            "path": "{ndkPath}/samples/native-codec/jni/native-codec-jni.cpp"
+          },
+          "flags": "\"-MMD\" \"-MP\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-fno-exceptions\" \"-fno-rtti\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-I{ndkPath}/sources/cxx-stl/system/include\" \"-I{ndkPath}/samples/native-codec/jni\" \"-DANDROID\" \"-UNDEBUG\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-21/arch-x86_64/usr/include\""
+        }
+      ],
+      "output": {
+        "path": "{ndkPath}/samples/native-codec/obj/local/x86_64/libnative-codec-jni.so"
+      }
+    },
+    "native-codec-jni-release-armeabi-v7a": {
+      "buildCommand": "echo build command native-codec-jni",
       "toolchain": "toolchain-armeabi-v7a",
       "abi": "armeabi-v7a",
+      "artifactName": "native-codec-jni",
       "files": [
         {
           "src": {
@@ -291,26 +235,96 @@
         "path": "{ndkPath}/samples/native-codec/obj/local/armeabi-v7a/libnative-codec-jni.so"
       }
     },
-    "mips-libnative-codec-jni-debug": {
-      "buildCommand": "echo build command",
-      "toolchain": "toolchain-mips",
-      "abi": "mips",
+    "native-codec-jni-debug-armeabi": {
+      "buildCommand": "echo build command native-codec-jni",
+      "toolchain": "toolchain-armeabi",
+      "abi": "armeabi",
+      "artifactName": "native-codec-jni",
       "files": [
         {
           "src": {
             "path": "{ndkPath}/samples/native-codec/jni/looper.cpp"
           },
-          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-fno-strict-aliasing\" \"-finline-functions\" \"-ffunction-sections\" \"-funwind-tables\" \"-fmessage-length\u003d0\" \"-fno-inline-functions-called-once\" \"-fgcse-after-reload\" \"-frerun-cse-after-loop\" \"-frename-registers\" \"-no-canonical-prefixes\" \"-fno-exceptions\" \"-fno-rtti\" \"-O0\" \"-g\" \"-fno-omit-frame-pointer\" \"-I{ndkPath}/sources/cxx-stl/system/include\" \"-I{ndkPath}/samples/native-codec/jni\" \"-DANDROID\" \"-UNDEBUG\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-21/arch-mips/usr/include\""
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector\" \"-no-canonical-prefixes\" \"-march\u003darmv5te\" \"-mtune\u003dxscale\" \"-msoft-float\" \"-fno-exceptions\" \"-fno-rtti\" \"-mthumb\" \"-Os\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fno-strict-aliasing\" \"-finline-limit\u003d64\" \"-O0\" \"-UNDEBUG\" \"-marm\" \"-fno-omit-frame-pointer\" \"-I{ndkPath}/sources/cxx-stl/system/include\" \"-I{ndkPath}/samples/native-codec/jni\" \"-DANDROID\" \"-UNDEBUG\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-21/arch-arm/usr/include\""
         },
         {
           "src": {
             "path": "{ndkPath}/samples/native-codec/jni/native-codec-jni.cpp"
           },
-          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-fno-strict-aliasing\" \"-finline-functions\" \"-ffunction-sections\" \"-funwind-tables\" \"-fmessage-length\u003d0\" \"-fno-inline-functions-called-once\" \"-fgcse-after-reload\" \"-frerun-cse-after-loop\" \"-frename-registers\" \"-no-canonical-prefixes\" \"-fno-exceptions\" \"-fno-rtti\" \"-O0\" \"-g\" \"-fno-omit-frame-pointer\" \"-I{ndkPath}/sources/cxx-stl/system/include\" \"-I{ndkPath}/samples/native-codec/jni\" \"-DANDROID\" \"-UNDEBUG\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-21/arch-mips/usr/include\""
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector\" \"-no-canonical-prefixes\" \"-march\u003darmv5te\" \"-mtune\u003dxscale\" \"-msoft-float\" \"-fno-exceptions\" \"-fno-rtti\" \"-mthumb\" \"-Os\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fno-strict-aliasing\" \"-finline-limit\u003d64\" \"-O0\" \"-UNDEBUG\" \"-marm\" \"-fno-omit-frame-pointer\" \"-I{ndkPath}/sources/cxx-stl/system/include\" \"-I{ndkPath}/samples/native-codec/jni\" \"-DANDROID\" \"-UNDEBUG\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-21/arch-arm/usr/include\""
+        }
+      ],
+      "output": {
+        "path": "{ndkPath}/samples/native-codec/obj/local/armeabi/libnative-codec-jni.so"
+      }
+    },
+    "native-codec-jni-release-mips": {
+      "buildCommand": "echo build command native-codec-jni",
+      "toolchain": "toolchain-mips",
+      "abi": "mips",
+      "artifactName": "native-codec-jni",
+      "files": [
+        {
+          "src": {
+            "path": "{ndkPath}/samples/native-codec/jni/looper.cpp"
+          },
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-fno-strict-aliasing\" \"-finline-functions\" \"-ffunction-sections\" \"-funwind-tables\" \"-fmessage-length\u003d0\" \"-fno-inline-functions-called-once\" \"-fgcse-after-reload\" \"-frerun-cse-after-loop\" \"-frename-registers\" \"-no-canonical-prefixes\" \"-fno-exceptions\" \"-fno-rtti\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-I{ndkPath}/sources/cxx-stl/system/include\" \"-I{ndkPath}/samples/native-codec/jni\" \"-DANDROID\" \"-UNDEBUG\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-21/arch-mips/usr/include\""
+        },
+        {
+          "src": {
+            "path": "{ndkPath}/samples/native-codec/jni/native-codec-jni.cpp"
+          },
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-fno-strict-aliasing\" \"-finline-functions\" \"-ffunction-sections\" \"-funwind-tables\" \"-fmessage-length\u003d0\" \"-fno-inline-functions-called-once\" \"-fgcse-after-reload\" \"-frerun-cse-after-loop\" \"-frename-registers\" \"-no-canonical-prefixes\" \"-fno-exceptions\" \"-fno-rtti\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-I{ndkPath}/sources/cxx-stl/system/include\" \"-I{ndkPath}/samples/native-codec/jni\" \"-DANDROID\" \"-UNDEBUG\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-21/arch-mips/usr/include\""
         }
       ],
       "output": {
         "path": "{ndkPath}/samples/native-codec/obj/local/mips/libnative-codec-jni.so"
+      }
+    },
+    "native-codec-jni-release-x86": {
+      "buildCommand": "echo build command native-codec-jni",
+      "toolchain": "toolchain-x86",
+      "abi": "x86",
+      "artifactName": "native-codec-jni",
+      "files": [
+        {
+          "src": {
+            "path": "{ndkPath}/samples/native-codec/jni/looper.cpp"
+          },
+          "flags": "\"-MMD\" \"-MP\" \"-ffunction-sections\" \"-funwind-tables\" \"-no-canonical-prefixes\" \"-fstack-protector\" \"-fno-exceptions\" \"-fno-rtti\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-I{ndkPath}/sources/cxx-stl/system/include\" \"-I{ndkPath}/samples/native-codec/jni\" \"-DANDROID\" \"-UNDEBUG\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-21/arch-x86/usr/include\""
+        },
+        {
+          "src": {
+            "path": "{ndkPath}/samples/native-codec/jni/native-codec-jni.cpp"
+          },
+          "flags": "\"-MMD\" \"-MP\" \"-ffunction-sections\" \"-funwind-tables\" \"-no-canonical-prefixes\" \"-fstack-protector\" \"-fno-exceptions\" \"-fno-rtti\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-I{ndkPath}/sources/cxx-stl/system/include\" \"-I{ndkPath}/samples/native-codec/jni\" \"-DANDROID\" \"-UNDEBUG\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-21/arch-x86/usr/include\""
+        }
+      ],
+      "output": {
+        "path": "{ndkPath}/samples/native-codec/obj/local/x86/libnative-codec-jni.so"
+      }
+    },
+    "native-codec-jni-debug-armeabi-v7a": {
+      "buildCommand": "echo build command native-codec-jni",
+      "toolchain": "toolchain-armeabi-v7a",
+      "abi": "armeabi-v7a",
+      "artifactName": "native-codec-jni",
+      "files": [
+        {
+          "src": {
+            "path": "{ndkPath}/samples/native-codec/jni/looper.cpp"
+          },
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector\" \"-no-canonical-prefixes\" \"-march\u003darmv7-a\" \"-mfpu\u003dvfpv3-d16\" \"-mfloat-abi\u003dsoftfp\" \"-fno-exceptions\" \"-fno-rtti\" \"-mthumb\" \"-Os\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fno-strict-aliasing\" \"-finline-limit\u003d64\" \"-O0\" \"-UNDEBUG\" \"-marm\" \"-fno-omit-frame-pointer\" \"-I{ndkPath}/sources/cxx-stl/system/include\" \"-I{ndkPath}/samples/native-codec/jni\" \"-DANDROID\" \"-UNDEBUG\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-21/arch-arm/usr/include\""
+        },
+        {
+          "src": {
+            "path": "{ndkPath}/samples/native-codec/jni/native-codec-jni.cpp"
+          },
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector\" \"-no-canonical-prefixes\" \"-march\u003darmv7-a\" \"-mfpu\u003dvfpv3-d16\" \"-mfloat-abi\u003dsoftfp\" \"-fno-exceptions\" \"-fno-rtti\" \"-mthumb\" \"-Os\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fno-strict-aliasing\" \"-finline-limit\u003d64\" \"-O0\" \"-UNDEBUG\" \"-marm\" \"-fno-omit-frame-pointer\" \"-I{ndkPath}/sources/cxx-stl/system/include\" \"-I{ndkPath}/samples/native-codec/jni\" \"-DANDROID\" \"-UNDEBUG\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-I{ndkPath}/platforms/android-21/arch-arm/usr/include\""
+        }
+      ],
+      "output": {
+        "path": "{ndkPath}/samples/native-codec/obj/local/armeabi-v7a/libnative-codec-jni.so"
       }
     }
   },

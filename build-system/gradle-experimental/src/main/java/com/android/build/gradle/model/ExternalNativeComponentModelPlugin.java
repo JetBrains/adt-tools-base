@@ -273,6 +273,7 @@ public class ExternalNativeComponentModelPlugin implements Plugin<Project> {
                         artifacts -> {
                             artifacts.getLibraries().add(lib.getOutput());
                             artifacts.setAbi(lib.getAbi());
+                            artifacts.setTarget(lib.getArtifactName());
                             artifacts.setVariantName(lib.getName());
                             artifacts.setBuildType(lib.getBuildType());
                             if (lib.getOutput() != null) {

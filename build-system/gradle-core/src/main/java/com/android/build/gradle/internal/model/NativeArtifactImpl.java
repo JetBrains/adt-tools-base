@@ -17,11 +17,10 @@
 package com.android.build.gradle.internal.model;
 
 import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
 import com.android.builder.model.NativeArtifact;
 import com.android.builder.model.NativeFile;
 import com.android.builder.model.NativeFolder;
-import com.google.common.base.Objects;
+import com.google.common.base.MoreObjects;
 
 import java.io.File;
 import java.io.Serializable;
@@ -51,6 +50,8 @@ public class NativeArtifactImpl implements NativeArtifact, Serializable {
     private final File getOutputFile;
     @NonNull
     private final String abi;
+    @NonNull
+    private final String targetName;
 
     public NativeArtifactImpl(
             @NonNull String name,
@@ -61,7 +62,8 @@ public class NativeArtifactImpl implements NativeArtifact, Serializable {
             @NonNull Collection<NativeFile> sourceFiles,
             @NonNull Collection<File> exportedHeaders,
             @NonNull File getOutputFile,
-            @NonNull String abi) {
+            @NonNull String abi,
+            @NonNull String targetName) {
         this.name = name;
         this.toolChain = toolChain;
         this.groupName = groupName;
@@ -71,6 +73,7 @@ public class NativeArtifactImpl implements NativeArtifact, Serializable {
         this.exportedHeaders = exportedHeaders;
         this.getOutputFile = getOutputFile;
         this.abi = abi;
+        this.targetName = targetName;
     }
 
     @Override
@@ -128,8 +131,14 @@ public class NativeArtifactImpl implements NativeArtifact, Serializable {
     }
 
     @Override
+    @NonNull
+    public String getTargetName() {
+        return targetName;
+    }
+
+    @Override
     public String toString() {
-        return Objects.toStringHelper(getClass())
+        return MoreObjects.toStringHelper(getClass())
                 .add("Name", name)
                 .add("ToolChain", toolChain)
                 .add("GroupName", groupName)

@@ -18,6 +18,7 @@ package com.android.build.gradle.model;
 
 import static com.android.build.gradle.model.ModelConstants.EXTERNAL_BUILD_CONFIG;
 import static com.android.build.gradle.model.ModelConstants.NATIVE_BUILD_SYSTEMS;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
@@ -38,7 +39,6 @@ import com.android.builder.model.NativeFolder;
 import com.android.builder.model.NativeSettings;
 import com.android.builder.model.NativeToolchain;
 import com.android.utils.StringHelper;
-import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -63,9 +63,9 @@ import java.util.stream.Collectors;
 public class NativeComponentModelBuilder implements ToolingModelBuilder {
 
     @NonNull
-    private ModelRegistry registry;
+    private final ModelRegistry registry;
     @NonNull
-    private Map<List<String>, NativeSettings> settingsMap = Maps.newHashMap();
+    private final Map<List<String>, NativeSettings> settingsMap = Maps.newHashMap();
     private int settingIndex = 0;
     private NativeBuildConfig config;
     private List<String> buildSystems;
@@ -119,7 +119,7 @@ public class NativeComponentModelBuilder implements ToolingModelBuilder {
         for (NativeLibrary lib : config.getLibraries()) {
             List<NativeFolder> folders = lib.getFolders().stream()
                     .map(src -> {
-                        Preconditions.checkNotNull(src.getSrc());
+                        checkNotNull(src.getSrc());
                         return new NativeFolderImpl(
                                 src.getSrc(),
                                 ImmutableMap.of(
@@ -129,16 +129,17 @@ public class NativeComponentModelBuilder implements ToolingModelBuilder {
                     .collect(Collectors.toList());
             List<NativeFile> files = lib.getFiles().stream()
                     .map(src -> {
-                        Preconditions.checkNotNull(src.getSrc());
+                        checkNotNull(src.getSrc());
                         return new NativeFileImpl(
                                 src.getSrc(),
                                 getSettingsName(convertFlagFormat(src.getFlags())),
                                 src.getWorkingDirectory());})
                     .collect(Collectors.toList());
-            Preconditions.checkNotNull(lib.getToolchain());
-            Preconditions.checkNotNull(lib.getAssembleTaskName());
-            Preconditions.checkNotNull(lib.getOutput());
-            Preconditions.checkNotNull(lib.getAbi());
+            checkNotNull(lib.getToolchain());
+            checkNotNull(lib.getAssembleTaskName());
+            checkNotNull(lib.getOutput());
+            checkNotNull(lib.getAbi());
+            checkNotNull(lib.getArtifactName());
             NativeArtifact artifact = new NativeArtifactImpl(
                     lib.getName(),
                     lib.getToolchain(),
@@ -148,7 +149,8 @@ public class NativeComponentModelBuilder implements ToolingModelBuilder {
                     files,
                     ImmutableList.copyOf(lib.getExportedHeaders()),
                     lib.getOutput(),
-                    lib.getAbi());
+                    lib.getAbi(),
+                    lib.getArtifactName());
             artifacts.add(artifact);
         }
         return artifacts;

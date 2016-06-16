@@ -51,4 +51,10 @@ public interface ExternalNativeCmakeOptions {
      */
     @NonNull
     List<String>  getCppFlags();
+
+    /**
+     * The build targets
+     */
+    @NonNull
+    Set<String> getTargets();
 }

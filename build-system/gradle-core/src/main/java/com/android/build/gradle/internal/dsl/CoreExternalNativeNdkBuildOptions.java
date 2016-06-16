@@ -48,4 +48,10 @@ public interface CoreExternalNativeNdkBuildOptions {
      */
     @NonNull
     Set<String> getAbiFilters();
+
+    /**
+     * The build targets
+     */
+    @NonNull
+    Set<String> getTargets();
 }

@@ -50,6 +50,7 @@ import com.android.builder.core.BuilderConstants;
 import com.android.builder.core.VariantConfiguration;
 import com.android.utils.ImmutableCollectors;
 import com.android.utils.NativeSourceFileExtensions;
+import com.android.utils.NdkUtils;
 import com.android.utils.StringHelper;
 import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
@@ -522,6 +523,8 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
                 nativeLibrary.setGroupName(binary.getName());
                 nativeLibrary.setAssembleTaskName(nativeBinary.getBuildTask().getName());
                 nativeLibrary.setAbi(abi.getName());
+                nativeLibrary.setArtifactName(NdkUtils.getTargetNameFromBuildOutputFile(
+                        nativeBinary.getSharedLibraryFile()));
 
                 final List<String> cFlags =
                         Lists.newArrayList(nativeBinary.getcCompiler().getArgs());
@@ -673,6 +676,7 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
                 }
                 artifact.setVariantName(binary.getName());
                 artifact.setAbi(nativeBinary.getTargetPlatform().getName());
+                artifact.setTarget(NdkUtils.getTargetNameFromBuildOutputFile(output));
                 artifact.setLinkage(linkage);
 
                 List<Object> builtBy = Lists.newArrayList();

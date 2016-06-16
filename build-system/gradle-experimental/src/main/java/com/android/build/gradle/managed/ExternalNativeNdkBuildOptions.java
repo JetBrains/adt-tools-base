@@ -50,5 +50,11 @@ public interface ExternalNativeNdkBuildOptions {
      * The CPP Flags
      */
     @NonNull
-    List<String>  getCppFlags();
+    List<String> getCppFlags();
+
+    /**
+     * The build targets
+     */
+    @NonNull
+    Set<String> getTargets();
 }

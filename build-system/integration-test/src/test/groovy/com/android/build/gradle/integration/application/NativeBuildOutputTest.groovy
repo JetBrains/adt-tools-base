@@ -20,6 +20,7 @@ import com.android.build.gradle.integration.common.fixture.GradleBuildResult
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldJniApp
 import com.android.builder.model.AndroidProject
+import com.android.builder.model.NativeAndroidProject
 import com.android.builder.model.SyncIssue
 import groovy.transform.CompileStatic
 import org.junit.Before
@@ -64,7 +65,7 @@ class NativeBuildOutputTest {
             }
             """;
     }
-
+/*
     @Test
     public void checkNdkBuildErrorInSourceCode() {
         project.buildFile << """
@@ -179,6 +180,54 @@ class NativeBuildOutputTest {
               ["ndkBuild.path", "Android.mk but that file doesn't exist"], 2);
     }
 
+    @Test
+    public void checkNdkBuildUnrecognizedTarget() {
+        project.buildFile << """
+            android {
+                externalNativeBuild {
+                    ndkBuild {
+                        path "src/main/cpp/Android.mk"
+                    }
+                }
+                defaultConfig {
+                    ndkBuild {
+                        targets "-unrecognized-target-" // <-- error
+                    }
+                }
+            }
+            """;
+
+        project.file("src/main/cpp/Android.mk") << androidMk;
+
+        check(["Unexpected native build target -unrecognized-target-",
+               "Valid values are: hello-jni"],
+                [], 0);
+    }
+*/
+    @Test
+    public void checkCMakeWrongTarget() {
+        project.buildFile << """
+            android {
+                externalNativeBuild {
+                    cmake {
+                        path "CMakeLists.txt"
+                    }
+                }
+                defaultConfig {
+                      cmake {
+                        targets "-unrecognized-target-" // <-- error
+                      }
+                }
+            }
+            """;
+
+        project.file("CMakeLists.txt") << cmakeLists;
+
+        check(["Unexpected native build target -unrecognized-target-",
+            "Valid values are: hello-jni"],
+            [], 0);
+    }
+
     private void check(List<String> expectInStderr, List<String> expectInSyncIssues,
             int expectedSyncIssueCount) {
         // Check the sync
@@ -207,6 +256,9 @@ class NativeBuildOutputTest {
                 }
             }
         }
+
+        // Make sure we can get a NativeAndroidProject
+        project.model().getSingle(NativeAndroidProject.class);
 
         // Check the build
         GradleBuildResult result = project.executor()

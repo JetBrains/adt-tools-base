@@ -75,6 +75,13 @@ public interface NativeLibraryArtifact extends Named {
     void setAbi(String abi);
 
     /**
+    * Target of the artifact.
+    */
+    @Nullable
+    String getTarget();
+    void setTarget(String target);
+    
+    /**
      *
      */
     @Nullable

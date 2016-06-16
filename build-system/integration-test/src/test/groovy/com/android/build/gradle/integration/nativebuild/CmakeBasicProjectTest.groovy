@@ -77,11 +77,11 @@ $modelBefore
         buildToolsVersion "$GradleTestProject.DEFAULT_BUILD_TOOL_VERSION"
         defaultConfig {
           cmake {
-            arguments.addAll("-DANDROID_TOOLCHAIN_NAME=arm-linux-androideabi-clang3.5")
             cFlags.addAll("-DTEST_C_FLAG", "-DTEST_C_FLAG_2")
             cppFlags.addAll("-DTEST_CPP_FLAG")
             abiFilters.addAll("armeabi-v7a", "armeabi", "armeabi-v7a with NEON",
                 "armeabi-v7a with VFPV3", "armeabi-v6 with VFP")
+            targets.addAll("hello-jni")
           }
         }
         externalNativeBuild {
