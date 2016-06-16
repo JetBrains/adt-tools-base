@@ -153,7 +153,6 @@ public class ExternalBuildPluginTest {
         assertThat(artifact.getLocation().exists()).isTrue();
 
         ApkSubject apkSubject = expect.about(ApkSubject.FACTORY).that(artifact.getLocation());
-        apkSubject.containsApkSigningBlock();
         apkSubject.contains("instant-run.zip");
         assertThat(apkSubject.hasMainDexFile());
 
