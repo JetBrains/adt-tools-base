@@ -15,6 +15,7 @@ dependencies {
     testCompile project(':base:sdk-common')
     testCompile project(':base:lint')
     testCompile project(':base:instant-run:instant-run-client')
+    testCompile project(':base:testutils')
     testCompile project(':base:testing-infrastructure:device-pool:device-provider')
 
 
