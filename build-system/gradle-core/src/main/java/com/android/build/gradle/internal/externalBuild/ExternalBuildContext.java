@@ -32,6 +32,7 @@ public class ExternalBuildContext {
     private List<File> inputJarFiles = new ArrayList<>();
     private ExternalBuildApkManifest.ApkManifest buildManifest;
     private AndroidBuilder androidBuilder;
+    private File executionRoot;
 
     public ExternalBuildContext(ExternalBuildExtension externalBuildExtension) {
         this.externalBuildExtension = externalBuildExtension;
@@ -43,6 +44,14 @@ public class ExternalBuildContext {
 
     public List<File> getInputJarFiles() {
         return inputJarFiles;
+    }
+
+    public void setExecutionRoot(File executionRoot) {
+        this.executionRoot = executionRoot;
+    }
+
+    public File getExecutionRoot() {
+        return executionRoot;
     }
 
     public ExternalBuildExtension getExternalBuildExtension() {

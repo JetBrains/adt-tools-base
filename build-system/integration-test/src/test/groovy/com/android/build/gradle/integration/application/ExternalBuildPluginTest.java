@@ -52,6 +52,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.file.Path;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.jar.JarEntry;
@@ -102,9 +103,12 @@ public class ExternalBuildPluginTest {
 
         List<String> jarFiles = new FileNameFinder().getFileNames(
                 sProject.getTestDir().getAbsolutePath(), "**/*.jar");
+        Path projectPath = sProject.getTestDir().toPath();
         for (String jarFile : jarFiles) {
+            Path jarFilePath = new File(jarFile).toPath();
+            Path relativePath = projectPath.relativize(jarFilePath);
             apkManifest.addJars(ExternalBuildApkManifest.Artifact.newBuilder()
-                    .setExecRootPath(jarFile)
+                    .setExecRootPath(relativePath.toString())
                     .setHash(ByteString.copyFromUtf8(String.valueOf(jarFile.hashCode()))));
         }
 
@@ -130,6 +134,7 @@ public class ExternalBuildPluginTest {
 + "apply plugin: 'com.android.external.build'\n"
 + "\n"
 + "externalBuild {\n"
++ "  executionRoot = $/" + sProject.getTestDir().getAbsolutePath() +"/$\n"
 + "  buildManifestPath = $/" + manifestFile.getAbsolutePath() + "/$\n"
 + "}\n");
 

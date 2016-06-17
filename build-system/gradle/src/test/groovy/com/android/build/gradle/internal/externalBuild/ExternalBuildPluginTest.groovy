@@ -37,6 +37,7 @@ public class ExternalBuildPluginTest {
     public void externalBuildExtensionPopulation() {
         Project project = createAndConfigureBasicProject()
         assertThat(project.extensions.externalBuild.getBuildManifestPath()).isEqualTo('/usr/tmp/foo')
+        assertThat(project.extensions.externalBuild.getExecutionRoot()).isEqualTo("/Users/user/project")
     }
 
     private static Project createBasicProject() {
@@ -47,6 +48,7 @@ public class ExternalBuildPluginTest {
 
     private void configureBasicProject(Project project) {
         project.externalBuild {
+            executionRoot = '/Users/user/project'
             buildManifestPath = '/usr/tmp/foo'
         }
     }

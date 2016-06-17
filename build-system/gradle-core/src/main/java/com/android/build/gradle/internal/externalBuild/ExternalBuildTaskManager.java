@@ -84,6 +84,7 @@ class ExternalBuildTaskManager {
 
         File file = project.file(externalBuildExtension.buildManifestPath);
         ExternalBuildManifestLoader.loadAndPopulateContext(
+                new File(externalBuildExtension.getExecutionRoot()),
                 file, project, externalBuildContext);
 
         ExtraModelInfo modelInfo = new ExtraModelInfo(project, false /* isLibrary */);

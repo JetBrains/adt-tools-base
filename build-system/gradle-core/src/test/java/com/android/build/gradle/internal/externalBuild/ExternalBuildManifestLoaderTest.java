@@ -92,7 +92,9 @@ public class ExternalBuildManifestLoaderTest {
         }
         ExternalBuildContext externalBuildContext =
                 new ExternalBuildContext(mExternalBuildExtension);
-        ExternalBuildManifestLoader.loadAndPopulateContext(apk_manifest_test,
+        ExternalBuildManifestLoader.loadAndPopulateContext(
+                mTemporaryFolder.getRoot(),
+                apk_manifest_test,
                 mProject, externalBuildContext);
 
         // assert build context population.

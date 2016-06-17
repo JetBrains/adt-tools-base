@@ -22,6 +22,15 @@ package com.android.build.gradle.internal.externalBuild;
 public class ExternalBuildExtension {
 
     String buildManifestPath;
+    String executionRoot;
+
+    public String getExecutionRoot() {
+        return executionRoot;
+    }
+
+    public void setExecutionRoot(String executionRoot) {
+        this.executionRoot = executionRoot;
+    }
 
     public String getBuildManifestPath() {
         return buildManifestPath;

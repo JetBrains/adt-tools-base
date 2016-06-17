@@ -53,6 +53,7 @@ public class ExternalBuildManifestLoader {
      * @throws IOException if the file cannot be read correctly
      */
     public static void loadAndPopulateContext(
+            @NonNull File execRootFile,
             @NonNull File manifestProtoFile,
             @NonNull Project project,
             @NonNull ExternalBuildContext externalBuildContext) throws IOException {
@@ -66,9 +67,10 @@ public class ExternalBuildManifestLoader {
             manifest = ExternalBuildApkManifest.ApkManifest.parseFrom(is);
         }
         externalBuildContext.setBuildManifest(manifest);
+        externalBuildContext.setExecutionRoot(execRootFile);
 
         List<File> jarFiles = manifest.getJarsList().stream()
-                .map(artifact -> project.file(artifact.getExecRootPath()))
+                .map(artifact -> new File(execRootFile, artifact.getExecRootPath()))
                 .collect(Collectors.toList());
         externalBuildContext.setInputJarFiles(jarFiles);
 
