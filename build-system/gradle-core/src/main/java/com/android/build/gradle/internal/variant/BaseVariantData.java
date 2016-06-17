@@ -52,6 +52,7 @@ import com.android.ide.common.blame.SourceFile;
 import com.android.ide.common.res2.ResourceSet;
 import com.android.utils.StringHelper;
 import com.google.common.base.Objects;
+import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 
@@ -315,10 +316,13 @@ public abstract class BaseVariantData<T extends BaseVariantOutputData> {
     }
 
     public void registerJavaGeneratingTask(@NonNull Task task, @NonNull File... generatedSourceFolders) {
+        Preconditions.checkState(javacTask != null || jackTransform != null);
         sourceGenTask.dependsOn(task);
 
         for (File f : generatedSourceFolders) {
-            javacTask.source(f);
+            if (javacTask != null) {
+                javacTask.source(f);
+            }
             if (jackTransform != null) {
                 jackTransform.addSource(f);
             }
@@ -328,10 +332,13 @@ public abstract class BaseVariantData<T extends BaseVariantOutputData> {
     }
 
     public void registerJavaGeneratingTask(@NonNull Task task, @NonNull Collection<File> generatedSourceFolders) {
+        Preconditions.checkState(javacTask != null || jackTransform != null);
         sourceGenTask.dependsOn(task);
 
         for (File f : generatedSourceFolders) {
-            javacTask.source(f);
+            if (javacTask != null) {
+                javacTask.source(f);
+            }
             if (jackTransform != null) {
                 jackTransform.addSource(f);
             }

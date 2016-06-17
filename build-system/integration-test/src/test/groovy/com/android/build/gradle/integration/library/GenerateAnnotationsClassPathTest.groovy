@@ -15,6 +15,7 @@
  */
 
 package com.android.build.gradle.integration.library
+
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import groovy.transform.CompileStatic
 import org.junit.AfterClass
@@ -22,6 +23,7 @@ import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Test
 
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
 import static org.junit.Assert.assertFalse
 
 @CompileStatic
@@ -62,7 +64,21 @@ android.libraryVariants.all { variant ->
         variant.registerJavaGeneratingTask(task, outDir)
 }
 
+android.testVariants.all { variant ->
+    def outDir = project.file("$project.buildDir/generated/source/testplugin/$variant.name");
+        def task = project.task(
+                "generateJavaFromPlugin${variant.name.capitalize()}",
+                type: JavaGeneratingTask) {
+            suffix = "AndroidTest"
+            outputDirectory = outDir
+        }
+        variant.registerJavaGeneratingTask(task, outDir)
+}
+
 public class JavaGeneratingTask extends DefaultTask {
+    @Input
+    String suffix = "";
+
     @OutputDirectory
     File outputDirectory
 
@@ -70,19 +86,21 @@ public class JavaGeneratingTask extends DefaultTask {
     void execute(IncrementalTaskInputs inputs) {
         System.err.println('Plugin executed on ' + inputs)
         File outputFile = new File(outputDirectory, Joiner.on(File.separatorChar).join(
-                "com", "example", "helloworld", "GeneratedClass.java"))
-                System.err.println("creating file " + outputFile)
+                "com", "example", "helloworld", "GeneratedClass${suffix}.java"))
+        System.err.println("creating file " + outputFile)
+        if (outputFile.exists()) {
+            outputFile.delete()
+        }
         outputFile.getParentFile().mkdirs()
 
         outputFile << """
 package com.example.helloworld;
 
-public class GeneratedClass {
+public class GeneratedClass${suffix} {
     public void method() {
         System.out.println("Executed generated method");
     }
 }
-
     """
     }
 }
@@ -106,6 +124,14 @@ public class GeneratedClass {
         assertFalse(
                 "Extract annotation should get generated class on path.",
                 project.getStdout().contains("Not extracting annotations (compilation problems encountered)"))
+        assertThat(project.file("build/generated/source/testplugin/debug/com/example/helloworld/GeneratedClass.java")).exists()
     }
 
+    @Test
+    public void "check generating java class works for test variant"() {
+        project.execute("compileDebugAndroidTestSource")
+        assertThat(project.file("build/generated/source/testplugin/debugAndroidTest/com/example/helloworld/GeneratedClassAndroidTest.java")).exists()
+
+
+    }
 }
