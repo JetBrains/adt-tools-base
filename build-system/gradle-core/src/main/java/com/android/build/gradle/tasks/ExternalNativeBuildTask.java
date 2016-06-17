@@ -279,6 +279,7 @@ public class ExternalNativeBuildTask extends BaseTask {
             task.setObjFolder(generator.getObjFolder());
             task.setNativeBuildConfigurationsJsons(generator.getNativeBuildConfigurationsJsons());
             task.setAndroidBuilder(androidBuilder);
+            variantData.externalNativeBuildTasks.add(task);
         }
     }
 }

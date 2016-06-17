@@ -19,6 +19,7 @@ package com.android.build.gradle.api;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.tasks.AidlCompile;
+import com.android.build.gradle.tasks.ExternalNativeBuildTask;
 import com.android.build.gradle.tasks.GenerateBuildConfig;
 import com.android.build.gradle.tasks.MergeSourceSetFolders;
 import com.android.build.gradle.tasks.MergeResources;
@@ -187,6 +188,11 @@ public interface BaseVariant {
      */
     @NonNull
     NdkCompile getNdkCompile();
+
+    /**
+     * Returns the tasks for building external native projects.
+     */
+    Collection<ExternalNativeBuildTask> getExternalNativeBuildTasks();
 
     /**
      * Returns the obfuscation task. This can be null if obfuscation is not enabled.
