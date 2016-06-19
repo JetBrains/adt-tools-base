@@ -453,7 +453,7 @@ public class FolderConfigurationTest extends TestCase {
                 return "itemBlank";
             }
         };
-        ResourceFile sourceBlank = new ResourceFile(new File("sourceBlank"), itemBlank, "");
+        ResourceFile sourceBlank = ResourceFile.createSingle(new File("sourceBlank"), itemBlank, "");
         itemBlank.setSource(sourceBlank);
         FolderConfiguration configBlank = itemBlank.getConfiguration();
 
@@ -463,7 +463,7 @@ public class FolderConfigurationTest extends TestCase {
                 return "itemEn";
             }
         };
-        ResourceFile sourceEn = new ResourceFile(new File("sourceEn"), itemBlank, "en");
+        ResourceFile sourceEn = ResourceFile.createSingle(new File("sourceEn"), itemBlank, "en");
         itemEn.setSource(sourceEn);
         FolderConfiguration configEn = itemEn.getConfiguration();
 
@@ -473,7 +473,7 @@ public class FolderConfigurationTest extends TestCase {
                 return "itemBcpEn";
             }
         };
-        ResourceFile sourceBcpEn = new ResourceFile(new File("sourceBcpEn"), itemBlank, "b+en");
+        ResourceFile sourceBcpEn = ResourceFile.createSingle(new File("sourceBcpEn"), itemBlank, "b+en");
         itemBcpEn.setSource(sourceBcpEn);
         FolderConfiguration configBcpEn = itemBcpEn.getConfiguration();
 
@@ -484,7 +484,7 @@ public class FolderConfigurationTest extends TestCase {
             }
         };
 
-        ResourceFile sourceDe = new ResourceFile(new File("sourceDe"), itemBlank, "de");
+        ResourceFile sourceDe = ResourceFile.createSingle(new File("sourceDe"), itemBlank, "de");
         itemDe.setSource(sourceDe);
         FolderConfiguration configDe = itemDe.getConfiguration();
 

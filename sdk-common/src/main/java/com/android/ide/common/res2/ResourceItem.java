@@ -174,12 +174,11 @@ public class ResourceItem extends DataItem<ResourceFile>
 
     @Override
     public FolderConfiguration getConfiguration() {
-        String qualifier = getQualifiers();
-        if (qualifier.isEmpty()) {
-            return new FolderConfiguration();
+        ResourceFile resourceFile = getSource();
+        if (resourceFile == null) {
+            throw new RuntimeException("Cannot call getConfiguration on " + toString());
         }
-
-        return FolderConfiguration.getConfigForQualifierString(qualifier);
+        return resourceFile.getFolderConfiguration();
     }
 
     /**

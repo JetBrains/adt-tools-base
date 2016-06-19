@@ -18,6 +18,8 @@ package com.android.ide.common.res2;
 
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
+import com.android.annotations.VisibleForTesting;
+import com.android.ide.common.resources.configuration.FolderConfiguration;
 import com.google.common.base.Objects;
 
 import org.w3c.dom.Document;
@@ -41,6 +43,7 @@ public class ResourceFile extends DataFile<ResourceItem> {
     static final String ATTR_QUALIFIER = "qualifiers";
 
     private String mQualifiers;
+    private FolderConfiguration mFolderConfiguration;
 
     /**
      * Creates a resource file with a single resource item.
@@ -52,11 +55,13 @@ public class ResourceFile extends DataFile<ResourceItem> {
      * @param file the File
      * @param item the resource item
      * @param qualifiers the qualifiers.
+     * @param folderConfiguration the folder configuration
      */
     public ResourceFile(@NonNull File file, @NonNull ResourceItem item,
-            @NonNull String qualifiers) {
+            @NonNull String qualifiers, @NonNull FolderConfiguration folderConfiguration) {
         super(file, FileType.SINGLE_FILE);
         mQualifiers = qualifiers;
+        mFolderConfiguration = folderConfiguration;
         init(item);
     }
 
@@ -70,25 +75,42 @@ public class ResourceFile extends DataFile<ResourceItem> {
      * @param file the File
      * @param items the resource items
      * @param qualifiers the qualifiers.
+     * @param folderConfiguration the folder configuration
      */
     public ResourceFile(@NonNull File file, @NonNull List<ResourceItem> items,
-            @NonNull String qualifiers) {
-        this(file, items, qualifiers, FileType.XML_VALUES);
+            @NonNull String qualifiers, @NonNull FolderConfiguration folderConfiguration) {
+        this(file, items, qualifiers, folderConfiguration, FileType.XML_VALUES);
     }
 
     private ResourceFile(@NonNull File file, @NonNull List<ResourceItem> items,
-            @NonNull String qualifiers, @NonNull FileType fileType) {
+                         @NonNull String qualifiers, @NonNull FolderConfiguration folderConfiguration,
+                         @NonNull FileType fileType) {
         super(file, fileType);
         mQualifiers = qualifiers;
+        mFolderConfiguration = folderConfiguration;
         init(items);
     }
 
     public static ResourceFile generatedFiles(
             @NonNull File file,
             @NonNull List<ResourceItem> items,
-            @NonNull String qualifiers) {
+            @NonNull String qualifiers,
+            @NonNull FolderConfiguration folderConfiguration) {
         // TODO: Replace other constructors with named methods.
-        return new ResourceFile(file, items, qualifiers, FileType.GENERATED_FILES);
+        return new ResourceFile(file, items, qualifiers, folderConfiguration, FileType.GENERATED_FILES);
+    }
+
+    /**
+     * Creates a resource file with a single resource item.
+     *
+     * This parses the folder configuration from qualifiers for each file independently (which may be less performant
+     * than parsing it once for all files in a folder and supplying the parsed configuration).
+     */
+    @VisibleForTesting
+    public static ResourceFile createSingle(@NonNull File file, @NonNull ResourceItem item, @NonNull String qualifiers) {
+        FolderConfiguration folderConfiguration = FolderConfiguration.getConfigForQualifierString(qualifiers);
+        assert folderConfiguration != null;
+        return new ResourceFile(file, item, qualifiers, folderConfiguration);
     }
 
 
@@ -100,6 +122,12 @@ public class ResourceFile extends DataFile<ResourceItem> {
     // Used in Studio
     public void setQualifiers(@NonNull String qualifiers) {
         mQualifiers = qualifiers;
+        mFolderConfiguration = FolderConfiguration.getConfigForQualifierString(qualifiers);
+    }
+
+    @NonNull
+    public FolderConfiguration getFolderConfiguration() {
+        return mFolderConfiguration;
     }
 
     @Override
