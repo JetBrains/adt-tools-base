@@ -55,7 +55,8 @@ public class FakePackage implements LocalPackage, RemotePackage {
     private Channel mChannel;
     private Archive mArchive;
 
-    public FakePackage(String path, Revision version, Collection<Dependency> dependencies) {
+    public FakePackage(@NonNull String path, @NonNull Revision version,
+            @Nullable Collection<Dependency> dependencies) {
         mPath = path;
         mVersion = version;
         mDependencies = dependencies == null ? ImmutableList.<Dependency>of() : dependencies;

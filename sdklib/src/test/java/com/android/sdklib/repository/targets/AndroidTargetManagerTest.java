@@ -15,13 +15,28 @@
  */
 package com.android.sdklib.repository.targets;
 
+import com.android.SdkConstants;
+import com.android.annotations.NonNull;
+import com.android.repository.Revision;
+import com.android.repository.api.LocalPackage;
+import com.android.repository.api.RepoManager;
+import com.android.repository.api.RepoPackage;
+import com.android.repository.impl.manager.RepoManagerImpl;
+import com.android.repository.impl.meta.RepositoryPackages;
+import com.android.repository.impl.meta.TypeDetails;
+import com.android.repository.testframework.FakePackage;
 import com.android.repository.testframework.FakeProgressIndicator;
+import com.android.repository.testframework.FakeRepoManager;
 import com.android.repository.testframework.MockFileOp;
 import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.IAndroidTarget;
 import com.android.sdklib.repository.AndroidSdkHandler;
+import com.android.sdklib.repository.meta.DetailsTypes;
+import com.android.sdklib.repository.meta.RepoFactory;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
 import junit.framework.TestCase;
@@ -29,7 +44,9 @@ import junit.framework.TestCase;
 import java.io.File;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -694,5 +711,68 @@ public class AndroidTargetManagerTest extends TestCase {
 
         assertEquals("24.0.0", handler.getLatestBuildTool(progress, false).getRevision().toString());
         assertEquals("24.0.0", handler.getLatestBuildTool(progress, true).getRevision().toString());
+    }
+
+    public void testDuplicatePlatform() throws Exception {
+        MockFileOp fop = new MockFileOp();
+        File bogus1Location = new File("/sdk", "foo");
+        File bogus2Location = new File("/sdk", "bar");
+        File real1Location = new File("/sdk", "platforms/android-20");
+        File real2Location = new File("/sdk", "platforms/android-19");
+        fop.recordExistingFile(new File(bogus1Location, SdkConstants.FN_BUILD_PROP));
+        fop.recordExistingFile(new File(bogus2Location, SdkConstants.FN_BUILD_PROP));
+        fop.recordExistingFile(new File(real1Location, SdkConstants.FN_BUILD_PROP));
+        fop.recordExistingFile(new File(real2Location, SdkConstants.FN_BUILD_PROP));
+        LocalPackage bogus1 = new FakePlatformPackage("foo", bogus1Location, 20);
+        LocalPackage bogus2 = new FakePlatformPackage("bar", bogus2Location, 20);
+        LocalPackage real1 = new FakePlatformPackage(
+                DetailsTypes.getPlatformPath(new AndroidVersion(20, null)), real1Location, 20);
+        LocalPackage real2 = new FakePlatformPackage("19", real2Location, 19);
+        List<LocalPackage> locals = ImmutableList.of(bogus1, bogus2, real1, real2);
+        RepositoryPackages packages = new RepositoryPackages(
+                Maps.uniqueIndex(locals, RepoPackage::getPath),
+                new HashMap<>());
+        RepoManager mgr = new FakeRepoManager(packages);
+        AndroidSdkHandler handler = new AndroidSdkHandler(new File("/sdk"), fop, mgr);
+        FakeProgressIndicator progress = new FakeProgressIndicator();
+        AndroidTargetManager targetMgr =
+                handler.getAndroidTargetManager(progress);
+        Iterator<IAndroidTarget> targetIter = targetMgr.getTargets(progress).iterator();
+
+        IAndroidTarget target19 = targetIter.next();
+        assertEquals(new AndroidVersion(19, null),  target19.getVersion());
+        IAndroidTarget target20 = targetIter.next();
+        assertEquals(new AndroidVersion(20, null), target20.getVersion());
+        assertFalse(targetIter.hasNext());
+
+        assertNull(targetMgr.getTargetFromPackage(bogus1, progress));
+        assertNull(targetMgr.getTargetFromPackage(bogus2, progress));
+        assertEquals(target20, targetMgr.getTargetFromPackage(real1, progress));
+        assertEquals(target19, targetMgr.getTargetFromPackage(real2, progress));
+    }
+
+    private static class FakePlatformPackage extends FakePackage {
+        private final DetailsTypes.PlatformDetailsType mDetails;
+        private final File mLocation;
+
+        public FakePlatformPackage(@NonNull String path, @NonNull File location, int apiLevel) {
+            super(path, new Revision(1), null);
+            mDetails = ((RepoFactory)AndroidSdkHandler.getRepositoryModule().createLatestFactory())
+                    .createPlatformDetailsType();
+            mDetails.setApiLevel(apiLevel);
+            mLocation = location;
+        }
+
+        @NonNull
+        @Override
+        public TypeDetails getTypeDetails() {
+            return (TypeDetails)mDetails;
+        }
+
+        @NonNull
+        @Override
+        public File getLocation() {
+            return mLocation;
+        }
     }
 }

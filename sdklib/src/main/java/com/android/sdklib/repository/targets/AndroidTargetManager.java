@@ -29,6 +29,8 @@ import com.android.sdklib.IAndroidTarget;
 import com.android.sdklib.repository.AndroidSdkHandler;
 import com.android.sdklib.repository.meta.DetailsTypes;
 import com.google.common.collect.ComparisonChain;
+import com.google.common.collect.BiMap;
+import com.google.common.collect.HashBiMap;
 import com.google.common.collect.Maps;
 
 import java.util.Collection;
@@ -94,21 +96,34 @@ public class AndroidTargetManager {
                             .result();
                 }
             };
-            Map<LocalPackage, IAndroidTarget> result = Maps.newTreeMap(TARGET_COMPARATOR);
             RepoManager manager = mSdkHandler.getSdkManager(progress);
             Map<AndroidVersion, PlatformTarget> platformTargets = Maps.newHashMap();
+            BiMap<IAndroidTarget, LocalPackage> tempTargetToPackage = HashBiMap.create();
             for (LocalPackage p : manager.getPackages().getLocalPackages().values()) {
                 TypeDetails details = p.getTypeDetails();
                 if (details instanceof DetailsTypes.PlatformDetailsType) {
                     try {
                         PlatformTarget target = new PlatformTarget(p, mSdkHandler, mFop, progress);
-                        result.put(p, target);
-                        platformTargets.put(target.getVersion(), target);
+                        AndroidVersion androidVersion = target.getVersion();
+                        // If we've already seen a platform with this version, replace the existing
+                        // with this if this is the "real" package (with the expected path).
+                        // Otherwise, don't create a duplicate.
+                        PlatformTarget existing = platformTargets.get(androidVersion);
+                        if (existing == null ||
+                                p.getPath().equals(DetailsTypes.getPlatformPath(androidVersion))) {
+                            if (existing != null) {
+                                tempTargetToPackage.remove(existing);
+                            }
+                            platformTargets.put(androidVersion, target);
+                            tempTargetToPackage.put(target, p);
+                        }
                     } catch (IllegalArgumentException e) {
                         newErrors.put(p.getPath(), e.getMessage());
                     }
                 }
             }
+            Map<LocalPackage, IAndroidTarget> result = Maps.newTreeMap(TARGET_COMPARATOR);
+            result.putAll(tempTargetToPackage.inverse());
             for (LocalPackage p : manager.getPackages().getLocalPackages().values()) {
                 TypeDetails details = p.getTypeDetails();
                 if (details instanceof DetailsTypes.AddonDetailsType) {
