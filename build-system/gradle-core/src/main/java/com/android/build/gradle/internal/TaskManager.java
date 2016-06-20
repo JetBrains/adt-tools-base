@@ -68,6 +68,7 @@ import com.android.build.gradle.internal.scope.AndroidTaskRegistry;
 import com.android.build.gradle.internal.scope.ConventionMappingHelper;
 import com.android.build.gradle.internal.scope.DefaultGradlePackagingScope;
 import com.android.build.gradle.internal.scope.GlobalScope;
+import com.android.build.gradle.internal.scope.SupplierTask;
 import com.android.build.gradle.internal.scope.TaskConfigAction;
 import com.android.build.gradle.internal.scope.VariantOutputScope;
 import com.android.build.gradle.internal.scope.VariantScope;
@@ -1926,11 +1927,21 @@ public abstract class TaskManager {
                         extractJarsTask,
                         allActionAnchorTask,
                         getResMergingScopes(variantScope),
-                        () -> {
-                            BaseVariantOutputData variantOutput = variantScope.getVariantData()
-                                    .getOutputs().get(0);
-                            return variantOutput.getScope().getVariantScope()
-                                    .getInstantRunManifestOutputFile();
+                        new SupplierTask<File>() {
+                            private final VariantOutputScope variantOutputScope =
+                                    variantScope.getVariantData().getOutputs().get(0).getScope();
+
+                            @Nullable
+                            @Override
+                            public AndroidTask<?> getBuilderTask() {
+                                return variantOutputScope.getManifestProcessorTask();
+                            }
+
+                            @Override
+                            public File get() {
+                                return variantOutputScope.getVariantScope()
+                                        .getInstantRunManifestOutputFile();
+                            }
                         },
                         true /* addResourceVerifier */);
 

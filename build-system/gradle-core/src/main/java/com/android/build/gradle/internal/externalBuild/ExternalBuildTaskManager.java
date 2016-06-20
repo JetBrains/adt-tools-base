@@ -17,6 +17,7 @@
 package com.android.build.gradle.internal.externalBuild;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.build.api.transform.QualifiedContent;
 import com.android.build.gradle.AndroidGradleOptions;
 import com.android.build.gradle.internal.ExtraModelInfo;
@@ -37,6 +38,7 @@ import com.android.build.gradle.internal.pipeline.TransformTask;
 import com.android.build.gradle.internal.scope.AndroidTask;
 import com.android.build.gradle.internal.scope.AndroidTaskRegistry;
 import com.android.build.gradle.internal.scope.PackagingScope;
+import com.android.build.gradle.internal.scope.SupplierTask;
 import com.android.build.gradle.internal.scope.TaskConfigAction;
 import com.android.build.gradle.internal.transforms.DexTransform;
 import com.android.build.gradle.internal.transforms.ExtractJarsTransform;
@@ -141,7 +143,20 @@ class ExternalBuildTaskManager {
                         extractJarsTask,
                         externalBuildAnchorTask,
                         EnumSet.of(QualifiedContent.Scope.PROJECT),
-                        () -> androidManifestFile,
+                        new SupplierTask<File>() {
+                            @Nullable
+                            @Override
+                            public AndroidTask<?> getBuilderTask() {
+                                // no task built the manifest file, it's supplied by the external
+                                // build system.
+                                return null;
+                            }
+
+                            @Override
+                            public File get() {
+                                return androidManifestFile;
+                            }
+                        },
                         false /* addResourceVerifier */);
 
         extractJarsTask.dependsOn(tasks, buildInfoLoaderTask);
@@ -169,8 +184,7 @@ class ExternalBuildTaskManager {
                         AndroidGradleOptions.isUserCacheEnabled(
                                 variantScope.getGlobalScope().getProject()));
 
-        AndroidTask<TransformTask> dexTask =
-                transformManager.addTransform(tasks, variantScope, dexTransform);
+        transformManager.addTransform(tasks, variantScope, dexTransform);
 
         // for now always use the debug key.
         SigningConfig debugSigningConfig = new SigningConfig(BuilderConstants.DEBUG);

@@ -31,6 +31,7 @@ import com.android.build.gradle.internal.pipeline.TransformTask;
 import com.android.build.gradle.internal.scope.AndroidTask;
 import com.android.build.gradle.internal.scope.AndroidTaskRegistry;
 import com.android.build.gradle.internal.scope.InstantRunVariantScope;
+import com.android.build.gradle.internal.scope.SupplierTask;
 import com.android.build.gradle.internal.scope.TransformVariantScope;
 import com.android.build.gradle.internal.transforms.InstantRunDex;
 import com.android.build.gradle.internal.transforms.InstantRunSlicer;
@@ -95,7 +96,7 @@ public class InstantRunTaskManager {
             AndroidTask<?> preTask,
             AndroidTask<?> anchorTask,
             Set<QualifiedContent.Scope> resMergingScopes,
-            Supplier<File> instantRunMergedManifest,
+            SupplierTask<File> instantRunMergedManifest,
             boolean addResourceVerifier) {
 
         TransformVariantScope transformVariantScope = variantScope.getTransformVariantScope();
@@ -178,6 +179,12 @@ public class InstantRunTaskManager {
                 .setJar(generateInstantRunAppInfoTask.getOutputFile())
                 .setDependency(generateInstantRunAppInfoTask)
                 .build());
+
+        // add a dependency on the manifest merger for the appInfo generation as it uses its output
+        // the manifest merger task may be null depending if an external build system or Gradle
+        // is used.
+        generateAppInfoAndroidTask.optionalDependsOn(
+                tasks, instantRunMergedManifest.getBuilderTask());
 
         anchorTask.dependsOn(tasks, instantRunTask);
 
