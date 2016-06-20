@@ -78,12 +78,14 @@ $modelBefore
         compileSdkVersion $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
         buildToolsVersion "$GradleTestProject.DEFAULT_BUILD_TOOL_VERSION"
         defaultConfig {
-          ndkBuild {
-            arguments.addAll("NDK_TOOLCHAIN_VERSION:=clang")
-            targets.addAll("mylibrary2")
-            cFlags.addAll("-DTEST_C_FLAG", "-DTEST_C_FLAG_2")
-            cppFlags.addAll("-DTEST_CPP_FLAG")
-            abiFilters.addAll("armeabi-v7a", "armeabi", "x86", "x86_64")
+          externalNativeBuild {
+            ndkBuild {
+              arguments.addAll("NDK_TOOLCHAIN_VERSION:=clang")
+              targets.addAll("mylibrary2")
+              cFlags.addAll("-DTEST_C_FLAG", "-DTEST_C_FLAG_2")
+              cppFlags.addAll("-DTEST_CPP_FLAG")
+              abiFilters.addAll("armeabi-v7a", "armeabi", "x86", "x86_64")
+            }
           }
         }
         externalNativeBuild {

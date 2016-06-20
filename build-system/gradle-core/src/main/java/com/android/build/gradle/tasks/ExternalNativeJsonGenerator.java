@@ -39,6 +39,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.io.Files;
 
+import org.apache.tools.ant.taskdefs.Move;
 import org.gradle.api.GradleException;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.Optional;
@@ -357,10 +358,12 @@ public abstract class ExternalNativeJsonGenerator {
         switch(buildSystem) {
             case NDK_BUILD: {
                 CoreExternalNativeNdkBuildOptions options =
-                        variantConfig.getExternalNativeNdkBuildOptions();
+                        variantConfig.getExternalNativeBuildOptions()
+                                .getExternalNativeNdkBuildOptions();
                 return new NdkBuildExternalNativeJsonGenerator(
                         variantData.getName(),
-                        ExternalNativeBuildTaskUtils.getAbiFilters(options.getAbiFilters()),
+                        ExternalNativeBuildTaskUtils.getAbiFilters(
+                                options.getAbiFilters()),
                         androidBuilder,
                         sdkHandler.getSdkFolder(),
                         sdkHandler.getNdkFolder(),
@@ -375,11 +378,13 @@ public abstract class ExternalNativeJsonGenerator {
             }
             case CMAKE: {
                 CoreExternalNativeCmakeOptions options =
-                        variantConfig.getExternalNativeCmakeOptions();
+                        variantConfig.getExternalNativeBuildOptions()
+                                .getExternalNativeCmakeOptions();
                 return new CmakeExternalNativeJsonGenerator(
                         sdkHandler.getSdkFolder(),
                         variantData.getName(),
-                        ExternalNativeBuildTaskUtils.getAbiFilters(options.getAbiFilters()),
+                        ExternalNativeBuildTaskUtils.getAbiFilters(
+                                options.getAbiFilters()),
                         androidBuilder,
                         sdkHandler.getSdkFolder(),
                         sdkHandler.getNdkFolder(),
@@ -391,7 +396,6 @@ public abstract class ExternalNativeJsonGenerator {
                         options.getArguments(),
                         options.getcFlags(),
                         options.getCppFlags());
-
             }
             default:
                 throw new IllegalArgumentException("Unknown ExternalNativeJsonGenerator type");

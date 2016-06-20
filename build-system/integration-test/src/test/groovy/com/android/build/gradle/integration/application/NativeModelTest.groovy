@@ -63,10 +63,12 @@ class NativeModelTest {
                     }
                 }
                 defaultConfig {
-                      ndkBuild {
-                        cFlags "-DTEST_C_FLAG"
-                        cppFlags "-DTEST_CPP_FLAG"
-                      }
+                    externalNativeBuild {
+                        ndkBuild {
+                            cFlags "-DTEST_C_FLAG"
+                            cppFlags "-DTEST_CPP_FLAG"
+                        }
+                    }
                 }
             }
             """, [androidMkC("src/main/cpp")], false, 1, 2, 7, Compiler.GCC, NativeBuildSystem.NDK_BUILD),
@@ -82,10 +84,12 @@ class NativeModelTest {
                     }
                 }
                 defaultConfig {
-                      ndkBuild {
-                        cFlags "-DTEST_C_FLAG"
-                        cppFlags "-DTEST_CPP_FLAG"
-                      }
+                    externalNativeBuild {
+                        ndkBuild {
+                            cFlags "-DTEST_C_FLAG"
+                            cppFlags "-DTEST_CPP_FLAG"
+                        }
+                    }
                 }
             }
             """,
@@ -103,10 +107,12 @@ class NativeModelTest {
                     }
                 }
                 defaultConfig {
-                      ndkBuild {
-                        cFlags "-DTEST_C_FLAG"
-                        cppFlags "-DTEST_CPP_FLAG"
-                      }
+                    externalNativeBuild {
+                        ndkBuild {
+                            cFlags "-DTEST_C_FLAG"
+                            cppFlags "-DTEST_CPP_FLAG"
+                        }
+                    }
                 }
             }
             """, [androidMkGoogleTest("src/main/cpp"),
@@ -132,11 +138,13 @@ class NativeModelTest {
                     }
                 }
                 defaultConfig {
-                      ndkBuild {
-                        arguments "NDK_TOOLCHAIN_VERSION:=clang"
-                        cFlags "-DTEST_C_FLAG"
-                        cppFlags "-DTEST_CPP_FLAG"
-                      }
+                    externalNativeBuild {
+                        ndkBuild {
+                            arguments "NDK_TOOLCHAIN_VERSION:=clang"
+                            cFlags "-DTEST_C_FLAG"
+                            cppFlags "-DTEST_CPP_FLAG"
+                        }
+                    }
                 }
             }
             """, [androidMkCpp("src/main/cpp")], true, 1, 2, 7, Compiler.CLANG,
@@ -153,10 +161,12 @@ class NativeModelTest {
                     }
                 }
                 defaultConfig {
-                      ndkBuild {
-                        cFlags "-DTEST_C_FLAG"
-                        cppFlags "-DTEST_CPP_FLAG"
-                      }
+                    externalNativeBuild {
+                        ndkBuild {
+                            cFlags "-DTEST_C_FLAG"
+                            cppFlags "-DTEST_CPP_FLAG"
+                        }
+                    }
                 }
             }
             """, [androidMkCpp("src/main/cpp"), applicationMk("src/main/cpp")],
@@ -173,18 +183,21 @@ class NativeModelTest {
                     }
                 }
                 defaultConfig {
-                      ndkBuild {
-                        cFlags "-DTEST_C_FLAG"
-                        cppFlags "-DTEST_CPP_FLAG"
-                      }
+                    externalNativeBuild {
+                        ndkBuild {
+                            cFlags "-DTEST_C_FLAG"
+                            cppFlags "-DTEST_CPP_FLAG"
+                        }
+                    }
                 }
-
                 buildTypes {
-                      myCustomBuildType {
+                    myCustomBuildType {
+                         externalNativeBuild {
                           ndkBuild {
                             cppFlags "-DCUSTOM_BUILD_TYPE"
                           }
                       }
+                    }
                 }
             }
             """, [androidMkCpp("src/main/cpp")], true, 1, 3, 7, Compiler.GCC,
@@ -201,10 +214,12 @@ class NativeModelTest {
                     }
                 }
                 defaultConfig {
-                      cmake {
-                        cFlags "-DTEST_C_FLAG"
-                        cppFlags "-DTEST_CPP_FLAG"
-                      }
+                    externalNativeBuild {
+                        cmake {
+                            cFlags "-DTEST_C_FLAG"
+                            cppFlags "-DTEST_CPP_FLAG"
+                        }
+                    }
                 }
             }
             """, [cmakeLists(".")], true, 1, 2, 7, Compiler.GCC,
@@ -221,12 +236,14 @@ class NativeModelTest {
                     }
                 }
                 defaultConfig {
+                    externalNativeBuild {
                       cmake {
                         arguments "-DCMAKE_CXX_FLAGS=-DTEST_CPP_FLAG"
                         cFlags "-DTEST_C_FLAG"
                         abiFilters "armeabi-v7a", "armeabi", "armeabi-v7a with NEON",
                             "armeabi-v7a with VFPV3", "armeabi-v6 with VFP"
                       }
+                    }
                 }
             }
             """, [cmakeLists(".")], true, 1, 2, 5, Compiler.GCC, NativeBuildSystem.CMAKE),
@@ -242,10 +259,12 @@ class NativeModelTest {
                     }
                 }
                 defaultConfig {
+                    externalNativeBuild {
                       cmake {
                         cFlags "-DTEST_C_FLAG"
                         cppFlags "-DTEST_CPP_FLAG"
                       }
+                    }
                 }
             }
             """, [cmakeLists(".")], false, 1, 2, 7, Compiler.GCC,

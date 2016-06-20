@@ -48,11 +48,9 @@ android {
     compileSdkVersion rootProject.latestCompileSdk
     buildToolsVersion = rootProject.buildToolsVersion
 
-    defaultConfig {
-        externalNativeBuild {
-          ndkBuild {
+    externalNativeBuild {
+        ndkBuild {
             path file("src/main/cxx/Android.mk")
-          }
         }
     }
 }

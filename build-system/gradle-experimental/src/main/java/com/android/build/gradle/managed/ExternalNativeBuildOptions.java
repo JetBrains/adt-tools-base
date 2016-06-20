@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 The Android Open Source Project
+ * Copyright (C) 2016 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,31 +14,26 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.internal.dsl;
+package com.android.build.gradle.managed;
 
 import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
-import com.android.builder.model.ProductFlavor;
 
-import org.gradle.api.Named;
+import org.gradle.model.Managed;
 
 /**
- * A product flavor with addition properties for building with Gradle plugin.
+ * DSL object for variant specific external build settings.
  */
-public interface CoreProductFlavor extends ProductFlavor, Named {
-
-    @Nullable
-    CoreNdkOptions getNdkConfig();
-
-    @Nullable
-    CoreExternalNativeBuildOptions getExternalNativeBuildOptions();
-
+@Managed
+public interface ExternalNativeBuildOptions {
+    /**
+     * The ndk-build system settings.
+     */
     @NonNull
-    CoreJackOptions getJackOptions();
+    ExternalNativeNdkBuildOptions getNdkBuild();
 
+    /**
+     * The CMake system settings.
+     */
     @NonNull
-    CoreJavaCompileOptions getJavaCompileOptions();
-
-    @NonNull
-    CoreShaderOptions getShaders();
+    ExternalNativeCmakeOptions getCmake();
 }

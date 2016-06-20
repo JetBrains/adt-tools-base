@@ -57,10 +57,7 @@ public class ProductFlavor extends DefaultProductFlavor implements CoreProductFl
     private final NdkOptions ndkConfig;
 
     @NonNull
-    private final ExternalNativeNdkBuildOptions externalNativeNdkBuildOptions;
-
-    @NonNull
-    private final ExternalNativeCmakeOptions externalNativeCmakeOptions;
+    private final ExternalNativeBuildOptions externalNativeBuildOptions;
 
     @NonNull
     private final ErrorReporter errorReporter;
@@ -85,8 +82,8 @@ public class ProductFlavor extends DefaultProductFlavor implements CoreProductFl
         this.logger = logger;
         this.errorReporter = errorReporter;
         ndkConfig = instantiator.newInstance(NdkOptions.class);
-        externalNativeNdkBuildOptions = instantiator.newInstance(ExternalNativeNdkBuildOptions.class);
-        externalNativeCmakeOptions = instantiator.newInstance(ExternalNativeCmakeOptions.class);
+        externalNativeBuildOptions = instantiator.newInstance(ExternalNativeBuildOptions.class,
+                instantiator);
         jackOptions = instantiator.newInstance(JackOptions.class);
         javaCompileOptions = instantiator.newInstance(JavaCompileOptions.class, instantiator);
         shaderOptions = instantiator.newInstance(ShaderOptions.class);
@@ -98,16 +95,10 @@ public class ProductFlavor extends DefaultProductFlavor implements CoreProductFl
         return ndkConfig;
     }
 
-    @NonNull
+    @Nullable
     @Override
-    public ExternalNativeNdkBuildOptions getExternalNativeNdkBuildOptions() {
-        return externalNativeNdkBuildOptions;
-    }
-
-    @NonNull
-    @Override
-    public ExternalNativeCmakeOptions getExternalNativeCmakeOptions() {
-        return externalNativeCmakeOptions;
+    public CoreExternalNativeBuildOptions getExternalNativeBuildOptions() {
+        return externalNativeBuildOptions;
     }
 
     public void setMinSdkVersion(int minSdkVersion) {
@@ -441,17 +432,10 @@ public class ProductFlavor extends DefaultProductFlavor implements CoreProductFl
     }
 
     /**
-     * Specifies ndk-build options.
+     * Configure native build options.
      */
-    public void ndkBuild(Action<ExternalNativeNdkBuildOptions> action) {
-        action.execute(externalNativeNdkBuildOptions);
-    }
-
-    /**
-     * Specifies cmake options.
-     */
-    public void cmake(Action<ExternalNativeCmakeOptions> action) {
-        action.execute(externalNativeCmakeOptions);
+    public void externalNativeBuild(@NonNull Action<ExternalNativeBuildOptions> action) {
+        action.execute(externalNativeBuildOptions);
     }
 
     /**

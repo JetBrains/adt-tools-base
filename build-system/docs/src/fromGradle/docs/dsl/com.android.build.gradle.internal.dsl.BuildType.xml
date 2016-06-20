@@ -31,10 +31,9 @@
                 <tr><td>Name</td></tr>
             </thead>
             <tr><td>buildConfigField</td></tr>
-            <tr><td>cmake</td></tr>
             <tr><td>consumerProguardFile</td></tr>
             <tr><td>consumerProguardFiles</td></tr>
-            <tr><td>ndkBuild</td></tr>
+            <tr><td>externalNativeBuild</td></tr>
             <tr><td>proguardFile</td></tr>
             <tr><td>proguardFiles</td></tr>
             <tr><td>resValue</td></tr>

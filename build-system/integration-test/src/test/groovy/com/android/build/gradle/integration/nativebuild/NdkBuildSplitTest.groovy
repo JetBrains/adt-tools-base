@@ -58,12 +58,10 @@ android {
     // This actual the app version code. Giving ourselves 100,000 values [0, 99999]
     defaultConfig.versionCode = 123
 
-    defaultConfig {
-        externalNativeBuild {
-          ndkBuild {
-            path file("src/main/cxx/Android.mk")
-          }
-        }
+    externalNativeBuild {
+      ndkBuild {
+        path file("src/main/cxx/Android.mk")
+      }
     }
 
     productFlavors {
@@ -122,7 +120,6 @@ android {
         assertThatApk(project.getApk("current", "debug_mips64")).hasVersionCode(3000123);
         assertThatApk(project.getApk("current", "debug_mips64")).contains("lib/mips64/libhello-jni.so");
     }
-
 
     @Test
     public void checkModel() {

@@ -18,8 +18,7 @@ package com.android.build.gradle.managed.adaptor;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.build.gradle.internal.dsl.CoreExternalNativeCmakeOptions;
-import com.android.build.gradle.internal.dsl.CoreExternalNativeNdkBuildOptions;
+import com.android.build.gradle.internal.dsl.CoreExternalNativeBuildOptions;
 import com.android.build.gradle.internal.dsl.CoreJackOptions;
 import com.android.build.gradle.internal.dsl.CoreJavaCompileOptions;
 import com.android.build.gradle.internal.dsl.CoreNdkOptions;
@@ -184,14 +183,8 @@ public class ProductFlavorAdaptor extends BaseConfigAdaptor implements CoreProdu
 
     @Nullable
     @Override
-    public CoreExternalNativeNdkBuildOptions getExternalNativeNdkBuildOptions() {
-        return new ExternalNativeNdkBuildOptionsAdaptor(productFlavor.getNdkBuild());
-    }
-
-    @Nullable
-    @Override
-    public CoreExternalNativeCmakeOptions getExternalNativeCmakeOptions() {
-        return new ExternalNativeCmakeOptionsAdaptor(productFlavor.getCmake());
+    public CoreExternalNativeBuildOptions getExternalNativeBuildOptions() {
+        return new ExternalNativeBuildOptionsAdaptor(productFlavor.getExternalNativeBuild());
     }
 
     @NonNull
