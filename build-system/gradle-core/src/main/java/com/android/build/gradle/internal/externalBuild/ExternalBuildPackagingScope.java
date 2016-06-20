@@ -81,7 +81,8 @@ public class ExternalBuildPackagingScope implements PackagingScope {
     @NonNull
     @Override
     public File getFinalResourcesFile() {
-        return mProject.file(mBuildManifest.getResourceApk().getExecRootPath());
+        return new File(mExternalBuildContext.getExecutionRoot(),
+                mBuildManifest.getResourceApk().getExecRootPath());
     }
 
     @NonNull

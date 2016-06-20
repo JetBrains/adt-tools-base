@@ -21,6 +21,7 @@ import com.android.annotations.Nullable;
 import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.BuildToolInfo;
 import com.android.sdklib.IAndroidTarget;
+import com.google.common.collect.ImmutableList;
 
 import java.io.File;
 import java.util.Collections;
@@ -41,7 +42,7 @@ class ExternalBuildAndroidTarget implements IAndroidTarget {
 
     @Override
     public String getLocation() {
-        return mAndroidJar.getAbsolutePath();
+        return mAndroidJar.getParentFile().getAbsolutePath();
     }
 
     @Override
@@ -118,7 +119,7 @@ class ExternalBuildAndroidTarget implements IAndroidTarget {
     @NonNull
     @Override
     public List<String> getBootClasspath() {
-        return Collections.emptyList();
+        return ImmutableList.of(mAndroidJar.getAbsolutePath());
     }
 
     @NonNull

@@ -86,10 +86,6 @@ public class ExternalBuildPluginTest {
         IAndroidTarget target = SdkHelper.getTarget(23);
         assertThat(target).isNotNull();
 
-
-        File resourceFile = sProject.file("resources.ap_");
-        File manifest = sProject.file("AndroidManifest.xml");
-
         ApkManifest.Builder apkManifest =
                 ApkManifest.newBuilder()
                         .setAndroidSdk(ExternalBuildApkManifest.AndroidSdk.newBuilder()
@@ -100,9 +96,9 @@ public class ExternalBuildPluginTest {
                                 .setAapt(target.getBuildToolInfo().getPath(
                                         BuildToolInfo.PathId.AAPT)))
                         .setResourceApk(ExternalBuildApkManifest.Artifact.newBuilder()
-                                .setExecRootPath(resourceFile.getAbsolutePath()))
+                                .setExecRootPath("resources.ap_"))
                         .setAndroidManifest(ExternalBuildApkManifest.Artifact.newBuilder()
-                                .setExecRootPath(manifest.getAbsolutePath()));
+                                .setExecRootPath("AndroidManifest.xml"));
 
         List<String> jarFiles = new FileNameFinder().getFileNames(
                 sProject.getTestDir().getAbsolutePath(), "**/*.jar");

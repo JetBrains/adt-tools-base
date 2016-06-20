@@ -26,6 +26,7 @@ import com.android.build.gradle.internal.scope.TransformGlobalScope;
 import com.android.build.gradle.internal.scope.TransformVariantScope;
 import com.android.builder.core.ManifestAttributeSupplier;
 import com.android.builder.model.AaptOptions;
+import com.android.sdklib.IAndroidTarget;
 import com.android.utils.FileUtils;
 import com.android.utils.StringHelper;
 import com.google.common.collect.ImmutableList;
@@ -99,9 +100,14 @@ import java.util.Collections;
     @NonNull
     @Override
     public ImmutableList<File> getInstantRunBootClasspath() {
-        // TODO: Use target device platform jar instead.
-        return ImmutableList.of(
-                new File(externalBuildContext.getBuildManifest().getAndroidSdk().getAndroidJar()));
+        IAndroidTarget target = externalBuildContext.getAndroidBuilder().getTarget();
+        ImmutableList.Builder<File> fileListBuilder = ImmutableList.builder();
+        if (target != null) {
+            for (String classpathElement : target.getBootClasspath()) {
+                fileListBuilder.add(new File(classpathElement));
+            }
+        }
+        return fileListBuilder.build();
     }
 
     @NonNull

@@ -111,7 +111,7 @@ class ExternalBuildTaskManager {
 
         ExternalBuildGlobalScope globalScope = new ExternalBuildGlobalScope(project);
         File androidManifestFile =
-                project.file(
+                new File(externalBuildContext.getExecutionRoot(),
                         externalBuildContext
                                 .getBuildManifest()
                                 .getAndroidManifest()

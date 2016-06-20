@@ -72,11 +72,13 @@ public class ExternalBuildManifestLoader {
                 .collect(Collectors.toList());
         externalBuildContext.setInputJarFiles(jarFiles);
 
-        externalBuildContext.setAndroidBuilder(createAndroidBuilder(project, manifest));
+        externalBuildContext.setAndroidBuilder(
+                createAndroidBuilder(execRootFile, project, manifest));
     }
 
     @NonNull
     private static AndroidBuilder createAndroidBuilder(
+            @NonNull File executionRoot,
             @NonNull Project project,
             @NonNull ExternalBuildApkManifest.ApkManifest manifest) {
         ExternalBuildApkManifest.AndroidSdk sdk = manifest.getAndroidSdk();
@@ -87,12 +89,13 @@ public class ExternalBuildManifestLoader {
                 ImmutableMap.of(
                         // TODO: Put dx.jar in the proto
                         BuildToolInfo.PathId.DX_JAR,
-                        project.file(sdk.getDx()),
+                        getAbsoluteFile(executionRoot, sdk.getDx()),
                         BuildToolInfo.PathId.AAPT,
-                        project.file(sdk.getAapt())));
+                        getAbsoluteFile(executionRoot, sdk.getAapt())));
 
         IAndroidTarget androidTarget =
-                new ExternalBuildAndroidTarget(project.file(sdk.getAndroidJar()));
+                new ExternalBuildAndroidTarget(
+                        getAbsoluteFile(executionRoot, sdk.getAndroidJar()));
 
         TargetInfo targetInfo = new TargetInfo(androidTarget, buildToolInfo);
 
@@ -107,5 +110,12 @@ public class ExternalBuildManifestLoader {
 
         androidBuilder.setTargetInfo(targetInfo);
         return androidBuilder;
+    }
+
+    private static File getAbsoluteFile(File executionRoot, String relativeOrAbsoluteFilePath) {
+        File relativeOrAbsoluteFile = new File(relativeOrAbsoluteFilePath);
+        return relativeOrAbsoluteFile.isAbsolute()
+                ? relativeOrAbsoluteFile
+                : new File(executionRoot, relativeOrAbsoluteFilePath);
     }
 }
