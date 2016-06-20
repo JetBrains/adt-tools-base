@@ -313,6 +313,7 @@ public class ApiDetector extends ResourceXmlDetector
                     Scope.RESOURCE_FILE_SCOPE));
 
     private static final String TARGET_API_VMSIG = '/' + TARGET_API + ';';
+    private static final String REQ_API_VMSIG = "/RequiresApi;";
     private static final String SWITCH_TABLE_PREFIX = "$SWITCH_TABLE$";  //$NON-NLS-1$
     private static final String ORDINAL_METHOD = "ordinal"; //$NON-NLS-1$
     public static final String ENUM_SWITCH_PREFIX = "$SwitchMap$";  //$NON-NLS-1$
@@ -1460,10 +1461,25 @@ public class ApiDetector extends ResourceXmlDetector
                     if (annotation.values != null) {
                         for (int i = 0, n = annotation.values.size(); i < n; i += 2) {
                             String key = (String) annotation.values.get(i);
-                            if (key.equals("value")) {  //$NON-NLS-1$
+                            if (key.equals(ATTR_VALUE)) {  //$NON-NLS-1$
                                 Object value = annotation.values.get(i + 1);
                                 if (value instanceof Integer) {
                                     return (Integer) value;
+                                }
+                            }
+                        }
+                    }
+                } else if (desc.endsWith(REQ_API_VMSIG)) {
+                    if (annotation.values != null) {
+                        for (int i = 0, n = annotation.values.size(); i < n; i += 2) {
+                            String key = (String) annotation.values.get(i);
+                            if (key.equals(ATTR_VALUE) || key.equals("api")) {
+                                Object value = annotation.values.get(i + 1);
+                                if (value instanceof Integer) {
+                                    int api = (Integer) value;
+                                    if (api > 1) {
+                                        return api;
+                                    }
                                 }
                             }
                         }
@@ -1875,6 +1891,11 @@ public class ApiDetector extends ResourceXmlDetector
                 if (REQUIRES_API_ANNOTATION.equals(annotation.getQualifiedName())) {
                     int api = (int) SupportAnnotationDetector.getLongAttribute(annotation,
                         ATTR_VALUE, -1);
+                    if (api <= 1) {
+                        // @RequiresApi has two aliasing attributes: api and value
+                        api = (int) SupportAnnotationDetector.getLongAttribute(annotation,
+                                "api", -1);
+                    }
                     int minSdk = getMinSdk(mContext);
                     if (api > minSdk) {
                         int target = getTargetApi(expression);
@@ -2155,7 +2176,9 @@ public class ApiDetector extends ResourceXmlDetector
 
         for (PsiAnnotation annotation : modifierList.getAnnotations()) {
             String fqcn = annotation.getQualifiedName();
-            if (fqcn != null && (fqcn.equals(FQCN_TARGET_API) || fqcn.equals(REQUIRES_API_ANNOTATION)
+            if (fqcn != null &&
+                    (fqcn.equals(FQCN_TARGET_API)
+                    || fqcn.equals(REQUIRES_API_ANNOTATION)
                     || fqcn.equals(TARGET_API))) { // when missing imports
                 PsiAnnotationParameterList parameterList = annotation.getParameterList();
                 for (PsiNameValuePair pair : parameterList.getAttributes()) {

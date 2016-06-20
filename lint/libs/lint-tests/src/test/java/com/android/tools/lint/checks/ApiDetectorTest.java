@@ -28,6 +28,7 @@ import com.android.builder.model.AndroidProject;
 import com.android.repository.Revision;
 import com.android.sdklib.BuildToolInfo;
 import com.android.sdklib.SdkVersionInfo;
+import com.android.testutils.SdkTestCase;
 import com.android.tools.lint.detector.api.Context;
 import com.android.tools.lint.detector.api.Detector;
 import com.android.tools.lint.detector.api.Issue;
@@ -38,8 +39,25 @@ import com.android.tools.lint.detector.api.Severity;
 import java.io.File;
 import java.util.regex.Pattern;
 
-@SuppressWarnings("javadoc")
+@SuppressWarnings({"javadoc", "ClassNameDiffersFromFileName"})
 public class ApiDetectorTest extends AbstractCheckTest {
+
+    private TestFile mRequiresApi = java("src/annotation/support/annotation/RequiresApi.java", ""
+            + "package android.support.annotation;\n"
+            + "\n"
+            + "import java.lang.annotation.Retention;\n"
+            + "import java.lang.annotation.Target;\n"
+            + "\n"
+            + "import static java.lang.annotation.ElementType.*;\n"
+            + "import static java.lang.annotation.RetentionPolicy.*;\n"
+            + "\n"
+            + "@Retention(SOURCE)\n"
+            + "@Target({TYPE,METHOD,CONSTRUCTOR,FIELD})\n"
+            + "public @interface RequiresApi {\n"
+            + "    int value() default 1;\n"
+            + "    int api() default 1;\n"
+            + "}");
+
     @Override
     protected Detector getDetector() {
         return new ApiDetector();
@@ -2187,6 +2205,33 @@ public class ApiDetectorTest extends AbstractCheckTest {
     }
 
     @SuppressWarnings("all") // sample code
+    public void testRequiresApiAsTargetApi() throws Exception {
+        assertEquals("No warnings.",
+                lintProject(
+                        manifest().minSdk(15),
+                        java("src/test/pkg/ApiDetectorTest2.java", ""
+                                + "package test.pkg;\n"
+                                + "\n"
+                                + "import android.location.LocationManager;\n"
+                                + "import android.support.annotation.RequiresApi;\n"
+                                + "\n"
+                                + "@SuppressWarnings({\"FieldCanBeLocal\", \"unused\"})\n"
+                                + "public class ApiDetectorTest2 {\n"
+                                + "public enum HealthChangeHandler {\n"
+                                + "    @RequiresApi(api=19)\n"
+                                + "    LOCATION_MODE_CHANGED(LocationManager.MODE_CHANGED_ACTION) {\n"
+                                + "        @Override String toString() { return super.toString(); }\n"
+                                + "};\n"
+                                + "\n"
+                                + "    HealthChangeHandler(String mode) {\n"
+                                + "    }\n"
+                                + "}\n"
+                                + "}"),
+                        mRequiresApi
+                ));
+    }
+
+    @SuppressWarnings("all") // sample code
     public void testRequiresApi() throws Exception {
         assertEquals(""
                 + "src/test/pkg/TestRequiresApi.java:9: Error: Call requires API level 21 (current min is 15): LollipopClass [NewApi]\n"
@@ -2225,20 +2270,7 @@ public class ApiDetectorTest extends AbstractCheckTest {
                                 + "        }\n"
                                 + "    }\n"
                                 + "}\n"),
-                        java("src/annotation/support/annotation/RequiresApi.java", ""
-                                + "package android.support.annotation;\n"
-                                + "\n"
-                                + "import java.lang.annotation.Retention;\n"
-                                + "import java.lang.annotation.Target;\n"
-                                + "\n"
-                                + "import static java.lang.annotation.ElementType.*;\n"
-                                + "import static java.lang.annotation.RetentionPolicy.*;\n"
-                                + "\n"
-                                + "@Retention(SOURCE)\n"
-                                + "@Target({TYPE,METHOD,CONSTRUCTOR,FIELD})\n"
-                                + "public @interface RequiresApi {\n"
-                                + "    int value();\n"
-                                + "}")
+                        mRequiresApi
                 ));
     }
 
