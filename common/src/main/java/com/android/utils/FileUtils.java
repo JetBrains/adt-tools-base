@@ -169,6 +169,37 @@ public final class FileUtils {
     }
 
     /**
+     * Makes a copy of the directory's content, in the specified location, while maintaining the
+     * directory structure. So the entire directory tree from the source will be copied.
+     *
+     * @param from directory from which the content is copied
+     * @param to destination directory, will be created if does not exist
+     */
+    public static void copyDirectoryContentToDirectory(
+            @NonNull final File from, @NonNull final File to) throws IOException {
+        Preconditions.checkArgument(from.isDirectory(), "Source path is not a directory.");
+
+        File[] children = from.listFiles();
+        if (children != null) {
+            for (File f : children) {
+                if (f.isDirectory()) {
+                    File destination = new File(to, relativePath(f, from));
+                    Files.createParentDirs(destination);
+                    mkdirs(destination);
+
+                    copyDirectoryContentToDirectory(f, destination);
+                } else if (f.isFile()) {
+                    File destination = new File(to, relativePath(f.getParentFile(), from));
+                    Files.createParentDirs(destination);
+                    mkdirs(destination);
+
+                    copyFileToDirectory(f, destination);
+                }
+            }
+        }
+    }
+
+    /**
      * Creates a directory, if it doesn't exist.
      *
      * @param folder the directory to create, may already exist

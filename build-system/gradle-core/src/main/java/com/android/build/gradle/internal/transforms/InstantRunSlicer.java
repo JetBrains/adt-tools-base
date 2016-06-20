@@ -364,7 +364,8 @@ public class InstantRunSlicer extends Transform {
                         case CHANGED:
                             Files.createParentDirs(outputFile);
                             if (fileToProcess.isDirectory()) {
-                                FileUtils.copyDirectoryToDirectory(fileToProcess, outputFile);
+                                FileUtils.copyDirectoryContentToDirectory(
+                                        fileToProcess, outputFile);
                             } else {
                                 Files.copy(fileToProcess, outputFile);
                             }
