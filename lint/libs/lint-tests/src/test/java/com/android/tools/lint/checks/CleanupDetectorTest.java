@@ -514,4 +514,22 @@ public class CleanupDetectorTest extends AbstractCheckTest {
                                 + "    }\n"
                                 + "}")));
     }
+
+    @SuppressWarnings("ALL") // sample code with warnings
+    public void testCommitNow() throws Exception {
+        assertEquals("No warnings.",
+                lintProject(
+                        java("src/test/pkg/CommitTest.java", ""
+                                + "package test.pkg;\n"
+                                + "\n"
+                                + "import android.app.FragmentManager;\n"
+                                + "import android.app.FragmentTransaction;\n"
+                                + "\n"
+                                + "public class CommitTest {\n"
+                                + "    public void select(FragmentManager fragmentManager) {\n"
+                                + "        FragmentTransaction trans = fragmentManager.beginTransaction().disallowAddToBackStack();\n"
+                                + "        trans.commitNow();\n"
+                                + "    }"
+                                + "}")));
+    }
 }

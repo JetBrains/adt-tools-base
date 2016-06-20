@@ -128,6 +128,7 @@ public class CleanupDetector extends Detector implements JavaPsiScanner {
     private static final String OBTAIN_STYLED_ATTRIBUTES = "obtainStyledAttributes";  //$NON-NLS-1$
     private static final String BEGIN_TRANSACTION = "beginTransaction";               //$NON-NLS-1$
     private static final String COMMIT = "commit";                                    //$NON-NLS-1$
+    private static final String COMMIT_NOW = "commitNow";                             //$NON-NLS-1$
     private static final String APPLY = "apply";                                      //$NON-NLS-1$
     private static final String COMMIT_ALLOWING_LOSS = "commitAllowingStateLoss";     //$NON-NLS-1$
     private static final String QUERY = "query";                                      //$NON-NLS-1$
@@ -449,7 +450,9 @@ public class CleanupDetector extends Detector implements JavaPsiScanner {
             @NonNull PsiMethodCallExpression call) {
 
         String methodName = call.getMethodExpression().getReferenceName();
-        return (COMMIT.equals(methodName) || COMMIT_ALLOWING_LOSS.equals(methodName)) &&
+        return (COMMIT.equals(methodName)
+                    || COMMIT_ALLOWING_LOSS.equals(methodName)
+                    || COMMIT_NOW.equals(methodName)) &&
                 isMethodOnFragmentClass(context, call,
                         FRAGMENT_TRANSACTION_CLS,
                         FRAGMENT_TRANSACTION_V4_CLS,
