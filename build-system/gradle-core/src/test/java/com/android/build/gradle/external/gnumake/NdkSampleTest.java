@@ -267,6 +267,13 @@ public class NdkSampleTest {
     }
 
     @Test
+    public void ccache_example() throws IOException, InterruptedException {
+        // CCache is turned on in ndk build by setting NDK_CCACHE to a path to ccache
+        // executable.
+        checkJson("samples/ccache");
+    }
+
+    @Test
     public void google_test_example() throws IOException, InterruptedException {
         checkJson("samples/google-test-example");
     }
