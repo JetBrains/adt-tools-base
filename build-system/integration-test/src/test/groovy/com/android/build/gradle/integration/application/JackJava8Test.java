@@ -81,7 +81,7 @@ public class JackJava8Test {
                 project.getBuildFile(),
                 "android {\n"
                         + "    buildToolsVersion '" + GradleTestProject.UPCOMING_BUILD_TOOL_VERSION + "'\n"
-                        + "    compileSdkVersion 'android-N'\n"
+                        + "    compileSdkVersion 'android-24'\n"
                         + "    defaultConfig {\n"
                         + minSdkVersionSpec
                         + "        jackOptions {\n"
