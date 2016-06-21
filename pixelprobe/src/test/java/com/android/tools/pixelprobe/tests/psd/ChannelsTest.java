@@ -27,7 +27,7 @@ import java.io.IOException;
 public class ChannelsTest {
     @Test
     public void bitmap() throws IOException {
-        Image image = ImageUtils.loadImage("bitmap.psd");
+        Image image = ImageUtils.loadImage("psd/bitmap.psd");
         Assert.assertFalse(image.getMergedImage().getColorModel().hasAlpha());
         Assert.assertEquals(Transparency.OPAQUE, image.getMergedImage().getTransparency());
         Assert.assertEquals(3, image.getMergedImage().getColorModel().getNumComponents());
@@ -35,7 +35,7 @@ public class ChannelsTest {
 
     @Test
     public void cmyk() throws IOException {
-        Image image = ImageUtils.loadImage("cmyk.psd");
+        Image image = ImageUtils.loadImage("psd/cmyk.psd");
         Assert.assertFalse(image.getMergedImage().getColorModel().hasAlpha());
         Assert.assertEquals(Transparency.OPAQUE, image.getMergedImage().getTransparency());
         Assert.assertEquals(4, image.getMergedImage().getColorModel().getNumComponents());
@@ -43,7 +43,7 @@ public class ChannelsTest {
 
     @Test
     public void cmykAlpha() throws IOException {
-        Image image = ImageUtils.loadImage("cmyk_alpha.psd");
+        Image image = ImageUtils.loadImage("psd/cmyk_alpha.psd");
         Assert.assertTrue(image.getMergedImage().getColorModel().hasAlpha());
         Assert.assertEquals(Transparency.TRANSLUCENT, image.getMergedImage().getTransparency());
         Assert.assertEquals(5, image.getMergedImage().getColorModel().getNumComponents());
@@ -51,7 +51,7 @@ public class ChannelsTest {
 
     @Test
     public void duotone() throws IOException {
-        Image image = ImageUtils.loadImage("duotone.psd");
+        Image image = ImageUtils.loadImage("psd/duotone.psd");
         Assert.assertFalse(image.getMergedImage().getColorModel().hasAlpha());
         Assert.assertEquals(Transparency.OPAQUE, image.getMergedImage().getTransparency());
         Assert.assertEquals(1, image.getMergedImage().getColorModel().getNumComponents());
@@ -59,7 +59,7 @@ public class ChannelsTest {
 
     @Test
     public void duotoneAlpha() throws IOException {
-        Image image = ImageUtils.loadImage("duotone_alpha.psd");
+        Image image = ImageUtils.loadImage("psd/duotone_alpha.psd");
         Assert.assertTrue(image.getMergedImage().getColorModel().hasAlpha());
         Assert.assertEquals(Transparency.TRANSLUCENT, image.getMergedImage().getTransparency());
         Assert.assertEquals(2, image.getMergedImage().getColorModel().getNumComponents());
@@ -67,7 +67,7 @@ public class ChannelsTest {
 
     @Test
     public void grayscale() throws IOException {
-        Image image = ImageUtils.loadImage("grayscale.psd");
+        Image image = ImageUtils.loadImage("psd/grayscale.psd");
         Assert.assertFalse(image.getMergedImage().getColorModel().hasAlpha());
         Assert.assertEquals(Transparency.OPAQUE, image.getMergedImage().getTransparency());
         Assert.assertEquals(1, image.getMergedImage().getColorModel().getNumComponents());
@@ -75,7 +75,7 @@ public class ChannelsTest {
 
     @Test
     public void grayscaleAlpha() throws IOException {
-        Image image = ImageUtils.loadImage("grayscale_alpha.psd");
+        Image image = ImageUtils.loadImage("psd/grayscale_alpha.psd");
         Assert.assertTrue(image.getMergedImage().getColorModel().hasAlpha());
         Assert.assertEquals(Transparency.TRANSLUCENT, image.getMergedImage().getTransparency());
         Assert.assertEquals(2, image.getMergedImage().getColorModel().getNumComponents());
@@ -83,7 +83,7 @@ public class ChannelsTest {
 
     @Test
     public void indexed() throws IOException {
-        Image image = ImageUtils.loadImage("indexed.psd");
+        Image image = ImageUtils.loadImage("psd/indexed.psd");
         Assert.assertFalse(image.getMergedImage().getColorModel().hasAlpha());
         Assert.assertEquals(Transparency.OPAQUE, image.getMergedImage().getTransparency());
         Assert.assertEquals(3, image.getMergedImage().getColorModel().getNumComponents());
@@ -91,7 +91,7 @@ public class ChannelsTest {
 
     @Test
     public void indexedAlpha() throws IOException {
-        Image image = ImageUtils.loadImage("indexed_alpha.psd");
+        Image image = ImageUtils.loadImage("psd/indexed_alpha.psd");
         Assert.assertTrue(image.getMergedImage().getColorModel().hasAlpha());
         Assert.assertEquals(Transparency.BITMASK, image.getMergedImage().getTransparency());
         Assert.assertEquals(4, image.getMergedImage().getColorModel().getNumComponents());
@@ -99,7 +99,7 @@ public class ChannelsTest {
 
     @Test
     public void lab() throws IOException {
-        Image image = ImageUtils.loadImage("lab.psd");
+        Image image = ImageUtils.loadImage("psd/lab.psd");
         Assert.assertFalse(image.getMergedImage().getColorModel().hasAlpha());
         Assert.assertEquals(Transparency.OPAQUE, image.getMergedImage().getTransparency());
         Assert.assertEquals(3, image.getMergedImage().getColorModel().getNumComponents());
@@ -107,7 +107,7 @@ public class ChannelsTest {
 
     @Test
     public void labAlpha() throws IOException {
-        Image image = ImageUtils.loadImage("lab_alpha.psd");
+        Image image = ImageUtils.loadImage("psd/lab_alpha.psd");
         Assert.assertTrue(image.getMergedImage().getColorModel().hasAlpha());
         Assert.assertEquals(Transparency.TRANSLUCENT, image.getMergedImage().getTransparency());
         Assert.assertEquals(4, image.getMergedImage().getColorModel().getNumComponents());
@@ -115,7 +115,7 @@ public class ChannelsTest {
 
     @Test
     public void rgb() throws IOException {
-        Image image = ImageUtils.loadImage("rgb.psd");
+        Image image = ImageUtils.loadImage("psd/rgb.psd");
         Assert.assertFalse(image.getMergedImage().getColorModel().hasAlpha());
         Assert.assertEquals(Transparency.OPAQUE, image.getMergedImage().getTransparency());
         Assert.assertEquals(3, image.getMergedImage().getColorModel().getNumComponents());
@@ -123,7 +123,7 @@ public class ChannelsTest {
 
     @Test
     public void rgbAlpha() throws IOException {
-        Image image = ImageUtils.loadImage("rgb_alpha.psd");
+        Image image = ImageUtils.loadImage("psd/rgb_alpha.psd");
         Assert.assertTrue(image.getMergedImage().getColorModel().hasAlpha());
         Assert.assertEquals(Transparency.TRANSLUCENT, image.getMergedImage().getTransparency());
         Assert.assertEquals(4, image.getMergedImage().getColorModel().getNumComponents());

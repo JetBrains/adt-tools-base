@@ -38,6 +38,28 @@ public final class TextInfo {
     private final List<ParagraphRun> paragraphRuns;
 
     /**
+     * Different types of alignments for paragraphs.
+     */
+    public enum Alignment {
+        /**
+         * The paragraph is left-aligned.
+         */
+        LEFT,
+        /**
+         * The paragraph is right-aligned.
+         */
+        RIGHT,
+        /**
+         * The paragraph is centered.
+         */
+        CENTER,
+        /**
+         * The paragraph is justified.
+         */
+        JUSTIFY
+    }
+
+    /**
      * A run represents a range of characters in a string.
      */
     public static abstract class Run {
@@ -83,7 +105,7 @@ public final class TextInfo {
     public static final class StyleRun extends Run {
         private final String font;
         private final float fontSize;
-        private final Color color;
+        private final Paint paint;
         private final float tracking;
 
         StyleRun(Builder builder) {
@@ -91,7 +113,7 @@ public final class TextInfo {
 
             font = builder.font;
             fontSize = builder.fontSize;
-            color = builder.color;
+            paint = builder.paint;
             tracking = builder.tracking;
         }
 
@@ -112,10 +134,10 @@ public final class TextInfo {
         }
 
         /**
-         * Returns the color of this run.
+         * Returns the paint of this run.
          */
-        public Color getColor() {
-            return color;
+        public Paint getPaint() {
+            return paint;
         }
 
         /**
@@ -132,7 +154,7 @@ public final class TextInfo {
 
             String font = "arial";
             float fontSize = 12.0f;
-            Color color = Color.BLACK;
+            Paint paint = Color.BLACK;
             float tracking = 0.0f;
 
             public Builder(int start, int end) {
@@ -150,8 +172,8 @@ public final class TextInfo {
                 return this;
             }
 
-            public Builder color(Color color) {
-                this.color = color;
+            public Builder paint(Paint paint) {
+                this.paint = paint;
                 return this;
             }
 
@@ -172,28 +194,6 @@ public final class TextInfo {
      */
     public static final class ParagraphRun extends Run {
         private final Alignment alignment;
-
-        /**
-         * The paragraph justification.
-         */
-        public enum Alignment {
-            /**
-             * The paragraph is left-aligned.
-             */
-            LEFT,
-            /**
-             * The paragraph is right-aligned.
-             */
-            RIGHT,
-            /**
-             * The paragraph is centered.
-             */
-            CENTER,
-            /**
-             * The paragraph is justified.
-             */
-            JUSTIFY
-        }
 
         ParagraphRun(Builder builder) {
             super(builder.start, builder.end);

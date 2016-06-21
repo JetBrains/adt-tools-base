@@ -30,7 +30,7 @@ import java.util.List;
 public class LayerTest {
     @Test
     public void name() throws IOException {
-        Image image = ImageUtils.loadImage("layer_names.psd");
+        Image image = ImageUtils.loadImage("psd/layer_names.psd");
         List<Layer> layers = image.getLayers();
 
         // Test ASCII compatible name
@@ -41,7 +41,7 @@ public class LayerTest {
 
     @Test
     public void types() throws IOException {
-        Image image = ImageUtils.loadImage("layer_types.psd");
+        Image image = ImageUtils.loadImage("psd/layer_types.psd");
 
         List<Layer> layers = image.getLayers();
         Assert.assertEquals(7, layers.size());
@@ -57,7 +57,7 @@ public class LayerTest {
 
     @Test
     public void groups() throws IOException {
-        Image image = ImageUtils.loadImage("groups.psd");
+        Image image = ImageUtils.loadImage("psd/groups.psd");
 
         List<Layer> layers = image.getLayers();
         Assert.assertEquals(3, layers.size());
@@ -75,7 +75,7 @@ public class LayerTest {
 
     @Test
     public void visibility() throws IOException {
-        Image image = ImageUtils.loadImage("visibility.psd");
+        Image image = ImageUtils.loadImage("psd/visibility.psd");
 
         List<Layer> layers = image.getLayers();
         Assert.assertEquals(3, layers.size());
@@ -89,7 +89,7 @@ public class LayerTest {
 
     @Test
     public void blendModes() throws IOException {
-        Image image = ImageUtils.loadImage("blend_modes.psd");
+        Image image = ImageUtils.loadImage("psd/blend_modes.psd");
 
         List<Layer> layers = image.getLayers();
         BlendMode[] modes = BlendMode.values();
@@ -100,7 +100,7 @@ public class LayerTest {
 
     @Test
     public void opacity() throws IOException {
-        Image image = ImageUtils.loadImage("opacity.psd");
+        Image image = ImageUtils.loadImage("psd/opacity.psd");
 
         List<Layer> layers = image.getLayers();
         float[] opacities = { 0.25f, 0.50f, 0.75f, 1.0f };
@@ -111,7 +111,7 @@ public class LayerTest {
 
     @Test
     public void clipBase() throws IOException {
-        Image image = ImageUtils.loadImage("clip_base.psd");
+        Image image = ImageUtils.loadImage("psd/clip_base.psd");
 
         List<Layer> layers = image.getLayers();
 
@@ -122,7 +122,7 @@ public class LayerTest {
 
     @Test
     public void bounds() throws IOException {
-        Image image = ImageUtils.loadImage("bounds.psd");
+        Image image = ImageUtils.loadImage("psd/bounds.psd");
 
         List<Layer> layers = image.getLayers();
 

@@ -33,7 +33,7 @@ public class JpgFormatTest {
 
     @Test
     public void jpg8() throws IOException {
-        Image image = ImageUtils.loadImage("jpg_8_srgb.jpg");
+        Image image = ImageUtils.loadImage("jpg/jpg_8_srgb.jpg");
         Assert.assertNotNull(image.getMergedImage());
         Assert.assertEquals(ColorMode.RGB, image.getColorMode());
         Assert.assertEquals(8, image.getColorDepth());
@@ -45,7 +45,7 @@ public class JpgFormatTest {
 
     @Test
     public void jpg8AdobeRgb() throws IOException {
-        Image image = ImageUtils.loadImage("jpg_8_adobe_rgb.jpg");
+        Image image = ImageUtils.loadImage("jpg/jpg_8_adobe_rgb.jpg");
         Assert.assertNotNull(image.getMergedImage());
         Assert.assertEquals(ColorMode.RGB, image.getColorMode());
         Assert.assertEquals(8, image.getColorDepth());
@@ -59,12 +59,12 @@ public class JpgFormatTest {
     public void jpg8Cmyk() throws IOException {
         // CMYK JPEGs as written by Photoshop are not supported
         thrown.expect(IOException.class);
-        ImageUtils.loadImage("jpg_8_cmyk.jpg");
+        ImageUtils.loadImage("jpg/jpg_8_cmyk.jpg");
     }
 
     @Test
     public void jpg8Gray() throws IOException {
-        Image image = ImageUtils.loadImage("jpg_8_gray.jpg");
+        Image image = ImageUtils.loadImage("jpg/jpg_8_gray.jpg");
         Assert.assertNotNull(image.getMergedImage());
         Assert.assertEquals(ColorMode.GRAYSCALE, image.getColorMode());
         Assert.assertEquals(8, image.getColorDepth());

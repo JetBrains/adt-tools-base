@@ -28,7 +28,7 @@ import java.io.IOException;
 public class ColorModeTest {
     @Test
     public void bitmap() throws IOException {
-        Image image = ImageUtils.loadImage("bitmap.psd");
+        Image image = ImageUtils.loadImage("psd/bitmap.psd");
         Assert.assertEquals(ColorMode.BITMAP, image.getColorMode());
         // Indexed color models are always RGB
         Assert.assertEquals(ColorSpace.TYPE_RGB, image.getColorSpace().getType());
@@ -37,7 +37,7 @@ public class ColorModeTest {
 
     @Test
     public void cmyk() throws IOException {
-        Image image = ImageUtils.loadImage("cmyk.psd");
+        Image image = ImageUtils.loadImage("psd/cmyk.psd");
         Assert.assertEquals(ColorMode.CMYK, image.getColorMode());
         Assert.assertEquals(ColorSpace.TYPE_CMYK, image.getColorSpace().getType());
         Assert.assertEquals(ColorSpace.TYPE_CMYK, colorSpace(image).getType());
@@ -45,7 +45,7 @@ public class ColorModeTest {
 
     @Test
     public void duotone() throws IOException {
-        Image image = ImageUtils.loadImage("duotone.psd");
+        Image image = ImageUtils.loadImage("psd/duotone.psd");
         Assert.assertEquals(ColorMode.DUOTONE, image.getColorMode());
         // The embedded color space might be different from the merged image's
         Assert.assertEquals(ColorSpace.TYPE_RGB, image.getColorSpace().getType());
@@ -54,7 +54,7 @@ public class ColorModeTest {
 
     @Test
     public void grayscale() throws IOException {
-        Image image = ImageUtils.loadImage("grayscale.psd");
+        Image image = ImageUtils.loadImage("psd/grayscale.psd");
         Assert.assertEquals(ColorMode.GRAYSCALE, image.getColorMode());
         Assert.assertEquals(ColorSpace.TYPE_GRAY, image.getColorSpace().getType());
         Assert.assertEquals(ColorSpace.TYPE_GRAY, colorSpace(image).getType());
@@ -62,7 +62,7 @@ public class ColorModeTest {
 
     @Test
     public void indexed() throws IOException {
-        Image image = ImageUtils.loadImage("indexed.psd");
+        Image image = ImageUtils.loadImage("psd/indexed.psd");
         Assert.assertEquals(ColorMode.INDEXED, image.getColorMode());
         Assert.assertEquals(ColorSpace.TYPE_RGB, image.getColorSpace().getType());
         Assert.assertEquals(ColorSpace.TYPE_RGB, colorSpace(image).getType());
@@ -70,7 +70,7 @@ public class ColorModeTest {
 
     @Test
     public void lab() throws IOException {
-        Image image = ImageUtils.loadImage("lab.psd");
+        Image image = ImageUtils.loadImage("psd/lab.psd");
         Assert.assertEquals(ColorMode.LAB, image.getColorMode());
         // The embedded color space might be different from the merged image's
         Assert.assertEquals(ColorSpace.TYPE_RGB, image.getColorSpace().getType());
@@ -79,7 +79,7 @@ public class ColorModeTest {
 
     @Test
     public void rgb() throws IOException {
-        Image image = ImageUtils.loadImage("rgb.psd");
+        Image image = ImageUtils.loadImage("psd/rgb.psd");
         Assert.assertEquals(ColorMode.RGB, image.getColorMode());
         Assert.assertEquals(ColorSpace.TYPE_RGB, image.getColorSpace().getType());
         Assert.assertEquals(ColorSpace.TYPE_RGB, colorSpace(image).getType());

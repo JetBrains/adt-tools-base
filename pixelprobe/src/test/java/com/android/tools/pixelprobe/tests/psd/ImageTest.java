@@ -31,7 +31,7 @@ import java.util.List;
 public class ImageTest {
     @Test
     public void empty() throws IOException {
-        Image image = ImageUtils.loadImage("empty.psd");
+        Image image = ImageUtils.loadImage("psd/empty.psd");
         Assert.assertNotNull(image.getMergedImage());
 
         List<Layer> layers = image.getLayers();
@@ -43,7 +43,7 @@ public class ImageTest {
 
     @Test
     public void thumbnail() throws IOException {
-        Image image = ImageUtils.loadImage("rgb.psd");
+        Image image = ImageUtils.loadImage("psd/rgb.psd");
         BufferedImage thumbnail = image.getThumbnailImage();
 
         Assert.assertNotNull(thumbnail);
@@ -57,7 +57,7 @@ public class ImageTest {
 
     @Test
     public void dimension() throws IOException {
-        Image image = ImageUtils.loadImage("empty.psd");
+        Image image = ImageUtils.loadImage("psd/empty.psd");
 
         Assert.assertEquals(256, image.getWidth());
         Assert.assertEquals(256, image.getHeight());
@@ -65,12 +65,12 @@ public class ImageTest {
 
     @Test
     public void resolution() throws IOException {
-        Image image = ImageUtils.loadImage("empty.psd");
+        Image image = ImageUtils.loadImage("psd/empty.psd");
 
         Assert.assertEquals(72.0f, image.getHorizontalResolution(), 0.001f);
         Assert.assertEquals(72.0f, image.getVerticalResolution(), 0.001f);
 
-        image = ImageUtils.loadImage("empty_300dpi.psd");
+        image = ImageUtils.loadImage("psd/empty_300dpi.psd");
 
         Assert.assertEquals(300.0f, image.getHorizontalResolution(), 0.001f);
         Assert.assertEquals(300.0f, image.getVerticalResolution(), 0.001f);
@@ -78,7 +78,7 @@ public class ImageTest {
 
     @Test
     public void guides() throws IOException {
-        Image image = ImageUtils.loadImage("guides.psd");
+        Image image = ImageUtils.loadImage("psd/guides.psd");
 
         List<Guide> guides = image.getGuides();
         Assert.assertEquals(14, guides.size());
@@ -104,7 +104,7 @@ public class ImageTest {
     @Test
     public void complex() throws IOException {
         // Load complex PSD files and see if we crash
-        ImageUtils.loadImage("complex1.psd");
-        ImageUtils.loadImage("complex2.psd");
+        ImageUtils.loadImage("psd/complex1.psd");
+        ImageUtils.loadImage("psd/complex2.psd");
     }
 }

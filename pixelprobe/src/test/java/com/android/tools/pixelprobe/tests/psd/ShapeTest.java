@@ -37,7 +37,7 @@ public class ShapeTest {
     public void colorTypes() throws IOException {
         // In this test, the file defines fill colors for various shapes in the
         // following color spaces: Grayscale, Lab, CMYK, HSB and RGB
-        Image image = ImageUtils.loadImage("color_spaces.psd");
+        Image image = ImageUtils.loadImage("psd/color_spaces.psd");
 
         Map<String, Color> convertedColors = new HashMap<>();
         convertedColors.put("Grayscale", new Color(116, 116, 116));
@@ -57,7 +57,7 @@ public class ShapeTest {
 
     @Test
     public void fill() throws IOException {
-        Image image = ImageUtils.loadImage("fill_opacity.psd");
+        Image image = ImageUtils.loadImage("psd/fill_opacity.psd");
 
         Layer layer = image.getLayers().get(0);
         Assert.assertEquals(Layer.Type.SHAPE, layer.getType());
@@ -69,7 +69,7 @@ public class ShapeTest {
 
     @Test
     public void stroke() throws IOException {
-        Image image = ImageUtils.loadImage("stroked_shape.psd");
+        Image image = ImageUtils.loadImage("psd/stroked_shape.psd");
 
         List<Layer> layers = image.getLayers();
         ShapeInfo shape;
@@ -140,7 +140,7 @@ public class ShapeTest {
 
     @Test
     public void pathOps() throws IOException {
-        Image image = ImageUtils.loadImage("path_ops.psd");
+        Image image = ImageUtils.loadImage("psd/path_ops.psd");
 
         List<Layer> layers = image.getLayers();
 
@@ -171,7 +171,7 @@ public class ShapeTest {
 
     @Test
     public void pathTypes() throws IOException {
-        Image image = ImageUtils.loadImage("path_type.psd");
+        Image image = ImageUtils.loadImage("psd/path_type.psd");
 
         List<Layer> layers = image.getLayers();
 
@@ -187,7 +187,7 @@ public class ShapeTest {
         Assert.assertEquals(ShapeInfo.PathType.OPEN, paths.get(0).getType());
         Assert.assertFalse(isClosed(paths));
 
-        image = ImageUtils.loadImage("layer_effect_single_shadow.psd");
+        image = ImageUtils.loadImage("psd/layer_effect_single_shadow.psd");
 
         layers = image.getLayers();
 
