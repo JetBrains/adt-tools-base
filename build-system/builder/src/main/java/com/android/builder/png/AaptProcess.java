@@ -113,7 +113,11 @@ public class AaptProcess {
                     mAaptLocation, SLAVE_AAPT_TIMEOUT_IN_SECONDS));
         }
 
-        mLogger.verbose("Slave %1$s is ready", hashCode());
+        if (mReady.get()) {
+            mLogger.verbose("Slave %1$s is ready", hashCode());
+        } else {
+            mLogger.verbose("Slave %1$s failed to start", hashCode());
+        }
     }
 
     @Override
@@ -237,6 +241,12 @@ public class AaptProcess {
                     mLogger.error(null, "AAPT err(%1$s) : No Delegate set : lost message:%2$s",
                             toString(), line);
                 }
+            }
+            // Even after the aapt error, we should notify the main thread that we are ready.
+            // The error state will be handled there
+            if (!mReadyLatch.isSignalled()) {
+                AaptProcess.this.mReady.set(false);
+                mReadyLatch.signal();
             }
         }
 
