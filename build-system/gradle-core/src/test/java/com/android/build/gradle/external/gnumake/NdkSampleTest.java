@@ -15,11 +15,14 @@
  */
 package com.android.build.gradle.external.gnumake;
 
+import static org.junit.Assert.fail;
+
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.external.gson.NativeBuildConfigValue;
 import com.android.build.gradle.truth.NativeBuildConfigValueSubject;
+import com.android.utils.FileUtils;
 import com.google.common.base.Charsets;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableMap;
@@ -161,19 +164,35 @@ public class NdkSampleTest {
     }
 
     @NonNull
-    private static File getVariantBuildOutputFile(@NonNull File testPath, String variant) {
+    private static File getVariantBuildOutputFile(
+            @NonNull File testPath,
+            @NonNull String variant,
+            int operatingSystem) {
         return new File(
                 THIS_TEST_FOLDER
                         + "support-files/ndk-sample-baselines/"
                         + testPath.getName()
-                        + "." + variant + ".linux.txt");
+                        + "." + variant + "." + getOsName(operatingSystem) + ".txt");
     }
 
     @NonNull
-    private static File getJsonFile(@NonNull File testPath) {
+    private static String getOsName(int os) {
+        switch(os) {
+            case SdkConstants.PLATFORM_LINUX:
+                return "linux";
+            case SdkConstants.PLATFORM_DARWIN:
+                return "darwin";
+            case SdkConstants.PLATFORM_WINDOWS:
+                return "windows";
+            default:
+                return "unknown";
+        }
+    }
+    @NonNull
+    private static File getJsonFile(@NonNull File testPath, int operatingSystem) {
         return new File(
                 THIS_TEST_FOLDER + "support-files/ndk-sample-baselines/"
-                        + testPath.getName() + ".json");
+                        + testPath.getName() + "." + getOsName(operatingSystem) + ".json");
     }
 
     @NonNull
@@ -186,7 +205,13 @@ public class NdkSampleTest {
         return Spawner.spawn(command);
     }
 
+
     private static void checkJson(String path)
+            throws IOException, InterruptedException {
+        checkJson(path, SdkConstants.PLATFORM_LINUX);
+    }
+
+    private static void checkJson(String path, int operatingSystem)
             throws IOException, InterruptedException {
 
         if (isWindows) {
@@ -197,7 +222,7 @@ public class NdkSampleTest {
         Map<String, String> variantConfigs = getVariantConfigs();
 
         // Get the baseline config
-        File baselineJsonFile = getJsonFile(testPath);
+        File baselineJsonFile = getJsonFile(testPath, operatingSystem);
 
         if (REGENERATE_TEST_BASELINES) {
             File directory = new File(THIS_TEST_FOLDER + "support-files/ndk-sample-baselines");
@@ -212,13 +237,13 @@ public class NdkSampleTest {
                         getNdkResult(testPath, variantConfigs.get(variantName));
                 variantBuildOutputText = variantBuildOutputText
                         .replace("\\", "/")
-                        .replace(ndkPath.toString(), "{ndkPath}")
-                        .replace(testPath.toString(), "{testPath}")
+                        .replace(FileUtils.toSystemIndependentPath(ndkPath.getPath()), "{ndkPath}")
+                        .replace(FileUtils.toSystemIndependentPath(testPath.getPath()), "{testPath}")
                         .replace("windows", "{platform}")
                         .replace("linux", "{platform}")
                         .replace("darwin", "{platform}")
                         .replace(THIS_TEST_FOLDER, "{test}");
-                File variantBuildOutputFile = getVariantBuildOutputFile(testPath, variantName);
+                File variantBuildOutputFile = getVariantBuildOutputFile(testPath, variantName, operatingSystem);
                 Files.write(variantBuildOutputText, variantBuildOutputFile, Charsets.UTF_8);
             }
         }
@@ -226,7 +251,7 @@ public class NdkSampleTest {
         // Build the expected result
         NativeBuildConfigValueBuilder builder = new NativeBuildConfigValueBuilder(testPath);
         for (String variantName : variantConfigs.keySet()) {
-            File variantBuildOutputFile = getVariantBuildOutputFile(testPath, variantName);
+            File variantBuildOutputFile = getVariantBuildOutputFile(testPath, variantName, operatingSystem);
             String variantBuildOutputText = Joiner.on('\n')
                     .join(Files.readLines(variantBuildOutputFile, Charsets.UTF_8));
             builder.addCommands("echo build command", variantName, variantBuildOutputText, true);
@@ -281,6 +306,12 @@ public class NdkSampleTest {
     public void san_angeles() throws IOException, InterruptedException {
         checkJson("samples/san-angeles");
     }
+
+    @Test
+    public void san_angeles_windows() throws IOException, InterruptedException {
+        checkJson("samples/san-angeles", SdkConstants.PLATFORM_WINDOWS);
+    }
+
     // input: support-files/ndk-sample-baselines/Teapot.json
     @Test
     public void Teapot() throws IOException, InterruptedException {

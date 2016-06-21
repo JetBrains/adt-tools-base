@@ -21,12 +21,14 @@ import com.android.build.gradle.external.gson.NativeLibraryValue;
 import com.android.build.gradle.external.gson.NativeSourceFileValue;
 import com.android.build.gradle.external.gson.NativeSourceFolderValue;
 import com.android.build.gradle.external.gson.NativeToolchainValue;
+import com.android.utils.FileUtils;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.truth.FailureStrategy;
 import com.google.common.truth.Subject;
 import com.google.common.truth.SubjectFactory;
 
+import java.io.File;
 import java.lang.reflect.Field;
 import java.util.Collections;
 import java.util.List;
@@ -131,7 +133,19 @@ public class NativeBuildConfigValueSubject
             return;
         }
 
-        check().that(actual).named(levelDescription).isEqualTo(expected);
+        if (expected instanceof File) {
+            check().that(actual).isInstanceOf(expected.getClass());
+            check().that(((File) actual).getPath().replace('\\', '/'))
+                    .named(levelDescription)
+                    .isEqualTo(((File) expected).getPath().replace('\\', '/'));
+        } else if (expected instanceof String) {
+            check().that(actual).isInstanceOf(expected.getClass());
+            check().that(((String) actual).replace('\\', '/'))
+                    .named(levelDescription)
+                    .isEqualTo(((String) expected).replace('\\', '/'));
+        } else {
+            check().that(actual).named(levelDescription).isEqualTo(expected);
+        }
     }
 
 }
