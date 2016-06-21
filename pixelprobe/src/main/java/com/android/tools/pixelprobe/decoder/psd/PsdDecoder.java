@@ -696,7 +696,7 @@ public final class PsdDecoder extends Decoder {
             }
         }
 
-        layer.image(bitmap);
+        layer.image(fixBitmap(image, bitmap));
     }
 
     private static void extractHeaderData(Image.Builder image, Header header) {
