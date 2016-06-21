@@ -1356,10 +1356,10 @@ public abstract class TaskManager {
                 VariantType.LIBRARY)) {
             // in this case the tested library must be fully built before test can be built!
             if (testedVariantOutputData.getScope().getAssembleTask() != null) {
-                variantOutputData.getScope().getManifestProcessorTask().dependsOn(
-                        tasks, testedVariantOutputData.getScope().getAssembleTask());
-                variantScope.getMergeResourcesTask().dependsOn(
-                        tasks, testedVariantOutputData.getScope().getAssembleTask());
+                String bundle =
+                        testedVariantOutputData.getScope().getVariantScope().getTaskName("bundle");
+                variantOutputData.getScope().getManifestProcessorTask().dependsOn(tasks, bundle);
+                variantScope.getMergeResourcesTask().dependsOn(tasks, bundle);
             }
         }
 

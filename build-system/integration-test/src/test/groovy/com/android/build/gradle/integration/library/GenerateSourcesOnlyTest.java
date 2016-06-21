@@ -23,7 +23,11 @@ import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldLibraryApp;
 import com.android.build.gradle.integration.common.utils.ModelHelper;
 import com.android.build.gradle.integration.common.utils.TestFileUtils;
+import com.android.builder.model.AndroidArtifact;
 import com.android.builder.model.AndroidProject;
+import com.android.builder.model.JavaArtifact;
+import com.android.builder.model.Variant;
+import com.google.common.collect.Lists;
 
 import org.junit.Before;
 import org.junit.Rule;
@@ -80,18 +84,26 @@ public class GenerateSourcesOnlyTest {
         GradleBuildResult resultWithout = project.executor()
                 .run(generateSources);
 
-        assertThat(resultWithout.getStdout()).doesNotContain("compileDebugJava");
         assertThat(resultWithout.getStdout()).contains("compileReleaseJava");
     }
 
 
     private List<String> getGenerateSourcesCommands () {
-        return project.model().getMulti().entrySet().stream()
-                .map(entry ->
-                        entry.getKey() + ":" +
-                                ModelHelper.getDebugVariant(entry.getValue()).getMainArtifact()
-                                        .getSourceGenTaskName())
-                .collect(Collectors.toList());
+        List<String> commands = Lists.newArrayList();
+        for (Map.Entry<String, AndroidProject> entry: project.model().getMulti().entrySet()) {
+            Variant debug = ModelHelper.getDebugVariant(entry.getValue());
+            commands.add(entry.getKey() + ":" + debug.getMainArtifact().getSourceGenTaskName());
+            for (AndroidArtifact artifact: debug.getExtraAndroidArtifacts()) {
+                commands.add(entry.getKey() + ":" + artifact.getSourceGenTaskName());
+            }
+            for (JavaArtifact artifact: debug.getExtraJavaArtifacts()) {
+                for (String taskName: artifact.getIdeSetupTaskNames()) {
+                    commands.add(entry.getKey() + ":" + taskName);
+                }
+            }
+
+        }
+        return commands;
     }
 
 }
