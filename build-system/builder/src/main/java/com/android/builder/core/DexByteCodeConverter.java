@@ -63,8 +63,7 @@ public class DexByteCodeConverter {
     /**
      * Amount of heap size that an "average" project needs for dexing in-process.
      */
-    @VisibleForTesting
-    static final long DEFAULT_DEX_HEAP_SIZE = 1024 * 1024 * 1024; // 1 GiB
+    private static final long DEFAULT_DEX_HEAP_SIZE = 1024 * 1024 * 1024; // 1 GiB
 
     /**
      * Approximate amount of heap space necessary for non-dexing steps of the build process.
@@ -91,8 +90,8 @@ public class DexByteCodeConverter {
 
     private final boolean mVerboseExec;
     private final JavaProcessExecutor mJavaProcessExecutor;
-    TargetInfo mTargetInfo;
-    ILogger mLogger;
+    private final TargetInfo mTargetInfo;
+    private final ILogger mLogger;
     private Boolean mIsDexInProcess = null;
 
 
@@ -167,7 +166,7 @@ public class DexByteCodeConverter {
             @NonNull final ProcessOutputHandler outputHandler)
             throws IOException, ProcessException {
         final String submission = Joiner.on(',').join(builder.getInputs());
-        mLogger.info("Dexing in-process.");
+        mLogger.info("Dexing in-process : %s", submission);
         try {
             sDexExecutorService.submit(() -> {
                 Stopwatch stopwatch = Stopwatch.createStarted();
@@ -186,20 +185,16 @@ public class DexByteCodeConverter {
             @NonNull final DexOptions dexOptions,
             @NonNull final ProcessOutputHandler processOutputHandler)
             throws ProcessException, InterruptedException {
-        mLogger.info("Dexing out-of-process.");
+        final String submission = Joiner.on(',').join(builder.getInputs());
+        mLogger.info("Dexing out-of-process : %s", submission);
         try {
-            final String submission = Joiner.on(',').join(builder.getInputs());
-
-            Callable<Void> task = new Callable<Void>() {
-                @Override
-                public Void call() throws Exception {
-                    JavaProcessInfo javaProcessInfo =
-                            builder.build(mTargetInfo.getBuildTools(), dexOptions);
-                    ProcessResult result =
-                            mJavaProcessExecutor.execute(javaProcessInfo, processOutputHandler);
-                    result.rethrowFailure().assertNormalExitValue();
-                    return null;
-                }
+            Callable<Void> task = () -> {
+                JavaProcessInfo javaProcessInfo =
+                        builder.build(mTargetInfo.getBuildTools(), dexOptions);
+                ProcessResult result =
+                        mJavaProcessExecutor.execute(javaProcessInfo, processOutputHandler);
+                result.rethrowFailure().assertNormalExitValue();
+                return null;
             };
 
             Stopwatch stopwatch = Stopwatch.createStarted();
@@ -384,8 +379,7 @@ public class DexByteCodeConverter {
             return checkFolder(input);
         }
 
-        ZipFile zipFile = new ZipFile(input);
-        try {
+        try (ZipFile zipFile = new ZipFile(input)) {
             Enumeration<? extends ZipEntry> entries = zipFile.entries();
             while(entries.hasMoreElements()) {
                 String name = entries.nextElement().getName();
@@ -394,8 +388,6 @@ public class DexByteCodeConverter {
                 }
             }
             return false;
-        } finally {
-            zipFile.close();
         }
     }
 
