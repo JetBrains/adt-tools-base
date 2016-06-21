@@ -1265,7 +1265,7 @@ public abstract class LintDetectorTest extends SdkTestCase {
                                     // Creating the resource file will set the source of
                                     // idItem.
                                     //noinspection ResultOfObjectAllocationIgnored
-                                    new ResourceFile(file, idItem, qualifiers);
+                                    ResourceFile.createSingle(file, idItem, qualifiers);
                                     idMap.put(id, idItem);
                                 }
                             }

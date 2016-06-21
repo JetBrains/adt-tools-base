@@ -80,7 +80,7 @@ public class ResourceMerger extends DataMerger<ResourceItem, ResourceFile, Resou
      * This override the method returning the qualifier or the source type, to directly
      * return a value instead of relying on a source file (since merged items don't have any).
      */
-    private static class MergedResourceItem extends ResourceItem {
+    private static class MergedResourceItem extends SourcelessResourceItem {
 
         @NonNull
         private final String mQualifiers;

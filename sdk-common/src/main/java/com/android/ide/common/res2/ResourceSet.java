@@ -123,6 +123,10 @@ public class ResourceSet extends DataSet<ResourceItem, ResourceFile> {
             throws MergingException {
         String qualifier = firstNonNull(NodeUtils.getAttribute(fileNode, ATTR_QUALIFIER), "");
         String typeAttr = NodeUtils.getAttribute(fileNode, SdkConstants.ATTR_TYPE);
+        FolderConfiguration folderConfiguration = FolderConfiguration.getConfigForQualifierString(qualifier);
+        if (folderConfiguration == null) {
+            return null;
+        }
 
         if (NodeUtils.getAttribute(fileNode, SdkConstants.ATTR_PREPROCESSING) != null) {
             // FileType.GENERATED_FILES
@@ -162,7 +166,7 @@ public class ResourceSet extends DataSet<ResourceItem, ResourceFile> {
                                 mLibraryName));
             }
 
-            return ResourceFile.generatedFiles(file, resourceItems, qualifier);
+            return ResourceFile.generatedFiles(file, resourceItems, qualifier, folderConfiguration);
         }
         else if (typeAttr == null) {
             // FileType.XML_VALUES
@@ -192,7 +196,7 @@ public class ResourceSet extends DataSet<ResourceItem, ResourceFile> {
                 }
             }
 
-            return new ResourceFile(file, resourceList, qualifier);
+            return new ResourceFile(file, resourceList, qualifier, folderConfiguration);
 
         } else {
             // single res file
@@ -210,7 +214,7 @@ public class ResourceSet extends DataSet<ResourceItem, ResourceFile> {
                 FileResourceNameValidator.validate(file, type);
             }
             ResourceItem item = new ResourceItem(nameAttr, type, null, mLibraryName);
-            return new ResourceFile(file, item, qualifier);
+            return new ResourceFile(file, item, qualifier, folderConfiguration);
         }
     }
 
@@ -445,7 +449,8 @@ public class ResourceSet extends DataSet<ResourceItem, ResourceFile> {
                 return ResourceFile.generatedFiles(
                         file,
                         getResourceItemsForGeneratedFiles(file),
-                        folderData.qualifiers);
+                        folderData.qualifiers,
+                        folderData.folderConfiguration);
             } else if (mShouldParseResourceIds && folderData.isIdGenerating &&
                        SdkUtils.endsWithIgnoreCase(file.getPath(), SdkConstants.DOT_XML)) {
                 String resourceName = getNameForFile(file);
@@ -453,12 +458,12 @@ public class ResourceSet extends DataSet<ResourceItem, ResourceFile> {
                 List<ResourceItem> items = parser.getIdResourceItems();
                 ResourceItem fileItem = parser.getFileResourceItem();
                 items.add(fileItem);
-                return new ResourceFile(file, items, folderData.qualifiers);
+                return new ResourceFile(file, items, folderData.qualifiers, folderData.folderConfiguration);
             } else {
                 return new ResourceFile(
                         file,
                         new ResourceItem(getNameForFile(file), folderData.type, null, mLibraryName),
-                        folderData.qualifiers);
+                        folderData.qualifiers, folderData.folderConfiguration);
             }
         } else {
             try {
@@ -466,7 +471,7 @@ public class ResourceSet extends DataSet<ResourceItem, ResourceFile> {
                 parser.setTrackSourcePositions(mTrackSourcePositions);
                 List<ResourceItem> items = parser.parseFile();
 
-                return new ResourceFile(file, items, folderData.qualifiers);
+                return new ResourceFile(file, items, folderData.qualifiers, folderData.folderConfiguration);
             } catch (MergingException e) {
                 logger.error(e, "Failed to parse %s", file.getAbsolutePath());
                 throw e;
@@ -531,6 +536,7 @@ public class ResourceSet extends DataSet<ResourceItem, ResourceFile> {
      */
     private static class FolderData {
         String qualifiers = "";
+        FolderConfiguration folderConfiguration = new FolderConfiguration();
         ResourceType type = null;
         ResourceFolderType folderType = null;
         boolean isIdGenerating = false;
@@ -569,6 +575,7 @@ public class ResourceSet extends DataSet<ResourceItem, ResourceFile> {
             // get the qualifier portion from the folder config.
             // the returned string starts with "-" so we remove that.
             fd.qualifiers = folderConfiguration.getUniqueKey().substring(1);
+            fd.folderConfiguration = folderConfiguration;
 
         } else {
             fd.folderType = ResourceFolderType.getTypeByName(folderName);

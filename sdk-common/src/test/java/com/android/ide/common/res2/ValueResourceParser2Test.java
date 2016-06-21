@@ -21,6 +21,7 @@ import static org.junit.Assert.assertNotNull;
 
 import com.android.SdkConstants;
 import com.android.ide.common.rendering.api.ResourceValue;
+import com.android.ide.common.resources.configuration.FolderConfiguration;
 import com.android.resources.ResourceType;
 import com.android.testutils.TestUtils;
 import com.google.common.base.Charsets;
@@ -144,7 +145,7 @@ public class ValueResourceParser2Test extends BaseTestCase {
 
             // create a fake resource file to allow calling ResourceItem.getKey()
             //noinspection ResultOfObjectAllocationIgnored
-            new ResourceFile(valuesXml, sResources, "");
+            new ResourceFile(valuesXml, sResources, "", new FolderConfiguration());
         }
 
         return sResources;
