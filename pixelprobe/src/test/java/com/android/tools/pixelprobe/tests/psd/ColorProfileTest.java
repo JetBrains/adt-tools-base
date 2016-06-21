@@ -28,7 +28,7 @@ import java.io.IOException;
 public class ColorProfileTest {
     @Test
     public void cmyk() throws IOException {
-        Image image = ImageUtils.loadImage("cmyk.psd");
+        Image image = ImageUtils.loadImage("psd/cmyk.psd");
         ColorSpace colorSpace = image.getColorSpace();
         Assert.assertEquals(ColorSpace.TYPE_CMYK, colorSpace.getType());
         Assert.assertFalse(colorSpace.isCS_sRGB());
@@ -37,7 +37,7 @@ public class ColorProfileTest {
 
     @Test
     public void adobeRgb() throws IOException {
-        Image image = ImageUtils.loadImage("color_profile_adobe_rgb.psd");
+        Image image = ImageUtils.loadImage("psd/color_profile_adobe_rgb.psd");
         ColorSpace colorSpace = image.getColorSpace();
         Assert.assertEquals(ColorSpace.TYPE_RGB, colorSpace.getType());
         Assert.assertFalse(colorSpace.isCS_sRGB());
@@ -47,7 +47,7 @@ public class ColorProfileTest {
 
     @Test
     public void sRgb() throws IOException {
-        Image image = ImageUtils.loadImage("rgb.psd");
+        Image image = ImageUtils.loadImage("psd/rgb.psd");
         ColorSpace colorSpace = image.getColorSpace();
         Assert.assertEquals(ColorSpace.TYPE_RGB, colorSpace.getType());
         Assert.assertEquals("sRGB IEC61966-2.1", image.getColorProfileDescription());
@@ -55,7 +55,7 @@ public class ColorProfileTest {
 
     @Test
     public void rgbNoProfile() throws IOException {
-        Image image = ImageUtils.loadImage("rgb_no_profile.psd");
+        Image image = ImageUtils.loadImage("psd/rgb_no_profile.psd");
         ColorSpace colorSpace = image.getColorSpace();
         Assert.assertEquals(ColorSpace.TYPE_RGB, colorSpace.getType());
         Assert.assertTrue(colorSpace.isCS_sRGB());

@@ -28,21 +28,21 @@ import java.io.IOException;
 public class DepthTest {
     @Test
     public void bitmap() throws IOException {
-        Image image = ImageUtils.loadImage("bitmap.psd");
+        Image image = ImageUtils.loadImage("psd/bitmap.psd");
         Assert.assertEquals(1, image.getColorDepth());
         Assert.assertEquals(1, image.getMergedImage().getColorModel().getPixelSize());
     }
 
     @Test
     public void cmyk() throws IOException {
-        Image image = ImageUtils.loadImage("cmyk.psd");
+        Image image = ImageUtils.loadImage("psd/cmyk.psd");
         Assert.assertEquals(8, image.getColorDepth());
         Assert.assertEquals(32, image.getMergedImage().getColorModel().getPixelSize());
     }
 
     @Test
     public void cmyk16() throws IOException {
-        Image image = ImageUtils.loadImage("cmyk_16.psd");
+        Image image = ImageUtils.loadImage("psd/cmyk_16.psd");
         Assert.assertEquals(16, image.getColorDepth());
         // 16 bit CMYK images are loaded as 8 bit images for now
         Assert.assertEquals(32, image.getMergedImage().getColorModel().getPixelSize());
@@ -50,49 +50,49 @@ public class DepthTest {
 
     @Test
     public void duotone() throws IOException {
-        Image image = ImageUtils.loadImage("duotone.psd");
+        Image image = ImageUtils.loadImage("psd/duotone.psd");
         Assert.assertEquals(8, image.getColorDepth());
         Assert.assertEquals(8, image.getMergedImage().getColorModel().getPixelSize());
     }
 
     @Test
     public void grayscale() throws IOException {
-        Image image = ImageUtils.loadImage("grayscale.psd");
+        Image image = ImageUtils.loadImage("psd/grayscale.psd");
         Assert.assertEquals(8, image.getColorDepth());
         Assert.assertEquals(8, image.getMergedImage().getColorModel().getPixelSize());
     }
 
     @Test
     public void grayscale16() throws IOException {
-        Image image = ImageUtils.loadImage("grayscale_16.psd");
+        Image image = ImageUtils.loadImage("psd/grayscale_16.psd");
         Assert.assertEquals(16, image.getColorDepth());
         Assert.assertEquals(32, image.getMergedImage().getColorModel().getPixelSize());
     }
 
     @Test
     public void grayscale32() throws IOException {
-        Image image = ImageUtils.loadImage("grayscale_32.psd");
+        Image image = ImageUtils.loadImage("psd/grayscale_32.psd");
         Assert.assertEquals(32, image.getColorDepth());
         Assert.assertEquals(32, image.getMergedImage().getColorModel().getPixelSize());
     }
 
     @Test
     public void indexed() throws IOException {
-        Image image = ImageUtils.loadImage("indexed.psd");
+        Image image = ImageUtils.loadImage("psd/indexed.psd");
         Assert.assertEquals(8, image.getColorDepth());
         Assert.assertEquals(8, image.getMergedImage().getColorModel().getPixelSize());
     }
 
     @Test
     public void lab() throws IOException {
-        Image image = ImageUtils.loadImage("lab.psd");
+        Image image = ImageUtils.loadImage("psd/lab.psd");
         Assert.assertEquals(8, image.getColorDepth());
         Assert.assertEquals(24, image.getMergedImage().getColorModel().getPixelSize());
     }
 
     @Test
     public void lab16() throws IOException {
-        Image image = ImageUtils.loadImage("lab_16.psd");
+        Image image = ImageUtils.loadImage("psd/lab_16.psd");
         Assert.assertEquals(16, image.getColorDepth());
         // 16 bit Lab images are loaded as 8 bit images for now
         Assert.assertEquals(24, image.getMergedImage().getColorModel().getPixelSize());
@@ -100,21 +100,21 @@ public class DepthTest {
 
     @Test
     public void rgb() throws IOException {
-        Image image = ImageUtils.loadImage("rgb.psd");
+        Image image = ImageUtils.loadImage("psd/rgb.psd");
         Assert.assertEquals(8, image.getColorDepth());
         Assert.assertEquals(24, image.getMergedImage().getColorModel().getPixelSize());
     }
 
     @Test
     public void rgb16() throws IOException {
-        Image image = ImageUtils.loadImage("rgb_16.psd");
+        Image image = ImageUtils.loadImage("psd/rgb_16.psd");
         Assert.assertEquals(16, image.getColorDepth());
         Assert.assertEquals(96, image.getMergedImage().getColorModel().getPixelSize());
     }
 
     @Test
     public void rgb32() throws IOException {
-        Image image = ImageUtils.loadImage("rgb_32.psd");
+        Image image = ImageUtils.loadImage("psd/rgb_32.psd");
         Assert.assertEquals(32, image.getColorDepth());
         Assert.assertEquals(96, image.getMergedImage().getColorModel().getPixelSize());
     }

@@ -435,10 +435,15 @@ public final class PsdDecoder extends Decoder {
                     getFromMap(sheet, defaultSheet, "FillColor.Values")).toFloatArray();
             int tracking = ((TextEngine.IntProperty) getFromMap(sheet, defaultSheet, "Tracking")).getValue();
 
-            TextInfo.StyleRun run = new TextInfo.StyleRun.Builder(pos, pos += runs[i])
+            int start = pos;
+            int end = pos += runs[i];
+            // The last run contains the terminating null character
+            if (i == runs.length - 1) end--;
+
+            TextInfo.StyleRun run = new TextInfo.StyleRun.Builder(start, end)
                     .font(fonts.get(index))
                     .fontSize(size)
-                    .color(new Color(rgb[1], rgb[2], rgb[3], rgb[0]))
+                    .paint(new Color(rgb[1], rgb[2], rgb[3], rgb[0]))
                     .tracking(tracking / 1000.0f)
                     .build();
             info.addStyleRun(run);
@@ -465,7 +470,7 @@ public final class PsdDecoder extends Decoder {
                     getFromMap(sheet, defaultSheet, "Justification")).getValue();
 
             TextInfo.ParagraphRun run = new TextInfo.ParagraphRun.Builder(pos, pos += runs[i])
-                    .alignment(TextInfo.ParagraphRun.Alignment.valueOf(alignments[justification]))
+                    .alignment(TextInfo.Alignment.valueOf(alignments[justification]))
                     .build();
             info.addParagraphRun(run);
         }

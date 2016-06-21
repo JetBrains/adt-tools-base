@@ -30,7 +30,7 @@ import java.util.List;
 public class EffectTest {
     @Test
     public void singleShadow() throws IOException {
-        Image image = ImageUtils.loadImage("layer_effect_single_shadow.psd");
+        Image image = ImageUtils.loadImage("psd/layer_effect_single_shadow.psd");
         List<Layer> layers = image.getLayers();
 
         Layer layer = layers.get(0);
@@ -66,7 +66,7 @@ public class EffectTest {
 
     @Test
     public void multiShadow() throws IOException {
-        Image image = ImageUtils.loadImage("layer_effect_multi_shadow.psd");
+        Image image = ImageUtils.loadImage("psd/layer_effect_multi_shadow.psd");
         List<Layer> layers = image.getLayers();
 
         Layer layer = layers.get(0);
