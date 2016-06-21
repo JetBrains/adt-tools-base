@@ -151,6 +151,7 @@ import com.android.builder.core.VariantConfiguration;
 import com.android.builder.core.VariantType;
 import com.android.builder.internal.aapt.Aapt;
 import com.android.builder.model.DataBindingOptions;
+import com.android.builder.model.InstantRun;
 import com.android.builder.model.OptionalCompilationStep;
 import com.android.builder.model.SyncIssue;
 import com.android.builder.sdk.TargetInfo;
@@ -1198,7 +1199,9 @@ public abstract class TaskManager {
         }
 
         // Disable instant run when external native build is enabled.
-        scope.getVariantConfiguration().setEnableInstantRunOverride(false);
+        scope.getVariantConfiguration()
+                .setInstantRunSupportStatusOverride(
+                        InstantRun.STATUS_NOT_SUPPORTED_FOR_EXTERNAL_NATIVE_BUILD);
 
         scope.setExternalNativeJsonGenerator(ExternalNativeJsonGenerator.create(
                 project.getProjectDir(),

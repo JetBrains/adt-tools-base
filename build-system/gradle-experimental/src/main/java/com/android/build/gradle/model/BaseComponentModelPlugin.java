@@ -53,7 +53,6 @@ import com.android.build.gradle.internal.ndk.NdkHandler;
 import com.android.build.gradle.internal.pipeline.TransformTask;
 import com.android.build.gradle.internal.process.GradleJavaProcessExecutor;
 import com.android.build.gradle.internal.process.GradleProcessExecutor;
-import com.android.build.gradle.internal.profile.RecordingBuildListener;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.tasks.DependencyReportTask;
 import com.android.build.gradle.internal.tasks.SigningReportTask;
@@ -80,14 +79,11 @@ import com.android.build.gradle.model.internal.AndroidComponentSpecInternal;
 import com.android.build.gradle.tasks.ExternalNativeBuildTaskUtils;
 import com.android.build.gradle.tasks.ExternalNativeJsonGenerator;
 import com.android.build.gradle.tasks.JackPreDexTransform;
-import com.android.builder.Version;
 import com.android.builder.core.AndroidBuilder;
 import com.android.builder.internal.compiler.JackConversionCache;
 import com.android.builder.internal.compiler.PreDexCache;
+import com.android.builder.model.InstantRun;
 import com.android.builder.profile.ProcessRecorder;
-import com.android.builder.profile.ProcessRecorderFactory;
-import com.android.builder.profile.Recorder;
-import com.android.builder.profile.ThreadRecorder;
 import com.android.builder.sdk.TargetInfo;
 import com.android.builder.signing.DefaultSigningConfig;
 import com.android.ide.common.internal.ExecutorSingleton;
@@ -101,7 +97,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
-import com.google.wireless.android.sdk.stats.AndroidStudioStats;
 
 import org.gradle.api.Action;
 import org.gradle.api.Plugin;
@@ -540,7 +535,10 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
                         variantManager.createVariantData(
                                 new BuildTypeAdaptor(binary.getBuildType()),
                                 adaptedFlavors));
-                binary.getVariantData().getVariantConfiguration().setEnableInstantRunOverride(false);
+                binary.getVariantData()
+                        .getVariantConfiguration()
+                        .setInstantRunSupportStatusOverride(
+                                InstantRun.STATUS_NOT_SUPPORTED_FOR_EXPERIMENTAL_PLUGIN);
                 variantManager.getVariantDataList().add(binary.getVariantData());
             });
         }

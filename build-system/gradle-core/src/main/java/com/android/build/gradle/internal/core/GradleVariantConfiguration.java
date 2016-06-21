@@ -32,6 +32,7 @@ import com.android.build.gradle.internal.dsl.CoreProductFlavor;
 import com.android.build.gradle.internal.dsl.CoreSigningConfig;
 import com.android.builder.core.VariantConfiguration;
 import com.android.builder.core.VariantType;
+import com.android.builder.model.InstantRun;
 import com.android.builder.model.SourceProvider;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
@@ -43,6 +44,7 @@ import org.gradle.api.Project;
 
 import java.util.List;
 import java.util.Map;
+import java.util.OptionalInt;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -54,12 +56,13 @@ import java.util.function.Function;
  *
  * <p>It also adds support for Ndk support that is not ready to go in the builder library.
  */
-public class GradleVariantConfiguration extends VariantConfiguration<CoreBuildType, CoreProductFlavor, CoreProductFlavor> {
+public class GradleVariantConfiguration
+        extends VariantConfiguration<CoreBuildType, CoreProductFlavor, CoreProductFlavor> {
 
     @NonNull
     private final Project project;
-    @Nullable
-    private Boolean enableInstantRunOverride = null;
+    @NonNull
+    private OptionalInt instantRunSupportStatusOverride = OptionalInt.empty();
     @NonNull
     private final MergedNdkConfig mergedNdkConfig = new MergedNdkConfig();
     @NonNull
@@ -357,16 +360,32 @@ public class GradleVariantConfiguration extends VariantConfiguration<CoreBuildTy
     }
 
     public boolean isInstantRunSupported() {
-        if (enableInstantRunOverride != null) {
-            return enableInstantRunOverride;
-        }
-        return getBuildType().isDebuggable()
-                && !getType().isForTesting()
-                && !getJackOptions().isEnabled();
+        return getInstantRunSupportStatus() == InstantRun.STATUS_SUPPORTED;
     }
 
-    public void setEnableInstantRunOverride(@Nullable Boolean enableInstantRunOverride) {
-        this.enableInstantRunOverride = enableInstantRunOverride;
+    /**
+     * Returns a status code indicating whether Instant Run is supported and why.
+     */
+    public int getInstantRunSupportStatus() {
+        if (instantRunSupportStatusOverride.isPresent()) {
+            return instantRunSupportStatusOverride.getAsInt();
+        }
+
+        if (!getBuildType().isDebuggable()) {
+            return InstantRun.STATUS_NOT_SUPPORTED_FOR_NON_DEBUG_VARIANT;
+        }
+        if (getType().isForTesting()) {
+            return InstantRun.STATUS_NOT_SUPPORTED_VARIANT_USED_FOR_TESTING;
+        }
+        if (getJackOptions().isEnabled()) {
+            return InstantRun.STATUS_NOT_SUPPORTED_FOR_JACK;
+        }
+
+        return InstantRun.STATUS_SUPPORTED;
+    }
+
+    public void setInstantRunSupportStatusOverride(int instantRunSupportStatusOverride) {
+        this.instantRunSupportStatusOverride = OptionalInt.of(instantRunSupportStatusOverride);
     }
 
     @NonNull
