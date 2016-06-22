@@ -92,6 +92,18 @@ $modelBefore
     }
 $modelAfter
 """;
+        if (!isModel) {
+            project.buildFile << """
+android {
+    applicationVariants.all { variant ->
+        assert !variant.getExternalNativeBuildTasks().isEmpty()
+        for (def task : variant.getExternalNativeBuildTasks()) {
+            assert task.getName() == "externalNativeBuild" + variant.getName().capitalize()
+        }
+    }
+}
+"""
+        }
         project.execute("clean", "assembleDebug")
     }
 

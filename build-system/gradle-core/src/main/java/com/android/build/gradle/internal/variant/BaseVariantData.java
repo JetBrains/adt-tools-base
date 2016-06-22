@@ -36,6 +36,7 @@ import com.android.build.gradle.internal.tasks.PrepareDependenciesTask;
 import com.android.build.gradle.internal.transforms.JackTransform;
 import com.android.build.gradle.tasks.AidlCompile;
 import com.android.build.gradle.tasks.BinaryFileProviderTask;
+import com.android.build.gradle.tasks.ExternalNativeBuildTask;
 import com.android.build.gradle.tasks.GenerateBuildConfig;
 import com.android.build.gradle.tasks.GenerateResValues;
 import com.android.build.gradle.tasks.MergeResources;
@@ -119,6 +120,8 @@ public abstract class BaseVariantData<T extends BaseVariantOutputData> {
     /** Can be JavaCompile or JackTask depending on user's settings. */
     public Task javaCompilerTask;
     public JavaCompile javacTask;
+    @NonNull
+    public Collection<ExternalNativeBuildTask> externalNativeBuildTasks = Lists.newArrayList();
     @Nullable
     public JackTransform jackTransform = null;
     public Jar classesJarTask;

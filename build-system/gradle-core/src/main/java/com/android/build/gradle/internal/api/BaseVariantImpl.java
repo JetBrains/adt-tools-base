@@ -22,6 +22,7 @@ import com.android.build.gradle.api.BaseVariant;
 import com.android.build.gradle.api.BaseVariantOutput;
 import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.build.gradle.tasks.AidlCompile;
+import com.android.build.gradle.tasks.ExternalNativeBuildTask;
 import com.android.build.gradle.tasks.GenerateBuildConfig;
 import com.android.build.gradle.tasks.MergeSourceSetFolders;
 import com.android.build.gradle.tasks.MergeResources;
@@ -195,6 +196,11 @@ abstract class BaseVariantImpl implements BaseVariant {
     @Override
     public NdkCompile getNdkCompile() {
         return getVariantData().ndkCompileTask;
+    }
+
+    @Override
+    public Collection<ExternalNativeBuildTask> getExternalNativeBuildTasks() {
+        return getVariantData().externalNativeBuildTasks;
     }
 
     @Nullable
