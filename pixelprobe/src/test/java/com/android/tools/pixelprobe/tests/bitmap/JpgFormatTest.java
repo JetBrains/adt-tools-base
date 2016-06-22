@@ -19,6 +19,7 @@ package com.android.tools.pixelprobe.tests.bitmap;
 import com.android.tools.pixelprobe.ColorMode;
 import com.android.tools.pixelprobe.Image;
 import com.android.tools.pixelprobe.tests.ImageUtils;
+import com.android.tools.pixelprobe.util.Images;
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
@@ -41,6 +42,7 @@ public class JpgFormatTest {
         Assert.assertEquals(0, image.getGuides().size());
         Assert.assertEquals("sRGB IEC61966-2.1", image.getColorProfileDescription());
         Assert.assertEquals(ColorSpace.TYPE_RGB, image.getColorSpace().getType());
+        Assert.assertTrue(Images.isColorSpace_sRGB(image.getMergedImage()));
     }
 
     @Test
@@ -51,8 +53,8 @@ public class JpgFormatTest {
         Assert.assertEquals(8, image.getColorDepth());
         Assert.assertEquals(0, image.getLayers().size());
         Assert.assertEquals(0, image.getGuides().size());
-        //Assert.assertEquals("Adobe RGB (1998)", image.getColorProfileDescription());
         Assert.assertEquals(ColorSpace.TYPE_RGB, image.getColorSpace().getType());
+        Assert.assertTrue(Images.isColorSpace_sRGB(image.getMergedImage()));
     }
 
     @Test
@@ -72,5 +74,6 @@ public class JpgFormatTest {
         Assert.assertEquals(0, image.getGuides().size());
         Assert.assertEquals("KODAK Grayscale Conversion - Gamma 1.0", image.getColorProfileDescription());
         Assert.assertEquals(ColorSpace.TYPE_GRAY, image.getColorSpace().getType());
+        Assert.assertFalse(Images.isColorSpace_sRGB(image.getMergedImage()));
     }
 }

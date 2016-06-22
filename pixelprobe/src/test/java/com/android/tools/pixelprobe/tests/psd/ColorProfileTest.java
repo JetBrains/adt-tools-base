@@ -18,6 +18,7 @@ package com.android.tools.pixelprobe.tests.psd;
 
 import com.android.tools.pixelprobe.Image;
 import com.android.tools.pixelprobe.tests.ImageUtils;
+import com.android.tools.pixelprobe.util.Images;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -25,14 +26,22 @@ import java.awt.color.ColorSpace;
 import java.awt.color.ICC_ColorSpace;
 import java.io.IOException;
 
+/**
+ * Important note for these tests: the color space decoded from the PSD file
+ * and associated with the Image instance might be different than the color
+ * space associated with the merged BufferedImage. For instance, Photoshop
+ * saves Lab images with an sRGB profile, even though the image data is in
+ * the Lab color space. In this case, the merged image will have a Lab color
+ * space but the Image will have an RGB color space.
+ */
 public class ColorProfileTest {
     @Test
     public void cmyk() throws IOException {
         Image image = ImageUtils.loadImage("psd/cmyk.psd");
         ColorSpace colorSpace = image.getColorSpace();
         Assert.assertEquals(ColorSpace.TYPE_CMYK, colorSpace.getType());
-        Assert.assertFalse(colorSpace.isCS_sRGB());
         Assert.assertTrue(colorSpace instanceof ICC_ColorSpace);
+        Assert.assertFalse(Images.isColorSpace_sRGB(image.getMergedImage()));
     }
 
     @Test
@@ -40,9 +49,9 @@ public class ColorProfileTest {
         Image image = ImageUtils.loadImage("psd/color_profile_adobe_rgb.psd");
         ColorSpace colorSpace = image.getColorSpace();
         Assert.assertEquals(ColorSpace.TYPE_RGB, colorSpace.getType());
-        Assert.assertFalse(colorSpace.isCS_sRGB());
         Assert.assertTrue(colorSpace instanceof ICC_ColorSpace);
         Assert.assertEquals("Adobe RGB (1998)", image.getColorProfileDescription());
+        Assert.assertFalse(Images.isColorSpace_sRGB(image.getMergedImage()));
     }
 
     @Test
@@ -51,6 +60,7 @@ public class ColorProfileTest {
         ColorSpace colorSpace = image.getColorSpace();
         Assert.assertEquals(ColorSpace.TYPE_RGB, colorSpace.getType());
         Assert.assertEquals("sRGB IEC61966-2.1", image.getColorProfileDescription());
+        Assert.assertTrue(Images.isColorSpace_sRGB(image.getMergedImage()));
     }
 
     @Test
@@ -58,6 +68,52 @@ public class ColorProfileTest {
         Image image = ImageUtils.loadImage("psd/rgb_no_profile.psd");
         ColorSpace colorSpace = image.getColorSpace();
         Assert.assertEquals(ColorSpace.TYPE_RGB, colorSpace.getType());
-        Assert.assertTrue(colorSpace.isCS_sRGB());
+        Assert.assertEquals("sRGB IEC61966-2.1", image.getColorProfileDescription());
+        Assert.assertTrue(Images.isColorSpace_sRGB(image.getMergedImage()));
+    }
+
+    @Test
+    public void bitmap() throws IOException {
+        Image image = ImageUtils.loadImage("psd/bitmap.psd");
+        ColorSpace colorSpace = image.getColorSpace();
+        Assert.assertEquals(ColorSpace.TYPE_RGB, colorSpace.getType());
+        Assert.assertEquals("sRGB IEC61966-2.1", image.getColorProfileDescription());
+        Assert.assertTrue(Images.isColorSpace_sRGB(image.getMergedImage()));
+    }
+
+    @Test
+    public void duotone() throws IOException {
+        Image image = ImageUtils.loadImage("psd/duotone.psd");
+        ColorSpace colorSpace = image.getColorSpace();
+        Assert.assertEquals(ColorSpace.TYPE_RGB, colorSpace.getType());
+        Assert.assertEquals("sRGB IEC61966-2.1", image.getColorProfileDescription());
+        Assert.assertFalse(Images.isColorSpace_sRGB(image.getMergedImage()));
+    }
+
+    @Test
+    public void grayscale() throws IOException {
+        Image image = ImageUtils.loadImage("psd/grayscale.psd");
+        ColorSpace colorSpace = image.getColorSpace();
+        Assert.assertEquals(ColorSpace.TYPE_GRAY, colorSpace.getType());
+        Assert.assertEquals("sGray", image.getColorProfileDescription());
+        Assert.assertFalse(Images.isColorSpace_sRGB(image.getMergedImage()));
+    }
+
+    @Test
+    public void indexed() throws IOException {
+        Image image = ImageUtils.loadImage("psd/indexed.psd");
+        ColorSpace colorSpace = image.getColorSpace();
+        Assert.assertEquals(ColorSpace.TYPE_RGB, colorSpace.getType());
+        Assert.assertEquals("sRGB IEC61966-2.1", image.getColorProfileDescription());
+        Assert.assertTrue(Images.isColorSpace_sRGB(image.getMergedImage()));
+    }
+
+    @Test
+    public void lab() throws IOException {
+        Image image = ImageUtils.loadImage("psd/lab.psd");
+        ColorSpace colorSpace = image.getColorSpace();
+        Assert.assertEquals(ColorSpace.TYPE_RGB, colorSpace.getType());
+        Assert.assertEquals("sRGB IEC61966-2.1", image.getColorProfileDescription());
+        Assert.assertFalse(Images.isColorSpace_sRGB(image.getMergedImage()));
     }
 }

@@ -183,9 +183,18 @@ public final class Colors {
      * @return The description of the color space's ICC profile, or an empty string
      */
     public static String getIccProfileDescription(ColorSpace colorSpace) {
+        if (colorSpace == null) {
+            return "";
+        }
+
+        if (colorSpace.isCS_sRGB()) {
+            return "sRGB IEC61966-2.1";
+        }
+
         if (colorSpace instanceof ICC_ColorSpace) {
             return getIccProfileDescription(((ICC_ColorSpace) colorSpace).getProfile());
         }
+
         return "";
     }
 

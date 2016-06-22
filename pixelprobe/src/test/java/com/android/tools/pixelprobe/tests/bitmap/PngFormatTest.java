@@ -19,6 +19,7 @@ package com.android.tools.pixelprobe.tests.bitmap;
 import com.android.tools.pixelprobe.ColorMode;
 import com.android.tools.pixelprobe.Image;
 import com.android.tools.pixelprobe.tests.ImageUtils;
+import com.android.tools.pixelprobe.util.Images;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -40,6 +41,7 @@ public class PngFormatTest {
         Assert.assertFalse(image.getMergedImage().getColorModel().hasAlpha());
         Assert.assertEquals(Transparency.OPAQUE, image.getMergedImage().getTransparency());
         Assert.assertEquals(3, image.getMergedImage().getColorModel().getNumComponents());
+        Assert.assertTrue(Images.isColorSpace_sRGB(image.getMergedImage()));
     }
 
     @Test
@@ -55,6 +57,7 @@ public class PngFormatTest {
         Assert.assertTrue(image.getMergedImage().getColorModel().hasAlpha());
         Assert.assertEquals(Transparency.TRANSLUCENT, image.getMergedImage().getTransparency());
         Assert.assertEquals(4, image.getMergedImage().getColorModel().getNumComponents());
+        Assert.assertTrue(Images.isColorSpace_sRGB(image.getMergedImage()));
     }
 
     @Test
@@ -70,6 +73,7 @@ public class PngFormatTest {
         Assert.assertFalse(image.getMergedImage().getColorModel().hasAlpha());
         Assert.assertEquals(Transparency.OPAQUE, image.getMergedImage().getTransparency());
         Assert.assertEquals(3, image.getMergedImage().getColorModel().getNumComponents());
+        Assert.assertTrue(Images.isColorSpace_sRGB(image.getMergedImage()));
     }
 
     @Test
@@ -85,6 +89,7 @@ public class PngFormatTest {
         Assert.assertFalse(image.getMergedImage().getColorModel().hasAlpha());
         Assert.assertEquals(Transparency.OPAQUE, image.getMergedImage().getTransparency());
         Assert.assertEquals(3, image.getMergedImage().getColorModel().getNumComponents());
+        Assert.assertTrue(Images.isColorSpace_sRGB(image.getMergedImage()));
     }
 
     @Test
@@ -100,6 +105,7 @@ public class PngFormatTest {
         Assert.assertTrue(image.getMergedImage().getColorModel().hasAlpha());
         Assert.assertEquals(Transparency.TRANSLUCENT, image.getMergedImage().getTransparency());
         Assert.assertEquals(4, image.getMergedImage().getColorModel().getNumComponents());
+        Assert.assertTrue(Images.isColorSpace_sRGB(image.getMergedImage()));
     }
 
     @Test
@@ -115,6 +121,7 @@ public class PngFormatTest {
         Assert.assertFalse(image.getMergedImage().getColorModel().hasAlpha());
         Assert.assertEquals(Transparency.OPAQUE, image.getMergedImage().getTransparency());
         Assert.assertEquals(1, image.getMergedImage().getColorModel().getNumComponents());
+        Assert.assertFalse(Images.isColorSpace_sRGB(image.getMergedImage()));
     }
 
     @Test
@@ -130,6 +137,7 @@ public class PngFormatTest {
         Assert.assertTrue(image.getMergedImage().getColorModel().hasAlpha());
         Assert.assertEquals(Transparency.TRANSLUCENT, image.getMergedImage().getTransparency());
         Assert.assertEquals(2, image.getMergedImage().getColorModel().getNumComponents());
+        Assert.assertFalse(Images.isColorSpace_sRGB(image.getMergedImage()));
     }
 
     @Test
@@ -145,6 +153,7 @@ public class PngFormatTest {
         Assert.assertFalse(image.getMergedImage().getColorModel().hasAlpha());
         Assert.assertEquals(Transparency.OPAQUE, image.getMergedImage().getTransparency());
         Assert.assertEquals(1, image.getMergedImage().getColorModel().getNumComponents());
+        Assert.assertFalse(Images.isColorSpace_sRGB(image.getMergedImage()));
     }
 
     @Test
@@ -160,6 +169,7 @@ public class PngFormatTest {
         Assert.assertTrue(image.getMergedImage().getColorModel().hasAlpha());
         Assert.assertEquals(Transparency.TRANSLUCENT, image.getMergedImage().getTransparency());
         Assert.assertEquals(2, image.getMergedImage().getColorModel().getNumComponents());
+        Assert.assertFalse(Images.isColorSpace_sRGB(image.getMergedImage()));
     }
 
     @Test
@@ -172,6 +182,7 @@ public class PngFormatTest {
         Assert.assertEquals(0, image.getGuides().size());
         Assert.assertEquals("sRGB IEC61966-2.1", image.getColorProfileDescription());
         Assert.assertEquals(ColorSpace.TYPE_RGB, image.getColorSpace().getType());
+        Assert.assertTrue(Images.isColorSpace_sRGB(image.getMergedImage()));
         // ImageIO can read opaque, indexed PNG as translucent images, and this
         // behavior might change with the version of the JDK
     }
@@ -189,6 +200,7 @@ public class PngFormatTest {
         Assert.assertTrue(image.getMergedImage().getColorModel().hasAlpha());
         Assert.assertEquals(Transparency.BITMASK, image.getMergedImage().getTransparency());
         Assert.assertEquals(4, image.getMergedImage().getColorModel().getNumComponents());
+        Assert.assertTrue(Images.isColorSpace_sRGB(image.getMergedImage()));
     }
 
     @Test

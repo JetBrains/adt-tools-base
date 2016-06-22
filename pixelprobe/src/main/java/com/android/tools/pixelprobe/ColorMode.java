@@ -23,7 +23,6 @@ package com.android.tools.pixelprobe;
 public enum ColorMode {
     /**
      * Each pixel is either white or black.
-     * This mode is currently not supported.
      */
     BITMAP,
     /**
@@ -32,12 +31,12 @@ public enum ColorMode {
     GRAYSCALE,
     /**
      * Each pixel is an index in a color palette.
-     * This mode is currently not supported.
      */
     INDEXED,
     /**
      * Each pixel is stored either as an RGB or
-     * ARGB (RGB + alpha) value.
+     * ARGB (RGB + alpha) value. This does not
+     * define the image's color space.
      */
     RGB,
     /**
@@ -54,18 +53,15 @@ public enum ColorMode {
     NONE,
     /**
      * Each pixel is stored over more than 4 channels.
-     * This mode is currently not supported.
      */
     MULTI_CHANNEL,
     /**
      * Each pixel is represented as the superimposition of
      * two halftone colors.
-     * This mode is currently not supported.
      */
     DUOTONE,
     /**
-     * Each is pixel is stored as a Lab value (3 channels).
-     * This mode is currently not supported.
+     * Each is pixel is stored as a L*a*b* value (3 channels).
      */
     LAB
 }

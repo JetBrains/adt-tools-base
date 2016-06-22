@@ -16,6 +16,7 @@
 
 package com.android.tools.pixelprobe;
 
+import com.android.tools.pixelprobe.util.Images;
 import com.android.tools.pixelprobe.util.Lists;
 
 import java.awt.geom.Rectangle2D;
@@ -161,10 +162,16 @@ public final class Layer {
 
     /**
      * Returns this layer's image representation for {@link Type#IMAGE} layers.
-     * Can be null if the bounds are empty. Make sure to check the color model
-     * and/or color space of this image before using it in high performance code
-     * paths. The color model/color space might not be suitable for direct
-     * rendering.
+     * Can be null if the bounds are empty.
+     *
+     * Make sure to check the color model and/or color space of this image
+     * before using it in high performance code paths.
+     *
+     * Note that the color space of a layer's image might be different from
+     * the color space of the image the layer belongs to.
+     *
+     * @see Images#isColorSpace_sRGB(BufferedImage)
+     * @see Images#copyTo_sRGB(BufferedImage)
      */
     public BufferedImage getImage() {
         return image;
