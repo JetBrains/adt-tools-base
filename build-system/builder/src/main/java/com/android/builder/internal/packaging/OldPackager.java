@@ -25,9 +25,8 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.builder.files.FileModificationType;
 import com.android.builder.files.RelativeFile;
-import com.android.builder.internal.packaging.JavaResourceProcessor.IArchiveBuilder;
-import com.android.builder.packaging.ApkCreatorFactory;
 import com.android.builder.packaging.ApkCreator;
+import com.android.builder.packaging.ApkCreatorFactory;
 import com.android.builder.packaging.DuplicateFileException;
 import com.android.builder.packaging.PackagerException;
 import com.android.builder.packaging.ZipAbortException;
@@ -72,7 +71,7 @@ import java.util.jar.Manifest;
  * and incremental packaging.
  */
 @Deprecated
-public final class OldPackager implements IArchiveBuilder, Closeable {
+public final class OldPackager implements Closeable {
 
     /**
      * Filter to detect duplicate entries
@@ -245,7 +244,6 @@ public final class OldPackager implements IArchiveBuilder, Closeable {
      * @throws PackagerException if an error occurred
      * @throws IOException if an error occurred
      */
-    @Override
     public void addFile(File file, String archivePath) throws PackagerException, IOException {
         Preconditions.checkState(mApkCreator != null, "mApkCreator == null");
 

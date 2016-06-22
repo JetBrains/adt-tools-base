@@ -26,6 +26,7 @@ import com.android.builder.packaging.ApkCreatorFactory;
 import com.android.builder.packaging.ManifestAttributes;
 import com.android.builder.packaging.ZipAbortException;
 import com.android.builder.packaging.ZipEntryFilter;
+import com.android.ide.common.packaging.PackagingUtils;
 import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Predicate;
@@ -212,8 +213,9 @@ public class SignedJarApkCreator implements ApkCreator {
                     int index = subName.indexOf('/');
                     if (index == -1) {
                         // no sub folder, ignores signature files.
-                        if (subName.endsWith(".SF") || name.endsWith(".RSA")
-                                || name.endsWith(".DSA")) {
+                        if (PackagingUtils.SIGNING_EXTENSIONS
+                                .stream()
+                                .anyMatch(ext -> subName.endsWith("." + ext))) {
                             continue;
                         }
                     }

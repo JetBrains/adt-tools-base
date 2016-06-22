@@ -66,12 +66,18 @@ public class JavaResMergePackagingTest {
 
     @Before
     public void addResources() throws Exception {
+        TestFileUtils.appendToFile(
+                project.getBuildFile(),
+                "subprojects { apply from: \"$rootDir/../commonLocalRepo.gradle\"}");
+
         GradleTestProject appProject = project.getSubproject(":app");
-        TestFileUtils.appendToFile(appProject.getBuildFile(),
-                "dependencies{\n" +
-                "    compile project (':lib1')\n" +
-                "    compile project (':lib2')\n" +
-                "}\n");
+        TestFileUtils.appendToFile(
+                appProject.getBuildFile(),
+                "dependencies{\n"
+                        + "    compile project (':lib1')\n"
+                        + "    compile project (':lib2')\n"
+                        + "    compile 'org.bouncycastle:bcprov-jdk16:1.46'\n"
+                        + "}\n");
 
         FileUtils.createFile(appProject.file("src/main/resources/" + META_INF_SERVICES), APP_IMPL);
         FileUtils.createFile(project.getSubproject(":lib1")
@@ -85,11 +91,19 @@ public class JavaResMergePackagingTest {
         assembleDebug();
         File apk = project.getSubproject(":app").getApk("debug");
 
-        // in tests, newline is standardized on \n
+        // In tests, newline is standardized on \n
         assertThatApk(apk).containsFileWithMatch(META_INF_SERVICES, APP_IMPL);
         assertThatApk(apk).containsFileWithMatch(META_INF_SERVICES, LIB1_IMPL);
         assertThatApk(apk).containsFileWithMatch(META_INF_SERVICES, LIB2_IMPL);
         assertThatApk(apk).containsFileWithMatch(META_INF_SERVICES, ".+\n.+\n.+");
+
+        // Make sure we don't package signatures from dependencies.
+        assertThatApk(apk).doesNotContainJavaResource("META-INF/BCKEY.SF");
+        assertThatApk(apk).doesNotContainJavaResource("META-INF/BCKEY.DSA");
+
+        // Make sure we don't package maven metadata from dependencies.
+        assertThatApk(apk)
+                .doesNotContainJavaResource("META-INF/maven/com.google.guava/guava/pom.xml");
     }
 
     @Test
