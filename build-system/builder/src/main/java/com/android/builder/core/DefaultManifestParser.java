@@ -56,17 +56,19 @@ public class DefaultManifestParser implements ManifestAttributeSupplier {
         if (!manifestFile.exists()) {
             attributeValues = Maps.newHashMap();
         } else {
-            Set<String> xPaths = Sets.newHashSet(
-                    AndroidManifest.getPackageXPath(),
-                    AndroidManifest.getVersionNameXPath(),
-                    AndroidManifest.getVersionCodeXPath(),
-                    AndroidManifest.getMinSdkVersionXPath(),
-                    AndroidManifest.getTargetSdkVersionXPath(),
-                    AndroidManifest.getInstrumentationRunnerXPath(),
-                    AndroidManifest.getTestTargetPackageXPath(),
-                    AndroidManifest.getTestFunctionalTestXPath(),
-                    AndroidManifest.getTestHandleProfilingXPath(),
-                    AndroidManifest.getTestLabelXPath());
+            Set<String> xPaths =
+                    Sets.newHashSet(
+                            AndroidManifest.getPackageXPath(),
+                            AndroidManifest.getVersionNameXPath(),
+                            AndroidManifest.getVersionCodeXPath(),
+                            AndroidManifest.getMinSdkVersionXPath(),
+                            AndroidManifest.getTargetSdkVersionXPath(),
+                            AndroidManifest.getInstrumentationRunnerXPath(),
+                            AndroidManifest.getTestTargetPackageXPath(),
+                            AndroidManifest.getTestFunctionalTestXPath(),
+                            AndroidManifest.getTestHandleProfilingXPath(),
+                            AndroidManifest.getTestLabelXPath(),
+                            AndroidManifest.getExtractNativeLibsXPath());
 
             attributeValues = getStringValues(manifestFile, xPaths);
         }
@@ -164,6 +166,13 @@ public class DefaultManifestParser implements ManifestAttributeSupplier {
     @Override
     public String getTestLabel() {
         return attributeValues.get(AndroidManifest.getTestLabelXPath());
+    }
+
+    @Nullable
+    @Override
+    public Boolean getExtractNativeLibs() {
+        String extractNativeLibs = attributeValues.get(AndroidManifest.getExtractNativeLibsXPath());
+        return parseBoolean(extractNativeLibs);
     }
 
     /**

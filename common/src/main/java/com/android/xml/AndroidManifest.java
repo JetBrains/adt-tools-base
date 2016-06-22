@@ -101,6 +101,7 @@ public final class AndroidManifest {
     public static final String ATTRIBUTE_SUPPORTS_RTL = "supportsRtl";
     public static final String ATTRIBUTE_UI_OPTIONS = "uiOptions";
     public static final String ATTRIBUTE_VALUE = "value";
+    public static final String ATTRIBUTE_EXTRACT_NATIVE_LIBS = "extractNativeLibs";
 
     public static final String VALUE_PARENT_ACTIVITY =
             SdkConstants.ANDROID_SUPPORT_PKG_PREFIX + "PARENT_ACTIVITY";
@@ -292,6 +293,17 @@ public final class AndroidManifest {
                 + "/" + NODE_USES_SDK
                 + "/@" + AndroidXPathFactory.DEFAULT_NS_PREFIX
                 + ":" + ATTRIBUTE_TARGET_SDK_VERSION;
+    }
+
+    public static String getExtractNativeLibsXPath() {
+        return "/"
+                + NODE_MANIFEST
+                + "/"
+                + NODE_APPLICATION
+                + "/@"
+                + AndroidXPathFactory.DEFAULT_NS_PREFIX
+                + ":"
+                + ATTRIBUTE_EXTRACT_NATIVE_LIBS;
     }
 
 

@@ -101,4 +101,11 @@ public interface ManifestAttributeSupplier {
      */
     @Nullable
     String getTestLabel();
+
+    /**
+     * Returns value of the {@code extractNativeLibs} attribute of the {@code application} tag, if
+     * present.
+     */
+    @Nullable
+    Boolean getExtractNativeLibs();
 }
