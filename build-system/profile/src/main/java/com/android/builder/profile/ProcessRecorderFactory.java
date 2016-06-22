@@ -177,6 +177,9 @@ public class ProcessRecorderFactory {
         AnalyticsSettings settings;
         try {
             settings = AnalyticsSettings.loadSettings();
+            if (settings == null) {
+                settings = AnalyticsSettings.newAnalyticsSettings();
+            }
         } catch (IOException e) {
             logger.error(e, "Could not initialize analytics, treating as opt-out.");
             settings = new AnalyticsSettings();
