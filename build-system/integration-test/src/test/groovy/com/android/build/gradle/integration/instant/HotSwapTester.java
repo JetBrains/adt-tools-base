@@ -20,6 +20,7 @@ import static com.android.build.gradle.integration.common.utils.AndroidVersionMa
 import static org.junit.Assert.assertEquals;
 
 import com.android.annotations.NonNull;
+import com.android.build.gradle.integration.common.UninstallOnClose;
 import com.android.build.gradle.integration.common.fixture.Adb;
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.common.fixture.Logcat;
@@ -39,6 +40,8 @@ import com.google.common.collect.ImmutableList;
 
 import org.mockito.Mockito;
 
+import java.io.Closeable;
+
 /**
  * Helper for automating HotSwap testing.
  */
@@ -54,7 +57,7 @@ public class HotSwapTester {
             @NonNull Logcat logcat,
             @NonNull Steps steps)  throws Exception {
         IDevice device = adb.getDevice(thatUsesArt());
-        try {
+        try (Closeable ignored = new UninstallOnClose(device, packageName)) {
             logcat.start(device, logTag);
 
             // Open project in simulated IDE
@@ -118,13 +121,6 @@ public class HotSwapTester {
             InstantRunTestUtils.waitForAppStart(client, device);
 
             steps.verifyNewCode(client, logcat, device);
-        } finally {
-            try {
-                // Clean up
-                device.uninstallPackage(packageName);
-            } catch (Exception e) {
-                // No point hiding the original exception.
-            }
         }
     }
 
@@ -141,5 +137,4 @@ public class HotSwapTester {
                 @NonNull Logcat logcat,
                 @NonNull IDevice device) throws Exception;
     }
-
 }

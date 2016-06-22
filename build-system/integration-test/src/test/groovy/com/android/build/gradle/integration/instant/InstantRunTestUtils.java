@@ -229,7 +229,11 @@ public final class InstantRunTestUtils {
             }
             Thread.sleep(SLEEP_TIME_MSEC);
             times += SLEEP_TIME_MSEC;
-            appState = client.getAppState(device);
+            try {
+                appState = client.getAppState(device);
+            } catch (IOException e) {
+                System.err.println(Throwables.getStackTraceAsString(e));
+            }
         }
     }
 }
