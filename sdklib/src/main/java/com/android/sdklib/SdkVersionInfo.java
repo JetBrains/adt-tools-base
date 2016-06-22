@@ -41,7 +41,7 @@ public class SdkVersionInfo {
      * The lowest active API level in the ecosystem. This number will change over time
      * as the distribution of older platforms decreases.
      */
-    public static final int LOWEST_ACTIVE_API = 8;
+    public static final int LOWEST_ACTIVE_API = 9;
 
     /**
      * The highest known API level for Wearables. Note the tools at the

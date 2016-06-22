@@ -3,7 +3,7 @@
     format="5"
     revision="5"
     name="Empty Activity"
-    minApi="7"
+    minApi="9"
     minBuildApi="14"
     description="Creates a new empty activity">
 

@@ -3,7 +3,7 @@
         format="5"
         revision="6"
         name="Basic Activity"
-        minApi="7"
+        minApi="9"
         minBuildApi="14"
         requireAppTheme="true"
         description="Creates a new basic activity with an app bar.">
