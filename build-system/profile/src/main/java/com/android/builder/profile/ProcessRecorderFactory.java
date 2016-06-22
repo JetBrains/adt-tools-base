@@ -40,6 +40,7 @@ import java.net.URL;
 import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Configures and creates instances of {@link ProcessRecorder}.
@@ -183,7 +184,7 @@ public class ProcessRecorderFactory {
         }
         UsageTracker.initialize(settings, eventLoop);
         UsageTracker tracker = UsageTracker.getInstance();
-        tracker.setMaxJournalTime(10);
+        tracker.setMaxJournalTime(10, TimeUnit.MINUTES);
         tracker.setMaxJournalSize(1000);
     }
 
