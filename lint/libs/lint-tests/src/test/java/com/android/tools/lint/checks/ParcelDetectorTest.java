@@ -141,4 +141,33 @@ public class ParcelDetectorTest extends AbstractCheckTest {
                                 + "}\n")
                 ));
     }
+
+    @SuppressWarnings("all") // sample code
+    public void testInheritedCreatorField() throws Exception {
+        assertEquals("No warnings.",
+                lintProject(
+                        java("src/test/pkg/ParcelableTest.java", ""
+                                + "package test.pkg;\n"
+                                + "\n"
+                                + "import android.os.Parcel;\n"
+                                + "import android.os.Parcelable;\n"
+                                + "\n"
+                                + "public class ParcelableTest {\n"
+                                + "    public static abstract class AbstractParcelable implements Parcelable {\n"
+                                + "        public static Creator CREATOR;\n"
+                                + "    }\n"
+                                + "\n"
+                                + "    public class MyParcelable extends AbstractParcelable {\n"
+                                + "        @Override\n"
+                                + "        public int describeContents() {\n"
+                                + "            return 0;\n"
+                                + "        }\n"
+                                + "\n"
+                                + "        @Override\n"
+                                + "        public void writeToParcel(Parcel parcel, int i) {\n"
+                                + "        }\n"
+                                + "    }\n"
+                                + "}\n")
+                ));
+    }
 }

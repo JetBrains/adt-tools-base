@@ -92,7 +92,7 @@ public class ParcelDetector extends Detector implements JavaPsiScanner {
             return;
         }
 
-        PsiField field = declaration.findFieldByName("CREATOR", false);
+        PsiField field = declaration.findFieldByName("CREATOR", true);
         if (field == null) {
             Location location = context.getNameLocation(declaration);
             context.report(ISSUE, declaration, location,
