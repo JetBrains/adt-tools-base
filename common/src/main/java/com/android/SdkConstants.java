@@ -627,6 +627,7 @@ public final class SdkConstants {
     public static final String CLASS_NAVIGATION_VIEW = "android.support.design.widget.NavigationView"; //$NON-NLS-1$
     public static final String CLASS_SNACKBAR = "android.support.design.widget.Snackbar"; //$NON-NLS-1$
     public static final String CLASS_TAB_LAYOUT = "android.support.design.widget.TabLayout"; //$NON-NLS-1$
+    public static final String CLASS_TAB_ITEM = "android.support.design.widget.TabItem"; //$NON-NLS-1$
     public static final String CLASS_TEXT_INPUT_LAYOUT = "android.support.design.widget.TextInputLayout"; //$NON-NLS-1$
     public static final String CLASS_NESTED_SCROLL_VIEW = "android.support.v4.widget.NestedScrollView";  //$NON-NLS-1$
     public static final String CLASS_VIEW_PAGER = "android.support.v4.view.ViewPager";  //$NON-NLS-1$
@@ -922,6 +923,7 @@ public final class SdkConstants {
     public static final String NAVIGATION_VIEW = CLASS_NAVIGATION_VIEW;
     public static final String SNACKBAR = CLASS_SNACKBAR;
     public static final String TAB_LAYOUT = CLASS_TAB_LAYOUT;
+    public static final String TAB_ITEM = CLASS_TAB_ITEM;
     public static final String TEXT_INPUT_LAYOUT = CLASS_TEXT_INPUT_LAYOUT;
     public static final String NESTED_SCROLL_VIEW = CLASS_NESTED_SCROLL_VIEW;
     public static final String DRAWER_LAYOUT = CLASS_DRAWER_LAYOUT;
