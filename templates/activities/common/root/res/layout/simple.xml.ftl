@@ -14,6 +14,9 @@
 
 <#if isNewProject!false>
     <TextView
+<#if includeCppSupport!false>
+        android:id="@+id/sample_text"
+</#if>
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Hello World!"

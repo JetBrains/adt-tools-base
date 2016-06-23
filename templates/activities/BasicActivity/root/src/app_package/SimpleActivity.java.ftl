@@ -1,6 +1,9 @@
 package ${packageName};
 
 import android.os.Bundle;
+<#if includeCppSupport!false>
+import android.widget.TextView;
+</#if>
 <#if hasAppBar>
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
@@ -40,6 +43,7 @@ public class ${activityClass} extends ${superClass} {
 <#if parentActivityClass != "">
         get${Support}ActionBar().setDisplayHomeAsUpEnabled(true);
 </#if>
+<#include "../../../../common/jni_code_usage.java.ftl">
     }
 
 <#if isNewProject>
