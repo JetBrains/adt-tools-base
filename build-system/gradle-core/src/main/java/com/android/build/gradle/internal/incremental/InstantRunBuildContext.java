@@ -324,6 +324,10 @@ public class InstantRunBuildContext {
         return duration;
     }
 
+    /**
+     * Setst the verifier status for the current build.
+     * @param verifierStatus
+     */
     public void setVerifierResult(@NonNull InstantRunVerifierStatus verifierStatus) {
         if (!currentBuild.verifierStatus.isPresent() ||
                 currentBuild.getVerifierStatus().get() == InstantRunVerifierStatus.COMPATIBLE) {
@@ -332,6 +336,14 @@ public class InstantRunBuildContext {
         buildMode = buildMode.combine(
                 verifierStatus.getInstantRunBuildModeForPatchingPolicy(patchingPolicy));
         LOG.info("Got verifier result: {}. Build mode is now {}.", verifierStatus, buildMode);
+    }
+
+    /**
+     * Returns the verifier status if set for the current build being executed or
+     * null {@link Optional} if it is not set.
+     */
+    public Optional<InstantRunVerifierStatus> getVerifierResult() {
+        return currentBuild.getVerifierStatus();
     }
 
     /**

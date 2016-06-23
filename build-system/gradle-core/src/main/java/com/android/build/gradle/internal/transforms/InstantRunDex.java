@@ -149,9 +149,6 @@ public class InstantRunDex extends Transform {
         // if no files were added, clean up and return.
         if (jarClassesBuilder.isEmpty()) {
             FileUtils.cleanOutputDir(outputFolder);
-            if (!classesJar.delete()) {
-                logger.warning("Cannot delete tmp file : " + classesJar.getAbsolutePath());
-            }
             return;
         }
         final ImmutableList.Builder<File> inputFiles = ImmutableList.builder();
