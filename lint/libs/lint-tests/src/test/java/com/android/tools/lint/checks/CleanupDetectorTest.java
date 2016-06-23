@@ -532,4 +532,37 @@ public class CleanupDetectorTest extends AbstractCheckTest {
                                 + "    }"
                                 + "}")));
     }
+
+    @SuppressWarnings("MethodMayBeStatic")
+    public void testAutoCloseable() throws Exception {
+        // Regression test for
+        //   https://code.google.com/p/android/issues/detail?id=214086
+        //
+        // Queries assigned to try/catch resource variables are automatically
+        // closed.
+        assertEquals("No warnings.",
+                lintProject(
+                        java("src/test/pkg/TryWithResources.java", ""
+                                + "package test.pkg;\n"
+                                + "\n"
+                                + "import android.content.ContentResolver;\n"
+                                + "import android.database.Cursor;\n"
+                                + "import android.net.Uri;\n"
+                                + "import android.os.Build;\n"
+                                + "\n"
+                                + "public class TryWithResources {\n"
+                                + "    public void test(ContentResolver resolver, Uri uri, String[] projection) {\n"
+                                + "        try (Cursor cursor = resolver.query(uri, projection, null, null, null)) {\n"
+                                + "            if (cursor != null) {\n"
+                                + "                //noinspection StatementWithEmptyBody\n"
+                                + "                while (cursor.moveToNext()) {\n"
+                                + "                    // ..\n"
+                                + "                }\n"
+                                + "            }\n"
+                                + "        }\n"
+                                + "    }\n"
+                                + "}\n"
+                        )
+                ));
+    }
 }

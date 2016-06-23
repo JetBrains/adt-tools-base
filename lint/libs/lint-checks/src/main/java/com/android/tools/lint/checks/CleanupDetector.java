@@ -55,12 +55,12 @@ import com.intellij.psi.PsiMethodCallExpression;
 import com.intellij.psi.PsiNewExpression;
 import com.intellij.psi.PsiReference;
 import com.intellij.psi.PsiReferenceExpression;
+import com.intellij.psi.PsiResourceVariable;
 import com.intellij.psi.PsiReturnStatement;
 import com.intellij.psi.PsiStatement;
 import com.intellij.psi.PsiType;
 import com.intellij.psi.PsiVariable;
 import com.intellij.psi.PsiWhileStatement;
-import com.intellij.psi.util.PsiTreeUtil;
 
 import java.util.Arrays;
 import java.util.List;
@@ -284,6 +284,13 @@ public class CleanupDetector extends Detector implements JavaPsiScanner {
             //    android.provider.DocumentsProvider#querySearchDocuments
             //    android.provider.MediaStore$Images$Media#query
             //    android.widget.FilterQueryProvider#runQuery
+
+            // If it's in a try-with-resources clause, don't flag it: these
+            // will be cleaned up automatically
+            if (getParentOfType(node, PsiResourceVariable.class) != null) {
+                return;
+            }
+
             checkRecycled(context, node, CURSOR_CLS, CLOSE);
         }
     }
@@ -539,7 +546,7 @@ public class CleanupDetector extends Detector implements JavaPsiScanner {
                 if (commitVisitor.isCleanedUp() || commitVisitor.variableEscapes()) {
                     return;
                 }
-            } else if (PsiTreeUtil.getParentOfType(node, PsiReturnStatement.class) != null) {
+            } else if (getParentOfType(node, PsiReturnStatement.class) != null) {
                 // Allocation is in a return statement
                 return;
             }
