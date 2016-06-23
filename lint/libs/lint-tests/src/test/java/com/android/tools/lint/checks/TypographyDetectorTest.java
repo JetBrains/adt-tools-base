@@ -110,6 +110,21 @@ public class TypographyDetectorTest extends AbstractCheckTest {
                 lintProject("res/values/plurals_typography.xml"));
     }
 
+    public void testDashesInUntranslatable() throws Exception {
+        // Regression test for
+        //    https://code.google.com/p/android/issues/detail?id=214088
+        // Don't flag service keys and untranslatable keys
+        assertEquals("No warnings.",
+                lintProject(
+                        xml("res/values/strings.xml", ""
+                                + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                                + "<resources>\n"
+                                + "    <string name=\"untranslatable\" translatable=\"false\">12345-1abcd.1234abcd.apps.googleusercontent.com</string>\n"
+                                + "    <string name=\"default_web_client_id\">12345-1abcd.1234abcd.apps.googleusercontent.com</string>\n"
+                                + "</resources>\n")
+                ));
+    }
+
     public void testSingleQuotesRange() {
         assertTrue(SINGLE_QUOTE.matcher("Foo: 'bar'").matches());
         assertTrue(SINGLE_QUOTE.matcher("'Foo': bar").matches());

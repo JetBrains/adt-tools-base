@@ -660,9 +660,15 @@ public class TranslationDetector extends ResourceXmlDetector {
         // would run into fatal translation errors at build time.
         // See for example
         //    https://code.google.com/p/android/issues/detail?id=195824
+        // For Firebase see also
+        //    https://firebase.google.com/docs/reference/gradle/#processing_the_json_file
         return name.equals("gcm_defaultSenderId")
                 || name.equals("google_app_id")
-                || name.equals("ga_trackingID");
+                || name.equals("google_api_key")
+                || name.equals("google_storage_bucket")
+                || name.equals("ga_trackingID")
+                || name.equals("default_web_client_id")
+                || name.equals("firebase_database_url");
     }
 
     private static boolean allItemsAreReferences(Element element) {
