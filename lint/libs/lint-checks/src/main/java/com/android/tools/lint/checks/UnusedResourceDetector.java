@@ -16,9 +16,14 @@
 
 package com.android.tools.lint.checks;
 
+import static com.android.SdkConstants.ATTR_DISCARD;
+import static com.android.SdkConstants.ATTR_KEEP;
 import static com.android.SdkConstants.ATTR_NAME;
+import static com.android.SdkConstants.ATTR_SHRINK_MODE;
 import static com.android.SdkConstants.DOT_JAVA;
 import static com.android.SdkConstants.DOT_XML;
+import static com.android.SdkConstants.TOOLS_PREFIX;
+import static com.android.SdkConstants.XMLNS_PREFIX;
 import static com.android.tools.lint.detector.api.LintUtils.findSubstring;
 import static com.android.utils.SdkUtils.endsWithIgnoreCase;
 import static com.google.common.base.Charsets.UTF_8;
@@ -67,6 +72,7 @@ import com.intellij.psi.PsiReferenceExpression;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 
 import java.io.File;
@@ -627,9 +633,49 @@ public class UnusedResourceDetector extends ResourceXmlDetector implements JavaP
                         }
                     }
                 }
+
+                if (type == ResourceType.RAW &&isKeepFile(name, xmlContext)) {
+                    // Don't flag raw.keep: these are used for resource shrinking
+                    // keep lists
+                    //    http://tools.android.com/tech-docs/new-build-system/resource-shrinking
+                    resource.setReachable(true);
+                }
             }
 
             return resource;
+        }
+
+        private static boolean isKeepFile(
+          @NonNull String name,
+          @Nullable XmlContext xmlContext) {
+            if ("keep".equals(name)) {
+                return true;
+            }
+
+            if (xmlContext != null && xmlContext.document != null) {
+                Element element = xmlContext.document.getDocumentElement();
+                if (element != null && element.getFirstChild() == null) {
+                    NamedNodeMap attributes = element.getAttributes();
+                    boolean found = false;
+                    for (int i = 0, n = attributes.getLength(); i < n; i++) {
+                        Node attr = attributes.item(i);
+                        String nodeName = attr.getNodeName();
+                        if (!nodeName.startsWith(XMLNS_PREFIX)
+                                && !nodeName.startsWith(TOOLS_PREFIX)) {
+                            return false;
+                        } else if (nodeName.endsWith(ATTR_SHRINK_MODE) ||
+                                nodeName.endsWith(ATTR_DISCARD) ||
+                                nodeName.endsWith(ATTR_KEEP)) {
+                            found = true;
+                        }
+                    }
+
+                    return found;
+                }
+            }
+
+
+            return false;
         }
     }
 }
