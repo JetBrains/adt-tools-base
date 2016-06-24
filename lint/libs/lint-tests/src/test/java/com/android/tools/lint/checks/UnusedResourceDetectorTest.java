@@ -614,6 +614,26 @@ public class UnusedResourceDetectorTest extends AbstractCheckTest {
                 ));
     }
 
+    public void testKeepAndDiscard() throws Exception {
+        mEnableIds = false;
+        assertEquals("No warnings.",
+
+                lintProject(
+                        // By name
+                        xml("res/raw/keep.xml", ""
+                                + "<foo/>"),
+
+                        // By content
+                        xml("res/raw/used.xml", ""
+                                + "<resources\n"
+                                + "        xmlns:tools=\"http://schemas.android.com/tools\"\n"
+                                + "        tools:shrinkMode=\"strict\"\n"
+                                + "        tools:discard=\"@raw/unused\"\n"
+                                + "        tools:keep=\"@raw/used\" />\n")
+
+                ));
+    }
+
     @Override
     protected TestLintClient createClient() {
         if (!getName().startsWith("testDynamicResources")) {
