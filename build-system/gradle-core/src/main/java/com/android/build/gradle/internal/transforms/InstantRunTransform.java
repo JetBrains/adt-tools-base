@@ -38,9 +38,11 @@ import com.android.build.gradle.internal.incremental.IncrementalChangeVisitor;
 import com.android.build.gradle.internal.incremental.IncrementalSupportVisitor;
 import com.android.build.gradle.internal.incremental.IncrementalVisitor;
 import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
+import com.android.build.gradle.internal.incremental.InstantRunVerifierStatus;
 import com.android.build.gradle.internal.pipeline.ExtendedContentType;
 import com.android.build.gradle.internal.pipeline.TransformManager;
 import com.android.build.gradle.internal.scope.InstantRunVariantScope;
+import com.android.builder.model.OptionalCompilationStep;
 import com.android.utils.FileUtils;
 import com.android.utils.ILogger;
 import com.google.common.base.Throwables;
@@ -65,6 +67,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -145,6 +148,14 @@ public class InstantRunTransform extends Transform {
     public void transform(@NonNull TransformInvocation invocation)
             throws IOException, TransformException, InterruptedException {
 
+        // if the restart/flag flag is turned on, there is no need to create the classes.3 format
+        Optional<InstantRunVerifierStatus> verifierResult = transformScope
+                .getInstantRunBuildContext().getVerifierResult();
+        @SuppressWarnings("OptionalGetWithoutIsPresent")
+        boolean restartArtifactRequested = verifierResult.isPresent()
+                && (verifierResult.get().equals(InstantRunVerifierStatus.COLD_SWAP_REQUESTED)
+                    || verifierResult.get().equals(InstantRunVerifierStatus.FULL_BUILD_REQUESTED));
+
         TransformOutputProvider outputProvider = invocation.getOutputProvider();
         if (outputProvider == null) {
             throw new IllegalStateException("InstantRunTransform called with null output");
@@ -171,6 +182,9 @@ public class InstantRunTransform extends Transform {
             File classesThreeOutput = outputProvider.getContentLocation("enhanced",
                     ImmutableSet.<ContentType>of(ExtendedContentType.CLASSES_ENHANCED),
                     getScopes(), Format.DIRECTORY);
+            if (restartArtifactRequested) {
+                FileUtils.cleanOutputDir(classesThreeOutput);
+            }
 
             for (TransformInput input : invocation.getInputs()) {
                 for (DirectoryInput directoryInput : input.getDirectoryInputs()) {
@@ -207,10 +221,14 @@ public class InstantRunTransform extends Transform {
                                             inputFile,
                                             classesTwoOutput,
                                             Status.CHANGED);
-                                    transformToClasses3Format(
-                                            inputDir,
-                                            inputFile,
-                                            classesThreeOutput);
+                                    // only generate the classes.3 is the restart/full artifacts
+                                    // are not requested.
+                                    if (!restartArtifactRequested) {
+                                        transformToClasses3Format(
+                                                inputDir,
+                                                inputFile,
+                                                classesThreeOutput);
+                                    }
                                     break;
                                 case NOTCHANGED:
                                     break;
