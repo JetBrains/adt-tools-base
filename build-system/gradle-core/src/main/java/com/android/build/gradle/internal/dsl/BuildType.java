@@ -52,10 +52,7 @@ public class BuildType extends DefaultBuildType implements CoreBuildType, Serial
     private final NdkOptions ndkConfig;
 
     @NonNull
-    private final ExternalNativeNdkBuildOptions externalNativeNdkBuildOptions;
-
-    @NonNull
-    private final ExternalNativeCmakeOptions externalNativeCmakeOptions;
+    private final ExternalNativeBuildOptions externalNativeBuildOptions;
 
     @NonNull
     private final JackOptions jackOptions;
@@ -83,8 +80,8 @@ public class BuildType extends DefaultBuildType implements CoreBuildType, Serial
         javaCompileOptions = instantiator.newInstance(JavaCompileOptions.class, instantiator);
         shaderOptions = instantiator.newInstance(ShaderOptions.class);
         ndkConfig = instantiator.newInstance(NdkOptions.class);
-        externalNativeNdkBuildOptions = instantiator.newInstance(ExternalNativeNdkBuildOptions.class);
-        externalNativeCmakeOptions = instantiator.newInstance(ExternalNativeCmakeOptions.class);
+        externalNativeBuildOptions = instantiator.newInstance(ExternalNativeBuildOptions.class,
+                instantiator);
     }
 
     @VisibleForTesting
@@ -98,8 +95,7 @@ public class BuildType extends DefaultBuildType implements CoreBuildType, Serial
         javaCompileOptions = new JavaCompileOptions();
         shaderOptions = new ShaderOptions();
         ndkConfig = null;
-        externalNativeNdkBuildOptions = new ExternalNativeNdkBuildOptions();
-        externalNativeCmakeOptions = new ExternalNativeCmakeOptions();
+        externalNativeBuildOptions = null;
     }
 
     @Override
@@ -110,14 +106,8 @@ public class BuildType extends DefaultBuildType implements CoreBuildType, Serial
 
     @Override
     @NonNull
-    public ExternalNativeNdkBuildOptions getExternalNativeNdkBuildOptions() {
-        return externalNativeNdkBuildOptions;
-    }
-
-    @Override
-    @NonNull
-    public ExternalNativeCmakeOptions getExternalNativeCmakeOptions() {
-        return externalNativeCmakeOptions;
+    public CoreExternalNativeBuildOptions getExternalNativeBuildOptions() {
+        return externalNativeBuildOptions;
     }
 
     @Override
@@ -393,17 +383,11 @@ public class BuildType extends DefaultBuildType implements CoreBuildType, Serial
     }
 
     /**
-     * Configure ndk-build options.
+     * Configure native build options.
      */
-    public void ndkBuild(@NonNull Action<ExternalNativeNdkBuildOptions> action) {
-        action.execute(externalNativeNdkBuildOptions);
-    }
-
-    /**
-     * Configure cmake options.
-     */
-    public void cmake(@NonNull Action<ExternalNativeCmakeOptions> action) {
-        action.execute(externalNativeCmakeOptions);
+    public ExternalNativeBuildOptions externalNativeBuild(@NonNull Action<ExternalNativeBuildOptions> action) {
+        action.execute(externalNativeBuildOptions);
+        return externalNativeBuildOptions;
     }
 
     /**

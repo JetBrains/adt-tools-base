@@ -212,14 +212,9 @@ public interface ProductFlavor extends DimensionAware, BaseConfig {
     NdkOptions getNdk();
 
     /**
-     * Returns the ndk-build options for this product flavor.
+     * Returns the native build options for this product flavor.
      */
-    ExternalNativeNdkBuildOptions getNdkBuild();
-
-    /**
-     * Returns the cmake options for this product flavor.
-     */
-    ExternalNativeCmakeOptions getCmake();
+    ExternalNativeBuildOptions getExternalNativeBuild();
 
     @NonNull
     VectorDrawablesOptions getVectorDrawables();

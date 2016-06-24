@@ -65,7 +65,7 @@ class NativeBuildOutputTest {
             }
             """;
     }
-/*
+
     @Test
     public void checkNdkBuildErrorInSourceCode() {
         project.buildFile << """
@@ -130,9 +130,11 @@ class NativeBuildOutputTest {
                     }
                 }
                 defaultConfig {
+                  externalNativeBuild {
                     ndkBuild {
                         abiFilters "-unrecognized-abi-" // <-- error
                     }
+                  }
                 }
             }
             """;
@@ -152,9 +154,11 @@ class NativeBuildOutputTest {
                     }
                 }
                 defaultConfig {
+                    externalNativeBuild {
                       cmake {
                         abiFilters "-unrecognized-abi-" // <-- error
                       }
+                    }
                 }
             }
             """;
@@ -190,8 +194,10 @@ class NativeBuildOutputTest {
                     }
                 }
                 defaultConfig {
-                    ndkBuild {
-                        targets "-unrecognized-target-" // <-- error
+                    externalNativeBuild {
+                        ndkBuild {
+                            targets "-unrecognized-target-" // <-- error
+                        }
                     }
                 }
             }
@@ -203,7 +209,7 @@ class NativeBuildOutputTest {
                "Valid values are: hello-jni"],
                 [], 0);
     }
-*/
+
     @Test
     public void checkCMakeWrongTarget() {
         project.buildFile << """
@@ -214,9 +220,11 @@ class NativeBuildOutputTest {
                     }
                 }
                 defaultConfig {
+                    externalNativeBuild {
                       cmake {
                         targets "-unrecognized-target-" // <-- error
                       }
+                    }
                 }
             }
             """;

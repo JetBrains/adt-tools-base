@@ -263,11 +263,15 @@ public class ExternalNativeBuildTask extends BaseTask {
             switch (generator.getNativeBuildSystem()) {
                 case CMAKE:
                     targets = variantData.getVariantConfiguration()
-                            .getExternalNativeCmakeOptions().getTargets();
+                            .getExternalNativeBuildOptions()
+                            .getExternalNativeCmakeOptions()
+                            .getTargets();
                     break;
                 case NDK_BUILD:
                     targets = variantData.getVariantConfiguration()
-                            .getExternalNativeNdkBuildOptions().getTargets();
+                            .getExternalNativeBuildOptions()
+                            .getExternalNativeNdkBuildOptions()
+                            .getTargets();
                     break;
                 default:
                     throw new RuntimeException("Unexpected native build system "

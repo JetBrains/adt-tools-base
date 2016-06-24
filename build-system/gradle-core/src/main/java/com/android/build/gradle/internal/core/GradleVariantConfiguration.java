@@ -24,8 +24,7 @@ import com.android.build.gradle.AndroidConfig;
 import com.android.build.gradle.AndroidGradleOptions;
 import com.android.build.gradle.TestAndroidConfig;
 import com.android.build.gradle.internal.dsl.CoreBuildType;
-import com.android.build.gradle.internal.dsl.CoreExternalNativeCmakeOptions;
-import com.android.build.gradle.internal.dsl.CoreExternalNativeNdkBuildOptions;
+import com.android.build.gradle.internal.dsl.CoreExternalNativeBuildOptions;
 import com.android.build.gradle.internal.dsl.CoreJackOptions;
 import com.android.build.gradle.internal.dsl.CoreJavaCompileOptions;
 import com.android.build.gradle.internal.dsl.CoreNdkOptions;
@@ -66,11 +65,8 @@ public class GradleVariantConfiguration extends VariantConfiguration<CoreBuildTy
     @NonNull
     private final MergedJackOptions mergedJackOptions = new MergedJackOptions();
     @NonNull
-    private final MergedExternalNativeNdkBuildOptions mergedExternalNativeNdkBuildOptions =
-            new MergedExternalNativeNdkBuildOptions();
-    @NonNull
-    private final MergedExternalNativeCmakeOptions mergedExternalNativeCmakeOptions =
-            new MergedExternalNativeCmakeOptions();
+    private final MergedExternalNativeBuildOptions mergedExternalNativeBuildOptions =
+            new MergedExternalNativeBuildOptions();
     @NonNull
     private final MergedJavaCompileOptions mergedJavaCompileOptions =
             new MergedJavaCompileOptions();
@@ -246,17 +242,11 @@ public class GradleVariantConfiguration extends VariantConfiguration<CoreBuildTy
                 MergedNdkConfig::reset,
                 MergedNdkConfig::append);
         computeMergedOptions(
-                mergedExternalNativeNdkBuildOptions,
-                CoreProductFlavor::getExternalNativeNdkBuildOptions,
-                CoreBuildType::getExternalNativeNdkBuildOptions,
-                MergedExternalNativeNdkBuildOptions::reset,
-                MergedExternalNativeNdkBuildOptions::append);
-        computeMergedOptions(
-                mergedExternalNativeCmakeOptions,
-                CoreProductFlavor::getExternalNativeCmakeOptions,
-                CoreBuildType::getExternalNativeCmakeOptions,
-                MergedExternalNativeCmakeOptions::reset,
-                MergedExternalNativeCmakeOptions::append);
+                mergedExternalNativeBuildOptions,
+                CoreProductFlavor::getExternalNativeBuildOptions,
+                CoreBuildType::getExternalNativeBuildOptions,
+                MergedExternalNativeBuildOptions::reset,
+                MergedExternalNativeBuildOptions::append);
     }
 
 
@@ -280,25 +270,8 @@ public class GradleVariantConfiguration extends VariantConfiguration<CoreBuildTy
     }
 
     @NonNull
-    public CoreExternalNativeNdkBuildOptions getExternalNativeNdkBuildOptions() {
-        return mergedExternalNativeNdkBuildOptions;
-    }
-
-    @NonNull
-    public CoreExternalNativeCmakeOptions getExternalNativeCmakeOptions() {
-        return mergedExternalNativeCmakeOptions;
-    }
-
-    @NonNull
-    public Set<String> getExternalNativeAbiFilters() {
-        if (!mergedExternalNativeCmakeOptions.getAbiFilters().isEmpty()) {
-            return mergedExternalNativeCmakeOptions.getAbiFilters();
-        }
-
-        if (!mergedExternalNativeNdkBuildOptions.getAbiFilters().isEmpty()) {
-            return mergedExternalNativeNdkBuildOptions.getAbiFilters();
-        }
-        return Sets.newHashSet();
+    public CoreExternalNativeBuildOptions getExternalNativeBuildOptions() {
+        return mergedExternalNativeBuildOptions;
     }
 
     /**

@@ -76,12 +76,14 @@ $modelBefore
         compileSdkVersion $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
         buildToolsVersion "$GradleTestProject.DEFAULT_BUILD_TOOL_VERSION"
         defaultConfig {
-          cmake {
-            cFlags.addAll("-DTEST_C_FLAG", "-DTEST_C_FLAG_2")
-            cppFlags.addAll("-DTEST_CPP_FLAG")
-            abiFilters.addAll("armeabi-v7a", "armeabi", "armeabi-v7a with NEON",
-                "armeabi-v7a with VFPV3", "armeabi-v6 with VFP")
-            targets.addAll("hello-jni")
+          externalNativeBuild {
+              cmake {
+                cFlags.addAll("-DTEST_C_FLAG", "-DTEST_C_FLAG_2")
+                cppFlags.addAll("-DTEST_CPP_FLAG")
+                abiFilters.addAll("armeabi-v7a", "armeabi", "armeabi-v7a with NEON",
+                    "armeabi-v7a with VFPV3", "armeabi-v6 with VFP")
+                targets.addAll("hello-jni")
+              }
           }
         }
         externalNativeBuild {

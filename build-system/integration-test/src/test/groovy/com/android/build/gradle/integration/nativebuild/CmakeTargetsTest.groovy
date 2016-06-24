@@ -79,8 +79,10 @@ $modelBefore
         compileSdkVersion $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
         buildToolsVersion "$GradleTestProject.DEFAULT_BUILD_TOOL_VERSION"
         defaultConfig {
-          cmake {
-            targets.addAll("library2")
+          externalNativeBuild {
+              cmake {
+                targets.addAll("library2")
+              }
           }
         }
         externalNativeBuild {

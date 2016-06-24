@@ -35,9 +35,8 @@
             <tr><td>buildConfigField</td></tr>
             <tr><td>consumerProguardFile</td></tr>
             <tr><td>consumerProguardFiles</td></tr>
+            <tr><td>externalNativeBuild</td></tr>
             <tr><td>jackOptions</td></tr>
-            <tr><td>cmake</td></tr>
-            <tr><td>ndkBuild</td></tr>
             <tr><td>maxSdkVersion</td></tr>
             <tr><td>maxSdkVersion</td></tr>
             <tr><td>minSdkVersion</td></tr>

@@ -60,9 +60,11 @@ model {
             release {
                 minifyEnabled false
                 proguardFiles.add(file("proguard-rules.pro"))
-                ndkBuild {
-                    cFlags.addAll("-DCOLOR=RED")
-                    abiFilters.addAll("x86", "x86_64")
+                externalNativeBuild {
+                    ndkBuild {
+                        cFlags.addAll("-DCOLOR=RED")
+                        abiFilters.addAll("x86", "x86_64")
+                    }
                 }
             }
         }
