@@ -115,7 +115,7 @@ class NativeBuildOutputTest {
             """;
 
         check(["cmake.path",
-             "CMakeLists.txt but that file doesn't exist"],
+               "CMakeLists.txt but that file doesn't exist"],
             ["cmake.path",
              "CMakeLists.txt but that file doesn't exist"], 2);
     }
@@ -141,7 +141,10 @@ class NativeBuildOutputTest {
 
         project.file("src/main/cpp/Android.mk") << androidMk;
 
-        check(["The -unrecognized-abi- ABI should"], [], 2);
+        check(["ABIs [-unrecognized-abi-] are not available for platform and will be excluded" +
+                       " from building and packaging. Available ABIs are ["],
+                ["ABIs [-unrecognized-abi-] are not available for platform and will be excluded" +
+                         " from building and packaging. Available ABIs are ["], 2);
     }
 
     @Test
@@ -165,7 +168,10 @@ class NativeBuildOutputTest {
 
         project.file("src/main/cpp/CMakeLists.txt") << cmakeLists;
 
-        check([" \"-unrecognized-abi-\" is not supported"], [], 2);
+        check(["ABIs [-unrecognized-abi-] are not available for platform and will be excluded" +
+                       " from building and packaging. Available ABIs are ["],
+                ["ABIs [-unrecognized-abi-] are not available for platform and will be excluded" +
+                         " from building and packaging. Available ABIs are ["], 2);
     }
 
     @Test

@@ -186,7 +186,7 @@ public class NdkHandler {
      *
      * @param toolchain toolchain to use.
      * @param toolchainVersion toolchain version to use.
-     * @param abi target ABI of the toolchaina
+     * @param abi target ABI of the toolchain
      * @return a directory that contains the executables.
      */
     @NonNull
@@ -222,7 +222,7 @@ public class NdkHandler {
     /**
      * Return true if compiledSdkVersion supports 64 bits ABI.
      */
-    public boolean supports64Bits() {
+    private boolean supports64Bits() {
         if (getPlatformVersion() == null) {
             return false;
         }
@@ -244,7 +244,7 @@ public class NdkHandler {
      * If clang is used, then it depends the target abi.
      */
     @NonNull
-    public String getGccToolchainVersion(@NonNull Abi abi) {
+    private String getGccToolchainVersion(@NonNull Abi abi) {
         checkNotNull(ndkInfo);
         return (toolchain == Toolchain.GCC && !toolchainVersion.isEmpty())
                 ? toolchainVersion
@@ -271,7 +271,7 @@ public class NdkHandler {
      * Returns a list of 32-bits ABI.
      */
     @NonNull
-    public static Collection<Abi> getAbiList32() {
+    private static Collection<Abi> getAbiList32() {
         ImmutableList.Builder<Abi> builder = ImmutableList.builder();
         for (Abi abi : Abi.values()) {
             if (!abi.supports64Bits()) {
@@ -331,5 +331,10 @@ public class NdkHandler {
             @NonNull Abi abi) {
         checkNotNull(ndkInfo);
         return ndkInfo.getStlNativeToolSpecification(stl, stlVersion, abi);
+    }
+
+    public int findSuitablePlatformVersion(String abi, int minSdkVersion) {
+        checkNotNull(ndkInfo);
+        return ndkInfo.findSuitablePlatformVersion(abi, minSdkVersion);
     }
 }

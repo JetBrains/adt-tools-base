@@ -16,18 +16,20 @@
 
 package com.android.build.gradle.tasks;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.build.gradle.internal.core.Abi;
+import com.android.build.gradle.internal.ndk.NdkHandler;
 import com.android.builder.core.AndroidBuilder;
 import com.android.ide.common.process.ProcessInfoBuilder;
 import com.android.repository.api.ConsoleProgressIndicator;
 import com.android.repository.api.LocalPackage;
 import com.android.repository.api.ProgressIndicator;
-import com.android.sdklib.IAndroidTarget;
 import com.android.sdklib.repository.AndroidSdkHandler;
 import com.google.common.base.Joiner;
-import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 
 import org.gradle.api.GradleException;
@@ -36,7 +38,6 @@ import org.gradle.api.InvalidUserDataException;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
-import java.util.Set;
 
 /**
  * CMake JSON generation logic. This is separated from the corresponding CMake task so that
@@ -46,8 +47,10 @@ class CmakeExternalNativeJsonGenerator extends ExternalNativeJsonGenerator {
 
     CmakeExternalNativeJsonGenerator(
             @Nullable File sdkDirectory,
+            @NonNull NdkHandler ndkHandler,
+            int minSdkVersion,
             @NonNull String variantName,
-            @NonNull Set<String> abis,
+            @NonNull List<Abi> abis,
             @NonNull AndroidBuilder androidBuilder,
             @NonNull File sdkFolder,
             @NonNull File ndkFolder,
@@ -58,10 +61,12 @@ class CmakeExternalNativeJsonGenerator extends ExternalNativeJsonGenerator {
             boolean debuggable,
             @Nullable List<String> buildArguments,
             @Nullable List<String> cFlags,
-            @Nullable List<String> cppFlags) {
-        super(variantName, abis, androidBuilder, sdkFolder, ndkFolder, soFolder, objFolder,
-                jsonFolder, makeFileOrFolder, debuggable, buildArguments, cFlags, cppFlags);
-        Preconditions.checkNotNull(sdkDirectory);
+            @Nullable List<String> cppFlags,
+            @NonNull List<File> nativeBuildConfigurationsJsons) {
+        super(ndkHandler, minSdkVersion, variantName, abis, androidBuilder, sdkFolder, ndkFolder,
+                soFolder, objFolder, jsonFolder, makeFileOrFolder, debuggable,
+                buildArguments, cFlags, cppFlags, nativeBuildConfigurationsJsons);
+        checkNotNull(sdkDirectory);
 
         File cmakeExecutable = getCmakeExecutable();
         if (!cmakeExecutable.exists()) {
@@ -76,14 +81,16 @@ class CmakeExternalNativeJsonGenerator extends ExternalNativeJsonGenerator {
     }
 
     @Override
-    void processBuildOutput(@NonNull String buildOutput, @NonNull String abi) throws IOException {
+    void processBuildOutput(@NonNull String buildOutput, @NonNull String abi,
+            int abiPlatformVersion) throws IOException {
         // CMake doesn't need to process build output because it directly writes JSON file
         // to specified location.
     }
 
     @NonNull
     @Override
-    ProcessInfoBuilder getProcessBuilder(@NonNull String abi, @NonNull File outputJson) {
+    ProcessInfoBuilder getProcessBuilder(@NonNull String abi, int abiPlatformVersion,
+            @NonNull File outputJson) {
         checkConfiguration();
         ProcessInfoBuilder builder = new ProcessInfoBuilder();
         // CMake requires a folder. Trim the filename off.
@@ -105,15 +112,7 @@ class CmakeExternalNativeJsonGenerator extends ExternalNativeJsonGenerator {
         builder.addArgs(String.format("-DCMAKE_TOOLCHAIN_FILE=%s",
                 getToolChainFile().getAbsolutePath()));
 
-        IAndroidTarget target = androidBuilder.getTarget();
-        if (target != null && !target.isPlatform()) {
-            target = target.getParent();
-        }
-
-        if (target != null) {
-            builder.addArgs(
-                    String.format("-DANDROID_NATIVE_API_LEVEL=%s", target.hashString()));
-        }
+        builder.addArgs(String.format("-DANDROID_NATIVE_API_LEVEL=%s", abiPlatformVersion));
 
         if (!getcFlags().isEmpty()) {
             builder.addArgs(String.format("-DCMAKE_C_FLAGS=%s", Joiner.on(" ").join(getcFlags())));
