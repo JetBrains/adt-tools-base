@@ -628,6 +628,7 @@ public class AnnotationDetector extends Detector implements JavaPsiScanner {
             PsiAnnotationMemberValue[] allowedValues = array.getInitializers();
 
             List<PsiElement> fields = Lists.newArrayListWithCapacity(allowedValues.length);
+            List<Integer> seenValues = Lists.newArrayListWithCapacity(allowedValues.length);
             for (PsiAnnotationMemberValue allowedValue : allowedValues) {
                 if (allowedValue instanceof PsiReferenceExpression) {
                     PsiElement resolved = ((PsiReferenceExpression) allowedValue).resolve();
@@ -638,7 +639,6 @@ public class AnnotationDetector extends Detector implements JavaPsiScanner {
                     fields.add(allowedValue);
                 }
             }
-
 
             // Empty switch: arguably we could skip these (since the IDE already warns about
             // empty switches) but it's useful since the quickfix will kick in and offer all
@@ -709,7 +709,12 @@ public class AnnotationDetector extends Detector implements JavaPsiScanner {
                                 }
                             }
 
-                            if (!found) {
+                            if (found) {
+                                Integer cv = getConstantValue((PsiField) resolved);
+                                if (cv != null) {
+                                    seenValues.add(cv);
+                                }
+                            } else {
                                 List<String> list = computeFieldNames(node, Arrays.asList(allowedValues));
                                 // Keep error message in sync with {@link #getMissingCases}
                                 String message = "Unexpected constant; expected one of: " + Joiner
@@ -721,6 +726,22 @@ public class AnnotationDetector extends Detector implements JavaPsiScanner {
                     }
                 }
             }
+
+            // Any missing switch constants? Before we flag them, look to see if any
+            // of them have the same values: those can be omitted
+            if (!fields.isEmpty()) {
+                ListIterator<PsiElement> iterator = fields.listIterator();
+                while (iterator.hasNext()) {
+                    PsiElement next = iterator.next();
+                    if (next instanceof PsiField) {
+                        Integer cv = getConstantValue((PsiField)next);
+                        if (seenValues.contains(cv)) {
+                            iterator.remove();
+                        }
+                    }
+                }
+            }
+
             if (!fields.isEmpty()) {
                 List<String> list = computeFieldNames(node, fields);
                 // Keep error message in sync with {@link #getMissingCases}
@@ -729,6 +750,16 @@ public class AnnotationDetector extends Detector implements JavaPsiScanner {
                 Location location = mContext.getNameLocation(node);
                 mContext.report(SWITCH_TYPE_DEF, node, location, message);
             }
+        }
+
+        @Nullable
+        private Integer getConstantValue(@NonNull PsiField intDefConstantRef) {
+            Object constant = intDefConstantRef.computeConstantValue();
+            if (constant instanceof Number) {
+                return ((Number)constant).intValue();
+            }
+
+            return null;
         }
 
         private void ensureUniqueValues(@NonNull PsiAnnotation node) {

@@ -592,6 +592,43 @@ public class AnnotationDetectorTest extends AbstractCheckTest {
                 ));
     }
 
+    public void testOverlappingConstants() throws Exception {
+        // Regression test for https://code.google.com/p/android/issues/detail?id=214161
+        // Ensure that we don't flag a missing constant if there is an existing constant
+        // with the same value already present.
+        assertEquals("No warnings.",
+                lintProject(
+                        java("src/test/pkg/IntDefSwitchTest.java", ""
+                                + "package test.pkg;\n"
+                                + "\n"
+                                + "import android.annotation.SuppressLint;\n"
+                                + "import android.support.annotation.IntDef;\n"
+                                + "\n"
+                                + "import java.lang.annotation.Retention;\n"
+                                + "import java.lang.annotation.RetentionPolicy;\n"
+                                + "\n"
+                                + "public class IntDefSwitchTest {\n"
+                                + "    @SuppressLint(\"UniqueConstants\")\n"
+                                + "    @IntDef(value = {CONST1, CONST2})\n"
+                                + "    @Retention(RetentionPolicy.SOURCE)\n"
+                                + "    public @interface Const {\n"
+                                + "    }\n"
+                                + "\n"
+                                + "    private static final int CONST1 = 0;\n"
+                                + "    private static final int CONST2 = CONST1;\n"
+                                + "\n"
+                                + "    void f(@Const int constant) {\n"
+                                + "        switch (constant) {\n"
+                                + "            case CONST1:\n"
+                                + "                break;\n"
+                                + "        }\n"
+                                + "    }\n"
+                                + "}\n"),
+                        copy("src/android/support/annotation/IntDef.java.txt",
+                                "src/android/support/annotation/IntDef.java")
+                ));
+    }
+
     private final TestFile mRequirePermissionAnnotation = java("src/android/support/annotation/RequiresPermission.java", ""
             + "package android.support.annotation;\n"
             + "\n"
