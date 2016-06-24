@@ -152,7 +152,7 @@ public class InstantRunTransform extends Transform {
         Optional<InstantRunVerifierStatus> verifierResult = transformScope
                 .getInstantRunBuildContext().getVerifierResult();
         @SuppressWarnings("OptionalGetWithoutIsPresent")
-        boolean restartArtifactRequested = verifierResult.isPresent()
+        boolean restartArtifactRequested = verifierResult != null && verifierResult.isPresent()
                 && (verifierResult.get().equals(InstantRunVerifierStatus.COLD_SWAP_REQUESTED)
                     || verifierResult.get().equals(InstantRunVerifierStatus.FULL_BUILD_REQUESTED));
 
