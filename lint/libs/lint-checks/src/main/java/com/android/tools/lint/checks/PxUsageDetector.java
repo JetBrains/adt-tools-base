@@ -244,8 +244,8 @@ public class PxUsageDetector extends LayoutDetector {
                 if (context.getClient().supportsProjectResources()) {
                     LintClient client = context.getClient();
                     Project project = context.getProject();
-                    AbstractResourceRepository resources = client.getProjectResources(project,
-                            true);
+                    AbstractResourceRepository resources = client.getResourceRepository(project,
+                            true, false);
                     ResourceUrl url = ResourceUrl.parse(value);
                     if (resources != null && url != null) {
                         List<ResourceItem> items = resources.getResourceItem(url.type, url.name);

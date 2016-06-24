@@ -34,6 +34,7 @@ import com.android.ide.common.res2.ResourceItem;
 import com.android.ide.common.resources.ResourceUrl;
 import com.android.resources.ResourceFolderType;
 import com.android.resources.ResourceType;
+import com.android.tools.lint.client.api.LintClient;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Context;
 import com.android.tools.lint.detector.api.Implementation;
@@ -184,9 +185,9 @@ public class VectorDrawableCompatDetector extends ResourceXmlDetector {
             // TODO: Always use resources, once command-line client supports it.
             isVector = mVectors::contains;
         } else {
-            AbstractResourceRepository resources =
-                    context.getClient().getProjectResources(context.getMainProject(), true);
-
+            LintClient client = context.getClient();
+            AbstractResourceRepository resources = client.getResourceRepository(
+                    context.getMainProject(), true, false);
             if (resources == null) {
                 // We only run on a single layout file, but have no access to the resources
                 // database, there's no way we can perform the check.

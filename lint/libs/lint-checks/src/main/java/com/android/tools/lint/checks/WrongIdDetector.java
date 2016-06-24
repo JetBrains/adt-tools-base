@@ -332,7 +332,7 @@ public class WrongIdDetector extends LayoutDetector {
                     Set<String> spellingDictionary = mGlobalIds;
                     if (!projectScope && client.supportsProjectResources()) {
                         AbstractResourceRepository resources =
-                                client.getProjectResources(context.getProject(), true);
+                                client.getResourceRepository(context.getProject(), true, false);
                         if (resources != null) {
                             spellingDictionary = Sets.newHashSet(
                                     resources.getItemsOfType(ResourceType.ID));
@@ -455,7 +455,7 @@ public class WrongIdDetector extends LayoutDetector {
     private boolean idDefined(@NonNull Context context, @NonNull String id,
             @Nullable File notIn) {
         AbstractResourceRepository resources =
-                context.getClient().getProjectResources(context.getProject(), true);
+                context.getClient().getResourceRepository(context.getProject(), true, true);
         if (resources != null) {
             List<ResourceItem> items = resources.getResourceItem(ResourceType.ID,
                     stripIdPrefix(id));

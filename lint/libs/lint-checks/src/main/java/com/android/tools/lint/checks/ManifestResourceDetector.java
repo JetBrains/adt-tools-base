@@ -114,7 +114,7 @@ public class ManifestResourceDetector extends ResourceXmlDetector {
         Project project = context.getProject();
         AbstractResourceRepository repository = null;
         if (client.supportsProjectResources()) {
-            repository = client.getProjectResources(project, true);
+            repository = client.getResourceRepository(project, true, false);
         }
         if (repository == null && !context.getScope().contains(Scope.RESOURCE_FILE)) {
             // Can't perform incremental analysis without a resource repository

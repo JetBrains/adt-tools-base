@@ -219,7 +219,7 @@ public class ViewTypeDetector extends ResourceXmlDetector implements JavaPsiScan
 
                     if (client.supportsProjectResources()) {
                         AbstractResourceRepository resources = client
-                                .getProjectResources(context.getMainProject(), true);
+                                .getResourceRepository(context.getMainProject(), true, false);
                         if (resources == null) {
                             return;
                         }

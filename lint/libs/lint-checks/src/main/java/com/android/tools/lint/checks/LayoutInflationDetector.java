@@ -201,7 +201,7 @@ public class LayoutInflationDetector extends LayoutDetector implements JavaPsiSc
         }
 
         Project project = context.getProject();
-        AbstractResourceRepository resources = client.getProjectResources(project, true);
+        AbstractResourceRepository resources = client.getResourceRepository(project, true, false);
         if (resources == null) {
             return true; // not certain
         }
@@ -219,7 +219,7 @@ public class LayoutInflationDetector extends LayoutDetector implements JavaPsiSc
             File file = source.getFile();
             if (file.exists()) {
                 try {
-                    String s = context.getClient().readFile(file);
+                    String s = client.readFile(file);
                     if (hasLayoutParams(new StringReader(s))) {
                         return true;
                     }
