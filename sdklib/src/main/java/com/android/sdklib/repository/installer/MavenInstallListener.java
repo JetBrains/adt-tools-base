@@ -51,7 +51,7 @@ import javax.xml.namespace.QName;
  * A {@link PackageOperation.StatusChangeListener} that knows how to install and uninstall Maven
  * packages.
  */
-class MavenInstallListener implements PackageOperation.StatusChangeListener {
+public class MavenInstallListener implements PackageOperation.StatusChangeListener {
 
     public static final String MAVEN_DIR_NAME = "m2repository";
 
