@@ -887,7 +887,7 @@ public class LintUtils {
             return null;
         }
 
-        AbstractResourceRepository resources = client.getProjectResources(project, true);
+        AbstractResourceRepository resources = client.getResourceRepository(project, true, true);
         if (resources == null) {
             return null;
         }
@@ -961,7 +961,7 @@ public class LintUtils {
             return null;
         }
 
-        AbstractResourceRepository resources = client.getProjectResources(project, true);
+        AbstractResourceRepository resources = client.getResourceRepository(project, true, true);
         if (resources == null) {
             return null;
         }

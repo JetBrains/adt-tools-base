@@ -1215,7 +1215,7 @@ public class StringFormatDetector extends ResourceXmlDetector implements JavaPsi
             if (client.supportsProjectResources() &&
                     !context.getScope().contains(Scope.RESOURCE_FILE)) {
                 AbstractResourceRepository resources = client
-                        .getProjectResources(context.getMainProject(), true);
+                        .getResourceRepository(context.getMainProject(), true, false);
                 List<ResourceItem> items;
                 if (resources != null) {
                     items = resources.getResourceItem(ResourceType.STRING, name);

@@ -27,8 +27,11 @@ import static com.android.SdkConstants.ATTR_PACKAGE;
 import static com.android.SdkConstants.ATTR_SRC_COMPAT;
 import static com.android.SdkConstants.ATTR_STYLE;
 import static com.android.SdkConstants.AUTO_URI;
+import static com.android.SdkConstants.CONSTRAINT_LAYOUT;
+import static com.android.SdkConstants.CONSTRAINT_LAYOUT_GUIDELINE;
 import static com.android.SdkConstants.TAG_LAYOUT;
 import static com.android.SdkConstants.TOOLS_URI;
+import static com.android.SdkConstants.VIEW_FRAGMENT;
 import static com.android.SdkConstants.VIEW_TAG;
 import static com.android.resources.ResourceFolderType.ANIM;
 import static com.android.resources.ResourceFolderType.ANIMATOR;
@@ -38,16 +41,19 @@ import static com.android.resources.ResourceFolderType.INTERPOLATOR;
 import static com.android.resources.ResourceFolderType.LAYOUT;
 import static com.android.resources.ResourceFolderType.MENU;
 
-import com.android.SdkConstants;
 import com.android.annotations.NonNull;
+import com.android.ide.common.res2.AbstractResourceRepository;
+import com.android.ide.common.res2.ResourceItem;
 import com.android.resources.ResourceFolderType;
+import com.android.resources.ResourceType;
+import com.android.tools.lint.client.api.LintClient;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.LayoutDetector;
+import com.android.tools.lint.detector.api.Project;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
-import com.android.tools.lint.detector.api.Speed;
 import com.android.tools.lint.detector.api.XmlContext;
 
 import org.w3c.dom.Attr;
@@ -56,6 +62,7 @@ import org.w3c.dom.Node;
 
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -84,7 +91,7 @@ public class DetectMissingPrefix extends LayoutDetector {
                     Scope.MANIFEST_AND_RESOURCE_SCOPE,
                     Scope.MANIFEST_SCOPE, Scope.RESOURCE_FILE_SCOPE));
 
-    private static final Set<String> NO_PREFIX_ATTRS = new HashSet<String>();
+    private static final Set<String> NO_PREFIX_ATTRS = new HashSet<>();
     static {
         NO_PREFIX_ATTRS.add(ATTR_CLASS);
         NO_PREFIX_ATTRS.add(ATTR_STYLE);
@@ -106,12 +113,6 @@ public class DetectMissingPrefix extends LayoutDetector {
                 || folderType == ANIMATOR
                 || folderType == COLOR
                 || folderType == INTERPOLATOR;
-    }
-
-    @NonNull
-    @Override
-    public Speed getSpeed() {
-        return Speed.FAST;
     }
 
     @Override
@@ -169,6 +170,7 @@ public class DetectMissingPrefix extends LayoutDetector {
                 // ....&& !attribute.getLocalName().startsWith(ATTR_LAYOUT_RESOURCE_PREFIX)
                 && attribute.getOwnerElement().getParentNode().getNodeType() == Node.ELEMENT_NODE
                 && !isCustomView((Element) attribute.getOwnerElement().getParentNode())) {
+
             if (context.getResourceFolderType() == LAYOUT
                     && AUTO_URI.equals(uri)) {
                 // Data binding: Can add attributes like onClickListener to buttons etc.
@@ -182,6 +184,24 @@ public class DetectMissingPrefix extends LayoutDetector {
                 if (attribute.getLocalName().equals(ATTR_SRC_COMPAT)) {
                     return;
                 }
+
+                // Look for other app compat attributes - such as buttonTint
+                Project project = context.getMainProject();
+                LintClient client = context.getClient();
+                AbstractResourceRepository repository = client.getResourceRepository(project,
+                        true, true);
+                if (repository != null) {
+                    List<ResourceItem> items = repository.getResourceItem(ResourceType.ATTR,
+                                                                        attribute.getLocalName());
+                    if (items != null && !items.isEmpty()) {
+                        for (ResourceItem item : items) {
+                            String libraryName = item.getLibraryName();
+                            if (libraryName != null && libraryName.startsWith("appcompat-")) {
+                                return;
+                            }
+                        }
+                    }
+                }
             }
 
             context.report(MISSING_NAMESPACE, attribute,
@@ -192,7 +212,7 @@ public class DetectMissingPrefix extends LayoutDetector {
     }
 
     private static boolean isFragment(Element element) {
-        return SdkConstants.VIEW_FRAGMENT.equals(element.getTagName());
+        return VIEW_FRAGMENT.equals(element.getTagName());
     }
 
     private static boolean isCustomView(Element element) {
@@ -201,6 +221,12 @@ public class DetectMissingPrefix extends LayoutDetector {
         if (tag.equals(VIEW_TAG)) {
             // <view class="my.custom.view" ...>
             return true;
+        }
+
+        // For the purposes of this check, the ConstraintLayout isn't a custom view
+        //noinspection SimplifiableIfStatement
+        if (CONSTRAINT_LAYOUT.equals(tag) || CONSTRAINT_LAYOUT_GUIDELINE.equals(tag)) {
+            return false;
         }
 
         return tag.indexOf('.') != -1 && (!tag.startsWith(ANDROID_PKG_PREFIX)

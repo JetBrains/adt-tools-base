@@ -288,7 +288,7 @@ public class ArraySizeDetector extends ResourceXmlDetector {
             @NonNull String name, int childCount) {
         LintClient client = context.getClient();
         Project project = context.getMainProject();
-        AbstractResourceRepository resources = client.getProjectResources(project, true);
+        AbstractResourceRepository resources = client.getResourceRepository(project, true, false);
         if (resources == null) {
             return;
         }

@@ -39,6 +39,7 @@ import com.android.annotations.Nullable;
 import com.android.ide.common.repository.ResourceVisibilityLookup;
 import com.android.ide.common.res2.AbstractResourceRepository;
 import com.android.ide.common.res2.ResourceItem;
+import com.android.repository.api.ProgressIndicator;
 import com.android.resources.ResourceFolderType;
 import com.android.sdklib.BuildToolInfo;
 import com.android.sdklib.IAndroidTarget;
@@ -2196,11 +2197,26 @@ public class LintDriver {
             return mDelegate.supportsProjectResources();
         }
 
+        @SuppressWarnings("deprecation") // forwarding required API
         @Nullable
         @Override
         public AbstractResourceRepository getProjectResources(Project project,
                 boolean includeDependencies) {
             return mDelegate.getProjectResources(project, includeDependencies);
+        }
+
+        @Nullable
+        @Override
+        public AbstractResourceRepository getResourceRepository(Project project,
+                boolean includeModuleDependencies, boolean includeLibraries) {
+            return mDelegate.getResourceRepository(project, includeModuleDependencies,
+                    includeLibraries);
+        }
+
+        @NonNull
+        @Override
+        public ProgressIndicator getRepositoryLogger() {
+            return mDelegate.getRepositoryLogger();
         }
 
         @NonNull

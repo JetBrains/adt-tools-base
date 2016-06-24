@@ -29,9 +29,7 @@ import static com.android.tools.lint.detector.api.LintUtils.endsWith;
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.builder.model.AndroidArtifact;
 import com.android.builder.model.AndroidLibrary;
-import com.android.builder.model.Dependencies;
 import com.android.builder.model.Variant;
 import com.android.ide.common.repository.ResourceVisibilityLookup;
 import com.android.ide.common.res2.AbstractResourceRepository;
@@ -1117,7 +1115,7 @@ public abstract class LintClient {
 
     /**
      * Returns true if this client supports project resource repository lookup via
-     * {@link #getProjectResources(Project,boolean)}
+     * {@link #getResourceRepository(Project, boolean, boolean)}
      *
      * @return true if the client can provide project resources
      */
@@ -1130,10 +1128,26 @@ public abstract class LintClient {
      *
      * @param includeDependencies if true, include merged view of all dependencies
      * @return the project resources, or null if not available
+     * @deprecated Use {@link #getResourceRepository} instead
      */
+    @Deprecated
     @Nullable
     public AbstractResourceRepository getProjectResources(Project project,
             boolean includeDependencies) {
+        return getResourceRepository(project, includeDependencies, false);
+    }
+
+    /**
+     * Returns the project resources, if available
+     *
+     * @param includeModuleDependencies if true, include merged view of all module dependencies
+     * @param includeLibraries          if true, include merged view of all library dependencies
+     *                                  (this also requires all module dependencies)
+     * @return the project resources, or null if not available
+     */
+    @Nullable
+    public AbstractResourceRepository getResourceRepository(Project project,
+            boolean includeModuleDependencies, boolean includeLibraries) {
         return null;
     }
 

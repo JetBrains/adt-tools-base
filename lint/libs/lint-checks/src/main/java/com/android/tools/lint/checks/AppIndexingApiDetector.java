@@ -662,7 +662,7 @@ public class AppIndexingApiDetector extends Detector implements XmlScanner, Java
         if (style == null || style.type != ResourceType.STRING || style.framework) {
             return str;
         }
-        AbstractResourceRepository resources = client.getProjectResources(project, true);
+        AbstractResourceRepository resources = client.getResourceRepository(project, true, true);
         if (resources == null) {
             return str;
         }
