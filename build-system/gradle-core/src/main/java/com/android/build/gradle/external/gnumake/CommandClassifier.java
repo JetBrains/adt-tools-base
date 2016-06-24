@@ -235,9 +235,10 @@ class CommandClassifier {
                     || executable.endsWith("g++")
                     || executable.endsWith("clang")
                     || executable.endsWith("clang++")
+                    || executable.endsWith("clang.exe")
+                    || executable.endsWith("clang++.exe")
                     || executable.contains("-gcc-")
-                    || executable.contains("-g++-")
-                    || executable.contains("-clang-");
+                    || executable.contains("-g++-");
         }
     }
 }
