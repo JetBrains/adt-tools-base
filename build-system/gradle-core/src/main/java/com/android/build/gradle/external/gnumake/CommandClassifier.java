@@ -18,11 +18,11 @@ package com.android.build.gradle.external.gnumake;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -35,13 +35,13 @@ import joptsimple.OptionSet;
  */
 class CommandClassifier {
     @NonNull
-    final private static NativeCompilerBuildTool sNativeCompilerBuildTool =
+    static final NativeCompilerBuildTool sNativeCompilerBuildTool =
             new NativeCompilerBuildTool();
     @NonNull
-    final private static GccArBuildTool sGccArBuildTool =
+    private static final GccArBuildTool sGccArBuildTool =
             new GccArBuildTool();
     @NonNull
-    final private static CCacheBuildTool sCCacheBuildTool =
+    private static final CCacheBuildTool sCCacheBuildTool =
             new CCacheBuildTool();
 
     @NonNull
@@ -190,78 +190,40 @@ class CommandClassifier {
      */
     static class NativeCompilerBuildTool implements BuildTool {
         @NonNull
-        private static final OptionParser PARSER = new OptionParser("cSE");
-
-        // These are the gcc/clang flags that take a following parameter. This list is gleaned
-        // from the clang sources.
-        @NonNull
-        private static final List<String> ignoreOneFlags = Arrays.asList(
-                "assert",
-                "define-macro",
-                "dump",
-                "gcc-toolchain",
-                "idirafter",
-                "imacros",
-                "imultilib",
-                "include",
-                "include-directory",
-                "include-directory-after",
-                "include-prefix",
-                "include-with-prefix",
-                "include-with-prefix-after",
-                "include-with-prefix-before",
-                "iprefix",
-                "isysroot",
-                "isystem",
-                "iquote",
-                "iwithprefix",
-                "iwithprefixbefore",
-                "o",
-                "output",
-                "output-pch",
-                "undefine-macro",
-                "write-dependencies",
-                "write-user-dependencies",
-                "A",
-                "D",
-                "F",
-                "I",
-                "MD",
-                "MF",
-                "MMD",
-                "MQ",
-                "MT",
-                "U",
-                "target");
-
-        static {
-            // Also allow flags that we don't recognize for a limited amount of future-proofing.
-            PARSER.allowsUnrecognizedOptions();
-
-            // These are the flags that require an argument.
-            for (String flag :ignoreOneFlags) {
-                PARSER.accepts(flag).withRequiredArg();
-            }
-
-        }
-
-        @NonNull
         @Override
         public BuildStepInfo createCommand(@NonNull CommandLine command) {
             String[] arr = new String[command.args.size()];
             arr = command.args.toArray(arr);
-            OptionSet options = PARSER.parse(arr);
+            OptionSet options = CompilerParser.get().parse(arr);
 
             List<String> outputs = new ArrayList<>();
             @SuppressWarnings("unchecked")
             List<String> nonOptions = (List<String>) options.nonOptionArguments();
+
             // Inputs are whatever is left over that doesn't look like a flag.
-            List<String> inputs = nonOptions.stream()
+            List<String> inputs =
+                    nonOptions.stream()
+                    // gcc and clang don't allow source files that start with "-", so we don't need
+                    // to either.
                     .filter(nonOption -> !nonOption.startsWith("-"))
+                    // Do a weak heuristic check about whether this might really be a file. If
+                    // there's no dot then it probably isn't a file.
+                    .filter(nonOption -> nonOption.contains("."))
                     .collect(Collectors.toList());
 
             // Check -o
             if (options.has("o") && options.hasArgument("o")) {
+                //noinspection unchecked
+                List<String> outputValues = (List<String> ) options.valuesOf("o");
+                if (options.valuesOf("o").size() > 1) {
+                    throw new RuntimeException(
+                        String.format(
+                                "GNUMAKE: Expected exactly one -o file in compile step:"
+                                        + " %s\nbut received: \n%s\nin command:\n%s\n",
+                                this,
+                                Joiner.on("\n").join(outputValues),
+                                Joiner.on("\n").join(command.args)));
+                }
                 String output = (String) options.valueOf("o");
                 outputs.add(output);
             }
@@ -271,6 +233,16 @@ class CommandClassifier {
             boolean inputsAreSourceFiles = options.has("c")
                 || options.has("S")
                 || options.has("E");
+
+            if (inputsAreSourceFiles && inputs.size() != 1) {
+                throw new RuntimeException(
+                        String.format(
+                                "GNUMAKE: Expected exactly one source file in compile step:"
+                                        + " %s\nbut received: \n%s\nin command:\n%s\n",
+                                this,
+                                Joiner.on("\n").join(inputs),
+                                Joiner.on("\n").join(command.args)));
+            }
 
             return new BuildStepInfo(command, inputs, outputs, inputsAreSourceFiles);
         }

@@ -73,6 +73,11 @@ public class CommandClassifierTest {
     }
 
     @Test
+    public void mmd() throws FileNotFoundException {
+        assertClassifyContains("g++ -MMD test.cpp -D BOB", "[ in:test.cpp ]");
+    }
+
+    @Test
     public void include1() throws FileNotFoundException {
         assertClassifyContains("g++ -I foo bar.c", "[ in:bar.c ]");
     }

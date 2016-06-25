@@ -36,6 +36,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.List;
 import java.util.Map;
 
 public class NdkSampleTest {
@@ -111,6 +112,7 @@ public class NdkSampleTest {
          */
         private static class StreamReaderThread extends Thread {
             private final InputStream is;
+            @SuppressWarnings("StringBufferField")
             private final StringBuilder output = new StringBuilder();
             @Nullable
             IOException ioe = null;
@@ -128,17 +130,15 @@ public class NdkSampleTest {
             public void run() {
                 try {
                     InputStreamReader streamReader = new InputStreamReader(is);
-                    BufferedReader bufferedReader = new BufferedReader(streamReader);
-                    try {
+                    try (BufferedReader bufferedReader = new BufferedReader(streamReader)) {
                         String line;
                         while ((line = bufferedReader.readLine()) != null) {
                             output.append(line);
                             output.append("\n");
                         }
-                    } finally {
-                        //noinspection ThrowFromFinallyBlock
-                        bufferedReader.close();
                     }
+                    //noinspection ThrowFromFinallyBlock
+
                 } catch (IOException ioe) {
                     this.ioe = ioe;
                 }
@@ -253,6 +253,9 @@ public class NdkSampleTest {
             String variantBuildOutputText = Joiner.on('\n')
                     .join(Files.readLines(variantBuildOutputFile, Charsets.UTF_8));
             builder.addCommands("echo build command", variantName, variantBuildOutputText, true);
+
+            checkExpectedCompilerParserBehavior(CommandLineParser.parse(variantBuildOutputText,
+                    operatingSystem == SdkConstants.PLATFORM_WINDOWS));
         }
         NativeBuildConfigValue actualConfig = builder.build();
         String actualResult = new GsonBuilder()
@@ -287,6 +290,52 @@ public class NdkSampleTest {
                 .fromJson(baselineResult, NativeBuildConfigValue.class);
         Truth.assert_().about(NativeBuildConfigValueSubject.FACTORY)
                 .that(actualConfig).isEqualTo(baselineConfig);
+    }
+
+    // Find the compiler commands and check their parse against expected parse.
+    private static void checkExpectedCompilerParserBehavior(List<CommandLine> commands) {
+        for (CommandLine command : commands) {
+            if (CommandClassifier.sNativeCompilerBuildTool.isMatch(command)) {
+                for (String arg : command.args) {
+                    if (arg.startsWith("-")) {
+                        String trimmed = arg;
+                        while(trimmed.startsWith("-")) {
+                            trimmed = trimmed.substring(1);
+                        }
+                        boolean matched = false;
+                        for (String withRequiredArgFlag : CompilerParser.WITH_REQUIRED_ARG_FLAGS) {
+                            if (trimmed.startsWith(withRequiredArgFlag)) {
+                                matched = true;
+                            }
+                        }
+
+                        for (String withNoArgsFlag : CompilerParser.WITH_NO_ARG_FLAGS) {
+                            if (trimmed.equals(withNoArgsFlag)) {
+                                matched = true;
+                            }
+                        }
+
+                        // Recognize -W style flag
+                        if (trimmed.startsWith("W")) {
+                            matched = true;
+                        }
+
+                        if (!matched) {
+                            // If you get here, there is a new gcc or clang flag in a baseline test.
+                            // For completeness, you should add this flag in CompilerParser.
+                            throw new RuntimeException(
+                                    "The flag " + arg + " was not a recognized compiler flag");
+
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    @Test
+    public void clang_example() throws IOException, InterruptedException {
+        checkJson("samples/clang");
     }
 
     @Test

@@ -1,0 +1,93 @@
+{
+  "buildFiles": [
+    {
+      "path": "{testPath}"
+    }
+  ],
+  "libraries": {
+    "helloneon-debug-armeabi": {
+      "buildCommand": "echo build command helloneon",
+      "toolchain": "toolchain-armeabi",
+      "abi": "armeabi",
+      "artifactName": "helloneon",
+      "files": [
+        {
+          "src": {
+            "path": "/usr/local/google/home/jomof/projects/hello-neon1/app/src/main/cpp/helloneon.c"
+          },
+          "flags": "\"-MP\" \"-gcc-toolchain\" \"/usr/local/google/home/jomof/Android/Sdk/ndk-bundle/toolchains/arm-linux-androideabi-4.9/prebuilt/linux-x86_64\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-Wno-invalid-command-line-argument\" \"-Wno-unused-command-line-argument\" \"-no-canonical-prefixes\" \"-fno-integrated-as\" \"-g\" \"-target\" \"armv5te-none-linux-androideabi\" \"-march\u003darmv5te\" \"-mtune\u003dxscale\" \"-msoft-float\" \"-mthumb\" \"-Os\" \"-DNDEBUG\" \"-I/usr/local/google/home/jomof/Android/Sdk/ndk-bundle/sources/android/cpufeatures\" \"-I/usr/local/google/home/jomof/projects/hello-neon1/app/src/main/cpp\" \"-DANDROID\" \"-std\u003dc++11\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-isystem\" \"/usr/local/google/home/jomof/Android/Sdk/ndk-bundle/platforms/android-9/arch-arm/usr/include\""
+        }
+      ],
+      "output": {
+        "path": "/usr/local/google/home/jomof/projects/hello-neon1/app/build/intermediates/ndkBuild/debug/obj/local/armeabi/libhelloneon.so"
+      }
+    },
+    "cpu-features-debug-cpufeatures": {
+      "buildCommand": "echo build command cpu-features",
+      "toolchain": "toolchain-cpufeatures",
+      "abi": "cpufeatures",
+      "artifactName": "cpu-features",
+      "files": [
+        {
+          "src": {
+            "path": "/usr/local/google/home/jomof/Android/Sdk/ndk-bundle/sources/android/cpufeatures/cpu-features.c"
+          },
+          "flags": "\"-MP\" \"-gcc-toolchain\" \"/usr/local/google/home/jomof/Android/Sdk/ndk-bundle/toolchains/arm-linux-androideabi-4.9/prebuilt/linux-x86_64\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-Wno-invalid-command-line-argument\" \"-Wno-unused-command-line-argument\" \"-no-canonical-prefixes\" \"-fno-integrated-as\" \"-g\" \"-target\" \"armv5te-none-linux-androideabi\" \"-march\u003darmv5te\" \"-mtune\u003dxscale\" \"-msoft-float\" \"-mthumb\" \"-Os\" \"-DNDEBUG\" \"-I/usr/local/google/home/jomof/Android/Sdk/ndk-bundle/sources/android/cpufeatures\" \"-DANDROID\" \"-Wall\" \"-Wextra\" \"-Werror\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-isystem\" \"/usr/local/google/home/jomof/Android/Sdk/ndk-bundle/platforms/android-9/arch-arm/usr/include\""
+        }
+      ],
+      "output": {
+        "path": "/usr/local/google/home/jomof/projects/hello-neon1/app/build/intermediates/ndkBuild/debug/obj/local/armeabi/objs/cpufeatures/cpu-features.o"
+      }
+    },
+    "helloneon-release-armeabi": {
+      "buildCommand": "echo build command helloneon",
+      "toolchain": "toolchain-armeabi",
+      "abi": "armeabi",
+      "artifactName": "helloneon",
+      "files": [
+        {
+          "src": {
+            "path": "/usr/local/google/home/jomof/projects/hello-neon1/app/src/main/cpp/helloneon.c"
+          },
+          "flags": "\"-MP\" \"-gcc-toolchain\" \"/usr/local/google/home/jomof/Android/Sdk/ndk-bundle/toolchains/arm-linux-androideabi-4.9/prebuilt/linux-x86_64\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-Wno-invalid-command-line-argument\" \"-Wno-unused-command-line-argument\" \"-no-canonical-prefixes\" \"-fno-integrated-as\" \"-g\" \"-target\" \"armv5te-none-linux-androideabi\" \"-march\u003darmv5te\" \"-mtune\u003dxscale\" \"-msoft-float\" \"-mthumb\" \"-Os\" \"-DNDEBUG\" \"-I/usr/local/google/home/jomof/Android/Sdk/ndk-bundle/sources/android/cpufeatures\" \"-I/usr/local/google/home/jomof/projects/hello-neon1/app/src/main/cpp\" \"-DANDROID\" \"-std\u003dc++11\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-isystem\" \"/usr/local/google/home/jomof/Android/Sdk/ndk-bundle/platforms/android-9/arch-arm/usr/include\""
+        }
+      ],
+      "output": {
+        "path": "/usr/local/google/home/jomof/projects/hello-neon1/app/build/intermediates/ndkBuild/debug/obj/local/armeabi/libhelloneon.so"
+      }
+    },
+    "cpu-features-release-cpufeatures": {
+      "buildCommand": "echo build command cpu-features",
+      "toolchain": "toolchain-cpufeatures",
+      "abi": "cpufeatures",
+      "artifactName": "cpu-features",
+      "files": [
+        {
+          "src": {
+            "path": "/usr/local/google/home/jomof/Android/Sdk/ndk-bundle/sources/android/cpufeatures/cpu-features.c"
+          },
+          "flags": "\"-MP\" \"-gcc-toolchain\" \"/usr/local/google/home/jomof/Android/Sdk/ndk-bundle/toolchains/arm-linux-androideabi-4.9/prebuilt/linux-x86_64\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-Wno-invalid-command-line-argument\" \"-Wno-unused-command-line-argument\" \"-no-canonical-prefixes\" \"-fno-integrated-as\" \"-g\" \"-target\" \"armv5te-none-linux-androideabi\" \"-march\u003darmv5te\" \"-mtune\u003dxscale\" \"-msoft-float\" \"-mthumb\" \"-Os\" \"-DNDEBUG\" \"-I/usr/local/google/home/jomof/Android/Sdk/ndk-bundle/sources/android/cpufeatures\" \"-DANDROID\" \"-Wall\" \"-Wextra\" \"-Werror\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-isystem\" \"/usr/local/google/home/jomof/Android/Sdk/ndk-bundle/platforms/android-9/arch-arm/usr/include\""
+        }
+      ],
+      "output": {
+        "path": "/usr/local/google/home/jomof/projects/hello-neon1/app/build/intermediates/ndkBuild/debug/obj/local/armeabi/objs/cpufeatures/cpu-features.o"
+      }
+    }
+  },
+  "toolchains": {
+    "toolchain-armeabi": {
+      "cCompilerExecutable": {
+        "path": "/usr/local/google/home/jomof/Android/Sdk/ndk-bundle/toolchains/llvm/prebuilt/linux-x86_64/bin/clang"
+      }
+    },
+    "toolchain-cpufeatures": {
+      "cCompilerExecutable": {
+        "path": "/usr/local/google/home/jomof/Android/Sdk/ndk-bundle/toolchains/llvm/prebuilt/linux-x86_64/bin/clang"
+      }
+    }
+  },
+  "cFileExtensions": [
+    "c"
+  ],
+  "cppFileExtensions": []
+}
