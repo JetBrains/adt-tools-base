@@ -90,7 +90,9 @@ public class ConstraintLayoutDetector extends LayoutDetector {
                 if (CONSTRAINT_LAYOUT_LIB_GROUP_ID.equals(rc.getGroupId())
                     && CONSTRAINT_LAYOUT_LIB_ARTIFACT_ID.equals(rc.getArtifactId())) {
                     String version = rc.getVersion();
-                    if ("1.0.0-alpha1".equals(version)) {
+                    if ("1.0.0-alpha1".equals(version)
+                            || "1.0.0.-alpha2".equals(version)
+                            || "1.0.0-alpha3".equals(version)) {
                         // Keep in sync with #isUpgradeDependencyError below
                         String message = "Using version " + version
                                          + " of the constraint library, which is obsolete";

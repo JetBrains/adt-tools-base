@@ -41,7 +41,7 @@ import java.util.List;
 public class ConstraintLayoutDetectorTest extends AbstractCheckTest {
     public void test1() throws Exception {
         assertEquals(""
-                + "res/layout/layout1.xml:2: Error: Using version 1.0.0-alpha1 of the constraint library, which is obsolete [MissingConstraints]\n"
+                + "res/layout/layout1.xml:2: Error: Using version 1.0.0-alpha3 of the constraint library, which is obsolete [MissingConstraints]\n"
                 + "<android.support.constraint.ConstraintLayout xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
                 + "^\n"
                 + "res/layout/layout1.xml:19: Error: This view is not constrained, it only has designtime positions, so it will jump to (0,0) unless you add constraints [MissingConstraints]\n"
@@ -160,12 +160,12 @@ public class ConstraintLayoutDetectorTest extends AbstractCheckTest {
                         Simulate variant which has an AndroidLibrary with
                         resolved coordinates
 
-                        com.android.support.constraint:constraint-layout:1.0.0-alpha1"
+                        com.android.support.constraint:constraint-layout:1.0.0-alpha3"
                          */
                         MavenCoordinates coordinates = mock(MavenCoordinates.class);
                         when(coordinates.getGroupId()).thenReturn("com.android.support.constraint");
                         when(coordinates.getArtifactId()).thenReturn("constraint-layout");
-                        when(coordinates.getVersion()).thenReturn("1.0.0-alpha1");
+                        when(coordinates.getVersion()).thenReturn("1.0.0-alpha3");
 
                         AndroidLibrary library = mock(AndroidLibrary.class);
                         when(library.getResolvedCoordinates()).thenReturn(coordinates);
