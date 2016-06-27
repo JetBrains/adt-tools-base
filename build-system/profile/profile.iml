@@ -16,5 +16,8 @@
     <orderEntry type="module" module-name="protos" />
     <orderEntry type="module" module-name="tracker" />
     <orderEntry type="module" module-name="shared" />
+    <orderEntry type="module" module-name="analytics-shared" />
+    <orderEntry type="module" module-name="analytics-tracker" />
+    <orderEntry type="module" module-name="analytics-protos" />
   </component>
 </module>

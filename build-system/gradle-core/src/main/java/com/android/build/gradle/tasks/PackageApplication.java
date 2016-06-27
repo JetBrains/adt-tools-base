@@ -33,6 +33,7 @@ import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.io.Files;
+import com.google.wireless.android.sdk.stats.AndroidStudioStats;
 
 import org.gradle.api.logging.Logger;
 import org.gradle.api.tasks.ParallelizableTask;

@@ -1048,5 +1048,6 @@
       </library>
     </orderEntry>
     <orderEntry type="library" name="protobuf" level="project" />
+    <orderEntry type="module" module-name="analytics-protos" />
   </component>
 </module>
