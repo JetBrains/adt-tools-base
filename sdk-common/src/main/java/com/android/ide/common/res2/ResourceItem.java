@@ -61,6 +61,8 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
+import java.nio.file.Paths;
+
 /**
  * A resource.
  *
@@ -393,6 +395,15 @@ public class ResourceItem extends DataItem<ResourceFile>
             case STRING:
                 value = parseTextValue(new TextResourceValue(type, name, isFrameworks, mLibraryName));
                 break;
+            case ANIMATOR:
+            case DRAWABLE:
+            case INTERPOLATOR:
+            case LAYOUT:
+            case MENU:
+            case MIPMAP:
+            case TRANSITION:
+                value = parseFileName(new ResourceValue(type, name, isFrameworks, mLibraryName));
+                break;
             default:
                 value = parseValue(new ResourceValue(type, name, isFrameworks, mLibraryName));
                 break;
@@ -565,6 +576,13 @@ public class ResourceItem extends DataItem<ResourceFile>
     private ResourceValue parseValue(@NonNull ResourceValue value) {
         String text = getTextNode(mValue.getChildNodes());
         value.setValue(ValueXmlHelper.unescapeResourceString(text, false, true));
+
+        return value;
+    }
+
+    @NonNull
+    private ResourceValue parseFileName(@NonNull ResourceValue value) {
+        value.setValue(Paths.get(getTextNode(mValue.getChildNodes())).toString());
 
         return value;
     }
