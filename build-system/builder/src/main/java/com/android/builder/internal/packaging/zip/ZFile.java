@@ -1009,8 +1009,11 @@ public class ZFile implements Closeable {
      */
     @Override
     public void close() throws IOException {
-        update();
-        innerClose();
+        // We need to make sure to release mRaf, otherwise we end up locking the file on
+        // Windows. Use try-with-resources to handle exception suppressing.
+        try (Closeable ignored = this::innerClose) {
+            update();
+        }
 
         notify(ext -> {
            ext.closed();
@@ -2017,18 +2020,6 @@ public class ZFile implements Closeable {
 
         mRaf.seek(offset);
         RandomAccessFileUtils.fullyRead(mRaf, data);
-    }
-
-    /**
-     * Obtains the size the file has on disk. This may be out-of-sync with changes made if
-     * {@link #update()} has not been called.
-     *
-     * @return the size of the file on disk
-     * @throws IOException failed to read the file size
-     */
-    public long directSize() throws IOException {
-        Preconditions.checkNotNull(mRaf, "File is closed");
-        return mRaf.length();
     }
 
     /**
