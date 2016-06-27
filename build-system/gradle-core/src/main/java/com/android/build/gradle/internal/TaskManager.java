@@ -104,6 +104,7 @@ import com.android.build.gradle.internal.transforms.NewShrinkerTransform;
 import com.android.build.gradle.internal.transforms.ProGuardTransform;
 import com.android.build.gradle.internal.transforms.ProguardConfigurable;
 import com.android.build.gradle.internal.transforms.ShrinkResourcesTransform;
+import com.android.build.gradle.internal.transforms.StripDebugSymbolTransform;
 import com.android.build.gradle.internal.variant.ApkVariantData;
 import com.android.build.gradle.internal.variant.ApkVariantOutputData;
 import com.android.build.gradle.internal.variant.ApplicationVariantData;
@@ -757,7 +758,7 @@ public abstract class TaskManager {
             variantScope.getTransformManager().addStream(OriginalStream.builder()
                     .addContentType(ExtendedContentType.NATIVE_LIBS)
                     .addScope(Scope.PROJECT)
-                    .setFolder(variantScope.getExternalNativeJsonGenerator().getSoFolder())
+                    .setFolder(variantScope.getExternalNativeJsonGenerator().getObjFolder())
                     .setDependency(variantScope.getExternalNativeBuildTask().getName())
                     .build());
         }
@@ -1287,6 +1288,27 @@ public abstract class TaskManager {
             ndkCompile.setSoFolder(ndkSoFolder.iterator().next());
         }
     }
+
+    /**
+     * Create transform for stripping debug symbols from native libraries before deploying.
+     */
+    public static void createStripNativeLibraryTask(
+            @NonNull TaskFactory tasks,
+            @NonNull VariantScope scope) {
+        if (!scope.getGlobalScope().getNdkHandler().isConfigured()) {
+            // We don't know where the NDK is, so we won't be stripping the debug symbols from
+            // native libraries.
+            return;
+        }
+        TransformManager transformManager = scope.getTransformManager();
+        transformManager.addTransform(
+                tasks,
+                scope,
+                new StripDebugSymbolTransform(
+                        scope.getGlobalScope().getProject(),
+                        scope.getGlobalScope().getNdkHandler()));
+    }
+
 
     /**
      * Creates the tasks to build unit tests.

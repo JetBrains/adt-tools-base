@@ -284,6 +284,8 @@ public class ApplicationTaskManager extends TaskManager {
             createDataBindingTasks(tasks, variantScope);
         }
 
+        createStripNativeLibraryTask(tasks, variantScope);
+
         if (variantData.getSplitHandlingPolicy().equals(
                 SplitHandlingPolicy.RELEASE_21_AND_AFTER_POLICY)) {
             if (getExtension().getBuildToolsRevision().getMajor() < 21) {

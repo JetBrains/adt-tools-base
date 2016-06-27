@@ -22,12 +22,14 @@ import com.android.build.gradle.integration.common.fixture.app.EmptyAndroidTestA
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldJniApp
 import com.android.build.gradle.integration.common.fixture.app.MultiModuleTestProject
 import com.android.build.gradle.integration.common.fixture.app.TestSourceFile
+import com.android.build.gradle.integration.common.utils.ZipHelper
 import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Test
 
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatAar
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatNativeLib
 
 /**
  * Integration test library plugin with JNI sources.
@@ -117,5 +119,10 @@ model {
 
         File app = project.getSubproject("app").getApk("debug")
         assertThatAar(app).contains("lib/x86/libhello-jni.so")
+
+        File lib = ZipHelper.extractFile(releaseAar, "jni/x86/libhello-jni.so")
+        assertThatNativeLib(lib).isNotStripped()
+        lib = ZipHelper.extractFile(app, "lib/x86/libhello-jni.so")
+        assertThatNativeLib(lib).isStripped()
     }
 }
