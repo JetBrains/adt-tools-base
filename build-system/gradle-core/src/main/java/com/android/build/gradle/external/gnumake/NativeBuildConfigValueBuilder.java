@@ -163,7 +163,7 @@ public class NativeBuildConfigValueBuilder {
             Set<String> cppCompilers = new HashSet<>();
             Map<String, Set<String>> compilerToWeirdExtensions = new HashMap<>();
             for (BuildStepInfo command : output.commandInputs) {
-                String compilerCommand = command.getCommand().command;
+                String compilerCommand = command.getCommand().executable;
                 String extension = Files.getFileExtension(command.getOnlyInput());
 
                 if (NativeSourceFileExtensions.C_FILE_EXTENSIONS.contains(extension)) {

@@ -24,22 +24,22 @@ import java.util.List;
  * A shell command with n arguments.
  */
 class CommandLine {
-    public final String command;
+    public final String executable;
     public final List<String> args;
 
-    CommandLine(String value, List<String> args) {
-        this.command = value;
+    CommandLine(String executable, List<String> args) {
+        this.executable = executable;
         this.args = args;
     }
 
     @Override
     public boolean equals(Object obj) {
         CommandLine other = (CommandLine) obj;
-        return command.equals(other.command) && args.equals(other.args);
+        return executable.equals(other.executable) && args.equals(other.args);
     }
 
     @Override
     public String toString() {
-        return command + " " + Joiner.on(' ').join(args);
+        return executable + " " + Joiner.on(' ').join(args);
     }
 }

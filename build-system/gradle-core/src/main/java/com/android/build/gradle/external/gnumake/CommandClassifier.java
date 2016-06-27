@@ -18,6 +18,7 @@ package com.android.build.gradle.external.gnumake;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.google.common.collect.Lists;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -33,11 +34,21 @@ import joptsimple.OptionSet;
  * line rules of that tool.
  */
 class CommandClassifier {
+    @NonNull
+    final private static NativeCompilerBuildTool sNativeCompilerBuildTool =
+            new NativeCompilerBuildTool();
+    @NonNull
+    final private static GccArBuildTool sGccArBuildTool =
+            new GccArBuildTool();
+    @NonNull
+    final private static CCacheBuildTool sCCacheBuildTool =
+            new CCacheBuildTool();
 
     @NonNull
     private static final BuildTool[] classifiers = {
-            new NativeCompilerBuildTool(),
-            new GccArBuildTool()
+            sNativeCompilerBuildTool,
+            sGccArBuildTool,
+            sCCacheBuildTool
     };
 
     /**
@@ -132,7 +143,43 @@ class CommandClassifier {
 
         @Override
         public boolean isMatch(@NonNull CommandLine command) {
-            return command.command.endsWith("gcc-ar");
+            return command.executable.endsWith("gcc-ar");
+        }
+    }
+
+    /**
+     * A CCache command line is like:
+     *
+     *   /usr/bin/ccache gcc [gcc-flags]
+     *
+     * This build tool first looks for ccache executable and then translates it into a
+     * compiler BuildStepInfo.
+     */
+    static class CCacheBuildTool implements BuildTool {
+        @Nullable
+        @Override
+        public BuildStepInfo createCommand(@NonNull CommandLine command) {
+            CommandLine translated = translateToCompilerCommandLine(command);
+            return sNativeCompilerBuildTool.createCommand(translated);
+        }
+
+        @Override
+        public boolean isMatch(@NonNull CommandLine command) {
+            String executable = new File(command.executable).getName();
+            if (executable.endsWith("ccache")) {
+                CommandLine translated = translateToCompilerCommandLine(command);
+                return sNativeCompilerBuildTool.isMatch(translated);
+            }
+            return false;
+        }
+
+        @NonNull
+        private static CommandLine translateToCompilerCommandLine(@NonNull CommandLine command) {
+            List<String> args = Lists.newArrayList(command.args);
+            String baseCommand = args.get(0);
+            args.remove(0);
+            return new CommandLine(baseCommand, args);
+
         }
     }
 
@@ -230,7 +277,7 @@ class CommandClassifier {
 
         @Override
         public boolean isMatch(@NonNull CommandLine command) {
-            String executable = new File(command.command).getName();
+            String executable = new File(command.executable).getName();
             return executable.endsWith("gcc")
                     || executable.endsWith("g++")
                     || executable.endsWith("clang")

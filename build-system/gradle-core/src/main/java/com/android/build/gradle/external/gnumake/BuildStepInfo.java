@@ -79,7 +79,7 @@ class BuildStepInfo {
             return false;
         }
         BuildStepInfo that = (BuildStepInfo) obj;
-        return this.command.command.equals(that.command.command)
+        return this.command.executable.equals(that.command.executable)
                 && this.inputs.equals(that.getInputs())
                 && this.outputs.equals(that.getOutputs())
                 && this.inputsAreSourceFiles == that.inputsAreSourceFiles;
@@ -88,7 +88,7 @@ class BuildStepInfo {
     @NonNull
     @Override
     public String toString() {
-        return command.command
+        return command.executable
                 + " in:[" + Joiner.on(' ').join(inputs) + "]"
                 + " out:[" + Joiner.on(' ').join(outputs) + "]"
                 + (inputsAreSourceFiles ? "SOURCE" : "INTERMEDIATE");
