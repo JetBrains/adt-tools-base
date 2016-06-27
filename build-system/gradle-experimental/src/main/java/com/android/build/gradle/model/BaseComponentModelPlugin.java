@@ -169,9 +169,6 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
             ProcessRecorder.setBenchmark(benchmarkName, benchmarkMode);
         }
 
-        project.getGradle().addListener(
-                new RecordingBuildListener(project.getPath(), ThreadRecorder.get()));
-
         project.getPlugins().apply(AndroidComponentModelPlugin.class);
         project.getPlugins().apply(JavaBasePlugin.class);
         project.getPlugins().apply(JacocoPlugin.class);

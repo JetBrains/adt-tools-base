@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 The Android Open Source Project
+ * Copyright (C) 2016 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,22 +14,24 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.profiling;
+package com.android.build.gradle.internal.profile;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.mockito.Mockito.when;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.build.gradle.internal.profile.RecordingBuildListener;
 import com.android.builder.profile.AsyncRecorder;
-import com.android.builder.profile.NameAnonymizer;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Maps;
-import com.google.wireless.android.sdk.stats.AndroidStudioStats;
-import com.google.wireless.android.sdk.stats.AndroidStudioStats.GradleBuildProfileSpan.ExecutionType;
 import com.android.builder.profile.ProcessRecorder;
 import com.android.builder.profile.ProcessRecorderFactory;
 import com.android.builder.profile.Recorder;
 import com.android.builder.profile.ThreadRecorder;
 import com.android.utils.ILogger;
+import com.google.common.collect.Maps;
+import com.google.wireless.android.sdk.stats.AndroidStudioStats;
+import com.google.wireless.android.sdk.stats.AndroidStudioStats.GradleBuildProfileSpan.ExecutionType;
+
 import org.gradle.api.Project;
 import org.gradle.api.Task;
 import org.gradle.api.tasks.TaskState;
@@ -42,15 +44,9 @@ import org.mockito.MockitoAnnotations;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Logger;
-
-import static org.junit.Assert.assertEquals;
-
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicLong;
-
-import static org.junit.Assert.assertNotNull;
-import static org.mockito.Mockito.when;
+import java.util.logging.Logger;
 
 /**
  * Tests for {@link RecordingBuildListener}
@@ -141,14 +137,17 @@ public class RecordingBuildListenerTest {
     @Before
     public void setUp() {
         MockitoAnnotations.initMocks(this);
+        when(mProject.getPath()).thenReturn(":projectName");
         when(mTask.getName()).thenReturn("taskName");
+        when(mTask.getProject()).thenReturn(mProject);
         when(mSecondTask.getName()).thenReturn("task2Name");
+        when(mSecondTask.getProject()).thenReturn(mProject);
     }
 
     @Test
     public void singleThreadInvocation() {
         TestRecorder recorder = new TestRecorder();
-        RecordingBuildListener listener = new RecordingBuildListener("projectName", recorder);
+        RecordingBuildListener listener = new RecordingBuildListener(recorder);
 
         listener.beforeExecute(mTask);
         listener.afterExecute(mTask, mTaskState);
@@ -168,7 +167,7 @@ public class RecordingBuildListenerTest {
         ProcessRecorderFactory.initializeForTests(recordWriter);
 
         RecordingBuildListener listener =
-                new RecordingBuildListener(":projectName", ThreadRecorder.get());
+                new RecordingBuildListener(ThreadRecorder.get());
 
         listener.beforeExecute(mTask);
         ThreadRecorder.get().record(ExecutionType.SOME_RANDOM_PROCESSING,
@@ -203,7 +202,7 @@ public class RecordingBuildListenerTest {
         ProcessRecorderFactory.initializeForTests(recordWriter);
 
         RecordingBuildListener listener =
-                new RecordingBuildListener(":projectName", AsyncRecorder.get());
+                new RecordingBuildListener(AsyncRecorder.get());
 
         listener.beforeExecute(mTask);
         listener.beforeExecute(mSecondTask);
@@ -264,7 +263,7 @@ public class RecordingBuildListenerTest {
     @Test
     public void multipleThreadsInvocation() {
         TestRecorder recorder = new TestRecorder();
-        RecordingBuildListener listener = new RecordingBuildListener(":projectName", recorder);
+        RecordingBuildListener listener = new RecordingBuildListener(recorder);
         Task secondTask = Mockito.mock(Task.class);
         when(secondTask.getName()).thenReturn("secondTaskName");
         when(secondTask.getProject()).thenReturn(mProject);
@@ -295,7 +294,7 @@ public class RecordingBuildListenerTest {
     @Test
     public void multipleThreadsOrderInvocation() {
         TestRecorder recorder = new TestRecorder();
-        RecordingBuildListener listener = new RecordingBuildListener(":projectName", recorder);
+        RecordingBuildListener listener = new RecordingBuildListener(recorder);
         Task secondTask = Mockito.mock(Task.class);
         when(secondTask.getName()).thenReturn("secondTaskName");
         when(secondTask.getProject()).thenReturn(mProject);

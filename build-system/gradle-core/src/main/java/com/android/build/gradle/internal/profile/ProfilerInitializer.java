@@ -16,11 +16,29 @@
 
 package com.android.build.gradle.internal.profile;
 
-import com.android.annotations.NonNull;
-import com.android.build.gradle.internal.LoggerWrapper;
-import com.android.builder.profile.ProcessRecorderFactory;
+import static com.android.utils.NullLogger.getLogger;
 
+import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
+import com.android.build.gradle.internal.LibraryCache;
+import com.android.build.gradle.internal.LoggerWrapper;
+import com.android.builder.internal.compiler.JackConversionCache;
+import com.android.builder.internal.compiler.PreDexCache;
+import com.android.builder.profile.AsyncRecorder;
+import com.android.builder.profile.ProcessRecorderFactory;
+import com.android.builder.profile.Recorder;
+import com.android.builder.profile.ThreadRecorder;
+import com.android.dx.command.dexer.Main;
+import com.android.ide.common.internal.ExecutorSingleton;
+
+import org.gradle.BuildAdapter;
+import org.gradle.BuildListener;
+import org.gradle.BuildResult;
 import org.gradle.api.Project;
+import org.gradle.api.initialization.Settings;
+import org.gradle.api.invocation.Gradle;
+
+import java.io.File;
 
 /**
  * Initialize the {@link ProcessRecorderFactory} using a given project.
@@ -30,8 +48,13 @@ import org.gradle.api.Project;
  */
 public final class ProfilerInitializer {
 
+    private static final Object sLOCK = new Object();
+
+    @Nullable
+    private static RecordingBuildListener sRecordingBuildListener;
+
     private ProfilerInitializer() {
-        //Util class.
+        //Static singleton class.
     }
 
     /**
@@ -44,5 +67,28 @@ public final class ProfilerInitializer {
                 project.getGradle().getGradleVersion(),
                 new LoggerWrapper(project.getLogger()),
                 project.getRootProject().file("profiler" + System.currentTimeMillis() + ".json"));
+        synchronized (sLOCK) {
+            if (sRecordingBuildListener == null) {
+                sRecordingBuildListener = new RecordingBuildListener(AsyncRecorder.get());
+                project.getGradle().addListener(sRecordingBuildListener);
+            }
+        }
+
+        project.getGradle().addBuildListener(new BuildAdapter() {
+            @Override
+            public void buildFinished(@NonNull BuildResult buildResult) {
+                try {
+                    synchronized (sLOCK) {
+                        if (sRecordingBuildListener != null) {
+                            project.getGradle().removeListener(sRecordingBuildListener);
+                            sRecordingBuildListener = null;
+                        }
+                    }
+                    ProcessRecorderFactory.shutdown();
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        });
     }
 }

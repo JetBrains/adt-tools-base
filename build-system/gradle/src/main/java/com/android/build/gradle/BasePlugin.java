@@ -314,9 +314,6 @@ public abstract class BasePlugin {
             ProcessRecorder.setBenchmark(benchmarkName, benchmarkMode);
         }
 
-        project.getGradle().addListener(
-                new RecordingBuildListener(project.getPath(), ThreadRecorder.get()));
-
         AndroidStudioStats.GradleBuildProject.PluginType pluginType =
                 AndroidStudioStats.GradleBuildProject.PluginType.UNKNOWN_PLUGIN_TYPE;
         if (this instanceof AppPlugin) {
@@ -441,12 +438,6 @@ public abstract class BasePlugin {
                                 return null;
                             }
                         });
-
-                try {
-                    ProcessRecorderFactory.shutdown();
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
-                }
             }
         });
         project.getGradle().getTaskGraph().addTaskExecutionGraphListener(

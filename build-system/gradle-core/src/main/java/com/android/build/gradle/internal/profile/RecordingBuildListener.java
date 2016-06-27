@@ -39,16 +39,13 @@ import java.util.concurrent.ConcurrentHashMap;
 public class RecordingBuildListener implements TaskExecutionListener {
 
     @NonNull
-    private final String mProject;
-    @NonNull
     private final Recorder mRecorder;
     // map of outstanding tasks executing, keyed by their name.
     @NonNull
     private final Map<String, GradleBuildProfileSpan.Builder> mTaskRecords =
             new ConcurrentHashMap<>();
 
-    public RecordingBuildListener(@NonNull String project, @NonNull Recorder recorder) {
-        mProject = project;
+    RecordingBuildListener(@NonNull Recorder recorder) {
         mRecorder = recorder;
     }
 
@@ -70,7 +67,7 @@ public class RecordingBuildListener implements TaskExecutionListener {
         record.setDurationInMs(System.currentTimeMillis() - record.getStartTimeInMs());
         //TODO: record task state.
 
-        mRecorder.closeRecord(mProject, getVariantName(task), record);
+        mRecorder.closeRecord(task.getProject().getPath(), getVariantName(task), record);
     }
 
     @NonNull
