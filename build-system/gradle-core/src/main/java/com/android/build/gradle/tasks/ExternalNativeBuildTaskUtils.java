@@ -25,9 +25,7 @@ import com.android.build.gradle.AndroidGradleOptions;
 import com.android.build.gradle.external.gson.NativeBuildConfigValue;
 import com.android.build.gradle.external.gson.NativeLibraryValue;
 import com.android.build.gradle.external.gson.PlainFileGsonTypeAdaptor;
-import com.android.build.gradle.internal.core.Abi;
 import com.android.build.gradle.internal.model.CoreExternalNativeBuild;
-import com.android.build.gradle.internal.ndk.NdkHandler;
 import com.android.builder.core.AndroidBuilder;
 import com.android.ide.common.process.LoggedProcessOutputHandler;
 import com.android.ide.common.process.ProcessException;
@@ -37,12 +35,10 @@ import com.google.common.base.Charsets;
 import com.google.common.base.Joiner;
 import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
 import com.google.common.io.Files;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
-import org.gradle.api.GradleException;
 import org.gradle.api.Project;
 
 import java.io.File;
@@ -51,7 +47,6 @@ import java.util.Collection;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * Shared utility methods for dealing with external native build tasks.
@@ -74,9 +69,9 @@ public class ExternalNativeBuildTaskUtils {
         return new File(getOutputFolder(jsonFolder, abi), "android_gradle_build.json");
     }
 
-
     @NonNull
-    public static List<File> getOutputJsons(@NonNull File jsonFolder, @NonNull Set<String> abis) {
+    public static List<File> getOutputJsons(@NonNull File jsonFolder,
+            @NonNull Collection<String> abis) {
         List<File> outputs = Lists.newArrayList();
         for (String abi : abis) {
             outputs.add(getOutputJson(jsonFolder, abi));
@@ -120,24 +115,6 @@ public class ExternalNativeBuildTaskUtils {
             configValues.add(getNativeBuildConfigValue(json, groupName));
         }
         return configValues;
-    }
-
-    /**
-     * Return abi filters, don't accept "all"
-     */
-    @NonNull
-    public static Set<String> getAbiFilters(@Nullable Set<String> abis) {
-        if (abis == null || abis.isEmpty()) {
-            abis = Sets.newHashSet();
-            for (Abi abi : NdkHandler.getAbiList()) {
-                abis.add(abi.getName());
-            }
-        }
-        if (abis.contains("all")) {
-            throw new GradleException(
-                    "expected abis to be specific, at least one is 'all'");
-        }
-        return abis;
     }
 
     /**
@@ -256,6 +233,7 @@ public class ExternalNativeBuildTaskUtils {
 
     private static class ExecuteBuildProcessLogger implements ILogger {
 
+        @SuppressWarnings("StringBufferField")
         private final StringBuilder output = new StringBuilder();
         private final ILogger logger;
 

@@ -44,10 +44,12 @@ public interface NdkInfo {
      * Retrieve the newest supported version if it is not the specified version is not supported.
      *
      * An older NDK may not support the specified compiledSdkVersion.  In that case, determine what
-     * is the newest supported version and modifycompileSdkVersion.
+     * is the newest supported version and modify compileSdkVersion.
      */
     @Nullable
     String findLatestPlatformVersion(@NonNull String targetPlatformString);
+
+    int findSuitablePlatformVersion(String abi, int minSdkVersion);
 
     /**
      * Return the executable for compiling C code.

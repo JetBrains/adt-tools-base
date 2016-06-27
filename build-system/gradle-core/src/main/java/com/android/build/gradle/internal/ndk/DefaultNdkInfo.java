@@ -16,6 +16,8 @@
 
 package com.android.build.gradle.internal.ndk;
 
+import static com.google.common.base.Preconditions.checkState;
+
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.internal.core.Abi;
@@ -42,7 +44,7 @@ public class DefaultNdkInfo implements NdkInfo {
 
     private final File root;
 
-    private Map<Pair<Toolchain, Abi>, String> defaultToolchainVersions = Maps.newHashMap();
+    private final Map<Pair<Toolchain, Abi>, String> defaultToolchainVersions = Maps.newHashMap();
 
     public DefaultNdkInfo(@NonNull File root) {
         this.root = root;
@@ -60,11 +62,16 @@ public class DefaultNdkInfo implements NdkInfo {
         return root + "/platforms/" + platformVersion + "/arch-" + abi.getArchitecture();
     }
 
+    @NonNull
+    private File getSysrootDirectory(@NonNull Abi abi, @NonNull String platformVersion) {
+        return new File(getSysrootPath(abi, platformVersion));
+    }
+
     /**
      * Retrieve the newest supported version if it is not the specified version is not supported.
      *
      * An older NDK may not support the specified compiledSdkVersion.  In that case, determine what
-     * is the newest supported version and modifycompileSdkVersion.
+     * is the newest supported version and modify compileSdkVersion.
      */
     @Override
     @Nullable
@@ -79,10 +86,81 @@ public class DefaultNdkInfo implements NdkInfo {
         } else {
             targetVersion = androidVersion.getFeatureLevel();
         }
-        String platformVersion = null;
+        targetVersion = findTargetPlatformVersionOrLower(targetVersion);
+        if (targetVersion == 0) {
+            return null;
+        }
+        return "android-" + targetVersion;
+    }
+
+    /**
+     *  Find suitable platform for the given ABI.
+     *
+     *  (1) If platforms/android-[min sdk]/arch-[ABI] exists, then use the min sdk as platform for
+     *      that ABI
+     *
+     *  (2) If there exists platforms/android-[platform]/arch-[ABI] such that platform greater-than
+     *      min sdk, use max(platform where platform less than min sdk)
+     *
+     *  (3) Use min(platform where platforms/android-[platform]/arch-[ABI] exists)
+     */
+    @Override
+    public int findSuitablePlatformVersion(@NonNull String abiName, int minSdkVersion) {
+        Abi abi = Abi.getByName(abiName);
+        if (abi == null) {
+            // This ABI is not recognized
+            return 0;
+        }
+
+        // If platforms/android-[min sdk]/arch-[ABI] exists, then use the min sdk as platform for
+        // that ABI
+        File platformDir = FileUtils.join(root, "platforms");
+        checkState(platformDir.isDirectory());
+        if (getSysrootDirectory(abi, "android-" + minSdkVersion).isDirectory()) {
+            return minSdkVersion;
+        }
+
+        // Walk over the platform folders that contain this ABI
+        File[] platformSubDirs = platformDir.listFiles(File::isDirectory);
+
+        int highestVersionBelowMinSdk = 0;
+        int lowestVersionOverall = 0;
+        for(File platform : platformSubDirs) {
+            if (platform.getName().startsWith("android-")) {
+                if (FileUtils.join(platform, "arch-" + abi.getArchitecture()).isDirectory()) {
+                    try {
+                        int version = Integer.parseInt(
+                                platform.getName().substring("android-".length()));
+                        if (version > highestVersionBelowMinSdk && version < minSdkVersion) {
+                            highestVersionBelowMinSdk = version;
+                        }
+                        if (lowestVersionOverall == 0 || version < lowestVersionOverall) {
+                            lowestVersionOverall = version;
+                        }
+                    } catch (NumberFormatException ignore) {
+                        // Ignore unrecognized directories.
+                    }
+                }
+            }
+        }
+
+        // If there exists platforms/android-[platform]/arch-[ABI] such that platform < min sdk,
+        // use max(platform where platform < min sdk)
+        if (highestVersionBelowMinSdk > 0) {
+            return highestVersionBelowMinSdk;
+        }
+
+        // Use min(platform where platforms/android-[platform]/arch-[ABI] exists)
+        checkState(lowestVersionOverall > 0,
+                String.format("Expected caller to ensure valid ABI: %s", abi));
+        return lowestVersionOverall;
+    }
+
+    // Will return 0 if no platform found
+    private int findTargetPlatformVersionOrLower(int targetVersion) {
         File platformDir = new File(root, "/platforms");
         if (new File(platformDir, "android-" + targetVersion).exists()) {
-            platformVersion = "android-" + targetVersion;
+            return targetVersion;
         } else {
             File[] platformSubDirs = platformDir.listFiles(File::isDirectory);
             int highestVersion = 0;
@@ -93,15 +171,14 @@ public class DefaultNdkInfo implements NdkInfo {
                                 platform.getName().substring("android-".length()));
                         if (version > highestVersion && version < targetVersion) {
                             highestVersion = version;
-                            platformVersion = "android-" + version;
                         }
                     } catch(NumberFormatException ignore) {
                         // Ignore unrecognized directories.
                     }
                 }
             }
+            return highestVersion;
         }
-        return platformVersion;
     }
 
     private static String getToolchainPrefix(Toolchain toolchain, Abi abi) {

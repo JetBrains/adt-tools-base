@@ -80,8 +80,7 @@ $modelBefore
               cmake {
                 cFlags.addAll("-DTEST_C_FLAG", "-DTEST_C_FLAG_2")
                 cppFlags.addAll("-DTEST_CPP_FLAG")
-                abiFilters.addAll("armeabi-v7a", "armeabi", "armeabi-v7a with NEON",
-                    "armeabi-v7a with VFPV3", "armeabi-v6 with VFP")
+                abiFilters.addAll("armeabi-v7a", "armeabi")
                 targets.addAll("hello-jni")
               }
           }
@@ -114,9 +113,6 @@ android {
         assertThatApk(project.getApk("debug")).hasVersionCode(1)
         assertThatApk(project.getApk("debug")).contains("lib/armeabi-v7a/libhello-jni.so");
         assertThatApk(project.getApk("debug")).contains("lib/armeabi/libhello-jni.so");
-        assertThatApk(project.getApk("debug")).contains("lib/armeabi-v7a with NEON/libhello-jni.so");
-        assertThatApk(project.getApk("debug")).contains("lib/armeabi-v7a with VFPV3/libhello-jni.so");
-        assertThatApk(project.getApk("debug")).contains("lib/armeabi-v6 with VFP/libhello-jni.so");
     }
 
     @Test
@@ -127,7 +123,7 @@ android {
         assertThat(model.getBuildSystems()).containsExactly(NativeBuildSystem.CMAKE.getName());
         assertThat(model.buildFiles).hasSize(1);
         assertThat(model.name).isEqualTo("project");
-        int abiCount = 5;
+        int abiCount = 2;
         assertThat(model.artifacts).hasSize(abiCount * /* variantCount */ 2);
         assertThat(model.fileExtensions).hasSize(1);
 

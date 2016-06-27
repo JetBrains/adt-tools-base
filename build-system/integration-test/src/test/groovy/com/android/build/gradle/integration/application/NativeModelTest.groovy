@@ -240,13 +240,12 @@ class NativeModelTest {
                       cmake {
                         arguments "-DCMAKE_CXX_FLAGS=-DTEST_CPP_FLAG"
                         cFlags "-DTEST_C_FLAG"
-                        abiFilters "armeabi-v7a", "armeabi", "armeabi-v7a with NEON",
-                            "armeabi-v7a with VFPV3", "armeabi-v6 with VFP"
+                        abiFilters "armeabi-v7a", "armeabi"
                       }
                     }
                 }
             }
-            """, [cmakeLists(".")], true, 1, 2, 5, Compiler.GCC, NativeBuildSystem.CMAKE),
+            """, [cmakeLists(".")], true, 1, 2, 2, Compiler.GCC, NativeBuildSystem.CMAKE),
         CMAKELISTS_FILE_C("""
             apply plugin: 'com.android.application'
 

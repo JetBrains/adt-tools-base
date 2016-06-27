@@ -21,9 +21,10 @@ import com.android.annotations.Nullable;
 import com.android.build.gradle.external.gnumake.NativeBuildConfigValueBuilder;
 import com.android.build.gradle.external.gson.NativeBuildConfigValue;
 import com.android.build.gradle.external.gson.PlainFileGsonTypeAdaptor;
+import com.android.build.gradle.internal.core.Abi;
+import com.android.build.gradle.internal.ndk.NdkHandler;
 import com.android.builder.core.AndroidBuilder;
 import com.android.ide.common.process.ProcessInfoBuilder;
-import com.android.sdklib.IAndroidTarget;
 import com.google.common.base.Charsets;
 import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
@@ -36,7 +37,6 @@ import org.gradle.api.GradleException;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
-import java.util.Set;
 
 /**
  * ndk-build JSON generation logic. This is separated from the corresponding ndk-build task so that
@@ -45,8 +45,10 @@ import java.util.Set;
 class NdkBuildExternalNativeJsonGenerator extends ExternalNativeJsonGenerator {
 
     NdkBuildExternalNativeJsonGenerator(
+            @NonNull NdkHandler ndkHandler,
+            int minSdkVersion,
             @NonNull String variantName,
-            @NonNull Set<String> abis,
+            @NonNull List<Abi> abis,
             @NonNull AndroidBuilder androidBuilder,
             @NonNull File sdkFolder,
             @NonNull File ndkFolder,
@@ -57,13 +59,16 @@ class NdkBuildExternalNativeJsonGenerator extends ExternalNativeJsonGenerator {
             boolean debuggable,
             @Nullable List<String> buildArguments,
             @Nullable List<String> cFlags,
-            @Nullable List<String> cppFlags) {
-        super(variantName, abis, androidBuilder, sdkFolder, ndkFolder, soFolder, objFolder,
-                jsonFolder, makeFileOrFolder, debuggable, buildArguments, cFlags, cppFlags);
+            @Nullable List<String> cppFlags,
+            @NonNull List<File> nativeBuildConfigurationsJsons) {
+        super(ndkHandler, minSdkVersion, variantName, abis, androidBuilder, sdkFolder, ndkFolder,
+                soFolder, objFolder, jsonFolder, makeFileOrFolder, debuggable,
+                buildArguments, cFlags, cppFlags, nativeBuildConfigurationsJsons);
     }
 
     @Override
-    void processBuildOutput(@NonNull String buildOutput, @NonNull String abi) throws IOException {
+    void processBuildOutput(@NonNull String buildOutput, @NonNull String abi,
+            int abiPlatformVersion) throws IOException {
         // Discover Application.mk if one exists next to Android.mk
         // If there is an Application.mk file next to Android.mk then pick it up.
         File applicationMk = new File(getMakeFile().getParent(), "Application.mk");
@@ -72,7 +77,7 @@ class NdkBuildExternalNativeJsonGenerator extends ExternalNativeJsonGenerator {
         diagnostic("parse and convert ndk-build output to build configuration JSON");
         NativeBuildConfigValue buildConfig = new NativeBuildConfigValueBuilder(getMakeFile())
                 .addCommands(
-                        getBuildCommand(abi, applicationMk),
+                        getBuildCommand(abi, abiPlatformVersion, applicationMk),
                         variantName,
                         buildOutput,
                         isWindows())
@@ -101,14 +106,15 @@ class NdkBuildExternalNativeJsonGenerator extends ExternalNativeJsonGenerator {
      */
     @NonNull
     @Override
-    ProcessInfoBuilder getProcessBuilder(@NonNull String abi, @NonNull File outputJson) {
+    ProcessInfoBuilder getProcessBuilder(@NonNull String abi, int abiPlatformVersion,
+            @NonNull File outputJson) {
         checkConfiguration();
         // Discover Application.mk if one exists next to Android.mk
         // If there is an Application.mk file next to Android.mk then pick it up.
         File applicationMk = new File(getMakeFile().getParent(), "Application.mk");
         ProcessInfoBuilder builder = new ProcessInfoBuilder();
         builder.setExecutable(getNdkBuild())
-                .addArgs(getBaseArgs(abi, applicationMk))
+                .addArgs(getBaseArgs(abi, abiPlatformVersion, applicationMk))
                 .addArgs("-n");
         return builder;
     }
@@ -156,13 +162,14 @@ class NdkBuildExternalNativeJsonGenerator extends ExternalNativeJsonGenerator {
      * Get the base list of arguments for invoking ndk-build.
      */
     @NonNull
-    private List<String> getBaseArgs(@NonNull String abi, @NonNull File applicationMk) {
+    private List<String> getBaseArgs(@NonNull String abi, int abiPlatformVersion,
+            @NonNull File applicationMk) {
         List<String> result = Lists.newArrayList();
         result.add("NDK_PROJECT_PATH=null");
         result.add("APP_BUILD_SCRIPT=" + getMakeFile());
 
         if (applicationMk.exists()) {
-            // NDK_APPLICATION_MK specifies the Appication.mk file.
+            // NDK_APPLICATION_MK specifies the Application.mk file.
             result.add("NDK_APPLICATION_MK=" + applicationMk.getAbsolutePath());
         }
 
@@ -179,15 +186,7 @@ class NdkBuildExternalNativeJsonGenerator extends ExternalNativeJsonGenerator {
             result.add("NDEBUG=0");
         }
 
-        IAndroidTarget target = androidBuilder.getTarget();
-        if (target != null && !target.isPlatform()) {
-            target = target.getParent();
-        }
-
-        if (target != null) {
-            result.add("APP_PLATFORM=" + target.hashString());
-        }
-
+        result.add("APP_PLATFORM=android-" + abiPlatformVersion);
         result.add("NDK_OUT=" + getObjFolder().getAbsolutePath());
         result.add("NDK_LIBS_OUT=" + getSoFolder().getAbsolutePath());
 
@@ -210,8 +209,10 @@ class NdkBuildExternalNativeJsonGenerator extends ExternalNativeJsonGenerator {
      * Get the build command
      */
     @NonNull
-    private String getBuildCommand(@NonNull String abi, @NonNull File applicationMk) {
-        return getNdkBuild() + " " + Joiner.on(" ").join(getBaseArgs(abi, applicationMk));
+    private String getBuildCommand(@NonNull String abi, int abiPlatformVersion,
+            @NonNull File applicationMk) {
+        return getNdkBuild() + " " + Joiner.on(" ").join(getBaseArgs(abi, abiPlatformVersion,
+                applicationMk));
     }
 
     /**

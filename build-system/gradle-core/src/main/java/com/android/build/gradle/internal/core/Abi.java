@@ -35,14 +35,14 @@ public enum Abi {
 
 
     @NonNull
-    private String name;
+    private final String name;
     @NonNull
-    String architecture;
+    final String architecture;
     @NonNull
-    private String gccToolchainPrefix;
+    private final String gccToolchainPrefix;
     @NonNull
-    private String gccExecutablePrefix;
-    private boolean supports64Bits;
+    private final String gccExecutablePrefix;
+    private final boolean supports64Bits;
 
     Abi(@NonNull String name, @NonNull String architecture,
             @NonNull String gccToolchainPrefix, @NonNull String gccExecutablePrefix, boolean supports64Bits) {
@@ -65,9 +65,9 @@ public enum Abi {
         }
         return null;
     }
-
+    
     /**
-     * Returns name of the ABI.
+     * Returns name of the ABI like "armeabi-v7a".
      */
     @NonNull
     public String getName() {
@@ -75,7 +75,7 @@ public enum Abi {
     }
 
     /**
-     * Returns the CPU architecture.
+     * Returns the CPU architecture like "arm".
      */
     @NonNull
     public String getArchitecture() {
