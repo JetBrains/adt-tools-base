@@ -65,7 +65,20 @@ import java.util.stream.Collectors;
  */
 @SuppressWarnings("SingleCharacterStringConcatenation")
 public class NativeBuildConfigValueBuilder {
-    private static final List<String> STRIP_FLAGS = Arrays.asList("-MF", "-c", "-o");
+
+    // These are flags which have a following argument.
+    private static final List<String> STRIP_FLAGS_WITH_ARG = Arrays.asList(
+            "-c",
+            "-o",
+            // Skip -MF <prefix> because this can change the location of the .d file generated
+            // by gcc.
+            "-MF");
+
+    // These are flags which don't have a following argument.
+    private static final List<String> STRIP_FLAGS_WITHOUT_ARG = Arrays.asList(
+            // Skip -MMD because this can change the location of the .d file generated
+            // by gcc.
+            "-MMD");
 
     private final Map<String, String> toolChainToCCompiler = new HashMap<>();
     private final Map<String, String> toolChainToCppCompiler = new HashMap<>();
@@ -250,11 +263,14 @@ public class NativeBuildConfigValueBuilder {
                 List<String> flags = new ArrayList<>();
                 for (int i = 0; i < input.getCommand().args.size(); ++i) {
                     String arg = input.getCommand().args.get(i);
-                    if (STRIP_FLAGS.contains(arg)) {
+                    if (STRIP_FLAGS_WITH_ARG.contains(arg)) {
                         ++i; // skip the next argument.
                         continue;
                     }
                     if (startsWithStripFlag(arg)) {
+                        continue;
+                    }
+                    if (STRIP_FLAGS_WITHOUT_ARG.contains(arg)) {
                         continue;
                     }
                     flags.add(arg);
@@ -267,7 +283,7 @@ public class NativeBuildConfigValueBuilder {
     }
 
     private static boolean startsWithStripFlag(@NonNull String arg) {
-        for (String flag : STRIP_FLAGS) {
+        for (String flag : STRIP_FLAGS_WITH_ARG) {
             if (arg.startsWith(flag)) {
                 return true;
             }

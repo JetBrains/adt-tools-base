@@ -15,8 +15,6 @@
  */
 package com.android.build.gradle.external.gnumake;
 
-import static org.junit.Assert.fail;
-
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
