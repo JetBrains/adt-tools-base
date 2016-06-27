@@ -23,6 +23,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hasher;
 import com.google.common.hash.Hashing;
+import com.google.common.io.Files;
 
 import java.io.File;
 import java.io.IOException;
@@ -39,7 +40,7 @@ public class PackagingUtils {
      *
      * @return true if the folder is valid for packaging.
      */
-    public static boolean checkFolderForPackaging(@NonNull String folderName) {
+    public static boolean checkFolderForApkPackaging(@NonNull String folderName) {
         return !folderName.equalsIgnoreCase("CVS") &&
                 !folderName.equalsIgnoreCase(".svn") &&
                 !folderName.equalsIgnoreCase("SCCS") &&
@@ -48,59 +49,41 @@ public class PackagingUtils {
 
     /**
      * Checks a file to make sure it should be packaged as standard resources.
-     * @param fileName the name of the file (including extension)
+     * @param filePath OS-independent path of the file (including extension), relative to the
+     *                 archive
      * @param allowClassFiles whether to allow java class files
-     * @return true if the file should be packaged as standard java resources.
+     * @return true if the file should be packaged as standard java resources
      */
-    public static boolean checkFileForPackaging(@NonNull String fileName, boolean allowClassFiles) {
-        String[] fileSegments = fileName.split("\\.");
-        String fileExt = "";
-        if (fileSegments.length > 1) {
-            fileExt = fileSegments[fileSegments.length-1];
+    public static boolean checkFileForApkPackaging(
+            @NonNull String filePath, boolean allowClassFiles) {
+        String fileName = new File(filePath).getName();
+
+        // ignore hidden files and backup files
+        return !(fileName.charAt(0) == '.' || fileName.charAt(fileName.length() - 1) == '~')
+                && !isOfNonResourcesExtensions(Files.getFileExtension(fileName), allowClassFiles)
+                && !isNotAResourceFile(fileName)
+                && !filePath.equals("META-INF/MANIFEST.MF")
+                && !isUsedForSigning(filePath)
+                && !isMavenMetadata(filePath);
+    }
+
+    private static boolean isMavenMetadata(String filePath) {
+        return filePath.startsWith("META-INF/maven");
+    }
+
+    private static boolean isUsedForSigning(String filePath) {
+        if (!"META-INF".equals(new File(filePath).getParent())) {
+            return false;
         }
 
-        return checkFileForPackaging(fileName, fileExt, allowClassFiles);
-    }
+        String fileExtension = Files.getFileExtension(filePath);
+        for (String extension : SIGNING_EXTENSIONS) {
+            if (fileExtension.equalsIgnoreCase(extension)) {
+                return true;
+            }
+        }
 
-    /**
-     * Checks a file to make sure it should be packaged as standard resources.
-     * @param fileName the name of the file (including extension)
-     * @return true if the file should be packaged as standard java resources.
-     */
-    public static boolean checkFileForPackaging(@NonNull String fileName) {
-        return checkFileForPackaging(fileName, false);
-    }
-
-    /**
-     * Checks a file to make sure it should be packaged as standard resources.
-     * @param fileName the name of the file (including extension)
-     * @param extension the extension of the file (excluding '.')
-     * @param allowClassFiles whether to allow java class files
-     * @return true if the file should be packaged as standard java resources.
-     */
-    public static boolean checkFileForPackaging(
-            @NonNull String fileName,
-            @NonNull String extension,
-            boolean allowClassFiles) {
-        // ignore hidden files and backup files
-        return !(fileName.charAt(0) == '.' || fileName.charAt(fileName.length() - 1) == '~') &&
-                !isOfNonResourcesExtensions(extension, allowClassFiles) &&
-                !isNotAResourceFile(fileName);
-    }
-
-    /**
-     * Checks a file to make sure it should be packaged as standard resources.
-     * @param fileName the name of the file (including extension)
-     * @param extension the extension of the file (excluding '.')
-     * @return true if the file should be packaged as standard java resources.
-     */
-    public static boolean checkFileForPackaging(
-            @NonNull String fileName,
-            @NonNull String extension) {
-        // ignore hidden files and backup files
-        return !(fileName.charAt(0) == '.' || fileName.charAt(fileName.length() - 1) == '~') &&
-                !isOfNonResourcesExtensions(extension, false) &&
-                !isNotAResourceFile(fileName);
+        return false;
     }
 
     private static boolean isOfNonResourcesExtensions(
@@ -125,9 +108,9 @@ public class PackagingUtils {
     }
 
     /**
-     * Returns the list of file extensions that represents non resources files.
+     * List of file extensions that represents non resources files.
      */
-    public static final ImmutableList<String> NON_RESOURCES_EXTENSIONS =
+    private static final ImmutableList<String> NON_RESOURCES_EXTENSIONS =
             ImmutableList.<String>builder()
                     .add("aidl")            // Aidl files
                     .add("rs")              // RenderScript files
@@ -141,9 +124,15 @@ public class PackagingUtils {
                     .build();
 
     /**
-     * Return file names that are not resource files.
+     * List of file extensions that are used for jar signing.
      */
-    public static final ImmutableList<String> NON_RESOURCES_FILENAMES =
+    public static final ImmutableList<String> SIGNING_EXTENSIONS =
+            ImmutableList.of("SF", "RSA", "DSA", "EC");
+
+    /**
+     * File names that are not resource files.
+     */
+    private static final ImmutableList<String> NON_RESOURCES_FILENAMES =
             ImmutableList.<String>builder()
                     .add("thumbs.db")       // image index file
                     .add("picasa.ini")      // image index file

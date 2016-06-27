@@ -470,10 +470,12 @@ public abstract class PackageAndroidArtifact extends IncrementalTask implements 
     @NonNull
     private IncrementalPackager createPackager(ApkCreatorFactory.CreationData creationData)
             throws PackagerException, IOException {
-        return new IncrementalPackager(creationData,
-                getIncrementalFolder(), ApkCreatorFactories
-                .fromProjectProperties(getProject(), getDebugBuild()),
-                getAbiFilters(), getJniDebugBuild());
+        return new IncrementalPackager(
+                creationData,
+                getIncrementalFolder(),
+                ApkCreatorFactories.fromProjectProperties(getProject(), getDebugBuild()),
+                getAbiFilters(),
+                getJniDebugBuild());
     }
 
     @Override

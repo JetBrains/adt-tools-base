@@ -261,7 +261,7 @@ public class ExtractJarsTransform extends Transform {
     /**
      * Provides an {@link Action} for the archive entry.
      * @param archivePath the archive entry path in the archive.
-     * @param extractCode whether to extractCode
+     * @param extractCode whether to extract class files
      * @return the action to implement.
      */
     @NonNull
@@ -284,15 +284,12 @@ public class ExtractJarsTransform extends Transform {
         // jar file, but we need to exclude some other folder (like /META-INF) so
         // we check anyway.
         for (int i = 0 ; i < segments.length - 1; i++) {
-            if (!PackagingUtils.checkFolderForPackaging(segments[i])) {
+            if (!PackagingUtils.checkFolderForApkPackaging(segments[i])) {
                 return Action.IGNORE;
             }
         }
 
-        // get the file name from the path
-        String fileName = segments[segments.length-1];
-
-        return PackagingUtils.checkFileForPackaging(fileName, extractCode)
+        return PackagingUtils.checkFileForApkPackaging(archivePath, extractCode)
                 ? Action.COPY
                 : Action.IGNORE;
     }

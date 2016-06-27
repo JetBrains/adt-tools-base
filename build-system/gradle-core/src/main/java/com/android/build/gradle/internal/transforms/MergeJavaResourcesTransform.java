@@ -37,14 +37,13 @@ import com.android.build.api.transform.TransformOutputProvider;
 import com.android.build.gradle.internal.dsl.PackagingOptions;
 import com.android.build.gradle.internal.pipeline.ExtendedContentType;
 import com.android.builder.packaging.DuplicateFileException;
-import com.android.builder.packaging.ZipEntryFilter;
 import com.android.builder.packaging.ZipAbortException;
+import com.android.builder.packaging.ZipEntryFilter;
 import com.android.ide.common.packaging.PackagingUtils;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ListMultimap;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.common.io.ByteStreams;
 import com.google.common.io.Files;
@@ -530,13 +529,12 @@ public class MergeJavaResourcesTransform extends Transform {
         // jar file, but we need to exclude some other folder (like /META-INF) so
         // we check anyway.
         for (int i = 0 ; i < segments.length - 1; i++) {
-            if (!PackagingUtils.checkFolderForPackaging(segments[i])) {
+            if (!PackagingUtils.checkFolderForApkPackaging(segments[i])) {
                 return true;
             }
         }
 
-        return !PackagingUtils.checkFileForPackaging(segments[segments.length-1],
-                false /*allowClassFiles*/);
+        return !PackagingUtils.checkFileForApkPackaging(path, false /*allowClassFiles*/);
     }
 
     private void gatherListFromFolder(
