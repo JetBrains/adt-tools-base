@@ -58,7 +58,7 @@ class ColdSwapTester {
 
     private void doTest(Steps steps, int apiLevel, ColdswapMode coldswapMode) throws Exception {
         InstantRun instantRunModel =
-                InstantRunTestUtils.doInitialBuild(mProject, apiLevel, coldswapMode);
+                InstantRunTestUtils.doInitialBuild(mProject, mPackaging, apiLevel, coldswapMode);
 
         steps.checkApk(mProject.getApk("debug"));
 

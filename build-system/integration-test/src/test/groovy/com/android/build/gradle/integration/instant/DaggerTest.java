@@ -150,7 +150,8 @@ public class DaggerTest {
 
     @Test
     public void hotSwap() throws Exception {
-        InstantRun instantRunModel = InstantRunTestUtils.doInitialBuild(project, 23, COLDSWAP_MODE);
+        InstantRun instantRunModel =
+                InstantRunTestUtils.doInitialBuild(project, Packaging.DEFAULT, 23, COLDSWAP_MODE);
 
         makeHotSwapChange();
 
