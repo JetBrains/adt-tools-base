@@ -22,6 +22,7 @@ import com.android.repository.api.LocalPackage;
 import com.android.repository.api.RemotePackage;
 import com.android.repository.api.RepoPackage;
 import com.android.repository.api.UpdatablePackage;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
@@ -209,8 +210,7 @@ public final class RepositoryPackages {
      */
     public void setLocalPkgInfos(@NonNull Map<String, ? extends LocalPackage> packages) {
         synchronized (mLock) {
-            mLocalPackages.clear();
-            mLocalPackages.putAll(packages);
+            mLocalPackages = ImmutableMap.copyOf(packages);
             invalidate();
             mLocalPackagesByPrefix = computePackagePrefixes(mLocalPackages);
         }
@@ -222,8 +222,7 @@ public final class RepositoryPackages {
      */
     public void setRemotePkgInfos(@NonNull Map<String, ? extends RemotePackage> packages) {
         synchronized (mLock) {
-            mRemotePackages.clear();
-            mRemotePackages.putAll(packages);
+            mRemotePackages = ImmutableMap.copyOf(packages);
             invalidate();
             mRemotePackagesByPrefix = computePackagePrefixes(mRemotePackages);
         }
