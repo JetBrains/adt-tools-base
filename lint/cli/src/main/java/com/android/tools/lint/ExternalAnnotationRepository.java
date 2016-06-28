@@ -916,8 +916,11 @@ public class ExternalAnnotationRepository {
         }
 
         @Nullable
-        private ClassInfo findClass(@NonNull ReferenceBinding cls) {
-            return cls.compoundName != null ? mClassMap.get(getTypeName(cls.compoundName)) : null;
+        private ClassInfo findClass(@Nullable ReferenceBinding cls) {
+            if (cls == null || cls.compoundName == null) {
+                return null;
+            }
+            return mClassMap.get(getTypeName(cls.compoundName));
         }
 
         @Nullable
@@ -1130,11 +1133,7 @@ public class ExternalAnnotationRepository {
 
         @Nullable
         private FieldInfo findField(@NonNull FieldBinding field) {
-            ReferenceBinding containingClass = field.declaringClass;
-            if (containingClass == null) {
-                return null;
-            }
-            ClassInfo c = findClass(containingClass);
+            ClassInfo c = findClass(field.declaringClass);
             if (c == null) {
                 return null;
             }
