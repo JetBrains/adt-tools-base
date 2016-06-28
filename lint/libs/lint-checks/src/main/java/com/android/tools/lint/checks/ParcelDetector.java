@@ -15,27 +15,18 @@
  */
 package com.android.tools.lint.checks;
 
-import static com.android.tools.lint.client.api.JavaParser.ResolvedClass;
-import static com.android.tools.lint.client.api.JavaParser.ResolvedField;
-
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.tools.lint.detector.api.Category;
-import com.android.tools.lint.detector.api.Detector;
-import com.android.tools.lint.detector.api.Implementation;
-import com.android.tools.lint.detector.api.Issue;
-import com.android.tools.lint.detector.api.JavaContext;
-import com.android.tools.lint.detector.api.Location;
-import com.android.tools.lint.detector.api.Scope;
-import com.android.tools.lint.detector.api.Severity;
-
-import org.objectweb.asm.Opcodes;
+import com.android.tools.lint.detector.api.*;
+import lombok.ast.ClassDeclaration;
+import lombok.ast.Node;
+import org.jetbrains.org.objectweb.asm.Opcodes;
 
 import java.util.Collections;
 import java.util.List;
 
-import lombok.ast.ClassDeclaration;
-import lombok.ast.Node;
+import static com.android.tools.lint.client.api.JavaParser.ResolvedClass;
+import static com.android.tools.lint.client.api.JavaParser.ResolvedField;
 
 /**
  * Looks for Parcelable classes that are missing a CREATOR field

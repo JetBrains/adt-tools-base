@@ -16,13 +16,6 @@
 
 package com.android.tools.lint.detector.api;
 
-import static com.android.SdkConstants.CONSTRUCTOR_NAME;
-import static com.android.SdkConstants.DOT_CLASS;
-import static com.android.SdkConstants.DOT_JAVA;
-import static com.android.tools.lint.detector.api.Location.SearchDirection.BACKWARD;
-import static com.android.tools.lint.detector.api.Location.SearchDirection.EOL_BACKWARD;
-import static com.android.tools.lint.detector.api.Location.SearchDirection.FORWARD;
-
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.tools.lint.client.api.LintDriver;
@@ -31,17 +24,14 @@ import com.android.tools.lint.detector.api.Location.SearchHints;
 import com.android.utils.AsmUtils;
 import com.google.common.annotations.Beta;
 import com.google.common.base.Splitter;
-
-import org.objectweb.asm.Type;
-import org.objectweb.asm.tree.AbstractInsnNode;
-import org.objectweb.asm.tree.ClassNode;
-import org.objectweb.asm.tree.FieldNode;
-import org.objectweb.asm.tree.LineNumberNode;
-import org.objectweb.asm.tree.MethodInsnNode;
-import org.objectweb.asm.tree.MethodNode;
+import org.jetbrains.org.objectweb.asm.Type;
+import org.jetbrains.org.objectweb.asm.tree.*;
 
 import java.io.File;
 import java.util.List;
+
+import static com.android.SdkConstants.*;
+import static com.android.tools.lint.detector.api.Location.SearchDirection.*;
 
 /**
  * A {@link Context} used when checking .class files.

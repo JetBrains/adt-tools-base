@@ -16,19 +16,14 @@
 
 package com.android.tools.lint.client.api;
 
-import static com.android.SdkConstants.DOT_CLASS;
-import static com.android.SdkConstants.DOT_JAR;
-import static org.objectweb.asm.Opcodes.ASM5;
-
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
 import com.google.common.collect.Maps;
 import com.google.common.io.ByteStreams;
 import com.google.common.io.Closeables;
-
-import org.objectweb.asm.ClassReader;
-import org.objectweb.asm.ClassVisitor;
+import org.jetbrains.org.objectweb.asm.ClassReader;
+import org.jetbrains.org.objectweb.asm.ClassVisitor;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -39,6 +34,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
+
+import static com.android.SdkConstants.DOT_CLASS;
+import static com.android.SdkConstants.DOT_JAR;
+import static org.jetbrains.org.objectweb.asm.Opcodes.ASM5;
 
 /** A class, present either as a .class file on disk, or inside a .jar file. */
 @VisibleForTesting

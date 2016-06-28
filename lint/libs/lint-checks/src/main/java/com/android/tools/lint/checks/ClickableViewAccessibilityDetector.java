@@ -16,28 +16,16 @@
 
 package com.android.tools.lint.checks;
 
-import static com.android.SdkConstants.ANDROID_VIEW_VIEW;
-
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.tools.lint.detector.api.Category;
-import com.android.tools.lint.detector.api.ClassContext;
-import com.android.tools.lint.detector.api.Detector;
-import com.android.tools.lint.detector.api.Implementation;
-import com.android.tools.lint.detector.api.Issue;
-import com.android.tools.lint.detector.api.Scope;
-import com.android.tools.lint.detector.api.Severity;
-import com.android.tools.lint.detector.api.Speed;
-
-import org.objectweb.asm.Opcodes;
-import org.objectweb.asm.tree.AbstractInsnNode;
-import org.objectweb.asm.tree.ClassNode;
-import org.objectweb.asm.tree.InsnList;
-import org.objectweb.asm.tree.MethodInsnNode;
-import org.objectweb.asm.tree.MethodNode;
+import com.android.tools.lint.detector.api.*;
+import org.jetbrains.org.objectweb.asm.Opcodes;
+import org.jetbrains.org.objectweb.asm.tree.*;
 
 import java.util.List;
 import java.util.ListIterator;
+
+import static com.android.SdkConstants.ANDROID_VIEW_VIEW;
 
 /**
  * Checks that views that override View#onTouchEvent also implement View#performClick

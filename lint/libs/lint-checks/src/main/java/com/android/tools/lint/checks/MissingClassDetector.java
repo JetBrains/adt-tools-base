@@ -16,62 +16,27 @@
 
 package com.android.tools.lint.checks;
 
-import static com.android.SdkConstants.ANDROID_PKG_PREFIX;
-import static com.android.SdkConstants.ANDROID_URI;
-import static com.android.SdkConstants.ATTR_CLASS;
-import static com.android.SdkConstants.ATTR_FRAGMENT;
-import static com.android.SdkConstants.ATTR_NAME;
-import static com.android.SdkConstants.CONSTRUCTOR_NAME;
-import static com.android.SdkConstants.TAG_ACTIVITY;
-import static com.android.SdkConstants.TAG_APPLICATION;
-import static com.android.SdkConstants.TAG_HEADER;
-import static com.android.SdkConstants.TAG_PROVIDER;
-import static com.android.SdkConstants.TAG_RECEIVER;
-import static com.android.SdkConstants.TAG_SERVICE;
-import static com.android.SdkConstants.TAG_STRING;
-import static com.android.SdkConstants.VIEW_FRAGMENT;
-import static com.android.SdkConstants.VIEW_TAG;
-import static com.android.resources.ResourceFolderType.LAYOUT;
-import static com.android.resources.ResourceFolderType.VALUES;
-import static com.android.resources.ResourceFolderType.XML;
-
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.resources.ResourceFolderType;
-import com.android.tools.lint.detector.api.Category;
-import com.android.tools.lint.detector.api.ClassContext;
-import com.android.tools.lint.detector.api.Context;
+import com.android.tools.lint.detector.api.*;
 import com.android.tools.lint.detector.api.Detector.ClassScanner;
-import com.android.tools.lint.detector.api.Implementation;
-import com.android.tools.lint.detector.api.Issue;
-import com.android.tools.lint.detector.api.LayoutDetector;
-import com.android.tools.lint.detector.api.LintUtils;
-import com.android.tools.lint.detector.api.Location;
 import com.android.tools.lint.detector.api.Location.Handle;
-import com.android.tools.lint.detector.api.Scope;
-import com.android.tools.lint.detector.api.Severity;
-import com.android.tools.lint.detector.api.Speed;
-import com.android.tools.lint.detector.api.TextFormat;
-import com.android.tools.lint.detector.api.XmlContext;
 import com.android.utils.SdkUtils;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-
-import org.objectweb.asm.Opcodes;
-import org.objectweb.asm.tree.ClassNode;
-import org.objectweb.asm.tree.MethodNode;
+import org.jetbrains.org.objectweb.asm.Opcodes;
+import org.jetbrains.org.objectweb.asm.tree.ClassNode;
+import org.jetbrains.org.objectweb.asm.tree.MethodNode;
 import org.w3c.dom.Attr;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.EnumSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
+
+import static com.android.SdkConstants.*;
+import static com.android.resources.ResourceFolderType.*;
 
 /**
  * Checks to ensure that classes referenced in the manifest actually exist and are included
