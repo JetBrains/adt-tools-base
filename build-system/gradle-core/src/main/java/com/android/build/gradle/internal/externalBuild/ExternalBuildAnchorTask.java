@@ -41,6 +41,7 @@ public class ExternalBuildAnchorTask extends BaseTask {
 
         @Override
         public void execute(@NonNull ExternalBuildAnchorTask task) {
+            task.setVariantName("debug");
         }
     }
 }
