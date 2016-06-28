@@ -39,7 +39,7 @@ import java.util.StringTokenizer;
 public class AndroidGradleOptions {
 
     @VisibleForTesting
-    public static final boolean DEFAULT_USE_OLD_PACKAGING = false;
+    public static final boolean DEFAULT_USE_OLD_PACKAGING = true;
 
     private static final boolean DEFAULT_ENABLE_AAPT2 = false;
 
