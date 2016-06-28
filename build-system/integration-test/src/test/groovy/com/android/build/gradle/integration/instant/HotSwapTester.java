@@ -24,6 +24,7 @@ import com.android.build.gradle.integration.common.UninstallOnClose;
 import com.android.build.gradle.integration.common.fixture.Adb;
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.common.fixture.Logcat;
+import com.android.build.gradle.integration.common.fixture.Packaging;
 import com.android.build.gradle.internal.incremental.ColdswapMode;
 import com.android.builder.model.AndroidProject;
 import com.android.builder.model.InstantRun;
@@ -50,6 +51,7 @@ public class HotSwapTester {
 
     public static void run(
             @NonNull GradleTestProject project,
+            @NonNull Packaging packaging,
             @NonNull String packageName,
             @NonNull String activityName,
             @NonNull String logTag,
@@ -57,6 +59,18 @@ public class HotSwapTester {
             @NonNull Logcat logcat,
             @NonNull Steps steps)  throws Exception {
         IDevice device = adb.getDevice(thatUsesArt());
+        run(project, packaging, packageName, activityName, logTag, device, logcat, steps);
+    }
+
+    public static void run(
+            @NonNull GradleTestProject project,
+            @NonNull Packaging packaging,
+            @NonNull String packageName,
+            @NonNull String activityName,
+            @NonNull String logTag,
+            @NonNull IDevice device,
+            @NonNull Logcat logcat,
+            @NonNull Steps steps)  throws Exception {
         try (Closeable ignored = new UninstallOnClose(device, packageName)) {
             logcat.start(device, logTag);
 
@@ -67,6 +81,7 @@ public class HotSwapTester {
 
             // Run first time on device
             project.executor()
+                    .withPackaging(packaging)
                     .withInstantRun(
                             device, ColdswapMode.MULTIDEX, OptionalCompilationStep.RESTART_ONLY)
                     .run("assembleDebug");
@@ -98,7 +113,9 @@ public class HotSwapTester {
             steps.makeChange();
 
             // Now build the hot swap patch.
-            project.executor().withInstantRun(device, ColdswapMode.MULTIDEX)
+            project.executor()
+                    .withPackaging(packaging)
+                    .withInstantRun(device, ColdswapMode.MULTIDEX)
                     .run("assembleDebug");
 
             InstantRunArtifact artifact =

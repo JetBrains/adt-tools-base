@@ -19,7 +19,7 @@ package com.android.build.gradle.integration.packaging;
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk;
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
-import com.android.build.gradle.integration.common.fixture.RunGradleTasks;
+import com.android.build.gradle.integration.common.fixture.Packaging;
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldAppWithJavaLibs;
 import com.android.build.gradle.integration.common.runner.FilterableParameterized;
 import com.android.build.gradle.integration.common.utils.TestFileUtils;
@@ -44,11 +44,11 @@ public class JavaResMergePackagingTest {
 
     @Parameterized.Parameters(name = "{0}")
     public static Collection<Object[]> data() {
-        return RunGradleTasks.Packaging.getParameters();
+        return Packaging.getParameters();
     }
 
     @Parameterized.Parameter
-    public RunGradleTasks.Packaging mPackaging;
+    public Packaging mPackaging;
 
     @Rule
     public GradleTestProject project = GradleTestProject.builder()

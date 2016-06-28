@@ -43,32 +43,12 @@ import org.gradle.tooling.ResultHandler;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * A Gradle tooling api build builder.
  */
 public class RunGradleTasks extends BaseGradleExecutor<RunGradleTasks> {
-
-    public enum Packaging {
-        OLD_PACKAGING(true),
-        NEW_PACKAGING(false);
-
-        private final boolean mFlagValue;
-
-        Packaging(boolean flagValue) {
-            mFlagValue = flagValue;
-        }
-
-        public static Collection<Object[]> getParameters() {
-            return Arrays.stream(values())
-                    .map(packaging -> new Object[] {packaging})
-                    .collect(Collectors.toList());
-        }
-    }
 
     private final boolean isUseJack;
     private final boolean isMinifyEnabled;
@@ -168,7 +148,10 @@ public class RunGradleTasks extends BaseGradleExecutor<RunGradleTasks> {
 
         if (mPackaging != null) {
             args.add(
-                    "-P" + AndroidGradleOptions.PROPERTY_USE_OLD_PACKAGING + "=" + mPackaging.mFlagValue);
+                    String.format(
+                            "-P%s=%s",
+                            AndroidGradleOptions.PROPERTY_USE_OLD_PACKAGING,
+                            mPackaging.mFlagValue));
         }
 
         args.addAll(mArguments);

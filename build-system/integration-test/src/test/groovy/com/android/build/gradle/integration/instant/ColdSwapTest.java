@@ -17,11 +17,12 @@
 package com.android.build.gradle.integration.instant;
 
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat;
-import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk;
 
 import com.android.annotations.NonNull;
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
+import com.android.build.gradle.integration.common.fixture.Packaging;
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp;
+import com.android.build.gradle.integration.common.runner.FilterableParameterized;
 import com.android.build.gradle.integration.common.truth.AbstractAndroidSubject;
 import com.android.build.gradle.integration.common.truth.ApkSubject;
 import com.android.build.gradle.integration.common.truth.DexClassSubject;
@@ -29,8 +30,6 @@ import com.android.build.gradle.integration.common.truth.DexFileSubject;
 import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
 import com.android.build.gradle.internal.incremental.InstantRunVerifierStatus;
 import com.android.ide.common.process.ProcessException;
-import com.android.tools.fd.client.InstantRunArtifact;
-import com.android.tools.fd.client.InstantRunArtifactType;
 import com.google.common.base.Charsets;
 import com.google.common.collect.Iterables;
 import com.google.common.io.Files;
@@ -38,18 +37,29 @@ import com.google.common.truth.Expect;
 
 import org.junit.Assume;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Collection;
 import java.util.List;
 
 /**
  * Smoke test for cold swap builds.
  */
+@RunWith(FilterableParameterized.class)
 public class ColdSwapTest {
+
+    @Parameterized.Parameters(name = "{0}")
+    public static Collection<Object[]> data() {
+        return Packaging.getParameters();
+    }
+
+    @Parameterized.Parameter
+    public Packaging packaging;
 
     @Rule
     public GradleTestProject project = GradleTestProject.builder()
@@ -66,7 +76,7 @@ public class ColdSwapTest {
 
     @Test
     public void withDalvik() throws Exception {
-        ColdSwapTester.testDalvik(project, new ColdSwapTester.Steps() {
+        new ColdSwapTester(project).withPackaging(packaging).testDalvik(new ColdSwapTester.Steps() {
             @Override
             public void checkApk(@NonNull File apk) throws Exception {
                 checkDalvikApk(apk);
@@ -105,7 +115,7 @@ public class ColdSwapTest {
 
     @Test
     public void withMultiDex() throws Exception {
-        ColdSwapTester.testMultiDex(project, new ColdSwapTester.Steps() {
+        new ColdSwapTester(project).withPackaging(packaging).testMultiDex(new ColdSwapTester.Steps() {
             @Override
             public void checkApk(@NonNull File apk) throws Exception {
                 ApkSubject apkSubject = expect.about(ApkSubject.FACTORY).that(apk);
@@ -143,7 +153,7 @@ public class ColdSwapTest {
 
     @Test
     public void withMultiApk() throws Exception {
-        ColdSwapTester.testMultiApk(project, new ColdSwapTester.Steps() {
+        new ColdSwapTester(project).withPackaging(packaging).testMultiApk(new ColdSwapTester.Steps() {
             @Override
             public void checkApk(@NonNull File apk) throws Exception {
             }

@@ -16,7 +16,11 @@
 
 package com.android.build.gradle.integration.application;
 
+import static com.google.common.truth.Truth.assertThat;
+
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
+import com.android.build.gradle.integration.common.fixture.Packaging;
+import com.android.build.gradle.integration.common.runner.FilterableParameterized;
 import com.android.build.gradle.integration.common.truth.ApkSubject;
 import com.android.build.gradle.integration.common.truth.DexFileSubject;
 import com.android.build.gradle.integration.common.utils.SdkHelper;
@@ -35,9 +39,10 @@ import com.google.protobuf.CodedOutputStream;
 
 import org.apache.commons.io.FileUtils;
 import org.junit.Before;
-import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
@@ -53,14 +58,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Path;
+import java.util.Collection;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.jar.JarOutputStream;
 import java.util.zip.ZipEntry;
-
-import static com.google.common.truth.Truth.assertThat;
 
 import javax.xml.parsers.ParserConfigurationException;
 
@@ -69,21 +73,29 @@ import groovy.util.FileNameFinder;
 /**
  * Integration test for the ExternalBuildPlugin.
  */
+@RunWith(FilterableParameterized.class)
 public class ExternalBuildPluginTest {
+
+    @Parameterized.Parameters(name = "{0}")
+    public static Collection<Object[]> data() {
+        return Packaging.getParameters();
+    }
+
+    @Parameterized.Parameter
+    public Packaging mPackaging;
 
     private File manifestFile;
 
     @Rule
     public Expect expect = Expect.createAndEnableStackTrace();
 
-    @ClassRule
-    public static GradleTestProject sProject = GradleTestProject.builder()
+    @Rule
+    public GradleTestProject mProject = GradleTestProject.builder()
             .fromTestProject("externalBuildPlugin")
             .create();
 
     @Before
     public void setUp() throws IOException {
-
         IAndroidTarget target = SdkHelper.getTarget(23);
         assertThat(target).isNotNull();
 
@@ -102,8 +114,8 @@ public class ExternalBuildPluginTest {
                                 .setExecRootPath("AndroidManifest.xml"));
 
         List<String> jarFiles = new FileNameFinder().getFileNames(
-                sProject.getTestDir().getAbsolutePath(), "**/*.jar");
-        Path projectPath = sProject.getTestDir().toPath();
+                mProject.getTestDir().getAbsolutePath(), "**/*.jar");
+        Path projectPath = mProject.getTestDir().toPath();
         for (String jarFile : jarFiles) {
             Path jarFilePath = new File(jarFile).toPath();
             Path relativePath = projectPath.relativize(jarFilePath);
@@ -112,7 +124,7 @@ public class ExternalBuildPluginTest {
                     .setHash(ByteString.copyFromUtf8(String.valueOf(jarFile.hashCode()))));
         }
 
-        manifestFile = sProject.file("apk_manifest.tmp");
+        manifestFile = mProject.file("apk_manifest.tmp");
         try (OutputStream os = new BufferedOutputStream(new FileOutputStream(manifestFile))) {
             CodedOutputStream cos =
                     CodedOutputStream.newInstance(os);
@@ -124,7 +136,7 @@ public class ExternalBuildPluginTest {
     @Test
     public void testBuild()
             throws ProcessException, IOException, ParserConfigurationException, SAXException {
-        FileUtils.write(sProject.getBuildFile(), ""
+        FileUtils.write(mProject.getBuildFile(), ""
 + "apply from: \"../commonHeader.gradle\"\n"
 + "buildscript {\n "
 + "  apply from: \"../commonBuildScript.gradle\"\n"
@@ -134,12 +146,13 @@ public class ExternalBuildPluginTest {
 + "apply plugin: 'com.android.external.build'\n"
 + "\n"
 + "externalBuild {\n"
-+ "  executionRoot = $/" + sProject.getTestDir().getAbsolutePath() +"/$\n"
++ "  executionRoot = $/" + mProject.getTestDir().getAbsolutePath() +"/$\n"
 + "  buildManifestPath = $/" + manifestFile.getAbsolutePath() + "/$\n"
 + "}\n");
 
-        sProject.executor()
+        mProject.executor()
             .withInstantRun(23, ColdswapMode.AUTO)
+            .withPackaging(mPackaging)
             .run("clean", "process");
 
         InstantRunBuildContext instantRunBuildContext = loadFromBuildInfo();
@@ -158,7 +171,7 @@ public class ExternalBuildPluginTest {
         assertThat(apkSubject.hasMainDexFile());
 
         // now perform a hot swap test.
-        File mainClasses = new File(sProject.getTestDir(), "jars/main/classes.jar");
+        File mainClasses = new File(mProject.getTestDir(), "jars/main/classes.jar");
         assertThat(mainClasses.exists()).isTrue();
 
         File originalFile = new File(mainClasses.getParentFile(), "original_classes.jar");
@@ -192,8 +205,9 @@ public class ExternalBuildPluginTest {
             }
         }
 
-        sProject.executor()
+        mProject.executor()
                 .withInstantRun(23, ColdswapMode.AUTO)
+                .withPackaging(mPackaging)
                 .run("process");
 
         instantRunBuildContext = loadFromBuildInfo();
@@ -244,10 +258,10 @@ public class ExternalBuildPluginTest {
         return cw.toByteArray();
     }
 
-    private static InstantRunBuildContext loadFromBuildInfo()
+    private InstantRunBuildContext loadFromBuildInfo()
             throws ParserConfigurationException, SAXException, IOException {
         // assert build-info.xml presence.
-        File buildInfo = new File(sProject.getTestDir(), "build/reload-dex/debug/build-info.xml");
+        File buildInfo = new File(mProject.getTestDir(), "build/reload-dex/debug/build-info.xml");
         assertThat(buildInfo.exists()).isTrue();
         InstantRunBuildContext instantRunBuildContext = new InstantRunBuildContext();
         instantRunBuildContext.setApiLevel(23, ColdswapMode.AUTO.toString(), "arm");

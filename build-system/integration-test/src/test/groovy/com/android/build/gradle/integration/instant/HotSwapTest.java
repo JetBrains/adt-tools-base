@@ -21,18 +21,20 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import com.android.annotations.NonNull;
-import com.android.builder.model.OptionalCompilationStep;
 import com.android.build.gradle.integration.common.category.DeviceTests;
 import com.android.build.gradle.integration.common.fixture.Adb;
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.common.fixture.Logcat;
+import com.android.build.gradle.integration.common.fixture.Packaging;
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp;
+import com.android.build.gradle.integration.common.runner.FilterableParameterized;
 import com.android.build.gradle.integration.common.truth.AbstractAndroidSubject;
 import com.android.build.gradle.integration.common.truth.ApkSubject;
 import com.android.build.gradle.integration.common.truth.DexFileSubject;
 import com.android.build.gradle.integration.common.utils.TestFileUtils;
 import com.android.build.gradle.internal.incremental.ColdswapMode;
 import com.android.builder.model.InstantRun;
+import com.android.builder.model.OptionalCompilationStep;
 import com.android.ddmlib.IDevice;
 import com.android.tools.fd.client.InstantRunArtifact;
 import com.android.tools.fd.client.InstantRunClient;
@@ -46,30 +48,37 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.junit.runners.Parameterized;
 
 import java.io.IOException;
+import java.util.Collection;
 
 /**
  * Smoke test for hot swap builds.
  */
-@RunWith(MockitoJUnitRunner.class)
+@RunWith(FilterableParameterized.class)
 public class HotSwapTest {
-
     private static final int VERSION_CODE = 17;
     private static final String VERSION_NAME = "0.0.1";
+    private static final ColdswapMode COLDSWAP_MODE = ColdswapMode.MULTIDEX;
+    private static final String LOG_TAG = "hotswapTest";
+
+    @Parameterized.Parameters(name = "{0}")
+    public static Collection<Object[]> data() {
+        return Packaging.getParameters();
+    }
+
+    @Parameterized.Parameter
+    public Packaging packaging;
 
     @Rule
     public final Adb adb = new Adb();
 
-    private static final ColdswapMode COLDSWAP_MODE = ColdswapMode.MULTIDEX;
-
-    private static final String LOG_TAG = "hotswapTest";
-
     @Rule
     public GradleTestProject project =
             GradleTestProject.builder()
-                    .fromTestApp(HelloWorldApp.forPlugin("com.android.application")).create();
+                    .fromTestApp(HelloWorldApp.forPlugin("com.android.application"))
+                    .create();
 
     @Rule
     public Logcat logcat = Logcat.create();
@@ -98,7 +107,9 @@ public class HotSwapTest {
         InstantRun instantRunModel =
                 InstantRunTestUtils.getInstantRunModel(project.model().getSingle());
 
-        project.executor().withInstantRun(19, COLDSWAP_MODE, OptionalCompilationStep.RESTART_ONLY)
+        project.executor()
+                .withInstantRun(19, COLDSWAP_MODE, OptionalCompilationStep.RESTART_ONLY)
+                .withPackaging(packaging)
                 .run("assembleDebug");
 
         // As no injected API level, will default to no splits.
@@ -112,7 +123,9 @@ public class HotSwapTest {
 
         makeHotSwapChange();
 
-        project.executor().withInstantRun(19, COLDSWAP_MODE)
+        project.executor()
+                .withInstantRun(19, COLDSWAP_MODE)
+                .withPackaging(packaging)
                 .run("assembleDebug");
 
         InstantRunArtifact artifact =
@@ -145,6 +158,7 @@ public class HotSwapTest {
     public void doHotSwapChangeTest() throws Exception {
         HotSwapTester.run(
                 project,
+                packaging,
                 "com.example.helloworld",
                 "HelloWorld",
                 LOG_TAG,

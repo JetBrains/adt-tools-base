@@ -26,6 +26,7 @@ import com.android.build.gradle.integration.common.category.DeviceTests;
 import com.android.build.gradle.integration.common.fixture.Adb;
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.common.fixture.Logcat;
+import com.android.build.gradle.integration.common.fixture.Packaging;
 import com.android.build.gradle.integration.common.runner.FilterableParameterized;
 import com.android.build.gradle.integration.common.utils.TestFileUtils;
 import com.android.build.gradle.internal.incremental.ColdswapMode;
@@ -118,7 +119,7 @@ public class DaggerTest {
 
     @Test
     public void coldSwap() throws Exception {
-        ColdSwapTester.testMultiDex(project, new ColdSwapTester.Steps() {
+        new ColdSwapTester(project).testMultiDex(new ColdSwapTester.Steps() {
             @Override
             public void checkApk(@NonNull File apk) throws Exception {
                 assertThatApk(apk).hasClass(APP_MODULE_DESC, INSTANT_RUN);
@@ -167,6 +168,7 @@ public class DaggerTest {
     public void hotSwap_device() throws Exception {
         HotSwapTester.run(
                 project,
+                Packaging.DEFAULT,
                 "com.android.tests",
                 "MainActivity",
                 this.testProject,

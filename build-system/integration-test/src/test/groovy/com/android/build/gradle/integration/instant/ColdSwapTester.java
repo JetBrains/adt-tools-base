@@ -17,9 +17,12 @@
 package com.android.build.gradle.integration.instant;
 
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 import com.android.annotations.NonNull;
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
+import com.android.build.gradle.integration.common.fixture.Packaging;
 import com.android.build.gradle.internal.incremental.ColdswapMode;
 import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
 import com.android.build.gradle.internal.incremental.InstantRunVerifierStatus;
@@ -28,59 +31,62 @@ import com.android.tools.fd.client.InstantRunBuildInfo;
 
 import java.io.File;
 import java.util.List;
+import java.util.Optional;
 
-/**
- * Helper class for testing cold-swap scenarios.
- */
+/** Helper class for testing cold-swap scenarios. */
 class ColdSwapTester {
     private final GradleTestProject mProject;
-    private final Steps mSteps;
+    private Packaging mPackaging;
 
-    private ColdSwapTester(GradleTestProject project, Steps steps) {
+    public ColdSwapTester(GradleTestProject project) {
         mProject = project;
-        mSteps = steps;
+        mPackaging = Packaging.DEFAULT;
     }
 
-    static void testDalvik(GradleTestProject project, Steps steps) throws Exception {
-        ColdSwapTester tester = new ColdSwapTester(project, steps);
-        tester.doTest(15, ColdswapMode.AUTO);
+    ColdSwapTester withPackaging(Packaging packaging) {
+        mPackaging = packaging;
+        return this;
     }
 
-    static void testMultiDex(GradleTestProject project, Steps steps) throws Exception {
-        ColdSwapTester tester = new ColdSwapTester(project, steps);
-        tester.doTest(21, ColdswapMode.MULTIDEX);
+    void testDalvik(Steps steps) throws Exception {
+        doTest(steps, 15, ColdswapMode.AUTO);
     }
 
-    private void doTest(int apiLevel, ColdswapMode coldswapMode) throws Exception {
+    void testMultiDex(Steps steps) throws Exception {
+        doTest(steps, 21, ColdswapMode.MULTIDEX);
+    }
+
+    private void doTest(Steps steps, int apiLevel, ColdswapMode coldswapMode) throws Exception {
         InstantRun instantRunModel =
                 InstantRunTestUtils.doInitialBuild(mProject, apiLevel, coldswapMode);
 
-        mSteps.checkApk(mProject.getApk("debug"));
+        steps.checkApk(mProject.getApk("debug"));
 
         InstantRunBuildInfo initialContext = InstantRunTestUtils.loadContext(instantRunModel);
         String startBuildId = initialContext.getTimeStamp();
 
-        mSteps.makeChange();
+        steps.makeChange();
 
         mProject.executor()
+                .withPackaging(mPackaging)
                 .withInstantRun(apiLevel, coldswapMode)
                 .run("assembleDebug");
 
         InstantRunBuildContext buildContext =
                 InstantRunTestUtils.loadBuildContext(apiLevel, instantRunModel);
 
+        InstantRunBuildContext.Build lastBuild = buildContext.getLastBuild();
+        assertNotNull(lastBuild);
+        assertThat(lastBuild.getBuildId()).isNotEqualTo(startBuildId);
 
-        assertThat(buildContext.getLastBuild().getBuildId()).isNotEqualTo(startBuildId);
-
-        assertThat(buildContext.getLastBuild().getVerifierStatus()).isPresent();
-        mSteps.checkVerifierStatus(buildContext.getLastBuild().getVerifierStatus().get());
-        mSteps.checkArtifacts(buildContext.getLastBuild().getArtifacts());
-
+        Optional<InstantRunVerifierStatus> verifierStatus = lastBuild.getVerifierStatus();
+        assertTrue(verifierStatus.isPresent());
+        steps.checkVerifierStatus(verifierStatus.get());
+        steps.checkArtifacts(lastBuild.getArtifacts());
     }
 
-    static void testMultiApk(GradleTestProject project, Steps steps) throws Exception {
-        ColdSwapTester tester = new ColdSwapTester(project, steps);
-        tester.doTest(24, ColdswapMode.AUTO);
+    void testMultiApk(Steps steps) throws Exception {
+        doTest(steps, 24, ColdswapMode.AUTO);
     }
 
     interface Steps {
@@ -90,6 +96,7 @@ class ColdSwapTester {
 
         void checkVerifierStatus(@NonNull InstantRunVerifierStatus status) throws Exception;
 
-        void checkArtifacts(@NonNull List<InstantRunBuildContext.Artifact> artifacts) throws Exception;
+        void checkArtifacts(@NonNull List<InstantRunBuildContext.Artifact> artifacts)
+                throws Exception;
     }
 }

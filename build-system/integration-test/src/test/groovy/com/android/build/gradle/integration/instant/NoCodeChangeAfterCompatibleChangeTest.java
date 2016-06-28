@@ -17,26 +17,19 @@
 package com.android.build.gradle.integration.instant;
 
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 
-import com.android.annotations.NonNull;
-import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
-import com.android.builder.model.OptionalCompilationStep;
-import com.android.build.gradle.integration.common.category.DeviceTests;
-import com.android.build.gradle.integration.common.fixture.Adb;
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.common.fixture.Logcat;
+import com.android.build.gradle.integration.common.fixture.Packaging;
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp;
+import com.android.build.gradle.integration.common.runner.FilterableParameterized;
 import com.android.build.gradle.integration.common.truth.AbstractAndroidSubject;
 import com.android.build.gradle.integration.common.truth.ApkSubject;
-import com.android.build.gradle.integration.common.truth.DexFileSubject;
-import com.android.build.gradle.integration.common.utils.TestFileUtils;
 import com.android.build.gradle.internal.incremental.ColdswapMode;
+import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
 import com.android.builder.model.InstantRun;
-import com.android.ddmlib.IDevice;
+import com.android.builder.model.OptionalCompilationStep;
 import com.android.tools.fd.client.InstantRunArtifact;
-import com.android.tools.fd.client.InstantRunClient;
 import com.google.common.base.Charsets;
 import com.google.common.io.Files;
 import com.google.common.truth.Expect;
@@ -45,22 +38,30 @@ import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.junit.runners.Parameterized;
 
 import java.io.IOException;
+import java.util.Collection;
 import java.util.List;
 
 /**
  * Smoke test for hot swap builds.
  */
-@RunWith(MockitoJUnitRunner.class)
+@RunWith(FilterableParameterized.class)
 public class NoCodeChangeAfterCompatibleChangeTest {
 
     private static final ColdswapMode COLDSWAP_MODE = ColdswapMode.MULTIDEX;
 
     private static final String LOG_TAG = "NoCodeChangeAfterCompatibleChangeTest";
+
+    @Parameterized.Parameters(name = "{0}")
+    public static Collection<Object[]> data() {
+        return Packaging.getParameters();
+    }
+
+    @Parameterized.Parameter
+    public Packaging packaging;
 
     @Rule
     public GradleTestProject project =
@@ -85,7 +86,9 @@ public class NoCodeChangeAfterCompatibleChangeTest {
         InstantRun instantRunModel =
                 InstantRunTestUtils.getInstantRunModel(project.model().getSingle());
 
-        project.executor().withInstantRun(23, COLDSWAP_MODE, OptionalCompilationStep.FULL_APK)
+        project.executor()
+                .withInstantRun(23, COLDSWAP_MODE, OptionalCompilationStep.FULL_APK)
+                .withPackaging(packaging)
                 .run("assembleDebug");
 
         ApkSubject apkFile = expect.about(ApkSubject.FACTORY)
@@ -99,7 +102,9 @@ public class NoCodeChangeAfterCompatibleChangeTest {
         makeHotSwapChange();
 
         // force the DEX creation.
-        project.executor().withInstantRun(23, COLDSWAP_MODE, OptionalCompilationStep.RESTART_ONLY)
+        project.executor()
+                .withInstantRun(23, COLDSWAP_MODE, OptionalCompilationStep.RESTART_ONLY)
+                .withPackaging(packaging)
                 .run("assembleDebug");
 
         List<InstantRunArtifact> dexFiles = InstantRunTestUtils
@@ -107,7 +112,10 @@ public class NoCodeChangeAfterCompatibleChangeTest {
         assertThat(dexFiles).hasSize(1);
 
         // now run again the incremental build.
-        project.executor().withInstantRun(23, COLDSWAP_MODE).run("assembleDebug");
+        project.executor()
+                .withPackaging(packaging)
+                .withInstantRun(23, COLDSWAP_MODE)
+                .run("assembleDebug");
 
         InstantRunBuildContext instantRunBuildContext = InstantRunTestUtils
                 .loadBuildContext(23, instantRunModel);

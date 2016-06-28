@@ -20,6 +20,7 @@ import static com.android.build.gradle.integration.common.truth.TruthHelper.asse
 
 import com.android.annotations.NonNull;
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
+import com.android.build.gradle.integration.common.fixture.Packaging;
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp;
 import com.android.build.gradle.integration.common.truth.AbstractAndroidSubject;
 import com.android.build.gradle.integration.common.truth.ApkSubject;
@@ -51,30 +52,36 @@ import java.util.stream.Collectors;
 public class InstantRunChangeDeviceTest {
 
     private static final Set<BuildTarget> buildTargetsToTest = EnumSet.allOf(BuildTarget.class);
-    private final BuildTarget firstBuild;
-    private final BuildTarget secondBuild;
+
+    @Parameterized.Parameters(name = "from {0} to {1}, {2}")
+    public static Collection<Object[]> scenarios() {
+        // Test all change combinations (plus packaging modes).
+        // We want (BuildTarget x BuildTarget) \ id(BuildTarget)
+        return Sets.cartesianProduct(
+                        ImmutableList.of(
+                                buildTargetsToTest,
+                                buildTargetsToTest,
+                                EnumSet.allOf(Packaging.class)))
+                .stream()
+                .filter(fromTo -> fromTo.get(0) != fromTo.get(1))
+                .map(fromTo -> Iterables.toArray(fromTo, Object.class))
+                .collect(Collectors.toList());
+    }
+
+    @Parameterized.Parameter(0)
+    public BuildTarget firstBuild;
+
+    @Parameterized.Parameter(1)
+    public BuildTarget secondBuild;
+
+    @Parameterized.Parameter(2)
+    public Packaging packaging;
+
     @Rule
     public GradleTestProject mProject = GradleTestProject.builder()
             .fromTestApp(HelloWorldApp.forPlugin("com.android.application")).create();
     @Rule
     public Expect expect = Expect.createAndEnableStackTrace();
-
-
-    public InstantRunChangeDeviceTest(BuildTarget firstBuild, BuildTarget secondBuild) {
-        this.firstBuild = firstBuild;
-        this.secondBuild = secondBuild;
-    }
-
-    @Parameterized.Parameters(name = "from {0} to {1}")
-    public static Collection<Object[]> scenarios() {
-        // Test all change combinations.
-        // We want (BuildTarget x BuildTarget) \ id(BuildTarget)
-        return Sets.cartesianProduct(ImmutableList.of(buildTargetsToTest, buildTargetsToTest))
-                .stream()
-                .filter(fromTo -> fromTo.get(0) != fromTo.get(1))
-                .map(fromTo -> fromTo.toArray(new BuildTarget[fromTo.size()]))
-                .collect(Collectors.toList());
-    }
 
     @NonNull
     private static File getMainApk(@NonNull List<InstantRunArtifact> artifacts) {
@@ -97,11 +104,12 @@ public class InstantRunChangeDeviceTest {
         mProject.execute("clean");
 
         if (firstBuild == BuildTarget.NO_INSTANT_RUN) {
-            mProject.execute("assembleDebug");
+            mProject.executor().withPackaging(packaging).run("assembleDebug");
             checkNormalApk(apk);
             startBuildId = null;
         } else {
             mProject.executor()
+                    .withPackaging(packaging)
                     .withInstantRun(
                             firstBuild.getApiLevel(),
                             ColdswapMode.AUTO,
@@ -113,10 +121,11 @@ public class InstantRunChangeDeviceTest {
         }
 
         if (secondBuild == BuildTarget.NO_INSTANT_RUN) {
-            mProject.execute("assembleDebug");
+            mProject.executor().withPackaging(packaging).run("assembleDebug");
             checkNormalApk(apk);
         } else {
             mProject.executor()
+                    .withPackaging(packaging)
                     .withInstantRun(
                             secondBuild.getApiLevel(),
                             ColdswapMode.AUTO,

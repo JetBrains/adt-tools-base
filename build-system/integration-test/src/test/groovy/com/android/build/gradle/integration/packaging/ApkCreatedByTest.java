@@ -20,7 +20,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
-import com.android.build.gradle.integration.common.fixture.RunGradleTasks;
+import com.android.build.gradle.integration.common.fixture.Packaging;
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp;
 import com.android.build.gradle.integration.common.runner.FilterableParameterized;
 import com.android.builder.internal.packaging.zip.StoredEntry;
@@ -40,11 +40,11 @@ import java.util.Properties;
 public class ApkCreatedByTest {
     @Parameterized.Parameters(name = "{0}")
     public static Collection<Object[]> data() {
-        return RunGradleTasks.Packaging.getParameters();
+        return Packaging.getParameters();
     }
 
     @Parameterized.Parameter
-    public RunGradleTasks.Packaging mPackaging;
+    public Packaging mPackaging;
 
     @Rule
     public GradleTestProject project = GradleTestProject.builder()

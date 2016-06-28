@@ -16,12 +16,11 @@
 
 package com.android.build.gradle.internal.externalBuild
 
-import org.gradle.api.Project;
-import org.gradle.testfixtures.ProjectBuilder;
+import org.gradle.api.Project
+import org.gradle.testfixtures.ProjectBuilder
 import org.junit.Test
 
-import static com.google.common.truth.Truth.assertThat;
-
+import static com.google.common.truth.Truth.assertThat
 /**
  * Basic tests for Blaze plugin instantiation, extension instantiation and tasks population.
  */

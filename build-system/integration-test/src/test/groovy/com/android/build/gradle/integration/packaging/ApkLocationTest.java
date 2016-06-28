@@ -20,7 +20,7 @@ import static com.android.build.gradle.integration.common.truth.TruthHelper.asse
 import static org.junit.Assert.assertNotNull;
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
-import com.android.build.gradle.integration.common.fixture.RunGradleTasks;
+import com.android.build.gradle.integration.common.fixture.Packaging;
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp;
 import com.android.build.gradle.integration.common.runner.FilterableParameterized;
 import com.android.builder.model.AndroidProject;
@@ -39,11 +39,11 @@ public class ApkLocationTest {
 
     @Parameterized.Parameters(name = "{0}")
     public static Collection<Object[]> data() {
-        return RunGradleTasks.Packaging.getParameters();
+        return Packaging.getParameters();
     }
 
     @Parameterized.Parameter
-    public RunGradleTasks.Packaging mPackaging;
+    public Packaging mPackaging;
 
     @Rule
     public GradleTestProject project = GradleTestProject.builder()
@@ -67,7 +67,7 @@ public class ApkLocationTest {
 
         // There can be one or two APKs in the directory, depending on whether we use old or new
         // packaging.
-        if (mPackaging == RunGradleTasks.Packaging.NEW_PACKAGING) {
+        if (mPackaging == Packaging.NEW_PACKAGING) {
             assertThat(files).hasLength(1);
         } else {
             assertThat(files).hasLength(2);

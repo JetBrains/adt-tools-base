@@ -18,7 +18,7 @@ package com.android.build.gradle.integration.library
 
 import com.android.build.gradle.integration.common.category.DeviceTests
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.fixture.RunGradleTasks
+import com.android.build.gradle.integration.common.fixture.Packaging
 import com.android.build.gradle.integration.common.runner.FilterableParameterized
 import com.google.common.io.Files
 import com.google.common.io.Resources
@@ -53,11 +53,11 @@ class AssetsTest {
 
     @Parameterized.Parameters
     public static Collection<Object[]> data() {
-        return RunGradleTasks.Packaging.getParameters();
+        return Packaging.getParameters();
     }
 
     @Parameterized.Parameter
-    public RunGradleTasks.Packaging mPackaging;
+    public Packaging mPackaging;
 
     @Rule
     public GradleTestProject project = GradleTestProject.builder()

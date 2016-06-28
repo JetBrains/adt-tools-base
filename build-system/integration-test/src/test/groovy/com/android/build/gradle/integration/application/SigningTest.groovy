@@ -19,7 +19,7 @@ package com.android.build.gradle.integration.application
 import com.android.build.gradle.integration.common.category.DeviceTests
 import com.android.build.gradle.integration.common.fixture.Adb
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.fixture.RunGradleTasks
+import com.android.build.gradle.integration.common.fixture.Packaging
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
 import com.android.build.gradle.integration.common.runner.FilterableParameterized
 import com.android.build.gradle.integration.common.utils.AndroidVersionMatcher
@@ -73,7 +73,7 @@ class SigningTest {
     public static Collection<Object[]> data() {
         List<Object[]> parameters = []
 
-        for (packaging in RunGradleTasks.Packaging.values()) {
+        for (packaging in Packaging.values()) {
             parameters.add([
                     "rsa_keystore.jks",
                     "CERT.RSA",
@@ -104,7 +104,7 @@ class SigningTest {
     public int minSdkVersion
 
     @Parameterized.Parameter(3)
-    public RunGradleTasks.Packaging packaging
+    public Packaging packaging
 
     @Rule
     public GradleTestProject project = GradleTestProject.builder()
@@ -361,7 +361,7 @@ class SigningTest {
     @Test
     public void 'signing scheme toggle'() throws Exception {
         // Old packaging doesn't support the v2 signing scheme.
-        Assume.assumeTrue(packaging == RunGradleTasks.Packaging.NEW_PACKAGING)
+        Assume.assumeTrue(packaging == Packaging.NEW_PACKAGING)
 
         File apk = project.getApk("debug")
 

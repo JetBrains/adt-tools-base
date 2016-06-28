@@ -576,10 +576,10 @@ public class GradleTestProject implements TestRule {
                 "apk/" + Joiner.on("-").join(dimensionList) + SdkConstants.DOT_ANDROID_PACKAGE);
     }
 
-    public File getTestApk(RunGradleTasks.Packaging packaging, String... dimensions) {
+    public File getTestApk(Packaging packaging, String... dimensions) {
         List<String> dimensionList = Lists.newArrayList(dimensions);
         dimensionList.add("androidTest");
-        if (packaging == RunGradleTasks.Packaging.OLD_PACKAGING) {
+        if (packaging == Packaging.OLD_PACKAGING) {
             dimensionList.add("unaligned");
         }
 
@@ -588,10 +588,10 @@ public class GradleTestProject implements TestRule {
 
     public File getTestApk(String... dimensions) {
         @SuppressWarnings("ConstantConditions")
-        RunGradleTasks.Packaging packaging =
+        Packaging packaging =
                 AndroidGradleOptions.DEFAULT_USE_OLD_PACKAGING
-                        ? RunGradleTasks.Packaging.OLD_PACKAGING
-                        : RunGradleTasks.Packaging.NEW_PACKAGING;
+                        ? Packaging.OLD_PACKAGING
+                        : Packaging.NEW_PACKAGING;
 
         return getTestApk(packaging, dimensions);
     }
