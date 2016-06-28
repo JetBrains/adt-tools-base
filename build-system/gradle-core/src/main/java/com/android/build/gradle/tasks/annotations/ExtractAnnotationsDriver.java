@@ -190,6 +190,8 @@ public class ExtractAnnotationsDriver {
                         languageLevel = EcjParser.getLanguageLevel(1, 6);
                     } else if ("1.7".equals(value)) {
                         languageLevel = EcjParser.getLanguageLevel(1, 7);
+                    } else if ("1.8".equals(value)) {
+                        languageLevel = EcjParser.getLanguageLevel(1, 8);
                     } else {
                         abort("Unsupported language level " + value);
                     }
