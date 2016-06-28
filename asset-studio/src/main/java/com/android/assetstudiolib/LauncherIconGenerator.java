@@ -36,61 +36,60 @@ public class LauncherIconGenerator extends GraphicGenerator {
     private static final Rectangle IMAGE_SIZE_WEB = new Rectangle(0, 0, 512, 512);
     private static final Rectangle IMAGE_SIZE_MDPI = new Rectangle(0, 0, 48, 48);
 
-    private static final Map<Pair<Shape, Density>, Rectangle> TARGET_RECTS
-            = new HashMap<Pair<Shape, Density>, Rectangle>();
+    private static final Map<Pair<Shape, Density>, Rectangle> TARGET_RECTS = new HashMap<>();
 
     static {
         // None, Web
-        TARGET_RECTS.put(Pair.of(Shape.NONE, (Density) null), new Rectangle(32, 32, 448, 448));
+        TARGET_RECTS.put(Pair.of(Shape.NONE, null), new Rectangle(32, 32, 448, 448));
         // None, HDPI
         TARGET_RECTS.put(Pair.of(Shape.NONE, Density.HIGH), new Rectangle(4, 4, 64, 64));
         // None, MDPI
         TARGET_RECTS.put(Pair.of(Shape.NONE, Density.MEDIUM), new Rectangle(3, 3, 42, 42));
 
         // Circle, Web
-        TARGET_RECTS.put(Pair.of(Shape.CIRCLE, (Density) null), new Rectangle(21, 21, 470, 470));
+        TARGET_RECTS.put(Pair.of(Shape.CIRCLE, null), new Rectangle(21, 21, 470, 470));
         // Circle, HDPI
         TARGET_RECTS.put(Pair.of(Shape.CIRCLE, Density.HIGH), new Rectangle(3, 3, 66, 66));
         // Circle, MDPI
         TARGET_RECTS.put(Pair.of(Shape.CIRCLE, Density.MEDIUM), new Rectangle(2, 2, 44, 44));
 
         // Square, Web
-        TARGET_RECTS.put(Pair.of(Shape.SQUARE, (Density) null), new Rectangle(53, 53, 406, 406));
+        TARGET_RECTS.put(Pair.of(Shape.SQUARE, null), new Rectangle(53, 53, 406, 406));
         // Square, HDPI
         TARGET_RECTS.put(Pair.of(Shape.SQUARE, Density.HIGH), new Rectangle(7, 7, 57, 57));
         // Square, MDPI
         TARGET_RECTS.put(Pair.of(Shape.SQUARE, Density.MEDIUM), new Rectangle(5, 5, 38, 38));
 
         // Vertical Rectangle, Web
-        TARGET_RECTS.put(Pair.of(Shape.VRECT, (Density) null), new Rectangle(85, 21, 342, 470));
+        TARGET_RECTS.put(Pair.of(Shape.VRECT, null), new Rectangle(85, 21, 342, 470));
         // Vertical Rectangle, HDPI
         TARGET_RECTS.put(Pair.of(Shape.VRECT, Density.HIGH), new Rectangle(12, 3, 48, 66));
         // Vertical Rectangle, MDPI
         TARGET_RECTS.put(Pair.of(Shape.VRECT, Density.MEDIUM), new Rectangle(8, 2, 32, 44));
 
         // Horizontal Rectangle, Web
-        TARGET_RECTS.put(Pair.of(Shape.HRECT, (Density) null), new Rectangle(21, 85, 470, 342));
+        TARGET_RECTS.put(Pair.of(Shape.HRECT, null), new Rectangle(21, 85, 470, 342));
         // Horizontal Rectangle, HDPI
         TARGET_RECTS.put(Pair.of(Shape.HRECT, Density.HIGH), new Rectangle(3, 12, 66, 48));
         // Horizontal Rectangle, MDPI
         TARGET_RECTS.put(Pair.of(Shape.HRECT, Density.MEDIUM), new Rectangle(2, 8, 44, 32));
 
         // Square Dog-ear, Web
-        TARGET_RECTS.put(Pair.of(Shape.SQUARE_DOG, (Density) null), new Rectangle(53, 149, 406, 312));
+        TARGET_RECTS.put(Pair.of(Shape.SQUARE_DOG, null), new Rectangle(53, 149, 406, 312));
         // Square Dog-ear, HDPI
         TARGET_RECTS.put(Pair.of(Shape.SQUARE_DOG, Density.HIGH), new Rectangle(7, 21, 57, 43));
         // Square Dog-ear, MDPI
         TARGET_RECTS.put(Pair.of(Shape.SQUARE_DOG, Density.MEDIUM), new Rectangle(5, 14, 38, 29));
 
         // Vertical Rectangle Dog-ear, Web
-        TARGET_RECTS.put(Pair.of(Shape.VRECT_DOG, (Density) null), new Rectangle(85, 117, 342, 374));
+        TARGET_RECTS.put(Pair.of(Shape.VRECT_DOG, null), new Rectangle(85, 117, 342, 374));
         // Vertical Rectangle Dog-ear, HDPI
         TARGET_RECTS.put(Pair.of(Shape.VRECT_DOG, Density.HIGH), new Rectangle(12, 17, 48, 52));
         // Vertical Rectangle Dog-ear, MDPI
         TARGET_RECTS.put(Pair.of(Shape.VRECT_DOG, Density.MEDIUM), new Rectangle(8, 11, 32, 35));
 
         // Horizontal Rectangle Dog-ear, Web
-        TARGET_RECTS.put(Pair.of(Shape.HRECT_DOG, (Density) null), new Rectangle(21, 85, 374, 342));
+        TARGET_RECTS.put(Pair.of(Shape.HRECT_DOG, null), new Rectangle(21, 85, 374, 342));
         // Horizontal Rectangle Dog-ear, HDPI
         TARGET_RECTS.put(Pair.of(Shape.HRECT_DOG, Density.HIGH), new Rectangle(3, 12, 52, 48));
         // Horizontal Rectangle Dog-ear, MDPI
@@ -103,7 +102,7 @@ public class LauncherIconGenerator extends GraphicGenerator {
      * @param shape     Shape of the icon before applying dog-ear effect
      * @return          Shape with dog-ear effect on
      */
-    private Shape applyDog(Shape shape) {
+    private static Shape applyDog(Shape shape) {
         if (shape == Shape.SQUARE) {
             return Shape.SQUARE_DOG;
         }
@@ -116,6 +115,7 @@ public class LauncherIconGenerator extends GraphicGenerator {
         }
     }
 
+    @SuppressWarnings("UseJBColor")
     @Override
     public BufferedImage generate(GraphicGeneratorContext context, Options options) {
         LauncherOptions launcherOptions = (LauncherOptions) options;
@@ -185,8 +185,15 @@ public class LauncherIconGenerator extends GraphicGenerator {
         } else {
             AssetUtil.drawCenterInside(gIcon, launcherOptions.sourceImage, targetRect);
         }
-        AssetUtil.drawEffects(gTemp, iconImage, 0, 0, new AssetUtil.Effect[]{
-          new AssetUtil.FillEffect(new Color(launcherOptions.foregroundColor), 1.0),});
+        AssetUtil.Effect[] effects;
+        if (launcherOptions.useForegroundColor) {
+            effects = new AssetUtil.Effect[]{
+              new AssetUtil.FillEffect(new Color(launcherOptions.foregroundColor), 1.0)
+            };
+        } else {
+            effects = new AssetUtil.Effect[0];
+        }
+        AssetUtil.drawEffects(gTemp, iconImage, 0, 0, effects);
 
         // Finally, render all layers to the output image
         gOut.drawImage(tempImage, 0, 0, null);
@@ -221,7 +228,7 @@ public class LauncherIconGenerator extends GraphicGenerator {
             launcherOptions.density = null;
             BufferedImage image = generate(context, options);
             if (image != null) {
-                Map<String, BufferedImage> imageMap = new HashMap<String, BufferedImage>();
+                Map<String, BufferedImage> imageMap = new HashMap<>();
                 categoryMap.put("Web", imageMap);
                 imageMap.put(getIconPath(options, name), image);
             }
@@ -242,6 +249,12 @@ public class LauncherIconGenerator extends GraphicGenerator {
         public LauncherOptions() {
             mipmap = true;
         }
+
+        /**
+         * Whether to use the foreground color. If we are using images as the source asset for our icons,
+         * you shouldn't apply the foreground color, which would paint over it and obscure the image.
+         */
+        public boolean useForegroundColor = true;
 
         /** Foreground color, as an RRGGBB packed integer */
         public int foregroundColor = 0;
