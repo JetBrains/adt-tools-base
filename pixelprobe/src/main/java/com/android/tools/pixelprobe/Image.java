@@ -17,6 +17,7 @@
 package com.android.tools.pixelprobe;
 
 import com.android.tools.pixelprobe.color.Colors;
+import com.android.tools.pixelprobe.util.Images;
 import com.android.tools.pixelprobe.util.Lists;
 
 import java.awt.color.ColorSpace;
@@ -145,9 +146,17 @@ public class Image {
     /**
      * Returns a flattened (or merged or composited) version of the image
      * as a renderable image. For images without layers, this is the actual
-     * image data. Make sure to check the color model and/or color space of
-     * this image before using it in high performance code paths. The color
-     * model/color space might not be suitable for direct rendering.
+     * image data.
+     *
+     * The color model/color space might not be suitable for direct rendering.
+     * The returned image can be converted to sRGB, suitable for direct
+     * rendering, using {@link Images#copyTo_sRGB(BufferedImage)}.
+     *
+     * Note that the color space of the merged image might be different from
+     * the color space associated with this image.
+     *
+     * @see Images#isColorSpace_sRGB(BufferedImage)
+     * @see Images#copyTo_sRGB(BufferedImage)
      */
     public BufferedImage getMergedImage() {
         return mergedImage;
@@ -156,6 +165,9 @@ public class Image {
     /**
      * Returns a thumbnail for this image, if present. The returned value
      * might be null if no thumbnail was found in the original source.
+     *
+     * @see Images#isColorSpace_sRGB(BufferedImage)
+     * @see Images#copyTo_sRGB(BufferedImage)
      */
     public BufferedImage getThumbnailImage() {
         return thumbnail;

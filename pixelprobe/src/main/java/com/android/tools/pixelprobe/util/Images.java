@@ -16,7 +16,7 @@
 
 package com.android.tools.pixelprobe.util;
 
-import com.android.tools.pixelprobe.ColorMode;
+import com.android.tools.pixelprobe.*;
 import com.android.tools.pixelprobe.color.Colors;
 import com.android.tools.pixelprobe.color.CsIndexColorModel;
 
@@ -612,6 +612,41 @@ public final class Images {
         }
 
         return imageOp.filter(image, null);
+    }
+
+    /**
+     * Returns whether the image's color space is the sRGB color space.
+     *
+     * @see #copyTo_sRGB(BufferedImage)
+     */
+    public static boolean isColorSpace_sRGB(BufferedImage image) {
+        ColorModel colorModel = image.getColorModel();
+        ColorSpace colorSpace = colorModel.getColorSpace();
+        if (colorSpace == null) return true;
+
+        if (colorSpace.getType() == ColorSpace.TYPE_RGB) {
+            if (colorSpace.isCS_sRGB()) return true;
+            ColorSpace sRGB = ColorSpace.getInstance(ColorSpace.CS_sRGB);
+            return Colors.getIccProfileDescription(sRGB).equals(Colors.getIccProfileDescription(colorSpace));
+        }
+
+        return false;
+    }
+
+    /**
+     * Creates a copy of the specified image in the sRGB color space. If the
+     * source image is already in the sRGB space, a copy is also returned.
+     * Callers can use {@link #isColorSpace_sRGB()} to decide whether to invoke
+     * this method.
+     *
+     * @param image The image to copy and convert. Cannot be null.
+     *
+     * @return A {@link BufferedImage} whose color space is {@link ColorSpace#CS_sRGB}
+     */
+    public static BufferedImage copyTo_sRGB(BufferedImage image) {
+        ColorConvertOp op = new ColorConvertOp(ColorSpace.getInstance(ColorSpace.CS_sRGB),
+                new RenderingHints(RenderingHints.KEY_COLOR_RENDERING, RenderingHints.VALUE_COLOR_RENDER_QUALITY));
+        return op.filter(image, null);
     }
 
     private static final class LutKey {
