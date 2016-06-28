@@ -319,7 +319,6 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
                     File tmpDir = new File(mTemporaryDirectory, "merged.dir");
                     FileUtils.deletePath(tmpDir);
                     FileUtils.mkdirs(tmpDir);
-                    tmpDir.deleteOnExit();
 
                     String folderName = key.isEmpty() ?
                             ResourceFolderType.VALUES.getName() :
