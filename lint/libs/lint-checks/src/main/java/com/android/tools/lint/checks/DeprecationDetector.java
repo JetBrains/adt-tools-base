@@ -29,6 +29,7 @@ import static com.android.SdkConstants.ATTR_SINGLE_LINE;
 import static com.android.SdkConstants.EDIT_TEXT;
 import static com.android.SdkConstants.TAG_USES_PERMISSION_SDK_23;
 import static com.android.SdkConstants.TAG_USES_PERMISSION_SDK_M;
+import static com.android.SdkConstants.VALUE_FALSE;
 import static com.android.SdkConstants.VALUE_TRUE;
 
 import com.android.annotations.NonNull;
@@ -151,7 +152,11 @@ public class DeprecationDetector extends LayoutDetector {
                 }
             }
         } else if (name.equals(ATTR_SINGLE_LINE)) {
-            fix = "Use `maxLines=\"1\"` instead";
+            if (VALUE_FALSE.equals(attribute.getValue())) {
+                fix = "False is the default, so just remove the attribute";
+            } else {
+                fix = "Use `maxLines=\"1\"` instead";
+            }
         } else {
             assert name.equals(ATTR_INPUT_METHOD)
                 || name.equals(ATTR_CAPITALIZE)

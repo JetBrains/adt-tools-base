@@ -126,4 +126,25 @@ public class DeprecationDetectorTest extends AbstractCheckTest {
                         )
                 ));
     }
+
+    public void testNotSingleLine() throws Exception {
+        // Regression test for https://code.google.com/p/android/issues/detail?id=214432
+        assertEquals(""
+                + "res/layout/deprecation2.xml:5: Warning: android:singleLine is deprecated: False is the default, so just remove the attribute [Deprecated]\n"
+                + "        android:singleLine=\"false\" />\n"
+                + "        ~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "0 errors, 1 warnings\n",
+                lintProject(
+                        xml("res/layout/deprecation2.xml", ""
+                                + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                                + "<FrameLayout xmlns:android=\"http://schemas.android.com/apk/res/android\">\n"
+                                + "\n"
+                                + "    <TextView\n"
+                                + "        android:singleLine=\"false\" />\n"
+                                + "\n"
+                                + "</FrameLayout>\n"
+                        ),
+                        manifest().minSdk(4)
+                ));
+    }
 }
