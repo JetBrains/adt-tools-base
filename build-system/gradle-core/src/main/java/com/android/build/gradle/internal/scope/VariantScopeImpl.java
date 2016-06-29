@@ -804,13 +804,23 @@ public class VariantScopeImpl extends GenericVariantScopeImpl implements Variant
     @NonNull
     @Override
     public File getAaptFriendlyManifestOutputFile() {
-        return FileUtils.join(getBaseBundleDir(), "aapt", "AndroidManifest.xml");
+        return FileUtils.join(
+                globalScope.getIntermediatesDir(),
+                "manifests",
+                "aapt",
+                getVariantConfiguration().getDirName(),
+                "AndroidManifest.xml");
     }
 
     @NonNull
     @Override
     public File getInstantRunManifestOutputFile() {
-        return FileUtils.join(getBaseBundleDir(), "instant-run", "AndroidManifest.xml");
+        return FileUtils.join(
+                globalScope.getIntermediatesDir(),
+                "manifests",
+                "instant-run",
+                getVariantConfiguration().getDirName(),
+                "AndroidManifest.xml");
     }
 
     @NonNull
