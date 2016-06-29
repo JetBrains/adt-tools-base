@@ -67,6 +67,15 @@ public class NativeAndroidProjectSubject
         return groupToArtifacts;
     }
 
+    @NonNull
+    private Multimap<String, NativeArtifact> getArtifactsByName() {
+        Multimap<String, NativeArtifact> groupToArtifacts = ArrayListMultimap.create();
+        for (NativeArtifact artifact : getSubject().getArtifacts()) {
+            groupToArtifacts.put(artifact.getName(), artifact);
+        }
+        return groupToArtifacts;
+    }
+
     @SuppressWarnings("NonBooleanMethodNameMayNotStartWithQuestion")
     public void hasArtifactGroupsNamed(String ...artifacts) {
         Set<String> expected = Sets.newHashSet(artifacts);
@@ -78,6 +87,19 @@ public class NativeAndroidProjectSubject
                     groups.keySet());
         }
     }
+
+    @SuppressWarnings("NonBooleanMethodNameMayNotStartWithQuestion")
+    public void hasTargetsNamed(String ...artifacts) {
+        Set<String> expected = Sets.newHashSet(artifacts);
+        Multimap<String, NativeArtifact> groups = getArtifactsByName();
+        if (!groups.keySet().equals(expected)) {
+            failWithRawMessage("Not true that %s that qualified targets are <%s>. They are <%s>",
+                    getDisplaySubject(),
+                    expected,
+                    groups.keySet());
+        }
+    }
+
 
     @SuppressWarnings("NonBooleanMethodNameMayNotStartWithQuestion")
     public void hasArtifactGroupsOfSize(long size) {
