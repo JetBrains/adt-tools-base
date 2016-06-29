@@ -77,9 +77,6 @@ public class PlatformLoader implements SdkLoader {
             @NonNull Revision buildToolRevision,
             @NonNull ILogger logger,
             @NonNull SdkLibData sdkLibData) {
-        Preconditions.checkArgument(!sdkLibData.useSdkDownload(),
-                "The Platform Loader does not support downloading missing components.");
-
         init(logger);
         IAndroidTarget androidTarget = new FakeAndroidTarget(mTreeLocation.getPath(), targetHash);
 
