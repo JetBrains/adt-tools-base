@@ -239,17 +239,40 @@ public class InstantRunVerifierTransform extends Transform {
                         LOGGER.warning("Cannot delete %1$s file", backupJar);
                     }
                     break;
-                case ADDED:
-                    copyFile(jarInput.getFile(), backupJar);
-                    break;
                 case CHANGED:
                     // get a Map of the back up jar entries indexed by name.
-                    if (resultSoFar != InstantRunVerifierStatus.COMPATIBLE) {
-                        try (JarFile backupJarFile = new JarFile(backupJar)) {
-                            try (JarFile jarFile = new JarFile(jarInput.getFile())) {
-                                resultSoFar = processChangedJar(backupJarFile, jarFile);
+                    if (resultSoFar == InstantRunVerifierStatus.COMPATIBLE) {
+                        if (backupJar.exists()) {
+                            if (backupJar.isDirectory()) {
+                                LOGGER.warning("Unexpected backup folder at %s while processing %s",
+                                        backupJar.getAbsolutePath(), jarInput.getFile());
+                                try {
+                                    FileUtils.deleteDirectoryContents(backupJar);
+                                } catch(IOException e) {
+                                    LOGGER.warning(String.format("Cannot delete %s : %s",
+                                            backupJar.getAbsolutePath(), e));
+                                }
+                                if (!backupJar.delete()) {
+                                    LOGGER.warning("Cannot delete " + backupJar.getAbsolutePath());
+                                }
+                                resultSoFar = InstantRunVerifierStatus.INSTANT_RUN_FAILURE;
+                            } else {
+                                try (JarFile backupJarFile = new JarFile(backupJar)) {
+                                    try (JarFile jarFile = new JarFile(jarInput.getFile())) {
+                                        resultSoFar = processChangedJar(backupJarFile, jarFile);
+                                    }
+                                }
                             }
                         }
+                    }
+                    // fall through ADDED case.
+                case ADDED:
+                    if (!jarInput.getFile().exists() || jarInput.getFile().isDirectory()) {
+                        LOGGER.warning(String.format(
+                                "Please file a bug : VerifierTransform expected a file"
+                                + " at:\n %s \nbut the file does not exist or is a directory",
+                                jarInput.getFile()));
+                        resultSoFar = InstantRunVerifierStatus.INSTANT_RUN_FAILURE;
                     }
                     copyFile(jarInput.getFile(), backupJar);
                     break;
