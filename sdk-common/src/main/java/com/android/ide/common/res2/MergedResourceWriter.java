@@ -325,11 +325,9 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
                             ResourceFolderType.VALUES.getName() + RES_QUALIFIER_SEP + key;
 
                     File valuesFolder = new File(tmpDir, folderName);
-                    valuesFolder.deleteOnExit();
                     // Name of the file is the same as the folder as AAPT gets confused with name
                     // collision when not normalizing folders name.
                     File outFile = new File(valuesFolder, folderName + DOT_XML);
-                    outFile.deleteOnExit();
 
                     FileUtils.mkdirs(valuesFolder);
 
