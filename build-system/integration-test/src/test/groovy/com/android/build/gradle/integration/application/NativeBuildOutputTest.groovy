@@ -99,7 +99,7 @@ class NativeBuildOutputTest {
         project.file("CMakeLists.txt") << cmakeLists;
         project.file("src/main/cpp/hello-jni.cpp").write("xx");
 
-        check(["'xx' does not name a type"], [], 0);
+        check(["'xx'"], [], 0);
     }
 
     @Test
@@ -240,6 +240,51 @@ class NativeBuildOutputTest {
         check(["Unexpected native build target -unrecognized-target-",
             "Valid values are: hello-jni"],
             [], 0);
+    }
+
+    @Test
+    public void checkCMakeExternalLib() {
+        project.buildFile << """
+            android {
+                externalNativeBuild {
+                    cmake {
+                        path "CMakeLists.txt"
+                    }
+                }
+                defaultConfig {
+                    externalNativeBuild {
+                      cmake {
+                        abiFilters "x86"
+                      }
+                    }
+                }
+            }
+            """;
+
+        // CMakeLists.txt that references an external library. The library doesn't exist but that
+        // doesn't really matter since we're only testing that the resulting model looks right.
+        project.file("CMakeLists.txt") <<  """cmake_minimum_required(VERSION 3.4.1)
+                   add_library(lib_gmath STATIC IMPORTED )
+                   set_target_properties(lib_gmath PROPERTIES IMPORTED_LOCATION
+                        ./gmath/lib/\${ANDROID_ABI}/libgmath.a)
+                   file(GLOB_RECURSE SRC src/*.c src/*.cpp src/*.cc src/*.cxx src/*.c++ src/*.C)
+                   message(\${SRC})
+                   set(CMAKE_VERBOSE_MAKEFILE ON)
+                   add_library(hello-jni SHARED \${SRC})
+                   target_link_libraries(hello-jni log)""";
+
+        project.file("src/main/cpp/hello-jni.cpp").write("void main() {}");
+
+        AndroidProject androidProject = project.model().getSingle(AndroidProject.class);
+        assertThat(androidProject.syncIssues).hasSize(0);
+        NativeAndroidProject nativeProject = project.model().getSingle(NativeAndroidProject.class);
+        // TODO: remove this if statement once a fresh CMake is deployed to buildbots.
+        // Old behavior was to emit two targets: "hello-jni-Debug-x86" and "hello-jni-Release-x86"
+        if (nativeProject.artifacts.size() != 2) {
+            assertThat(nativeProject)
+                    .hasTargetsNamed("lib_gmath-Release-x86", "hello-jni-Debug-x86",
+                            "hello-jni-Release-x86", "lib_gmath-Debug-x86");
+        }
     }
 
     private void check(List<String> expectInStderr, List<String> expectInSyncIssues,

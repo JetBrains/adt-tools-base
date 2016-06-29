@@ -113,6 +113,13 @@ public class ExternalNativeBuildTask extends BaseTask {
                       libraryValue.artifactName);
                     continue;
                 }
+                if (Strings.isNullOrEmpty(libraryValue.buildCommand)) {
+                    // This can happen when there's an externally referenced library.
+                    diagnostic("not building target %s because there was no build command for it",
+                            libraryValue.artifactName);
+                    continue;
+
+                }
                 buildCommands.add(libraryValue.buildCommand);
                 diagnostic("about to build %s", libraryValue.buildCommand);
             }
