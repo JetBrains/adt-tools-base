@@ -673,13 +673,20 @@ public abstract class TaskManager {
     public AndroidTask<MergeResources> createMergeResourcesTask(
             @NonNull TaskFactory tasks,
             @NonNull VariantScope scope) {
+        return createMergeResourcesTask(tasks, scope, true /*process9patch*/);
+    }
+
+    public AndroidTask<MergeResources> createMergeResourcesTask(
+            @NonNull TaskFactory tasks,
+            @NonNull VariantScope scope,
+            boolean process9patch) {
         return basicCreateMergeResourcesTask(
                 tasks,
                 scope,
                 "merge",
                 null /*outputLocation*/,
                 true /*includeDependencies*/,
-                true /*process9patch*/);
+                process9patch);
     }
 
     public AndroidTask<MergeResources> basicCreateMergeResourcesTask(

@@ -188,7 +188,10 @@ public class LibraryTaskManager extends TaskManager {
                             // Add a task to merge the resource folders, including the libraries, in order to
                             // generate the R.txt file with all the symbols, including the ones from
                             // the dependencies.
-                            createMergeResourcesTask(tasks, variantScope);
+                            createMergeResourcesTask(
+                                    tasks,
+                                    variantScope,
+                                    false /*process9patch*/);
                         }
 
                         mergeResourceTask.configure(tasks,
