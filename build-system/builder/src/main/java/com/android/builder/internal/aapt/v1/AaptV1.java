@@ -402,19 +402,19 @@ public class AaptV1 extends AbstractProcessExecutionAapt {
                 try {
                     Files.createParentDirs(outputFile);
                 } catch (IOException e) {
-                    throw new AaptException(e,
+                    throw new AaptException(e, String.format(
                             "Failed to create parent directories for file '%s'",
-                            output.getAbsolutePath());
+                            output.getAbsolutePath()));
                 }
 
                 int key = mCruncher.start();
                 try {
                     mCruncher.crunchPng(key, file, outputFile);
                 } catch (PngException e) {
-                    throw new AaptException(e,
+                    throw new AaptException(e, String.format(
                             "Failed to crunch file '%s' into '%s'",
                             file.getAbsolutePath(),
-                            outputFile.getAbsolutePath());
+                            outputFile.getAbsolutePath()));
                 }
 
                 mWaitExecutor.execute(() -> {
