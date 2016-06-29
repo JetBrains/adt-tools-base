@@ -16,6 +16,8 @@
 
 package com.android.builder.packaging;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.google.common.base.Preconditions;
@@ -23,6 +25,7 @@ import com.google.common.base.Preconditions;
 import java.io.File;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
+import java.util.function.Predicate;
 
 /**
  * Factory that creates instances of {@link ApkCreator}.
@@ -89,7 +92,11 @@ public interface ApkCreatorFactory {
          */
         private final int mMinSdkVersion;
 
+        @NonNull
         private final NativeLibrariesPackagingMode mNativeLibrariesPackagingMode;
+
+        @NonNull
+        private final Predicate<String> mNoCompressPredicate;
 
         /**
          *
@@ -108,6 +115,7 @@ public interface ApkCreatorFactory {
          * default should be used
          * @param minSdkVersion minimum SDK version that will run the APK
          * @param nativeLibrariesPackagingMode packaging mode for native libraries
+         * @param noCompressPredicate predicate to decide which file paths should be uncompressed
          */
         public CreationData(
                 @NonNull File apkPath,
@@ -118,7 +126,8 @@ public interface ApkCreatorFactory {
                 @Nullable String builtBy,
                 @Nullable String createdBy,
                 int minSdkVersion,
-                @NonNull NativeLibrariesPackagingMode nativeLibrariesPackagingMode) {
+                @NonNull NativeLibrariesPackagingMode nativeLibrariesPackagingMode,
+                @NonNull Predicate<String> noCompressPredicate) {
             Preconditions.checkArgument((key == null) == (certificate == null),
                     "(key == null) != (certificate == null)");
             Preconditions.checkArgument(minSdkVersion >= 0, "minSdkVersion < 0");
@@ -131,8 +140,8 @@ public interface ApkCreatorFactory {
             mBuiltBy = builtBy;
             mCreatedBy = createdBy;
             mMinSdkVersion = minSdkVersion;
-            mNativeLibrariesPackagingMode =
-                    Preconditions.checkNotNull(nativeLibrariesPackagingMode);
+            mNativeLibrariesPackagingMode = checkNotNull(nativeLibrariesPackagingMode);
+            mNoCompressPredicate = checkNotNull(noCompressPredicate);
         }
 
         /**
@@ -218,6 +227,14 @@ public interface ApkCreatorFactory {
         @NonNull
         public NativeLibrariesPackagingMode getNativeLibrariesPackagingMode() {
             return mNativeLibrariesPackagingMode;
+        }
+
+        /**
+         * Returns the predicate to decide which file paths should be uncompressed.
+         */
+        @NonNull
+        public Predicate<String> getNoCompressPredicate() {
+            return mNoCompressPredicate;
         }
     }
 }

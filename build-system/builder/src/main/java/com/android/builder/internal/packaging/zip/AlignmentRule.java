@@ -18,8 +18,6 @@ package com.android.builder.internal.packaging.zip;
 
 import com.android.annotations.NonNull;
 
-import java.util.Optional;
-
 /**
  * An alignment rule defines how to a file should be aligned in a zip, based on its name.
  */
@@ -31,21 +29,13 @@ public interface AlignmentRule {
     int NO_ALIGNMENT = 1;
 
     /**
-     * Default alignment value for uncompressed files.
-     */
-    int DEFAULT_ALIGNMENT = 4;
-
-    /**
-     * Page-size alignment.
-     */
-    int PAGE_ALIGNMENT = 4096;
-
-    /**
      * Obtains the alignment this rule computes for a given path.
      *
      * @param path the path in the zip file
      * @return the alignment value, always greater than {@code 0}; if this rule places no
-     *         restrictions on the provided path, then an empty Optional is returned
+     * restrictions on the provided path, then {@link AlignmentRule#NO_ALIGNMENT} is returned
      */
-    Optional<Integer> alignment(@NonNull String path);
+    int alignment(@NonNull String path);
 }
+
+

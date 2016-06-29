@@ -216,8 +216,7 @@ public class IncrementalPackager implements Closeable {
         }
 
         for (File arch : Sets.newHashSet(archives)) {
-            mApkCreator.writeZip(arch, Functions.forMap(pathNameMap),
-                    Predicates.not(Predicates.in(names)));
+            mApkCreator.writeZip(arch, pathNameMap::get, name -> !names.contains(name));
         }
     }
 

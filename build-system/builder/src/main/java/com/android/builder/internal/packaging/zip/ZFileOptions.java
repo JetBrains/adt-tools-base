@@ -16,12 +16,9 @@
 
 package com.android.builder.internal.packaging.zip;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import com.android.annotations.NonNull;
 import com.android.builder.internal.packaging.zip.compress.DeflateExecutionCompressor;
 import com.android.builder.internal.packaging.zip.utils.ByteTracker;
-import com.android.builder.packaging.NativeLibrariesPackagingMode;
 import com.google.common.util.concurrent.MoreExecutors;
 
 import java.util.zip.Deflater;
@@ -30,11 +27,6 @@ import java.util.zip.Deflater;
  * Options to create a {@link ZFile}.
  */
 public class ZFileOptions {
-
-    /**
-     * SOs are aligned at 4096-byte boundaries and identified as files ending with {@code .so}.
-     */
-    private static final AlignmentRule SO_RULE = AlignmentRules.constantForSuffix(".so", 4096);
 
     /**
      * The byte tracker.
@@ -70,17 +62,13 @@ public class ZFileOptions {
     private boolean mAutoSortFiles;
 
     /**
-     * Packaging mode for native libraries.
-     */
-    private NativeLibrariesPackagingMode mNativeLibrariesPackagingMode;
-
-    /**
      * Creates a new options object. All options are set to their defaults.
      */
     public ZFileOptions() {
         mTracker = new ByteTracker();
-        mCompressor = new DeflateExecutionCompressor(MoreExecutors.sameThreadExecutor(), mTracker,
-                Deflater.DEFAULT_COMPRESSION);
+        mCompressor =
+                new DeflateExecutionCompressor(
+                        MoreExecutors.sameThreadExecutor(), mTracker, Deflater.DEFAULT_COMPRESSION);
         mAlignmentRule = AlignmentRules.compose();
     }
 
@@ -92,16 +80,6 @@ public class ZFileOptions {
     @NonNull
     public ByteTracker getTracker() {
         return mTracker;
-    }
-
-    /**
-     * Sets the byte tracker to use. Setting the tracker usually requires setting the compressor
-     * to use this tracker.
-     *
-     * @param tracker the byte tracker
-     */
-    public void setTracker(@NonNull ByteTracker tracker) {
-        mTracker = tracker;
     }
 
     /**
@@ -148,11 +126,7 @@ public class ZFileOptions {
      */
     @NonNull
     public AlignmentRule getAlignmentRule() {
-        if (mNativeLibrariesPackagingMode == NativeLibrariesPackagingMode.COMPRESSED) {
-            return mAlignmentRule;
-        } else {
-            return AlignmentRules.compose(mAlignmentRule, SO_RULE);
-        }
+        return mAlignmentRule;
     }
 
     /**
@@ -202,17 +176,5 @@ public class ZFileOptions {
      */
     public void setAutoSortFiles(boolean autoSortFiles) {
         mAutoSortFiles = autoSortFiles;
-    }
-
-    /**
-     * Packaging mode for native libraries.
-     */
-    public NativeLibrariesPackagingMode getNativeLibrariesPackagingMode() {
-        return mNativeLibrariesPackagingMode;
-    }
-
-    public void setNativeLibrariesPackagingMode(
-            @NonNull NativeLibrariesPackagingMode nativeLibrariesPackagingMode) {
-        mNativeLibrariesPackagingMode = checkNotNull(nativeLibrariesPackagingMode);
     }
 }

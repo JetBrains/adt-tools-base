@@ -1,5 +1,6 @@
 package com.android.build.gradle.tasks;
 
+import static com.android.builder.packaging.NativeLibrariesPackagingMode.UNCOMPRESSED_AND_ALIGNED;
 import static com.android.sdklib.BuildToolInfo.PathId.ZIP_ALIGN;
 
 import com.android.annotations.NonNull;
@@ -10,6 +11,8 @@ import com.android.build.gradle.internal.scope.TaskConfigAction;
 import com.android.build.gradle.internal.scope.VariantOutputScope;
 import com.android.build.gradle.internal.tasks.FileSupplier;
 import com.android.build.gradle.internal.variant.ApkVariantOutputData;
+import com.android.builder.packaging.NativeLibrariesPackagingMode;
+import com.android.builder.packaging.PackagingUtils;
 import com.google.common.base.Preconditions;
 
 import org.gradle.api.DefaultTask;
@@ -60,6 +63,8 @@ public class ZipAlign extends DefaultTask implements FileSupplier {
     @PackageFile
     private File inputFile;
 
+    private File manifest;
+
     private File zipAlignExe;
 
     private InstantRunBuildContext instantRunBuildContext;
@@ -82,6 +87,11 @@ public class ZipAlign extends DefaultTask implements FileSupplier {
         this.zipAlignExe = zipAlignExe;
     }
 
+    @InputFile
+    public File getManifest() {
+        return manifest;
+    }
+
     @TaskAction
     public void zipAlign() throws IOException {
         File inputFile = getInputFile();
@@ -102,7 +112,20 @@ public class ZipAlign extends DefaultTask implements FileSupplier {
 
         getProject().exec(execSpec -> {
             execSpec.executable(getZipAlignExe());
-            execSpec.args("-f", "4");
+            // Overwrite output:
+            execSpec.args("-f");
+
+            NativeLibrariesPackagingMode nativeLibrariesPackagingMode =
+                    PackagingUtils.getNativeLibrariesLibrariesPackagingMode(manifest);
+
+            if (nativeLibrariesPackagingMode == UNCOMPRESSED_AND_ALIGNED) {
+                // Page-align shared object files:
+                execSpec.args("-p");
+            }
+
+            // Default align:
+            execSpec.args("4");
+
             execSpec.args(getInputFile());
             execSpec.args(getOutputFile());
         });
@@ -155,6 +178,8 @@ public class ZipAlign extends DefaultTask implements FileSupplier {
         public void execute(@NonNull ZipAlign zipAlign) {
             ApkVariantOutputData variantData = (ApkVariantOutputData) scope.getVariantOutputData();
             variantData.zipAlignTask = zipAlign;
+
+            zipAlign.manifest = scope.getManifestOutputFile();
 
             ConventionMappingHelper.map(zipAlign, "inputFile", () -> {
                 // wire to the output of the package task.

@@ -220,4 +220,10 @@ public class DefaultGradlePackagingScope implements PackagingScope {
     public VariantType getVariantType() {
         return mVariantScope.getVariantConfiguration().getType();
     }
+
+    @NonNull
+    @Override
+    public File getManifestFile() {
+        return mVariantOutputScope.getManifestOutputFile();
+    }
 }

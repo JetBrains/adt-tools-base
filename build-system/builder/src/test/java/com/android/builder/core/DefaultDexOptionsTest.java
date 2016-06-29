@@ -25,7 +25,7 @@ public class DefaultDexOptionsTest {
     @Test
     public void copyOfHandlesAllFields() throws Exception {
         DefaultDexOptions instance = new DefaultDexOptions();
-        CopyOfTester.assertAllMethodsCalled(DexOptions.class, instance, DefaultDexOptions::copyOf);
+        CopyOfTester.assertAllGettersCalled(DexOptions.class, instance, DefaultDexOptions::copyOf);
     }
 
 }

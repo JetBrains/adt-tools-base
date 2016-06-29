@@ -23,6 +23,8 @@ import com.android.build.gradle.integration.common.fixture.Packaging
 import com.android.build.gradle.integration.common.fixture.TemporaryProjectModification
 import com.android.build.gradle.integration.common.runner.FilterableParameterized
 import com.android.build.gradle.integration.common.truth.AbstractAndroidSubject
+import com.android.build.gradle.integration.common.utils.TestFileUtils
+import com.android.testutils.TestUtils
 import com.android.utils.FileUtils
 import com.google.common.base.Charsets
 import com.google.common.io.Files
@@ -62,6 +64,8 @@ class NativeSoPackagingTest {
     private GradleTestProject jarProject
 
     private void execute(String... tasks) {
+        // TODO: Remove once we understand the cause of flakiness.
+        TestUtils.waitFilesystemTime();
         project.executor().withPackaging(mPackaging).run(tasks)
     }
 
@@ -484,6 +488,19 @@ android {
 
             checkApk(testProject, "libtest.so", "new content")
         }
+    }
+
+    // ---- SO ALIGNMENT ----
+    @Test
+    public void "test shared object files alignment"() throws Exception {
+        TestFileUtils.searchAndReplace(
+                appProject.file("src/main/AndroidManifest.xml"),
+                "<application ",
+                "<application android:extractNativeLibs=\"false\" ")
+
+        execute("app:assembleDebug")
+        checkApk(appProject, "libapp.so", "app:abcd")
+        PackagingTests.checkZipAlignWithPageAlignedSoFiles(appProject.getApk("debug"))
     }
 
     /**

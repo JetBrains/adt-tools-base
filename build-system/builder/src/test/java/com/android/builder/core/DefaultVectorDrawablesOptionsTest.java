@@ -24,7 +24,7 @@ import org.junit.Test;
 public class DefaultVectorDrawablesOptionsTest {
     @Test
     public void testCopyOf() throws Exception {
-        CopyOfTester.assertAllMethodsCalled(
+        CopyOfTester.assertAllGettersCalled(
                 VectorDrawablesOptions.class,
                 new DefaultVectorDrawablesOptions(),
                 DefaultVectorDrawablesOptions::copyOf);

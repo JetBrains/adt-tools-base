@@ -994,8 +994,7 @@ public abstract class TaskManager {
         //noinspection VariableNotUsedInsideIf - only need to check if task exist.
         if (packageSplitAbiTask != null) {
             zipAlign.configure(tasks,
-                    task -> ((SplitZipAlign)task).getAbiInputFiles().addAll(
-                            scope.getPackageSplitAbiOutputFiles()));
+                    task -> task.getAbiInputFiles().addAll(scope.getPackageSplitAbiOutputFiles()));
         }
         zipAlign.dependsOn(tasks, packageSplitResourcesTask);
         zipAlign.optionalDependsOn(tasks, packageSplitAbiTask);
@@ -2152,10 +2151,8 @@ public abstract class TaskManager {
             DefaultGradlePackagingScope packagingScope =
                     new DefaultGradlePackagingScope(variantOutputScope);
             PackageApplication.ConfigAction packageConfigAction =
-                    new PackageApplication.ConfigAction(
-                            packagingScope,
-                            patchingPolicy,
-                            variantOutputScope.getNativeLibrariesPackagingMode());
+                    new PackageApplication.ConfigAction(packagingScope, patchingPolicy);
+
             AndroidTask<PackageApplication> packageApp =
                     androidTasks.create(tasks, packageConfigAction);
 

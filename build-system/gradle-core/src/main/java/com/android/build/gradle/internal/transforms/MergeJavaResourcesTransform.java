@@ -39,7 +39,7 @@ import com.android.build.gradle.internal.pipeline.ExtendedContentType;
 import com.android.builder.packaging.DuplicateFileException;
 import com.android.builder.packaging.ZipAbortException;
 import com.android.builder.packaging.ZipEntryFilter;
-import com.android.ide.common.packaging.PackagingUtils;
+import com.android.builder.packaging.PackagingUtils;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;

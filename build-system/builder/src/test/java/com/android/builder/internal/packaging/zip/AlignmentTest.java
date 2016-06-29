@@ -22,8 +22,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
-import com.android.builder.internal.packaging.zfile.ZFiles;
-import com.android.builder.packaging.NativeLibrariesPackagingMode;
 import com.android.utils.FileUtils;
 import com.google.common.base.Charsets;
 
@@ -248,49 +246,6 @@ public class AlignmentTest {
     }
 
     @Test
-    public void extensionsAffectCompression() throws Exception {
-        File zipFile = new File(mTemporaryFolder.getRoot(), "test.zip");
-
-        byte[] recognizable1 = new byte[] { 4, 3, 2, 1, 1, 2, 3, 4, 5, 4, 3, 3, 4, 5 };
-        byte[] recognizable2 = new byte[] { 9, 9, 8, 8, 7, 7, 6, 6, 7, 7, 8, 8, 9, 9 };
-
-        byte[] compressibleData1 = new byte[107];
-        byte[] compressibleData2 = new byte[107];
-        System.arraycopy(recognizable1, 0, compressibleData1, 0, recognizable1.length);
-        System.arraycopy(recognizable2, 0, compressibleData2, 0, recognizable2.length);
-
-        int imageFiles = 5;
-        int uncompressedFiles = 5;
-        int align = 1000;
-
-        ZFileOptions options = new ZFileOptions();
-        options.setAlignmentRule(AlignmentRules.constant(align));
-        try (ZFile zf = new ZFile(zipFile, options)) {
-            // These files could be compressed, but extension forces them to be uncompressed.
-            for (int i = 0; i < imageFiles; i++) {
-                zf.add("image" + i + ".png", new ByteArrayInputStream(compressibleData1));
-            }
-
-            // Here we just force the lack of compression with "false".
-            for (int i = 0; i < uncompressedFiles; i++) {
-                zf.add("unc" + i, new ByteArrayInputStream(compressibleData2), false);
-            }
-        }
-
-        for (int i = 0; i < imageFiles; i++) {
-            long start = align * (i + 1);
-            byte[] read = FileUtils.readSegment(zipFile, start, compressibleData1.length);
-            assertArrayEquals(compressibleData1, read);
-        }
-
-        for (int i = 0; i < uncompressedFiles; i++) {
-            long start = align * (imageFiles + i + 1);
-            byte[] read = FileUtils.readSegment(zipFile, start, compressibleData2.length);
-            assertArrayEquals(compressibleData2, read);
-        }
-    }
-
-    @Test
     public void alignFirstEntryUsingExtraField() throws Exception {
         File zipFile = new File(mTemporaryFolder.getRoot(), "test.zip");
 
@@ -475,12 +430,12 @@ public class AlignmentTest {
     }
 
     @Test
-    @Ignore("See ZFile.readData() why this is ignored")
+    @Ignore("See ZFile.readData() contents to understand why this is ignored")
     public void extraFieldSpaceUsedForAlignmentCanBeReclaimedAfterUpdate() throws Exception {
         File zipFile = new File(mTemporaryFolder.getRoot(), "test.zip");
 
-        byte[] recognizable1 = new byte[]{1, 2, 3, 4, 4, 3, 2, 1};
-        byte[] recognizable2 = new byte[]{9, 9, 8, 8, 7, 7, 6, 6, 5, 5, 4, 4};
+        byte[] recognizable1 = new byte[] { 1, 2, 3, 4, 4, 3, 2, 1 };
+        byte[] recognizable2 = new byte[] { 9, 9, 8, 8, 7, 7, 6, 6, 5, 5, 4, 4 };
 
         ZFileOptions options = new ZFileOptions();
         options.setCoverEmptySpaceUsingExtraField(true);
@@ -581,25 +536,5 @@ public class AlignmentTest {
         assertArrayEquals(
                 recognizable2,
                 FileUtils.readSegment(zipFile, recognizable2Start, recognizable2.length));
-    }
-
-    @Test
-    public void soFiles() throws Exception {
-        File apkWithSo = new File(mTemporaryFolder.getRoot(), "release.apk");
-
-        // Make sure compression actually decreases size, otherwise we will discard it.
-        byte[] contents = "cooooooooooooooooooooooooooooooooooooooooooooooooompressible".getBytes();
-
-        ZFileOptions options = new ZFileOptions();
-        options.setNativeLibrariesPackagingMode(
-                NativeLibrariesPackagingMode.UNCOMPRESSED_AND_ALIGNED);
-
-        try (ZFile zf = ZFiles.apk(apkWithSo, options)) {
-            zf.add("some_other_file", new ByteArrayInputStream(contents));
-            zf.add("libfoo.so", new ByteArrayInputStream(contents));
-        }
-
-        // Make sure the so file is uncompressed and aligned.
-        assertArrayEquals(contents, FileUtils.readSegment(apkWithSo, 4096, contents.length));
     }
 }

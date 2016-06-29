@@ -102,6 +102,7 @@ import com.google.common.base.Charsets;
 import com.google.common.base.Functions;
 import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
+import com.google.common.base.Predicate;
 import com.google.common.base.Predicates;
 import com.google.common.base.Strings;
 import com.google.common.collect.ArrayListMultimap;
@@ -143,7 +144,7 @@ import java.util.zip.ZipFile;
  * {@link #processResources(Aapt, AaptPackageConfig.Builder, boolean)}
  * {@link #compileAllAidlFiles(List, File, File, Collection, List, DependencyFileProcessor, ProcessOutputHandler)}
  * {@link #getDexByteCodeConverter()}
- * {@link #oldPackageApk(String, Set, Collection, Collection, File, Set, boolean, SigningConfig, File, int)}
+ * {@link #oldPackageApk(String, Set, Collection, Collection, File, Set, boolean, SigningConfig, File, int, Predicate)}
  *
  * Java compilation is not handled but the builder provides the boot classpath with
  * {@link #getBootClasspath(boolean)}.
@@ -1898,6 +1899,7 @@ public class AndroidBuilder {
      * @param jniDebugBuild whether the app should include jni debug data
      * @param signingConfig the signing configuration
      * @param outApkLocation location of the APK.
+     * @param noCompressPredicate predicate for paths that should not be compressed
      * @throws FileNotFoundException if the store location was not found
      * @throws KeytoolException
      * @throws PackagerException
@@ -1913,7 +1915,8 @@ public class AndroidBuilder {
             boolean jniDebugBuild,
             @Nullable SigningConfig signingConfig,
             @NonNull File outApkLocation,
-            int minSdkVersion)
+            int minSdkVersion,
+            @NonNull Predicate<String> noCompressPredicate)
             throws KeytoolException, PackagerException, SigningException, IOException {
         checkNotNull(androidResPkgLocation, "androidResPkgLocation cannot be null.");
         checkNotNull(outApkLocation, "outApkLocation cannot be null.");
@@ -1989,7 +1992,8 @@ public class AndroidBuilder {
                         null, // BuiltBy
                         mCreatedBy,
                         minSdkVersion,
-                        NativeLibrariesPackagingMode.COMPRESSED);
+                        NativeLibrariesPackagingMode.COMPRESSED,
+                        noCompressPredicate::apply);
         try (OldPackager packager = new OldPackager(creationData, androidResPkgLocation, mLogger)) {
             // add dex folder to the apk root.
             if (!dexFolders.isEmpty()) {
@@ -2070,7 +2074,8 @@ public class AndroidBuilder {
                         null,
                         mCreatedBy,
                         API_LEVEL_SPLIT_APK,
-                        NativeLibrariesPackagingMode.COMPRESSED);
+                        NativeLibrariesPackagingMode.COMPRESSED,
+                        s -> false);
 
         try (OldPackager packager = new OldPackager(creationData, androidResPkgLocation, mLogger)) {
             packager.addFile(dexFile, "classes.dex");
@@ -2133,7 +2138,8 @@ public class AndroidBuilder {
                         null,
                         null,
                         1,
-                        NativeLibrariesPackagingMode.COMPRESSED);
+                        NativeLibrariesPackagingMode.COMPRESSED,
+                        s -> false);
 
         try (SignedJarApkCreator signedJarBuilder = new SignedJarApkCreator(creationData)) {
             signedJarBuilder.writeZip(in);

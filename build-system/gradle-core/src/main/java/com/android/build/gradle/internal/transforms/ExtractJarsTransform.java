@@ -34,7 +34,7 @@ import com.android.build.api.transform.TransformInput;
 import com.android.build.api.transform.TransformInvocation;
 import com.android.build.api.transform.TransformOutputProvider;
 import com.android.ide.common.internal.WaitableExecutor;
-import com.android.ide.common.packaging.PackagingUtils;
+import com.android.builder.packaging.PackagingUtils;
 import com.android.utils.FileUtils;
 import com.google.common.io.ByteStreams;
 import com.google.common.io.Closer;

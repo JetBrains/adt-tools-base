@@ -16,9 +16,6 @@
 
 package com.android.builder.internal.packaging.zip;
 
-import static com.android.builder.packaging.NativeLibrariesPackagingMode.UNCOMPRESSED_AND_ALIGNED;
-
-import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.builder.internal.packaging.zip.utils.ByteTracker;
@@ -28,13 +25,11 @@ import com.android.builder.internal.packaging.zip.utils.RandomAccessFileUtils;
 import com.android.builder.internal.utils.CachedFileContents;
 import com.android.builder.internal.utils.IOExceptionFunction;
 import com.android.builder.internal.utils.IOExceptionRunnable;
-import com.android.builder.packaging.NativeLibrariesPackagingMode;
 import com.android.utils.FileUtils;
 import com.google.common.base.Charsets;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 import com.google.common.base.Verify;
-import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -125,9 +120,9 @@ import java.util.function.Predicate;
  * that files that need to change location will moved to memory and will only be flushed when
  * either {@link #update()} or {@link #close()} are called.
  *
- * <p>Aligning a file will force it to be not compressed. This is because alignment is used to
- * allow mapping files in the archive directly into memory and compressing defeats the purpose of
- * alignment.
+ * <p>Alignment only applies to filed that are forced to be uncompressed. This is because alignment
+ * is used to allow mapping files in the archive directly into memory and compressing defeats the
+ * purpose of alignment.
  *
  * <p>Manipulating zip files with {@link ZFile} may yield zip files with empty spaces between files.
  * This happens in two situations: (1) if alignment is required, files may be shifted to conform to
@@ -257,16 +252,6 @@ public class ZFile implements Closeable {
      * Maximum size of the extra field.
      */
     private static final int MAX_LOCAL_EXTRA_FIELD_CONTENTS_SIZE = (1 << 16);
-
-    /**
-     * Set of file formats which are already compressed, or don't compress well, same as the one
-     * used by aapt.
-     */
-    private static final ImmutableSet<String> DONT_COMPRESS_EXTENSIONS =
-            ImmutableSet.of(
-                    "jpg", "jpeg", "png", "gif", "wav", "mp2", "mp3", "ogg", "aac", "mpg", "mpeg",
-                    "mid", "midi", "smf", "jet", "rtttl", "imy", "xmf", "mp4", "m4a", "m4v", "3gp",
-                    "3gpp", "3g2", "3gpp2", "amr", "awb", "wma", "wmv", "webm", "mkv");
 
     /**
      * File zip file.
@@ -405,8 +390,6 @@ public class ZFile implements Closeable {
      */
     private boolean mAutoSortFiles;
 
-    private final NativeLibrariesPackagingMode mNativeLibrariesPackagingMode;
-
 
     /**
      * Creates a new zip file. If the zip file does not exist, then no file is created at this
@@ -448,7 +431,6 @@ public class ZFile implements Closeable {
         mCompressor = options.getCompressor();
         mCoverEmptySpaceUsingExtraField = options.getCoverEmptySpaceUsingExtraField();
         mAutoSortFiles = options.getAutoSortFiles();
-        mNativeLibrariesPackagingMode = options.getNativeLibrariesPackagingMode();
 
         /*
          * These two values will be overwritten by openReadOnly() below if the file exists.
@@ -1378,16 +1360,6 @@ public class ZFile implements Closeable {
             @NonNull InputStream stream,
             boolean mayCompress)
             throws IOException {
-        String extension = Files.getFileExtension(name);
-        if (DONT_COMPRESS_EXTENSIONS.contains(extension)) {
-            mayCompress = false;
-        }
-
-        if (SdkConstants.EXT_NATIVE_LIB.equalsIgnoreCase(extension)
-                && mNativeLibrariesPackagingMode == UNCOMPRESSED_AND_ALIGNED) {
-            mayCompress = false;
-        }
-
         CloseableByteSource source = mTracker.fromStream(stream);
         long crc32 = source.hash(Hashing.crc32()).padToLong();
 
@@ -1634,17 +1606,23 @@ public class ZFile implements Closeable {
         return mMap.add(newOffset, newEnd, entry);
     }
 
+    /**
+     * Determines what is the alignment value of an entry.
+     *
+     * @param entry the entry
+     * @return the alignment value, {@link AlignmentRule#NO_ALIGNMENT} if there is no alignment
+     * required for the entry
+     * @throws IOException failed to determine the alignment
+     */
     private int chooseAlignment(@NonNull StoredEntry entry) throws IOException {
         CentralDirectoryHeader cdh = entry.getCentralDirectoryHeader();
-        Future<CentralDirectoryHeaderCompressInfo> compressionInfo = cdh.getCompressionInfo();
+        CentralDirectoryHeaderCompressInfo compressionInfo = cdh.getCompressionInfoWithWait();
 
-        boolean isCompressed =
-                !compressionInfo.isDone()
-                        || cdh.getCompressionInfoWithWait().getMethod() != CompressionMethod.STORE;
+        boolean isCompressed = compressionInfo.getMethod() != CompressionMethod.STORE;
         if (isCompressed) {
             return AlignmentRule.NO_ALIGNMENT;
         } else {
-            return mAlignmentRule.alignment(cdh.getName()).orElse(AlignmentRule.DEFAULT_ALIGNMENT);
+            return mAlignmentRule.alignment(cdh.getName());
         }
     }
 

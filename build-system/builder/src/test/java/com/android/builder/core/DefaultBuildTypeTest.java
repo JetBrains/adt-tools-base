@@ -25,7 +25,7 @@ public class DefaultBuildTypeTest {
 
     @Test
     public void testInitWith() throws Exception {
-        CopyOfTester.assertAllMethodsCalled(
+        CopyOfTester.assertAllGettersCalled(
                 BuildType.class,
                 new DefaultBuildType("debug"),
                 original -> new DefaultBuildType(original.getName()).initWith(original));

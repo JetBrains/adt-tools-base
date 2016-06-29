@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013 The Android Open Source Project
+ * Copyright (C) 2016 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,12 +14,20 @@
  * limitations under the License.
  */
 
-package com.android.ide.common.packaging;
+package com.android.builder.packaging;
+
+import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.checkState;
 
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
+import com.android.builder.core.DefaultManifestParser;
+import com.android.builder.model.AaptOptions;
 import com.google.common.base.Charsets;
+import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Lists;
 import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hasher;
 import com.google.common.hash.Hashing;
@@ -27,6 +35,7 @@ import com.google.common.io.Files;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
 
 /**
  * Utility class for packaging.
@@ -46,6 +55,18 @@ public class PackagingUtils {
                 !folderName.equalsIgnoreCase("SCCS") &&
                 !folderName.startsWith("_");
     }
+
+    /**
+     * Set of file formats which are already compressed, or don't compress well, same as the one
+     * used by aapt.
+     */
+    public static final ImmutableSet<String> DEFAULT_DONT_COMPRESS_EXTENSIONS =
+            ImmutableSet.of(
+                    ".jpg", ".jpeg", ".png", ".gif", ".wav", ".mp2", ".mp3", ".ogg", ".aac", ".mpg",
+                    ".mpeg", ".mid", ".midi", ".smf", ".jet", ".rtttl", ".imy", ".xmf", ".mp4",
+                    ".m4a", ".m4v", ".3gp", ".3gpp", ".3g2", ".3gpp2", ".amr", ".awb", ".wma",
+                    ".wmv", ".webm", ".mkv");
+
 
     /**
      * Checks a file to make sure it should be packaged as standard resources.
@@ -183,5 +204,71 @@ public class PackagingUtils {
             hasher.putBytes(user.getBytes(Charsets.UTF_8));
         }
         return hasher.hash().asLong();
+    }
+
+    @NonNull
+    public static Predicate<String> getDefaultNoCompressPredicate() {
+        return getNoCompressPredicateForExtensions(DEFAULT_DONT_COMPRESS_EXTENSIONS);
+    }
+
+    @NonNull
+    public static Predicate<String> getNoCompressPredicate(
+            @NonNull AaptOptions aaptOptions,
+            @NonNull File manifest) {
+        checkNotNull(aaptOptions);
+        checkState(manifest.exists());
+
+        NativeLibrariesPackagingMode packagingMode =
+                getNativeLibrariesLibrariesPackagingMode(manifest);
+
+        return getNoCompressPredicateForExtensions(
+                getAllNoCompressExtensions(aaptOptions, packagingMode));
+    }
+
+    @NonNull
+    public static NativeLibrariesPackagingMode getNativeLibrariesLibrariesPackagingMode(
+            @NonNull File manifest) {
+        checkState(manifest.exists());
+        DefaultManifestParser parser = new DefaultManifestParser(manifest);
+        Boolean extractNativeLibs = parser.getExtractNativeLibs();
+
+        // The default is "true", so we only package *.so files differently if the user explicitly
+        // set this to "false".
+        if (Boolean.FALSE.equals(extractNativeLibs)) {
+            return NativeLibrariesPackagingMode.UNCOMPRESSED_AND_ALIGNED;
+        } else {
+            return NativeLibrariesPackagingMode.COMPRESSED;
+        }
+    }
+
+    @NonNull
+    private static Predicate<String> getNoCompressPredicateForExtensions(
+            @NonNull Iterable<String> noCompressExtensions) {
+        return name -> {
+            for (String extension : noCompressExtensions) {
+
+                //noinspection StringToUpperCaseOrToLowerCaseWithoutLocale - extensions are ASCII
+                if (name.toLowerCase().endsWith(extension)) {
+                    return true;
+                }
+            }
+            return false;
+        };
+    }
+
+    @NonNull
+    private static List<String> getAllNoCompressExtensions(
+            @NonNull AaptOptions aaptOptions,
+            @NonNull NativeLibrariesPackagingMode nativeLibrariesPackagingMode) {
+        List<String> result = Lists.newArrayList(DEFAULT_DONT_COMPRESS_EXTENSIONS);
+
+        if (nativeLibrariesPackagingMode == NativeLibrariesPackagingMode.UNCOMPRESSED_AND_ALIGNED) {
+            result.add(SdkConstants.DOT_NATIVE_LIBS);
+        }
+
+        if (aaptOptions.getNoCompress() != null) {
+            result.addAll(aaptOptions.getNoCompress());
+        }
+        return result;
     }
 }

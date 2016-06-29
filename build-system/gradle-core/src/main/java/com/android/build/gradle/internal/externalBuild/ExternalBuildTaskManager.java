@@ -48,7 +48,6 @@ import com.android.build.gradle.tasks.PreColdSwapTask;
 import com.android.builder.core.BuilderConstants;
 import com.android.builder.core.DefaultDexOptions;
 import com.android.builder.core.DefaultManifestParser;
-import com.android.builder.packaging.NativeLibrariesPackagingMode;
 import com.android.utils.FileUtils;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.io.Files;
@@ -236,8 +235,7 @@ class ExternalBuildTaskManager {
                         tasks,
                         new PackageApplication.ConfigAction(
                                 packagingScope,
-                                variantScope.getInstantRunBuildContext().getPatchingPolicy(),
-                                NativeLibrariesPackagingMode.COMPRESSED));
+                                variantScope.getInstantRunBuildContext().getPatchingPolicy()));
 
         variantScope.setPackageApplicationTask(packageApp);
         packageApp.dependsOn(tasks, createAssetsDirectory);

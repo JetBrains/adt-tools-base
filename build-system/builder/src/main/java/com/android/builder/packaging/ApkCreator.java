@@ -18,12 +18,12 @@ package com.android.builder.packaging;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.google.common.base.Function;
-import com.google.common.base.Predicate;
 
 import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
+import java.util.function.Function;
+import java.util.function.Predicate;
 
 /**
  * Creates or updates APKs based on provided entries.
