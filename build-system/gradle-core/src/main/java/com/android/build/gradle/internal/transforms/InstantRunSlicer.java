@@ -42,6 +42,7 @@ import com.android.utils.FileUtils;
 import com.android.utils.ILogger;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Charsets;
+import com.google.common.base.Joiner;
 import com.google.common.base.Strings;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableMap;
@@ -350,10 +351,16 @@ public class InstantRunSlicer extends Transform {
                     // themselves resulting in a state that was equal to the last restart state.
                     // In theory, it would not require to rebuild but it will confuse Android
                     // Studio is there is nothing to push so just be safe and rebuild.
-                    Files.write(
-                            String.valueOf(
-                                    variantScope.getInstantRunBuildContext().getBuildId()),
-                            new File(sliceOutputLocation, "buildId.txt"), Charsets.UTF_8);
+                    if (fileToProcess.isFile()) {
+                        Files.write(
+                                String.valueOf(
+                                        variantScope.getInstantRunBuildContext().getBuildId()),
+                                new File(sliceOutputLocation, "buildId.txt"), Charsets.UTF_8);
+                        logger.info("Writing buildId in %s because of %s",
+                                sliceOutputLocation.getAbsolutePath(),
+                                changedFile.toString());
+                    }
+
 
                     String relativePath = FileUtils.relativePossiblyNonExistingPath(
                             fileToProcess, directoryInput.getFile());
@@ -362,15 +369,15 @@ public class InstantRunSlicer extends Transform {
                     switch (status) {
                         case ADDED:
                         case CHANGED:
-                            Files.createParentDirs(outputFile);
-                            if (fileToProcess.isDirectory()) {
-                                FileUtils.copyDirectoryContentToDirectory(
-                                        fileToProcess, outputFile);
-                            } else {
+                            if (fileToProcess.isFile()) {
+                                Files.createParentDirs(outputFile);
                                 Files.copy(fileToProcess, outputFile);
+                                logger.info("Copied %s to %s", fileToProcess, outputFile);
                             }
                             break;
                         case REMOVED:
+                            // the outputFile may not exist as the fileToProcess was an intermediary
+                            // folder
                             if (outputFile.exists()) {
                                 if (outputFile.isDirectory()) {
                                     FileUtils.deleteDirectoryContents(outputFile);
@@ -380,6 +387,7 @@ public class InstantRunSlicer extends Transform {
                                             String.format("Cannot delete file %1$s",
                                                     outputFile.getAbsolutePath()));
                                 }
+                                logger.info("Deleted %s", outputFile);
                             }
                             break;
                         default:

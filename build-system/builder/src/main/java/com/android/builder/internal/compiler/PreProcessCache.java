@@ -48,6 +48,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -306,13 +307,29 @@ abstract class PreProcessCache<T extends PreProcessCache.Key> {
     }
 
     /**
+     * Removes a cached item if exists and calls a {@link #getItem}.
+     * This can happen when the generated files was removed by an external event.
+     * @param itemKey the key of the item to re-generate
+     */
+    synchronized Pair<Item, Boolean> regenerateItem(@NonNull ILogger logger, @NonNull T itemKey) {
+        mMap.remove(itemKey);
+        return getItem(logger, itemKey);
+    }
+
+    /**
      * Returns an {@link Item} loaded from the cache. If no item can be found this, throws an
      * exception.
      *
      * @param itemKey the key of the item
      * @return a pair of item, boolean
      */
-    synchronized Pair<Item, Boolean> getItem(@NonNull T itemKey) {
+    synchronized Pair<Item, Boolean> getItem(@NonNull ILogger logger, @NonNull T itemKey) {
+
+        File inputFile = itemKey.getSourceFile();
+        if (inputFile.isDirectory()) {
+            throw new RuntimeException(
+                    String.format("Cache cannot handle folder : %s", inputFile.getAbsolutePath()));
+        }
 
         // get the item
         Item item = mMap.get(itemKey);
@@ -323,17 +340,19 @@ abstract class PreProcessCache<T extends PreProcessCache.Key> {
             // check if we have a stored version.
             StoredItem storedItem = mStoredItems.get(itemKey);
 
-            File inputFile = itemKey.getSourceFile();
+            logger.info("StoredItem is %s", storedItem);
 
             if (storedItem != null) {
                 // check the sha1 is still valid, and the pre-dex files are still there.
+                HashCode hash = getHash(inputFile);
+                logger.info("Hash for %s is %s", inputFile.getAbsolutePath(), hash.toString());
                 if (storedItem.areOutputFilesPresent() &&
-                        storedItem.getSourceHash().equals(getHash(inputFile))) {
+                        storedItem.getSourceHash().equals(hash)) {
 
-                    Logger.getAnonymousLogger().info("Cached result for getItem(" + inputFile + "): "
+                    logger.info("Cached result for getItem(" + inputFile + "): "
                             + storedItem.getOutputFiles());
                     for (File f : storedItem.getOutputFiles()) {
-                        Logger.getAnonymousLogger().info(
+                        logger.info(
                                 String.format("%s l:%d ts:%d", f, f.length(), f.lastModified()));
                     }
 
@@ -351,7 +370,6 @@ abstract class PreProcessCache<T extends PreProcessCache.Key> {
                 item = new Item(inputFile, new CountDownLatch(1));
                 newItem = true;
             }
-
             mMap.put(itemKey, item);
         }
 

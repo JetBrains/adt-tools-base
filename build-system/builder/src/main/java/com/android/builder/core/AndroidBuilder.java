@@ -1396,7 +1396,6 @@ public class AndroidBuilder {
             boolean optimize,
             @NonNull ProcessOutputHandler processOutputHandler)
             throws IOException, InterruptedException, ProcessException {
-
         getDexByteCodeConverter().convertByteCode(inputs,
                 outDexFolder,
                 multidex,
@@ -1460,14 +1459,20 @@ public class AndroidBuilder {
         checkState(mTargetInfo != null,
                 "Cannot call preDexLibrary() before setTargetInfo() is called.");
 
-        PreDexCache.getCache().preDexLibrary(
-                this,
-                inputFile,
-                outFile,
-                multiDex,
-                dexOptions,
-                optimize,
-                processOutputHandler);
+        getLogger().info("AndroidBuilder::preDexLibrary %s", inputFile.getAbsolutePath());
+        if (inputFile.isFile()) {
+            PreDexCache.getCache().preDexLibrary(
+                    this,
+                    inputFile,
+                    outFile,
+                    multiDex,
+                    dexOptions,
+                    optimize,
+                    processOutputHandler);
+        } else {
+            preDexLibraryNoCache(
+                    inputFile, outFile, multiDex, dexOptions, optimize, processOutputHandler);
+        }
     }
 
     /**
@@ -1493,6 +1498,7 @@ public class AndroidBuilder {
         checkNotNull(inputFile, "inputFile cannot be null.");
         checkNotNull(outFile, "outFile cannot be null.");
         checkNotNull(dexOptions, "dexOptions cannot be null.");
+        getLogger().info("AndroidBuilder::preDexLibraryNoCache %s", inputFile.getAbsolutePath());
 
         try {
             if (!checkLibraryClassesJar(inputFile)) {

@@ -88,7 +88,7 @@ public class JackConversionCache extends PreProcessCache<JackDexKey> {
                 options.getDexOptimize(),
                 options.getAdditionalParameters());
 
-        Pair<PreProcessCache.Item, Boolean> pair = getItem(itemKey);
+        Pair<PreProcessCache.Item, Boolean> pair = getItem(androidBuilder.getLogger(), itemKey);
         Item item = pair.getFirst();
 
         // if this is a new item

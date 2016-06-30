@@ -25,6 +25,7 @@ import com.android.builder.core.DexOptions;
 import com.android.ide.common.process.ProcessException;
 import com.android.ide.common.process.ProcessOutputHandler;
 import com.android.utils.FileUtils;
+import com.android.utils.ILogger;
 import com.android.utils.Pair;
 import com.google.common.io.Files;
 
@@ -102,10 +103,25 @@ public class PreDexCache extends PreProcessCache<DxDexKey> {
                 dexOptions.getAdditionalParameters(),
                 multiDex);
 
-        Pair<Item, Boolean> pair = getItem(itemKey);
+        ILogger logger = builder.getLogger();
+        logger.info("preDexLibrary : %s", itemKey);
+        Pair<Item, Boolean> pair = getItem(logger, itemKey);
         Item item = pair.getFirst();
+        logger.info("Item from cache %s", item.toString());
 
-        // if this is a new item
+        // if this is an already cached item.
+        if (!pair.getSecond()) {
+            if (waitForPredexFile(item, outFile, multiDex)) {
+                return;
+            }
+            // if we fall through here, that means the cached item is not there any more, force
+            // the regeneration.
+            logger.info("Forced regeneration : %s", itemKey);
+            pair = regenerateItem(logger, itemKey);
+            item = pair.getFirst();
+        }
+
+        // if this is a new item, or we need to regenerate it.
         if (pair.getSecond()) {
             try {
                 // haven't process this file yet so do it and record it.
@@ -132,29 +148,40 @@ public class PreDexCache extends PreProcessCache<DxDexKey> {
                 item.getLatch().countDown();
             }
         } else {
-            // wait until the file is pre-dexed by the first thread.
-            item.getLatch().await();
-
-            // check that the generated file actually exists
-            if (item.areOutputFilesPresent()) {
-                if (multiDex) {
-                    // output should be a folder
-                    for (File sourceFile : item.getOutputFiles()) {
-                        File destFile = new File(outFile, sourceFile.getName());
-                        checkSame(sourceFile, destFile);
-                        Files.copy(sourceFile, destFile);
-                    }
-                } else {
-                    // file already pre-dex, just copy the output.
-                    if (item.getOutputFiles().isEmpty()) {
-                        throw new RuntimeException(item.toString());
-                    }
-                    checkSame(item.getOutputFiles().get(0), outFile);
-                    Files.copy(item.getOutputFiles().get(0), outFile);
-                }
-                incrementHits();
+            // at this point, another thread should have re-generated it for us.
+            if (!waitForPredexFile(item, outFile, multiDex)) {
+                throw new RuntimeException(String.format("Cannot obtain or regenerate item %s",
+                        item.getSourceFile()));
             }
         }
+    }
+
+    private boolean waitForPredexFile(Item item, File outFile, boolean multiDex)
+            throws InterruptedException, IOException {
+        // wait until the file is pre-dexed by the first thread.
+        item.getLatch().await();
+
+        // check that the generated file actually exists
+        if (item.areOutputFilesPresent()) {
+            if (multiDex) {
+                // output should be a folder
+                for (File sourceFile : item.getOutputFiles()) {
+                    File destFile = new File(outFile, sourceFile.getName());
+                    checkSame(sourceFile, destFile);
+                    Files.copy(sourceFile, destFile);
+                }
+            } else {
+                // file already pre-dex, just copy the output.
+                if (item.getOutputFiles().isEmpty()) {
+                    throw new RuntimeException(item.toString());
+                }
+                checkSame(item.getOutputFiles().get(0), outFile);
+                Files.copy(item.getOutputFiles().get(0), outFile);
+            }
+            incrementHits();
+            return true;
+        }
+        return false;
     }
 
     @Nullable
