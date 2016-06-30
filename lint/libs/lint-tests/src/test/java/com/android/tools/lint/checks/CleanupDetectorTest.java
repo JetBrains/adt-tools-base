@@ -565,4 +565,30 @@ public class CleanupDetectorTest extends AbstractCheckTest {
                         )
                 ));
     }
+
+    public void testApplyOnPutMethod() throws Exception {
+        // Regression test for
+        //    https://code.google.com/p/android/issues/detail?id=214196
+        //
+        // Ensure that if you call commit/apply on a put* call
+        // (not the edit field itself, but put passes it through)
+        // we correctly consider the editor operation finished.
+        assertEquals("No warnings.",
+                lintProject(
+                        java("src/test/pkg/CommitPrefTest.java", ""
+                                + "package test.pkg;\n"
+                                + "\n"
+                                + "import android.content.Context;\n"
+                                + "import android.content.SharedPreferences;\n"
+                                + "import android.preference.PreferenceManager;\n"
+                                + "\n"
+                                + "@SuppressWarnings(\"unused\")\n"
+                                + "public abstract class CommitPrefTest extends Context {\n"
+                                + "    public void test() {\n"
+                                + "        SharedPreferences.Editor edit = PreferenceManager.getDefaultSharedPreferences(this).edit();\n"
+                                + "        edit.putInt(\"foo\", 1).apply();\n"
+                                + "    }\n"
+                                + "}\n")
+                ));
+    }
 }

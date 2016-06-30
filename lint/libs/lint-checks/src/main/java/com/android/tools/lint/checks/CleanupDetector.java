@@ -535,6 +535,34 @@ public class CleanupDetector extends Detector implements JavaPsiScanner {
                                             return true;
                                         }
                                     }
+                                } else if (resolved instanceof PsiMethod) {
+                                    // Let's see if it's a series of chained put calls;
+                                    // these all return "this" so you can chain them,
+                                    // and that means we need to recognize
+                                    //    editor.putX().putY().apply();
+                                    while (operand instanceof PsiMethodCallExpression) {
+                                        PsiReferenceExpression methodExpression
+                                                = ((PsiMethodCallExpression) operand)
+                                                .getMethodExpression();
+                                        PsiType type = methodExpression.getType();
+                                        // The methods that return "this" are the methods that
+                                        // have a return type of SharedPreferences.Editor
+                                        // (various put* methods, plus remove and clear)
+                                        if (type == null ||
+                                                !ANDROID_CONTENT_SHARED_PREFERENCES_EDITOR.equals(
+                                                        type.getCanonicalText())) {
+                                            operand = null;
+                                        } else {
+                                            operand = methodExpression.getQualifierExpression();
+                                        }
+                                    }
+                                    if (operand instanceof PsiReferenceExpression) {
+                                        resolved = ((PsiReferenceExpression)operand).resolve();
+                                        //noinspection SuspiciousMethodCalls
+                                        if (resolved != null && mVariables.contains(resolved)) {
+                                            return true;
+                                        }
+                                    }
                                 }
                             }
                         }
