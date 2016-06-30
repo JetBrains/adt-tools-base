@@ -17,11 +17,13 @@
 package com.android.tools.pixelprobe.tests.psd;
 
 import com.android.tools.pixelprobe.Image;
+import com.android.tools.pixelprobe.Layer;
 import com.android.tools.pixelprobe.tests.ImageUtils;
 import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.util.List;
 
 // Note: 16 and 32 bit images are stored with 1 float per component,
 //       or 32 bits per component. Half floats are not supported.
@@ -117,5 +119,39 @@ public class DepthTest {
         Image image = ImageUtils.loadImage("psd/rgb_32.psd");
         Assert.assertEquals(32, image.getColorDepth());
         Assert.assertEquals(96, image.getMergedImage().getColorModel().getPixelSize());
+    }
+
+    @Test
+    public void layeredRgb16() throws IOException {
+        Image image = ImageUtils.loadImage("psd/rgb_16.psd");
+
+        List<Layer> layers = image.getLayers();
+
+        // With translucency
+        Layer layer = layers.get(1);
+        Assert.assertTrue(layer.getImage().getColorModel().hasAlpha());
+        Assert.assertEquals(128, layer.getImage().getColorModel().getPixelSize());
+
+        // Opaque
+        layer = layers.get(2);
+        Assert.assertFalse(layer.getImage().getColorModel().hasAlpha());
+        Assert.assertEquals(96, layer.getImage().getColorModel().getPixelSize());
+    }
+
+    @Test
+    public void layeredRgb32() throws IOException {
+        Image image = ImageUtils.loadImage("psd/rgb_32.psd");
+
+        List<Layer> layers = image.getLayers();
+
+        // With translucency
+        Layer layer = layers.get(1);
+        Assert.assertTrue(layer.getImage().getColorModel().hasAlpha());
+        Assert.assertEquals(128, layer.getImage().getColorModel().getPixelSize());
+
+        // Opaque
+        layer = layers.get(2);
+        Assert.assertFalse(layer.getImage().getColorModel().hasAlpha());
+        Assert.assertEquals(96, layer.getImage().getColorModel().getPixelSize());
     }
 }

@@ -104,7 +104,6 @@ final class PsdFile {
         // of the document
         @Chunk(dynamicByteCount = "imageResources.length", key = "imageResourceBlock.id")
         Map<Integer, ImageResourceBlock> blocks;
-
     }
 
     /**
@@ -157,8 +156,23 @@ final class PsdFile {
         @Chunk(byteCount = 4)
         long length;
 
-        @Chunk(dynamicByteCount = "layersInformation.length", readIf = "layersInformation.length > 0")
+        @Chunk(byteCount = 4)
+        long listLength;
+
+        @Chunk(dynamicByteCount = "layersInformation.listLength", readIf = "layersInformation.listLength > 0")
         LayersList layers;
+
+        @Chunk(byteCount = 4)
+        long globalMaskInfoLength;
+
+        @Chunk(dynamicByteCount = "layersInformation.globalMaskInfoLength")
+        Void globalMaskInfo;
+
+        // Subtract 8 for listLength and globalMaskInfoLength
+        @Chunk(dynamicByteCount =
+                "layersInformation.length - layersInformation.listLength - layersInformation.globalMaskInfoLength - 8",
+            key = "layerProperty.key")
+        Map<String, LayerProperty> extras;
     }
 
     /**
@@ -169,9 +183,6 @@ final class PsdFile {
      */
     @Chunked
     static final class LayersList {
-        @Chunk(byteCount = 4)
-        long length;
-
         // The count can be negative, which means the first
         // alpha channel contains the transparency data for
         // the flattened image. This means we must ensure
@@ -408,7 +419,7 @@ final class PsdFile {
         @Chunk(byteCount = 4)
         long length;
 
-        @Chunk(dynamicByteCount = "layerProperty.length",
+        @Chunk(dynamicByteCount = "(layerProperty.length + 3) & ~3",
             switchType = {
                 @Chunk.Case(test = "layerProperty.key.equals(\"lmfx\")", type = LayerEffects.class),
                 @Chunk.Case(test = "layerProperty.key.equals(\"lfx2\")", type = LayerEffects.class),
@@ -420,7 +431,9 @@ final class PsdFile {
                 @Chunk.Case(test = "layerProperty.key.equals(\"vmsk\")", type = ShapeMask.class),
                 @Chunk.Case(test = "layerProperty.key.equals(\"vsms\")", type = ShapeMask.class),
                 @Chunk.Case(test = "layerProperty.key.equals(\"vscg\")", type = ShapeGraphics.class),
-                @Chunk.Case(test = "layerProperty.key.equals(\"vstk\")", type = ShapeStroke.class)
+                @Chunk.Case(test = "layerProperty.key.equals(\"vstk\")", type = ShapeStroke.class),
+                @Chunk.Case(test = "layerProperty.key.equals(\"Lr16\")", type = LayersList.class),
+                @Chunk.Case(test = "layerProperty.key.equals(\"Lr32\")", type = LayersList.class),
             }
         )
         Object data;

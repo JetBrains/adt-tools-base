@@ -130,4 +130,38 @@ public class LayerTest {
         Assert.assertEquals(new Rectangle2D.Float(-24.0f, -24.0f, 96.0f, 96.0f), layers.get(1).getBounds());
         Assert.assertEquals(new Rectangle2D.Float(0.0f, 0.0f, 96.0f, 96.0f), layers.get(2).getBounds());
     }
+
+    @Test
+    public void layer16() throws IOException {
+        Image image = ImageUtils.loadImage("psd/rgb_16.psd");
+
+        List<Layer> layers = image.getLayers();
+        Assert.assertEquals(3, layers.size());
+
+        Layer layer = layers.get(0);
+        Assert.assertEquals(Layer.Type.ADJUSTMENT, layer.getType());
+
+        layer = layers.get(1);
+        Assert.assertEquals(Layer.Type.IMAGE, layer.getType());
+
+        layer = layers.get(2);
+        Assert.assertEquals(Layer.Type.IMAGE, layer.getType());
+    }
+
+    @Test
+    public void layer32() throws IOException {
+        Image image = ImageUtils.loadImage("psd/rgb_32.psd");
+
+        List<Layer> layers = image.getLayers();
+        Assert.assertEquals(3, layers.size());
+
+        Layer layer = layers.get(0);
+        Assert.assertEquals(Layer.Type.ADJUSTMENT, layer.getType());
+
+        layer = layers.get(1);
+        Assert.assertEquals(Layer.Type.IMAGE, layer.getType());
+
+        layer = layers.get(2);
+        Assert.assertEquals(Layer.Type.IMAGE, layer.getType());
+    }
 }

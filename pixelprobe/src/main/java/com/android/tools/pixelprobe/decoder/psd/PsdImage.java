@@ -82,21 +82,39 @@ final class PsdImage {
         // The data is transformed into a generic Image API
         extractHeaderData(image, psd.header);
         resolveBlocks(image, psd.resources);
-        extractLayers(image, psd.layersInfo);
+        extractLayers(image, psd);
         decodeImageData(image, psd);
 
         return image.build();
     }
 
     /**
+     * Layers are stored in different places depending on the image's bit depth.
+     * This method returns the list of layers from the appropriate location.
+     */
+    private static LayersList getLayers(PsdFile psd) {
+        switch (psd.header.depth) {
+            case 16: {
+                LayerProperty property = psd.layersInfo.extras.get(LayerProperty.KEY_LAYER_DEPTH_16);
+                return property == null ? null : (LayersList) property.data;
+            }
+            case 32: {
+                LayerProperty property = psd.layersInfo.extras.get(LayerProperty.KEY_LAYER_DEPTH_32);
+                return property == null ? null : (LayersList) property.data;
+            }
+
+        }
+        return psd.layersInfo.layers;
+    }
+
+    /**
      * Extract layers information from the PSD raw data into the specified image.
      * Not all layers will be extracted.
-     *
      * @param image The user image
-     * @param layersInfo The document's layers information
+     * @param psd The PSD file to extract layers from
      */
-    private static void extractLayers(Image.Builder image, LayersInformation layersInfo) {
-        LayersList layersList = layersInfo.layers;
+    private static void extractLayers(Image.Builder image, PsdFile psd) {
+        LayersList layersList = getLayers(psd);
         if (layersList == null) return;
 
         List<RawLayer> rawLayers = layersList.layers;
@@ -646,8 +664,7 @@ final class PsdImage {
             ChannelImageData imageData = channelsList.imageData.get(i);
             switch (imageData.compression) {
                 case RAW:
-                    // TODO: don't assume 8 bit depth
-                    Images.decodeChannelRaw(imageData.data, 0, info.id, bitmap, 8);
+                    Images.decodeChannelRaw(imageData.data, 0, info.id, bitmap, image.depth());
                     break;
                 case RLE:
                     int offset = (int) (bounds.getHeight() * 2);
@@ -742,7 +759,7 @@ final class PsdImage {
         int alphaChannel = 0;
         // When the layer count is negative, the first alpha channel is the
         // merged result's alpha mask
-        LayersList layers = psd.layersInfo.layers;
+        LayersList layers = getLayers(psd);
         if (layers != null && layers.count < 0) {
             alphaChannel = 1;
         }

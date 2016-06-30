@@ -17,7 +17,7 @@ final class PsdFile$LayerProperty$$ChunkIO {
         layerProperty.signature = ChunkUtils.readString(in, 4, Charset.forName("ISO-8859-1"));
         layerProperty.key = ChunkUtils.readString(in, 4, Charset.forName("ISO-8859-1"));
         layerProperty.length = in.readInt() & 0xffffffffL;
-        byteCount = layerProperty.length;
+        byteCount = (layerProperty.length + 3) & ~3;
         in.pushRange(byteCount);
         if (layerProperty.key.equals("lmfx")) {
             layerProperty.data = PsdFile$LayerEffects$$ChunkIO.read(in, stack);
@@ -41,6 +41,10 @@ final class PsdFile$LayerProperty$$ChunkIO {
             layerProperty.data = PsdFile$ShapeGraphics$$ChunkIO.read(in, stack);
         } else if (layerProperty.key.equals("vstk")) {
             layerProperty.data = PsdFile$ShapeStroke$$ChunkIO.read(in, stack);
+        } else if (layerProperty.key.equals("Lr16")) {
+            layerProperty.data = PsdFile$LayersList$$ChunkIO.read(in, stack);
+        } else if (layerProperty.key.equals("Lr32")) {
+            layerProperty.data = PsdFile$LayersList$$ChunkIO.read(in, stack);
         }
         in.popRange();
 

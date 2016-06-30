@@ -13,7 +13,6 @@ final class PsdFile$LayersList$$ChunkIO {
         int size = 0;
         long byteCount = 0;
 
-        layersList.length = in.readInt() & 0xffffffffL;
         layersList.count = in.readShort();
         layersList.layers = new ArrayList<PsdFile.RawLayer>();
         size = Math.abs(layersList.count);
