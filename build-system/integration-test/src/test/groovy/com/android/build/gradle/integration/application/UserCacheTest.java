@@ -22,15 +22,13 @@ import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp;
 import com.android.build.gradle.integration.common.utils.TestFileUtils;
 import com.android.utils.FileUtils;
-
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
 
 /** Integration tests for user cache. */
 public class UserCacheTest {
@@ -51,7 +49,7 @@ public class UserCacheTest {
 
     @Test
     public void testUserCacheEnabled() throws IOException {
-        File userCacheDir = new File(project.getTestDir(), "user-cache");
+        File userCacheDir = new File(project.getTestDir(), "build-cache");
         FileUtils.deletePath(userCacheDir);
 
         project.executor()
@@ -61,17 +59,17 @@ public class UserCacheTest {
 
         File preDexDir = FileUtils.join(project.getIntermediatesDir(), "pre-dexed", "debug");
         List<File> dexFiles = Arrays.asList(preDexDir.listFiles());
-        List<File> cachedFiles = Arrays.asList(userCacheDir.listFiles());
+        List<File> cachedFileContainers = Arrays.asList(userCacheDir.listFiles());
 
         assertThat(dexFiles).hasSize(2);
-        assertThat(cachedFiles).hasSize(1);
+        assertThat(cachedFileContainers).hasSize(1);
 
         // Assert that the pre-dexed file of the guava library is stored in the cache. Depending on
         // the cache implementation, either the output file is created first and copied to the
         // cache, or the cached file is created first and copied to the output file. In either way,
         // we check their timestamps to make sure we actually copied one to the other and did not
         // accidentally run pre-dexing twice to create the two files.
-        File cachedGuavaDexFile = cachedFiles.get(0);
+        File cachedGuavaDexFile = new File(cachedFileContainers.get(0), "output");
         File guavaDexFile;
         File projectDexFile;
         if (dexFiles.get(0).getName().contains("guava")) {
@@ -103,7 +101,7 @@ public class UserCacheTest {
 
     @Test
     public void testUserCacheDisabled() throws IOException {
-        File userCacheDir = new File(project.getTestDir(), "user-cache");
+        File userCacheDir = new File(project.getTestDir(), "build-cache");
         FileUtils.deletePath(userCacheDir);
 
         project.executor()

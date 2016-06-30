@@ -399,7 +399,7 @@ public class AndroidGradleOptions {
             // Use a directory under the user home directory if the user cache directory is not set
             return new File(
                     FileUtils.join(
-                            System.getProperty("user.home"), ".android-studio", "user-cache"));
+                            System.getProperty("user.home"), ".android", "build-cache"));
         }
     }
 

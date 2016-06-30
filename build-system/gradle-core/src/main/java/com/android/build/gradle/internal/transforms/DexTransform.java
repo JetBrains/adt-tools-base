@@ -19,7 +19,6 @@ package com.android.build.gradle.internal.transforms;
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.annotations.VisibleForTesting;
 import com.android.build.api.transform.DirectoryInput;
 import com.android.build.api.transform.Format;
 import com.android.build.api.transform.JarInput;
@@ -38,6 +37,7 @@ import com.android.build.gradle.internal.incremental.InstantRunBuildContext.File
 import com.android.build.gradle.internal.pipeline.TransformManager;
 import com.android.builder.core.AndroidBuilder;
 import com.android.builder.core.DexOptions;
+import com.android.builder.internal.utils.FileCache;
 import com.android.builder.sdk.TargetInfo;
 import com.android.ide.common.blame.Message;
 import com.android.ide.common.blame.ParsingProcessOutputHandler;
@@ -46,9 +46,7 @@ import com.android.ide.common.blame.parser.ToolOutputParser;
 import com.android.ide.common.internal.WaitableExecutor;
 import com.android.ide.common.process.ProcessException;
 import com.android.ide.common.process.ProcessOutputHandler;
-import com.android.repository.Revision;
 import com.android.sdklib.BuildToolInfo;
-import com.android.builder.internal.utils.FileCache;
 import com.android.utils.FileUtils;
 import com.android.utils.ILogger;
 import com.google.common.base.Charsets;
@@ -484,38 +482,57 @@ public class DexTransform extends Transform {
 
             boolean optimize = getOptimize();
 
-            // Use the cache for pre-dexing
-            String key = getKey(
-                    from,
-                    androidBuilder.getTargetInfo().getBuildTools().getRevision(),
-                    dexOptions.getJumboMode(),
-                    multiDex,
-                    optimize);
-            logger.info("Using file cache %s", fileCache);
-            fileCache.getOrCreateFile(to, key, (to) -> {
-                if (to.isDirectory()) {
-                    FileUtils.cleanOutputDir(to);
-                } else if (to.isFile()) {
-                    FileUtils.delete(to);
-                } else {
-                    if (multiDex) {
-                        FileUtils.mkdirs(to);
-                    } else {
-                        Files.createParentDirs(to);
-                    }
-                }
+            // To use the cache for pre-dexing, we first need to specify all the inputs that affect
+            // the outcome of a pre-dex (see DxDexKey for an exhaustive list of these inputs)
+            FileCache.Inputs.Builder inputs = new FileCache.Inputs.Builder();
 
-                try {
-                    androidBuilder.preDexLibrary(
-                          from, to, multiDex, dexOptions, optimize, outputHandler);
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                } catch (ProcessException e) {
-                    throw new RuntimeException(e);
-                }
+            String inputFilePath = from.getCanonicalPath();
+            int explodedAarIndex = inputFilePath.lastIndexOf("exploded-aar");
+            if (explodedAarIndex != -1) {
+                // If a file is exploded from an aar, we can use the file path relative to the
+                // "exploded-aar" directory as the unique ID of the file (i.e., if two files having
+                // the same relative file paths under "exploded-aar", their contents must be the
+                // same regardless of where the "exploded-aar" directories are located).
+                inputs.put(
+                        "exploded-aar-file",
+                        inputFilePath.substring(explodedAarIndex + "exploded-aar".length() + 1));
+            } else {
+                inputs.put("file", from);
+            }
+            inputs.put(
+                    "buildToolsRevision",
+                    androidBuilder.getTargetInfo().getBuildTools().getRevision().toString());
+            inputs.put("jumboMode", dexOptions.getJumboMode())
+                    .put("optimize", optimize)
+                    .put("multiDex", multiDex);
+            List<String> additionalParams = dexOptions.getAdditionalParameters();
+            for (int i = 0; i < additionalParams.size(); i++) {
+                inputs.put("additionalParameter" + (i + 1), additionalParams.get(i));
+            }
 
-                return null;
-            });
+            // Run pre-dexing using the cache
+            fileCache.getOrCreateFile(
+                    to,
+                    inputs.build(),
+                    (outputFile) -> {
+                        if (multiDex) {
+                            FileUtils.mkdirs(outputFile);
+                        }
+                        try {
+                            androidBuilder.preDexLibrary(
+                                    from,
+                                    outputFile,
+                                    multiDex,
+                                    dexOptions,
+                                    optimize,
+                                    outputHandler);
+                        } catch (InterruptedException e) {
+                            Thread.currentThread().interrupt();
+                        } catch (ProcessException e) {
+                            throw new RuntimeException(e);
+                        }
+                        return null;
+                    });
 
             for (File file : Files.fileTreeTraverser().breadthFirstTraversal(to)) {
                 if (file.isFile()) {
@@ -620,38 +637,4 @@ public class DexTransform extends Transform {
     private static boolean isExternalLibrary(@NonNull QualifiedContent content) {
         return content.getScopes().equals(Collections.singleton(Scope.EXTERNAL_LIBRARIES));
     }
-
-    /**
-     * Returns the key of a transform (which consists of the input file, build tools revision, and
-     * several dex options).
-     */
-    @VisibleForTesting
-    @NonNull
-    static String getKey(
-            @NonNull File inputFile,
-            @NonNull Revision buildToolsRevision,
-            boolean jumboMode,
-            boolean multiDex,
-            boolean optimize)
-            throws IOException {
-        String key;
-        int explodedAarIndex = inputFile.getCanonicalPath().lastIndexOf("exploded-aar");
-        if (explodedAarIndex >= 0) {
-            key = inputFile.getCanonicalPath().substring(
-                    explodedAarIndex + "exploded-aar".length() + 1);
-        } else {
-            String fileHash = Hashing.sha1()
-                    .hashString(inputFile.getCanonicalPath(), Charsets.UTF_16LE).toString();
-            key = inputFile.getName() + "_" + fileHash;
-        }
-
-        key = key
-                + "_build=" + buildToolsRevision.toString()
-                + "_jumbo=" + jumboMode
-                + "_multidex=" + multiDex
-                + "_optimize=" + optimize;
-
-        return key;
-    }
-
 }
