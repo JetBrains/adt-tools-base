@@ -359,6 +359,22 @@ public class LintUtils {
     }
 
     /**
+     * Returns true if the first string can be edited (Via insertions, deletions or
+     * substitutions) into the second string in at most the given number of editing
+     * operations. This computes the edit distance between the two strings and returns
+     * true if it is less than or equal to the given threshold.
+     *
+     * @param s   the first string to compare
+     * @param t   the second string to compare
+     * @param max the maximum number of edit operations allowed
+     * @return true if the first string is editable to the second string in at most the given number
+     * of steps
+     */
+    public static boolean isEditableTo(@NonNull String s, @NonNull String t, int max) {
+        return editDistance(s, t, max) <= max;
+    }
+
+    /**
      * Computes the edit distance (number of insertions, deletions or substitutions
      * to edit one string into the other) between two strings. In particular,
      * this will compute the Levenshtein distance.
@@ -370,6 +386,36 @@ public class LintUtils {
      * @return the edit distance between the two strings
      */
     public static int editDistance(@NonNull String s, @NonNull String t) {
+        return editDistance(s, t, Integer.MAX_VALUE);
+    }
+
+    /**
+     * Computes the edit distance (number of insertions, deletions or substitutions
+     * to edit one string into the other) between two strings. In particular,
+     * this will compute the Levenshtein distance.
+     * <p>
+     * See http://en.wikipedia.org/wiki/Levenshtein_distance for details.
+     *
+     * @param s   the first string to compare
+     * @param t   the second string to compare
+     * @param max the maximum edit distance that we care about; if for example the string length
+     *            delta is greater than this we don't bother computing the exact edit distance since
+     *            the caller has indicated they're not interested in the result
+     * @return the edit distance between the two strings, or some other value greater than that if
+     * the edit distance is at least as big as the {@code max} parameter
+     */
+    public static int editDistance(@NonNull String s, @NonNull String t, int max) {
+        if (s.equals(t)) {
+            return 0;
+        }
+
+        if (Math.abs(s.length() - t.length()) > max) {
+            // The string lengths differ more than the allowed edit distance;
+            // no point in even attempting to compute the edit distance (requires
+            // O(n*m) storage and O(n*m) speed, where n and m are the string lengths)
+            return Integer.MAX_VALUE;
+        }
+
         int m = s.length();
         int n = t.length();
         int[][] d = new int[m + 1][n + 1];

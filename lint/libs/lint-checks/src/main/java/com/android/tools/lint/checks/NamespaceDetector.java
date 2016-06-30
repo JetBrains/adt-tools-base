@@ -184,7 +184,7 @@ public class NamespaceDetector extends LayoutDetector {
                         if (resIndex != -1 && value.length() + 5 > URI_PREFIX.length()) {
                             String urlPrefix = value.substring(0, resIndex + 5);
                             if (!urlPrefix.equals(URI_PREFIX) &&
-                                    LintUtils.editDistance(URI_PREFIX, urlPrefix) <= 3) {
+                                    LintUtils.isEditableTo(URI_PREFIX, urlPrefix, 3)) {
                                 String correctUri = URI_PREFIX + value.substring(resIndex + 5);
                                 context.report(TYPO, attribute,
                                         context.getValueLocation(attribute),
@@ -202,7 +202,7 @@ public class NamespaceDetector extends LayoutDetector {
                         // should be our expected prefix, but for the "a" prefix we make sure
                         // that it's at least "close"; if you're bound it to something completely
                         // different, don't complain.
-                        if (LintUtils.editDistance(ANDROID_URI, value) > 4) {
+                        if (!LintUtils.isEditableTo(ANDROID_URI, value, 4)) {
                             continue;
                         }
                     }

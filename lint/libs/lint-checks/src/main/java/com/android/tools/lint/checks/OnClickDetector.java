@@ -188,7 +188,7 @@ public class OnClickDetector extends LayoutDetector implements ClassScanner {
                 if (rightArguments) {
                     // See if there's a possible typo instead
                     for (String n : mNames.keySet()) {
-                        if (LintUtils.editDistance(n, method.name) <= 2) {
+                        if (LintUtils.isEditableTo(n, method.name, 2)) {
                             recordSimilar(n, classNode, method);
                             break;
                         }

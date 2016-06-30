@@ -143,8 +143,6 @@ public class ManifestTypoDetector extends Detector implements Detector.XmlScanne
         return XmlScanner.ALL;
     }
 
-    private static final int MAX_EDIT_DISTANCE = 3;
-
     @Override
     public void visitElement(@NonNull XmlContext context, @NonNull Element element) {
         String tag = element.getTagName();
@@ -153,10 +151,7 @@ public class ManifestTypoDetector extends Detector implements Detector.XmlScanne
             // Try to find the corresponding match
             List<String> suggestions = null;
             for (String suggestion : sValidTags) {
-                if (Math.abs(suggestion.length() - tagLength) > MAX_EDIT_DISTANCE) {
-                    continue;
-                }
-                if (LintUtils.editDistance(suggestion, tag) <= MAX_EDIT_DISTANCE) {
+                if (LintUtils.isEditableTo(suggestion, tag, 3)) {
                     if (suggestions == null) {
                         suggestions = Lists.newArrayList();
                     }

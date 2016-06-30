@@ -496,13 +496,7 @@ public class WrongIdDetector extends LayoutDetector {
         if (!ids.isEmpty()) {
             for (String matchWith : ids) {
                 matchWith = stripIdPrefix(matchWith);
-                if (Math.abs(id.length() - matchWith.length()) > maxDistance) {
-                    // The string lengths differ more than the allowed edit distance;
-                    // no point in even attempting to compute the edit distance (requires
-                    // O(n*m) storage and O(n*m) speed, where n and m are the string lengths)
-                    continue;
-                }
-                int distance = editDistance(id, matchWith);
+                int distance = editDistance(id, matchWith, maxDistance);
                 if (distance <= maxDistance) {
                     matches.put(distance, matchWith);
                 }

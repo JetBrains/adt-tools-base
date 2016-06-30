@@ -140,6 +140,14 @@ public class LintUtilsTest extends TestCase {
         assertEquals(3, LintUtils.editDistance("saturday", "sunday"));
         assertEquals(1, LintUtils.editDistance("button", "bitton"));
         assertEquals(6, LintUtils.editDistance("radiobutton", "bitton"));
+
+        assertEquals(6, LintUtils.editDistance("radiobutton", "bitton", 10));
+        assertEquals(6, LintUtils.editDistance("radiobutton", "bitton", 6));
+        assertEquals(Integer.MAX_VALUE, LintUtils.editDistance("radiobutton", "bitton", 3));
+
+        assertTrue(LintUtils.isEditableTo("radiobutton", "bitton", 10));
+        assertTrue(LintUtils.isEditableTo("radiobutton", "bitton", 6));
+        assertFalse(LintUtils.isEditableTo("radiobutton", "bitton", 3));
     }
 
     public void testSplitPath() throws Exception {
