@@ -31,6 +31,8 @@
             <thead>
                 <tr><td>Name</td></tr>
             </thead>
+            <tr><td>cmake</td></tr>
+            <tr><td>ndkBuild</td></tr>
         </table>
     </section>
 </section>

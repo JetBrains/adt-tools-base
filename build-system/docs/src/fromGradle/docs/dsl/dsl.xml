@@ -39,13 +39,14 @@
         <para>Listed below are the configuration blocks available within <code>android</code></para>
         <table>
             <title>Configuration blocks</title>
-            <tr><td>defaultConfig</td></tr>
             <tr><td>aaptOptions</td></tr>
             <tr><td>adbOptions</td></tr>
             <tr><td>buildTypes</td></tr>
             <tr><td>compileOptions</td></tr>
             <tr><td>dataBinding</td></tr>
+            <tr><td>defaultConfig</td></tr>
             <tr><td>dexOptions</td></tr>
+            <tr><td>externalNativeBuild</td></tr>
             <tr><td>jacoco</td></tr>
             <tr><td>lintOptions</td></tr>
             <tr><td>packagingOptions</td></tr>

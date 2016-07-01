@@ -21,9 +21,7 @@
             <thead>
                 <tr><td>Name</td></tr>
             </thead>
-            <tr><td>cflags</td></tr>
-            <tr><td>cppflags</td></tr>
-            <tr><td>abiFilters</td></tr>
+            <tr><td>path</td></tr>
         </table>
     </section>
     <section>

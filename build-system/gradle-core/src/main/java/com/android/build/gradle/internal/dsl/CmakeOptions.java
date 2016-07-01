@@ -25,15 +25,7 @@ import org.gradle.api.Project;
 import java.io.File;
 
 /**
- * Implementation for cmake subsection of externalNativeBuild.
- *
- * android {
- *     externalNativeBuild {
- *         cmake {
- *             path '...'
- *         }
- *     }
- * }
+ * DSL object to configure CMake external native builds.
  */
 public class CmakeOptions implements CoreCmakeOptions {
     @NonNull
@@ -46,6 +38,9 @@ public class CmakeOptions implements CoreCmakeOptions {
         this.project = project;
     }
 
+    /**
+     * The path to CMakeLists.txt file.
+     */
     @Nullable
     @Override
     public File getPath() {
