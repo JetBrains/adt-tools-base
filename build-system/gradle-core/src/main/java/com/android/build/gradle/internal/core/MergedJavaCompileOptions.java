@@ -20,13 +20,6 @@ import com.android.annotations.NonNull;
 import com.android.build.gradle.internal.dsl.AnnotationProcessorOptions;
 import com.android.build.gradle.internal.dsl.CoreAnnotationProcessorOptions;
 import com.android.build.gradle.internal.dsl.CoreJavaCompileOptions;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-
-import java.util.List;
-import java.util.Map;
 
 /**
  * Implementation of CoreJavaCompileOptions used to merge multiple configs together.
@@ -44,7 +37,7 @@ public class MergedJavaCompileOptions implements CoreJavaCompileOptions {
     public void reset() {
         annotationProcessorOptions.getClassNames().clear();
         annotationProcessorOptions.getArguments().clear();
-        annotationProcessorOptions.setIncludeClasspath(true);
+        annotationProcessorOptions.setIncludeCompileClasspath(true);
     }
 
     public void append(@NonNull CoreJavaCompileOptions javaCompileOptions) {
@@ -52,9 +45,9 @@ public class MergedJavaCompileOptions implements CoreJavaCompileOptions {
                 javaCompileOptions.getAnnotationProcessorOptions().getClassNames());
         annotationProcessorOptions.arguments(
                 javaCompileOptions.getAnnotationProcessorOptions().getArguments());
-        if (javaCompileOptions.getAnnotationProcessorOptions().getIncludeClasspath() != null) {
-            annotationProcessorOptions.setIncludeClasspath(
-                    javaCompileOptions.getAnnotationProcessorOptions().getIncludeClasspath());
+        if (javaCompileOptions.getAnnotationProcessorOptions().getIncludeCompileClasspath() != null) {
+            annotationProcessorOptions.setIncludeCompileClasspath(
+                    javaCompileOptions.getAnnotationProcessorOptions().getIncludeCompileClasspath());
         }
     }
 }

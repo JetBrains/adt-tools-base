@@ -43,7 +43,6 @@ import com.android.jack.api.ConfigNotSupportedException;
 import com.android.jack.api.v01.CompilationException;
 import com.android.jack.api.v01.ConfigurationException;
 import com.android.jack.api.v01.UnrecoverableException;
-import com.android.repository.Revision;
 import com.android.sdklib.BuildToolInfo;
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
@@ -268,12 +267,12 @@ public class JackTransform extends Transform {
 
         CoreAnnotationProcessorOptions annotationProcessorOptions =
                 config.getJavaCompileOptions().getAnnotationProcessorOptions();
-        checkNotNull(annotationProcessorOptions.getIncludeClasspath());
+        checkNotNull(annotationProcessorOptions.getIncludeCompileClasspath());
         options.setAnnotationProcessorClassPath(
                 Lists.newArrayList(
                         scope.getVariantData().getVariantDependency()
                                 .resolveAndGetAnnotationProcessorClassPath(
-                                        annotationProcessorOptions.getIncludeClasspath(),
+                                        annotationProcessorOptions.getIncludeCompileClasspath(),
                                         androidBuilder.getErrorReporter())));
         options.setAnnotationProcessorNames(annotationProcessorOptions.getClassNames());
         options.setAnnotationProcessorOptions(annotationProcessorOptions.getArguments());

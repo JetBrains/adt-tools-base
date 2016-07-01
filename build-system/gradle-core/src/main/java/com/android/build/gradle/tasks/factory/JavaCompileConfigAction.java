@@ -21,10 +21,8 @@ import com.android.utils.ILogger;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 
-import org.gradle.api.Action;
 import org.gradle.api.JavaVersion;
 import org.gradle.api.Project;
-import org.gradle.api.Task;
 import org.gradle.api.file.ConfigurableFileTree;
 import org.gradle.api.file.FileCollection;
 
@@ -152,12 +150,12 @@ public class JavaCompileConfigAction implements TaskConfigAction<AndroidJavaComp
                         .getAnnotationProcessorOptions();
 
 
-        checkNotNull(annotationProcessorOptions.getIncludeClasspath());
+        checkNotNull(annotationProcessorOptions.getIncludeCompileClasspath());
         Collection<File> processorPath =
                 Lists.newArrayList(
                         scope.getVariantData().getVariantDependency()
                                 .resolveAndGetAnnotationProcessorClassPath(
-                                        annotationProcessorOptions.getIncludeClasspath(),
+                                        annotationProcessorOptions.getIncludeCompileClasspath(),
                                         scope.getGlobalScope().getAndroidBuilder().getErrorReporter()));
         if (compileOptions.getIncremental() != null) {
             incremental = compileOptions.getIncremental();
@@ -217,7 +215,7 @@ public class JavaCompileConfigAction implements TaskConfigAction<AndroidJavaComp
         }
 
         if (!processorPath.isEmpty()) {
-            if (Boolean.TRUE.equals(annotationProcessorOptions.getIncludeClasspath())) {
+            if (Boolean.TRUE.equals(annotationProcessorOptions.getIncludeCompileClasspath())) {
                 processorPath.addAll(javacTask.getClasspath().getFiles());
             }
             javacTask.getOptions().getCompilerArgs().add("-processorpath");

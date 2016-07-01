@@ -18,15 +18,16 @@ package com.android.build.gradle.internal.dsl;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.VisibleForTesting;
+import com.google.common.base.MoreObjects;
 import com.google.common.base.Objects;
 
 import org.gradle.api.Action;
 import org.gradle.internal.reflect.Instantiator;
-import org.gradle.model.Managed;
 
 /**
  * DSL object for javaCompileOptions.
  */
+@SuppressWarnings("unused") // exposed in DSL
 public class JavaCompileOptions implements CoreJavaCompileOptions {
     @NonNull
     private AnnotationProcessorOptions annotationProcessorOptions;
@@ -49,13 +50,16 @@ public class JavaCompileOptions implements CoreJavaCompileOptions {
         return annotationProcessorOptions;
     }
 
+    /**
+     * Configures annotation processor options.
+     */
     public void annotationProcessorOptions(Action<AnnotationProcessorOptions> configAction) {
         configAction.execute(annotationProcessorOptions);
     }
 
     @Override
     public String toString() {
-        return Objects.toStringHelper(this)
+        return MoreObjects.toStringHelper(this)
                 .add("annotationProcessorOptions", annotationProcessorOptions)
                 .toString();
     }

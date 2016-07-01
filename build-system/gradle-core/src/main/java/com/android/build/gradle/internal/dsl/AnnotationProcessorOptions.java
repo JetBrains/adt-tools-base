@@ -18,6 +18,7 @@ package com.android.build.gradle.internal.dsl;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.google.common.base.MoreObjects;
 import com.google.common.base.Objects;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -34,8 +35,9 @@ public class AnnotationProcessorOptions implements CoreAnnotationProcessorOption
 
     private final List<String> classNames = Lists.newArrayList();
     private final Map<String, String> arguments = Maps.newHashMap();
+
     @Nullable
-    private Boolean includeClasspath = null;
+    private Boolean includeCompileClasspath = null;
 
     /** {@inheritDoc} */
     @NonNull
@@ -85,20 +87,21 @@ public class AnnotationProcessorOptions implements CoreAnnotationProcessorOption
         this.arguments.putAll(arguments);
     }
 
+    /** {@inheritDoc} */
     @Override
     @Nullable
-    public Boolean getIncludeClasspath() {
-        return includeClasspath;
+    public Boolean getIncludeCompileClasspath() {
+        return includeCompileClasspath;
     }
 
-    public void setIncludeClasspath(@Nullable Boolean includeClasspath) {
-        this.includeClasspath = includeClasspath;
+    public void setIncludeCompileClasspath(@Nullable Boolean includeCompileClasspath) {
+        this.includeCompileClasspath = includeCompileClasspath;
     }
 
     public void _initWith(CoreAnnotationProcessorOptions aptOptions) {
         setClassNames(aptOptions.getClassNames());
         setArguments(aptOptions.getArguments());
-        setIncludeClasspath(aptOptions.getIncludeClasspath());
+        setIncludeCompileClasspath(aptOptions.getIncludeCompileClasspath());
     }
 
     @Override
@@ -112,7 +115,7 @@ public class AnnotationProcessorOptions implements CoreAnnotationProcessorOption
         AnnotationProcessorOptions that = (AnnotationProcessorOptions) o;
         return Objects.equal(classNames, that.classNames) &&
                 Objects.equal(arguments, that.arguments) &&
-                Objects.equal(includeClasspath, that.includeClasspath);
+                Objects.equal(includeCompileClasspath, that.includeCompileClasspath);
     }
 
     @Override
@@ -122,10 +125,10 @@ public class AnnotationProcessorOptions implements CoreAnnotationProcessorOption
 
     @Override
     public String toString() {
-        return Objects.toStringHelper(this)
+        return MoreObjects.toStringHelper(this)
                 .add("classNames", classNames)
                 .add("arguments", arguments)
-                .add("includeClasspath", includeClasspath)
+                .add("includeCompileClasspath", includeCompileClasspath)
                 .toString();
     }
 }

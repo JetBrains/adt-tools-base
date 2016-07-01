@@ -27,7 +27,7 @@ public interface CoreAnnotationProcessorOptions {
     /**
      * Annotation processors to run.
      *
-     * If empty, processors will be automatically discovered.
+     * <p>If empty, processors will be automatically discovered.
      */
     @NonNull
     List<String> getClassNames();
@@ -39,8 +39,8 @@ public interface CoreAnnotationProcessorOptions {
     Map<String, String> getArguments();
 
     /**
-     * Include compile classpath in the processor path.
+     * Whether to include compile classpath in the processors path.
      */
     @Nullable
-    Boolean getIncludeClasspath();
+    Boolean getIncludeCompileClasspath();
 }
