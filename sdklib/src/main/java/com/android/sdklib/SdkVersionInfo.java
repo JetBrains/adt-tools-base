@@ -123,7 +123,7 @@ public class SdkVersionInfo {
             case 21: return "5.0";
             case 22: return "5.1";
             case 23: return "6.0";
-            case 24: return "6.X";
+            case 24: return "7.0";
             // If you add more versions here, also update #getBuildCodes and
             // #HIGHEST_KNOWN_API
 
@@ -171,7 +171,7 @@ public class SdkVersionInfo {
             case 23:
                 return "Marshmallow";
             case 24:
-                return "N";
+                return "Nougat";
 
             // If you add more versions here, also update #getBuildCodes and
             // #HIGHEST_KNOWN_API
