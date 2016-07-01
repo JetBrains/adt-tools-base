@@ -757,7 +757,8 @@ public class Project {
         // have binary libraries, the support libraries have to be source-copied into
         // the workspace which then triggers warnings in these libraries that users
         // shouldn't have to investigate)
-        if (mPackage != null && mPackage.startsWith(ANDROID_SUPPORT_PKG_PREFIX)) {
+        if (mPackage != null && mPackage.startsWith(ANDROID_SUPPORT_PKG_PREFIX)
+                && !isAospBuildEnvironment()) {
             mReportIssues = false;
         }
 
