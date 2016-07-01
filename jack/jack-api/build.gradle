@@ -9,7 +9,8 @@ configurations {
 }
 
 dependencies {
-  provided 'com.google.code.findbugs:jsr305:1.3.9'
+    provided 'com.google.code.findbugs:jsr305:1.3.9'
+    testCompile "junit:junit:4.12"
 }
 
 compileJava.classpath += configurations.provided
