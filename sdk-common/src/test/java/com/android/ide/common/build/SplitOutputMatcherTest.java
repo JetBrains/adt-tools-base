@@ -414,6 +414,36 @@ public class SplitOutputMatcherTest extends TestCase {
         assertEquals(1, result.size());
     }
 
+    public void testConfigFormatFixed() {
+        String mccMnc =
+                "310mcc-260mnc-en-rUS-ldltr-sw320dp-w320dp-h508dp-normal-long-port-"
+                        + "notnight-hdpi-finger-keysexposed-nokeys-navexposed-trackball-v21:x86";
+        String expectedMccMnc = "mcc310-mnc260-en-rUS-ldltr-sw320dp-w320dp-h508dp-normal-long-port-"
+                + "notnight-hdpi-finger-keysexposed-nokeys-navexposed-trackball-v21:x86";
+        assertEquals(expectedMccMnc, SplitOutputMatcher.prepareConfigFormatMccMnc(mccMnc));
+
+        String mnc =
+                "260mnc-en-rUS-ldltr-sw320dp-w320dp-h508dp-normal-long-port-"
+                        + "notnight-hdpi-finger-keysexposed-nokeys-navexposed-trackball-v21:x86";
+        String expectedMnc = "mnc260-en-rUS-ldltr-sw320dp-w320dp-h508dp-normal-long-port-"
+                + "notnight-hdpi-finger-keysexposed-nokeys-navexposed-trackball-v21:x86";
+        assertEquals(expectedMnc, SplitOutputMatcher.prepareConfigFormatMccMnc(mnc));
+
+        String mcc =
+                "310mcc-en-rUS-ldltr-sw320dp-w320dp-h508dp-normal-long-port-"
+                        + "notnight-hdpi-finger-keysexposed-nokeys-navexposed-trackball-v21:x86";
+        String expectedMcc = "mcc310-en-rUS-ldltr-sw320dp-w320dp-h508dp-normal-long-port-"
+                + "notnight-hdpi-finger-keysexposed-nokeys-navexposed-trackball-v21:x86";
+        assertEquals(expectedMcc, SplitOutputMatcher.prepareConfigFormatMccMnc(mcc));
+
+        String noMccMnc =
+                "en-rUS-ldltr-sw320dp-w320dp-h508dp-normal-long-port-"
+                        + "notnight-hdpi-finger-keysexposed-nokeys-navexposed-trackball-v21:x86";
+        String expectedNoMccMnc = "en-rUS-ldltr-sw320dp-w320dp-h508dp-normal-long-port-"
+                + "notnight-hdpi-finger-keysexposed-nokeys-navexposed-trackball-v21:x86";
+        assertEquals(expectedNoMccMnc, SplitOutputMatcher.prepareConfigFormatMccMnc(noMccMnc));
+    }
+
     private static VariantOutput getUniversalOutput(int versionCode) {
         return new FakeVariantOutput(new FakeSplitOutput(null, null), versionCode);
     }

@@ -19,9 +19,11 @@ import com.android.build.gradle.integration.common.category.DeviceTests
 import com.android.build.gradle.integration.common.fixture.Adb
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldJniApp
+import com.android.build.gradle.integration.common.utils.AndroidVersionMatcher
 import com.android.build.gradle.integration.common.utils.AssumeUtil
 import com.android.ddmlib.IDevice
 import com.google.common.collect.ImmutableList
+import com.google.common.collect.Range
 import groovy.transform.CompileStatic
 import org.junit.AfterClass
 import org.junit.BeforeClass
@@ -122,7 +124,7 @@ model {
     @Category(DeviceTests.class)
     public void connectedAndroidTest() {
         project.execute("assembleDebug", "assembleDebugAndroidTest");
-        IDevice device = adb.getDevice(thatUsesArt());
+        IDevice device = adb.getDevice(AndroidVersionMatcher.forRange(Range.singleton(21)));
         project.executeConnectedCheck(
                 ImmutableList.of(Adb.getInjectToDeviceProviderProperty(device)));
     }

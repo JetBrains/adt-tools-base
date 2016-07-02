@@ -18,6 +18,7 @@ package com.android.ide.common.build;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.annotations.VisibleForTesting;
 import com.android.build.FilterData;
 import com.android.build.OutputFile;
 import com.android.build.VariantOutput;
@@ -25,7 +26,10 @@ import com.android.builder.testing.api.DeviceConfigProvider;
 import com.android.ide.common.process.ProcessException;
 import com.android.ide.common.process.ProcessExecutor;
 import com.android.resources.Density;
+import com.google.common.base.Joiner;
+import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -136,10 +140,12 @@ public class SplitOutputMatcher {
 
             Set<String> resultApksPath = new HashSet<String>();
             for (String abi : deviceConfigProvider.getAbis()) {
+                String deviceConfiguration =
+                        prepareConfigFormatMccMnc(deviceConfigProvider.getConfigFor(abi));
                 resultApksPath.addAll(SplitSelectTool.splitSelect(
                         processExecutor,
                         splitSelectExe,
-                        deviceConfigProvider.getConfigFor(abi),
+                        deviceConfiguration,
                         mainApk.getAbsolutePath(),
                         splitApksPath));
             }
@@ -249,5 +255,61 @@ public class SplitOutputMatcher {
             }
         }
         return null;
+    }
+
+    /**
+     * Preparing the configuration string according to the format expected by the split-select
+     * tool. This should not make sure that the configuration string is valid, but just fix
+     * this know issue.
+     *
+     * <p>Devices having api level 21 have a config format that is not compatible with split-select.
+     * The problem is that the split-select tool expects mcc310-mnc260, while the am get-config
+     * command will output 310mcc-260mnc-... (mcc is always before mnc, and both are optional). That
+     * is why the string is processed to match the expected format for these two dimensions.
+     * The rest of the config string is not changed.
+     *
+     * @param deviceConfig device configuration to process
+     * @return device configuration in format expected by the split-select tool
+     */
+    @VisibleForTesting
+    public static String prepareConfigFormatMccMnc(@NonNull String deviceConfig) {
+        Iterable<String> configParts = Splitter.on("-").split(deviceConfig);
+        List<String> outputParts = Lists.newArrayList();
+
+        // we should fix only the first 2 parts of the config, as mcc and mnc
+        // are found only there (they can also be omitted from the config)
+        int processed = 0;
+        for (String part: configParts) {
+            // both mcc and mnc parts are 6 characters long, also start with 3 digits
+            boolean matchingFormat =
+                    part.length() == 6
+                            && Character.isDigit(part.charAt(0))
+                            && Character.isDigit(part.charAt(1))
+                            && Character.isDigit(part.charAt(2));
+
+            if (processed == 0 && matchingFormat && part.endsWith("mcc")) {
+                processed = 1;
+                outputParts.add(fixSingleConfigDimension(part, "mcc"));
+            } else if (processed < 2 && matchingFormat && part.endsWith("mnc")) {
+                processed = 2;
+                outputParts.add(fixSingleConfigDimension(part, "mnc"));
+            } else {
+                outputParts.add(part);
+            }
+        }
+
+        return Joiner.on("-").join(outputParts);
+    }
+
+    private static String fixSingleConfigDimension(
+            @NonNull String configDimension, @NonNull String dimensionName) {
+        int nameStartIndex = configDimension.lastIndexOf(dimensionName);
+        if (nameStartIndex > 0) {
+            // put the dimension name first, than the rest
+            return dimensionName + configDimension.substring(0, nameStartIndex);
+        } else {
+            // no fix needed
+            return configDimension;
+        }
     }
 }
