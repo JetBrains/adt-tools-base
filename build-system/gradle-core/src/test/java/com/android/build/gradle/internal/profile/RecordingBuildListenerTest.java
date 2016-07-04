@@ -16,8 +16,10 @@
 
 package com.android.build.gradle.internal.profile;
 
+import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.android.annotations.NonNull;
@@ -38,7 +40,6 @@ import org.gradle.api.tasks.TaskState;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
 import java.io.IOException;
@@ -264,7 +265,7 @@ public class RecordingBuildListenerTest {
     public void multipleThreadsInvocation() {
         TestRecorder recorder = new TestRecorder();
         RecordingBuildListener listener = new RecordingBuildListener(recorder);
-        Task secondTask = Mockito.mock(Task.class);
+        Task secondTask = mock(Task.class);
         when(secondTask.getName()).thenReturn("secondTaskName");
         when(secondTask.getProject()).thenReturn(mProject);
 
@@ -295,7 +296,7 @@ public class RecordingBuildListenerTest {
     public void multipleThreadsOrderInvocation() {
         TestRecorder recorder = new TestRecorder();
         RecordingBuildListener listener = new RecordingBuildListener(recorder);
-        Task secondTask = Mockito.mock(Task.class);
+        Task secondTask = mock(Task.class);
         when(secondTask.getName()).thenReturn("secondTaskName");
         when(secondTask.getProject()).thenReturn(mProject);
 
@@ -322,6 +323,39 @@ public class RecordingBuildListenerTest {
         assertEquals(0, record.getParentId());
         assertEquals(1, record.getProject());
     }
+
+    @Test
+    public void ensureTaskStateRecorded() {
+        TestRecorder recorder = new TestRecorder();
+        RecordingBuildListener listener = new RecordingBuildListener(recorder);
+
+        when(mTaskState.getDidWork()).thenReturn(true);
+        when(mTaskState.getExecuted()).thenReturn(true);
+        when(mTaskState.getFailure()).thenReturn(new RuntimeException("Task failure"));
+        when(mTaskState.getSkipped()).thenReturn(false);
+        when(mTaskState.getUpToDate()).thenReturn(false);
+
+        listener.beforeExecute(mTask);
+        listener.afterExecute(mTask, mTaskState);
+
+        assertEquals(1, recorder.records.size());
+        assertThat(recorder.records.get(0).getType()).named("execution type").isEqualTo(ExecutionType.TASK_EXECUTION);
+        AndroidStudioStats.GradleTaskExecution task = recorder.records.get(0).getTask();
+        assertThat(task.getDidWork()).named("task.did_work").isTrue();
+        assertThat(task.getFailed()).named("task.failed").isTrue();
+        assertThat(task.getSkipped()).named("task.skipped").isFalse();
+        assertThat(task.getUpToDate()).named("task.up_to_date").isFalse();
+    }
+
+    @Test
+    public void checkTasksEnum() {
+        assertThat(
+                RecordingBuildListener.getExecutionType(
+                        org.gradle.api.tasks.compile.JavaCompile.class))
+                .named("JavaCompile")
+                .isEqualTo(AndroidStudioStats.GradleTaskExecution.Type.JAVA_COMPILE);
+    }
+
 
     private static void ensurePropertyValue(
             Map<String, String> properties, String name, String value) {

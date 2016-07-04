@@ -323,7 +323,13 @@ public class ProcessRecorder {
                 mJsonWriter.name("parentId").value(executionRecord.getParentId());
                 mJsonWriter.name("startTimeInMs").value(executionRecord.getStartTimeInMs());
                 mJsonWriter.name("durationInMs").value(executionRecord.getDurationInMs());
-                mJsonWriter.name("type").value(executionRecord.getType().toString());
+                String type = executionRecord.getType().toString();
+                if (executionRecord.hasTask()) {
+                    type = type + "_" + executionRecord.getTask().getType().toString();
+                } else if (executionRecord.hasTransform()) {
+                    type = type + "_" + executionRecord.getTransform().getType().toString();
+                }
+                mJsonWriter.name("type").value(type);
                 mJsonWriter.name("attributes");
                 mJsonWriter.beginArray();
                 {
