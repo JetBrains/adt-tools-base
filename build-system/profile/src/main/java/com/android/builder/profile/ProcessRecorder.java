@@ -217,8 +217,13 @@ public class ProcessRecorder {
     }
 
     /**
-     *
+     * Properties and statistics global to this build invocation.
      */
+    @NonNull
+    public static AndroidStudioStats.GradleBuildProfile.Builder getGlobalProperties() {
+        return get().getProperties();
+    }
+
     @NonNull
     AndroidStudioStats.GradleBuildProfile.Builder getProperties() {
         return mBuild;
