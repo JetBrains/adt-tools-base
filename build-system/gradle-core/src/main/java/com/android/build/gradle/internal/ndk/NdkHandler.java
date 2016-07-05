@@ -21,6 +21,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.annotations.VisibleForTesting;
 import com.android.build.gradle.internal.core.Abi;
 import com.android.build.gradle.internal.core.Toolchain;
 import com.android.repository.Revision;
@@ -65,7 +66,7 @@ public class NdkHandler {
         if (ndkDirectory == null) {
             ndkInfo = null;
         } else {
-            Revision revision = findRevision();
+            Revision revision = findRevision(ndkDirectory);
             if (revision == null) {
                 ndkInfo = new DefaultNdkInfo(ndkDirectory);
             } else if (revision.getMajor() > LATEST_SUPPORTED_VERSION) {
@@ -96,8 +97,9 @@ public class NdkHandler {
         return properties;
     }
 
+    @VisibleForTesting
     @Nullable
-    private Revision findRevision() {
+    public static Revision findRevision(@Nullable File ndkDirectory) {
         if (ndkDirectory == null) {
             return null;
         } else {

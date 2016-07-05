@@ -5,14 +5,14 @@ import static com.android.build.gradle.integration.common.truth.TruthHelper.asse
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldJniApp;
-import com.android.build.gradle.integration.common.utils.ModelHelper;
 import com.android.build.gradle.integration.common.utils.NativeModelHelper;
+import com.android.build.gradle.integration.common.utils.NdkHelper;
 import com.android.build.gradle.integration.common.utils.TestFileUtils;
 import com.android.build.gradle.internal.core.Abi;
-import com.android.builder.model.AndroidProject;
+import com.android.build.gradle.internal.ndk.NdkHandler;
 import com.android.builder.model.NativeAndroidProject;
 import com.android.builder.model.NativeArtifact;
-import com.android.builder.model.NativeLibrary;
+import com.android.repository.Revision;
 
 import org.junit.Before;
 import org.junit.Rule;
@@ -20,10 +20,8 @@ import org.junit.Test;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 /**
  * Integration test for platform version.
@@ -111,7 +109,11 @@ public class NdkPlatformVersionTest {
             if (artifact.getName().endsWith("x86")) {
                 assertThat(sysrootFlag.get()).contains("android-19");
             } else {
-                assertThat(sysrootFlag.get()).contains("android-" + GradleTestProject.LATEST_NDK_PLATFORM_VERSION);
+                int expected =
+                        Math.min(
+                                NdkHelper.getMaxPlatformSupported(project.getNdkDir()),
+                                GradleTestProject.DEFAULT_COMPILE_SDK_VERSION);
+                assertThat(sysrootFlag.get()).contains("android-" + expected);
             }
         }
     }
