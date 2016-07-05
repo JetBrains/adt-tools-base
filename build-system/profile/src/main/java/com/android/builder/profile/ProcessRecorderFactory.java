@@ -20,6 +20,7 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
 import com.android.tools.analytics.AnalyticsSettings;
+import com.android.tools.analytics.Anonymizer;
 import com.android.tools.analytics.UsageTracker;
 import com.android.utils.ILogger;
 import com.android.utils.StdLogger;
@@ -37,7 +38,6 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -98,6 +98,7 @@ public class ProcessRecorderFactory {
      *
      */
     public static void initialize(
+            @NonNull File projectPath,
             @NonNull String gradleVersion,
             @NonNull ILogger logger,
             @NonNull File out) {
@@ -119,12 +120,16 @@ public class ProcessRecorderFactory {
             }
 
             ProcessRecorder recorder = sINSTANCE.get(); // Initialize the ProcessRecorder instance
-            setGlobalProperties(recorder, gradleVersion);
+
+            setGlobalProperties(recorder, projectPath, gradleVersion, logger);
         }
     }
 
     private static void setGlobalProperties(
-            @NonNull ProcessRecorder recorder, @NonNull String gradleVersion) {
+            @NonNull ProcessRecorder recorder,
+            @NonNull File projectPath,
+            @NonNull String gradleVersion,
+            @NonNull ILogger logger) {
         recorder.getProperties()
                 .setOsName(System.getProperty("os.name"))
                 .setOsVersion(System.getProperty("os.version"))
@@ -132,6 +137,13 @@ public class ProcessRecorderFactory {
                 .setJavaVmVersion(System.getProperty("java.vm.version"))
                 .setMaxMemory(Runtime.getRuntime().maxMemory())
                 .setGradleVersion(gradleVersion);
+
+        try {
+            recorder.getProperties().setProjectId(
+                    Anonymizer.anonymizeUtf8(logger, projectPath.getAbsolutePath()));
+        } catch (IOException e) {
+            logger.error(e, "Could not anonymize project id.");
+        }
     }
 
     public synchronized void setLogger(@NonNull ILogger iLogger) {
@@ -169,7 +181,10 @@ public class ProcessRecorderFactory {
         setEnabled(true);
         sINSTANCE.setRecordWriter(recordWriter);
         ProcessRecorder recorder = sINSTANCE.get(); // Initialize the ProcessRecorder instance
-        setGlobalProperties(recorder, "2.10");
+        setGlobalProperties(recorder,
+                new File("fake/path/to/test_project/"),
+                "2.10",
+                new StdLogger(StdLogger.Level.VERBOSE));
     }
 
     private static void initializeAnalytics(@NonNull ILogger logger,

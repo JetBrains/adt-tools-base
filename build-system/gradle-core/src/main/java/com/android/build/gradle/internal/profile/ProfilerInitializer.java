@@ -64,6 +64,7 @@ public final class ProfilerInitializer {
      */
     public static void init(@NonNull Project project) {
         ProcessRecorderFactory.initialize(
+                project.getRootProject().getProjectDir(),
                 project.getGradle().getGradleVersion(),
                 new LoggerWrapper(project.getLogger()),
                 project.getRootProject().file("profiler" + System.currentTimeMillis() + ".json"));
