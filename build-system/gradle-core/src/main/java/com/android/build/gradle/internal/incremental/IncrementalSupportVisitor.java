@@ -116,6 +116,13 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
     }
 
     @Override
+    public void visitInnerClass(String name, String outerName, String innerName, int access) {
+        int newAccess =
+                access & (~(Opcodes.ACC_PRIVATE | Opcodes.ACC_PROTECTED)) | Opcodes.ACC_PUBLIC;
+        super.visitInnerClass(name, outerName, innerName, newAccess);
+    }
+
+    @Override
     public AnnotationVisitor visitAnnotation(String desc, boolean visible) {
         if (desc.equals(DISABLE_ANNOTATION_TYPE.getDescriptor())) {
             disableRedirectionForClass = true;
