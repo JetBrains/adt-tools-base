@@ -20,6 +20,7 @@ import com.android.annotations.NonNull;
 import com.android.build.gradle.internal.scope.InstantRunVariantScope;
 import com.android.build.gradle.internal.scope.TaskConfigAction;
 import com.android.build.gradle.internal.tasks.BaseTask;
+import com.android.builder.profile.ProcessRecorder;
 import com.google.common.base.Charsets;
 import com.google.common.io.Files;
 
@@ -81,6 +82,10 @@ public class InstantRunWrapperTask extends BaseTask {
                 logger.warn(String.format("Cannot delete %1$s", tmpBuildInfoFile));
             }
         }
+
+        // Record instant run status in analytics for this build
+        ProcessRecorder.getGlobalProperties().setInstantRunStatus(
+                InstantRunAnalyticsHelper.generateAnalyticsProto(instantRunBuildContext));
     }
 
     public static class ConfigAction implements TaskConfigAction<InstantRunWrapperTask> {
