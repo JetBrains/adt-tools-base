@@ -630,6 +630,7 @@ public abstract class PermissionRequirement {
             "android.permission.BODY_SENSORS",
             "android.permission.CALL_PHONE",
             "android.permission.CAMERA",
+            "android.permission.GET_ACCOUNTS",
             "android.permission.PROCESS_OUTGOING_CALLS",
             "android.permission.READ_CALENDAR",
             "android.permission.READ_CALL_LOG",
@@ -651,9 +652,9 @@ public abstract class PermissionRequirement {
             "android.permission.WRITE_CALL_LOG",
             "android.permission.WRITE_CONTACTS",
             "android.permission.WRITE_EXTERNAL_STORAGE",
-            "android.permission.WRITE_SETTINGS",
             "android.permission.WRITE_PROFILE",
+            "android.permission.WRITE_SETTINGS",
             "android.permission.WRITE_SOCIAL_STREAM",
-            "com.android.voicemail.permission.ADD_VOICEMAIL",
+            "com.android.voicemail.permission.ADD_VOICEMAIL"
     };
 }

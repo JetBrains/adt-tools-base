@@ -239,6 +239,15 @@ public class PermissionRequirementTest extends TestCase {
                 new AndroidVersion(target, null));
     }
 
+    public void testDangerousPermissionsOrder() {
+        // The order must be alphabetical to ensure binary search will work correctly
+        String prev = null;
+        for (String permission : REVOCABLE_PERMISSION_NAMES) {
+            assertTrue(prev == null || prev.compareTo(permission) < 0);
+            prev = permission;
+        }
+    }
+
     public static void testDbUpToDate() throws Exception {
         List<String> expected = getDangerousPermissions();
         if (expected == null) {
@@ -262,10 +271,11 @@ public class PermissionRequirementTest extends TestCase {
     private static List<String> getDangerousPermissions() throws IOException {
         Pattern pattern = Pattern.compile("dangerous");
         String top = System.getenv("ANDROID_BUILD_TOP");   //$NON-NLS-1$
-        if (top == null) {
-            top = "/Volumes/android/mnc-dev";
-        }
 
+        // Alternatively, you can look up the version for the release branch on ag via
+        // something like
+        //   platform/frameworks/base/+/nyc-release/core/res/AndroidManifest.xml
+        // and then set file = new File(path to copy of above)
         // TODO: We should ship this file with the SDK!
         File file = new File(top, "frameworks/base/core/res/AndroidManifest.xml");
         if (!file.exists()) {
@@ -297,6 +307,26 @@ public class PermissionRequirementTest extends TestCase {
                     String name = element.getAttributeNS(ANDROID_URI, ATTR_NAME);
                     if (!name.isEmpty() && pattern.matcher(protectionLevel).find()) {
                         revocable.add(name);
+                    } else {
+                        // Some permissions have been removed. We need to know about the historical
+                        // data for these. Whenever a new annotation i
+                        if (name.equals("android.permission.READ_SOCIAL_STREAM") ||
+                            name.equals("android.permission.WRITE_SOCIAL_STREAM") ||
+                            name.equals("android.permission.READ_PROFILE") ||
+                            name.equals("android.permission.WRITE_PROFILE")) {
+                            // Removed in 6d2c0e5
+                            revocable.add(name);
+                        } else if (name.equals("android.permission.USE_FINGERPRINT")) {
+                            // Made normal in d6bd9da; apply targetSdkVersion?
+                            // (It's not clear whether app developers have to worry about
+                            // this in M. Find out.)
+                            revocable.add(name);
+                        } else if (name.equals("android.permission.WRITE_SETTINGS")) {
+                            // This one seems to have gone from a dangerous permission
+                            // in M to a signature permission
+                            revocable.add(name);
+
+                        }
                     }
                 }
             }
