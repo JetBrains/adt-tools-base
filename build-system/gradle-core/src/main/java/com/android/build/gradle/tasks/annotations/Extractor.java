@@ -807,6 +807,10 @@ public class Extractor {
             return;
         }
 
+        addItemUnconditionally(fqn, item);
+    }
+
+    private void addItemUnconditionally(@NonNull String fqn, @NonNull Item item) {
         String pkg = getPackage(fqn);
         Map<String, List<Item>> classMap = itemMap.get(pkg);
         if (classMap == null) {
@@ -1011,8 +1015,42 @@ public class Extractor {
         return XmlEscapers.xmlAttributeEscaper().escape(unescaped);
     }
 
+    /**
+     * Returns true if this XML entry contains historic metadata, e.g. has
+     * an api attribute which designates that this API may no longer be in the SDK,
+     * but the annotations should be preserved for older API levels
+     */
+    private static boolean hasHistoricData(@NonNull Element item) {
+       Node curr = item.getFirstChild();
+       while (curr != null) {
+           // Example:
+           // <item name="android.provider.Browser BOOKMARKS_URI">
+           //   <annotation name="android.support.annotation.RequiresPermission.Read">
+           //     <val name="value" val="&quot;com.android.browser.permission.READ_HISTORY_BOOKMARKS&quot;" />
+           //     <val name="apis" val="&quot;..22&quot;" />
+           //   </annotation>
+           //   ..
+           if (curr.getNodeType() == Node.ELEMENT_NODE &&
+                   "annotation".equals(curr.getNodeName())) {
+               Node inner = curr.getFirstChild();
+               while (inner != null) {
+                   if (inner.getNodeType() == Node.ELEMENT_NODE &&
+                           "val".equals(inner.getNodeName()) &&
+                           "apis".equals(((Element) inner).getAttribute("name"))) {
+                       return true;
+                   }
+                   inner = inner.getNextSibling();
+               }
+           }
+           curr = curr.getNextSibling();
+       }
+
+       return false;
+    }
+
     private void mergeField(Element item, String containingClass, String fieldName) {
         if (apiFilter != null &&
+                !hasHistoricData(item) &&
                 !apiFilter.hasField(containingClass, fieldName)) {
             if (isListIgnored()) {
                 info("Skipping imported element because it is not part of the API file: "
@@ -1025,7 +1063,7 @@ public class Extractor {
             if (existing != null) {
                 mergedCount += mergeAnnotations(item, existing);
             } else {
-                addItem(containingClass, fieldItem);
+                addItemUnconditionally(containingClass, fieldItem);
                 mergedCount += addAnnotations(item, fieldItem);
             }
         }
@@ -1036,6 +1074,7 @@ public class Extractor {
         parameters = fixParameterString(parameters);
 
         if (apiFilter != null &&
+                !hasHistoricData(item) &&
                 !apiFilter.hasMethod(containingClass, methodName, parameters)) {
             if (isListIgnored()) {
                 info("Skipping imported element because it is not part of the API file: "
@@ -1062,7 +1101,7 @@ public class Extractor {
             if (existing != null) {
                 mergedCount += mergeAnnotations(item, existing);
             } else {
-                addItem(containingClass, parameterItem);
+                addItemUnconditionally(containingClass, parameterItem);
                 mergedCount += addAnnotations(item, parameterItem);
             }
         } else {
@@ -1072,7 +1111,7 @@ public class Extractor {
             if (existing != null) {
                 mergedCount += mergeAnnotations(item, existing);
             } else {
-                addItem(containingClass, methodItem);
+                addItemUnconditionally(containingClass, methodItem);
                 mergedCount += addAnnotations(item, methodItem);
             }
         }
