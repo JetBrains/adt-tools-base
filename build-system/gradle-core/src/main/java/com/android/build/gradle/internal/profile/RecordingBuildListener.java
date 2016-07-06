@@ -21,7 +21,9 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.internal.tasks.DefaultAndroidTask;
 import com.android.builder.profile.Recorder;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.CaseFormat;
+import com.google.wireless.android.sdk.stats.AndroidStudioStats;
 import com.google.wireless.android.sdk.stats.AndroidStudioStats.GradleBuildProfileSpan;
 import com.google.wireless.android.sdk.stats.AndroidStudioStats.GradleBuildProfileSpan.ExecutionType;
 
@@ -52,8 +54,7 @@ public class RecordingBuildListener implements TaskExecutionListener {
     @Override
     public void beforeExecute(@NonNull Task task) {
         GradleBuildProfileSpan.Builder builder = GradleBuildProfileSpan.newBuilder();
-
-        builder.setType(getExecutionType(task.getClass()));
+        builder.setType(ExecutionType.TASK_EXECUTION);
         builder.setId(mRecorder.allocationRecordId());
         builder.setStartTimeInMs(System.currentTimeMillis());
 
@@ -65,24 +66,33 @@ public class RecordingBuildListener implements TaskExecutionListener {
         GradleBuildProfileSpan.Builder record = mTaskRecords.get(task.getName());
 
         record.setDurationInMs(System.currentTimeMillis() - record.getStartTimeInMs());
-        //TODO: record task state.
+
+        //noinspection ThrowableResultOfMethodCallIgnored Just logging the failure.
+        record.setTask(
+                AndroidStudioStats.GradleTaskExecution.newBuilder()
+                        .setType(getExecutionType(task.getClass()))
+                        .setDidWork(taskState.getDidWork())
+                        .setSkipped(taskState.getSkipped())
+                        .setUpToDate(taskState.getUpToDate())
+                        .setFailed(taskState.getFailure() != null));
 
         mRecorder.closeRecord(task.getProject().getPath(), getVariantName(task), record);
     }
 
+    @VisibleForTesting
     @NonNull
-    private static ExecutionType getExecutionType(@NonNull Class<?> taskClass) {
+    static AndroidStudioStats.GradleTaskExecution.Type getExecutionType(@NonNull Class<?> taskClass) {
         // find the right ExecutionType.
         String taskImpl = taskClass.getSimpleName();
         if (taskImpl.endsWith("_Decorated")) {
             taskImpl = taskImpl.substring(0, taskImpl.length() - "_Decorated".length());
         }
-        String potentialExecutionTypeName = "TASK_" +
+        String potentialExecutionTypeName =
                 CaseFormat.LOWER_CAMEL.to(CaseFormat.UPPER_UNDERSCORE, taskImpl);
         try {
-            return ExecutionType.valueOf(potentialExecutionTypeName);
+            return AndroidStudioStats.GradleTaskExecution.Type.valueOf(potentialExecutionTypeName);
         } catch (IllegalArgumentException ignored) {
-            return ExecutionType.GENERIC_TASK_EXECUTION;
+            return AndroidStudioStats.GradleTaskExecution.Type.UNKNOWN_TASK_TYPE;
         }
     }
 
