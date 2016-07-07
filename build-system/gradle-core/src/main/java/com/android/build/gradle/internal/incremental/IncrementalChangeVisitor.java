@@ -143,6 +143,16 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
     }
 
     @Override
+    public void visitOuterClass(String owner, String name, String desc) {
+        // Ignore, the class hierarchy is not relevant in the override classes.
+    }
+
+    @Override
+    public void visitInnerClass(String name, String outerName, String innerName, int access) {
+        // Ignore, the class hierarchy is not relevant in the override classes.
+    }
+
+    @Override
     public AnnotationVisitor visitAnnotation(String desc, boolean visible) {
         if (DISABLE_ANNOTATION_TYPE.getDescriptor().equals(desc)) {
             instantRunDisabled = true;

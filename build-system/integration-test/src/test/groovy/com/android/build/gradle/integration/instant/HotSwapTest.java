@@ -31,6 +31,7 @@ import com.android.build.gradle.integration.common.runner.FilterableParameterize
 import com.android.build.gradle.integration.common.truth.AbstractAndroidSubject;
 import com.android.build.gradle.integration.common.truth.ApkSubject;
 import com.android.build.gradle.integration.common.truth.DexFileSubject;
+import com.android.build.gradle.integration.common.utils.AndroidVersionMatcher;
 import com.android.build.gradle.integration.common.utils.TestFileUtils;
 import com.android.build.gradle.internal.incremental.ColdswapMode;
 import com.android.builder.model.InstantRun;
@@ -155,14 +156,24 @@ public class HotSwapTest {
 
     @Test
     @Category(DeviceTests.class)
-    public void doHotSwapChangeTest() throws Exception {
+    public void artHotSwapChangeTest() throws Exception {
+        doHotSwapChangeTest(adb.getDevice(AndroidVersionMatcher.thatUsesArt()));
+    }
+
+    @Test
+    @Category(DeviceTests.class)
+    public void dalvikHotSwapChangeTest() throws Exception {
+        doHotSwapChangeTest(adb.getDevice(AndroidVersionMatcher.thatUsesDalvik()));
+    }
+
+    private void doHotSwapChangeTest(@NonNull IDevice device) throws Exception {
         HotSwapTester.run(
                 project,
                 packaging,
                 "com.example.helloworld",
                 "HelloWorld",
                 LOG_TAG,
-                adb,
+                device,
                 logcat,
                 new HotSwapTester.Steps() {
                     @Override
@@ -214,14 +225,27 @@ public class HotSwapTest {
                 + "import android.os.Bundle;\n"
                 + "import java.util.logging.Logger;\n"
                 + "\n"
+                + "import java.util.concurrent.Callable;\n"
+                + "\n"
                 + "public class HelloWorld extends Activity {\n"
                 + "    /** Called when the activity is first created. */\n"
                 + "    @Override\n"
                 + "    public void onCreate(Bundle savedInstanceState) {\n"
                 + "        super.onCreate(savedInstanceState);\n"
                 + "        setContentView(R.layout.main);\n"
-                + "        Logger.getLogger(\"" + LOG_TAG + "\")\n"
-                + "                .warning(\"" + message + "\");"
+                + "        Callable<Void> callable = new Callable<Void>() {\n"
+                + "            @Override\n"
+                + "            public Void call() throws Exception {\n"
+                + "                Logger.getLogger(\"" + LOG_TAG + "\")\n"
+                + "                        .warning(\"" + message + "\");"
+                + "                return null;\n"
+                + "            }\n"
+                + "        };\n"
+                + "        try {\n"
+                + "            callable.call();\n"
+                + "        } catch (Exception e) {\n"
+                + "            throw new RuntimeException(e);\n"
+                + "        }\n"
                 + "    }\n"
                 + "}\n";
         Files.write(javaCompile,
