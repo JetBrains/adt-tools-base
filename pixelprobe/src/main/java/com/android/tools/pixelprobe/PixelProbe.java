@@ -50,8 +50,39 @@ public final class PixelProbe {
      * @param in The input stream to decode an image from
      *
      * @return An Image instance, never null.
+     *
+     * @see #probe(InputStream, Decoder.Options)
+     * @see #probe(String, InputStream)
      */
     public static Image probe(InputStream in) throws IOException {
+        return probe(in, null);
+    }
+
+    /**
+     * Decodes an image from the specified input stream.
+     * This method will attempt to guess the image format by reading
+     * the beginning of the stream. It is therefore recommended to
+     * pass an InputStream that supports mark/reset. If the specified
+     * stream does not support mark/reset, this method will wrap the
+     * stream with a BufferedInputStream.
+     *
+     * This method does not close the stream.
+     *
+     * The returned image is always non-null but you must check
+     * the return value of Image.isValid() before attempting to use
+     * it. If the image is marked invalid, an error occurred while
+     * decoding the stream.
+     *
+     * @param in The input stream to decode an image from
+     * @param options The options to pass to the decoder, can be null
+     *
+     * @return An Image instance, never null.
+     *
+     * @see #probe(InputStream)
+     * @see #probe(String, InputStream, Decoder.Options)
+     */
+
+    public static Image probe(InputStream in, Decoder.Options options) throws IOException {
         // Make sure we have rewind capabilities to run Decoder.accept()
         if (!in.markSupported()) {
             in = new BufferedInputStream(in);
@@ -62,7 +93,7 @@ public final class PixelProbe {
             throw new IOException("Unknown image format");
         }
 
-        return decoder.decode(in);
+        return decoder.decode(in, options != null ? options : new Decoder.Options());
     }
 
     /**
@@ -79,13 +110,39 @@ public final class PixelProbe {
      * @param format The expected format of the image to decode from the stream
      *
      * @return An Image instance, never null.
+     *
+     * @see #probe(String, InputStream, Decoder.Options)
+     * @see #probe(InputStream)
      */
     public static Image probe(String format, InputStream in) throws IOException {
+        return probe(format, in, null);
+    }
+
+    /**
+     * Decodes an image from the specified input stream, using the
+     * specified format. The format can be a file extension or a
+     * descriptive name. Examples: "png", "jpg", "jpeg", "psd",
+     * "photoshop". Format matching is case insensitive. If a
+     * suitable decoder cannot be found, this method will delegate
+     * to {@link #probe(InputStream)}.
+     *
+     * This method does not close the stream.
+     *
+     * @param in The input stream to decode an image from
+     * @param format The expected format of the image to decode from the stream
+     * @param options The options to pass to the decoder, can be null
+     *
+     * @return An Image instance, never null.
+     *
+     * @see #probe(String, InputStream)
+     * @see #probe(InputStream, Decoder.Options)
+     */
+    public static Image probe(String format, InputStream in, Decoder.Options options) throws IOException {
         Decoder decoder = Decoders.find(format);
         if (decoder == null) {
             return probe(in);
         }
 
-        return decoder.decode(in);
+        return decoder.decode(in, options != null ? options : new Decoder.Options());
     }
 }

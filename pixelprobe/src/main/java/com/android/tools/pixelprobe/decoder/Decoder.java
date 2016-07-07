@@ -47,6 +47,219 @@ public abstract class Decoder {
     private final Set<String> formats = new HashSet<>();
 
     /**
+     * Set of options a decoder can use when reading the source data.
+     *
+     * @see #decode(InputStream, Options)
+     */
+    public static final class Options {
+        private boolean decodeLayers = true;
+        private boolean decodeLayerImageData = true;
+        private boolean decodeLayerAdjustmentData = true;
+        private boolean decodeLayerShapeData = true;
+        private boolean decodeLayerTextData = true;
+        private boolean decodeLayerEffects = true;
+        private boolean decodeThumbnail = false;
+        private boolean decodeGuides = false;
+
+        /**
+         * Only decodes the image. Layers and other complex data
+         * structures (guides, etc.) are not decoded.
+         */
+        public static final Options IMAGE_ONLY = new Options()
+            .decodeLayers(false)
+            .decodeGuides(false);
+
+        /**
+         * Only decodes layer metadata. Layer data such as images,
+         * shapes or effects is not decoded. Image-wide metadata
+         * such as guides will be decoded.
+         */
+        public static final Options LAYER_METADATA_ONLY = new Options()
+            .decodeLayerImageData(false)
+            .decodeLayerShapeData(false)
+            .decodeLayerTextData(false)
+            .decodeLayerAdjustmentData(false)
+            .decodeLayerEffects(false);
+
+        /**
+         * Indicates whether the decoder should attempt to read
+         * layers or not. True by default.
+         *
+         * @see #decodeLayers(boolean)
+         */
+        public boolean decodeLayers() {
+            return decodeLayers;
+        }
+
+        /**
+         * Indicates whether the decoder should attempt to read
+         * layers or not.
+         *
+         * @see #decodeLayers()
+         */
+        public Options decodeLayers(boolean decodeLayers) {
+            this.decodeLayers = decodeLayers;
+            return this;
+        }
+
+        /**
+         * Indicates whether the decoder should attempt to read
+         * layer effects or not. True by default.
+         *
+         * @see #decodeLayerEffects(boolean)
+         */
+        public boolean decodeLayerEffects() {
+            return decodeLayerEffects;
+        }
+
+        /**
+         * Indicates whether the decoder should attempt to read
+         * layer effects or not.
+         *
+         * @see #decodeLayerEffects()
+         */
+        public Options decodeLayerEffects(boolean decodeLayerEffects) {
+            this.decodeLayerEffects = decodeLayerEffects;
+            return this;
+        }
+
+        /**
+         * Indicates whether the decoder should attempt to read
+         * image data for image layers. This option has no effect
+         * if {@link #decodeLayers()} is false. True by default.
+         *
+         * @see #decodeLayerImageData(boolean)
+         */
+        public boolean decodeLayerImageData() {
+            return decodeLayerImageData;
+        }
+
+        /**
+         * Indicates whether the decoder should attempt to read
+         * image data for image layers. This option has no effect
+         * if {@link #decodeLayers()} is false.
+         *
+         * @see #decodeLayerImageData()
+         */
+        public Options decodeLayerImageData(boolean decodeLayerImageData) {
+            this.decodeLayerImageData = decodeLayerImageData;
+            return this;
+        }
+
+        /**
+         * Indicates whether the decoder should attempt to read
+         * shape data for image layers. This option has no effect
+         * if {@link #decodeLayers()} is false. True by default.
+         *
+         * @see #decodeLayerShapeData(boolean)
+         */
+        public boolean decodeLayerShapeData() {
+            return decodeLayerShapeData;
+        }
+
+        /**
+         * Indicates whether the decoder should attempt to read
+         * shape data for image layers. This option has no effect
+         * if {@link #decodeLayers()} is false.
+         *
+         * @see #decodeLayerShapeData()
+         */
+        public Options decodeLayerShapeData(boolean decodeLayerShapeData) {
+            this.decodeLayerShapeData = decodeLayerShapeData;
+            return this;
+        }
+
+        /**
+         * Indicates whether the decoder should attempt to read
+         * text data for image layers. This option has no effect
+         * if {@link #decodeLayers()} is false. True by default.
+         *
+         * @see #decodeLayerTextData(boolean)
+         */
+        public boolean decodeLayerTextData() {
+            return decodeLayerTextData;
+        }
+
+        /**
+         * Indicates whether the decoder should attempt to read
+         * text data for image layers. This option has no effect
+         * if {@link #decodeLayers()} is false.
+         *
+         * @see #decodeLayerTextData()
+         */
+        public Options decodeLayerTextData(boolean decodeLayerTextData) {
+            this.decodeLayerTextData = decodeLayerTextData;
+            return this;
+        }
+
+
+        /**
+         * Indicates whether the decoder should attempt to read
+         * adjustement data for image layers. This option has no effect
+         * if {@link #decodeLayers()} is false. True by default.
+         *
+         * @see #decodeLayerAdjustmentData(boolean)
+         */
+        public boolean decodeLayerAdjustmentData() {
+            return decodeLayerAdjustmentData;
+        }
+
+        /**
+         * Indicates whether the decoder should attempt to read
+         * adjustement data for image layers. This option has no effect
+         * if {@link #decodeLayers()} is false.
+         *
+         * @see #decodeLayerAdjustmentData()
+         */
+        public Options decodeLayerAdjustmentData(boolean decodeLayerAdjustmentData) {
+            this.decodeLayerAdjustmentData = decodeLayerAdjustmentData;
+            return this;
+        }
+
+        /**
+         * Indicates whether the decoder should attempt to decode
+         * the thumbnail stored in the data source. False by default.
+         *
+         * @see #decodeThumbnail(boolean)
+         */
+        public boolean decodeThumbnail() {
+            return decodeThumbnail;
+        }
+
+        /**
+         * Indicates whether the decoder should attempt to decode
+         * the thumbnail stored in the data source.
+         *
+         * @see #decodeThumbnail()
+         */
+        public Options decodeThumbnail(boolean decodeThumbnail) {
+            this.decodeThumbnail = decodeThumbnail;
+            return this;
+        }
+
+        /**
+         * Indicates whether the decoder should attempt to decode
+         * the guides stored in the data source. True by default.
+         *
+         * @see #decodeGuides(boolean)
+         */
+        public boolean decodeGuides() {
+            return decodeGuides;
+        }
+
+        /**
+         * Indicates whether the decoder should attempt to decode
+         * the guides stored in the data source. True by default.
+         *
+         * @see #decodeGuides()
+         */
+        public Options decodeGuides(boolean decodeGuides) {
+            this.decodeGuides = decodeGuides;
+            return this;
+        }
+    }
+
+    /**
      * Creates a new decoder that supports the specified list of formats.
      *
      * @param formats A list of formats
@@ -80,11 +293,12 @@ public abstract class Decoder {
      * Decodes the specified input stream into an Image.
      *
      * @param in Input stream to decode
+     * @param options The options to use during decoding, cannot be null
      *
      * @return An Image instance, never null. Might be marked invalid if
      * an error occurred during the decoding process.
      */
-    public Image decode(InputStream in) throws IOException {
+    public Image decode(InputStream in, Options options) throws IOException {
         ImageInputStream stream = ImageIO.createImageInputStream(in);
 
         ImageReader reader = getImageReader(stream);
@@ -121,13 +335,13 @@ public abstract class Decoder {
     }
 
     /**
-     * Invoked by the default {@link #decode(InputStream)} implementation
+     * Invoked by the default {@link #decode(InputStream, Options)} implementation
      * to let the decoder extract metadata from the image stream.
      *
      * @param builder The image builder where to stored decoded metadata
      * @param metadata The image stream metadata
      */
-    public void decodeMetadata(Image.Builder builder, IIOMetadata metadata) {
+    protected void decodeMetadata(Image.Builder builder, IIOMetadata metadata) {
     }
 
     private static ImageReader getImageReader(ImageInputStream stream) throws IOException {

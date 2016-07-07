@@ -51,11 +51,11 @@ public final class PsdDecoder extends Decoder {
     }
 
     @Override
-    public Image decode(InputStream in) throws IOException {
+    public Image decode(InputStream in, Options options) throws IOException {
         try {
             // The PsdFile class represents the entire document
             PsdFile psd = ChunkIO.read(in, PsdFile.class);
-            return PsdImage.from(psd);
+            return PsdImage.from(psd, options);
         } catch (Throwable t) {
             throw new IOException("Error while decoding PSD stream", t);
         }
