@@ -15,6 +15,6 @@
     <orderEntry type="module" module-name="layoutlib-api" />
     <orderEntry type="module" module-name="sdklib" />
     <orderEntry type="module" module-name="builder-model" />
-    <orderEntry type="library" name="asm5" level="project" />
+    <orderEntry type="library" name="ASM" level="project" />
   </component>
 </module>
