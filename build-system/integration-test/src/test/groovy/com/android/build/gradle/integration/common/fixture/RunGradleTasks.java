@@ -240,8 +240,6 @@ public class RunGradleTasks extends BaseGradleExecutor<RunGradleTasks> {
         }
 
         withProperty(AndroidProject.PROPERTY_SIGNING_COLDSWAP_MODE, coldswapMode.name());
-        withProperty(AndroidProject.PROPERTY_VERSION_CODE, AndroidProject.INSTANT_RUN_VERSION_CODE);
-        withProperty(AndroidProject.PROPERTY_VERSION_NAME, AndroidProject.INSTANT_RUN_VERSION_NAME);
 
         StringBuilder optionalSteps = new StringBuilder()
                 .append("-P").append("android.optional.compilation").append('=')

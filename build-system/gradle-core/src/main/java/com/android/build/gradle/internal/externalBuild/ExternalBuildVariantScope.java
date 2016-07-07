@@ -148,6 +148,12 @@ import java.util.Collections;
 
     @NonNull
     @Override
+    public File getInstantRunResourcesFile() {
+        return new File(outputRootFolder, "/instant-run-resources/debug.ir.ap_");
+    }
+
+    @NonNull
+    @Override
     public File getIncrementalRuntimeSupportJar() {
         return new File(outputRootFolder, "/incremental-runtime-classes/instant-run.jar");
     }

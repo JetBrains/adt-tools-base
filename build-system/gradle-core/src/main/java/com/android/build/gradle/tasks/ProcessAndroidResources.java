@@ -26,7 +26,6 @@ import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.dsl.AaptOptions;
 import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
 import com.android.build.gradle.internal.incremental.InstantRunVerifierStatus;
-import com.android.build.gradle.internal.incremental.InstantRunWrapperTask;
 import com.android.build.gradle.internal.scope.ConventionMappingHelper;
 import com.android.build.gradle.internal.scope.TaskConfigAction;
 import com.android.build.gradle.internal.scope.VariantOutputScope;
@@ -84,8 +83,6 @@ public class ProcessAndroidResources extends IncrementalTask {
 
     private File resDir;
 
-    private File assetsDir;
-
     private File sourceOutputDir;
 
     private File textSymbolOutputDir;
@@ -121,8 +118,6 @@ public class ProcessAndroidResources extends IncrementalTask {
     private InstantRunBuildContext instantRunBuildContext;
 
     private File instantRunSupportDir;
-
-    private File buildInfoFile;
 
     private VariantScope variantScope;
 
@@ -182,9 +177,6 @@ public class ProcessAndroidResources extends IncrementalTask {
 
             if (resOutBaseNameFile != null) {
                 if (instantRunBuildContext.isInInstantRunMode()) {
-
-                    instantRunBuildContext.addChangedFile(
-                            InstantRunBuildContext.FileType.RESOURCES, resOutBaseNameFile);
                     runManifestChangeVerifier(instantRunBuildContext, instantRunSupportDir,
                             manifestFileToPackage);
                     runManifestBinaryChangeVerifier(instantRunBuildContext, instantRunSupportDir,
@@ -233,6 +225,7 @@ public class ProcessAndroidResources extends IncrementalTask {
                 currentIterationCRC = String.valueOf(entry.getCrc());
             }
         }
+
         File crcFile = new File(instantRunSupportDir, "manifest.crc");
         // check the manifest file binary format.
         if (crcFile.exists() && currentIterationCRC != null) {
@@ -247,22 +240,6 @@ public class ProcessAndroidResources extends IncrementalTask {
         // write the new manifest file CRC.
         Files.createParentDirs(crcFile);
         Files.write(currentIterationCRC, crcFile, Charsets.UTF_8);
-    }
-
-    private boolean isSplitPackage(File file, File resBaseName) {
-        if (file.getName().startsWith(resBaseName.getName())) {
-            for (String split : splits) {
-                if (file.getName().contains(split)) {
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-
-    @Nullable
-    private static String absolutePath(@Nullable File file) {
-        return file == null ? null : file.getAbsolutePath();
     }
 
     public static class ConfigAction implements TaskConfigAction<ProcessAndroidResources> {
@@ -392,13 +369,6 @@ public class ProcessAndroidResources extends IncrementalTask {
                 }
             });
 
-            ConventionMappingHelper.map(processResources, "assetsDir", new Callable<File>() {
-                @Override
-                public File call() throws Exception {
-                    return variantData.mergeAssetsTask.getOutputDir();
-                }
-            });
-
             if (generateResourcePackage) {
                 processResources.setPackageOutputFile(scope.getProcessResourcePackageOutputFile());
             }
@@ -453,8 +423,6 @@ public class ProcessAndroidResources extends IncrementalTask {
 
             processResources.instantRunBuildContext =
                     scope.getVariantScope().getInstantRunBuildContext();
-            processResources.buildInfoFile =
-                    InstantRunWrapperTask.ConfigAction.getTmpBuildInfoFile(scope.getVariantScope());
         }
     }
 
@@ -499,17 +467,6 @@ public class ProcessAndroidResources extends IncrementalTask {
 
     public void setResDir(@NonNull File resDir) {
         this.resDir = resDir;
-    }
-
-    @InputDirectory
-    @Optional
-    @Nullable
-    public File getAssetsDir() {
-        return assetsDir;
-    }
-
-    public void setAssetsDir(File assetsDir) {
-        this.assetsDir = assetsDir;
     }
 
     @OutputDirectory

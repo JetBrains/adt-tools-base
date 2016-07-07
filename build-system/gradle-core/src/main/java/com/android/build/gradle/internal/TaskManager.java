@@ -196,6 +196,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -883,9 +884,9 @@ public abstract class TaskManager {
             }
             if (getIncrementalMode(scope.getVariantConfiguration())
                     != IncrementalMode.LOCAL_RES_ONLY) {
-                variantOutputScope.getProcessResourcesTask().dependsOn(tasks,
-                        variantOutputScope.getManifestProcessorTask(),
-                        scope.getMergeAssetsTask());
+                variantOutputScope.getProcessResourcesTask().dependsOn(
+                        tasks,
+                        variantOutputScope.getManifestProcessorTask());
             }
 
             if (vod.getMainOutputFile().getFilter(DENSITY) == null) {
@@ -1782,8 +1783,6 @@ public abstract class TaskManager {
         AndroidTask<PreColdSwapTask> preColdSwapTask = null;
         if (variantScope.getInstantRunBuildContext().isInInstantRunMode()) {
 
-            variantScope.getInstantRunBuildContext().setInstantRunMode(true);
-
             AndroidTask<DefaultTask> allActionsAnchorTask =
                     createInstantRunAllActionsTasks(tasks, variantScope);
             assert variantScope.getInstantRunTaskManager() != null;
@@ -2124,8 +2123,8 @@ public abstract class TaskManager {
             @NonNull VariantScope variantScope,
             boolean publishApk,
             @Nullable AndroidTask<InstantRunWrapperTask> fullBuildInfoGeneratorTask) {
-
-        final ApkVariantData variantData = (ApkVariantData) variantScope.getVariantData();
+        GlobalScope globalScope = variantScope.getGlobalScope();
+        ApkVariantData variantData = (ApkVariantData) variantScope.getVariantData();
 
         boolean signedApk = variantData.isSigned();
         boolean multiOutput = variantData.getOutputs().size() > 1;
@@ -2153,15 +2152,47 @@ public abstract class TaskManager {
 
             DefaultGradlePackagingScope packagingScope =
                     new DefaultGradlePackagingScope(variantOutputScope);
-            PackageApplication.ConfigAction packageConfigAction =
-                    new PackageApplication.ConfigAction(packagingScope, patchingPolicy);
 
             AndroidTask<PackageApplication> packageApp =
-                    androidTasks.create(tasks, packageConfigAction);
+                    androidTasks.create(
+                            tasks,
+                            new PackageApplication.StandardConfigAction(
+                                    packagingScope, patchingPolicy));
+
+            AndroidTask<PackageApplication> packageInstantRunResources = null;
+
+            if (variantScope.getInstantRunBuildContext().isInInstantRunMode()) {
+                packageInstantRunResources = androidTasks.create(
+                        tasks,
+                        new PackageApplication.InstantRunResourcesConfigAction(
+                                variantScope.getInstantRunResourcesFile(),
+                                packagingScope,
+                                patchingPolicy));
+
+                // Make sure the MAIN artifact is registered after the RESOURCES one.
+                packageApp.dependsOn(tasks, packageInstantRunResources);
+            }
 
             packageApp.configure(
                     tasks,
                     task -> variantOutputData.packageAndroidArtifactTask = task);
+
+            TransformManager transformManager = variantScope.getTransformManager();
+
+            // Common code for both packaging tasks.
+            Consumer<AndroidTask<PackageApplication>> configureResourcesAndAssetsDependencies =
+                    task -> {
+                        task.dependsOn(tasks, variantScope.getMergeAssetsTask());
+                        task.dependsOn(tasks, variantOutputScope.getProcessResourcesTask());
+                        transformManager
+                                .getStreams(StreamFilter.RESOURCES)
+                                .forEach(stream -> task.dependsOn(tasks, stream.getDependencies()));
+                    };
+
+            configureResourcesAndAssetsDependencies.accept(packageApp);
+            if (packageInstantRunResources != null) {
+                configureResourcesAndAssetsDependencies.accept(packageInstantRunResources);
+            }
 
             CoreSigningConfig signingConfig = packagingScope.getSigningConfig();
 
@@ -2178,7 +2209,6 @@ public abstract class TaskManager {
                 packageApp.dependsOn(tasks, validateSigningTask);
             }
 
-            packageApp.dependsOn(tasks, variantOutputScope.getProcessResourcesTask());
 
             packageApp.optionalDependsOn(
                     tasks,
@@ -2190,17 +2220,12 @@ public abstract class TaskManager {
                     variantOutputData.packageSplitResourcesTask,
                     variantOutputData.packageSplitAbiTask);
 
-            TransformManager transformManager = variantScope.getTransformManager();
 
             for (TransformStream stream : transformManager.getStreams(StreamFilter.DEX)) {
                 // TODO Optimize to avoid creating too many actions
                 packageApp.dependsOn(tasks, stream.getDependencies());
             }
 
-            for (TransformStream stream : transformManager.getStreams(StreamFilter.RESOURCES)) {
-                // TODO Optimize to avoid creating too many actions
-                packageApp.dependsOn(tasks, stream.getDependencies());
-            }
             for (TransformStream stream : transformManager.getStreams(StreamFilter.NATIVE_LIBS)) {
                 // TODO Optimize to avoid creating too many actions
                 packageApp.dependsOn(tasks, stream.getDependencies());
@@ -2210,10 +2235,9 @@ public abstract class TaskManager {
 
             AndroidTask<?> appTask = packageApp;
 
-            boolean useOldPackaging = AndroidGradleOptions.useOldPackaging(
-                    variantScope.getGlobalScope().getProject());
             if (signedApk) {
-                if (useOldPackaging && variantData.getZipAlignEnabled()) {
+                if (AndroidGradleOptions.useOldPackaging(globalScope.getProject())
+                        && variantData.getZipAlignEnabled()) {
                     AndroidTask<ZipAlign> zipAlignTask = androidTasks.create(
                             tasks, new ZipAlign.ConfigAction(variantOutputScope));
                     zipAlignTask.dependsOn(tasks, packageApp);
@@ -2233,8 +2257,10 @@ public abstract class TaskManager {
 
             checkState(variantScope.getAssembleTask() != null);
             if (fullBuildInfoGeneratorTask != null) {
-                fullBuildInfoGeneratorTask.dependsOn(tasks, appTask);
-                variantScope.getAssembleTask().dependsOn(tasks, fullBuildInfoGeneratorTask.getName());
+                fullBuildInfoGeneratorTask.optionalDependsOn(
+                        tasks, appTask, packageInstantRunResources);
+                variantScope.getAssembleTask().dependsOn(
+                        tasks, fullBuildInfoGeneratorTask.getName());
             }
 
             // Add an assemble task

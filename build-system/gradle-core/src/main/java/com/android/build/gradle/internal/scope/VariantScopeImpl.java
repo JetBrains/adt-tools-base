@@ -411,6 +411,15 @@ public class VariantScopeImpl extends GenericVariantScopeImpl implements Variant
                 variantData.getVariantConfiguration().getDirName());
     }
 
+    @NonNull
+    @Override
+    public File getInstantRunResourcesFile() {
+        return FileUtils.join(
+                globalScope.getIntermediatesDir(),
+                "instant-run-resources",
+                "resources-" + variantData.getVariantConfiguration().getDirName() + ".ir.ap_");
+    }
+
     @Override
     @NonNull
     public File getIncrementalVerifierDir() {

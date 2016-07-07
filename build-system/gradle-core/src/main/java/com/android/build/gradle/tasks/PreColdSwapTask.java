@@ -18,13 +18,13 @@ package com.android.build.gradle.tasks;
 
 import com.android.annotations.NonNull;
 import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
+import com.android.build.gradle.internal.incremental.InstantRunBuildMode;
 import com.android.build.gradle.internal.incremental.InstantRunPatchingPolicy;
 import com.android.build.gradle.internal.scope.AndroidTask;
 import com.android.build.gradle.internal.scope.InstantRunVariantScope;
 import com.android.build.gradle.internal.scope.TaskConfigAction;
 import com.android.build.gradle.internal.scope.TransformVariantScope;
 import com.android.build.gradle.internal.tasks.DefaultAndroidTask;
-import com.android.builder.model.OptionalCompilationStep;
 
 import org.gradle.api.Task;
 import org.gradle.api.tasks.TaskAction;
@@ -52,7 +52,7 @@ public class PreColdSwapTask extends DefaultAndroidTask {
     public void disableBuildTasksAsNeeded() throws IOException {
         switch (instantRunContext.getBuildMode()) {
             case HOT_WARM:
-                // We can hot swap, don't produce the apk
+                // We can hot swap, don't produce the full apk.
                 instantRunVariantScope.getColdSwapBuildTasks().forEach(this::disableTask);
                 disableTask(instantRunVariantScope.getPackageApplicationTask());
                 break;
@@ -64,6 +64,8 @@ public class PreColdSwapTask extends DefaultAndroidTask {
             case FULL:
                 // Leave everything enabled.
                 break;
+            default:
+                throw new AssertionError("Unknown " + InstantRunBuildMode.class.getName());
         }
     }
 

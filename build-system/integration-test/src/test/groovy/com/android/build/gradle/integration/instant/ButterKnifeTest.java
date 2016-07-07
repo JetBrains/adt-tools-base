@@ -120,7 +120,7 @@ public class ButterKnifeTest {
                 .run("assembleDebug");
 
         InstantRunArtifact artifact =
-                InstantRunTestUtils.getCompiledHotSwapCompatibleChange(instantRunModel);
+                InstantRunTestUtils.getReloadDexArtifact(instantRunModel);
 
         assertThatDex(artifact.file).hasClass("Lcom/example/bk/Activ$override;");
     }

@@ -28,9 +28,8 @@ import com.android.build.gradle.integration.common.fixture.Packaging;
 import com.android.build.gradle.internal.incremental.ColdswapMode;
 import com.android.builder.model.AndroidProject;
 import com.android.builder.model.InstantRun;
-import com.android.builder.model.OptionalCompilationStep;
-import com.android.ddmlib.IDevice;
 import com.android.builder.packaging.PackagingUtils;
+import com.android.ddmlib.IDevice;
 import com.android.tools.fd.client.InstantRunArtifact;
 import com.android.tools.fd.client.InstantRunBuildInfo;
 import com.android.tools.fd.client.InstantRunClient;
@@ -80,11 +79,8 @@ public class HotSwapTester {
             InstantRun instantRunModel = InstantRunTestUtils.getInstantRunModel(model);
 
             // Run first time on device
-            project.executor()
-                    .withPackaging(packaging)
-                    .withInstantRun(
-                            device, ColdswapMode.MULTIDEX, OptionalCompilationStep.RESTART_ONLY)
-                    .run("assembleDebug");
+            InstantRunTestUtils.doInitialBuild(
+                    project, packaging, device.getVersion().getApiLevel(), ColdswapMode.MULTIDEX);
 
             // Deploy to device
             InstantRunBuildInfo info = InstantRunTestUtils.loadContext(instantRunModel);
@@ -115,11 +111,11 @@ public class HotSwapTester {
             // Now build the hot swap patch.
             project.executor()
                     .withPackaging(packaging)
-                    .withInstantRun(device, ColdswapMode.MULTIDEX)
+                    .withInstantRun(device.getVersion().getApiLevel(), ColdswapMode.MULTIDEX)
                     .run("assembleDebug");
 
             InstantRunArtifact artifact =
-                    InstantRunTestUtils.getCompiledHotSwapCompatibleChange(instantRunModel);
+                    InstantRunTestUtils.getReloadDexArtifact(instantRunModel);
 
             FileTransfer fileTransfer = FileTransfer.createHotswapPatch(artifact.file);
 

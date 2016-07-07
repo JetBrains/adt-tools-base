@@ -138,7 +138,7 @@ public class AntennaPodInstantRunPerformanceTest {
                 .run("assembleDebug");
 
         InstantRunArtifact artifact =
-                InstantRunTestUtils.getCompiledHotSwapCompatibleChange(instantRunModel);
+                InstantRunTestUtils.getReloadDexArtifact(instantRunModel);
 
         expect.about(DexFileSubject.FACTORY)
                 .that(artifact.file)

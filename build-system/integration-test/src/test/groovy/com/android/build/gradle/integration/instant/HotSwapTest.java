@@ -17,6 +17,8 @@
 package com.android.build.gradle.integration.instant;
 
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat;
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk;
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatZip;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -35,7 +37,6 @@ import com.android.build.gradle.integration.common.utils.AndroidVersionMatcher;
 import com.android.build.gradle.integration.common.utils.TestFileUtils;
 import com.android.build.gradle.internal.incremental.ColdswapMode;
 import com.android.builder.model.InstantRun;
-import com.android.builder.model.OptionalCompilationStep;
 import com.android.ddmlib.IDevice;
 import com.android.tools.fd.client.InstantRunArtifact;
 import com.android.tools.fd.client.InstantRunClient;
@@ -51,7 +52,9 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
+import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 
 /**
@@ -59,6 +62,7 @@ import java.util.Collection;
  */
 @RunWith(FilterableParameterized.class)
 public class HotSwapTest {
+
     private static final int VERSION_CODE = 17;
     private static final String VERSION_NAME = "0.0.1";
     private static final ColdswapMode COLDSWAP_MODE = ColdswapMode.MULTIDEX;
@@ -104,14 +108,10 @@ public class HotSwapTest {
 
     @Test
     public void buildIncrementallyWithInstantRun() throws Exception {
-        project.execute("clean");
         InstantRun instantRunModel =
                 InstantRunTestUtils.getInstantRunModel(project.model().getSingle());
 
-        project.executor()
-                .withInstantRun(19, COLDSWAP_MODE, OptionalCompilationStep.RESTART_ONLY)
-                .withPackaging(packaging)
-                .run("assembleDebug");
+        InstantRunTestUtils.doInitialBuild(project, packaging, 19, COLDSWAP_MODE);
 
         // As no injected API level, will default to no splits.
         ApkSubject apkFile = expect.about(ApkSubject.FACTORY)
@@ -130,12 +130,43 @@ public class HotSwapTest {
                 .run("assembleDebug");
 
         InstantRunArtifact artifact =
-                InstantRunTestUtils.getCompiledHotSwapCompatibleChange(instantRunModel);
+                InstantRunTestUtils.getReloadDexArtifact(instantRunModel);
 
         expect.about(DexFileSubject.FACTORY)
                 .that(artifact.file)
                 .hasClass("Lcom/example/helloworld/HelloWorld$1$override;")
                 .that().hasMethod("call");
+    }
+
+    @Test
+    public void updateResources() throws Exception {
+        File asset = project.file("src/main/assets/movie.mp4");
+        Files.createParentDirs(asset);
+        Files.write("this is a movie", asset, StandardCharsets.UTF_8);
+
+        InstantRun instantRunModel =
+                InstantRunTestUtils.getInstantRunModel(project.model().getSingle());
+
+        InstantRunTestUtils.doInitialBuild(project, packaging, 21, COLDSWAP_MODE);
+        File apk = project.getApk("debug");
+        assertThatApk(apk).contains("assets/movie.mp4");
+        assertThatApk(apk).contains("classes.dex");
+        assertThatApk(apk).contains("instant-run.zip");
+
+        TestFileUtils.appendToFile(asset, " upgraded");
+
+        project.executor()
+                .withInstantRun(21, COLDSWAP_MODE)
+                .withPackaging(packaging)
+                .run("assembleDebug");
+
+        InstantRunArtifact artifact =
+                InstantRunTestUtils.getResourcesArtifact(instantRunModel);
+
+        assertThat(artifact.file.getName()).endsWith(".ir.ap_");
+        assertThatZip(artifact.file).contains("assets/movie.mp4");
+        assertThatZip(artifact.file).doesNotContain("classes.dex");
+        assertThatZip(artifact.file).doesNotContain("instant-run.zip");
     }
 
     @Test
@@ -213,9 +244,6 @@ public class HotSwapTest {
 
     private void makeHotSwapChange() throws IOException {
         createActivityClass("HOT SWAP!");
-
-        TestFileUtils.searchAndReplace(project.getBuildFile(), String.valueOf(VERSION_CODE), "42");
-        TestFileUtils.searchAndReplace(project.getBuildFile(), VERSION_NAME, "0.0.2");
     }
 
     private void createActivityClass(String message)

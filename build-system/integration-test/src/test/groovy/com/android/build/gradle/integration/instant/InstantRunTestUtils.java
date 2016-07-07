@@ -16,21 +16,20 @@
 
 package com.android.build.gradle.integration.instant;
 
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat;
 import static com.android.build.gradle.integration.common.utils.DeviceHelper.DEFAULT_ADB_TIMEOUT_MSEC;
-import static com.google.common.truth.Truth.assertThat;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.junit.Assert.assertNotNull;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.build.gradle.integration.common.fixture.Packaging;
-import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
-import com.android.builder.model.OptionalCompilationStep;
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
-import com.android.build.gradle.integration.common.truth.TruthHelper;
+import com.android.build.gradle.integration.common.fixture.Packaging;
 import com.android.build.gradle.internal.incremental.ColdswapMode;
+import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
 import com.android.builder.model.AndroidProject;
 import com.android.builder.model.InstantRun;
+import com.android.builder.model.OptionalCompilationStep;
 import com.android.builder.model.Variant;
 import com.android.builder.testing.api.DeviceException;
 import com.android.ddmlib.CollectingOutputReceiver;
@@ -156,25 +155,40 @@ public final class InstantRunTestUtils {
         InstantRun instantRunModel = getInstantRunModel(project.model().getSingle());
 
         project.executor()
-                .withInstantRun(apiLevel, coldswapMode, OptionalCompilationStep.RESTART_ONLY)
+                .withInstantRun(apiLevel, coldswapMode, OptionalCompilationStep.FULL_APK)
                 .withPackaging(packaging)
                 .run("assembleDebug");
 
         return instantRunModel;
     }
 
-    /**
-     * Gets the {@link InstantRunArtifact} produced by last build.
-     */
-    @NonNull
-    public static InstantRunArtifact getCompiledHotSwapCompatibleChange(
-            @NonNull InstantRun instantRunModel) throws Exception {
+    private static InstantRunArtifact getOnlyArtifact(@NonNull InstantRun instantRunModel)
+            throws Exception {
         InstantRunBuildInfo context = loadContext(instantRunModel);
 
-        TruthHelper.assertThat(context.getArtifacts()).hasSize(1);
-        InstantRunArtifact artifact = Iterables.getOnlyElement(context.getArtifacts());
+        assertThat(context.getArtifacts()).hasSize(1);
+        return Iterables.getOnlyElement(context.getArtifacts());
+    }
 
-        TruthHelper.assertThat(artifact.type).isEqualTo(InstantRunArtifactType.RELOAD_DEX);
+    /**
+     * Gets the RELOAD_DEX {@link InstantRunArtifact} produced by last build.
+     */
+    @NonNull
+    public static InstantRunArtifact getReloadDexArtifact(
+            @NonNull InstantRun instantRunModel) throws Exception {
+        InstantRunArtifact artifact = getOnlyArtifact(instantRunModel);
+        assertThat(artifact.type).isEqualTo(InstantRunArtifactType.RELOAD_DEX);
+        return artifact;
+    }
+
+    /**
+     * Gets the RESOURCES {@link InstantRunArtifact} produced by last build.
+     */
+    @NonNull
+    public static InstantRunArtifact getResourcesArtifact(
+            @NonNull InstantRun instantRunModel) throws Exception {
+        InstantRunArtifact artifact = getOnlyArtifact(instantRunModel);
+        assertThat(artifact.type).isEqualTo(InstantRunArtifactType.RESOURCES);
         return artifact;
     }
 
@@ -183,7 +197,7 @@ public final class InstantRunTestUtils {
             @NonNull InstantRun instantRunModel,
             @NonNull ColdswapMode coldswapMode) throws Exception {
         List<InstantRunArtifact> artifacts =  loadContext(instantRunModel).getArtifacts();
-        TruthHelper.assertThat(artifacts).isNotEmpty();
+        assertThat(artifacts).isNotEmpty();
 
         EnumSet<InstantRunArtifactType> allowedArtifactTypes;
         switch (coldswapMode) {

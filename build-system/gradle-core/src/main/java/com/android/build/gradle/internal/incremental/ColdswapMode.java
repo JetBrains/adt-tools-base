@@ -30,7 +30,7 @@ public enum ColdswapMode {
      */
     MULTIDEX,
     /**
-     * User native multi dex for Lollipop and multi apk for Marshmallow.
+     * Use native multi dex for Lollipop and multi apk for Marshmallow.
      */
     AUTO,
     /**

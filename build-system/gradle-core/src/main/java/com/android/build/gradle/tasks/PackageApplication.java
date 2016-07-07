@@ -20,6 +20,7 @@ import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.AndroidGradleOptions;
+import com.android.build.gradle.internal.incremental.DexPackagingPolicy;
 import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
 import com.android.build.gradle.internal.incremental.InstantRunPatchingPolicy;
 import com.android.build.gradle.internal.scope.ConventionMappingHelper;
@@ -44,6 +45,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -156,11 +158,11 @@ public class PackageApplication extends PackageAndroidArtifact {
             }
             throw new BuildException(e.getMessage(), e);
         }
+
         // mark this APK production, this will eventually be saved when instant-run is enabled.
         // this might get overridden if the package is signed/aligned.
         try {
-            instantRunContext.addChangedFile(InstantRunBuildContext.FileType.MAIN,
-                    getOutputFile());
+            instantRunContext.addChangedFile(instantRunFileType, getOutputFile());
         } catch (IOException e) {
             throw new BuildException(e.getMessage(), e);
         }
@@ -255,10 +257,14 @@ public class PackageApplication extends PackageAndroidArtifact {
 
     // ----- ConfigAction -----
 
-    public static class ConfigAction
+    /**
+     * Configures the task to perform the "standard" packaging, including all
+     * files that should end up in the APK.
+     */
+    public static class StandardConfigAction
             extends PackageAndroidArtifact.ConfigAction<PackageApplication> {
 
-        public ConfigAction(
+        public StandardConfigAction(
                 @NonNull PackagingScope scope,
                 @Nullable InstantRunPatchingPolicy patchingPolicy) {
             super(scope, patchingPolicy);
@@ -281,11 +287,64 @@ public class PackageApplication extends PackageAndroidArtifact {
             ConventionMappingHelper.map(
                     packageApplication, "outputFile", packagingScope::getPackageApk);
 
-            packageApplication.inOldMode = AndroidGradleOptions.useOldPackaging(
-                    packagingScope.getProject());
+            packageApplication.inOldMode =
+                    AndroidGradleOptions.useOldPackaging(packagingScope.getProject());
 
             super.execute(packageApplication);
         }
     }
 
+    /**
+     * Configures the task to only package resources and assets.
+     */
+    public static class InstantRunResourcesConfigAction
+            extends PackageAndroidArtifact.ConfigAction<PackageApplication> {
+
+        @NonNull
+        private final File mOutputFile;
+
+        public InstantRunResourcesConfigAction(
+                @NonNull File outputFile,
+                @NonNull PackagingScope scope,
+                @Nullable InstantRunPatchingPolicy patchingPolicy) {
+            super(scope, patchingPolicy);
+            mOutputFile = outputFile;
+        }
+
+        @NonNull
+        @Override
+        public String getName() {
+            return packagingScope.getTaskName("packageInstantRunResources");
+        }
+
+        @NonNull
+        @Override
+        public Class<PackageApplication> getType() {
+            return PackageApplication.class;
+        }
+
+        @Override
+        public void execute(@NonNull final PackageApplication packageApplication) {
+            packageApplication.setOutputFile(mOutputFile);
+
+            packageApplication.inOldMode =
+                    AndroidGradleOptions.useOldPackaging(packagingScope.getProject());
+
+            packageApplication.instantRunFileType = InstantRunBuildContext.FileType.RESOURCES;
+
+            super.execute(packageApplication);
+
+            // Don't try to add any special dex files to this zip.
+            packageApplication.dexPackagingPolicy = DexPackagingPolicy.STANDARD;
+
+            // Skip files which are not needed for hot/cold swap.
+            for (String prop : ImmutableList.of("dexFolders", "jniFolders", "javaResourceFiles")) {
+                ConventionMappingHelper.map(
+                        packageApplication, prop, Collections::<File>emptySet);
+            }
+
+            // Don't sign.
+            packageApplication.setSigningConfig(null);
+        }
+    }
 }

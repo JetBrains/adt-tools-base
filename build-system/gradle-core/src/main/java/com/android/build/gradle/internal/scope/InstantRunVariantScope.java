@@ -68,6 +68,10 @@ public interface InstantRunVariantScope {
     @NonNull
     File getIncrementalApplicationSupportDir();
 
+    /** The {@code *.ap_} with added assets, used for hot and cold swaps. */
+    @NonNull
+    File getInstantRunResourcesFile();
+
     /**
      * Returns the boot class path which matches the target device API level.
      */

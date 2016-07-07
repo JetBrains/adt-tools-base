@@ -159,7 +159,7 @@ public class DaggerTest {
                 .run("assembleDebug");
 
         InstantRunArtifact artifact =
-                InstantRunTestUtils.getCompiledHotSwapCompatibleChange(instantRunModel);
+                InstantRunTestUtils.getReloadDexArtifact(instantRunModel);
 
         assertThatDex(artifact.file).hasClass("Lcom/android/tests/AppModule$override;");
     }
