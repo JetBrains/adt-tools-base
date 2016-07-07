@@ -134,8 +134,8 @@ public class HotSwapTest {
 
         expect.about(DexFileSubject.FACTORY)
                 .that(artifact.file)
-                .hasClass("Lcom/example/helloworld/HelloWorld$override;")
-                .that().hasMethod("onCreate");
+                .hasClass("Lcom/example/helloworld/HelloWorld$1$override;")
+                .that().hasMethod("call");
     }
 
     @Test
