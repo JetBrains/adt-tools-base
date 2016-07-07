@@ -18,6 +18,7 @@ package com.android.tools.pixelprobe.tests;
 
 import com.android.tools.pixelprobe.Image;
 import com.android.tools.pixelprobe.PixelProbe;
+import com.android.tools.pixelprobe.decoder.Decoder;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -27,8 +28,12 @@ public final class ImageUtils {
     }
 
     public static Image loadImage(String imageName) throws IOException {
+        return loadImage(imageName, new Decoder.Options());
+    }
+
+    public static Image loadImage(String imageName, Decoder.Options options) throws IOException {
         try (InputStream in = ImageUtils.class.getResourceAsStream("/" + imageName)) {
-            return PixelProbe.probe(in);
+            return PixelProbe.probe(in, options);
         }
     }
 }

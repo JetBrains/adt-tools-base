@@ -18,6 +18,7 @@ package com.android.tools.pixelprobe.decoder.psd;
 
 import com.android.tools.pixelprobe.*;
 import com.android.tools.pixelprobe.Image;
+import com.android.tools.pixelprobe.decoder.Decoder.Options;
 import com.android.tools.pixelprobe.decoder.psd.PsdFile.*;
 import com.android.tools.pixelprobe.effect.Shadow;
 import com.android.tools.pixelprobe.util.Bytes;
@@ -72,17 +73,20 @@ final class PsdImage {
      *
      * @param psd The decoded PSD file to extract an image from, cannot be null
      *
+     * @param options
      * @return A non-null {@link Image instance}
      */
-    static Image from(PsdFile psd) {
+    static Image from(PsdFile psd, Options options) {
         Image.Builder image = new Image.Builder();
         image.format("PSD");
 
         // Extract and decode raw PSD data
         // The data is transformed into a generic Image API
         extractHeaderData(image, psd.header);
-        resolveBlocks(image, psd.resources);
-        extractLayers(image, psd);
+        resolveBlocks(image, psd.resources, options);
+        if (options.decodeLayers()) {
+            extractLayers(image, psd, options);
+        }
         decodeImageData(image, psd);
 
         return image.build();
@@ -109,11 +113,12 @@ final class PsdImage {
 
     /**
      * Extract layers information from the PSD raw data into the specified image.
-     * Not all layers will be extracted.
+     *
      * @param image The user image
      * @param psd The PSD file to extract layers from
+     * @param options The decoding options
      */
-    private static void extractLayers(Image.Builder image, PsdFile psd) {
+    private static void extractLayers(Image.Builder image, PsdFile psd, Options options) {
         LayersList layersList = getLayers(psd);
         if (layersList == null) return;
 
@@ -188,22 +193,33 @@ final class PsdImage {
             // Layer-specific decode steps
             switch (type) {
                 case ADJUSTMENT:
+                    // TODO: Read adjustment layers
+                    // if (options.decodeLayerAdjustmentData()) {
+                    // }
                     break;
                 case IMAGE:
-                    decodeLayerImageData(image, layer, rawLayer, layersList.channels.get(i));
+                    if (options.decodeLayerImageData()) {
+                        decodeLayerImageData(image, layer, rawLayer, layersList.channels.get(i));
+                    }
                     break;
                 case GROUP:
                     stack.offerFirst(layer);
                     break;
                 case SHAPE:
-                    decodeShapeData(image, layer, properties);
+                    if (options.decodeLayerShapeData()) {
+                        decodeShapeData(image, layer, properties);
+                    }
                     break;
                 case TEXT:
-                    decodeTextData(image, layer, properties.get(LayerProperty.KEY_TEXT));
+                    if (options.decodeLayerTextData()) {
+                        decodeTextData(image, layer, properties.get(LayerProperty.KEY_TEXT));
+                    }
                     break;
             }
 
-            extractLayerEffects(image, layer, rawLayer);
+            if (options.decodeLayerEffects()) {
+                extractLayerEffects(image, layer, rawLayer);
+            }
 
             // Groups are handled when they close
             if (type != Layer.Type.GROUP) {
@@ -681,9 +697,9 @@ final class PsdImage {
 
     private static void extractHeaderData(Image.Builder image, Header header) {
         image
-                .dimensions(header.width, header.height)
-                .colorMode(header.colorMode)
-                .depth(header.depth);
+            .dimensions(header.width, header.height)
+            .colorMode(header.colorMode)
+            .depth(header.depth);
     }
 
     /**
@@ -691,11 +707,15 @@ final class PsdImage {
      * all of it is interesting to us. Here we only look for the few blocks that
      * we actually care about.
      */
-    private static void resolveBlocks(Image.Builder image, ImageResources resources) {
-        extractGuides(image, PsdUtils.get(resources, GuidesResourceBlock.ID));
-        extractThumbnail(image, PsdUtils.get(resources, ThumbnailResourceBlock.ID));
+    private static void resolveBlocks(Image.Builder image, ImageResources resources, Options options) {
         extractResolution(image, PsdUtils.get(resources, ResolutionInfoBlock.ID));
         extractColorProfile(image, PsdUtils.get(resources, ColorProfileBlock.ID));
+        if (options.decodeGuides()) {
+            extractGuides(image, PsdUtils.get(resources, GuidesResourceBlock.ID));
+        }
+        if (options.decodeThumbnail()) {
+            extractThumbnail(image, PsdUtils.get(resources, ThumbnailResourceBlock.ID));
+        }
     }
 
     /**
