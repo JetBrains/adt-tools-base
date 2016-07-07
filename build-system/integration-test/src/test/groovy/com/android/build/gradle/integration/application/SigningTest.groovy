@@ -34,6 +34,7 @@ import com.android.builder.model.SigningConfig
 import com.android.builder.model.Variant
 import com.android.ddmlib.IDevice
 import com.android.sdklib.AndroidVersion
+import com.android.testutils.TestUtils
 import com.google.common.collect.ImmutableList
 import com.google.common.collect.Range
 import com.google.common.io.Resources
@@ -271,6 +272,7 @@ class SigningTest {
                     "minSdkVersion $DigestAlgorithm.API_SHA_256_RSA")
         }
 
+        TestUtils.waitFilesystemTime()
         execute("assembleDebug")
 
         if (certEntryName.endsWith(SignatureAlgorithm.RSA.name())) {
@@ -293,6 +295,7 @@ class SigningTest {
                 "minSdkVersion \\d+",
                 "minSdkVersion $DigestAlgorithm.API_SHA_256_ALL_ALGORITHMS")
 
+        TestUtils.waitFilesystemTime()
         execute("assembleDebug")
 
         assertThatApk(apk).containsFileWithMatch("META-INF/CERT.SF", "SHA-256-Digest");
@@ -375,6 +378,7 @@ class SigningTest {
                 project.buildFile,
                 "customDebug \\{",
                 "customDebug {\nv1SigningEnabled false\nv2SigningEnabled false")
+        TestUtils.waitFilesystemTime()
         execute("clean", "assembleDebug")
         assertThatApk(apk).doesNotContain("META-INF/CERT.SF")
         assertThatApk(apk).doesNotContainApkSigningBlock()
@@ -384,6 +388,7 @@ class SigningTest {
                 project.buildFile,
                 "v1SigningEnabled false",
                 "v1SigningEnabled true")
+        TestUtils.waitFilesystemTime()
         execute("clean", "assembleDebug")
         assertThatApk(apk).contains("META-INF/CERT.SF")
         assertThatApk(apk).doesNotContainApkSigningBlock()
@@ -397,6 +402,7 @@ class SigningTest {
                 project.buildFile,
                 "v2SigningEnabled false",
                 "v2SigningEnabled true")
+        TestUtils.waitFilesystemTime()
         execute("clean", "assembleDebug")
         assertThatApk(apk).doesNotContain("META-INF/CERT.SF")
         assertThatApk(apk).containsApkSigningBlock()
@@ -406,6 +412,7 @@ class SigningTest {
                 project.buildFile,
                 "v1SigningEnabled false",
                 "v1SigningEnabled true")
+        TestUtils.waitFilesystemTime()
         execute("clean", "assembleDebug")
         assertThatApk(apk).contains("META-INF/CERT.SF")
         assertThatApk(apk).containsApkSigningBlock()
