@@ -23,26 +23,31 @@ import com.google.common.truth.Truth;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.List;
 
 /**
  * Utilities common to all packaging tests.
  */
 public class PackagingTests {
 
-    public static void checkZipAlign(File apk) throws IOException, InterruptedException {
-        List<String> args =
-                ImmutableList.of(
-                        SdkHelper.getBuildTool(BuildToolInfo.PathId.ZIP_ALIGN).getAbsolutePath(),
-                        "-c", // check
-                        "-v", // verbose
-                        "-p", // page aligned so files
-                        "4", // 4 - you always have to use it with zipalign
-                        apk.getAbsolutePath());
+    public static void checkZipAlign(File apk, String... additionalFlags)
+            throws IOException, InterruptedException {
+        ImmutableList.Builder<String> args = ImmutableList.builder();
 
-        ProcessBuilder processBuilder = new ProcessBuilder(args);
+        args.add(SdkHelper.getBuildTool(BuildToolInfo.PathId.ZIP_ALIGN).getAbsolutePath());
+        args.add("-c"); // check
+        args.add("-v"); // verbose
+        args.add(additionalFlags);
+        args.add("4"); // default alignment - you always have to use it with zipalign
+        args.add(apk.getAbsolutePath());
+
+        ProcessBuilder processBuilder = new ProcessBuilder(args.build());
         Truth.assertThat(processBuilder.start().waitFor())
                 .named("zipalign return code")
                 .isEqualTo(0);
+    }
+
+    public static void checkZipAlignWithPageAlignedSoFiles(File apk)
+            throws IOException, InterruptedException {
+        checkZipAlign(apk, "-p");
     }
 }

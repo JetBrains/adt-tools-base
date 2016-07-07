@@ -137,4 +137,6 @@ public interface PackagingScope {
     @NonNull
     VariantType getVariantType();
 
+    @NonNull
+    File getManifestFile();
 }

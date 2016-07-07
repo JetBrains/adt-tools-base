@@ -26,10 +26,11 @@ import com.android.builder.packaging.ApkCreatorFactory;
 import com.android.builder.packaging.ManifestAttributes;
 import com.android.builder.packaging.ZipAbortException;
 import com.android.builder.packaging.ZipEntryFilter;
-import com.android.ide.common.packaging.PackagingUtils;
-import com.google.common.base.Function;
+import com.android.builder.packaging.PackagingUtils;
 import com.google.common.base.Preconditions;
-import com.google.common.base.Predicate;
+import com.google.common.hash.Hashing;
+import com.google.common.io.ByteSource;
+import com.google.common.io.Files;
 
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.DEROutputStream;
@@ -65,6 +66,8 @@ import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Map;
+import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.jar.Attributes;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
@@ -108,9 +111,10 @@ public class SignedJarApkCreator implements ApkCreator {
         }
     }
 
+    private final Predicate<String> mNoCompressPredicate;
+    private final PrivateKey mKey;
+    private final X509Certificate mCertificate;
     private JarOutputStream mOutputJar;
-    private PrivateKey mKey;
-    private X509Certificate mCertificate;
     private Manifest mManifest;
     private DigestAlgorithm mDigestAlgorithm;
     private SignatureAlgorithm mSignatureAlgorithm;
@@ -132,6 +136,7 @@ public class SignedJarApkCreator implements ApkCreator {
         mOutputJar = new JarOutputStream(new BufferedOutputStream(new FileOutputStream(
                 creationData.getApkPath())));
         mOutputJar.setLevel(9);
+        mNoCompressPredicate = creationData.getNoCompressPredicate();
         mKey = creationData.getPrivateKey();
         mCertificate = creationData.getCertificate();
 
@@ -163,8 +168,22 @@ public class SignedJarApkCreator implements ApkCreator {
             JarEntry entry = new JarEntry(apkPath);
             entry.setTime(inputFile.lastModified());
 
+            if (mNoCompressPredicate.test(apkPath)) {
+                configureStoredEntry(entry, inputFile);
+            }
+
             writeEntry(fis, entry);
         }
+    }
+
+    private static void configureStoredEntry(JarEntry entry, File inputFile) throws IOException {
+        ByteSource byteSource = Files.asByteSource(inputFile);
+        long size = inputFile.length();
+
+        entry.setMethod(ZipEntry.STORED);
+        entry.setSize(size);
+        entry.setCompressedSize(size);
+        entry.setCrc(byteSource.hash(Hashing.crc32()).padToLong());
     }
 
     /**
@@ -222,7 +241,7 @@ public class SignedJarApkCreator implements ApkCreator {
                 }
 
                 // if we have a filter, we check the entry against it
-                if (isIgnored != null && isIgnored.apply(name)) {
+                if (isIgnored != null && isIgnored.test(name)) {
                     continue;
                 }
 

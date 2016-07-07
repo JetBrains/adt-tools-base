@@ -24,7 +24,7 @@ public class ShaderOptionsTest {
 
     @Test
     public void testInitWith() throws Exception {
-        CopyOfTester.assertAllMethodsCalled(
+        CopyOfTester.assertAllGettersCalled(
                 CoreShaderOptions.class,
                 new ShaderOptions(),
                 original -> new ShaderOptions()._initWith(original));

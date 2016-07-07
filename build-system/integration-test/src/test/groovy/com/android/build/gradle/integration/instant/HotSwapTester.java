@@ -30,7 +30,7 @@ import com.android.builder.model.AndroidProject;
 import com.android.builder.model.InstantRun;
 import com.android.builder.model.OptionalCompilationStep;
 import com.android.ddmlib.IDevice;
-import com.android.ide.common.packaging.PackagingUtils;
+import com.android.builder.packaging.PackagingUtils;
 import com.android.tools.fd.client.InstantRunArtifact;
 import com.android.tools.fd.client.InstantRunBuildInfo;
 import com.android.tools.fd.client.InstantRunClient;

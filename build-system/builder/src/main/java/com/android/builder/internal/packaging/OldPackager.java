@@ -272,14 +272,11 @@ public final class OldPackager implements Closeable {
          */
         try {
             // ask the builder to add the content of the file.
-            mApkCreator.writeZip(zipFile, null, new Predicate<String>() {
-                @Override
-                public boolean apply(String input) {
-                    try {
-                        return !mNoDuplicateFilter.checkEntry(input);
-                    } catch (ZipAbortException e) {
-                        throw new RuntimeException(e);
-                    }
+            mApkCreator.writeZip(zipFile, null, input -> {
+                try {
+                    return !mNoDuplicateFilter.checkEntry(input);
+                } catch (ZipAbortException e) {
+                    throw new RuntimeException(e);
                 }
             });
         } catch (RuntimeException e) {
@@ -335,22 +332,19 @@ public final class OldPackager implements Closeable {
                      * Note that ZipAbortException has to be masked because it is not allowed in
                      * the Predicate interface.
                      */
-                    Predicate<String> newIsIgnored = new Predicate<String>() {
-                        @Override
-                        public boolean apply(String input) {
-                            try {
-                                if (!mNoJavaClassZipFilter.checkEntry(input)) {
-                                    return true;
-                                }
-                            } catch (ZipAbortException e) {
-                                throw new RuntimeException(e);
+                    Predicate<String> newIsIgnored = input -> {
+                        try {
+                            if (!mNoJavaClassZipFilter.checkEntry(input)) {
+                                return true;
                             }
-
-                            return isIgnored.apply(input);
+                        } catch (ZipAbortException e) {
+                            throw new RuntimeException(e);
                         }
+
+                        return isIgnored.apply(input);
                     };
 
-                    mApkCreator.writeZip(file, null, newIsIgnored);
+                    mApkCreator.writeZip(file, null, newIsIgnored::apply);
                 } catch (Throwable t) {
                     throw closer.rethrow(t, ZipAbortException.class);
                 } finally {

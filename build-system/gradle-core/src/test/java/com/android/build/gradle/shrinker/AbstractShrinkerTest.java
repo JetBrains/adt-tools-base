@@ -203,7 +203,10 @@ public abstract class AbstractShrinkerTest {
                 SdkConstants.FD_PLATFORMS,
                 "android-" + SdkVersionInfo.HIGHEST_KNOWN_STABLE_API,
                 "android.jar");
-        assertTrue(androidJar.getAbsolutePath(), androidJar.exists());
+
+        assertTrue(
+                androidJar.getAbsolutePath() + " does not exist.",
+                androidJar.exists());
 
         return ImmutableSet.of(androidJar);
     }

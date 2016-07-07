@@ -81,7 +81,8 @@ public class ExternalBuildPackagingScope implements PackagingScope {
     @NonNull
     @Override
     public File getFinalResourcesFile() {
-        return new File(mExternalBuildContext.getExecutionRoot(),
+        return new File(
+                mExternalBuildContext.getExecutionRoot(),
                 mBuildManifest.getResourceApk().getExecRootPath());
     }
 
@@ -237,5 +238,13 @@ public class ExternalBuildPackagingScope implements PackagingScope {
     @Override
     public VariantType getVariantType() {
         return VariantType.DEFAULT;
+    }
+
+    @NonNull
+    @Override
+    public File getManifestFile() {
+        return new File(
+                mExternalBuildContext.getExecutionRoot(),
+                mBuildManifest.getAndroidManifest().getExecRootPath());
     }
 }

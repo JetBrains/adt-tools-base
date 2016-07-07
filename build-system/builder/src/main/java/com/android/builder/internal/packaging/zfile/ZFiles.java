@@ -40,10 +40,9 @@ import java.security.cert.X509Certificate;
 public class ZFiles {
 
     /**
-     * Resource table files are aligned on a 4 byte boundary.
+     * By default all non-compressed files are alignment at 4 byte boundaries..
      */
-    private static final AlignmentRule ARSC_RULE =
-            AlignmentRules.constantForSuffix(".arsc", AlignmentRule.DEFAULT_ALIGNMENT);
+    private static final AlignmentRule APK_DEFAULT_RULE = AlignmentRules.constant(4);
 
     /**
      * Default build by string.
@@ -67,7 +66,8 @@ public class ZFiles {
      */
     @NonNull
     public static ZFile apk(@NonNull File f, @NonNull ZFileOptions options) throws IOException {
-        setAlignmentRules(options);
+        options.setAlignmentRule(
+                AlignmentRules.compose(options.getAlignmentRule(), APK_DEFAULT_RULE));
         return new ZFile(f, options);
     }
 
@@ -92,10 +92,16 @@ public class ZFiles {
      * @throws IOException failed to create the zip file
      */
     @NonNull
-    public static ZFile apk(@NonNull File f, @NonNull ZFileOptions options,
-            @Nullable PrivateKey key, @Nullable X509Certificate certificate,
-            boolean v1SigningEnabled, boolean v2SigningEnabled,
-            @Nullable String builtBy, @Nullable String createdBy, int minSdkVersion)
+    public static ZFile apk(
+            @NonNull File f,
+            @NonNull ZFileOptions options,
+            @Nullable PrivateKey key,
+            @Nullable X509Certificate certificate,
+            boolean v1SigningEnabled,
+            boolean v2SigningEnabled,
+            @Nullable String builtBy,
+            @Nullable String createdBy,
+            int minSdkVersion)
             throws IOException {
         ZFile zfile = apk(f, options);
 
@@ -148,9 +154,5 @@ public class ZFiles {
         }
 
         return zfile;
-    }
-
-    private static void setAlignmentRules(@NonNull ZFileOptions options) {
-        options.setAlignmentRule(AlignmentRules.compose(options.getAlignmentRule(), ARSC_RULE));
     }
 }

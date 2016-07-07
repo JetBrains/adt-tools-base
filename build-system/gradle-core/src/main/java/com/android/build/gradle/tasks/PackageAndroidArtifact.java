@@ -42,16 +42,19 @@ import com.android.builder.files.RelativeFile;
 import com.android.builder.internal.packaging.IncrementalPackager;
 import com.android.builder.internal.utils.CachedFileContents;
 import com.android.builder.internal.utils.IOExceptionWrapper;
+import com.android.builder.model.AaptOptions;
 import com.android.builder.model.ApiVersion;
 import com.android.builder.packaging.ApkCreatorFactory;
-import com.android.builder.packaging.NativeLibrariesPackagingMode;
 import com.android.builder.packaging.PackagerException;
+import com.android.builder.packaging.PackagingUtils;
 import com.android.ide.common.res2.FileStatus;
 import com.android.ide.common.signing.CertificateInfo;
 import com.android.ide.common.signing.KeystoreHelper;
 import com.android.ide.common.signing.KeytoolException;
 import com.android.utils.FileUtils;
 import com.google.common.base.Functions;
+import com.google.common.base.MoreObjects;
+import com.google.common.base.Predicate;
 import com.google.common.base.Predicates;
 import com.google.common.base.Verify;
 import com.google.common.collect.ImmutableMap;
@@ -192,8 +195,8 @@ public abstract class PackageAndroidArtifact extends IncrementalTask implements 
 
     protected DexPackagingPolicy dexPackagingPolicy;
 
-    protected NativeLibrariesPackagingMode nativeLibrariesPackagingMode;
-
+    protected File manifest;
+    protected AaptOptions aaptOptions;
 
     /**
      * Name of directory, inside the intermediate directory, where zip caches are kept.
@@ -256,9 +259,21 @@ public abstract class PackageAndroidArtifact extends IncrementalTask implements 
         return dexPackagingPolicy.toString();
     }
 
+    /*
+     * We don't really use this. But this forces a full build if the native packaging mode changes.
+     */
     @Input
     public String getNativeLibrariesPackagingModeName() {
-        return nativeLibrariesPackagingMode.name();
+        return PackagingUtils.getNativeLibrariesLibrariesPackagingMode(manifest).toString();
+    }
+
+    @Input
+    public Collection<String> getNoCompressExtensions() {
+        return MoreObjects.firstNonNull(aaptOptions.getNoCompress(), Collections.emptyList());
+    }
+
+    protected Predicate<String> getNoCompressPredicate() {
+        return PackagingUtils.getNoCompressPredicate(aaptOptions, manifest);
     }
 
     @Override
@@ -434,7 +449,8 @@ public abstract class PackageAndroidArtifact extends IncrementalTask implements 
                             null, // BuiltBy
                             getBuilder().getCreatedBy(),
                             getMinSdkVersion(),
-                            nativeLibrariesPackagingMode);
+                            PackagingUtils.getNativeLibrariesLibrariesPackagingMode(manifest),
+                            getNoCompressPredicate()::apply);
 
             try (IncrementalPackager packager = createPackager(creationData)) {
                 packager.updateDex(changedDex);
@@ -1049,14 +1065,11 @@ public abstract class PackageAndroidArtifact extends IncrementalTask implements 
 
         protected final PackagingScope packagingScope;
         protected final DexPackagingPolicy dexPackagingPolicy;
-        protected final NativeLibrariesPackagingMode nativeLibrariesPackagingMode;
 
         public ConfigAction(
                 @NonNull PackagingScope packagingScope,
-                @Nullable InstantRunPatchingPolicy patchingPolicy,
-                @NonNull NativeLibrariesPackagingMode nativeLibrariesPackagingMode) {
+                @Nullable InstantRunPatchingPolicy patchingPolicy) {
             this.packagingScope = checkNotNull(packagingScope);
-            this.nativeLibrariesPackagingMode = checkNotNull(nativeLibrariesPackagingMode);
             dexPackagingPolicy = patchingPolicy == null
                     ? DexPackagingPolicy.STANDARD
                     : patchingPolicy.getDexPatchingPolicy();
@@ -1074,7 +1087,9 @@ public abstract class PackageAndroidArtifact extends IncrementalTask implements 
                     packagingScope.getInstantRunSupportDir();
             packageAndroidArtifact.setIncrementalFolder(
                     packagingScope.getIncrementalDir(packageAndroidArtifact.getName()));
-            packageAndroidArtifact.nativeLibrariesPackagingMode = nativeLibrariesPackagingMode;
+
+            packageAndroidArtifact.aaptOptions = packagingScope.getAaptOptions();
+            packageAndroidArtifact.manifest = packagingScope.getManifestFile();
 
             File cacheByPathDir = new File(packageAndroidArtifact.getIncrementalFolder(),
                     ZIP_DIFF_CACHE_DIR);

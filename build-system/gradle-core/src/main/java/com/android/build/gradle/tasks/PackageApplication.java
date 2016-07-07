@@ -26,7 +26,6 @@ import com.android.build.gradle.internal.scope.ConventionMappingHelper;
 import com.android.build.gradle.internal.scope.PackagingScope;
 import com.android.build.gradle.internal.transforms.InstantRunSlicer;
 import com.android.builder.packaging.DuplicateFileException;
-import com.android.builder.packaging.NativeLibrariesPackagingMode;
 import com.android.builder.profile.ProcessRecorder;
 import com.android.ide.common.res2.FileStatus;
 import com.google.common.base.Throwables;
@@ -129,7 +128,8 @@ public class PackageApplication extends PackageAndroidArtifact {
                     getJniDebugBuild(),
                     getSigningConfig(),
                     getOutputFile(),
-                    getMinSdkVersion());
+                    getMinSdkVersion(),
+                    getNoCompressPredicate());
         } catch (DuplicateFileException e) {
             Logger logger = getLogger();
             logger.error("Error: duplicate files during packaging of APK " + getOutputFile()
@@ -260,9 +260,8 @@ public class PackageApplication extends PackageAndroidArtifact {
 
         public ConfigAction(
                 @NonNull PackagingScope scope,
-                @Nullable InstantRunPatchingPolicy patchingPolicy,
-                @NonNull NativeLibrariesPackagingMode nativeLibrariesPackagingMode) {
-            super(scope, patchingPolicy, nativeLibrariesPackagingMode);
+                @Nullable InstantRunPatchingPolicy patchingPolicy) {
+            super(scope, patchingPolicy);
         }
 
         @NonNull

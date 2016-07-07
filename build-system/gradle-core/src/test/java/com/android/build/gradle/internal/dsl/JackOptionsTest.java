@@ -24,7 +24,7 @@ public class JackOptionsTest {
 
     @Test
     public void testInitWith() throws Exception {
-        CopyOfTester.assertAllMethodsCalled(
+        CopyOfTester.assertAllGettersCalled(
                 CoreJackOptions.class,
                 new JackOptions(),
                 original -> new JackOptions()._initWith(original));
