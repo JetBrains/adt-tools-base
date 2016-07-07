@@ -28,8 +28,9 @@
         <title>Methods</title>
         <table>
             <thead>
-                <tr><td>annotationProcessorOptions</td></tr>
+                <tr><td>Name</td></tr>
             </thead>
+            <tr><td>annotationProcessorOptions</td></tr>
         </table>
     </section>
 </section>

@@ -23,6 +23,7 @@
             </thead>
             <tr><td>classNames</td></tr>
             <tr><td>arguments</td></tr>
+            <tr><td>includeCompileClasspath</td></tr>
         </table>
     </section>
     <section>
@@ -31,8 +32,6 @@
             <thead>
                 <tr><td>Name</td></tr>
             </thead>
-            <tr><td>classNames</td></tr>
-            <tr><td>arguments</td></tr>
         </table>
     </section>
 </section>
