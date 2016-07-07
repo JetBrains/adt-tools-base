@@ -24,15 +24,7 @@ import org.gradle.model.Managed;
 import java.io.File;
 
 /**
- * DSL for externalNativeBuild settings. Example,
- *
- * android {
- *     externalNativeBuild {
- *         cmake {
- *             ...
- *         }
- *     }
- * }
+ * Options for managing CMake external native builds.
  */
 @Managed
 public interface CoreCmakeOptions {

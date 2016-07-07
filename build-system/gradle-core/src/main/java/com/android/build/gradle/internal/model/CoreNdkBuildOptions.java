@@ -24,16 +24,7 @@ import org.gradle.model.Managed;
 import java.io.File;
 
 /**
- * DSL for externalNativeBuild settings. Example,
- *
- * android {
- *     externalNativeBuild {
- *         ndkBuild {
- *             path '...'
- *         }
- *     }
- * }
- *
+ * Options for managing ndk-build external native builds.
  */
 @Managed
 public interface CoreNdkBuildOptions {

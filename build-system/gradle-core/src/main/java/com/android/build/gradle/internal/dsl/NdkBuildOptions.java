@@ -25,15 +25,7 @@ import org.gradle.api.Project;
 import java.io.File;
 
 /**
- * Implementation for ndkBuild subsection of externalNativeBuild.
- *
- * android {
- *     externalNativeBuild {
- *         ndkBuild {
- *             path '...'
- *         }
- *     }
- * }
+ * DSL object for configuring NDK builds.
  */
 public class NdkBuildOptions implements CoreNdkBuildOptions {
     @NonNull
@@ -46,6 +38,9 @@ public class NdkBuildOptions implements CoreNdkBuildOptions {
         this.project = project;
     }
 
+    /**
+     * Path to ndk-build Android.mk file.
+     */
     @Nullable
     @Override
     public File getPath() {

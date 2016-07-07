@@ -20,17 +20,6 @@ import com.android.annotations.NonNull;
 
 import org.gradle.model.Managed;
 
-/**
- * DSL for externalNativeBuild settings. Example,
- *
- * android {
- *     externalNativeBuild {
- *         ndkBuild {
- *             ...
- *         }
- *     }
- * }
- */
 @Managed
 public interface CoreExternalNativeBuild {
     @NonNull

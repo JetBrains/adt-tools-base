@@ -17,7 +17,6 @@
 package com.android.build.gradle.internal.dsl;
 
 import com.android.annotations.NonNull;
-import com.android.build.gradle.internal.model.CoreCmakeOptions;
 import com.android.build.gradle.internal.model.CoreExternalNativeBuild;
 
 import org.gradle.api.Action;
@@ -25,16 +24,7 @@ import org.gradle.api.Project;
 import org.gradle.internal.reflect.Instantiator;
 
 /**
- * DSL for externalNativeBuild settings. Example,
- *
- * android {
- *     externalNativeBuild {
- *         ndkBuild {
- *             ...
- *         }
- *     }
- * }
- *
+ * DSL object to configure external native builds.
  */
 public class ExternalNativeBuild implements CoreExternalNativeBuild {
     private NdkBuildOptions ndkBuild;
@@ -45,23 +35,35 @@ public class ExternalNativeBuild implements CoreExternalNativeBuild {
         cmake = instantiator.newInstance(CmakeOptions.class, project);
     }
 
+    /**
+     * ndk-build options.
+     */
     @NonNull
     @Override
     public NdkBuildOptions getNdkBuild() {
         return this.ndkBuild;
     }
 
+    /**
+     * Configures the {@link NdkBuildOptions}.
+     */
     public NdkBuildOptions ndkBuild(Action<NdkBuildOptions> action) {
         action.execute(ndkBuild);
         return this.ndkBuild;
     }
 
+    /**
+     * CMake build options.
+     */
     @NonNull
     @Override
-    public CoreCmakeOptions getCmake() {
+    public CmakeOptions getCmake() {
         return cmake;
     }
 
+    /**
+     * Configures the {@link CmakeOptions}.
+     */
     public CmakeOptions cmake(Action<CmakeOptions> action) {
         action.execute(cmake);
         return this.cmake;
