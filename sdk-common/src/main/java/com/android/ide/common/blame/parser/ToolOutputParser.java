@@ -64,6 +64,10 @@ public class ToolOutputParser {
     }
 
     public List<Message> parseToolOutput(@NonNull String output) {
+        return parseToolOutput(output, false);
+    }
+
+    public List<Message> parseToolOutput(@NonNull String output, boolean ignoreUnrecognizedText) {
         OutputLineReader outputReader = new OutputLineReader(output);
 
         if (outputReader.getLineCount() == 0) {
@@ -98,7 +102,7 @@ public class ToolOutputParser {
                     }
                 }
             }
-            else {
+            else if (!ignoreUnrecognizedText) {
                 // If none of the standard parsers recognize the input, include it as info such
                 // that users don't miss potentially vital output such as gradle plugin exceptions.
                 // If there is predictable useless input we don't want to appear here, add a custom
