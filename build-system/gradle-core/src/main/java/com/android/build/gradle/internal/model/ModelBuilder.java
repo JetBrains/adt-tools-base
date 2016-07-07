@@ -457,7 +457,7 @@ public class ModelBuilder implements ToolingModelBuilder {
         InstantRunImpl instantRun = new InstantRunImpl(
                 // todo : move this to a shared location.
                 InstantRunWrapperTask.ConfigAction.getBuildInfoFile(scope),
-                variantConfiguration.isInstantRunSupported());
+                variantConfiguration.getInstantRunSupportStatus());
 
         VariantDependencies variantDependency = variantData.getVariantDependency();
         return new AndroidArtifactImpl(

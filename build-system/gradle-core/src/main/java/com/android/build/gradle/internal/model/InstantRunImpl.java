@@ -28,12 +28,11 @@ import java.io.Serializable;
 public class InstantRunImpl implements InstantRun, Serializable {
 
     @NonNull private final File infoFile;
-    private final boolean isSupported;
+    private final int supportStatus;
 
-    public InstantRunImpl(
-            @NonNull File infoFile, boolean isSupported) {
+    public InstantRunImpl(@NonNull File infoFile, int supportStatus) {
         this.infoFile = infoFile;
-        this.isSupported = isSupported;
+        this.supportStatus = supportStatus;
     }
 
     @NonNull
@@ -44,6 +43,11 @@ public class InstantRunImpl implements InstantRun, Serializable {
 
     @Override
     public boolean isSupportedByArtifact() {
-        return isSupported;
+        return supportStatus == InstantRun.STATUS_SUPPORTED;
+    }
+
+    @Override
+    public int getSupportStatus() {
+        return supportStatus;
     }
 }
