@@ -19,6 +19,7 @@ package com.android.tools.pixelprobe.tests.psd;
 import com.android.tools.pixelprobe.Guide;
 import com.android.tools.pixelprobe.Image;
 import com.android.tools.pixelprobe.Layer;
+import com.android.tools.pixelprobe.decoder.Decoder;
 import com.android.tools.pixelprobe.tests.ImageUtils;
 import org.junit.Assert;
 import org.junit.Test;
@@ -43,7 +44,7 @@ public class ImageTest {
 
     @Test
     public void thumbnail() throws IOException {
-        Image image = ImageUtils.loadImage("psd/rgb.psd");
+        Image image = ImageUtils.loadImage("psd/rgb.psd", new Decoder.Options().decodeThumbnail(true));
         BufferedImage thumbnail = image.getThumbnailImage();
 
         Assert.assertNotNull(thumbnail);

@@ -59,7 +59,7 @@ public abstract class Decoder {
         private boolean decodeLayerTextData = true;
         private boolean decodeLayerEffects = true;
         private boolean decodeThumbnail = false;
-        private boolean decodeGuides = false;
+        private boolean decodeGuides = true;
 
         /**
          * Only decodes the image. Layers and other complex data

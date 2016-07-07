@@ -84,7 +84,7 @@ public class OptionsTest {
 
     @Test
     public void decodeThumbnail() throws IOException {
-        Image image = ImageUtils.loadImage("psd/layer_types.psd", new Decoder.Options().decodeThumbnail(false));
+        Image image = ImageUtils.loadImage("psd/rgb.psd", new Decoder.Options().decodeThumbnail(false));
         Assert.assertNull(image.getThumbnailImage());
     }
 }
