@@ -57,14 +57,14 @@ class CmakeExternalNativeJsonGenerator extends ExternalNativeJsonGenerator {
             @NonNull File soFolder,
             @NonNull File objFolder,
             @NonNull File jsonFolder,
-            @NonNull File makeFileOrFolder,
+            @NonNull File makeFile,
             boolean debuggable,
             @Nullable List<String> buildArguments,
             @Nullable List<String> cFlags,
             @Nullable List<String> cppFlags,
             @NonNull List<File> nativeBuildConfigurationsJsons) {
         super(ndkHandler, minSdkVersion, variantName, abis, androidBuilder, sdkFolder, ndkFolder,
-                soFolder, objFolder, jsonFolder, makeFileOrFolder, debuggable,
+                soFolder, objFolder, jsonFolder, makeFile, debuggable,
                 buildArguments, cFlags, cppFlags, nativeBuildConfigurationsJsons);
         checkNotNull(sdkDirectory);
 

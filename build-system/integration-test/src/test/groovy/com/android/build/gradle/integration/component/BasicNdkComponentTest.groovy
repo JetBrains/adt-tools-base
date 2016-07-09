@@ -20,6 +20,7 @@ import com.android.build.gradle.integration.common.category.DeviceTests
 import com.android.build.gradle.integration.common.category.SmokeTests
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldJniApp
+import com.android.build.gradle.integration.common.utils.ZipHelper
 import groovy.transform.CompileStatic
 import org.junit.Before
 import org.junit.Rule
@@ -28,6 +29,7 @@ import org.junit.experimental.categories.Category
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatNativeLib
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatZip
 
 /**
@@ -91,6 +93,11 @@ model {
         assertThatZip(apk).contains("lib/mips/libhello-jni.so")
         assertThatZip(apk).contains("lib/armeabi/libhello-jni.so")
         assertThatZip(apk).contains("lib/armeabi-v7a/libhello-jni.so")
+
+        File lib = ZipHelper.extractFile(apk, "lib/armeabi-v7a/libhello-jni.so");
+        assertThatNativeLib(lib).isStripped();
+        lib = ZipHelper.extractFile(apk, "lib/x86/libhello-jni.so");
+        assertThatNativeLib(lib).isStripped();
     }
 
     @Test
@@ -108,6 +115,11 @@ model {
         assertThatZip(apk).doesNotContain("lib/x86_64/libhello-jni.so")
         assertThatZip(apk).doesNotContain("lib/arm64-v8a/libhello-jni.so")
         assertThatZip(apk).doesNotContain("lib/mips64/libhello-jni.so")
+
+        File lib = ZipHelper.extractFile(apk, "lib/armeabi-v7a/libhello-jni.so");
+        assertThatNativeLib(lib).isStripped();
+        lib = ZipHelper.extractFile(apk, "lib/x86/libhello-jni.so");
+        assertThatNativeLib(lib).isStripped();
     }
 
     @Test

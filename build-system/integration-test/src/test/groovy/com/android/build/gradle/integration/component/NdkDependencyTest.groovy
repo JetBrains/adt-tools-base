@@ -23,6 +23,7 @@ import com.android.build.gradle.integration.common.fixture.app.HelloWorldJniApp
 import com.android.build.gradle.integration.common.fixture.app.MultiModuleTestProject
 import com.android.build.gradle.integration.common.fixture.app.TestSourceFile
 import com.android.build.gradle.integration.common.utils.ModelHelper
+import com.android.build.gradle.integration.common.utils.ZipHelper
 import com.android.build.gradle.ndk.internal.NativeCompilerArgsUtil
 import com.android.builder.model.AndroidArtifact
 import com.android.builder.model.AndroidProject
@@ -37,6 +38,7 @@ import org.junit.Rule
 import org.junit.Test
 
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatNativeLib
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatZip
 
 /**
@@ -255,12 +257,6 @@ model {
 
         final File apk = project.getSubproject("app").getApk("debug")
         for (String abi : ABIS) {
-            assertThatZip(apk).contains("lib/$abi/libhello-jni.so")
-            assertThatZip(apk).contains("lib/$abi/libstlport_shared.so")
-            assertThatZip(apk).contains("lib/$abi/libgetstring1.so")
-            assertThatZip(apk).contains("lib/$abi/libgetstring2.so")
-            assertThatZip(apk).contains("lib/$abi/libprebuilt.so")
-
             NativeLibrary libModel = findNativeLibraryByAbi(model, "debug", abi)
             assertThat(libModel).isNotNull();
             assertThat(libModel.getDebuggableLibraryFolders()).containsAllOf(
@@ -268,6 +264,19 @@ model {
                     lib1.file("build/intermediates/binaries/debug/obj/$abi"),
                     lib2.file("build/intermediates/binaries/debug/obj/$abi"),
             )
+
+            List<String> expectedLibs = [
+                    "libhello-jni.so",
+                    "libstlport_shared.so",
+                    "libgetstring1.so",
+                    "libgetstring2.so",
+                    "libprebuilt.so"]
+            for (String expectedLib : expectedLibs) {
+                String path = "lib/$abi/$expectedLib";
+                assertThatZip(apk).contains(path);
+                File lib = ZipHelper.extractFile(apk, path)
+                assertThatNativeLib(lib).isStripped()
+            }
         }
     }
 

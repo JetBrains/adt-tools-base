@@ -55,15 +55,28 @@ class NdkBuildExternalNativeJsonGenerator extends ExternalNativeJsonGenerator {
             @NonNull File soFolder,
             @NonNull File objFolder,
             @NonNull File jsonFolder,
-            @NonNull File makeFileOrFolder,
+            @NonNull File makeFile,
             boolean debuggable,
             @Nullable List<String> buildArguments,
             @Nullable List<String> cFlags,
             @Nullable List<String> cppFlags,
             @NonNull List<File> nativeBuildConfigurationsJsons) {
-        super(ndkHandler, minSdkVersion, variantName, abis, androidBuilder, sdkFolder, ndkFolder,
-                soFolder, objFolder, jsonFolder, makeFileOrFolder, debuggable,
-                buildArguments, cFlags, cppFlags, nativeBuildConfigurationsJsons);
+        super(ndkHandler,
+                minSdkVersion,
+                variantName,
+                abis,
+                androidBuilder,
+                sdkFolder,
+                ndkFolder,
+                soFolder,
+                new File(objFolder, "local"),  // ndk-build create libraries in a "local" subfolder.
+                jsonFolder,
+                makeFile,
+                debuggable,
+                buildArguments,
+                cFlags,
+                cppFlags,
+                nativeBuildConfigurationsJsons);
     }
 
     @Override
@@ -187,7 +200,9 @@ class NdkBuildExternalNativeJsonGenerator extends ExternalNativeJsonGenerator {
         }
 
         result.add("APP_PLATFORM=android-" + abiPlatformVersion);
-        result.add("NDK_OUT=" + getObjFolder().getAbsolutePath());
+        // getObjFolder is set to the "local" subfolder in the user specified directory, therefore,
+        // NDK_OUT should be set to getObjFolder().getParent() instead of getObjFolder().
+        result.add("NDK_OUT=" + getObjFolder().getParent());
         result.add("NDK_LIBS_OUT=" + getSoFolder().getAbsolutePath());
 
         for (String flag : getcFlags()) {

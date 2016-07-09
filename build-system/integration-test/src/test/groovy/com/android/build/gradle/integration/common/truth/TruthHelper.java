@@ -81,6 +81,11 @@ public class TruthHelper {
     }
 
     @NonNull
+    public static NativeLibrarySubject assertThatNativeLib(@Nullable File file) {
+        return assert_().about(NativeLibrarySubject.FACTORY).that(file);
+    }
+
+    @NonNull
     public static ApkSubject assertThatApk(@Nullable File apk) {
         return assert_().about(ApkSubject.FACTORY).that(apk);
     }

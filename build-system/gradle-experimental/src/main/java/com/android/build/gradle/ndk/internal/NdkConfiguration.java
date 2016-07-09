@@ -30,7 +30,7 @@ import com.android.build.gradle.internal.ndk.Stl;
 import com.android.build.gradle.internal.ndk.StlNativeToolSpecification;
 import com.android.build.gradle.managed.NdkConfig;
 import com.android.build.gradle.model.NativeSourceSet;
-import com.android.build.gradle.tasks.StripDebugSymbolTask;
+import com.android.build.gradle.tasks.MergeNativeLibrariesConfigAction;
 import com.android.utils.StringHelper;
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableMap;
@@ -41,6 +41,7 @@ import com.google.common.collect.Multimap;
 import org.gradle.api.Action;
 import org.gradle.api.Task;
 import org.gradle.api.file.SourceDirectorySet;
+import org.gradle.api.tasks.Copy;
 import org.gradle.internal.service.ServiceRegistry;
 import org.gradle.language.base.FunctionalSourceSet;
 import org.gradle.language.c.CSourceSet;
@@ -373,7 +374,7 @@ public class NdkConfiguration {
                     ndkConfig.getStlVersion(),
                     compileNdkTaskName);
 
-            createStripDebugTask(
+            createCopyLibrariesTask(
                     tasks,
                     (SharedLibraryBinarySpec) binary,
                     dependencyMap,
@@ -383,7 +384,10 @@ public class NdkConfiguration {
         }
     }
 
-    private static void createStripDebugTask(
+    /**
+     * Create tasks for copying the libraries and their dependencies.
+     */
+    private static void createCopyLibrariesTask(
             ModelMap<Task> tasks,
             final SharedLibraryBinarySpec binary,
             @NonNull final Multimap<String, NativeDependencyResolveResult> dependencyMap,
@@ -417,15 +421,18 @@ public class NdkConfiguration {
                 }
             }
         }
+
+        // Create task to copy libraries into a single folder so that they can be added to the
+        // transform stream later.  This ensures the dependencies are placed in a folder for the
+        // appropriate ABI.
         tasks.create(
                 taskName,
-                StripDebugSymbolTask.class,
-                new StripDebugSymbolTask.ConfigAction(
+                Copy.class,
+                new MergeNativeLibrariesConfigAction(
                         binary,
                         new File(buildDir, NdkNamingScheme.getDebugLibraryDirectoryName(binary)),
                         libs,
-                        buildDir,
-                        handler));
+                        buildDir));
         tasks.named(buildTaskName, task -> {
             task.dependsOn(taskName);
         });

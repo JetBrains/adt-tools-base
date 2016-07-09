@@ -18,7 +18,9 @@ package com.android.build.gradle.integration.nativebuild
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldJniApp
+import com.android.build.gradle.integration.common.utils.ApkHelper
 import com.android.build.gradle.integration.common.utils.TestFileUtils
+import com.android.build.gradle.integration.common.utils.ZipHelper
 import com.android.build.gradle.tasks.NativeBuildSystem
 import com.android.builder.model.NativeAndroidProject
 import com.android.builder.model.NativeArtifact
@@ -33,6 +35,8 @@ import org.junit.runners.Parameterized
 
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatNativeLib
+
 /**
  * Assemble tests for Cmake.
  */
@@ -110,9 +114,16 @@ android {
 
     @Test
     void "check apk content"() {
-        assertThatApk(project.getApk("debug")).hasVersionCode(1)
-        assertThatApk(project.getApk("debug")).contains("lib/armeabi-v7a/libhello-jni.so");
-        assertThatApk(project.getApk("debug")).contains("lib/armeabi/libhello-jni.so");
+        File apk = project.getApk("debug");
+        assertThatApk(apk).hasVersionCode(1)
+        assertThatApk(apk).contains("lib/armeabi-v7a/libhello-jni.so");
+        assertThatApk(apk).contains("lib/armeabi/libhello-jni.so");
+
+        File lib = ZipHelper.extractFile(apk, "lib/armeabi-v7a/libhello-jni.so");
+        assertThatNativeLib(lib).isStripped();
+
+        lib = ZipHelper.extractFile(apk, "lib/armeabi/libhello-jni.so");
+        assertThatNativeLib(lib).isStripped();
     }
 
     @Test
