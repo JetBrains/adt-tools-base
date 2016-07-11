@@ -8,6 +8,7 @@
             <tr><td>encoding</td></tr>
             <tr><td>sourceCompatibility</td></tr>
             <tr><td>targetCompatibility</td></tr>
+            <tr><td>incremental</td></tr>
         </table>
     </section>
     <section>

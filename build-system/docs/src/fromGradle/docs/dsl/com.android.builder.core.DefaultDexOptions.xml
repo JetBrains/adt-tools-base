@@ -21,13 +21,6 @@
             <thead>
                 <tr><td>Name</td></tr>
             </thead>
-            <tr><td>additionalParameters</td></tr>
-            <tr><td>javaMaxHeapSize</td></tr>
-            <tr><td>jumboMode</td></tr>
-            <tr><td>maxProcessCount</td></tr>
-            <tr><td>optimize</td></tr>
-            <tr><td>preDexLibraries</td></tr>
-            <tr><td>threadCount</td></tr>
         </table>
     </section>
     <section>

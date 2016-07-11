@@ -23,7 +23,7 @@ import com.google.common.collect.Lists;
 import java.util.List;
 
 /**
- * Concrete implementation of {@link DexOptions}.
+ * Concrete implementation of DexOptions.
  */
 @SuppressWarnings("WeakerAccess") // Exposed in the DSL.
 public class DefaultDexOptions implements DexOptions {
