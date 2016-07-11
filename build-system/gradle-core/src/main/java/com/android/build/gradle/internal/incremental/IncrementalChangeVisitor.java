@@ -40,8 +40,8 @@ import java.util.Map;
 /**
  * Visitor for classes that have been changed since the initial push.
  *
- * This will generate a new class which name is the original class name + Support. This class will
- * have a static method for each method found in the updated class.
+ * This will generate a new class which name is the original class name + "$override". This class
+ * will have a static method for each method found in the updated class.
  *
  * The static method will be invoked from the generated access$dispatch method
  * following a delegation request issued by the original method implementation (through the bytecode

@@ -38,11 +38,10 @@ import com.android.build.gradle.internal.incremental.IncrementalChangeVisitor;
 import com.android.build.gradle.internal.incremental.IncrementalSupportVisitor;
 import com.android.build.gradle.internal.incremental.IncrementalVisitor;
 import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
-import com.android.build.gradle.internal.incremental.InstantRunVerifierStatus;
+import com.android.build.gradle.internal.incremental.InstantRunBuildMode;
 import com.android.build.gradle.internal.pipeline.ExtendedContentType;
 import com.android.build.gradle.internal.pipeline.TransformManager;
 import com.android.build.gradle.internal.scope.InstantRunVariantScope;
-import com.android.builder.model.OptionalCompilationStep;
 import com.android.utils.FileUtils;
 import com.android.utils.ILogger;
 import com.google.common.base.Throwables;
@@ -67,7 +66,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -147,14 +145,12 @@ public class InstantRunTransform extends Transform {
     @Override
     public void transform(@NonNull TransformInvocation invocation)
             throws IOException, TransformException, InterruptedException {
+        InstantRunBuildContext instantRunBuildContext = transformScope.getInstantRunBuildContext();
 
-        // if the restart/flag flag is turned on, there is no need to create the classes.3 format
-        Optional<InstantRunVerifierStatus> verifierResult = transformScope
-                .getInstantRunBuildContext().getVerifierResult();
-        @SuppressWarnings("OptionalGetWithoutIsPresent")
-        boolean restartArtifactRequested = verifierResult != null && verifierResult.isPresent()
-                && (verifierResult.get().equals(InstantRunVerifierStatus.COLD_SWAP_REQUESTED)
-                    || verifierResult.get().equals(InstantRunVerifierStatus.FULL_BUILD_REQUESTED));
+        // If this is not a HOT_WARM build, clean up the enhanced classes and don't generate new
+        // ones during this build.
+        boolean cleanUpClassesThree =
+                instantRunBuildContext.getBuildMode() != InstantRunBuildMode.HOT_WARM;
 
         TransformOutputProvider outputProvider = invocation.getOutputProvider();
         if (outputProvider == null) {
@@ -172,7 +168,7 @@ public class InstantRunTransform extends Transform {
         // class loader could also be store in the VariantScope for potential reuse if some
         // other transform need to load project's classes.
         try (URLClassLoader urlClassLoader = new NonDelegatingUrlClassloader(referencedInputUrls)) {
-            transformScope.getInstantRunBuildContext().startRecording(
+            instantRunBuildContext.startRecording(
                     InstantRunBuildContext.TaskType.INSTANT_RUN_TRANSFORM);
             Thread.currentThread().setContextClassLoader(urlClassLoader);
 
@@ -182,7 +178,8 @@ public class InstantRunTransform extends Transform {
             File classesThreeOutput = outputProvider.getContentLocation("enhanced",
                     ImmutableSet.<ContentType>of(ExtendedContentType.CLASSES_ENHANCED),
                     getScopes(), Format.DIRECTORY);
-            if (restartArtifactRequested) {
+
+            if (cleanUpClassesThree) {
                 FileUtils.cleanOutputDir(classesThreeOutput);
             }
 
@@ -213,17 +210,13 @@ public class InstantRunTransform extends Transform {
                                             inputDir, inputFile, classesThreeOutput);
                                     break;
                                 case CHANGED:
-                                    // an existing file was changed, we regenerate the classes.2
-                                    // and classes.3 files as they are both needed to support
-                                    // restart and reload.
                                     transformToClasses2Format(
                                             inputDir,
                                             inputFile,
                                             classesTwoOutput,
                                             Status.CHANGED);
-                                    // only generate the classes.3 is the restart/full artifacts
-                                    // are not requested.
-                                    if (!restartArtifactRequested) {
+
+                                    if (!cleanUpClassesThree) {
                                         transformToClasses3Format(
                                                 inputDir,
                                                 inputFile,
@@ -263,7 +256,7 @@ public class InstantRunTransform extends Transform {
             wrapUpOutputs(classesTwoOutput, classesThreeOutput);
         } finally {
             Thread.currentThread().setContextClassLoader(currentClassLoader);
-            transformScope.getInstantRunBuildContext().stopRecording(
+            instantRunBuildContext.stopRecording(
                     InstantRunBuildContext.TaskType.INSTANT_RUN_TRANSFORM);
         }
     }

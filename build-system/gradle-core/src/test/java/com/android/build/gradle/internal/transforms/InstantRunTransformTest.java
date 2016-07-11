@@ -35,6 +35,7 @@ import com.android.build.api.transform.TransformException;
 import com.android.build.api.transform.TransformInput;
 import com.android.build.api.transform.TransformOutputProvider;
 import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
+import com.android.build.gradle.internal.incremental.InstantRunBuildMode;
 import com.android.build.gradle.internal.pipeline.TransformInvocationBuilder;
 import com.android.build.gradle.internal.scope.GlobalScope;
 import com.android.build.gradle.internal.scope.VariantScope;
@@ -88,6 +89,7 @@ public class InstantRunTransformTest {
         when(variantScope.getGlobalScope()).thenReturn(globalScope);
         when(variantScope.getInstantRunBuildContext()).thenReturn(instantRunBuildContext);
         when(variantScope.getInstantRunBootClasspath()).thenReturn(ImmutableList.of());
+        when(instantRunBuildContext.getBuildMode()).thenReturn(InstantRunBuildMode.HOT_WARM);
     }
 
     @Test

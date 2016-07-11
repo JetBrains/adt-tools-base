@@ -58,7 +58,7 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
 
 /**
- * Non incremental transform that takes the hot (or warm) swap classes and dexes them.
+ * Transform that takes the hot (or warm) swap classes and dexes them.
  *
  * <p>The instant run transform outputs all of the hot swap files in the
  * {@link ExtendedContentType#CLASSES_ENHANCED} stream. This transform runs incrementally to re-dex

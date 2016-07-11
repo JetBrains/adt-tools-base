@@ -39,7 +39,10 @@ public enum ExtendedContentType implements ContentType {
     NATIVE_LIBS(0x2000),
 
     /**
-     * Classes that have been instrumented to be patch already loaded classes.
+     * Instant Run '$override' classes, which contain code of new method bodies.
+     *
+     * <p>This stream also contains the AbstractPatchesLoaderImpl class for applying HotSwap
+     * changes.
      */
     CLASSES_ENHANCED(0x4000),
 

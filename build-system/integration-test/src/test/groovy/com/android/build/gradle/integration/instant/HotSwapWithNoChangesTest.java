@@ -25,8 +25,10 @@ import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp;
 import com.android.build.gradle.integration.common.runner.FilterableParameterized;
 import com.android.build.gradle.integration.common.truth.AbstractAndroidSubject;
 import com.android.build.gradle.integration.common.truth.ApkSubject;
+import com.android.build.gradle.integration.common.utils.TestFileUtils;
 import com.android.build.gradle.internal.incremental.ColdswapMode;
 import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
+import com.android.builder.internal.utils.IOExceptionRunnable;
 import com.android.builder.model.InstantRun;
 import com.android.builder.model.OptionalCompilationStep;
 import com.android.tools.fd.client.InstantRunArtifact;
@@ -41,19 +43,23 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
 
 /**
- * Smoke test for hot swap builds.
+ * Tests how Instant Run cleans up state after a cold swap.
  */
 @RunWith(FilterableParameterized.class)
-public class NoCodeChangeAfterCompatibleChangeTest {
+public class HotSwapWithNoChangesTest {
 
     private static final ColdswapMode COLDSWAP_MODE = ColdswapMode.MULTIDEX;
 
     private static final String LOG_TAG = "NoCodeChangeAfterCompatibleChangeTest";
+
+    public static final String ACTIVITY_PATH =
+            "src/main/java/com/example/helloworld/HelloWorld.java";
 
     @Parameterized.Parameters(name = "{0}")
     public static Collection<Object[]> data() {
@@ -66,7 +72,8 @@ public class NoCodeChangeAfterCompatibleChangeTest {
     @Rule
     public GradleTestProject project =
             GradleTestProject.builder()
-                    .fromTestApp(HelloWorldApp.forPlugin("com.android.application")).create();
+                    .fromTestApp(HelloWorldApp.forPlugin("com.android.application"))
+                    .create();
 
     @Rule
     public Logcat logcat = Logcat.create();
@@ -81,8 +88,33 @@ public class NoCodeChangeAfterCompatibleChangeTest {
     }
 
     @Test
-    public void testMultidex() throws Exception {
-        project.execute("clean");
+    public void testRestartOnly() throws Exception {
+        doTestArtifacts(() -> {
+            // Force cold swap.
+            project.executor()
+                    .withInstantRun(23, COLDSWAP_MODE, OptionalCompilationStep.RESTART_ONLY)
+                    .withPackaging(packaging)
+                    .run("assembleDebug");
+        });
+    }
+
+    @Test
+    public void testIncompatibleChange() throws Exception {
+        doTestArtifacts(() -> {
+            String newPath = ACTIVITY_PATH.replace("HelloWorld", "HelloWorldCopy");
+            File newFile = project.file(newPath);
+            Files.copy(project.file(ACTIVITY_PATH), newFile);
+            TestFileUtils.searchAndReplace(newFile, "class HelloWorld", "class HelloWorldCopy");
+
+            // Adding a new class will force a cold swap.
+            project.executor()
+                    .withInstantRun(23, COLDSWAP_MODE)
+                    .withPackaging(packaging)
+                    .run("assembleDebug");
+        });
+    }
+
+    private void doTestArtifacts(IOExceptionRunnable runColdSwapBuild) throws Exception {
         InstantRun instantRunModel =
                 InstantRunTestUtils.getInstantRunModel(project.model().getSingle());
 
@@ -100,15 +132,10 @@ public class NoCodeChangeAfterCompatibleChangeTest {
                 AbstractAndroidSubject.ClassFileScope.ALL);
 
         makeHotSwapChange();
+        runColdSwapBuild.run();
 
-        // force the DEX creation.
-        project.executor()
-                .withInstantRun(23, COLDSWAP_MODE, OptionalCompilationStep.RESTART_ONLY)
-                .withPackaging(packaging)
-                .run("assembleDebug");
-
-        List<InstantRunArtifact> dexFiles = InstantRunTestUtils
-                .getCompiledColdSwapChange(instantRunModel, COLDSWAP_MODE);
+        List<InstantRunArtifact> dexFiles =
+                InstantRunTestUtils.getCompiledColdSwapChange(instantRunModel, COLDSWAP_MODE);
         assertThat(dexFiles).hasSize(1);
 
         // now run again the incremental build.
@@ -117,8 +144,8 @@ public class NoCodeChangeAfterCompatibleChangeTest {
                 .withInstantRun(23, COLDSWAP_MODE)
                 .run("assembleDebug");
 
-        InstantRunBuildContext instantRunBuildContext = InstantRunTestUtils
-                .loadBuildContext(23, instantRunModel);
+        InstantRunBuildContext instantRunBuildContext =
+                InstantRunTestUtils.loadBuildContext(23, instantRunModel);
 
         assertThat(instantRunBuildContext.getLastBuild().getArtifacts()).hasSize(0);
         assertThat(instantRunBuildContext.getLastBuild().getVerifierStatus()).isAbsent();
@@ -146,7 +173,7 @@ public class NoCodeChangeAfterCompatibleChangeTest {
                 + "    }\n"
                 + "}\n";
         Files.write(javaCompile,
-                project.file("src/main/java/com/example/helloworld/HelloWorld.java"),
+                project.file(ACTIVITY_PATH),
                 Charsets.UTF_8);
     }
 
