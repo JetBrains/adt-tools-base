@@ -29,6 +29,7 @@ import static com.android.SdkConstants.ATTR_TYPE;
 import static com.android.SdkConstants.ATTR_VALUE;
 import static com.android.SdkConstants.NEW_ID_PREFIX;
 import static com.android.SdkConstants.PREFIX_RESOURCE_REF;
+import static com.android.SdkConstants.PREFIX_THEME_REF;
 import static com.android.SdkConstants.TOOLS_URI;
 import static com.android.ide.common.resources.ResourceResolver.ATTR_EXAMPLE;
 import static com.android.ide.common.resources.ResourceResolver.XLIFF_G_TAG;
@@ -582,8 +583,14 @@ public class ResourceItem extends DataItem<ResourceFile>
 
     @NonNull
     private ResourceValue parseFileName(@NonNull ResourceValue value) {
-        value.setValue(Paths.get(getTextNode(mValue.getChildNodes())).toString());
+        String text = getTextNode(mValue.getChildNodes()).trim();
+        if (!text.isEmpty() &&
+                !text.startsWith(PREFIX_RESOURCE_REF) &&
+                !text.startsWith(PREFIX_THEME_REF)) {
+            text = Paths.get(text).toString();
+        }
 
+        value.setValue(text);
         return value;
     }
 
