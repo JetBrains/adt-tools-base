@@ -16,6 +16,9 @@
 
 package com.android.ide.common.repository;
 
+import static com.android.SdkConstants.CONSTRAINT_LAYOUT_LIB_ARTIFACT_ID;
+import static com.android.SdkConstants.CONSTRAINT_LAYOUT_LIB_GROUP_ID;
+import static com.android.SdkConstants.LATEST_CONSTRAINT_LAYOUT_VERSION;
 import static com.android.ide.common.repository.GradleCoordinate.COMPARE_PLUS_HIGHER;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static java.io.File.separator;
@@ -77,6 +80,18 @@ public class MavenRepositories {
                 versionCoordinates.add(gc);
             }
         }
+
+        // Temporary: We place the constraint layout in the Gradle
+        // offline repository, but not the SDK manager, so we end up
+        // returning the highest version available in the SDK manager,
+        // not including the ones from the offline repo. Ensure that
+        // we also know about the current version.
+        if (groupId.equals(CONSTRAINT_LAYOUT_LIB_GROUP_ID)
+                && artifactId.equals(CONSTRAINT_LAYOUT_LIB_ARTIFACT_ID)) {
+            versionCoordinates.add(GradleCoordinate.parseCoordinateString(
+                    groupId + ':' + artifactId + ':' + LATEST_CONSTRAINT_LAYOUT_VERSION));
+        }
+
         if (!versionCoordinates.isEmpty()) {
             return Collections.max(versionCoordinates, COMPARE_PLUS_HIGHER);
         }

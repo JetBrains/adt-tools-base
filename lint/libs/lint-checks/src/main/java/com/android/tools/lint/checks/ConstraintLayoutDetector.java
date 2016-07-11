@@ -24,6 +24,7 @@ import static com.android.SdkConstants.CONSTRAINT_LAYOUT_LIB_ARTIFACT_ID;
 import static com.android.SdkConstants.CONSTRAINT_LAYOUT_LIB_GROUP_ID;
 import static com.android.SdkConstants.TOOLS_URI;
 
+import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.builder.model.AndroidLibrary;
 import com.android.builder.model.Dependencies;
@@ -70,14 +71,11 @@ public class ConstraintLayoutDetector extends LayoutDetector {
 
     private static final String LAYOUT_CONSTRAINT_PREFIX = "layout_constraint";
 
-    /** Latest known version of the ConstraintLayout library (as a string) */
-    public static final String LATEST_KNOWN_VERSION_STRING = "1.0.0-alpha4";
-
     /** Latest known version of the ConstraintLayout library (as a {@link GradleVersion} */
     @SuppressWarnings("ConstantConditions")
     @NonNull
     public static final GradleVersion LATEST_KNOWN_VERSION =
-            GradleVersion.tryParse(LATEST_KNOWN_VERSION_STRING);
+            GradleVersion.tryParse(SdkConstants.LATEST_CONSTRAINT_LAYOUT_VERSION);
 
     /** Constructs a new {@link ConstraintLayoutDetector} check */
     public ConstraintLayoutDetector() {
@@ -100,7 +98,7 @@ public class ConstraintLayoutDetector extends LayoutDetector {
                 if (CONSTRAINT_LAYOUT_LIB_GROUP_ID.equals(rc.getGroupId())
                     && CONSTRAINT_LAYOUT_LIB_ARTIFACT_ID.equals(rc.getArtifactId())) {
                     String version = rc.getVersion();
-                    if (LATEST_KNOWN_VERSION_STRING.equals(version)) {
+                    if (SdkConstants.LATEST_CONSTRAINT_LAYOUT_VERSION.equals(version)) {
                         continue;
                     }
                     if ("1.0.0-alpha1".equals(version)
