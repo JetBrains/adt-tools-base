@@ -68,6 +68,7 @@ public class ExternalNativeBuildTask extends BaseTask {
                 .getNativeBuildConfigValues(
                         nativeBuildConfigurationsJsons, getVariantName());
         List<String> buildCommands = Lists.newArrayList();
+        List<String> libraryNames = Lists.newArrayList();
 
 
         // Check the resulting JSON targets against the targets specified in ndkBuild.targets or
@@ -121,10 +122,11 @@ public class ExternalNativeBuildTask extends BaseTask {
 
                 }
                 buildCommands.add(libraryValue.buildCommand);
+                libraryNames.add(libraryValue.output.getPath());
                 diagnostic("about to build %s", libraryValue.buildCommand);
             }
         }
-        executeProcessBatch(buildCommands);
+        executeProcessBatch(libraryNames, buildCommands);
 
         diagnostic("copying build outputs from JSON-defined locations to expected locations");
         for (NativeBuildConfigValue config : configValueList) {
@@ -175,8 +177,18 @@ public class ExternalNativeBuildTask extends BaseTask {
      * Given a list of build commands, execute each. If there is a failure, processing is stopped at
      * that point.
      */
-    private void executeProcessBatch(@NonNull List<String> commands) throws ProcessException {
-        for (String command : commands) {
+    private void executeProcessBatch(
+            @NonNull List<String> libraryNames,
+            @NonNull List<String> commands) throws ProcessException {
+        // Order of building doesn't matter to final result but building in reverse order causes
+        // the dependencies to be built first for CMake and ndk-build. This gives better progress
+        // visibility to the user because they will see "building XXXXX.a" before
+        // "building XXXXX.so". Nicer still would be to have the dependency information in the JSON
+        // so we can build in toposort order.
+        for (int library = libraryNames.size() - 1; library >= 0; --library) {
+            String libraryName = libraryNames.get(library);
+            getLogger().lifecycle(String.format("  building %s", libraryName));
+            String command = commands.get(library);
             List<String> tokens = StringHelper.tokenizeString(command);
             ProcessInfoBuilder processBuilder = new ProcessInfoBuilder();
             processBuilder.setExecutable(tokens.get(0));

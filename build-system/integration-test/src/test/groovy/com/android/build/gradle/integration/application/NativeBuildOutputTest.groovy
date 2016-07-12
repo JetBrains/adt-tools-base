@@ -81,7 +81,7 @@ class NativeBuildOutputTest {
         project.file("src/main/cpp/Android.mk") << androidMk;
         project.file("src/main/cpp/hello-jni.cpp").write("xx");
 
-        check(["'xx' does not name a type"], [], 0);
+        checkFailed(["'xx' does not name a type"], [], 0);
     }
 
     @Test
@@ -99,7 +99,7 @@ class NativeBuildOutputTest {
         project.file("CMakeLists.txt") << cmakeLists;
         project.file("src/main/cpp/hello-jni.cpp").write("xx");
 
-        check(["'xx'"], [], 0);
+        checkFailed(["'xx'"], [], 0);
     }
 
     @Test
@@ -114,8 +114,8 @@ class NativeBuildOutputTest {
             }
             """;
 
-        check(["cmake.path",
-               "CMakeLists.txt but that file doesn't exist"],
+        checkFailed(["cmake.path",
+                     "CMakeLists.txt but that file doesn't exist"],
             ["cmake.path",
              "CMakeLists.txt but that file doesn't exist"], 2);
     }
@@ -141,7 +141,7 @@ class NativeBuildOutputTest {
 
         project.file("src/main/cpp/Android.mk") << androidMk;
 
-        check(["ABIs [-unrecognized-abi-] are not available for platform and will be excluded" +
+        checkFailed(["ABIs [-unrecognized-abi-] are not available for platform and will be excluded" +
                        " from building and packaging. Available ABIs are ["],
                 ["ABIs [-unrecognized-abi-] are not available for platform and will be excluded" +
                          " from building and packaging. Available ABIs are ["], 2);
@@ -168,7 +168,7 @@ class NativeBuildOutputTest {
 
         project.file("src/main/cpp/CMakeLists.txt") << cmakeLists;
 
-        check(["ABIs [-unrecognized-abi-] are not available for platform and will be excluded" +
+        checkFailed(["ABIs [-unrecognized-abi-] are not available for platform and will be excluded" +
                        " from building and packaging. Available ABIs are ["],
                 ["ABIs [-unrecognized-abi-] are not available for platform and will be excluded" +
                          " from building and packaging. Available ABIs are ["], 2);
@@ -186,7 +186,7 @@ class NativeBuildOutputTest {
             }
             """;
 
-        check(["ndkBuild.path", "Android.mk but that file doesn't exist"],
+        checkFailed(["ndkBuild.path", "Android.mk but that file doesn't exist"],
               ["ndkBuild.path", "Android.mk but that file doesn't exist"], 2);
     }
 
@@ -211,8 +211,8 @@ class NativeBuildOutputTest {
 
         project.file("src/main/cpp/Android.mk") << androidMk;
 
-        check(["Unexpected native build target -unrecognized-target-",
-               "Valid values are: hello-jni"],
+        checkFailed(["Unexpected native build target -unrecognized-target-",
+                     "Valid values are: hello-jni"],
                 [], 0);
     }
 
@@ -237,8 +237,8 @@ class NativeBuildOutputTest {
 
         project.file("CMakeLists.txt") << cmakeLists;
 
-        check(["Unexpected native build target -unrecognized-target-",
-            "Valid values are: hello-jni"],
+        checkFailed(["Unexpected native build target -unrecognized-target-",
+                     "Valid values are: hello-jni"],
             [], 0);
     }
 
@@ -283,11 +283,39 @@ class NativeBuildOutputTest {
         if (nativeProject.artifacts.size() != 2) {
             assertThat(nativeProject)
                     .hasTargetsNamed("lib_gmath-Release-x86", "hello-jni-Debug-x86",
-                            "hello-jni-Release-x86", "lib_gmath-Debug-x86");
+                    "hello-jni-Release-x86", "lib_gmath-Debug-x86");
         }
     }
 
-    private void check(List<String> expectInStderr, List<String> expectInSyncIssues,
+    @Test
+    public void checkCMakeBuildOutput() {
+        project.buildFile << """
+            android {
+                externalNativeBuild {
+                    cmake {
+                        path "CMakeLists.txt"
+                    }
+                }
+            }
+            """;
+
+        project.file("CMakeLists.txt") << cmakeLists;
+
+        checkSucceeded(["building", "x86/libhello-jni.so"]);
+    }
+
+    private void checkSucceeded(List<String> expectInStdout) {
+        // Check the build
+        GradleBuildResult result = project.executor()
+                .withEnableInfoLogging(false)
+                .run("externalNativeBuildDebug");
+        String stdout = result.getStdout();
+        for (String expect : expectInStdout) {
+            assertThat(stdout).contains(expect);
+        }
+    }
+
+    private void checkFailed(List<String> expectInStderr, List<String> expectInSyncIssues,
             int expectedSyncIssueCount) {
         // Check the sync
         AndroidProject androidProject = project.model().getSingle(AndroidProject.class);
