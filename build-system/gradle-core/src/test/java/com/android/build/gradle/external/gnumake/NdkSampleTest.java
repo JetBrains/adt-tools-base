@@ -334,6 +334,11 @@ public class NdkSampleTest {
     }
 
     @Test
+    public void include_flag() throws IOException, InterruptedException {
+        checkJson("samples/include-flag");
+    }
+
+    @Test
     public void clang_example() throws IOException, InterruptedException {
         checkJson("samples/clang");
     }

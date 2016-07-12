@@ -59,7 +59,9 @@ public class CompilerParser {
                        // and libraries
             "l", // -l LIBNAME
             "L", // -L DIRECTORY
-            "U" // Undefine macro
+            "U", // Undefine macro
+            "include", // Includes a .h file
+            "macros"
     );
 
     @NonNull
