@@ -1073,6 +1073,7 @@ public final class SdkConstants {
     public static final String ATTR_MENU = "menu";                     //$NON-NLS-1$
     public static final String ATTR_OPEN_DRAWER = "openDrawer";        //$NON-NLS-1$
     public static final String ATTR_SHOW_IN = "showIn";                //$NON-NLS-1$
+    public static final String ATTR_PARENT_TAG = "parentTag";          //$NON-NLS-1$
 
     // TextView attributes
     public static final String ATTR_TEXT_APPEARANCE = "textAppearance"; //$NON-NLS-1$
