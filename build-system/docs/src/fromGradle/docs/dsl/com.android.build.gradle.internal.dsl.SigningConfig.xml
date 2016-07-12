@@ -10,6 +10,8 @@
             <tr><td>keyAlias</td></tr>
             <tr><td>keyPassword</td></tr>
             <tr><td>storeType</td></tr>
+            <tr><td>v1SigningEnabled</td></tr>
+            <tr><td>v2SigningEnabled</td></tr>
         </table>
     </section>
     <section>
