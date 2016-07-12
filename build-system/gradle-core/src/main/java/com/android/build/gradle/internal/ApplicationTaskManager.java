@@ -255,10 +255,11 @@ public class ApplicationTaskManager extends TaskManager {
                             // internal javac error.
                             if(variantScope.getGlobalScope().getExtension().getCompileOptions()
                                     .getTargetCompatibility().isJava8Compatible()) {
-                                // Only warn for users of retrolambda.
-                                if (project.getPlugins().hasPlugin("me.tatarka.retrolambda")) {
-                                    getLogger().warn("Jack is required to support java 8 language "
-                                            + "features.");
+                                // Only warn for users of retrolambda and dexguard
+                                if (project.getPlugins().hasPlugin("me.tatarka.retrolambda")
+                                        || project.getPlugins().hasPlugin("dexguard")) {
+                                    getLogger().warn("Jack is disabled, but one of the plugins you "
+                                            + "are using supports Java 8 language features.");
                                 } else {
                                     androidBuilder.getErrorReporter().handleSyncError(
                                             variantScope.getVariantConfiguration().getFullName(),
