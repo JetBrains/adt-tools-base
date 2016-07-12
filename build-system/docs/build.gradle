@@ -25,6 +25,7 @@ import org.gradle.build.docs.releasenotes.*
 import org.gradle.build.docs.releasenotes.checks.*
 
 evaluationDependsOn(':base:gradle')
+evaluationDependsOn(':base:gradle-api')
 evaluationDependsOn(':base:gradle-core')
 evaluationDependsOn(':base:builder')
 
@@ -83,13 +84,6 @@ dependencies {
         "ubuntumono:bold-italic:3:n_d8tv_JOIiYyMXR4eaV9WsGzsqhEorxQDpu60nfWEc@ttf"
 
     groovydocGroovy 'org.codehaus.groovy:groovy-all:2.3.6'
-
-    testCompile 'org.codehaus.groovy:groovy-all:2.3.6'
-    testCompile "org.pegdown:pegdown:1.1.0"
-    testCompile 'org.jsoup:jsoup:1.6.3'
-    testCompile "org.gebish:geb-spock:0.9.3"
-    testCompile 'org.seleniumhq.selenium:selenium-htmlunit-driver:2.42.2'
-    testCompile project(":base:gradle"), project(":base:gradle-core"), project(":base:builder")
 }
 
 ext {
@@ -243,6 +237,7 @@ def javaApiUrl = "http://docs.oracle.com/javase/8/docs/api/"
 def groovyApiUrl = "http://groovy.codehaus.org/gapi/"
 def publicGroovyProjects = [
         project(":base:gradle"),
+        project(":base:gradle-api"),
         project(":base:gradle-core"),
         project(":base:builder-model"),
         project(":base:builder")
@@ -256,12 +251,10 @@ task javadocAll(type: Javadoc) {
     options.encoding = 'utf-8'
     options.docEncoding = 'utf-8'
     options.charSet = 'utf-8'
-//    options.addStringOption "stylesheetfile", stylesheetFile.absolutePath
     source publicGroovyProjects.collect {project -> project.sourceSets.main.allJava }
     destinationDir = new File(docsDir, 'javadoc')
     classpath = files(publicGroovyProjects.collect {project -> [project.sourceSets.main.compileClasspath, project.sourceSets.main.output] })
-//    include 'org/gradle/*'
-//    include 'org/gradle/api/**'
+
     include 'com/android/builder/model/*.java'
     include 'com/android/build/gradle/*Extension.java'
     include 'com/android/build/gradle/AndroidConfig.java'
@@ -274,7 +267,7 @@ task javadocAll(type: Javadoc) {
     include 'com/android/builder/core/Default*.java'
     include 'com/android/builder/internal/BaseConfigImpl.java'
     include 'com/android/builder/signing/DefaultSigningConfig.java'
-//    exclude '**/internal/**'
+    include 'com/android/build/api/variant/VariantFilter.java'
 
     exclude 'com/android/build/gradle/shrinker/parser/ProguardLexer*'
     exclude 'com/android/builder/core/DefaultManifestParser.java'
@@ -335,4 +328,4 @@ task docsAll {
 
 // Make sure all the references are valid and up-to-date. Hopefully this will mark the build
 // red in Jenkins if they get out of sync.
-check.dependsOn dslHtml, javadocAll
+check.dependsOn dslHtmlZip, javadocAll
