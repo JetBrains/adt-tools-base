@@ -335,7 +335,8 @@ public class CentralDirectoryHeader implements Cloneable {
     /**
      * Obtains the offset in the zip file where this entry's data is.
      *
-     * @return the offset or {@code -1} if the file is new and has no data in the zip yet
+     * @return the offset or {@code -1} if the file has no data in the zip and, therefore, data
+     * is stored in memory
      */
     public long getOffset() {
         return mOffset;

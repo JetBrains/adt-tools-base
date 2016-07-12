@@ -25,9 +25,7 @@ import com.google.common.base.Verify;
 import com.google.common.io.ByteSource;
 import com.google.common.io.ByteStreams;
 import com.google.common.io.Closeables;
-import com.google.common.io.Closer;
 import com.google.common.primitives.Ints;
-import com.google.common.util.concurrent.Futures;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -585,9 +583,19 @@ public class StoredEntry {
      * Loads all data in memory and replaces {@link #mSource} with one that contains all the data
      * in memory.
      *
+     * <p>If the entry's contents are already in memory, this call does nothing.
+     *
      * @throws IOException failed to replace the source
      */
     void loadSourceIntoMemory() throws IOException {
+        if (mCdh.getOffset() == -1) {
+            /*
+             * No offset in the CDR means data has not been written to disk which, in turn,
+             * means data is already loaded into memory.
+             */
+            return;
+        }
+
         ProcessedAndRawByteSources oldSource = mSource;
         byte[] rawContents = oldSource.getRawByteSource().read();
         mSource = createSourcesFromRawContents(new CloseableDelegateByteSource(
