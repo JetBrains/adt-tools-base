@@ -70,7 +70,7 @@ public class SetJavaScriptEnabledDetector extends Detector implements JavaPsiSca
             if (constant != null && !Boolean.FALSE.equals(constant)) {
                 context.report(ISSUE, call, context.getLocation(call),
                         "Using `setJavaScriptEnabled` can introduce XSS vulnerabilities " +
-                                "into you application, review carefully.");
+                                "into your application, review carefully.");
             }
         }
     }
