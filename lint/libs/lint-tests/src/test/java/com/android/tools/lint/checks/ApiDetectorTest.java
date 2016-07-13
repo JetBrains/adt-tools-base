@@ -174,6 +174,58 @@ public class ApiDetectorTest extends AbstractCheckTest {
                 ));
     }
 
+    public void testUnusedLevelListAttribute() throws Exception {
+        // Regression test for https://code.google.com/p/android/issues/detail?id=214143
+        assertEquals(""
+                + "res/drawable/my_layer.xml:4: Warning: Attribute width is only used in API level 23 and higher (current min is 15) [UnusedAttribute]\n"
+                + "        android:width=\"535dp\"\n"
+                + "        ~~~~~~~~~~~~~~~~~~~~~\n"
+                + "res/drawable/my_layer.xml:5: Warning: Attribute height is only used in API level 23 and higher (current min is 15) [UnusedAttribute]\n"
+                + "        android:height=\"235dp\"\n"
+                + "        ~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "0 errors, 2 warnings\n",
+                lintProject(
+                        manifest().minSdk(15),
+                        xml("res/drawable/my_layer.xml", ""
+                                + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                                + "<layer-list xmlns:android=\"http://schemas.android.com/apk/res/android\">\n"
+                                + "    <item\n"
+                                + "        android:width=\"535dp\"\n"
+                                + "        android:height=\"235dp\"\n"
+                                + "        android:drawable=\"@drawable/ic_android_black_24dp\"\n"
+                                + "        android:gravity=\"center\" />\n"
+                                + "</layer-list>\n")
+                ));
+    }
+
+    public void testCustomDrawable() throws Exception {
+        assertEquals(""
+                + "res/drawable/my_layer.xml:2: Error: Custom drawables requires API level 24 (current min is 15) [NewApi]\n"
+                + "<my.custom.drawable/>\n"
+                + "~~~~~~~~~~~~~~~~~~~~~\n"
+                + "1 errors, 0 warnings\n",
+                lintProject(
+                        manifest().minSdk(15),
+                        xml("res/drawable/my_layer.xml", ""
+                                + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                                + "<my.custom.drawable/>\n")
+                ));
+    }
+
+    public void testCustomDrawableViaClassAttribute() throws Exception {
+        assertEquals(""
+                + "res/drawable/my_layer.xml:2: Error: <class> requires API level 24 (current min is 15) [NewApi]\n"
+                + "<drawable class=\"my.custom.drawable\"/>\n"
+                + "          ~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "1 errors, 0 warnings\n",
+                lintProject(
+                        manifest().minSdk(15),
+                        xml("res/drawable/my_layer.xml", ""
+                                + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                                + "<drawable class=\"my.custom.drawable\"/>\n")
+                ));
+    }
+
     public void testRtlManifestAttribute() throws Exception {
         // Treat the manifest RTL attribute in the same was as the layout start/end attributes:
         // these are known to be benign on older platforms, so don't flag it.
