@@ -204,6 +204,12 @@ public class UselessViewDetector extends LayoutDetector {
             return;
         }
 
+        if (element.hasAttribute(ATTR_STYLE) || parent.hasAttribute(ATTR_STYLE)) {
+            // If there is a custom style on the parent, it might be setting
+            // attributes like background, padding, etc.
+            return;
+        }
+
         // If we define a padding, and the parent provides a background, then
         // this view is not *necessarily* useless.
         if (parentHasBackground && (element.hasAttributeNS(ANDROID_URI, ATTR_PADDING)
