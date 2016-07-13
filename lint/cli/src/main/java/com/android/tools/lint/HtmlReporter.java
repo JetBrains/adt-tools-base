@@ -18,6 +18,7 @@ package com.android.tools.lint;
 
 import static com.android.SdkConstants.DOT_JPG;
 import static com.android.SdkConstants.DOT_PNG;
+import static com.android.SdkConstants.VALUE_FALSE;
 import static com.android.tools.lint.detector.api.LintUtils.endsWith;
 import static com.android.tools.lint.detector.api.TextFormat.HTML;
 import static com.android.tools.lint.detector.api.TextFormat.RAW;
@@ -63,6 +64,8 @@ import java.util.Set;
  */
 @Beta
 public class HtmlReporter extends Reporter {
+    public static boolean INLINE_RESOURCES =
+            !VALUE_FALSE.equals(System.getProperty("lint.inline-resources"));
     private static final boolean USE_HOLO_STYLE = true;
     @SuppressWarnings("ConstantConditions")
     private static final String CSS = USE_HOLO_STYLE
@@ -356,7 +359,9 @@ public class HtmlReporter extends Reporter {
                 String tools = adtHasFix && studioHasFix
                         ? (studio + " & " + adt) : studioHasFix ? studio : adt;
                 mWriter.write("Note: This issue has an associated quickfix operation in " + tools);
-                if (mFixUrl != null) {
+                if (!INLINE_RESOURCES) {
+                    mWriter.write(getFixIcon());
+                } else if (mFixUrl != null) {
                     mWriter.write("&nbsp;<img alt=\"Fix\" border=\"0\" align=\"top\" src=\""); //$NON-NLS-1$
                     mWriter.write(mFixUrl);
                     mWriter.write("\" />\n");                            //$NON-NLS-1$
@@ -524,7 +529,7 @@ public class HtmlReporter extends Reporter {
         }
 
         URL cssUrl = HtmlReporter.class.getResource(CSS);
-        if (mSimpleFormat) {
+        if (mSimpleFormat || INLINE_RESOURCES) {
             // Inline the CSS
             mWriter.write("<style>\n");                                   //$NON-NLS-1$
             InputStream input = cssUrl.openStream();
@@ -554,7 +559,7 @@ public class HtmlReporter extends Reporter {
 
         String errorUrl = null;
         String warningUrl = null;
-        if (!mSimpleFormat) {
+        if (!INLINE_RESOURCES && !mSimpleFormat) {
             errorUrl = addLocalResources(getErrorIconUrl());
             warningUrl = addLocalResources(getWarningIconUrl());
             mFixUrl = addLocalResources(HtmlReporter.class.getResource("lint-run.png")); //$NON-NLS-1$)
@@ -593,13 +598,19 @@ public class HtmlReporter extends Reporter {
 
             mWriter.write("<td class=\"issueColumn\">");             //$NON-NLS-1$
 
-            String imageUrl = isError ? errorUrl : warningUrl;
-            if (imageUrl != null) {
-                mWriter.write("<img border=\"0\" align=\"top\" src=\""); //$NON-NLS-1$
-                mWriter.write(imageUrl);
-                mWriter.write("\" alt=\"");
-                mWriter.write(isError ? "Error" : "Warning");
-                mWriter.write("\" />\n");                            //$NON-NLS-1$
+            if (INLINE_RESOURCES) {
+                String markup = isError ? getErrorIcon() : getWarningIcon();
+                mWriter.write(markup);
+                mWriter.write('\n');
+            } else {
+                String imageUrl = isError ? errorUrl : warningUrl;
+                if (imageUrl != null) {
+                    mWriter.write("<img border=\"0\" align=\"top\" src=\""); //$NON-NLS-1$
+                    mWriter.write(imageUrl);
+                    mWriter.write("\" alt=\"");
+                    mWriter.write(isError ? "Error" : "Warning");
+                    mWriter.write("\" />\n");                            //$NON-NLS-1$
+                }
             }
 
             mWriter.write("<a href=\"#");                            //$NON-NLS-1$
@@ -823,5 +834,17 @@ public class HtmlReporter extends Reporter {
 
     static URL getErrorIconUrl() {
         return HtmlReporter.class.getResource("lint-error.png");     //$NON-NLS-1$
+    }
+
+    static String getErrorIcon() {
+        return "<img border=\"0\" align=\"top\" width=\"15\" height=\"15\" alt=\"Error\" src=\"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA8AAAAPCAYAAAA71pVKAAAB00lEQVR42nWTS0hbQRiF587MzkUXooi6UHAjhNKNSkGhCDXxkZhUIwWhBLoRsQpi3bXmIboSV2aliI+WKqLUtqsuSxclrhRBUMnVmIpa2oIkQon+zhlr9F7jwOEw/znfLO6dYcy2Arys6AUv6x7klTNh4ViFY485u2+N8Uc8yB1DH0Vt6ki2UkZ20LkS/Eh6CXPk6FnAKVHNJ3nViind9E/6tTKto3TxaU379Qw5euhn4QXxOGzKFjqT7Vmlwx8IC357jh76GvzC64pj4mn6VLbRbf0Nvdcw3J6hr7gS9o3XDxwIN/0RPot+h95pGG7P0AfH1oVz6UR4ya5foXkNw3Pl4Ngub/p6yD1k13FoTsPwXDk4ti89SwnuJrtigYiGY4FhypWDY2aeb0CJ4rzZou9GPc0Y1drtGfrgWLzweUm8uPNsx2ikrHgjHT6LUOrzD/rpDpIlU0JfcaX6d8UfdoW38/20ZbiuxF10MHL1tRNvp2/mSuihn70kZl2/MJ+8Xtkq8NOm4VRqoIUKLy0Hx2mx3PN/5iTk6KFvuaJmyxux3zE8tFPTm9p84KMNdcAGa9COvZqnkaN37wNJvpooSvZFexIvx2b3OkdX4dgne6N3XtUl5wqoyBY2uZQAAAAASUVORK5CYII=\" />";
+    }
+
+    static String getWarningIcon() {
+        return "<img border=\"0\" align=\"top\" width=\"16\" height=\"15\" alt=\"Warning\" src=\"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAPCAQAAABHeoekAAAA3klEQVR42nWPsWoCQRCGVyJiF9tAsNImbcDKR/ABBEurYCsBsfQRQiAPYGPyAAnYWQULS9MErNU2Vsr/ObMX7g6O+xd2/5n5dmY3hFQEBVVpuCsVT/yoUl6u4XotBz4E4qR2YYyH6ugEWY8comR/t+tvPPJtSLPYvhvvTswtbdCmCOwjMHXAzjP9kB/ByB7nejbgy43WVPF3WNG+p9+kzkozdhGAQdZh7BlHdGTL3z98pp6Um7okKdvHNuIzWk+9xN+yINOcHps0OnAfuOOoHJH3pmHghhYP2VJcaXx7BaKz9YB2HVrDAAAAAElFTkSuQmCC\"/>";
+    }
+
+    static String getFixIcon() {
+        return "<img border=\"0\" align=\"top\" width=\"16\" height=\"16\" alt=\"Fix\" src=\"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA1ElEQVR42s2Szw7BQBCH+wTezAM4u7h7BBKEa3v1AK7iKvoAuDg5uSoaqTR2u90xs9P1J2FLHNjky29mu/Nt09Tz/mb1gxF8wlPBKoG3cAoiCbAVTCQe69bcN8+dgp1k9oTgpL4+bYIXVKCNEqfgIJk4w0RirGmIhklCe07BeBPCEQ9ZOsUwpd17KRiuQ3O4u/DhpMDkfU8kquQNesVQdVIzSX2KQ2l+wykQeKAx4w9GSf05532LU5BpZrD0rzUhLVAiwAtAaYbqXDPKpkvw1a/8s3UBSc/bWGUWa6wAAAAASUVORK5CYII=\"/>";
     }
 }
