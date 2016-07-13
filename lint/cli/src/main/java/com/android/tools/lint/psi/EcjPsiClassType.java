@@ -112,7 +112,10 @@ class EcjPsiClassType extends PsiClassType {
     public String getCanonicalText() {
         if (mReferenceBinding.compoundName == null) {
             // TypeVariableBindings for example - maybe call genericSignature() ?
-            return new String(mReferenceBinding.sourceName);
+            char[] sourceName = mReferenceBinding.sourceName();
+            if (sourceName != null) {
+                return new String(sourceName);
+            }
         }
         return EcjPsiManager.getTypeName(mReferenceBinding);
     }
