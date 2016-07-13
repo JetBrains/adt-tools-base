@@ -676,6 +676,25 @@ public class GradleDetectorTest extends AbstractCheckTest {
         ));
     }
 
+    public void testSupportAnnotations() throws Exception {
+        mEnabled = Sets.newHashSet(COMPATIBILITY);
+        assertEquals(""
+                + "No warnings.",
+
+                lintProject(source("build.gradle", ""
+                        + "apply plugin: 'com.android.application'\n"
+                        + "\n"
+                        + "android {\n"
+                        + "    compileSdkVersion 19\n"
+                        + "}\n"
+                        + "\n"
+                        + "dependencies {\n"
+                        + "    testCompile 'com.android.support:support-annotations:24.0.0'\n"
+                        + "    compile 'com.android.support:appcompat-v7:+'\n"
+                        + "}\n")));
+    }
+
+
     // -------------------------------------------------------------------------------------------
     // Test infrastructure below here
     // -------------------------------------------------------------------------------------------

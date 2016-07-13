@@ -1098,7 +1098,10 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
 
         // For artifacts that follow the platform numbering scheme, check that it matches the SDK
         // versions used.
-        if ("com.android.support".equals(groupId) && !artifactId.startsWith("multidex")) {
+        if ("com.android.support".equals(groupId)
+                && !artifactId.startsWith("multidex")
+                // Support annotation libraries work with any compileSdkVersion
+                && !artifactId.equals("support-annotations")) {
             if (mCompileSdkVersion >= 18
                     && dependency.getMajorVersion() != mCompileSdkVersion
                     && dependency.getMajorVersion() != GradleCoordinate.PLUS_REV_VALUE
