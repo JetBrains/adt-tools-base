@@ -172,7 +172,8 @@ public class HardwareConfigHelper {
 
     /** Manufacturer used by the generic devices in the device list */
     public static final String MANUFACTURER_GENERIC = "Generic";          //$NON-NLS-1$
-    private static final String NEXUS = "Nexus";                          //$NON-NLS-1$
+    /** Manufacturer used by the Nexus devices in the device list */
+    public static final String MANUFACTURER_GOOGLE = "Google";          //$NON-NLS-1$
     private static final Pattern GENERIC_PATTERN =
             Pattern.compile("(\\d+\\.?\\d*)\" (.+?)( \\(.*Nexus.*\\))?"); //$NON-NLS-1$
 
@@ -255,7 +256,7 @@ public class HardwareConfigHelper {
      * @return true if the device is a Nexus
      */
     public static boolean isNexus(@NonNull Device device) {
-        return device.getId().contains(NEXUS);
+        return MANUFACTURER_GOOGLE.equals(device.getManufacturer());
     }
 
     /**
@@ -318,11 +319,14 @@ public class HardwareConfigHelper {
         if (id.equals("Nexus 6")) {        //$NON-NLS-1$
             return 10;
         }
-        if (id.equals("Nexus 6P")) {        //$NON-NLS-1$
+        if (id.equals("pixel_c")) {        //$NON-NLS-1$
             return 11;
         }
-        if (id.equals("Nexus 5X")) {        //$NON-NLS-1$
+        if (id.equals("Nexus 6P")) {       //$NON-NLS-1$
             return 12;
+        }
+        if (id.equals("Nexus 5X")) {       //$NON-NLS-1$
+            return 13;
         }
 
         return 100; // devices released in the future?
