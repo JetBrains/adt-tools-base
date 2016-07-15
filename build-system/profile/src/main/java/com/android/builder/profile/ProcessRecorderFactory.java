@@ -131,12 +131,12 @@ public class ProcessRecorderFactory {
             @NonNull String gradleVersion,
             @NonNull ILogger logger) {
         recorder.getProperties()
-                .setOsName(System.getProperty("os.name"))
-                .setOsVersion(System.getProperty("os.version"))
-                .setJavaVersion(System.getProperty("java.version"))
-                .setJavaVmVersion(System.getProperty("java.vm.version"))
+                .setOsName(Strings.nullToEmpty(System.getProperty("os.name")))
+                .setOsVersion(Strings.nullToEmpty(System.getProperty("os.version")))
+                .setJavaVersion(Strings.nullToEmpty(System.getProperty("java.version")))
+                .setJavaVmVersion(Strings.nullToEmpty(System.getProperty("java.vm.version")))
                 .setMaxMemory(Runtime.getRuntime().maxMemory())
-                .setGradleVersion(gradleVersion);
+                .setGradleVersion(Strings.nullToEmpty(gradleVersion));
 
         try {
             recorder.getProperties().setProjectId(

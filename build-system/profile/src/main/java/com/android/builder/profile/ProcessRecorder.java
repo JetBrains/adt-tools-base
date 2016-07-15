@@ -131,7 +131,9 @@ public class ProcessRecorder {
                     project.variants.values()) {
                 project.properties.addVariant(variant);
             }
-            mBuild.addProject(project.properties);
+            if (project.properties != null) {
+                mBuild.addProject(project.properties);
+            }
         }
 
         AndroidStudioStats.AndroidStudioEvent.Builder studioStats =
@@ -261,7 +263,9 @@ public class ProcessRecorder {
 
     private AndroidStudioStats.GradleBuildMemorySample createAndRecordMemorySample() {
         AndroidStudioStats.GradleBuildMemorySample stats = getCurrentProperties();
-        mBuild.addMemorySample(stats);
+        if (stats != null) {
+            mBuild.addMemorySample(stats);
+        }
         return stats;
     }
 
