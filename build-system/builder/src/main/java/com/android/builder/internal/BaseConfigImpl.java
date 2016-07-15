@@ -266,6 +266,15 @@ public abstract class BaseConfigImpl implements Serializable, BaseConfig {
         mMultiDexEnabled = multiDex;
     }
 
+    /**
+     * Text file that specifies additional classes that will be compiled into the main dex file.
+     *
+     * <p>Classes specified in the file are appended to the main dex classes computed using
+     * {@code aapt}.
+     *
+     * <p>If set, the file should contain one class per line, in the following format:
+     * {@code com/example/MyClass.class}
+     */
     @Override
     @Nullable
     public File getMultiDexKeepFile() {
@@ -276,6 +285,13 @@ public abstract class BaseConfigImpl implements Serializable, BaseConfig {
         mMultiDexKeepFile = file;
     }
 
+    /**
+     * Text file with additional ProGuard rules to be used to determine which classes are compiled
+     * into the main dex file.
+     *
+     * <p>If set, rules from this file are used in combination with the default rules used by the
+     * build system.
+     */
     @Override
     @Nullable
     public File getMultiDexKeepProguard() {
