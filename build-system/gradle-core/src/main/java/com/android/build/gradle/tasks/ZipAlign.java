@@ -186,7 +186,7 @@ public class ZipAlign extends DefaultTask implements FileSupplier {
                 PackageAndroidArtifact packageAndroidArtifactTask =
                         scope.getVariantOutputData().packageAndroidArtifactTask;
                 return packageAndroidArtifactTask == null
-                        ? scope.getPackageApk()
+                        ? scope.getIntermediateApk()
                         : packageAndroidArtifactTask.getOutputFile();
             });
 

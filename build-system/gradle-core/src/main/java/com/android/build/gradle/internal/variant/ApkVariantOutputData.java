@@ -73,7 +73,9 @@ public class ApkVariantOutputData extends BaseVariantOutputData {
             return zipAlignTask.getOutputFile();
         }
 
-        return packageAndroidArtifactTask == null ? null : packageAndroidArtifactTask.getOutputFile();
+        return packageAndroidArtifactTask == null
+                ? getScope().getFinalApk()
+                : packageAndroidArtifactTask.getOutputFile();
     }
 
     @NonNull

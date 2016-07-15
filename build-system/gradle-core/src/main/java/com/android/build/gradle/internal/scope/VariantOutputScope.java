@@ -113,22 +113,48 @@ public class VariantOutputScope implements TransformVariantScope {
         return prefix + StringHelper.capitalize(getVariantOutputData().getFullName()) + suffix;
     }
 
+    /**
+     * Final APK, signed and zipaligned (if enabled), ready to be installed on the device.
+     */
     @NonNull
-    public File getPackageApk() {
+    public File getFinalApk() {
+        if (AndroidGradleOptions.useOldPackaging(getGlobalScope().getProject())) {
+            if (isSignedApk() && isZipAlignApk()) {
+                return buildApkPath(".apk");
+            } else {
+                return getIntermediateApk();
+            }
+        } else {
+            return buildApkPath(isSignedApk() ? ".apk" : "-unsigned.apk");
+        }
+    }
+
+    /**
+     * Path to the intermediate APK, created by old packaging and optionally consumed by zipalign.
+     */
+    @NonNull
+    public File getIntermediateApk() {
+        return buildApkPath(isSignedApk() ? "-unaligned.apk" : "-unsigned.apk");
+    }
+
+    @NonNull
+    private File buildApkPath(String suffix) {
+        return new File(
+                getGlobalScope().getApkLocation(),
+                getGlobalScope().getProjectBaseName()
+                        + "-"
+                        + variantOutputData.getBaseName()
+                        + suffix);
+    }
+
+    private boolean isSignedApk() {
         ApkVariantData apkVariantData = (ApkVariantData) variantScope.getVariantData();
+        return apkVariantData.isSigned();
+    }
 
-        boolean useOldPackaging = AndroidGradleOptions.useOldPackaging(
-                getGlobalScope().getProject());
-
-        // New packaging also signs so eventually I will fix this :)
-        boolean signedApk = apkVariantData.isSigned();
-        String apkName = signedApk ?
-                getGlobalScope().getProjectBaseName() + "-" + variantOutputData.getBaseName()
-                        + (useOldPackaging ? "-unaligned.apk" : ".apk"):
-                getGlobalScope().getProjectBaseName() + "-" + variantOutputData.getBaseName()
-                        + "-unsigned.apk";
-
-        return new File(getGlobalScope().getApkLocation(), apkName);
+    private boolean isZipAlignApk() {
+        ApkVariantData apkVariantData = (ApkVariantData) variantScope.getVariantData();
+        return apkVariantData.getZipAlignEnabled();
     }
 
     @NonNull
