@@ -116,7 +116,14 @@ public class ApiLookup {
         synchronized (ApiLookup.class) {
             ApiLookup db = sInstance.get();
             if (db == null) {
-                File file = client.findResource(XML_FILE_PATH);
+                // Fallbacks: Allow the API database
+                String env = System.getProperty("LINT_API_DATABASE");
+                File file;
+                if (env != null) {
+                    file = new File(env);
+                } else {
+                    file = client.findResource(XML_FILE_PATH);
+                }
                 if (file == null) {
                     // AOSP build environment?
                     String build = System.getenv("ANDROID_BUILD_TOP");   //$NON-NLS-1$
