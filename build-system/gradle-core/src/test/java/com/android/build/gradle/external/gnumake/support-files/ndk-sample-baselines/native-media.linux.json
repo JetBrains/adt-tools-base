@@ -6,7 +6,7 @@
   ],
   "libraries": {
     "native-media-jni-release-armeabi-v7a": {
-      "buildCommand": "echo build command native-media-jni",
+      "buildCommand": "echo build command {ndkPath}/samples/native-media/obj/local/armeabi-v7a/libnative-media-jni.so",
       "toolchain": "toolchain-armeabi-v7a",
       "abi": "armeabi-v7a",
       "artifactName": "native-media-jni",
@@ -23,7 +23,7 @@
       }
     },
     "native-media-jni-release-x86_64": {
-      "buildCommand": "echo build command native-media-jni",
+      "buildCommand": "echo build command {ndkPath}/samples/native-media/obj/local/x86_64/libnative-media-jni.so",
       "toolchain": "toolchain-x86_64",
       "abi": "x86_64",
       "artifactName": "native-media-jni",
@@ -40,7 +40,7 @@
       }
     },
     "native-media-jni-release-armeabi": {
-      "buildCommand": "echo build command native-media-jni",
+      "buildCommand": "echo build command {ndkPath}/samples/native-media/obj/local/armeabi/libnative-media-jni.so",
       "toolchain": "toolchain-armeabi",
       "abi": "armeabi",
       "artifactName": "native-media-jni",
@@ -57,7 +57,7 @@
       }
     },
     "native-media-jni-release-arm64-v8a": {
-      "buildCommand": "echo build command native-media-jni",
+      "buildCommand": "echo build command {ndkPath}/samples/native-media/obj/local/arm64-v8a/libnative-media-jni.so",
       "toolchain": "toolchain-arm64-v8a",
       "abi": "arm64-v8a",
       "artifactName": "native-media-jni",
@@ -74,7 +74,7 @@
       }
     },
     "native-media-jni-release-mips": {
-      "buildCommand": "echo build command native-media-jni",
+      "buildCommand": "echo build command {ndkPath}/samples/native-media/obj/local/mips/libnative-media-jni.so",
       "toolchain": "toolchain-mips",
       "abi": "mips",
       "artifactName": "native-media-jni",
@@ -91,7 +91,7 @@
       }
     },
     "native-media-jni-debug-armeabi": {
-      "buildCommand": "echo build command native-media-jni",
+      "buildCommand": "echo build command {ndkPath}/samples/native-media/obj/local/armeabi/libnative-media-jni.so",
       "toolchain": "toolchain-armeabi",
       "abi": "armeabi",
       "artifactName": "native-media-jni",
@@ -108,7 +108,7 @@
       }
     },
     "native-media-jni-debug-x86": {
-      "buildCommand": "echo build command native-media-jni",
+      "buildCommand": "echo build command {ndkPath}/samples/native-media/obj/local/x86/libnative-media-jni.so",
       "toolchain": "toolchain-x86",
       "abi": "x86",
       "artifactName": "native-media-jni",
@@ -125,7 +125,7 @@
       }
     },
     "native-media-jni-release-x86": {
-      "buildCommand": "echo build command native-media-jni",
+      "buildCommand": "echo build command {ndkPath}/samples/native-media/obj/local/x86/libnative-media-jni.so",
       "toolchain": "toolchain-x86",
       "abi": "x86",
       "artifactName": "native-media-jni",
@@ -142,7 +142,7 @@
       }
     },
     "native-media-jni-debug-arm64-v8a": {
-      "buildCommand": "echo build command native-media-jni",
+      "buildCommand": "echo build command {ndkPath}/samples/native-media/obj/local/arm64-v8a/libnative-media-jni.so",
       "toolchain": "toolchain-arm64-v8a",
       "abi": "arm64-v8a",
       "artifactName": "native-media-jni",
@@ -159,7 +159,7 @@
       }
     },
     "native-media-jni-debug-x86_64": {
-      "buildCommand": "echo build command native-media-jni",
+      "buildCommand": "echo build command {ndkPath}/samples/native-media/obj/local/x86_64/libnative-media-jni.so",
       "toolchain": "toolchain-x86_64",
       "abi": "x86_64",
       "artifactName": "native-media-jni",
@@ -176,7 +176,7 @@
       }
     },
     "native-media-jni-debug-mips": {
-      "buildCommand": "echo build command native-media-jni",
+      "buildCommand": "echo build command {ndkPath}/samples/native-media/obj/local/mips/libnative-media-jni.so",
       "toolchain": "toolchain-mips",
       "abi": "mips",
       "artifactName": "native-media-jni",
@@ -193,7 +193,7 @@
       }
     },
     "native-media-jni-release-mips64": {
-      "buildCommand": "echo build command native-media-jni",
+      "buildCommand": "echo build command {ndkPath}/samples/native-media/obj/local/mips64/libnative-media-jni.so",
       "toolchain": "toolchain-mips64",
       "abi": "mips64",
       "artifactName": "native-media-jni",
@@ -210,7 +210,7 @@
       }
     },
     "native-media-jni-debug-armeabi-v7a": {
-      "buildCommand": "echo build command native-media-jni",
+      "buildCommand": "echo build command {ndkPath}/samples/native-media/obj/local/armeabi-v7a/libnative-media-jni.so",
       "toolchain": "toolchain-armeabi-v7a",
       "abi": "armeabi-v7a",
       "artifactName": "native-media-jni",
@@ -227,7 +227,7 @@
       }
     },
     "native-media-jni-debug-mips64": {
-      "buildCommand": "echo build command native-media-jni",
+      "buildCommand": "echo build command {ndkPath}/samples/native-media/obj/local/mips64/libnative-media-jni.so",
       "toolchain": "toolchain-mips64",
       "abi": "mips64",
       "artifactName": "native-media-jni",

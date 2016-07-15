@@ -6,7 +6,7 @@
   ],
   "libraries": {
     "hellocomputendk-release-x86": {
-      "buildCommand": "echo build command hellocomputendk",
+      "buildCommand": "echo build command {ndkPath}/samples/HelloComputeNDK/obj/local/x86/libhellocomputendk.so",
       "toolchain": "toolchain-x86",
       "abi": "x86",
       "artifactName": "hellocomputendk",
@@ -29,7 +29,7 @@
       }
     },
     "rs.mono-release-armeabi-v7a": {
-      "buildCommand": "echo build command rs.mono",
+      "buildCommand": "echo build command {ndkPath}/samples/HelloComputeNDK/libs/armeabi-v7a/librs.mono.so",
       "toolchain": "toolchain-armeabi-v7a",
       "abi": "armeabi-v7a",
       "artifactName": "rs.mono",
@@ -39,7 +39,7 @@
       }
     },
     "rs.mono-debug-mips": {
-      "buildCommand": "echo build command rs.mono",
+      "buildCommand": "echo build command {ndkPath}/samples/HelloComputeNDK/libs/mips/librs.mono.so",
       "toolchain": "toolchain-mips",
       "abi": "mips",
       "artifactName": "rs.mono",
@@ -49,7 +49,7 @@
       }
     },
     "rs.mono-debug-x86": {
-      "buildCommand": "echo build command rs.mono",
+      "buildCommand": "echo build command {ndkPath}/samples/HelloComputeNDK/libs/x86/librs.mono.so",
       "toolchain": "toolchain-x86",
       "abi": "x86",
       "artifactName": "rs.mono",
@@ -59,7 +59,7 @@
       }
     },
     "hellocomputendk-debug-mips": {
-      "buildCommand": "echo build command hellocomputendk",
+      "buildCommand": "echo build command {ndkPath}/samples/HelloComputeNDK/obj/local/mips/libhellocomputendk.so",
       "toolchain": "toolchain-mips",
       "abi": "mips",
       "artifactName": "hellocomputendk",
@@ -82,7 +82,7 @@
       }
     },
     "rs.mono-release-mips": {
-      "buildCommand": "echo build command rs.mono",
+      "buildCommand": "echo build command {ndkPath}/samples/HelloComputeNDK/libs/mips/librs.mono.so",
       "toolchain": "toolchain-mips",
       "abi": "mips",
       "artifactName": "rs.mono",
@@ -92,7 +92,7 @@
       }
     },
     "hellocomputendk-release-armeabi-v7a": {
-      "buildCommand": "echo build command hellocomputendk",
+      "buildCommand": "echo build command {ndkPath}/samples/HelloComputeNDK/obj/local/armeabi-v7a/libhellocomputendk.so",
       "toolchain": "toolchain-armeabi-v7a",
       "abi": "armeabi-v7a",
       "artifactName": "hellocomputendk",
@@ -115,7 +115,7 @@
       }
     },
     "rs.mono-debug-armeabi-v7a": {
-      "buildCommand": "echo build command rs.mono",
+      "buildCommand": "echo build command {ndkPath}/samples/HelloComputeNDK/libs/armeabi-v7a/librs.mono.so",
       "toolchain": "toolchain-armeabi-v7a",
       "abi": "armeabi-v7a",
       "artifactName": "rs.mono",
@@ -125,7 +125,7 @@
       }
     },
     "rs.mono-release-x86": {
-      "buildCommand": "echo build command rs.mono",
+      "buildCommand": "echo build command {ndkPath}/samples/HelloComputeNDK/libs/x86/librs.mono.so",
       "toolchain": "toolchain-x86",
       "abi": "x86",
       "artifactName": "rs.mono",
@@ -135,7 +135,7 @@
       }
     },
     "hellocomputendk-release-mips": {
-      "buildCommand": "echo build command hellocomputendk",
+      "buildCommand": "echo build command {ndkPath}/samples/HelloComputeNDK/obj/local/mips/libhellocomputendk.so",
       "toolchain": "toolchain-mips",
       "abi": "mips",
       "artifactName": "hellocomputendk",
@@ -158,7 +158,7 @@
       }
     },
     "hellocomputendk-debug-armeabi-v7a": {
-      "buildCommand": "echo build command hellocomputendk",
+      "buildCommand": "echo build command {ndkPath}/samples/HelloComputeNDK/obj/local/armeabi-v7a/libhellocomputendk.so",
       "toolchain": "toolchain-armeabi-v7a",
       "abi": "armeabi-v7a",
       "artifactName": "hellocomputendk",
@@ -181,7 +181,7 @@
       }
     },
     "hellocomputendk-debug-x86": {
-      "buildCommand": "echo build command hellocomputendk",
+      "buildCommand": "echo build command {ndkPath}/samples/HelloComputeNDK/obj/local/x86/libhellocomputendk.so",
       "toolchain": "toolchain-x86",
       "abi": "x86",
       "artifactName": "hellocomputendk",

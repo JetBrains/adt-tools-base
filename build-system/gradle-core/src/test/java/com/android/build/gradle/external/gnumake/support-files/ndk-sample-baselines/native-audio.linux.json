@@ -6,7 +6,7 @@
   ],
   "libraries": {
     "native-audio-jni-debug-armeabi": {
-      "buildCommand": "echo build command native-audio-jni",
+      "buildCommand": "echo build command {ndkPath}/samples/native-audio/obj/local/armeabi/libnative-audio-jni.so",
       "toolchain": "toolchain-armeabi",
       "abi": "armeabi",
       "artifactName": "native-audio-jni",
@@ -23,7 +23,7 @@
       }
     },
     "native-audio-jni-debug-mips64": {
-      "buildCommand": "echo build command native-audio-jni",
+      "buildCommand": "echo build command {ndkPath}/samples/native-audio/obj/local/mips64/libnative-audio-jni.so",
       "toolchain": "toolchain-mips64",
       "abi": "mips64",
       "artifactName": "native-audio-jni",
@@ -40,7 +40,7 @@
       }
     },
     "native-audio-jni-debug-arm64-v8a": {
-      "buildCommand": "echo build command native-audio-jni",
+      "buildCommand": "echo build command {ndkPath}/samples/native-audio/obj/local/arm64-v8a/libnative-audio-jni.so",
       "toolchain": "toolchain-arm64-v8a",
       "abi": "arm64-v8a",
       "artifactName": "native-audio-jni",
@@ -57,7 +57,7 @@
       }
     },
     "native-audio-jni-release-x86": {
-      "buildCommand": "echo build command native-audio-jni",
+      "buildCommand": "echo build command {ndkPath}/samples/native-audio/obj/local/x86/libnative-audio-jni.so",
       "toolchain": "toolchain-x86",
       "abi": "x86",
       "artifactName": "native-audio-jni",
@@ -74,7 +74,7 @@
       }
     },
     "native-audio-jni-release-arm64-v8a": {
-      "buildCommand": "echo build command native-audio-jni",
+      "buildCommand": "echo build command {ndkPath}/samples/native-audio/obj/local/arm64-v8a/libnative-audio-jni.so",
       "toolchain": "toolchain-arm64-v8a",
       "abi": "arm64-v8a",
       "artifactName": "native-audio-jni",
@@ -91,7 +91,7 @@
       }
     },
     "native-audio-jni-release-armeabi-v7a": {
-      "buildCommand": "echo build command native-audio-jni",
+      "buildCommand": "echo build command {ndkPath}/samples/native-audio/obj/local/armeabi-v7a/libnative-audio-jni.so",
       "toolchain": "toolchain-armeabi-v7a",
       "abi": "armeabi-v7a",
       "artifactName": "native-audio-jni",
@@ -108,7 +108,7 @@
       }
     },
     "native-audio-jni-release-armeabi": {
-      "buildCommand": "echo build command native-audio-jni",
+      "buildCommand": "echo build command {ndkPath}/samples/native-audio/obj/local/armeabi/libnative-audio-jni.so",
       "toolchain": "toolchain-armeabi",
       "abi": "armeabi",
       "artifactName": "native-audio-jni",
@@ -125,7 +125,7 @@
       }
     },
     "native-audio-jni-debug-armeabi-v7a": {
-      "buildCommand": "echo build command native-audio-jni",
+      "buildCommand": "echo build command {ndkPath}/samples/native-audio/obj/local/armeabi-v7a/libnative-audio-jni.so",
       "toolchain": "toolchain-armeabi-v7a",
       "abi": "armeabi-v7a",
       "artifactName": "native-audio-jni",
@@ -142,7 +142,7 @@
       }
     },
     "native-audio-jni-debug-mips": {
-      "buildCommand": "echo build command native-audio-jni",
+      "buildCommand": "echo build command {ndkPath}/samples/native-audio/obj/local/mips/libnative-audio-jni.so",
       "toolchain": "toolchain-mips",
       "abi": "mips",
       "artifactName": "native-audio-jni",
@@ -159,7 +159,7 @@
       }
     },
     "native-audio-jni-release-mips": {
-      "buildCommand": "echo build command native-audio-jni",
+      "buildCommand": "echo build command {ndkPath}/samples/native-audio/obj/local/mips/libnative-audio-jni.so",
       "toolchain": "toolchain-mips",
       "abi": "mips",
       "artifactName": "native-audio-jni",
@@ -176,7 +176,7 @@
       }
     },
     "native-audio-jni-debug-x86_64": {
-      "buildCommand": "echo build command native-audio-jni",
+      "buildCommand": "echo build command {ndkPath}/samples/native-audio/obj/local/x86_64/libnative-audio-jni.so",
       "toolchain": "toolchain-x86_64",
       "abi": "x86_64",
       "artifactName": "native-audio-jni",
@@ -193,7 +193,7 @@
       }
     },
     "native-audio-jni-release-mips64": {
-      "buildCommand": "echo build command native-audio-jni",
+      "buildCommand": "echo build command {ndkPath}/samples/native-audio/obj/local/mips64/libnative-audio-jni.so",
       "toolchain": "toolchain-mips64",
       "abi": "mips64",
       "artifactName": "native-audio-jni",
@@ -210,7 +210,7 @@
       }
     },
     "native-audio-jni-debug-x86": {
-      "buildCommand": "echo build command native-audio-jni",
+      "buildCommand": "echo build command {ndkPath}/samples/native-audio/obj/local/x86/libnative-audio-jni.so",
       "toolchain": "toolchain-x86",
       "abi": "x86",
       "artifactName": "native-audio-jni",
@@ -227,7 +227,7 @@
       }
     },
     "native-audio-jni-release-x86_64": {
-      "buildCommand": "echo build command native-audio-jni",
+      "buildCommand": "echo build command {ndkPath}/samples/native-audio/obj/local/x86_64/libnative-audio-jni.so",
       "toolchain": "toolchain-x86_64",
       "abi": "x86_64",
       "artifactName": "native-audio-jni",

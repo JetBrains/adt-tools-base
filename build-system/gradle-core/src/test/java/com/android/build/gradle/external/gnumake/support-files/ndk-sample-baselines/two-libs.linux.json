@@ -6,7 +6,7 @@
   ],
   "libraries": {
     "twolib-first-debug-armeabi-v7a": {
-      "buildCommand": "echo build command twolib-first",
+      "buildCommand": "echo build command {ndkPath}/samples/two-libs/obj/local/armeabi-v7a/libtwolib-first.a",
       "toolchain": "toolchain-armeabi-v7a",
       "abi": "armeabi-v7a",
       "artifactName": "twolib-first",
@@ -23,7 +23,7 @@
       }
     },
     "twolib-second-debug-x86": {
-      "buildCommand": "echo build command twolib-second",
+      "buildCommand": "echo build command {ndkPath}/samples/two-libs/obj/local/x86/libtwolib-second.so",
       "toolchain": "toolchain-x86",
       "abi": "x86",
       "artifactName": "twolib-second",
@@ -46,7 +46,7 @@
       }
     },
     "twolib-first-debug-arm64-v8a": {
-      "buildCommand": "echo build command twolib-first",
+      "buildCommand": "echo build command {ndkPath}/samples/two-libs/obj/local/arm64-v8a/libtwolib-first.a",
       "toolchain": "toolchain-arm64-v8a",
       "abi": "arm64-v8a",
       "artifactName": "twolib-first",
@@ -63,7 +63,7 @@
       }
     },
     "twolib-second-release-x86": {
-      "buildCommand": "echo build command twolib-second",
+      "buildCommand": "echo build command {ndkPath}/samples/two-libs/obj/local/x86/libtwolib-second.so",
       "toolchain": "toolchain-x86",
       "abi": "x86",
       "artifactName": "twolib-second",
@@ -86,7 +86,7 @@
       }
     },
     "twolib-second-release-x86_64": {
-      "buildCommand": "echo build command twolib-second",
+      "buildCommand": "echo build command {ndkPath}/samples/two-libs/obj/local/x86_64/libtwolib-second.so",
       "toolchain": "toolchain-x86_64",
       "abi": "x86_64",
       "artifactName": "twolib-second",
@@ -109,7 +109,7 @@
       }
     },
     "twolib-second-release-armeabi": {
-      "buildCommand": "echo build command twolib-second",
+      "buildCommand": "echo build command {ndkPath}/samples/two-libs/obj/local/armeabi/libtwolib-second.so",
       "toolchain": "toolchain-armeabi",
       "abi": "armeabi",
       "artifactName": "twolib-second",
@@ -132,7 +132,7 @@
       }
     },
     "twolib-second-debug-mips64": {
-      "buildCommand": "echo build command twolib-second",
+      "buildCommand": "echo build command {ndkPath}/samples/two-libs/obj/local/mips64/libtwolib-second.so",
       "toolchain": "toolchain-mips64",
       "abi": "mips64",
       "artifactName": "twolib-second",
@@ -155,7 +155,7 @@
       }
     },
     "twolib-first-release-armeabi-v7a": {
-      "buildCommand": "echo build command twolib-first",
+      "buildCommand": "echo build command {ndkPath}/samples/two-libs/obj/local/armeabi-v7a/libtwolib-first.a",
       "toolchain": "toolchain-armeabi-v7a",
       "abi": "armeabi-v7a",
       "artifactName": "twolib-first",
@@ -172,7 +172,7 @@
       }
     },
     "twolib-second-release-armeabi-v7a": {
-      "buildCommand": "echo build command twolib-second",
+      "buildCommand": "echo build command {ndkPath}/samples/two-libs/obj/local/armeabi-v7a/libtwolib-second.so",
       "toolchain": "toolchain-armeabi-v7a",
       "abi": "armeabi-v7a",
       "artifactName": "twolib-second",
@@ -195,7 +195,7 @@
       }
     },
     "twolib-second-debug-armeabi": {
-      "buildCommand": "echo build command twolib-second",
+      "buildCommand": "echo build command {ndkPath}/samples/two-libs/obj/local/armeabi/libtwolib-second.so",
       "toolchain": "toolchain-armeabi",
       "abi": "armeabi",
       "artifactName": "twolib-second",
@@ -218,7 +218,7 @@
       }
     },
     "twolib-second-release-arm64-v8a": {
-      "buildCommand": "echo build command twolib-second",
+      "buildCommand": "echo build command {ndkPath}/samples/two-libs/obj/local/arm64-v8a/libtwolib-second.so",
       "toolchain": "toolchain-arm64-v8a",
       "abi": "arm64-v8a",
       "artifactName": "twolib-second",
@@ -241,7 +241,7 @@
       }
     },
     "twolib-second-debug-arm64-v8a": {
-      "buildCommand": "echo build command twolib-second",
+      "buildCommand": "echo build command {ndkPath}/samples/two-libs/obj/local/arm64-v8a/libtwolib-second.so",
       "toolchain": "toolchain-arm64-v8a",
       "abi": "arm64-v8a",
       "artifactName": "twolib-second",
@@ -264,7 +264,7 @@
       }
     },
     "twolib-second-debug-armeabi-v7a": {
-      "buildCommand": "echo build command twolib-second",
+      "buildCommand": "echo build command {ndkPath}/samples/two-libs/obj/local/armeabi-v7a/libtwolib-second.so",
       "toolchain": "toolchain-armeabi-v7a",
       "abi": "armeabi-v7a",
       "artifactName": "twolib-second",
@@ -287,7 +287,7 @@
       }
     },
     "twolib-first-release-x86": {
-      "buildCommand": "echo build command twolib-first",
+      "buildCommand": "echo build command {ndkPath}/samples/two-libs/obj/local/x86/libtwolib-first.a",
       "toolchain": "toolchain-x86",
       "abi": "x86",
       "artifactName": "twolib-first",
@@ -304,7 +304,7 @@
       }
     },
     "twolib-second-debug-x86_64": {
-      "buildCommand": "echo build command twolib-second",
+      "buildCommand": "echo build command {ndkPath}/samples/two-libs/obj/local/x86_64/libtwolib-second.so",
       "toolchain": "toolchain-x86_64",
       "abi": "x86_64",
       "artifactName": "twolib-second",
@@ -327,7 +327,7 @@
       }
     },
     "twolib-first-debug-mips": {
-      "buildCommand": "echo build command twolib-first",
+      "buildCommand": "echo build command {ndkPath}/samples/two-libs/obj/local/mips/libtwolib-first.a",
       "toolchain": "toolchain-mips",
       "abi": "mips",
       "artifactName": "twolib-first",
@@ -344,7 +344,7 @@
       }
     },
     "twolib-first-release-arm64-v8a": {
-      "buildCommand": "echo build command twolib-first",
+      "buildCommand": "echo build command {ndkPath}/samples/two-libs/obj/local/arm64-v8a/libtwolib-first.a",
       "toolchain": "toolchain-arm64-v8a",
       "abi": "arm64-v8a",
       "artifactName": "twolib-first",
@@ -361,7 +361,7 @@
       }
     },
     "twolib-first-release-mips64": {
-      "buildCommand": "echo build command twolib-first",
+      "buildCommand": "echo build command {ndkPath}/samples/two-libs/obj/local/mips64/libtwolib-first.a",
       "toolchain": "toolchain-mips64",
       "abi": "mips64",
       "artifactName": "twolib-first",
@@ -378,7 +378,7 @@
       }
     },
     "twolib-second-debug-mips": {
-      "buildCommand": "echo build command twolib-second",
+      "buildCommand": "echo build command {ndkPath}/samples/two-libs/obj/local/mips/libtwolib-second.so",
       "toolchain": "toolchain-mips",
       "abi": "mips",
       "artifactName": "twolib-second",
@@ -401,7 +401,7 @@
       }
     },
     "twolib-second-release-mips64": {
-      "buildCommand": "echo build command twolib-second",
+      "buildCommand": "echo build command {ndkPath}/samples/two-libs/obj/local/mips64/libtwolib-second.so",
       "toolchain": "toolchain-mips64",
       "abi": "mips64",
       "artifactName": "twolib-second",
@@ -424,7 +424,7 @@
       }
     },
     "twolib-first-release-mips": {
-      "buildCommand": "echo build command twolib-first",
+      "buildCommand": "echo build command {ndkPath}/samples/two-libs/obj/local/mips/libtwolib-first.a",
       "toolchain": "toolchain-mips",
       "abi": "mips",
       "artifactName": "twolib-first",
@@ -441,7 +441,7 @@
       }
     },
     "twolib-first-release-armeabi": {
-      "buildCommand": "echo build command twolib-first",
+      "buildCommand": "echo build command {ndkPath}/samples/two-libs/obj/local/armeabi/libtwolib-first.a",
       "toolchain": "toolchain-armeabi",
       "abi": "armeabi",
       "artifactName": "twolib-first",
@@ -458,7 +458,7 @@
       }
     },
     "twolib-first-debug-armeabi": {
-      "buildCommand": "echo build command twolib-first",
+      "buildCommand": "echo build command {ndkPath}/samples/two-libs/obj/local/armeabi/libtwolib-first.a",
       "toolchain": "toolchain-armeabi",
       "abi": "armeabi",
       "artifactName": "twolib-first",
@@ -475,7 +475,7 @@
       }
     },
     "twolib-first-release-x86_64": {
-      "buildCommand": "echo build command twolib-first",
+      "buildCommand": "echo build command {ndkPath}/samples/two-libs/obj/local/x86_64/libtwolib-first.a",
       "toolchain": "toolchain-x86_64",
       "abi": "x86_64",
       "artifactName": "twolib-first",
@@ -492,7 +492,7 @@
       }
     },
     "twolib-first-debug-x86": {
-      "buildCommand": "echo build command twolib-first",
+      "buildCommand": "echo build command {ndkPath}/samples/two-libs/obj/local/x86/libtwolib-first.a",
       "toolchain": "toolchain-x86",
       "abi": "x86",
       "artifactName": "twolib-first",
@@ -509,7 +509,7 @@
       }
     },
     "twolib-second-release-mips": {
-      "buildCommand": "echo build command twolib-second",
+      "buildCommand": "echo build command {ndkPath}/samples/two-libs/obj/local/mips/libtwolib-second.so",
       "toolchain": "toolchain-mips",
       "abi": "mips",
       "artifactName": "twolib-second",
@@ -532,7 +532,7 @@
       }
     },
     "twolib-first-debug-x86_64": {
-      "buildCommand": "echo build command twolib-first",
+      "buildCommand": "echo build command {ndkPath}/samples/two-libs/obj/local/x86_64/libtwolib-first.a",
       "toolchain": "toolchain-x86_64",
       "abi": "x86_64",
       "artifactName": "twolib-first",
@@ -549,7 +549,7 @@
       }
     },
     "twolib-first-debug-mips64": {
-      "buildCommand": "echo build command twolib-first",
+      "buildCommand": "echo build command {ndkPath}/samples/two-libs/obj/local/mips64/libtwolib-first.a",
       "toolchain": "toolchain-mips64",
       "abi": "mips64",
       "artifactName": "twolib-first",

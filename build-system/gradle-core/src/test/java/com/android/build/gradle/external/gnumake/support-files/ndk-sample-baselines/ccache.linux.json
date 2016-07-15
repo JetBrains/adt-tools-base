@@ -6,7 +6,7 @@
   ],
   "libraries": {
     "jpeg-turbo-debug-armeabi-v7a": {
-      "buildCommand": "echo build command jpeg-turbo",
+      "buildCommand": "echo build command {project}/library/build/intermediates/ndk-build/debug/obj/local/armeabi-v7a/libjpeg-turbo.a",
       "toolchain": "toolchain-armeabi-v7a",
       "abi": "armeabi-v7a",
       "artifactName": "jpeg-turbo",
@@ -347,7 +347,7 @@
       }
     },
     "imageprocessor-debug-armeabi-v7a": {
-      "buildCommand": "echo build command imageprocessor",
+      "buildCommand": "echo build command {project}/library/build/intermediates/ndk-build/debug/obj/local/armeabi-v7a/libimageprocessor.so",
       "toolchain": "toolchain-armeabi-v7a",
       "abi": "armeabi-v7a",
       "artifactName": "imageprocessor",
@@ -694,7 +694,7 @@
       }
     },
     "imageprocessor-release-armeabi-v7a": {
-      "buildCommand": "echo build command imageprocessor",
+      "buildCommand": "echo build command {project}/library/build/intermediates/ndk-build/debug/obj/local/armeabi-v7a/libimageprocessor.so",
       "toolchain": "toolchain-armeabi-v7a",
       "abi": "armeabi-v7a",
       "artifactName": "imageprocessor",
@@ -1041,7 +1041,7 @@
       }
     },
     "jpeg-turbo-release-armeabi-v7a": {
-      "buildCommand": "echo build command jpeg-turbo",
+      "buildCommand": "echo build command {project}/library/build/intermediates/ndk-build/debug/obj/local/armeabi-v7a/libjpeg-turbo.a",
       "toolchain": "toolchain-armeabi-v7a",
       "abi": "armeabi-v7a",
       "artifactName": "jpeg-turbo",

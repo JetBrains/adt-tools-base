@@ -6,7 +6,7 @@
   ],
   "libraries": {
     "native-codec-jni-debug-x86_64": {
-      "buildCommand": "echo build command native-codec-jni",
+      "buildCommand": "echo build command {ndkPath}/samples/native-codec/obj/local/x86_64/libnative-codec-jni.so",
       "toolchain": "toolchain-x86_64",
       "abi": "x86_64",
       "artifactName": "native-codec-jni",
@@ -29,7 +29,7 @@
       }
     },
     "native-codec-jni-release-mips64": {
-      "buildCommand": "echo build command native-codec-jni",
+      "buildCommand": "echo build command {ndkPath}/samples/native-codec/obj/local/mips64/libnative-codec-jni.so",
       "toolchain": "toolchain-mips64",
       "abi": "mips64",
       "artifactName": "native-codec-jni",
@@ -52,7 +52,7 @@
       }
     },
     "native-codec-jni-debug-mips": {
-      "buildCommand": "echo build command native-codec-jni",
+      "buildCommand": "echo build command {ndkPath}/samples/native-codec/obj/local/mips/libnative-codec-jni.so",
       "toolchain": "toolchain-mips",
       "abi": "mips",
       "artifactName": "native-codec-jni",
@@ -75,7 +75,7 @@
       }
     },
     "native-codec-jni-debug-x86": {
-      "buildCommand": "echo build command native-codec-jni",
+      "buildCommand": "echo build command {ndkPath}/samples/native-codec/obj/local/x86/libnative-codec-jni.so",
       "toolchain": "toolchain-x86",
       "abi": "x86",
       "artifactName": "native-codec-jni",
@@ -98,7 +98,7 @@
       }
     },
     "native-codec-jni-debug-arm64-v8a": {
-      "buildCommand": "echo build command native-codec-jni",
+      "buildCommand": "echo build command {ndkPath}/samples/native-codec/obj/local/arm64-v8a/libnative-codec-jni.so",
       "toolchain": "toolchain-arm64-v8a",
       "abi": "arm64-v8a",
       "artifactName": "native-codec-jni",
@@ -121,7 +121,7 @@
       }
     },
     "native-codec-jni-debug-mips64": {
-      "buildCommand": "echo build command native-codec-jni",
+      "buildCommand": "echo build command {ndkPath}/samples/native-codec/obj/local/mips64/libnative-codec-jni.so",
       "toolchain": "toolchain-mips64",
       "abi": "mips64",
       "artifactName": "native-codec-jni",
@@ -144,7 +144,7 @@
       }
     },
     "native-codec-jni-release-arm64-v8a": {
-      "buildCommand": "echo build command native-codec-jni",
+      "buildCommand": "echo build command {ndkPath}/samples/native-codec/obj/local/arm64-v8a/libnative-codec-jni.so",
       "toolchain": "toolchain-arm64-v8a",
       "abi": "arm64-v8a",
       "artifactName": "native-codec-jni",
@@ -167,7 +167,7 @@
       }
     },
     "native-codec-jni-release-armeabi": {
-      "buildCommand": "echo build command native-codec-jni",
+      "buildCommand": "echo build command {ndkPath}/samples/native-codec/obj/local/armeabi/libnative-codec-jni.so",
       "toolchain": "toolchain-armeabi",
       "abi": "armeabi",
       "artifactName": "native-codec-jni",
@@ -190,7 +190,7 @@
       }
     },
     "native-codec-jni-release-x86_64": {
-      "buildCommand": "echo build command native-codec-jni",
+      "buildCommand": "echo build command {ndkPath}/samples/native-codec/obj/local/x86_64/libnative-codec-jni.so",
       "toolchain": "toolchain-x86_64",
       "abi": "x86_64",
       "artifactName": "native-codec-jni",
@@ -213,7 +213,7 @@
       }
     },
     "native-codec-jni-release-armeabi-v7a": {
-      "buildCommand": "echo build command native-codec-jni",
+      "buildCommand": "echo build command {ndkPath}/samples/native-codec/obj/local/armeabi-v7a/libnative-codec-jni.so",
       "toolchain": "toolchain-armeabi-v7a",
       "abi": "armeabi-v7a",
       "artifactName": "native-codec-jni",
@@ -236,7 +236,7 @@
       }
     },
     "native-codec-jni-debug-armeabi": {
-      "buildCommand": "echo build command native-codec-jni",
+      "buildCommand": "echo build command {ndkPath}/samples/native-codec/obj/local/armeabi/libnative-codec-jni.so",
       "toolchain": "toolchain-armeabi",
       "abi": "armeabi",
       "artifactName": "native-codec-jni",
@@ -259,7 +259,7 @@
       }
     },
     "native-codec-jni-release-mips": {
-      "buildCommand": "echo build command native-codec-jni",
+      "buildCommand": "echo build command {ndkPath}/samples/native-codec/obj/local/mips/libnative-codec-jni.so",
       "toolchain": "toolchain-mips",
       "abi": "mips",
       "artifactName": "native-codec-jni",
@@ -282,7 +282,7 @@
       }
     },
     "native-codec-jni-release-x86": {
-      "buildCommand": "echo build command native-codec-jni",
+      "buildCommand": "echo build command {ndkPath}/samples/native-codec/obj/local/x86/libnative-codec-jni.so",
       "toolchain": "toolchain-x86",
       "abi": "x86",
       "artifactName": "native-codec-jni",
@@ -305,7 +305,7 @@
       }
     },
     "native-codec-jni-debug-armeabi-v7a": {
-      "buildCommand": "echo build command native-codec-jni",
+      "buildCommand": "echo build command {ndkPath}/samples/native-codec/obj/local/armeabi-v7a/libnative-codec-jni.so",
       "toolchain": "toolchain-armeabi-v7a",
       "abi": "armeabi-v7a",
       "artifactName": "native-codec-jni",

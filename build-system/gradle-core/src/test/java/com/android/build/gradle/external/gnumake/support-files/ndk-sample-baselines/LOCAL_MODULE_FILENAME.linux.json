@@ -1,0 +1,100 @@
+{
+  "buildFiles": [
+    {
+      "path": "{testPath}"
+    }
+  ],
+  "libraries": {
+    "shared_cpp_code-debug-armeabi-v7a": {
+      "buildCommand": "echo build command /usr/local/google/home/jomof/projects/bug-214626/app/.externalNativeBuild/ndkBuild/debug/obj/local/armeabi-v7a/libshared_cpp_code.a",
+      "toolchain": "toolchain-armeabi-v7a",
+      "abi": "armeabi-v7a",
+      "artifactName": "shared_cpp_code",
+      "files": [
+        {
+          "src": {
+            "path": "/usr/local/google/home/jomof/projects/bug-214626/jni/../shared_cpp_code/SomeTestStuff.cpp"
+          },
+          "flags": "\"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-march\u003darmv7-a\" \"-mfpu\u003dvfpv3-d16\" \"-mfloat-abi\u003dsoftfp\" \"-fno-exceptions\" \"-fno-rtti\" \"-mthumb\" \"-Os\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fno-strict-aliasing\" \"-finline-limit\u003d64\" \"-O0\" \"-UNDEBUG\" \"-marm\" \"-fno-omit-frame-pointer\" \"-I/usr/local/google/home/jomof/android-ndk-r11c/sources/cxx-stl/gnu-libstdc++/4.9/include\" \"-I/usr/local/google/home/jomof/android-ndk-r11c/sources/cxx-stl/gnu-libstdc++/4.9/libs/armeabi-v7a/include\" \"-I/usr/local/google/home/jomof/android-ndk-r11c/sources/cxx-stl/gnu-libstdc++/4.9/include/backward\" \"-I/usr/local/google/home/jomof/projects/bug-214626/jni\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-std\u003dc++14\" \"-isystem\" \"/usr/local/google/home/jomof/android-ndk-r11c/platforms/android-15/arch-arm/usr/include\""
+        }
+      ],
+      "output": {
+        "path": "/usr/local/google/home/jomof/projects/bug-214626/app/.externalNativeBuild/ndkBuild/debug/obj/local/armeabi-v7a/libshared_cpp_code.a"
+      }
+    },
+    "shared_cpp_code-release-armeabi-v7a": {
+      "buildCommand": "echo build command /usr/local/google/home/jomof/projects/bug-214626/app/.externalNativeBuild/ndkBuild/debug/obj/local/armeabi-v7a/libshared_cpp_code.a",
+      "toolchain": "toolchain-armeabi-v7a",
+      "abi": "armeabi-v7a",
+      "artifactName": "shared_cpp_code",
+      "files": [
+        {
+          "src": {
+            "path": "/usr/local/google/home/jomof/projects/bug-214626/jni/../shared_cpp_code/SomeTestStuff.cpp"
+          },
+          "flags": "\"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-march\u003darmv7-a\" \"-mfpu\u003dvfpv3-d16\" \"-mfloat-abi\u003dsoftfp\" \"-fno-exceptions\" \"-fno-rtti\" \"-mthumb\" \"-Os\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fno-strict-aliasing\" \"-finline-limit\u003d64\" \"-O0\" \"-UNDEBUG\" \"-marm\" \"-fno-omit-frame-pointer\" \"-I/usr/local/google/home/jomof/android-ndk-r11c/sources/cxx-stl/gnu-libstdc++/4.9/include\" \"-I/usr/local/google/home/jomof/android-ndk-r11c/sources/cxx-stl/gnu-libstdc++/4.9/libs/armeabi-v7a/include\" \"-I/usr/local/google/home/jomof/android-ndk-r11c/sources/cxx-stl/gnu-libstdc++/4.9/include/backward\" \"-I/usr/local/google/home/jomof/projects/bug-214626/jni\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-std\u003dc++14\" \"-isystem\" \"/usr/local/google/home/jomof/android-ndk-r11c/platforms/android-15/arch-arm/usr/include\""
+        }
+      ],
+      "output": {
+        "path": "/usr/local/google/home/jomof/projects/bug-214626/app/.externalNativeBuild/ndkBuild/debug/obj/local/armeabi-v7a/libshared_cpp_code.a"
+      }
+    },
+    "DifferentName-debug-armeabi-v7a": {
+      "buildCommand": "echo build command /usr/local/google/home/jomof/projects/bug-214626/app/.externalNativeBuild/ndkBuild/debug/obj/local/armeabi-v7a/libDifferentName.so",
+      "toolchain": "toolchain-armeabi-v7a",
+      "abi": "armeabi-v7a",
+      "artifactName": "DifferentName",
+      "files": [
+        {
+          "src": {
+            "path": "/usr/local/google/home/jomof/projects/bug-214626/jni/../shared_cpp_code/SomeTestStuff.cpp"
+          },
+          "flags": "\"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-march\u003darmv7-a\" \"-mfpu\u003dvfpv3-d16\" \"-mfloat-abi\u003dsoftfp\" \"-fno-exceptions\" \"-fno-rtti\" \"-mthumb\" \"-Os\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fno-strict-aliasing\" \"-finline-limit\u003d64\" \"-O0\" \"-UNDEBUG\" \"-marm\" \"-fno-omit-frame-pointer\" \"-I/usr/local/google/home/jomof/android-ndk-r11c/sources/cxx-stl/gnu-libstdc++/4.9/include\" \"-I/usr/local/google/home/jomof/android-ndk-r11c/sources/cxx-stl/gnu-libstdc++/4.9/libs/armeabi-v7a/include\" \"-I/usr/local/google/home/jomof/android-ndk-r11c/sources/cxx-stl/gnu-libstdc++/4.9/include/backward\" \"-I/usr/local/google/home/jomof/projects/bug-214626/jni\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-std\u003dc++14\" \"-isystem\" \"/usr/local/google/home/jomof/android-ndk-r11c/platforms/android-15/arch-arm/usr/include\""
+        },
+        {
+          "src": {
+            "path": "/usr/local/google/home/jomof/projects/bug-214626/jni/hello-jni.cpp"
+          },
+          "flags": "\"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-march\u003darmv7-a\" \"-mfpu\u003dvfpv3-d16\" \"-mfloat-abi\u003dsoftfp\" \"-fno-exceptions\" \"-fno-rtti\" \"-mthumb\" \"-Os\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fno-strict-aliasing\" \"-finline-limit\u003d64\" \"-O0\" \"-UNDEBUG\" \"-marm\" \"-fno-omit-frame-pointer\" \"-I/usr/local/google/home/jomof/projects/bug-214626/jni/../shared_cpp_code\" \"-I/usr/local/google/home/jomof/android-ndk-r11c/sources/cxx-stl/gnu-libstdc++/4.9/include\" \"-I/usr/local/google/home/jomof/android-ndk-r11c/sources/cxx-stl/gnu-libstdc++/4.9/libs/armeabi-v7a/include\" \"-I/usr/local/google/home/jomof/android-ndk-r11c/sources/cxx-stl/gnu-libstdc++/4.9/include/backward\" \"-I/usr/local/google/home/jomof/projects/bug-214626/jni\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-std\u003dc++14\" \"-isystem\" \"/usr/local/google/home/jomof/android-ndk-r11c/platforms/android-15/arch-arm/usr/include\""
+        }
+      ],
+      "output": {
+        "path": "/usr/local/google/home/jomof/projects/bug-214626/app/.externalNativeBuild/ndkBuild/debug/obj/local/armeabi-v7a/libDifferentName.so"
+      }
+    },
+    "DifferentName-release-armeabi-v7a": {
+      "buildCommand": "echo build command /usr/local/google/home/jomof/projects/bug-214626/app/.externalNativeBuild/ndkBuild/debug/obj/local/armeabi-v7a/libDifferentName.so",
+      "toolchain": "toolchain-armeabi-v7a",
+      "abi": "armeabi-v7a",
+      "artifactName": "DifferentName",
+      "files": [
+        {
+          "src": {
+            "path": "/usr/local/google/home/jomof/projects/bug-214626/jni/../shared_cpp_code/SomeTestStuff.cpp"
+          },
+          "flags": "\"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-march\u003darmv7-a\" \"-mfpu\u003dvfpv3-d16\" \"-mfloat-abi\u003dsoftfp\" \"-fno-exceptions\" \"-fno-rtti\" \"-mthumb\" \"-Os\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fno-strict-aliasing\" \"-finline-limit\u003d64\" \"-O0\" \"-UNDEBUG\" \"-marm\" \"-fno-omit-frame-pointer\" \"-I/usr/local/google/home/jomof/android-ndk-r11c/sources/cxx-stl/gnu-libstdc++/4.9/include\" \"-I/usr/local/google/home/jomof/android-ndk-r11c/sources/cxx-stl/gnu-libstdc++/4.9/libs/armeabi-v7a/include\" \"-I/usr/local/google/home/jomof/android-ndk-r11c/sources/cxx-stl/gnu-libstdc++/4.9/include/backward\" \"-I/usr/local/google/home/jomof/projects/bug-214626/jni\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-std\u003dc++14\" \"-isystem\" \"/usr/local/google/home/jomof/android-ndk-r11c/platforms/android-15/arch-arm/usr/include\""
+        },
+        {
+          "src": {
+            "path": "/usr/local/google/home/jomof/projects/bug-214626/jni/hello-jni.cpp"
+          },
+          "flags": "\"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-march\u003darmv7-a\" \"-mfpu\u003dvfpv3-d16\" \"-mfloat-abi\u003dsoftfp\" \"-fno-exceptions\" \"-fno-rtti\" \"-mthumb\" \"-Os\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fno-strict-aliasing\" \"-finline-limit\u003d64\" \"-O0\" \"-UNDEBUG\" \"-marm\" \"-fno-omit-frame-pointer\" \"-I/usr/local/google/home/jomof/projects/bug-214626/jni/../shared_cpp_code\" \"-I/usr/local/google/home/jomof/android-ndk-r11c/sources/cxx-stl/gnu-libstdc++/4.9/include\" \"-I/usr/local/google/home/jomof/android-ndk-r11c/sources/cxx-stl/gnu-libstdc++/4.9/libs/armeabi-v7a/include\" \"-I/usr/local/google/home/jomof/android-ndk-r11c/sources/cxx-stl/gnu-libstdc++/4.9/include/backward\" \"-I/usr/local/google/home/jomof/projects/bug-214626/jni\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-std\u003dc++14\" \"-isystem\" \"/usr/local/google/home/jomof/android-ndk-r11c/platforms/android-15/arch-arm/usr/include\""
+        }
+      ],
+      "output": {
+        "path": "/usr/local/google/home/jomof/projects/bug-214626/app/.externalNativeBuild/ndkBuild/debug/obj/local/armeabi-v7a/libDifferentName.so"
+      }
+    }
+  },
+  "toolchains": {
+    "toolchain-armeabi-v7a": {
+      "cppCompilerExecutable": {
+        "path": "/usr/local/google/home/jomof/android-ndk-r11c/toolchains/arm-linux-androideabi-4.9/prebuilt/linux-x86_64/bin/arm-linux-androideabi-g++"
+      }
+    }
+  },
+  "cFileExtensions": [],
+  "cppFileExtensions": [
+    "cpp"
+  ]
+}
