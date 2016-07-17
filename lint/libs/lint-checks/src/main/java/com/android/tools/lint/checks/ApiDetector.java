@@ -1112,6 +1112,14 @@ public class ApiDetector extends ResourceXmlDetector
                                 }
                             }
 
+                            if (api == 24
+                                && "java.util.concurrent.ConcurrentHashMap.KeySetView#iterator".equals(fqcn)) {
+                                message += ". The `keySet()` method in `ConcurrentHashMap` "
+                                    + "changed in a backwards incompatible way in Java 8; "
+                                    + "to work around this issue, add an explicit cast to "
+                                    + "`(Map)` before the `keySet()` call.";
+                            }
+
                             report(context, message, node, method, name, null,
                                     SearchHints.create(FORWARD).matchJavaSymbol());
                             break;

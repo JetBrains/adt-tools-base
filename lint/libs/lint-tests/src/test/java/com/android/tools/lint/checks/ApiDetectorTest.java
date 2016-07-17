@@ -23,12 +23,14 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
+import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.builder.model.AndroidProject;
 import com.android.repository.Revision;
+import com.android.repository.api.LocalPackage;
 import com.android.sdklib.BuildToolInfo;
 import com.android.sdklib.SdkVersionInfo;
-import com.android.testutils.SdkTestCase;
+import com.android.sdklib.repository.AndroidSdkHandler;
 import com.android.tools.lint.detector.api.Context;
 import com.android.tools.lint.detector.api.Detector;
 import com.android.tools.lint.detector.api.Issue;
@@ -2608,7 +2610,77 @@ public class ApiDetectorTest extends AbstractCheckTest {
                 ));
     }
 
+    @SuppressWarnings("all") // Sample code
+    public void testConcurrentHashMapUsage() throws Exception {
+        // This test requires API 24 to be installed on the test machine:
+        TestLintClient client = createClient();
+        AndroidSdkHandler sdk = client.getSdk();
+        if (sdk == null) {
+            return;
+        }
+        LocalPackage pkgInfo = sdk.getLocalPackage(SdkConstants.FD_PLATFORM_TOOLS,
+                client.getRepositoryLogger());
+        if (pkgInfo == null) {
+            return;
+        }
+        Revision revision = pkgInfo.getVersion();
+        if (revision.getMajor() < 24) {
+            System.out.println("Skipping " + getName() + ": requires platform-tools >= 24; was "
+                + revision);
+            return;
+        }
 
+        assertEquals(""
+                        + "src/test/pkg/MapUsage.java:7: Error: Call requires API level 24 (current min is 1): java.util.concurrent.ConcurrentHashMap.KeySetView#iterator. The keySet() method in ConcurrentHashMap changed in a backwards incompatible way in Java 8; to work around this issue, add an explicit cast to (Map) before the keySet() call. [NewApi]\n"
+                        + "        for (String key : map.keySet()) {\n"
+                        + "        ^\n"
+                        + "1 errors, 0 warnings\n",
+
+                lintProject(
+                        java("src/test/pkg/MapUsage.java", ""
+                                + "package test.pkg;\n"
+                                + "\n"
+                                + "import java.util.concurrent.ConcurrentHashMap;\n"
+                                + "\n"
+                                + "public class MapUsage {\n"
+                                + "    public void dumpKeys(ConcurrentHashMap<String, Object> map) {\n"
+                                + "        for (String key : map.keySet()) {\n"
+                                + "            System.out.println(key);\n"
+                                + "        }\n"
+                                + "    }\n"
+                                + "}"),
+                        base64("bin/classes/test/pkg/MapUsage.class", ""
+                                + "yv66vgAAADMAQgoACgAgCgAhACIKACMAJAsAJQAmCwAlACcHACgJACkAKgoA\n"
+                                + "KwAsBwAtBwAuAQAGPGluaXQ+AQADKClWAQAEQ29kZQEAD0xpbmVOdW1iZXJU\n"
+                                + "YWJsZQEAEkxvY2FsVmFyaWFibGVUYWJsZQEABHRoaXMBABNMdGVzdC9wa2cv\n"
+                                + "TWFwVXNhZ2U7AQAIZHVtcEtleXMBACsoTGphdmEvdXRpbC9jb25jdXJyZW50\n"
+                                + "L0NvbmN1cnJlbnRIYXNoTWFwOylWAQADa2V5AQASTGphdmEvbGFuZy9TdHJp\n"
+                                + "bmc7AQADbWFwAQAoTGphdmEvdXRpbC9jb25jdXJyZW50L0NvbmN1cnJlbnRI\n"
+                                + "YXNoTWFwOwEAFkxvY2FsVmFyaWFibGVUeXBlVGFibGUBAE5MamF2YS91dGls\n"
+                                + "L2NvbmN1cnJlbnQvQ29uY3VycmVudEhhc2hNYXA8TGphdmEvbGFuZy9TdHJp\n"
+                                + "bmc7TGphdmEvbGFuZy9PYmplY3Q7PjsBAA1TdGFja01hcFRhYmxlBwAvAQAJ\n"
+                                + "U2lnbmF0dXJlAQBRKExqYXZhL3V0aWwvY29uY3VycmVudC9Db25jdXJyZW50\n"
+                                + "SGFzaE1hcDxMamF2YS9sYW5nL1N0cmluZztMamF2YS9sYW5nL09iamVjdDs+\n"
+                                + "OylWAQAKU291cmNlRmlsZQEADU1hcFVzYWdlLmphdmEMAAsADAcAMAwAMQA0\n"
+                                + "BwA1DAA2ADcHAC8MADgAOQwAOgA7AQAQamF2YS9sYW5nL1N0cmluZwcAPAwA\n"
+                                + "PQA+BwA/DABAAEEBABF0ZXN0L3BrZy9NYXBVc2FnZQEAEGphdmEvbGFuZy9P\n"
+                                + "YmplY3QBABJqYXZhL3V0aWwvSXRlcmF0b3IBACZqYXZhL3V0aWwvY29uY3Vy\n"
+                                + "cmVudC9Db25jdXJyZW50SGFzaE1hcAEABmtleVNldAEACktleVNldFZpZXcB\n"
+                                + "AAxJbm5lckNsYXNzZXMBADUoKUxqYXZhL3V0aWwvY29uY3VycmVudC9Db25j\n"
+                                + "dXJyZW50SGFzaE1hcCRLZXlTZXRWaWV3OwEAMWphdmEvdXRpbC9jb25jdXJy\n"
+                                + "ZW50L0NvbmN1cnJlbnRIYXNoTWFwJEtleVNldFZpZXcBAAhpdGVyYXRvcgEA\n"
+                                + "FigpTGphdmEvdXRpbC9JdGVyYXRvcjsBAAdoYXNOZXh0AQADKClaAQAEbmV4\n"
+                                + "dAEAFCgpTGphdmEvbGFuZy9PYmplY3Q7AQAQamF2YS9sYW5nL1N5c3RlbQEA\n"
+                                + "A291dAEAFUxqYXZhL2lvL1ByaW50U3RyZWFtOwEAE2phdmEvaW8vUHJpbnRT\n"
+                                + "dHJlYW0BAAdwcmludGxuAQAVKExqYXZhL2xhbmcvU3RyaW5nOylWACEACQAK\n"
+                                + "AAAAAAACAAEACwAMAAEADQAAAC8AAQABAAAABSq3AAGxAAAAAgAOAAAABgAB\n"
+                                + "AAAABQAPAAAADAABAAAABQAQABEAAAABABIAEwACAA0AAACTAAIABAAAACYr\n"
+                                + "tgACtgADTSy5AAQBAJkAFyy5AAUBAMAABk6yAActtgAIp//msQAAAAQADgAA\n"
+                                + "ABIABAAAAAcAGwAIACIACQAlAAoADwAAACAAAwAbAAcAFAAVAAMAAAAmABAA\n"
+                                + "EQAAAAAAJgAWABcAAQAYAAAADAABAAAAJgAWABkAAQAaAAAACwAC/AAIBwAb\n"
+                                + "+gAcABwAAAACAB0AAgAeAAAAAgAfADMAAAAKAAEAIwAhADIACQ==")
+                ));
+    }
 
     @Override
     protected boolean ignoreSystemErrors() {
