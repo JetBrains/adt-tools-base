@@ -22,9 +22,11 @@ import static com.google.common.base.Preconditions.checkState;
 import com.android.annotations.NonNull;
 import com.android.build.gradle.external.gson.NativeBuildConfigValue;
 import com.android.build.gradle.external.gson.NativeLibraryValue;
+import com.android.build.gradle.internal.dsl.CoreExternalNativeBuildOptions;
+import com.android.build.gradle.internal.dsl.CoreExternalNativeCmakeOptions;
+import com.android.build.gradle.internal.dsl.CoreExternalNativeNdkBuildOptions;
 import com.android.build.gradle.internal.scope.TaskConfigAction;
 import com.android.build.gradle.internal.scope.VariantScope;
-import com.android.build.gradle.internal.tasks.BaseTask;
 import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.builder.core.AndroidBuilder;
@@ -49,7 +51,7 @@ import java.util.Set;
 /**
  * Task that takes set of JSON files of type NativeBuildConfigValue and does build steps with them.
  */
-public class ExternalNativeBuildTask extends BaseTask {
+public class ExternalNativeBuildTask extends ExternalNativeBaseTask {
 
     private List<File> nativeBuildConfigurationsJsons;
 
@@ -69,7 +71,6 @@ public class ExternalNativeBuildTask extends BaseTask {
                         nativeBuildConfigurationsJsons, getVariantName());
         List<String> buildCommands = Lists.newArrayList();
         List<String> libraryNames = Lists.newArrayList();
-
 
         // Check the resulting JSON targets against the targets specified in ndkBuild.targets or
         // cmake.targets. If a target name specified by the user isn't present then provide an
@@ -122,7 +123,7 @@ public class ExternalNativeBuildTask extends BaseTask {
 
                 }
                 buildCommands.add(libraryValue.buildCommand);
-                libraryNames.add(libraryValue.output.getPath());
+                libraryNames.add(checkNotNull(libraryValue.output).getPath());
                 diagnostic("about to build %s", libraryValue.buildCommand);
             }
         }
@@ -177,7 +178,7 @@ public class ExternalNativeBuildTask extends BaseTask {
      * Given a list of build commands, execute each. If there is a failure, processing is stopped at
      * that point.
      */
-    private void executeProcessBatch(
+    protected void executeProcessBatch(
             @NonNull List<String> libraryNames,
             @NonNull List<String> commands) throws ProcessException {
         // Order of building doesn't matter to final result but building in reverse order causes
@@ -200,14 +201,6 @@ public class ExternalNativeBuildTask extends BaseTask {
                     getBuilder(),
                     processBuilder.createProcess());
         }
-    }
-
-    /**
-     * Log low level diagnostic information.
-     */
-    private void diagnostic(String format, Object... args) {
-        getLogger().info(
-                String.format(getName() + ": " + format, args));
     }
 
     @NonNull
@@ -279,19 +272,21 @@ public class ExternalNativeBuildTask extends BaseTask {
             final BaseVariantData<? extends BaseVariantOutputData> variantData =
                     scope.getVariantData();
             final Set<String> targets;
+            CoreExternalNativeBuildOptions nativeBuildOptions =
+                    variantData.getVariantConfiguration().getExternalNativeBuildOptions();
             switch (generator.getNativeBuildSystem()) {
-                case CMAKE:
-                    targets = variantData.getVariantConfiguration()
-                            .getExternalNativeBuildOptions()
-                            .getExternalNativeCmakeOptions()
-                            .getTargets();
+                case CMAKE: {
+                    CoreExternalNativeCmakeOptions options = checkNotNull(nativeBuildOptions
+                            .getExternalNativeCmakeOptions());
+                    targets = options.getTargets();
                     break;
-                case NDK_BUILD:
-                    targets = variantData.getVariantConfiguration()
-                            .getExternalNativeBuildOptions()
-                            .getExternalNativeNdkBuildOptions()
-                            .getTargets();
+                }
+                case NDK_BUILD: {
+                    CoreExternalNativeNdkBuildOptions options = checkNotNull(nativeBuildOptions
+                            .getExternalNativeNdkBuildOptions());
+                    targets = options.getTargets();
                     break;
+                }
                 default:
                     throw new RuntimeException("Unexpected native build system "
                             + generator.getNativeBuildSystem().getName());

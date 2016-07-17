@@ -4,6 +4,9 @@
       "path": "{testPath}"
     }
   ],
+  "cleanCommands": [
+    "echo build command clean"
+  ],
   "libraries": {
     "native-audio-jni-debug-armeabi": {
       "buildCommand": "echo build command {ndkPath}/samples/native-audio/obj/local/armeabi/libnative-audio-jni.so",

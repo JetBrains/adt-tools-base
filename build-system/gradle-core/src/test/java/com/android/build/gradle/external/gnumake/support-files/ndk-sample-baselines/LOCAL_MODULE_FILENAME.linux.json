@@ -4,6 +4,9 @@
       "path": "{testPath}"
     }
   ],
+  "cleanCommands": [
+    "echo build command clean"
+  ],
   "libraries": {
     "shared_cpp_code-debug-armeabi-v7a": {
       "buildCommand": "echo build command /usr/local/google/home/jomof/projects/bug-214626/app/.externalNativeBuild/ndkBuild/debug/obj/local/armeabi-v7a/libshared_cpp_code.a",

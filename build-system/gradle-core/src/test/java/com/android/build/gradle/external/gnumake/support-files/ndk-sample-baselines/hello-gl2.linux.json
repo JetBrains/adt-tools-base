@@ -4,6 +4,9 @@
       "path": "{testPath}"
     }
   ],
+  "cleanCommands": [
+    "echo build command clean"
+  ],
   "libraries": {
     "gl2jni-release-x86": {
       "buildCommand": "echo build command {ndkPath}/samples/hello-gl2/obj/local/x86/libgl2jni.so",

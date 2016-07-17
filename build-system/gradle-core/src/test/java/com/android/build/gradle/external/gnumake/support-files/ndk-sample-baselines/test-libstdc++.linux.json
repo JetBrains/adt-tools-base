@@ -4,6 +4,9 @@
       "path": "{testPath}"
     }
   ],
+  "cleanCommands": [
+    "echo build command clean"
+  ],
   "libraries": {
     "test-libstl-debug-x86_64": {
       "buildCommand": "echo build command {ndkPath}/samples/test-libstdc++/obj/local/x86_64/test-libstl",

@@ -71,7 +71,8 @@ class NativeModelTest {
                     }
                 }
             }
-            """, [androidMkC("src/main/cpp")], false, 1, 2, 7, Compiler.GCC, NativeBuildSystem.NDK_BUILD),
+            """, [androidMkC("src/main/cpp")], false, 1, 2, 7, Compiler.GCC,
+                NativeBuildSystem.NDK_BUILD, 14),
         ANDROID_MK_FILE_CPP("""
             apply plugin: 'com.android.application'
 
@@ -94,7 +95,7 @@ class NativeModelTest {
             }
             """,
                 [androidMkCpp("src/main/cpp")],
-                true, 1, 2, 7, Compiler.GCC, NativeBuildSystem.NDK_BUILD),
+                true, 1, 2, 7, Compiler.GCC, NativeBuildSystem.NDK_BUILD, 14),
         ANDROID_MK_GOOGLE_TEST("""
             apply plugin: 'com.android.application'
 
@@ -125,7 +126,7 @@ class NativeModelTest {
                               EXPECT_EQ(1, 1);
                             }
                             """)],
-                true, 4, 2, 7, Compiler.GCC, NativeBuildSystem.NDK_BUILD),
+                true, 4, 2, 7, Compiler.GCC, NativeBuildSystem.NDK_BUILD, 0),
         ANDROID_MK_FILE_CPP_CLANG("""
             apply plugin: 'com.android.application'
 
@@ -148,7 +149,7 @@ class NativeModelTest {
                 }
             }
             """, [androidMkCpp("src/main/cpp")], true, 1, 2, 7, Compiler.CLANG,
-                NativeBuildSystem.NDK_BUILD),
+                NativeBuildSystem.NDK_BUILD, 14),
         ANDROID_MK_FILE_CPP_CLANG_VIA_APPLICATION_MK("""
             apply plugin: 'com.android.application'
 
@@ -170,7 +171,7 @@ class NativeModelTest {
                 }
             }
             """, [androidMkCpp("src/main/cpp"), applicationMk("src/main/cpp")],
-                true, 1, 2, 7, Compiler.CLANG, NativeBuildSystem.NDK_BUILD),
+                true, 1, 2, 7, Compiler.CLANG, NativeBuildSystem.NDK_BUILD, 14),
         ANDROID_MK_CUSTOM_BUILD_TYPE("""
             apply plugin: 'com.android.application'
 
@@ -201,7 +202,7 @@ class NativeModelTest {
                 }
             }
             """, [androidMkCpp("src/main/cpp")], true, 1, 3, 7, Compiler.GCC,
-                NativeBuildSystem.NDK_BUILD),
+                NativeBuildSystem.NDK_BUILD, 21),
         CMAKELISTS_FILE_CPP("""
             apply plugin: 'com.android.application'
 
@@ -223,7 +224,7 @@ class NativeModelTest {
                 }
             }
             """, [cmakeLists(".")], true, 1, 2, 7, Compiler.GCC,
-                NativeBuildSystem.CMAKE),
+                NativeBuildSystem.CMAKE, 14),
         CMAKELISTS_ARGUMENTS("""
             apply plugin: 'com.android.application'
 
@@ -245,7 +246,7 @@ class NativeModelTest {
                     }
                 }
             }
-            """, [cmakeLists(".")], true, 1, 2, 2, Compiler.GCC, NativeBuildSystem.CMAKE),
+            """, [cmakeLists(".")], true, 1, 2, 2, Compiler.GCC, NativeBuildSystem.CMAKE, 4),
         CMAKELISTS_FILE_C("""
             apply plugin: 'com.android.application'
 
@@ -267,7 +268,7 @@ class NativeModelTest {
                 }
             }
             """, [cmakeLists(".")], false, 1, 2, 7, Compiler.GCC,
-                NativeBuildSystem.CMAKE);
+                NativeBuildSystem.CMAKE, 14);
 
         public final String buildGradle;
         private final List<TestSourceFile> extraFiles;
@@ -277,9 +278,11 @@ class NativeModelTest {
         public final int abiCount;
         public final Compiler compiler;
         public final NativeBuildSystem buildSystem;
+        public final int expectedBuildOutputs;
 
         Config(String buildGradle, List<TestSourceFile> extraFiles, boolean isCpp, int targetCount,
-                int variantCount, int abiCount, Compiler compiler, NativeBuildSystem buildSystem) {
+                int variantCount, int abiCount, Compiler compiler,
+                NativeBuildSystem buildSystem, int expectedBuildOutputs) {
             this.buildGradle = buildGradle;
             this.extraFiles = extraFiles;
             this.isCpp = isCpp;
@@ -288,6 +291,7 @@ class NativeModelTest {
             this.abiCount = abiCount;
             this.compiler = compiler;
             this.buildSystem = buildSystem;
+            this.expectedBuildOutputs = expectedBuildOutputs;
         }
 
         public GradleTestProject create() {
@@ -421,6 +425,27 @@ class NativeModelTest {
         } else {
             checkIsChangedC(nativeProject);
         }
+
+        // Do a clean and check that the JSON is not regenerated
+        originalTimeStamp = getHighestResolutionTimeStamp(jsonFile)
+        project.execute("clean");
+        nativeProject = project.model().getSingle(NativeAndroidProject.class);
+        assertThat(originalTimeStamp).isEqualTo(getHighestResolutionTimeStamp(jsonFile));
+        assertThat(nativeProject).noBuildOutputsExist();
+
+        // If there are expected build outputs then build them and check results
+        if (config.expectedBuildOutputs > 0) {
+            project.execute("assemble");
+            assertThat(nativeProject).hasBuildOutputCountEqualTo(config.expectedBuildOutputs);
+            assertThat(nativeProject).allBuildOutputsExist();
+
+            // Make sure clean removes the known build outputs.
+            project.execute("clean");
+            assertThat(nativeProject).noBuildOutputsExist();
+
+            // But clean shouldn't change the JSON because it is outside of the build/ folder.
+            assertThat(originalTimeStamp).isEqualTo(getHighestResolutionTimeStamp(jsonFile));
+        }
     }
 
     /*
@@ -440,12 +465,17 @@ class NativeModelTest {
                 file.toPath()).toMillis();
     }
 
-    private File getJsonFile(String variantName, String abi) {
-        return ExternalNativeBuildTaskUtils.getOutputJson(new File(FileUtils.join(
+    private File getExternalNativeBuildRootOutputFolder() {
+        return new File(FileUtils.join(
                 project.buildFile.getParent(),
-                "externalNativeBuild",
+                ".externalNativeBuild"));
+    }
+
+    private File getJsonFile(String variantName, String abi) {
+        return ExternalNativeBuildTaskUtils.getOutputJson(FileUtils.join(
+                getExternalNativeBuildRootOutputFolder(),
                 config.buildSystem.name,
-                variantName)),
+                variantName),
                 abi);
     }
 

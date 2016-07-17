@@ -4,6 +4,9 @@
       "path": "{testPath}"
     }
   ],
+  "cleanCommands": [
+    "echo build command clean"
+  ],
   "libraries": {
     "hellocomputendk-release-x86": {
       "buildCommand": "echo build command {ndkPath}/samples/HelloComputeNDK/obj/local/x86/libhellocomputendk.so",

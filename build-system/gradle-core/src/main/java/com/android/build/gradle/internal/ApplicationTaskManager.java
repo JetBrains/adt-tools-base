@@ -215,7 +215,7 @@ public class ApplicationTaskManager extends TaskManager {
                 projectPath, variantName, new Recorder.Block<Void>() {
                     @Override
                     public Void call() {
-                        createExternalNativeBuildJsonGenerators(tasks, variantScope);
+                        createExternalNativeBuildJsonGenerators(variantScope);
                         createExternalNativeBuildTasks(tasks, variantScope);
                         return null;
                     }

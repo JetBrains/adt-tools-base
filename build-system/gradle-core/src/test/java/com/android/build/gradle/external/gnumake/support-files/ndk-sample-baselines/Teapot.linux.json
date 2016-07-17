@@ -4,6 +4,9 @@
       "path": "{testPath}"
     }
   ],
+  "cleanCommands": [
+    "echo build command clean"
+  ],
   "libraries": {
     "ndk_helper-release-armeabi": {
       "buildCommand": "echo build command {ndkPath}/samples/Teapot/obj/local/armeabi/libndk_helper.a",

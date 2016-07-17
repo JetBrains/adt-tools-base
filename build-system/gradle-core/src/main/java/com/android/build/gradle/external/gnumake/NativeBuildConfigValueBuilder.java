@@ -27,6 +27,7 @@ import com.android.utils.StringHelper;
 import com.google.common.base.Strings;
 import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import com.google.common.io.Files;
 
 import java.io.File;
@@ -75,7 +76,7 @@ public class NativeBuildConfigValueBuilder {
             "-MF");
 
     // These are flags which don't have a following argument.
-    private static final List<String> STRIP_FLAGS_WITHOUT_ARG = Arrays.asList(
+    private static final List<String> STRIP_FLAGS_WITHOUT_ARG = Collections.singletonList(
             // Skip -MMD because this can change the location of the .d file generated
             // by gcc.
             "-MMD");
@@ -126,6 +127,9 @@ public class NativeBuildConfigValueBuilder {
         findToolChainCompilers();
 
         NativeBuildConfigValue config = new NativeBuildConfigValue();
+        // Sort by library name so that output is stable
+        Collections.sort(outputs, (o1, o2) -> o1.libraryName.compareTo(o2.libraryName));
+        config.cleanCommands = generateCleanCommands();
         config.buildFiles = Lists.newArrayList(projectRootPath);
         config.libraries = generateLibraries();
         config.toolchains = generateToolchains();
@@ -240,9 +244,17 @@ public class NativeBuildConfigValueBuilder {
     }
 
     @NonNull
+    private List<String> generateCleanCommands() {
+        Set<String> cleanCommands = Sets.newHashSet();
+        for (Output output : outputs) {
+            cleanCommands.add(output.buildCommand + " clean");
+        }
+
+        return Lists.newArrayList(cleanCommands);
+    }
+
+    @NonNull
     private Map<String, NativeLibraryValue> generateLibraries() {
-        // Sort by library name so that output is stable
-        Collections.sort(outputs, (o1, o2) -> o1.libraryName.compareTo(o2.libraryName));
 
         Map<String, NativeLibraryValue> librariesMap = new HashMap<>();
 

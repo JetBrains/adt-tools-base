@@ -4,6 +4,9 @@
       "path": "{testPath}"
     }
   ],
+  "cleanCommands": [
+    "echo build command clean"
+  ],
   "libraries": {
     "android_native_app_glue-release-mips": {
       "buildCommand": "echo build command {ndkPath}/samples/native-plasma/obj/local/mips/libandroid_native_app_glue.a",

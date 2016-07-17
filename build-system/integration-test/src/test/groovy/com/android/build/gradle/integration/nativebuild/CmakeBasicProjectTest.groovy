@@ -18,7 +18,6 @@ package com.android.build.gradle.integration.nativebuild
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldJniApp
-import com.android.build.gradle.integration.common.utils.ApkHelper
 import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.build.gradle.integration.common.utils.ZipHelper
 import com.android.build.gradle.tasks.NativeBuildSystem
@@ -36,7 +35,6 @@ import org.junit.runners.Parameterized
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatNativeLib
-
 /**
  * Assemble tests for Cmake.
  */
@@ -109,7 +107,7 @@ android {
 }
 """
         }
-        project.execute("clean", "assembleDebug")
+        project.execute("clean", "assembleDebug", "assembleRelease")
     }
 
     @Test
@@ -130,7 +128,6 @@ android {
     public void checkModel() {
         project.model().getSingle(); // Make sure we can successfully get AndroidProject
         NativeAndroidProject model = project.model().getSingle(NativeAndroidProject.class);
-        assertThat(model).isNotNull();
         assertThat(model.getBuildSystems()).containsExactly(NativeBuildSystem.CMAKE.getName());
         assertThat(model.buildFiles).hasSize(1);
         assertThat(model.name).isEqualTo("project");
@@ -153,5 +150,18 @@ android {
 
         assertThat(model).hasArtifactGroupsNamed("debug", "release");
         assertThat(model).hasArtifactGroupsOfSize(abiCount);
+    }
+
+    @Test
+    public void checkClean() {
+        NativeAndroidProject model = project.model().getSingle(NativeAndroidProject.class);
+        assertThat(model).hasBuildOutputCountEqualTo(4);
+        assertThat(model).allBuildOutputsExist();
+        assertThat(model).hasExactObjectFiles("hello-jni.c.o");
+        assertThat(model).hasExactSharedObjectFiles("libhello-jni.so");
+        project.execute("clean");
+        assertThat(model).noBuildOutputsExist();
+        assertThat(model).hasExactObjectFiles();
+        assertThat(model).hasExactSharedObjectFiles();
     }
 }

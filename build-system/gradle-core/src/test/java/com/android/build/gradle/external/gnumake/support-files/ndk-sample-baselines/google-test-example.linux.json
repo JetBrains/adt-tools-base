@@ -4,6 +4,9 @@
       "path": "{testPath}"
     }
   ],
+  "cleanCommands": [
+    "echo build command clean"
+  ],
   "libraries": {
     "sample1_unittest-release-arm64-v8a": {
       "buildCommand": "echo build command {NDK}/debug/obj/local/arm64-v8a/sample1_unittest",

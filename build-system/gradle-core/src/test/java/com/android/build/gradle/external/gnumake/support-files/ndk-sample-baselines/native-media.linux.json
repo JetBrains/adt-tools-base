@@ -4,6 +4,9 @@
       "path": "{testPath}"
     }
   ],
+  "cleanCommands": [
+    "echo build command clean"
+  ],
   "libraries": {
     "native-media-jni-release-armeabi-v7a": {
       "buildCommand": "echo build command {ndkPath}/samples/native-media/obj/local/armeabi-v7a/libnative-media-jni.so",

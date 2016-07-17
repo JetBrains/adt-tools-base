@@ -4,6 +4,9 @@
       "path": "{testPath}"
     }
   ],
+  "cleanCommands": [
+    "echo build command clean"
+  ],
   "libraries": {
     "plasma-release-x86": {
       "buildCommand": "echo build command {ndkPath}/samples/bitmap-plasma/obj/local/x86/libplasma.so",

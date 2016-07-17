@@ -4,6 +4,9 @@
       "path": "{testPath}"
     }
   ],
+  "cleanCommands": [
+    "echo build command clean"
+  ],
   "libraries": {
     "twolib-first-debug-armeabi-v7a": {
       "buildCommand": "echo build command {ndkPath}/samples/two-libs/obj/local/armeabi-v7a/libtwolib-first.a",

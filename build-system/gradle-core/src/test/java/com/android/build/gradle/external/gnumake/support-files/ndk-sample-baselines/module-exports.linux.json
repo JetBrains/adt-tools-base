@@ -4,6 +4,9 @@
       "path": "{testPath}"
     }
   ],
+  "cleanCommands": [
+    "echo build command clean"
+  ],
   "libraries": {
     "zoo-debug-mips64": {
       "buildCommand": "echo build command {ndkPath}/samples/module-exports/obj/local/mips64/libzoo.so",

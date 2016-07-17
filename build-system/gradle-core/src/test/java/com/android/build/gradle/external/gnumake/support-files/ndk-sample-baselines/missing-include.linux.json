@@ -4,6 +4,9 @@
       "path": "{testPath}"
     }
   ],
+  "cleanCommands": [
+    "echo build command clean"
+  ],
   "libraries": {
     "jpeg-turbo-debug-armeabi-v7a": {
       "buildCommand": "echo build command {project}/library/build/intermediates/ndk-build/debug/obj/local/armeabi-v7a/libjpeg-turbo.a",

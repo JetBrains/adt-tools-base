@@ -501,11 +501,11 @@ public abstract class ExternalNativeJsonGenerator {
                 variantData.getVariantConfiguration().getDirName());
 
         File soFolder = new File(intermediates, "lib");
-        File objFolder = new File(intermediates, "obj");
-        File jsonFolder = FileUtils.join(projectDir,
-                "externalNativeBuild",
+        File externalNativeBuildFolder = FileUtils.join(projectDir,
+                ".externalNativeBuild",
                 buildSystem.getName(),
                 variantData.getName());
+        File objFolder = new File(externalNativeBuildFolder, "obj");
 
         // Get the highest platform version below compileSdkVersion
         NdkHandler ndkHandler = scope.getGlobalScope().getNdkHandler();
@@ -538,14 +538,14 @@ public abstract class ExternalNativeJsonGenerator {
 
         // Produce the list of expected JSON files. This list includes possibly invalid ABIs
         // so that generator can create fallback JSON for them.
-        List<File> expectedJsons = ExternalNativeBuildTaskUtils.getOutputJsons(jsonFolder,
+        List<File> expectedJsons = ExternalNativeBuildTaskUtils.getOutputJsons(externalNativeBuildFolder,
                 userRequestedAbis);
 
         switch(buildSystem) {
             case NDK_BUILD: {
                 CoreExternalNativeNdkBuildOptions options =
-                        variantConfig.getExternalNativeBuildOptions()
-                                .getExternalNativeNdkBuildOptions();
+                        checkNotNull(variantConfig.getExternalNativeBuildOptions()
+                                .getExternalNativeNdkBuildOptions());
                 return new NdkBuildExternalNativeJsonGenerator(
                         ndkHandler,
                         minSdkVersionApiLevel,
@@ -556,7 +556,7 @@ public abstract class ExternalNativeJsonGenerator {
                         sdkHandler.getNdkFolder(),
                         soFolder,
                         objFolder,
-                        jsonFolder,
+                        externalNativeBuildFolder,
                         makefile,
                         variantConfig.getBuildType().isDebuggable(),
                         options.getArguments(),
@@ -579,7 +579,7 @@ public abstract class ExternalNativeJsonGenerator {
                         sdkHandler.getNdkFolder(),
                         soFolder,
                         objFolder,
-                        jsonFolder,
+                        externalNativeBuildFolder,
                         makefile,
                         variantConfig.getBuildType().isDebuggable(),
                         options.getArguments(),
