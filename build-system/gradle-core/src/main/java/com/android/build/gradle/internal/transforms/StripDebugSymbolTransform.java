@@ -129,6 +129,9 @@ public class StripDebugSymbolTransform extends Transform {
                     for (Map.Entry<File, Status> fileStatus
                             : directoryInput.getChangedFiles().entrySet()) {
                         File input = fileStatus.getKey();
+                        if (input.isDirectory()) {
+                            continue;
+                        }
                         String abiName = input.getParentFile().getName();
                         Abi abi = Abi.getByName(abiName);
                         File strippedLib = new File(
@@ -148,6 +151,9 @@ public class StripDebugSymbolTransform extends Transform {
                     }
                 } else {
                     for (File input : FileUtils.getAllFiles(folder)) {
+                        if (input.isDirectory()) {
+                            continue;
+                        }
                         String abiName = input.getParentFile().getName();
                         Abi abi = Abi.getByName(abiName);
                         File strippedLib = new File(output, FileUtils.relativePath(input, folder));
