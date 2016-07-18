@@ -20,8 +20,10 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.build.gradle.external.gson.NativeBuildConfigValue;
 import com.android.build.gradle.external.gson.NativeLibraryValue;
+import com.android.build.gradle.internal.core.Abi;
 import com.android.build.gradle.internal.dsl.CoreExternalNativeBuildOptions;
 import com.android.build.gradle.internal.dsl.CoreExternalNativeCmakeOptions;
 import com.android.build.gradle.internal.dsl.CoreExternalNativeNdkBuildOptions;
@@ -30,6 +32,7 @@ import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.builder.core.AndroidBuilder;
+import com.android.builder.model.SyncIssue;
 import com.android.ide.common.process.ProcessException;
 import com.android.ide.common.process.ProcessInfoBuilder;
 import com.android.utils.StringHelper;
@@ -44,9 +47,11 @@ import org.gradle.api.tasks.TaskAction;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Task that takes set of JSON files of type NativeBuildConfigValue and does build steps with them.
@@ -239,6 +244,8 @@ public class ExternalNativeBuildTask extends ExternalNativeBaseTask {
     }
 
     public static class ConfigAction implements TaskConfigAction<ExternalNativeBuildTask> {
+        @Nullable
+        private final String buildTargetAbi;
         @NonNull
         private final ExternalNativeJsonGenerator generator;
         @NonNull
@@ -247,9 +254,11 @@ public class ExternalNativeBuildTask extends ExternalNativeBaseTask {
         private final AndroidBuilder androidBuilder;
 
         public ConfigAction(
+                @Nullable String buildTargetAbi,
                 @NonNull ExternalNativeJsonGenerator generator,
                 @NonNull VariantScope scope,
                 @NonNull AndroidBuilder androidBuilder) {
+            this.buildTargetAbi = buildTargetAbi;
             this.generator = generator;
             this.scope = scope;
             this.androidBuilder = androidBuilder;
@@ -295,7 +304,41 @@ public class ExternalNativeBuildTask extends ExternalNativeBaseTask {
             task.setVariantName(variantData.getName());
             task.setSoFolder(generator.getSoFolder());
             task.setObjFolder(generator.getObjFolder());
-            task.setNativeBuildConfigurationsJsons(generator.getNativeBuildConfigurationsJsons());
+            if (Strings.isNullOrEmpty(buildTargetAbi)) {
+                task.setNativeBuildConfigurationsJsons(
+                        generator.getNativeBuildConfigurationsJsons());
+            } else {
+                // Android Studio has requested a particular ABI to build or the user has specified
+                // one from the command-line like with: -Pandroid.injected.build.abi=x86
+                //
+                // In this case, the requested ABI overrides and abiFilters in the variantConfig.
+                // So this can build ABIs that aren't specified in any variant.
+                //
+                // It is possible for multiple ABIs to be passed through buildTargetAbi. In this
+                // case, take the first. It is preferred.
+                List<File> expectedJson = ExternalNativeBuildTaskUtils.getOutputJsons(
+                            generator.getJsonFolder(),
+                            Arrays.asList(buildTargetAbi.split(",")));
+                // Remove JSONs that won't be created by the generator.
+                expectedJson.retainAll(generator.getNativeBuildConfigurationsJsons());
+                // If no JSONs remain then issue a warning and proceed with no-op build.
+                if (expectedJson.isEmpty()) {
+                    androidBuilder.getErrorReporter().handleSyncWarning(
+                            scope.getFullVariantName(),
+                            SyncIssue.TYPE_EXTERNAL_NATIVE_BUILD_CONFIGURATION,
+                            String.format("Targeted device ABI or comma-delimited ABIs [%s] is not"
+                                    + " one of [%s]. Nothing to build.",
+                                    buildTargetAbi,
+                                    Joiner.on(", ").join(generator.getAbis().stream()
+                                            .map(Abi::getName)
+                                            .collect(Collectors.toList()))));
+                } else {
+                    // Take the first JSON that matched the build configuration
+                    task.setNativeBuildConfigurationsJsons(
+                            Lists.newArrayList(expectedJson.iterator().next()));
+                }
+            }
+
             task.setAndroidBuilder(androidBuilder);
             variantData.externalNativeBuildTasks.add(task);
         }

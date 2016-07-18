@@ -21,6 +21,7 @@ import com.android.build.gradle.integration.common.fixture.app.HelloWorldJniApp
 import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.build.gradle.integration.common.utils.ZipHelper
 import com.android.build.gradle.tasks.NativeBuildSystem
+import com.android.builder.model.AndroidProject
 import com.android.builder.model.NativeAndroidProject
 import com.android.builder.model.NativeArtifact
 import com.google.common.collect.ArrayListMultimap
@@ -96,12 +97,11 @@ android {
 }
 """
        }
-
-        project.execute("clean", "assembleDebug", "assembleRelease")
     }
 
     @Test
     void "check apk content"() {
+        project.execute("clean", "assembleDebug")
         File apk = project.getApk("debug");
         assertThatApk(apk).hasVersionCode(1)
         assertThatApk(apk).contains("lib/armeabi-v7a/libhello-jni.so");
@@ -113,6 +113,24 @@ android {
         assertThatNativeLib(lib).isStripped();
 
         lib = ZipHelper.extractFile(apk, "lib/armeabi/libhello-jni.so");
+        assertThatNativeLib(lib).isStripped();
+    }
+
+    @Test
+    void "check apk content with injected ABI"() {
+        // Pass invalid-abi, x86 and armeabi. The first (invalid-abi) should be ignored because
+        // it is not valid for the build . The second (x86) should be the one chosen to build.
+        // Finally, armeabi is valid but it will be ignored because x86 is "preferred".
+        project.executor()
+                .withProperty(AndroidProject.PROPERTY_BUILD_ABI, "invalid-abi,x86,armeabi")
+                .run("clean", "assembleDebug")
+        File apk = project.getApk("debug");
+        assertThatApk(apk).doesNotContain("lib/armeabi-v7a/libhello-jni.so");
+        assertThatApk(apk).doesNotContain("lib/armeabi/libhello-jni.so");
+        assertThatApk(apk).contains("lib/x86/libhello-jni.so");
+        assertThatApk(apk).doesNotContain("lib/x86_64/libhello-jni.so");
+
+        File lib = ZipHelper.extractFile(apk, "lib/x86/libhello-jni.so");
         assertThatNativeLib(lib).isStripped();
     }
 
@@ -145,6 +163,7 @@ android {
 
     @Test
     public void checkClean() {
+        project.execute("clean", "assembleDebug", "assembleRelease")
         NativeAndroidProject model = project.model().getSingle(NativeAndroidProject.class);
         assertThat(model).hasBuildOutputCountEqualTo(14);
         assertThat(model).allBuildOutputsExist();

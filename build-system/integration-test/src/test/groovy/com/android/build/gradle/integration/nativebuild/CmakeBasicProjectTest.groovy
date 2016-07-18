@@ -21,6 +21,7 @@ import com.android.build.gradle.integration.common.fixture.app.HelloWorldJniApp
 import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.build.gradle.integration.common.utils.ZipHelper
 import com.android.build.gradle.tasks.NativeBuildSystem
+import com.android.builder.model.AndroidProject
 import com.android.builder.model.NativeAndroidProject
 import com.android.builder.model.NativeArtifact
 import com.google.common.collect.ArrayListMultimap
@@ -82,7 +83,7 @@ $modelBefore
               cmake {
                 cFlags.addAll("-DTEST_C_FLAG", "-DTEST_C_FLAG_2")
                 cppFlags.addAll("-DTEST_CPP_FLAG")
-                abiFilters.addAll("armeabi-v7a", "armeabi")
+                abiFilters.addAll("armeabi-v7a", "armeabi", "x86")
                 targets.addAll("hello-jni")
               }
           }
@@ -107,20 +108,37 @@ android {
 }
 """
         }
-        project.execute("clean", "assembleDebug", "assembleRelease")
     }
 
     @Test
     void "check apk content"() {
+        project.execute("clean", "assembleDebug")
         File apk = project.getApk("debug");
         assertThatApk(apk).hasVersionCode(1)
         assertThatApk(apk).contains("lib/armeabi-v7a/libhello-jni.so");
         assertThatApk(apk).contains("lib/armeabi/libhello-jni.so");
+        assertThatApk(apk).contains("lib/x86/libhello-jni.so");
 
         File lib = ZipHelper.extractFile(apk, "lib/armeabi-v7a/libhello-jni.so");
         assertThatNativeLib(lib).isStripped();
 
         lib = ZipHelper.extractFile(apk, "lib/armeabi/libhello-jni.so");
+        assertThatNativeLib(lib).isStripped();
+
+        lib = ZipHelper.extractFile(apk, "lib/x86/libhello-jni.so");
+        assertThatNativeLib(lib).isStripped();
+    }
+
+    @Test
+    void "check apk content with injected ABI"() {
+        project.executor().withProperty(AndroidProject.PROPERTY_BUILD_ABI, "x86")
+                .run("clean", "assembleDebug")
+        File apk = project.getApk("debug");
+        assertThatApk(apk).doesNotContain("lib/armeabi-v7a/libhello-jni.so");
+        assertThatApk(apk).doesNotContain("lib/armeabi/libhello-jni.so");
+        assertThatApk(apk).contains("lib/x86/libhello-jni.so");
+
+        File lib = ZipHelper.extractFile(apk, "lib/x86/libhello-jni.so");
         assertThatNativeLib(lib).isStripped();
     }
 
@@ -131,7 +149,7 @@ android {
         assertThat(model.getBuildSystems()).containsExactly(NativeBuildSystem.CMAKE.getName());
         assertThat(model.buildFiles).hasSize(1);
         assertThat(model.name).isEqualTo("project");
-        int abiCount = 2;
+        int abiCount = 3;
         assertThat(model.artifacts).hasSize(abiCount * /* variantCount */ 2);
         assertThat(model.fileExtensions).hasSize(1);
 
@@ -154,8 +172,9 @@ android {
 
     @Test
     public void checkClean() {
+        project.execute("clean", "assembleDebug", "assembleRelease")
         NativeAndroidProject model = project.model().getSingle(NativeAndroidProject.class);
-        assertThat(model).hasBuildOutputCountEqualTo(4);
+        assertThat(model).hasBuildOutputCountEqualTo(6);
         assertThat(model).allBuildOutputsExist();
         assertThat(model).hasExactObjectFiles("hello-jni.c.o");
         assertThat(model).hasExactSharedObjectFiles("libhello-jni.so");

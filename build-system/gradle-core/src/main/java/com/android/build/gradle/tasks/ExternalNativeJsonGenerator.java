@@ -544,8 +544,9 @@ public abstract class ExternalNativeJsonGenerator {
         switch(buildSystem) {
             case NDK_BUILD: {
                 CoreExternalNativeNdkBuildOptions options =
-                        checkNotNull(variantConfig.getExternalNativeBuildOptions()
-                                .getExternalNativeNdkBuildOptions());
+                        variantConfig.getExternalNativeBuildOptions()
+                                .getExternalNativeNdkBuildOptions();
+                checkNotNull(options);
                 return new NdkBuildExternalNativeJsonGenerator(
                         ndkHandler,
                         minSdkVersionApiLevel,
@@ -568,6 +569,7 @@ public abstract class ExternalNativeJsonGenerator {
                 CoreExternalNativeCmakeOptions options =
                         variantConfig.getExternalNativeBuildOptions()
                                 .getExternalNativeCmakeOptions();
+                checkNotNull(options);
                 return new CmakeExternalNativeJsonGenerator(
                         sdkHandler.getSdkFolder(),
                         ndkHandler,
@@ -665,5 +667,10 @@ public abstract class ExternalNativeJsonGenerator {
     @Input
     public File getSdkFolder() {
         return sdkFolder;
+    }
+
+    @NonNull
+    List<Abi> getAbis() {
+        return abis;
     }
 }
