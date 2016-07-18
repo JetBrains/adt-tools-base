@@ -333,6 +333,12 @@ public class NdkSampleTest {
         }
     }
 
+    // Related to b.android.com/214626
+    @Test
+    public void LOCAL_MODULE_FILENAME() throws IOException, InterruptedException {
+        checkJson("samples/LOCAL_MODULE_FILENAME");
+    }
+
     @Test
     public void include_flag() throws IOException, InterruptedException {
         checkJson("samples/include-flag");

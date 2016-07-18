@@ -249,7 +249,7 @@ public class NativeBuildConfigValueBuilder {
         for (Output output : outputs) {
             NativeLibraryValue value = new NativeLibraryValue();
             librariesMap.put(output.libraryName, value);
-            value.buildCommand = output.buildCommand + " " + output.artifactName;
+            value.buildCommand = output.buildCommand + " " + output.outputFile;
             value.abi = output.outputFile.getParentFile().getName();
             value.artifactName = output.artifactName;
             value.toolchain = output.toolchain;

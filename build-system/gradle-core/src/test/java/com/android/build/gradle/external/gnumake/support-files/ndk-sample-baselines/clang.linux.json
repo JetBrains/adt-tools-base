@@ -6,7 +6,7 @@
   ],
   "libraries": {
     "helloneon-debug-armeabi": {
-      "buildCommand": "echo build command helloneon",
+      "buildCommand": "echo build command /usr/local/google/home/jomof/projects/hello-neon1/app/build/intermediates/ndkBuild/debug/obj/local/armeabi/libhelloneon.so",
       "toolchain": "toolchain-armeabi",
       "abi": "armeabi",
       "artifactName": "helloneon",
@@ -23,7 +23,7 @@
       }
     },
     "cpu-features-debug-cpufeatures": {
-      "buildCommand": "echo build command cpu-features",
+      "buildCommand": "echo build command /usr/local/google/home/jomof/projects/hello-neon1/app/build/intermediates/ndkBuild/debug/obj/local/armeabi/objs/cpufeatures/cpu-features.o",
       "toolchain": "toolchain-cpufeatures",
       "abi": "cpufeatures",
       "artifactName": "cpu-features",
@@ -40,7 +40,7 @@
       }
     },
     "helloneon-release-armeabi": {
-      "buildCommand": "echo build command helloneon",
+      "buildCommand": "echo build command /usr/local/google/home/jomof/projects/hello-neon1/app/build/intermediates/ndkBuild/debug/obj/local/armeabi/libhelloneon.so",
       "toolchain": "toolchain-armeabi",
       "abi": "armeabi",
       "artifactName": "helloneon",
@@ -57,7 +57,7 @@
       }
     },
     "cpu-features-release-cpufeatures": {
-      "buildCommand": "echo build command cpu-features",
+      "buildCommand": "echo build command /usr/local/google/home/jomof/projects/hello-neon1/app/build/intermediates/ndkBuild/debug/obj/local/armeabi/objs/cpufeatures/cpu-features.o",
       "toolchain": "toolchain-cpufeatures",
       "abi": "cpufeatures",
       "artifactName": "cpu-features",

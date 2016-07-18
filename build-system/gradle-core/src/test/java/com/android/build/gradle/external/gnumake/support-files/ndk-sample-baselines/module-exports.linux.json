@@ -6,7 +6,7 @@
   ],
   "libraries": {
     "zoo-debug-mips64": {
-      "buildCommand": "echo build command zoo",
+      "buildCommand": "echo build command {ndkPath}/samples/module-exports/obj/local/mips64/libzoo.so",
       "toolchain": "toolchain-mips64",
       "abi": "mips64",
       "artifactName": "zoo",
@@ -35,7 +35,7 @@
       }
     },
     "bar-release-mips": {
-      "buildCommand": "echo build command bar",
+      "buildCommand": "echo build command {ndkPath}/samples/module-exports/obj/local/mips/libbar.so",
       "toolchain": "toolchain-mips",
       "abi": "mips",
       "artifactName": "bar",
@@ -58,7 +58,7 @@
       }
     },
     "foo-release-armeabi": {
-      "buildCommand": "echo build command foo",
+      "buildCommand": "echo build command {ndkPath}/samples/module-exports/obj/local/armeabi/libfoo.a",
       "toolchain": "toolchain-armeabi",
       "abi": "armeabi",
       "artifactName": "foo",
@@ -75,7 +75,7 @@
       }
     },
     "bar-debug-mips64": {
-      "buildCommand": "echo build command bar",
+      "buildCommand": "echo build command {ndkPath}/samples/module-exports/obj/local/mips64/libbar.so",
       "toolchain": "toolchain-mips64",
       "abi": "mips64",
       "artifactName": "bar",
@@ -98,7 +98,7 @@
       }
     },
     "zoo-release-armeabi": {
-      "buildCommand": "echo build command zoo",
+      "buildCommand": "echo build command {ndkPath}/samples/module-exports/obj/local/armeabi/libzoo.so",
       "toolchain": "toolchain-armeabi",
       "abi": "armeabi",
       "artifactName": "zoo",
@@ -127,7 +127,7 @@
       }
     },
     "foo-release-mips": {
-      "buildCommand": "echo build command foo",
+      "buildCommand": "echo build command {ndkPath}/samples/module-exports/obj/local/mips/libfoo.a",
       "toolchain": "toolchain-mips",
       "abi": "mips",
       "artifactName": "foo",
@@ -144,7 +144,7 @@
       }
     },
     "zoo-release-mips": {
-      "buildCommand": "echo build command zoo",
+      "buildCommand": "echo build command {ndkPath}/samples/module-exports/obj/local/mips/libzoo.so",
       "toolchain": "toolchain-mips",
       "abi": "mips",
       "artifactName": "zoo",
@@ -173,7 +173,7 @@
       }
     },
     "bar-release-armeabi-v7a": {
-      "buildCommand": "echo build command bar",
+      "buildCommand": "echo build command {ndkPath}/samples/module-exports/obj/local/armeabi-v7a/libbar.so",
       "toolchain": "toolchain-armeabi-v7a",
       "abi": "armeabi-v7a",
       "artifactName": "bar",
@@ -196,7 +196,7 @@
       }
     },
     "zoo-release-mips64": {
-      "buildCommand": "echo build command zoo",
+      "buildCommand": "echo build command {ndkPath}/samples/module-exports/obj/local/mips64/libzoo.so",
       "toolchain": "toolchain-mips64",
       "abi": "mips64",
       "artifactName": "zoo",
@@ -225,7 +225,7 @@
       }
     },
     "foo-release-arm64-v8a": {
-      "buildCommand": "echo build command foo",
+      "buildCommand": "echo build command {ndkPath}/samples/module-exports/obj/local/arm64-v8a/libfoo.a",
       "toolchain": "toolchain-arm64-v8a",
       "abi": "arm64-v8a",
       "artifactName": "foo",
@@ -242,7 +242,7 @@
       }
     },
     "bar-debug-x86": {
-      "buildCommand": "echo build command bar",
+      "buildCommand": "echo build command {ndkPath}/samples/module-exports/obj/local/x86/libbar.so",
       "toolchain": "toolchain-x86",
       "abi": "x86",
       "artifactName": "bar",
@@ -265,7 +265,7 @@
       }
     },
     "bar-debug-x86_64": {
-      "buildCommand": "echo build command bar",
+      "buildCommand": "echo build command {ndkPath}/samples/module-exports/obj/local/x86_64/libbar.so",
       "toolchain": "toolchain-x86_64",
       "abi": "x86_64",
       "artifactName": "bar",
@@ -288,7 +288,7 @@
       }
     },
     "bar-release-x86_64": {
-      "buildCommand": "echo build command bar",
+      "buildCommand": "echo build command {ndkPath}/samples/module-exports/obj/local/x86_64/libbar.so",
       "toolchain": "toolchain-x86_64",
       "abi": "x86_64",
       "artifactName": "bar",
@@ -311,7 +311,7 @@
       }
     },
     "foo-debug-arm64-v8a": {
-      "buildCommand": "echo build command foo",
+      "buildCommand": "echo build command {ndkPath}/samples/module-exports/obj/local/arm64-v8a/libfoo.a",
       "toolchain": "toolchain-arm64-v8a",
       "abi": "arm64-v8a",
       "artifactName": "foo",
@@ -328,7 +328,7 @@
       }
     },
     "zoo-debug-armeabi": {
-      "buildCommand": "echo build command zoo",
+      "buildCommand": "echo build command {ndkPath}/samples/module-exports/obj/local/armeabi/libzoo.so",
       "toolchain": "toolchain-armeabi",
       "abi": "armeabi",
       "artifactName": "zoo",
@@ -357,7 +357,7 @@
       }
     },
     "zoo-debug-x86_64": {
-      "buildCommand": "echo build command zoo",
+      "buildCommand": "echo build command {ndkPath}/samples/module-exports/obj/local/x86_64/libzoo.so",
       "toolchain": "toolchain-x86_64",
       "abi": "x86_64",
       "artifactName": "zoo",
@@ -386,7 +386,7 @@
       }
     },
     "zoo-release-x86": {
-      "buildCommand": "echo build command zoo",
+      "buildCommand": "echo build command {ndkPath}/samples/module-exports/obj/local/x86/libzoo.so",
       "toolchain": "toolchain-x86",
       "abi": "x86",
       "artifactName": "zoo",
@@ -415,7 +415,7 @@
       }
     },
     "zoo-release-armeabi-v7a": {
-      "buildCommand": "echo build command zoo",
+      "buildCommand": "echo build command {ndkPath}/samples/module-exports/obj/local/armeabi-v7a/libzoo.so",
       "toolchain": "toolchain-armeabi-v7a",
       "abi": "armeabi-v7a",
       "artifactName": "zoo",
@@ -444,7 +444,7 @@
       }
     },
     "foo-release-x86_64": {
-      "buildCommand": "echo build command foo",
+      "buildCommand": "echo build command {ndkPath}/samples/module-exports/obj/local/x86_64/libfoo.a",
       "toolchain": "toolchain-x86_64",
       "abi": "x86_64",
       "artifactName": "foo",
@@ -461,7 +461,7 @@
       }
     },
     "foo-release-mips64": {
-      "buildCommand": "echo build command foo",
+      "buildCommand": "echo build command {ndkPath}/samples/module-exports/obj/local/mips64/libfoo.a",
       "toolchain": "toolchain-mips64",
       "abi": "mips64",
       "artifactName": "foo",
@@ -478,7 +478,7 @@
       }
     },
     "foo-debug-x86": {
-      "buildCommand": "echo build command foo",
+      "buildCommand": "echo build command {ndkPath}/samples/module-exports/obj/local/x86/libfoo.a",
       "toolchain": "toolchain-x86",
       "abi": "x86",
       "artifactName": "foo",
@@ -495,7 +495,7 @@
       }
     },
     "bar-debug-arm64-v8a": {
-      "buildCommand": "echo build command bar",
+      "buildCommand": "echo build command {ndkPath}/samples/module-exports/obj/local/arm64-v8a/libbar.so",
       "toolchain": "toolchain-arm64-v8a",
       "abi": "arm64-v8a",
       "artifactName": "bar",
@@ -518,7 +518,7 @@
       }
     },
     "zoo-debug-mips": {
-      "buildCommand": "echo build command zoo",
+      "buildCommand": "echo build command {ndkPath}/samples/module-exports/obj/local/mips/libzoo.so",
       "toolchain": "toolchain-mips",
       "abi": "mips",
       "artifactName": "zoo",
@@ -547,7 +547,7 @@
       }
     },
     "bar-release-mips64": {
-      "buildCommand": "echo build command bar",
+      "buildCommand": "echo build command {ndkPath}/samples/module-exports/obj/local/mips64/libbar.so",
       "toolchain": "toolchain-mips64",
       "abi": "mips64",
       "artifactName": "bar",
@@ -570,7 +570,7 @@
       }
     },
     "foo-release-armeabi-v7a": {
-      "buildCommand": "echo build command foo",
+      "buildCommand": "echo build command {ndkPath}/samples/module-exports/obj/local/armeabi-v7a/libfoo.a",
       "toolchain": "toolchain-armeabi-v7a",
       "abi": "armeabi-v7a",
       "artifactName": "foo",
@@ -587,7 +587,7 @@
       }
     },
     "zoo-debug-x86": {
-      "buildCommand": "echo build command zoo",
+      "buildCommand": "echo build command {ndkPath}/samples/module-exports/obj/local/x86/libzoo.so",
       "toolchain": "toolchain-x86",
       "abi": "x86",
       "artifactName": "zoo",
@@ -616,7 +616,7 @@
       }
     },
     "foo-release-x86": {
-      "buildCommand": "echo build command foo",
+      "buildCommand": "echo build command {ndkPath}/samples/module-exports/obj/local/x86/libfoo.a",
       "toolchain": "toolchain-x86",
       "abi": "x86",
       "artifactName": "foo",
@@ -633,7 +633,7 @@
       }
     },
     "zoo-debug-arm64-v8a": {
-      "buildCommand": "echo build command zoo",
+      "buildCommand": "echo build command {ndkPath}/samples/module-exports/obj/local/arm64-v8a/libzoo.so",
       "toolchain": "toolchain-arm64-v8a",
       "abi": "arm64-v8a",
       "artifactName": "zoo",
@@ -662,7 +662,7 @@
       }
     },
     "zoo-release-arm64-v8a": {
-      "buildCommand": "echo build command zoo",
+      "buildCommand": "echo build command {ndkPath}/samples/module-exports/obj/local/arm64-v8a/libzoo.so",
       "toolchain": "toolchain-arm64-v8a",
       "abi": "arm64-v8a",
       "artifactName": "zoo",
@@ -691,7 +691,7 @@
       }
     },
     "foo-debug-armeabi-v7a": {
-      "buildCommand": "echo build command foo",
+      "buildCommand": "echo build command {ndkPath}/samples/module-exports/obj/local/armeabi-v7a/libfoo.a",
       "toolchain": "toolchain-armeabi-v7a",
       "abi": "armeabi-v7a",
       "artifactName": "foo",
@@ -708,7 +708,7 @@
       }
     },
     "zoo-debug-armeabi-v7a": {
-      "buildCommand": "echo build command zoo",
+      "buildCommand": "echo build command {ndkPath}/samples/module-exports/obj/local/armeabi-v7a/libzoo.so",
       "toolchain": "toolchain-armeabi-v7a",
       "abi": "armeabi-v7a",
       "artifactName": "zoo",
@@ -737,7 +737,7 @@
       }
     },
     "foo-debug-mips": {
-      "buildCommand": "echo build command foo",
+      "buildCommand": "echo build command {ndkPath}/samples/module-exports/obj/local/mips/libfoo.a",
       "toolchain": "toolchain-mips",
       "abi": "mips",
       "artifactName": "foo",
@@ -754,7 +754,7 @@
       }
     },
     "bar-release-armeabi": {
-      "buildCommand": "echo build command bar",
+      "buildCommand": "echo build command {ndkPath}/samples/module-exports/obj/local/armeabi/libbar.so",
       "toolchain": "toolchain-armeabi",
       "abi": "armeabi",
       "artifactName": "bar",
@@ -777,7 +777,7 @@
       }
     },
     "foo-debug-x86_64": {
-      "buildCommand": "echo build command foo",
+      "buildCommand": "echo build command {ndkPath}/samples/module-exports/obj/local/x86_64/libfoo.a",
       "toolchain": "toolchain-x86_64",
       "abi": "x86_64",
       "artifactName": "foo",
@@ -794,7 +794,7 @@
       }
     },
     "zoo-release-x86_64": {
-      "buildCommand": "echo build command zoo",
+      "buildCommand": "echo build command {ndkPath}/samples/module-exports/obj/local/x86_64/libzoo.so",
       "toolchain": "toolchain-x86_64",
       "abi": "x86_64",
       "artifactName": "zoo",
@@ -823,7 +823,7 @@
       }
     },
     "bar-release-x86": {
-      "buildCommand": "echo build command bar",
+      "buildCommand": "echo build command {ndkPath}/samples/module-exports/obj/local/x86/libbar.so",
       "toolchain": "toolchain-x86",
       "abi": "x86",
       "artifactName": "bar",
@@ -846,7 +846,7 @@
       }
     },
     "bar-debug-armeabi": {
-      "buildCommand": "echo build command bar",
+      "buildCommand": "echo build command {ndkPath}/samples/module-exports/obj/local/armeabi/libbar.so",
       "toolchain": "toolchain-armeabi",
       "abi": "armeabi",
       "artifactName": "bar",
@@ -869,7 +869,7 @@
       }
     },
     "bar-debug-armeabi-v7a": {
-      "buildCommand": "echo build command bar",
+      "buildCommand": "echo build command {ndkPath}/samples/module-exports/obj/local/armeabi-v7a/libbar.so",
       "toolchain": "toolchain-armeabi-v7a",
       "abi": "armeabi-v7a",
       "artifactName": "bar",
@@ -892,7 +892,7 @@
       }
     },
     "bar-debug-mips": {
-      "buildCommand": "echo build command bar",
+      "buildCommand": "echo build command {ndkPath}/samples/module-exports/obj/local/mips/libbar.so",
       "toolchain": "toolchain-mips",
       "abi": "mips",
       "artifactName": "bar",
@@ -915,7 +915,7 @@
       }
     },
     "foo-debug-mips64": {
-      "buildCommand": "echo build command foo",
+      "buildCommand": "echo build command {ndkPath}/samples/module-exports/obj/local/mips64/libfoo.a",
       "toolchain": "toolchain-mips64",
       "abi": "mips64",
       "artifactName": "foo",
@@ -932,7 +932,7 @@
       }
     },
     "bar-release-arm64-v8a": {
-      "buildCommand": "echo build command bar",
+      "buildCommand": "echo build command {ndkPath}/samples/module-exports/obj/local/arm64-v8a/libbar.so",
       "toolchain": "toolchain-arm64-v8a",
       "abi": "arm64-v8a",
       "artifactName": "bar",
@@ -955,7 +955,7 @@
       }
     },
     "foo-debug-armeabi": {
-      "buildCommand": "echo build command foo",
+      "buildCommand": "echo build command {ndkPath}/samples/module-exports/obj/local/armeabi/libfoo.a",
       "toolchain": "toolchain-armeabi",
       "abi": "armeabi",
       "artifactName": "foo",

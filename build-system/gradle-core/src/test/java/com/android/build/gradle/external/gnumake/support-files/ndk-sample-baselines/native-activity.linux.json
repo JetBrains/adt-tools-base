@@ -6,7 +6,7 @@
   ],
   "libraries": {
     "android_native_app_glue-release-mips": {
-      "buildCommand": "echo build command android_native_app_glue",
+      "buildCommand": "echo build command {ndkPath}/samples/native-activity/obj/local/mips/libandroid_native_app_glue.a",
       "toolchain": "toolchain-mips",
       "abi": "mips",
       "artifactName": "android_native_app_glue",
@@ -23,7 +23,7 @@
       }
     },
     "native-activity-debug-arm64-v8a": {
-      "buildCommand": "echo build command native-activity",
+      "buildCommand": "echo build command {ndkPath}/samples/native-activity/obj/local/arm64-v8a/libnative-activity.so",
       "toolchain": "toolchain-arm64-v8a",
       "abi": "arm64-v8a",
       "artifactName": "native-activity",
@@ -46,7 +46,7 @@
       }
     },
     "native-activity-debug-mips": {
-      "buildCommand": "echo build command native-activity",
+      "buildCommand": "echo build command {ndkPath}/samples/native-activity/obj/local/mips/libnative-activity.so",
       "toolchain": "toolchain-mips",
       "abi": "mips",
       "artifactName": "native-activity",
@@ -69,7 +69,7 @@
       }
     },
     "native-activity-release-x86_64": {
-      "buildCommand": "echo build command native-activity",
+      "buildCommand": "echo build command {ndkPath}/samples/native-activity/obj/local/x86_64/libnative-activity.so",
       "toolchain": "toolchain-x86_64",
       "abi": "x86_64",
       "artifactName": "native-activity",
@@ -92,7 +92,7 @@
       }
     },
     "android_native_app_glue-debug-mips64": {
-      "buildCommand": "echo build command android_native_app_glue",
+      "buildCommand": "echo build command {ndkPath}/samples/native-activity/obj/local/mips64/libandroid_native_app_glue.a",
       "toolchain": "toolchain-mips64",
       "abi": "mips64",
       "artifactName": "android_native_app_glue",
@@ -109,7 +109,7 @@
       }
     },
     "android_native_app_glue-release-armeabi": {
-      "buildCommand": "echo build command android_native_app_glue",
+      "buildCommand": "echo build command {ndkPath}/samples/native-activity/obj/local/armeabi/libandroid_native_app_glue.a",
       "toolchain": "toolchain-armeabi",
       "abi": "armeabi",
       "artifactName": "android_native_app_glue",
@@ -126,7 +126,7 @@
       }
     },
     "native-activity-debug-armeabi": {
-      "buildCommand": "echo build command native-activity",
+      "buildCommand": "echo build command {ndkPath}/samples/native-activity/obj/local/armeabi/libnative-activity.so",
       "toolchain": "toolchain-armeabi",
       "abi": "armeabi",
       "artifactName": "native-activity",
@@ -149,7 +149,7 @@
       }
     },
     "native-activity-debug-x86_64": {
-      "buildCommand": "echo build command native-activity",
+      "buildCommand": "echo build command {ndkPath}/samples/native-activity/obj/local/x86_64/libnative-activity.so",
       "toolchain": "toolchain-x86_64",
       "abi": "x86_64",
       "artifactName": "native-activity",
@@ -172,7 +172,7 @@
       }
     },
     "android_native_app_glue-debug-arm64-v8a": {
-      "buildCommand": "echo build command android_native_app_glue",
+      "buildCommand": "echo build command {ndkPath}/samples/native-activity/obj/local/arm64-v8a/libandroid_native_app_glue.a",
       "toolchain": "toolchain-arm64-v8a",
       "abi": "arm64-v8a",
       "artifactName": "android_native_app_glue",
@@ -189,7 +189,7 @@
       }
     },
     "native-activity-release-armeabi-v7a": {
-      "buildCommand": "echo build command native-activity",
+      "buildCommand": "echo build command {ndkPath}/samples/native-activity/obj/local/armeabi-v7a/libnative-activity.so",
       "toolchain": "toolchain-armeabi-v7a",
       "abi": "armeabi-v7a",
       "artifactName": "native-activity",
@@ -212,7 +212,7 @@
       }
     },
     "native-activity-release-mips64": {
-      "buildCommand": "echo build command native-activity",
+      "buildCommand": "echo build command {ndkPath}/samples/native-activity/obj/local/mips64/libnative-activity.so",
       "toolchain": "toolchain-mips64",
       "abi": "mips64",
       "artifactName": "native-activity",
@@ -235,7 +235,7 @@
       }
     },
     "native-activity-release-x86": {
-      "buildCommand": "echo build command native-activity",
+      "buildCommand": "echo build command {ndkPath}/samples/native-activity/obj/local/x86/libnative-activity.so",
       "toolchain": "toolchain-x86",
       "abi": "x86",
       "artifactName": "native-activity",
@@ -258,7 +258,7 @@
       }
     },
     "native-activity-debug-armeabi-v7a": {
-      "buildCommand": "echo build command native-activity",
+      "buildCommand": "echo build command {ndkPath}/samples/native-activity/obj/local/armeabi-v7a/libnative-activity.so",
       "toolchain": "toolchain-armeabi-v7a",
       "abi": "armeabi-v7a",
       "artifactName": "native-activity",
@@ -281,7 +281,7 @@
       }
     },
     "android_native_app_glue-debug-x86": {
-      "buildCommand": "echo build command android_native_app_glue",
+      "buildCommand": "echo build command {ndkPath}/samples/native-activity/obj/local/x86/libandroid_native_app_glue.a",
       "toolchain": "toolchain-x86",
       "abi": "x86",
       "artifactName": "android_native_app_glue",
@@ -298,7 +298,7 @@
       }
     },
     "native-activity-release-mips": {
-      "buildCommand": "echo build command native-activity",
+      "buildCommand": "echo build command {ndkPath}/samples/native-activity/obj/local/mips/libnative-activity.so",
       "toolchain": "toolchain-mips",
       "abi": "mips",
       "artifactName": "native-activity",
@@ -321,7 +321,7 @@
       }
     },
     "android_native_app_glue-debug-armeabi": {
-      "buildCommand": "echo build command android_native_app_glue",
+      "buildCommand": "echo build command {ndkPath}/samples/native-activity/obj/local/armeabi/libandroid_native_app_glue.a",
       "toolchain": "toolchain-armeabi",
       "abi": "armeabi",
       "artifactName": "android_native_app_glue",
@@ -338,7 +338,7 @@
       }
     },
     "android_native_app_glue-release-x86": {
-      "buildCommand": "echo build command android_native_app_glue",
+      "buildCommand": "echo build command {ndkPath}/samples/native-activity/obj/local/x86/libandroid_native_app_glue.a",
       "toolchain": "toolchain-x86",
       "abi": "x86",
       "artifactName": "android_native_app_glue",
@@ -355,7 +355,7 @@
       }
     },
     "android_native_app_glue-release-armeabi-v7a": {
-      "buildCommand": "echo build command android_native_app_glue",
+      "buildCommand": "echo build command {ndkPath}/samples/native-activity/obj/local/armeabi-v7a/libandroid_native_app_glue.a",
       "toolchain": "toolchain-armeabi-v7a",
       "abi": "armeabi-v7a",
       "artifactName": "android_native_app_glue",
@@ -372,7 +372,7 @@
       }
     },
     "native-activity-debug-x86": {
-      "buildCommand": "echo build command native-activity",
+      "buildCommand": "echo build command {ndkPath}/samples/native-activity/obj/local/x86/libnative-activity.so",
       "toolchain": "toolchain-x86",
       "abi": "x86",
       "artifactName": "native-activity",
@@ -395,7 +395,7 @@
       }
     },
     "native-activity-release-armeabi": {
-      "buildCommand": "echo build command native-activity",
+      "buildCommand": "echo build command {ndkPath}/samples/native-activity/obj/local/armeabi/libnative-activity.so",
       "toolchain": "toolchain-armeabi",
       "abi": "armeabi",
       "artifactName": "native-activity",
@@ -418,7 +418,7 @@
       }
     },
     "android_native_app_glue-release-arm64-v8a": {
-      "buildCommand": "echo build command android_native_app_glue",
+      "buildCommand": "echo build command {ndkPath}/samples/native-activity/obj/local/arm64-v8a/libandroid_native_app_glue.a",
       "toolchain": "toolchain-arm64-v8a",
       "abi": "arm64-v8a",
       "artifactName": "android_native_app_glue",
@@ -435,7 +435,7 @@
       }
     },
     "native-activity-release-arm64-v8a": {
-      "buildCommand": "echo build command native-activity",
+      "buildCommand": "echo build command {ndkPath}/samples/native-activity/obj/local/arm64-v8a/libnative-activity.so",
       "toolchain": "toolchain-arm64-v8a",
       "abi": "arm64-v8a",
       "artifactName": "native-activity",
@@ -458,7 +458,7 @@
       }
     },
     "android_native_app_glue-debug-mips": {
-      "buildCommand": "echo build command android_native_app_glue",
+      "buildCommand": "echo build command {ndkPath}/samples/native-activity/obj/local/mips/libandroid_native_app_glue.a",
       "toolchain": "toolchain-mips",
       "abi": "mips",
       "artifactName": "android_native_app_glue",
@@ -475,7 +475,7 @@
       }
     },
     "android_native_app_glue-debug-armeabi-v7a": {
-      "buildCommand": "echo build command android_native_app_glue",
+      "buildCommand": "echo build command {ndkPath}/samples/native-activity/obj/local/armeabi-v7a/libandroid_native_app_glue.a",
       "toolchain": "toolchain-armeabi-v7a",
       "abi": "armeabi-v7a",
       "artifactName": "android_native_app_glue",
@@ -492,7 +492,7 @@
       }
     },
     "android_native_app_glue-debug-x86_64": {
-      "buildCommand": "echo build command android_native_app_glue",
+      "buildCommand": "echo build command {ndkPath}/samples/native-activity/obj/local/x86_64/libandroid_native_app_glue.a",
       "toolchain": "toolchain-x86_64",
       "abi": "x86_64",
       "artifactName": "android_native_app_glue",
@@ -509,7 +509,7 @@
       }
     },
     "native-activity-debug-mips64": {
-      "buildCommand": "echo build command native-activity",
+      "buildCommand": "echo build command {ndkPath}/samples/native-activity/obj/local/mips64/libnative-activity.so",
       "toolchain": "toolchain-mips64",
       "abi": "mips64",
       "artifactName": "native-activity",
@@ -532,7 +532,7 @@
       }
     },
     "android_native_app_glue-release-x86_64": {
-      "buildCommand": "echo build command android_native_app_glue",
+      "buildCommand": "echo build command {ndkPath}/samples/native-activity/obj/local/x86_64/libandroid_native_app_glue.a",
       "toolchain": "toolchain-x86_64",
       "abi": "x86_64",
       "artifactName": "android_native_app_glue",
@@ -549,7 +549,7 @@
       }
     },
     "android_native_app_glue-release-mips64": {
-      "buildCommand": "echo build command android_native_app_glue",
+      "buildCommand": "echo build command {ndkPath}/samples/native-activity/obj/local/mips64/libandroid_native_app_glue.a",
       "toolchain": "toolchain-mips64",
       "abi": "mips64",
       "artifactName": "android_native_app_glue",

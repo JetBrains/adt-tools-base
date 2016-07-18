@@ -6,7 +6,7 @@
   ],
   "libraries": {
     "plasma-release-x86": {
-      "buildCommand": "echo build command plasma",
+      "buildCommand": "echo build command {ndkPath}/samples/bitmap-plasma/obj/local/x86/libplasma.so",
       "toolchain": "toolchain-x86",
       "abi": "x86",
       "artifactName": "plasma",
@@ -23,7 +23,7 @@
       }
     },
     "plasma-debug-armeabi": {
-      "buildCommand": "echo build command plasma",
+      "buildCommand": "echo build command {ndkPath}/samples/bitmap-plasma/obj/local/armeabi/libplasma.so",
       "toolchain": "toolchain-armeabi",
       "abi": "armeabi",
       "artifactName": "plasma",
@@ -40,7 +40,7 @@
       }
     },
     "plasma-debug-x86": {
-      "buildCommand": "echo build command plasma",
+      "buildCommand": "echo build command {ndkPath}/samples/bitmap-plasma/obj/local/x86/libplasma.so",
       "toolchain": "toolchain-x86",
       "abi": "x86",
       "artifactName": "plasma",
@@ -57,7 +57,7 @@
       }
     },
     "plasma-debug-mips64": {
-      "buildCommand": "echo build command plasma",
+      "buildCommand": "echo build command {ndkPath}/samples/bitmap-plasma/obj/local/mips64/libplasma.so",
       "toolchain": "toolchain-mips64",
       "abi": "mips64",
       "artifactName": "plasma",
@@ -74,7 +74,7 @@
       }
     },
     "plasma-release-armeabi-v7a": {
-      "buildCommand": "echo build command plasma",
+      "buildCommand": "echo build command {ndkPath}/samples/bitmap-plasma/obj/local/armeabi-v7a/libplasma.so",
       "toolchain": "toolchain-armeabi-v7a",
       "abi": "armeabi-v7a",
       "artifactName": "plasma",
@@ -91,7 +91,7 @@
       }
     },
     "plasma-release-armeabi": {
-      "buildCommand": "echo build command plasma",
+      "buildCommand": "echo build command {ndkPath}/samples/bitmap-plasma/obj/local/armeabi/libplasma.so",
       "toolchain": "toolchain-armeabi",
       "abi": "armeabi",
       "artifactName": "plasma",
@@ -108,7 +108,7 @@
       }
     },
     "plasma-debug-x86_64": {
-      "buildCommand": "echo build command plasma",
+      "buildCommand": "echo build command {ndkPath}/samples/bitmap-plasma/obj/local/x86_64/libplasma.so",
       "toolchain": "toolchain-x86_64",
       "abi": "x86_64",
       "artifactName": "plasma",
@@ -125,7 +125,7 @@
       }
     },
     "plasma-release-x86_64": {
-      "buildCommand": "echo build command plasma",
+      "buildCommand": "echo build command {ndkPath}/samples/bitmap-plasma/obj/local/x86_64/libplasma.so",
       "toolchain": "toolchain-x86_64",
       "abi": "x86_64",
       "artifactName": "plasma",
@@ -142,7 +142,7 @@
       }
     },
     "plasma-debug-arm64-v8a": {
-      "buildCommand": "echo build command plasma",
+      "buildCommand": "echo build command {ndkPath}/samples/bitmap-plasma/obj/local/arm64-v8a/libplasma.so",
       "toolchain": "toolchain-arm64-v8a",
       "abi": "arm64-v8a",
       "artifactName": "plasma",
@@ -159,7 +159,7 @@
       }
     },
     "plasma-debug-armeabi-v7a": {
-      "buildCommand": "echo build command plasma",
+      "buildCommand": "echo build command {ndkPath}/samples/bitmap-plasma/obj/local/armeabi-v7a/libplasma.so",
       "toolchain": "toolchain-armeabi-v7a",
       "abi": "armeabi-v7a",
       "artifactName": "plasma",
@@ -176,7 +176,7 @@
       }
     },
     "plasma-release-mips64": {
-      "buildCommand": "echo build command plasma",
+      "buildCommand": "echo build command {ndkPath}/samples/bitmap-plasma/obj/local/mips64/libplasma.so",
       "toolchain": "toolchain-mips64",
       "abi": "mips64",
       "artifactName": "plasma",
@@ -193,7 +193,7 @@
       }
     },
     "plasma-debug-mips": {
-      "buildCommand": "echo build command plasma",
+      "buildCommand": "echo build command {ndkPath}/samples/bitmap-plasma/obj/local/mips/libplasma.so",
       "toolchain": "toolchain-mips",
       "abi": "mips",
       "artifactName": "plasma",
@@ -210,7 +210,7 @@
       }
     },
     "plasma-release-arm64-v8a": {
-      "buildCommand": "echo build command plasma",
+      "buildCommand": "echo build command {ndkPath}/samples/bitmap-plasma/obj/local/arm64-v8a/libplasma.so",
       "toolchain": "toolchain-arm64-v8a",
       "abi": "arm64-v8a",
       "artifactName": "plasma",
@@ -227,7 +227,7 @@
       }
     },
     "plasma-release-mips": {
-      "buildCommand": "echo build command plasma",
+      "buildCommand": "echo build command {ndkPath}/samples/bitmap-plasma/obj/local/mips/libplasma.so",
       "toolchain": "toolchain-mips",
       "abi": "mips",
       "artifactName": "plasma",
