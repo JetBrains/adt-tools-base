@@ -77,4 +77,12 @@ public class JackIncrementalTest {
         assertThat(androidJar).wasModifiedAt(androidJarTimestamp);
     }
 
+    @Test
+    public void checkDisablingIncrementalCompile() throws IOException {
+        TestFileUtils.appendToFile(project.getBuildFile(), "\n"
+                + "android.compileOptions.incremental false\n");
+        project.execute("clean", "assembleDebug");
+        assertThat(project.file("build/intermediates/incremental/jack")).doesNotExist();
+
+    }
 }
