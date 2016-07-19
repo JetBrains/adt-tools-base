@@ -69,16 +69,28 @@ public class NativeBuildConfigValueBuilder {
 
     // These are flags which have a following argument.
     private static final List<String> STRIP_FLAGS_WITH_ARG = Arrays.asList(
+
             "-c",
             "-o",
-            // Skip -MF <prefix> because this can change the location of the .d file generated
-            // by gcc.
-            "-MF");
+            // Skip -M* flags because these govern the creation of .d files in gcc. We don't want
+            // spurious files dropped by Cidr. See see b.android.com/215555 and
+            // b.android.com/213429.
+            // Also, removing these flags reduces the number of Settings groups that have to be
+            // passed to Android Studio.
+            "-MF",
+            "-MT",
+            "-MQ");
 
     // These are flags which don't have a following argument.
-    private static final List<String> STRIP_FLAGS_WITHOUT_ARG = Collections.singletonList(
-            // Skip -MMD because this can change the location of the .d file generated
-            // by gcc.
+    private static final List<String> STRIP_FLAGS_WITHOUT_ARG = Lists.newArrayList(
+            // Skip -M* flags because these govern the creation of .d files in gcc. We don't want
+            // spurious files dropped by Cidr. See see b.android.com/215555 and
+            // b.android.com/213429
+            "-M",
+            "-MM",
+            "-MD",
+            "-MG",
+            "-MP",
             "-MMD");
 
     private final Map<String, String> toolChainToCCompiler = new HashMap<>();

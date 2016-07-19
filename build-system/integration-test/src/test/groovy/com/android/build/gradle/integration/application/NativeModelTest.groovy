@@ -381,6 +381,7 @@ class NativeModelTest {
 
         if (config.compiler == Compiler.GCC) {
             checkGcc(model);
+            checkProblematicGccFlags(model);
         } else {
             checkClang(model);
         }
@@ -483,7 +484,7 @@ class NativeModelTest {
         assertThat(model).hasArtifactGroupsNamed("debug", "release");
 
         for (NativeSettings settings : model.settings) {
-            assertThat(settings).doesntHaveExactCompilerFlag("-DCUSTOM_BUILD_TYPE");
+            assertThat(settings).doesNotContainCompilerFlag("-DCUSTOM_BUILD_TYPE");
         }
     }
 
@@ -494,7 +495,7 @@ class NativeModelTest {
         for (NativeSettings settings : model.settings) {
             List<String> flags = settings.compilerFlags;
             if (flags.contains("-DCUSTOM_BUILD_TYPE")) {
-                assertThat(settings).hasExactCompilerFlag("-DCUSTOM_BUILD_TYPE");
+                assertThat(settings).containsCompilerFlag("-DCUSTOM_BUILD_TYPE");
                 sawCustomVariantFLag = true;
             }
         }
@@ -503,13 +504,27 @@ class NativeModelTest {
 
     private static void checkGcc(NativeAndroidProject model) {
         for (NativeSettings settings : model.settings) {
-            assertThat(settings).doesntHaveCompilerFlagStartingWith("-gcc-toolchain");
+            assertThat(settings).doesNotContainCompilerFlagStartingWith("-gcc-toolchain");
         }
     }
 
     private static void checkClang(NativeAndroidProject model) {
         for (NativeSettings settings : model.settings) {
-            assertThat(settings).hasCompilerFlagStartingWith("-gcc-toolchain");
+            assertThat(settings).containsCompilerFlagStartingWith("-gcc-toolchain");
+        }
+    }
+
+    private static void checkProblematicGccFlags(NativeAndroidProject model) {
+        for (NativeSettings settings : model.settings) {
+            // These flags are known to cause problems, see b.android.com/215555 and
+            // b.android.com/213429. They should be stripped (or not present) by JSON producer.
+            assertThat(settings).doesNotContainCompilerFlag("-MMD");
+            assertThat(settings).doesNotContainCompilerFlag("-MP");
+            assertThat(settings).doesNotContainCompilerFlag("-MT");
+            assertThat(settings).doesNotContainCompilerFlag("-MQ");
+            assertThat(settings).doesNotContainCompilerFlag("-MG");
+            assertThat(settings).doesNotContainCompilerFlag("-M");
+            assertThat(settings).doesNotContainCompilerFlag("-MM");
         }
     }
 
@@ -517,8 +532,8 @@ class NativeModelTest {
         assertThat(model.fileExtensions).containsEntry("c", "c");
         assertThat(model.fileExtensions).doesNotContainEntry("cpp", "c++");
         for (NativeSettings settings : model.settings) {
-            assertThat(settings).hasExactCompilerFlag("-DTEST_C_FLAG");
-            assertThat(settings).doesntHaveExactCompilerFlag("-DTEST_CPP_FLAG");
+            assertThat(settings).containsCompilerFlag("-DTEST_C_FLAG");
+            assertThat(settings).doesNotContainCompilerFlag("-DTEST_CPP_FLAG");
         }
     }
 
@@ -526,25 +541,25 @@ class NativeModelTest {
         assertThat(model.fileExtensions).containsEntry("cpp", "c++");
         assertThat(model.fileExtensions).doesNotContainEntry("c", "c");
         for (NativeSettings settings : model.settings) {
-            assertThat(settings).hasExactCompilerFlag("-DTEST_CPP_FLAG");
+            assertThat(settings).containsCompilerFlag("-DTEST_CPP_FLAG");
         }
     }
 
     private static void checkIsChangedC(NativeAndroidProject model) {
         assertThat(model.fileExtensions).containsEntry("c", "c");
         for (NativeSettings settings : model.settings) {
-            assertThat(settings).doesntHaveExactCompilerFlag("-DTEST_C_FLAG");
-            assertThat(settings).doesntHaveExactCompilerFlag("-DTEST_CPP_FLAG");
-            assertThat(settings).hasExactCompilerFlag("-DTEST_CHANGED_C_FLAG");
-            assertThat(settings).doesntHaveExactCompilerFlag("-DTEST_CHANGED_CPP_FLAG");
+            assertThat(settings).doesNotContainCompilerFlag("-DTEST_C_FLAG");
+            assertThat(settings).doesNotContainCompilerFlag("-DTEST_CPP_FLAG");
+            assertThat(settings).containsCompilerFlag("-DTEST_CHANGED_C_FLAG");
+            assertThat(settings).doesNotContainCompilerFlag("-DTEST_CHANGED_CPP_FLAG");
         }
     }
 
     private static void checkIsChangedCpp(NativeAndroidProject model) {
         assertThat(model.fileExtensions).containsEntry("cpp", "c++");
         for (NativeSettings settings : model.settings) {
-            assertThat(settings).doesntHaveExactCompilerFlag("-DTEST_CPP_FLAG");
-            assertThat(settings).hasExactCompilerFlag("-DTEST_CHANGED_CPP_FLAG");
+            assertThat(settings).doesNotContainCompilerFlag("-DTEST_CPP_FLAG");
+            assertThat(settings).containsCompilerFlag("-DTEST_CHANGED_CPP_FLAG");
         }
     }
 }

@@ -55,7 +55,7 @@ public class NativeSettingsSubject
 
     }
 
-    public void doesntHaveCompilerFlagStartingWith(@NonNull String prefix) {
+    public void doesNotContainCompilerFlagStartingWith(@NonNull String prefix) {
         List<String> compilerFlags = getSubject().getCompilerFlags();
         for (String flag : compilerFlags) {
             if (flag.startsWith(prefix)) {
@@ -65,7 +65,7 @@ public class NativeSettingsSubject
     }
 
     @SuppressWarnings("NonBooleanMethodNameMayNotStartWithQuestion")
-    public void hasCompilerFlagStartingWith(@NonNull String prefix) {
+    public void containsCompilerFlagStartingWith(@NonNull String prefix) {
         List<String> compilerFlags = getSubject().getCompilerFlags();
         for (String flag : compilerFlags) {
             if (flag.startsWith(prefix)) {
@@ -75,7 +75,7 @@ public class NativeSettingsSubject
         fail("contains flag with prefix", prefix);
     }
 
-    public void doesntHaveExactCompilerFlag(String expected) {
+    public void doesNotContainCompilerFlag(String expected) {
         List<String> compilerFlags = getSubject().getCompilerFlags();
         for (String flag : compilerFlags) {
             if (flag.equals(expected)) {
@@ -85,7 +85,7 @@ public class NativeSettingsSubject
     }
 
     @SuppressWarnings("NonBooleanMethodNameMayNotStartWithQuestion")
-    public void hasExactCompilerFlag(String expected) {
+    public void containsCompilerFlag(String expected) {
         List<String> compilerFlags = getSubject().getCompilerFlags();
         for (String flag : compilerFlags) {
             if (flag.equals(expected)) {
