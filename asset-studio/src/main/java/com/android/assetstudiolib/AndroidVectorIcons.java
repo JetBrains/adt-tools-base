@@ -19,9 +19,9 @@ import com.android.ide.common.vectordrawable.VdIcon;
 
 import java.net.URL;
 
-public class AndroidVectorIcons {
-  private static final String MATERIAL_DESIGN_ICONS_PATH = "images/material_design_icons/";
+import static com.android.assetstudiolib.AssetStudio.MATERIAL_DESIGN_ICONS_PATH;
 
+public class AndroidVectorIcons {
   private static VdIcon load(String path, int size) {
     URL url = GraphicGenerator.class.getClassLoader().getResource(MATERIAL_DESIGN_ICONS_PATH + path);
     return new VdIcon(url, size, size);
