@@ -21,21 +21,27 @@ import static java.io.File.separator;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.build.gradle.tasks.Lint;
 import com.android.builder.model.AndroidProject;
 import com.android.builder.model.Variant;
 import com.android.sdklib.BuildToolInfo;
 import com.android.tools.lint.LintCliClient;
 import com.android.tools.lint.LintCliFlags;
 import com.android.tools.lint.Warning;
-import com.android.tools.lint.checks.UnusedResourceDetector;
 import com.android.tools.lint.client.api.IssueRegistry;
 import com.android.tools.lint.client.api.LintRequest;
+import com.android.tools.lint.detector.api.Context;
 import com.android.tools.lint.detector.api.Issue;
+import com.android.tools.lint.detector.api.Location;
 import com.android.tools.lint.detector.api.Project;
+import com.android.tools.lint.detector.api.Severity;
+import com.android.tools.lint.detector.api.TextFormat;
 import com.android.utils.Pair;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+
+import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry;
 
 import java.io.File;
 import java.io.IOException;
@@ -49,9 +55,13 @@ public class LintGradleClient extends LintCliClient {
     /**
      * Variant to run the client on.
      */
-    @NonNull private Variant mVariant;
+    @NonNull private final Variant mVariant;
 
     private final org.gradle.api.Project mGradleProject;
+    /**
+     * Note that as soon as we disable {@link Lint#MODEL_LIBRARIES} this is
+     * unused and we can delete it and all the callers passing it recursively
+     */
     private List<File> mCustomRules = Lists.newArrayList();
     private File mSdkHome;
     private final BuildToolInfo mBuildToolInfo;
@@ -115,8 +125,11 @@ public class LintGradleClient extends LintCliClient {
     @NonNull
     protected LintRequest createLintRequest(@NonNull List<File> files) {
         LintRequest lintRequest = new LintRequest(this, files);
-        if (mVariant == null) {
-            lintRequest.setProjects(Lists.<Project>newArrayList());
+        if (Lint.MODEL_LIBRARIES) {
+            LintGradleProject.ProjectSearch search = new LintGradleProject.ProjectSearch();
+            Project project = search.getProject(this, mGradleProject, mVariant.getName());
+            lintRequest.setProjects(Collections.singletonList(project));
+            setCustomRules(search.customViewRuleJars);
         } else {
             Pair<LintGradleProject,List<File>> result = LintGradleProject.create(
                     this, mModelProject, mVariant, mGradleProject);
@@ -221,5 +234,17 @@ public class LintGradleClient extends LintCliClient {
     @Override
     public BuildToolInfo getBuildTools(@NonNull Project project) {
         return mBuildToolInfo;
+    }
+
+    @Override
+    public void report(@NonNull Context context, @NonNull Issue issue, @NonNull Severity severity,
+            @NonNull Location location, @NonNull String message, @NonNull TextFormat format) {
+        if (issue == IssueRegistry.LINT_ERROR
+                && message.startsWith("No `.class` files were found in project")) {
+            // In Gradle, .class files are always generated when needed, so no need
+            // to flag this (and it's erroneous on library projects)
+            return;
+        }
+        super.report(context, issue, severity, location, message, format);
     }
 }

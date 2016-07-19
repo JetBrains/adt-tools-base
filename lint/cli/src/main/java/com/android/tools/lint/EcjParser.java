@@ -36,6 +36,7 @@ import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.psi.EcjPsiBuilder;
 import com.android.tools.lint.psi.EcjPsiJavaEvaluator;
 import com.android.tools.lint.psi.EcjPsiManager;
+import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import com.google.common.collect.Lists;
 import com.google.common.collect.MapMaker;
@@ -544,6 +545,19 @@ public class EcjParser extends JavaParser {
             String androidJar = compileTarget.getPath(IAndroidTarget.ANDROID_JAR);
             if (androidJar != null && new File(androidJar).exists()) {
                 classPath.add(androidJar);
+            }
+        } else if (!mProject.isAndroidProject()) {
+            // Gradle Java library? We don't have the correct classpath here.
+            String bootClassPath = System.getProperty("sun.boot.class.path");
+            if (bootClassPath != null) {
+                for (String path : Splitter.on(File.pathSeparatorChar).split(bootClassPath)) {
+                    // Sadly sometimes the path doesn't exist (e.g. the boot classpath property
+                    // includes jar files that don't exist, or directories) so we need to validate
+                    // these
+                    if (new File(path).isFile()) {
+                        classPath.add(path);
+                    }
+                }
             }
         }
 

@@ -55,13 +55,27 @@ import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry;
 import java.io.File;
 import java.io.IOException;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 @ParallelizableTask
 public class Lint extends BaseTask {
+    /** Name of property used to enable {@link #MODEL_LIBRARIES} */
+    public static final String MODEL_LIBRARIES_PROPERTY = "lint.new-lib-model"; // for test access
+    /**
+     * Whether lint should attempt to do deep analysis of libraries. E.g. when
+     * building up the project graph, when it encounters an AndroidLibrary or JavaLibrary
+     * dependency, it should check if it's a local project, and if so recursively initialize
+     * the project with the local source paths etc of the library (in the past, this was not
+     * the case: it would naively just point to the library's resources and class files,
+     * which were the compiled outputs.
+     * <p>
+     * The new behavior is clearly the correct behavior (see issue #194092), but since this
+     * is a risky fix, we're putting it behind a flag now and as soon as we get some real
+     * user testing, we should enable this by default and remove the old code.
+     */
+    public static final boolean MODEL_LIBRARIES = Boolean.getBoolean(MODEL_LIBRARIES_PROPERTY);
 
     private static final Logger LOG = Logging.getLogger(Lint.class);
 
@@ -117,8 +131,10 @@ public class Lint extends BaseTask {
         }
 
         // Compute error matrix
-        boolean quiet = mLintOptions.isQuiet();
-
+        boolean quiet = false;
+        if (mLintOptions != null) {
+            quiet = mLintOptions.isQuiet();
+        }
 
         for (Map.Entry<Variant,List<Warning>> entry : warningMap.entrySet()) {
             Variant variant = entry.getKey();
@@ -145,12 +161,8 @@ public class Lint extends BaseTask {
          * have any variants.
          */
         if (!modelProject.getVariants().isEmpty()) {
-            Set<Variant> allVariants = Sets.newTreeSet(new Comparator<Variant>() {
-                @Override
-                public int compare(Variant v1, Variant v2) {
-                    return v1.getName().compareTo(v2.getName());
-                }
-            });
+            Set<Variant> allVariants = Sets.newTreeSet(
+                    (v1, v2) -> v1.getName().compareTo(v2.getName()));
 
             allVariants.addAll(modelProject.getVariants());
             Variant variant = allVariants.iterator().next();
@@ -214,6 +226,10 @@ public class Lint extends BaseTask {
 
     /** Runs lint on the given variant and returns the set of warnings */
     private List<Warning> runLint(
+            /*
+             * Note that as soon as we disable {@link #MODEL_LIBRARIES} this is
+             * unused and we can delete it and all the callers passing it recursively
+             */
             @NonNull AndroidProject modelProject,
             @NonNull Variant variant,
             boolean report) {
@@ -222,12 +238,14 @@ public class Lint extends BaseTask {
         LintGradleClient client = new LintGradleClient(registry, flags, getProject(), modelProject,
                 mSdkHome, variant, getBuildTools());
         if (mFatalOnly) {
-            if (!mLintOptions.isCheckReleaseBuilds()) {
+            if (mLintOptions != null && !mLintOptions.isCheckReleaseBuilds()) {
                 return Collections.emptyList();
             }
             flags.setFatalOnly(true);
         }
-        syncOptions(mLintOptions, client, flags, variant, getProject(), report, mFatalOnly);
+        if (mLintOptions != null) {
+            syncOptions(mLintOptions, client, flags, variant, getProject(), report, mFatalOnly);
+        }
         if (!report || mFatalOnly) {
             flags.setQuiet(true);
         }
@@ -326,7 +344,10 @@ public class Lint extends BaseTask {
         @Override
         public void execute(@NonNull Lint lint) {
             lint.setLintOptions(scope.getGlobalScope().getExtension().getLintOptions());
-            lint.setSdkHome(scope.getGlobalScope().getSdkHandler().getSdkFolder());
+            File sdkFolder = scope.getGlobalScope().getSdkHandler().getSdkFolder();
+            if (sdkFolder != null) {
+                lint.setSdkHome(sdkFolder);
+            }
             lint.setAndroidBuilder(scope.getGlobalScope().getAndroidBuilder());
             lint.setVariantName(scope.getVariantConfiguration().getFullName());
             lint.setToolingRegistry(scope.getGlobalScope().getToolingRegistry());
@@ -399,7 +420,10 @@ public class Lint extends BaseTask {
             lintTask.setVariantName("");
             lintTask.setGroup(JavaBasePlugin.VERIFICATION_GROUP);
             lintTask.setLintOptions(globalScope.getExtension().getLintOptions());
-            lintTask.setSdkHome(globalScope.getSdkHandler().getSdkFolder());
+            File sdkFolder = globalScope.getSdkHandler().getSdkFolder();
+            if (sdkFolder != null) {
+                lintTask.setSdkHome(sdkFolder);
+            }
             lintTask.setToolingRegistry(globalScope.getToolingRegistry());
             lintTask.setAndroidBuilder(globalScope.getAndroidBuilder());
         }
