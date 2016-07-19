@@ -42,6 +42,7 @@ import com.android.build.gradle.internal.NdkOptionsHelper;
 import com.android.build.gradle.internal.ProductFlavorCombo;
 import com.android.build.gradle.internal.SdkHandler;
 import com.android.build.gradle.internal.TaskManager;
+import com.android.build.gradle.internal.ToolingRegistryProvider;
 import com.android.build.gradle.internal.VariantManager;
 import com.android.build.gradle.internal.coverage.JacocoPlugin;
 import com.android.build.gradle.internal.dependency.AndroidNativeDependencySpec;
@@ -137,7 +138,7 @@ import javax.inject.Inject;
 
 import groovy.lang.Closure;
 
-public class BaseComponentModelPlugin implements Plugin<Project> {
+public class BaseComponentModelPlugin implements Plugin<Project>, ToolingRegistryProvider {
 
     private final ToolingModelBuilderRegistry toolingRegistry;
 
@@ -284,6 +285,12 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
 
         configuration.setVisible(false);
         configuration.setDescription(configurationDescription);
+    }
+
+    @NonNull
+    @Override
+    public ToolingModelBuilderRegistry getModelBuilderRegistry() {
+        return toolingRegistry;
     }
 
     public static class Rules extends RuleSource {

@@ -35,6 +35,7 @@ import com.android.build.gradle.internal.NativeLibraryFactoryImpl;
 import com.android.build.gradle.internal.SdkHandler;
 import com.android.build.gradle.internal.TaskContainerAdaptor;
 import com.android.build.gradle.internal.TaskManager;
+import com.android.build.gradle.internal.ToolingRegistryProvider;
 import com.android.build.gradle.internal.VariantManager;
 import com.android.build.gradle.internal.coverage.JacocoPlugin;
 import com.android.build.gradle.internal.dependency.VariantDependencies;
@@ -129,7 +130,7 @@ import java.util.jar.Manifest;
 /**
  * Base class for all Android plugins
  */
-public abstract class BasePlugin {
+public abstract class BasePlugin implements ToolingRegistryProvider {
 
     private static final GradleVersion GRADLE_MIN_VERSION = GradleVersion.parse("2.10");
     /** default retirement age in days since its inception date for RC or beta versions. */
@@ -837,6 +838,12 @@ public abstract class BasePlugin {
                         + "=true' to gradle.properties file in the project directory.";
 
         throw new StopExecutionException(message);
+    }
+
+    @NonNull
+    @Override
+    public ToolingModelBuilderRegistry getModelBuilderRegistry() {
+        return registry;
     }
 
     private static SettingsController getSettingsController() {
