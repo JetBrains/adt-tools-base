@@ -2054,4 +2054,49 @@ public class SupportAnnotationDetectorTest extends AbstractCheckTest {
                                 + "}\n")
                 ));
     }
+
+    public void testSnackbarDuration() throws Exception {
+        assertEquals("No warnings.",
+                lintProject(
+                        java("src/test/pkg/SnackbarTest.java", ""
+                                + "package test.pkg;\n"
+                                + "\n"
+                                + "import android.support.design.widget.Snackbar;\n"
+                                + "\n"
+                                + "public class SnackbarTest {\n"
+                                + "    public Snackbar makeSnackbar(@Snackbar.Duration int duration) {\n"
+                                + "        return null;\n"
+                                + "    }\n"
+                                + "\n"
+                                + "    public void test() {\n"
+                                + "        makeSnackbar(Snackbar.LENGTH_LONG);\n"
+                                + "    }\n"
+                                + "}\n"),
+                        java("src/android/support/design/widget/Snackbar.java", ""
+                                + "package android.support.design.widget;\n"
+                                + "\n"
+                                + "import android.support.annotation.IntDef;\n"
+                                + "import android.support.annotation.IntRange;\n"
+                                + "\n"
+                                + "import java.lang.annotation.Retention;\n"
+                                + "import java.lang.annotation.RetentionPolicy;\n"
+                                + "\n"
+                                + "public class Snackbar {\n"
+                                // In the real class definition, this annotation is there,
+                                // but in the compiled design library, since it has source
+                                // retention, the @IntDef is missing and only the @IntRange
+                                // remains
+                                //+ "    @IntDef({LENGTH_INDEFINITE, LENGTH_SHORT, LENGTH_LONG})\n"
+                                + "    @IntRange(from = 1)\n"
+                                + "    @Retention(RetentionPolicy.SOURCE)\n"
+                                + "    public @interface Duration {}\n"
+                                + "\n"
+                                + "    public static final int LENGTH_INDEFINITE = -2;\n"
+                                + "    public static final int LENGTH_SHORT = -1;\n"
+                                + "    public static final int LENGTH_LONG = 0;\n"
+                                + "}\n"),
+                        copy("src/android/support/annotation/IntDef.java.txt", "src/android/support/annotation/IntDef.java"),
+                        copy("src/android/support/annotation/IntRange.java.txt", "src/android/support/annotation/IntRange.java")
+                ));
+    }
 }

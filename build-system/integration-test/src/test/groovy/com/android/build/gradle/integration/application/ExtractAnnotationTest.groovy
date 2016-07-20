@@ -30,7 +30,7 @@ import static com.android.build.gradle.integration.common.truth.TruthHelper.asse
  * Tip: To execute just this test after modifying the annotations extraction code:
  * <pre>
  *     $ cd tools
- *     $ ./gradlew :base:i:test -Dtest.single=ExtractAnnotationTest
+ *     $  ./gradlew :base:int:test -Dtest.single=ExtractAnnotationTest
  * </pre>
  */
 @CompileStatic
@@ -109,8 +109,11 @@ class ExtractAnnotationTest {
 
         // Check typedefs removals:
 
-        // public typedef: should be present
-        assertThatZip(classesJar).contains(
+        // public typedefs should NOT be present, because even though the
+        // typedef class itself can be referenced from code, the constants
+        // themselves are missing from the annotation, so tools cannot
+        // check that they have the right semantics anyway!
+        assertThatZip(classesJar).doesNotContain(
                 "com/android/tests/extractannotations/ExtractTest\$Visibility.class")
 
         // private/protected typedefs: should have been removed
