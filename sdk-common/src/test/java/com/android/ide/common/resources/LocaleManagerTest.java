@@ -244,6 +244,9 @@ public class LocaleManagerTest extends TestCase {
             assertEquals("PT", LocaleManager.getLanguageRegion("pt"));
             TimeZone.setDefault(TimeZone.getTimeZone("Europe/Oslo"));
             assertEquals("PT", LocaleManager.getLanguageRegion("pt"));
+            TimeZone.setDefault(TimeZone.getTimeZone("Europe/Minsk"));
+            assertEquals("BY", LocaleManager.getLanguageRegion("be"));
+            assertEquals("RU", LocaleManager.getLanguageRegion("ru"));
         } finally {
             Locale.setDefault(prevLocale);
             TimeZone.setDefault(prevTimeZone);

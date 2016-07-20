@@ -370,8 +370,11 @@ public class LocaleManager {
             //     region choice.)
             if (relevant != null) {
                 String region = getTimeZoneRegionAlpha2(TimeZone.getDefault());
-                if (region != null && regions.contains(region) &&
-                        (relevant.isEmpty() || relevant.contains(region))) {
+                if (region == null) {
+                    // Unknown timezone: ambiguous and don't attempt to guess
+                    return null;
+                }
+                if (regions.contains(region) && (relevant.isEmpty() || relevant.contains(region))) {
                     return region;
                 }
             }
@@ -462,6 +465,8 @@ public class LocaleManager {
                     "PA", "PY", "SV", "UY", "VE", "ME");
         } else if ("pt".equals(languageCode)) {
             return Arrays.asList("PT", "BR");
+        } else if ("ru".equals(languageCode)) {
+            return Collections.singletonList("ru");
         } else {
             return null;
         }
