@@ -173,10 +173,10 @@ public class DependenciesImpl implements Dependencies, Serializable {
             }
         }
 
-        DependenciesImpl clonedDependencies = new DependenciesImpl(clonedAndroidLibraries,
-                clonedJavaLibraries, clonedProjects);
-
-        return clonedDependencies;
+        return new DependenciesImpl(
+                clonedAndroidLibraries,
+                clonedJavaLibraries,
+                clonedProjects);
     }
 
     private static void handleFlatClonedAndroidLib(
@@ -204,15 +204,17 @@ public class DependenciesImpl implements Dependencies, Serializable {
         if (!customArtifact && javaLibrary.getProject() != null) {
             clonedProjects.add(javaLibrary.getProject());
         } else {
-            clonedJavaLibraries.add(
-                    new JavaLibraryImpl(
-                            jarFile,
-                            null /*project*/,
-                            ImmutableList.<JavaLibrary>of(),
-                            null,
-                            javaLibrary.getResolvedCoordinates(),
-                            javaLibrary.isSkipped(),
-                            javaLibrary.isProvided()));
+            JavaLibraryImpl clonedJavaLib = new JavaLibraryImpl(
+                    jarFile,
+                    null /*project*/,
+                    ImmutableList.of(),
+                    null,
+                    javaLibrary.getResolvedCoordinates(),
+                    javaLibrary.isSkipped(),
+                    javaLibrary.isProvided());
+            if (!clonedJavaLibraries.contains(clonedJavaLib)) {
+                clonedJavaLibraries.add(clonedJavaLib);
+            }
         }
 
         // then recursively go through the rest.
@@ -266,7 +268,7 @@ public class DependenciesImpl implements Dependencies, Serializable {
             Collection<? extends JavaLibrary> jarDeps = libraryDependency.getJavaDependencies();
             clonedJavaLibraries = Lists.newArrayListWithCapacity(jarDeps.size());
             for (JavaLibrary javaLibrary : jarDeps) {
-                JavaLibraryImpl clonedJar = sJarCache.get((JarDependency) javaLibrary);
+                JavaLibraryImpl clonedJar = sJarCache.get(javaLibrary);
                 if (clonedJar != null) {
                     clonedJavaLibraries.add(clonedJar);
                 }
