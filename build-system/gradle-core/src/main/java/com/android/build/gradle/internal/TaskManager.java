@@ -48,7 +48,6 @@ import com.android.build.gradle.internal.dsl.CoreSigningConfig;
 import com.android.build.gradle.internal.dsl.PackagingOptions;
 import com.android.build.gradle.internal.incremental.BuildInfoLoaderTask;
 import com.android.build.gradle.internal.incremental.InstantRunAnchorTaskConfigAction;
-import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
 import com.android.build.gradle.internal.incremental.InstantRunPatchingPolicy;
 import com.android.build.gradle.internal.incremental.InstantRunWrapperTask;
 import com.android.build.gradle.internal.model.CoreExternalNativeBuild;
@@ -156,14 +155,12 @@ import com.android.builder.model.DataBindingOptions;
 import com.android.builder.model.InstantRun;
 import com.android.builder.model.OptionalCompilationStep;
 import com.android.builder.model.SyncIssue;
-import com.android.builder.sdk.TargetInfo;
 import com.android.builder.testing.ConnectedDeviceProvider;
 import com.android.builder.testing.api.DeviceProvider;
 import com.android.builder.testing.api.TestServer;
 import com.android.manifmerger.ManifestMerger2;
 import com.android.repository.Revision;
 import com.android.sdklib.AndroidVersion;
-import com.android.sdklib.BuildToolInfo;
 import com.android.utils.StringHelper;
 import com.google.common.base.Objects;
 import com.google.common.base.Suppliers;
@@ -2483,38 +2480,36 @@ public abstract class TaskManager {
     }
 
     /**
-     * creates a zip align. This does not use convention mapping, and is meant to let other plugin
-     * create zip align tasks.
+     * Creates a zip align task that aligns a provided APK.
      *
-     * @param name          the name of the task
-     * @param buildContext  the InstantRun build context
-     * @param inputFile     the input file
-     * @param outputFile    the output file
-     * @return the task
+     * @param name the name of the task
+     * @param inputFile the file to align
+     * @param outputFile where to put the aligned file
+     * @param variantOutputScope the variant output scope required to find build tools
      */
     @NonNull
     public ZipAlign createZipAlignTask(
             @NonNull String name,
-            @NonNull InstantRunBuildContext buildContext,
             @NonNull File inputFile,
-            @NonNull File outputFile) {
+            @NonNull File outputFile,
+            @NonNull VariantOutputScope variantOutputScope) {
+
         // Add a task to zip align application package
-        ZipAlign zipAlignTask = project.getTasks().create(name, ZipAlign.class);
+        ZipAlign zipAlignTask =
+                project
+                        .getTasks()
+                        .create(
+                                name,
+                                ZipAlign.class,
+                                new ZipAlign.ConfigAction(variantOutputScope));
+        ConventionMappingHelper.map(zipAlignTask, "inputFile", () -> inputFile);
+        ConventionMappingHelper.map(zipAlignTask, "outputFile", () -> outputFile);
 
-        zipAlignTask.setInputFile(inputFile);
-        zipAlignTask.setOutputFile(outputFile);
-        zipAlignTask.setInstantRunBuildContext(buildContext);
-        ConventionMappingHelper.map(zipAlignTask, "zipAlignExe", (Callable<File>) () -> {
-            final TargetInfo info = androidBuilder.getTargetInfo();
-            if (info != null) {
-                String path = info.getBuildTools().getPath(BuildToolInfo.PathId.ZIP_ALIGN);
-                if (path != null) {
-                    return new File(path);
-                }
-            }
-
-            return null;
-        });
+        /*
+         * We need to make sure we have the manifest available so, we need a dependency.
+         */
+        zipAlignTask.dependsOn(
+                variantOutputScope.getVariantScope().getPackageApplicationTask().getName());
 
         return zipAlignTask;
     }

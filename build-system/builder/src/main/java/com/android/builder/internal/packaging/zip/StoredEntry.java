@@ -283,7 +283,7 @@ public class StoredEntry {
      *
      * @return the local header size in bytes
      */
-    int getLocalHeaderSize() {
+    public int getLocalHeaderSize() {
         Preconditions.checkState(!mDeleted, "mDeleted");
         return FIXED_LOCAL_FILE_HEADER_SIZE + mCdh.getEncodedFileName().length + mLocalExtra.length;
     }
