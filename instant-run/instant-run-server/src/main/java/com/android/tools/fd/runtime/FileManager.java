@@ -517,6 +517,9 @@ public class FileManager {
                 Log.e(LOG_TAG, "Failed to create directory " + dexFolder);
                 return null;
             }
+
+            // There was nothing to purge, but leave the folder be from now on.
+            sHavePurgedTempDexFolder = true;
         } else {
             // The *first* time we write a reload dex file in the new process, we'll
             // delete previously stashes reload dex files. (We keep them around
