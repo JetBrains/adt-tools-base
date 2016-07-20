@@ -43,7 +43,9 @@ import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.common.io.Files;
+
 import org.gradle.api.GradleException;
+import org.gradle.api.InvalidUserDataException;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.Optional;
 import org.gradle.api.tasks.OutputDirectory;
@@ -490,8 +492,14 @@ public abstract class ExternalNativeJsonGenerator {
             @NonNull AndroidBuilder androidBuilder,
             @NonNull SdkHandler sdkHandler,
             @NonNull VariantScope scope) {
-        checkNotNull(sdkHandler.getNdkFolder());
         checkNotNull(sdkHandler.getSdkFolder());
+        File ndkFolder =  sdkHandler.getNdkFolder();
+        if (ndkFolder == null || !ndkFolder.isDirectory()) {
+            throw new InvalidUserDataException(String.format(
+                    "NDK not configured. %s\n" +
+                            "Download it with SDK manager.)",
+                    ndkFolder== null ? "" : ndkFolder));
+        }
         final BaseVariantData<? extends BaseVariantOutputData> variantData =
                 scope.getVariantData();
         final GradleVariantConfiguration variantConfig = variantData.getVariantConfiguration();
