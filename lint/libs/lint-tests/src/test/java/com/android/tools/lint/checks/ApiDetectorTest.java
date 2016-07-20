@@ -23,14 +23,11 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
-import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.builder.model.AndroidProject;
 import com.android.repository.Revision;
-import com.android.repository.api.LocalPackage;
 import com.android.sdklib.BuildToolInfo;
 import com.android.sdklib.SdkVersionInfo;
-import com.android.sdklib.repository.AndroidSdkHandler;
 import com.android.tools.lint.detector.api.Context;
 import com.android.tools.lint.detector.api.Detector;
 import com.android.tools.lint.detector.api.Issue;
@@ -2612,21 +2609,11 @@ public class ApiDetectorTest extends AbstractCheckTest {
 
     @SuppressWarnings("all") // Sample code
     public void testConcurrentHashMapUsage() throws Exception {
-        // This test requires API 24 to be installed on the test machine:
-        TestLintClient client = createClient();
-        AndroidSdkHandler sdk = client.getSdk();
-        if (sdk == null) {
-            return;
-        }
-        LocalPackage pkgInfo = sdk.getLocalPackage(SdkConstants.FD_PLATFORM_TOOLS,
-                client.getRepositoryLogger());
-        if (pkgInfo == null) {
-            return;
-        }
-        Revision revision = pkgInfo.getVersion();
-        if (revision.getMajor() < 24) {
-            System.out.println("Skipping " + getName() + ": requires platform-tools >= 24; was "
-                + revision);
+        ApiLookup lookup = ApiLookup.get(createClient());
+        int version = lookup.getCallVersion("java/util/concurrent/ConcurrentHashMap", "keySet",
+                "(Ljava/lang/Object;)");
+        if (version == -1) {
+            // This test machine doesn't have the right version of Nougat yet
             return;
         }
 
