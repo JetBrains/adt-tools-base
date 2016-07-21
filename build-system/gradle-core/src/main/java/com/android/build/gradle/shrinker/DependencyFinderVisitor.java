@@ -309,7 +309,7 @@ abstract class DependencyFinderVisitor<T> extends ClassVisitor {
             // This can be the case when calling "clone" on arrays, which is done in Enum classes.
             // Just ignore it, we know arrays not declared in the program, so there's no point in
             // creating the dependency.
-            Type type = Type.getType(owner);
+            Type type = Type.getObjectType(owner);
             if (type.getSort() != Type.ARRAY && !isSdkPackage(owner)) {
                 handleDependency(
                         mMethod,
