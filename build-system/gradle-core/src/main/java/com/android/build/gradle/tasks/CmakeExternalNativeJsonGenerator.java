@@ -138,9 +138,17 @@ class CmakeExternalNativeJsonGenerator extends ExternalNativeJsonGenerator {
 
     @NonNull
     private File getToolChainFile() {
-        return new File(getCmakeFolder(), "android.toolchain.cmake");
+        String toolchainFileName = "android.toolchain.cmake";
+        File ndkCmakeFolder = new File(new File(getNdkFolder(), "build"), "cmake");
+        // Toolchain file should be located at ndk/build/cmake/ for NDK r13+.
+        File toolchainFile = new File(ndkCmakeFolder, toolchainFileName);
+        if (!toolchainFile.exists()) {
+            // Toolchain file for NDK r12 is in the SDK.
+            // TODO: remove this when we stop caring about r12.
+            toolchainFile = new File(getCmakeFolder(), toolchainFileName);
+        }
+        return toolchainFile;
     }
-
 
     @NonNull
     private File getCmakeFolder() {
