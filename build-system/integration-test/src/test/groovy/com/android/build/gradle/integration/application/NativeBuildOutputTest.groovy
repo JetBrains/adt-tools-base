@@ -148,6 +148,88 @@ class NativeBuildOutputTest {
     }
 
     @Test
+    public void checkUnrecognizedNdkAbi() {
+        project.buildFile << """
+            android {
+                externalNativeBuild {
+                    ndkBuild {
+                        path "src/main/cpp/Android.mk"
+                    }
+                }
+                defaultConfig {
+                  ndk {
+                    abiFilters "-unrecognized-abi-" // <-- error
+                  }
+                }
+            }
+            """;
+
+        project.file("src/main/cpp/Android.mk") << androidMk;
+
+        checkFailed(["ABIs [-unrecognized-abi-] are not available for platform and will be excluded" +
+                             " from building and packaging. Available ABIs are ["],
+                ["ABIs [-unrecognized-abi-] are not available for platform and will be excluded" +
+                         " from building and packaging. Available ABIs are ["], 2);
+    }
+
+    // In this test, ndk.abiFilters and ndkBuild.abiFilters only have "x86" in common.
+    // Only "x86" should be built
+    @Test
+    public void checkNdkIntersectNativeBuild() {
+        project.buildFile << """
+            android {
+                externalNativeBuild {
+                    ndkBuild {
+                        path "src/main/cpp/Android.mk"
+                    }
+                }
+                defaultConfig {
+                  ndk {
+                    abiFilters "armeabi-v7a", "x86"
+                  }
+                  externalNativeBuild {
+                    ndkBuild {
+                      abiFilters "armeabi", "x86"
+                    }
+                  }
+                }
+            }
+            """;
+
+        project.file("src/main/cpp/Android.mk") << androidMk;
+        checkSucceeded(["x86/libhello-jni.so"],
+                       ["armeabi"]);
+    }
+
+    // In this test, ndk.abiFilters and ndkBuild.abiFilters have nothing in common.
+    // Nothing should be built
+    @Test
+    public void checkNdkEmptyIntersectNativeBuild() {
+        project.buildFile << """
+            android {
+                externalNativeBuild {
+                    ndkBuild {
+                        path "src/main/cpp/Android.mk"
+                    }
+                }
+                defaultConfig {
+                  ndk {
+                    abiFilters "armeabi-v7a", "x86_64"
+                  }
+                  externalNativeBuild {
+                    ndkBuild {
+                      abiFilters "armeabi", "x86"
+                    }
+                  }
+                }
+            }
+            """;
+
+        project.file("src/main/cpp/Android.mk") << androidMk;
+        checkSucceeded([], ["x86", "armeabi"]);
+    }
+
+    @Test
     public void checkCMakeUnrecognizedAbi() {
         project.buildFile << """
             android {
@@ -301,10 +383,10 @@ class NativeBuildOutputTest {
 
         project.file("CMakeLists.txt") << cmakeLists;
 
-        checkSucceeded(["building", "x86/libhello-jni.so"]);
+        checkSucceeded(["building", "x86/libhello-jni.so"], []);
     }
 
-    private void checkSucceeded(List<String> expectInStdout) {
+    private void checkSucceeded(List<String> expectInStdout, List<String> dontExpectInStdout) {
         // Check the build
         GradleBuildResult result = project.executor()
                 .withEnableInfoLogging(false)
@@ -312,6 +394,9 @@ class NativeBuildOutputTest {
         String stdout = result.getStdout();
         for (String expect : expectInStdout) {
             assertThat(stdout).contains(expect);
+        }
+        for (String dontExpect: dontExpectInStdout) {
+            assertThat(stdout).doesNotContain(dontExpect);
         }
     }
 

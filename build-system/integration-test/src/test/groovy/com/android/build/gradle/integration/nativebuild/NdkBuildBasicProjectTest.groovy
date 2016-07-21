@@ -25,6 +25,7 @@ import com.android.builder.model.AndroidProject
 import com.android.builder.model.NativeAndroidProject
 import com.android.builder.model.NativeArtifact
 import com.google.common.collect.ArrayListMultimap
+import com.google.common.collect.Lists
 import com.google.common.collect.Multimap
 import groovy.transform.CompileStatic
 import org.junit.Before
@@ -77,6 +78,13 @@ $modelBefore
     android {
         compileSdkVersion $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
         buildToolsVersion "$GradleTestProject.DEFAULT_BUILD_TOOL_VERSION"
+        defaultConfig {
+          externalNativeBuild {
+              ndkBuild {
+                abiFilters.addAll("armeabi-v7a", "armeabi", "x86")
+              }
+          }
+        }
         externalNativeBuild {
           ndkBuild {
             path "src/main/jni/Android.mk"
@@ -107,12 +115,14 @@ android {
         assertThatApk(apk).contains("lib/armeabi-v7a/libhello-jni.so");
         assertThatApk(apk).contains("lib/armeabi/libhello-jni.so");
         assertThatApk(apk).contains("lib/x86/libhello-jni.so");
-        assertThatApk(apk).contains("lib/x86_64/libhello-jni.so");
 
         File lib = ZipHelper.extractFile(apk, "lib/armeabi-v7a/libhello-jni.so");
         assertThatNativeLib(lib).isStripped();
 
         lib = ZipHelper.extractFile(apk, "lib/armeabi/libhello-jni.so");
+        assertThatNativeLib(lib).isStripped();
+
+        lib = ZipHelper.extractFile(apk, "lib/x86/libhello-jni.so");
         assertThatNativeLib(lib).isStripped();
     }
 
@@ -141,7 +151,8 @@ android {
         assertThat(model.getBuildSystems()).containsExactly(NativeBuildSystem.NDK_BUILD.getName());
         assertThat(model.buildFiles).hasSize(1);
         assertThat(model.name).isEqualTo("project");
-        assertThat(model.artifacts).hasSize(14);
+        int abiCount = 3;
+        assertThat(model.artifacts).hasSize(abiCount * 2 /* variantCount */);
         assertThat(model.fileExtensions).hasSize(1);
 
         for (File file : model.buildFiles) {
@@ -158,14 +169,14 @@ android {
         }
 
         assertThat(model).hasArtifactGroupsNamed("debug", "release");
-        assertThat(model).hasArtifactGroupsOfSize(7);
+        assertThat(model).hasArtifactGroupsOfSize(abiCount);
     }
 
     @Test
     public void checkClean() {
         project.execute("clean", "assembleDebug", "assembleRelease")
         NativeAndroidProject model = project.model().getSingle(NativeAndroidProject.class);
-        assertThat(model).hasBuildOutputCountEqualTo(14);
+        assertThat(model).hasBuildOutputCountEqualTo(6);
         assertThat(model).allBuildOutputsExist();
         assertThat(model).hasExactObjectFiles("hello-jni.o");
         assertThat(model).hasExactSharedObjectFiles("libhello-jni.so");
@@ -173,5 +184,46 @@ android {
         assertThat(model).noBuildOutputsExist();
         assertThat(model).hasExactObjectFiles();
         assertThat(model).hasExactSharedObjectFiles();
+    }
+
+    @Test
+    public void checkCleanAfterAbiSubset() {
+        project.execute("clean", "assembleDebug", "assembleRelease")
+        NativeAndroidProject model = project.model().getSingle(NativeAndroidProject.class);
+        assertThat(model).hasBuildOutputCountEqualTo(6);
+
+        List<File> allBuildOutputs = Lists.newArrayList();
+        for (NativeArtifact artifact : model.artifacts) {
+            assertThat(artifact.outputFile).isFile();
+            allBuildOutputs.add(artifact.outputFile);
+        }
+
+// Change the build file to only have "x86"
+        String plugin = isModel ? "apply plugin: 'com.android.model.application'"
+                : "apply plugin: 'com.android.application'";
+        String modelBefore = isModel ? "model { " : ""
+        String modelAfter = isModel ? " }" : ""
+        project.buildFile <<
+"""
+$plugin
+$modelBefore
+    android {
+        defaultConfig {
+          externalNativeBuild {
+              ndkBuild {
+                abiFilters.clear();
+                abiFilters.addAll("x86")
+              }
+          }
+        }
+    }
+$modelAfter
+""";
+        project.execute("clean");
+
+        // All build outputs should no longer exist, even the non-x86 outputs
+        for (File output : allBuildOutputs) {
+            assertThat(output).doesNotExist();
+        };
     }
 }

@@ -16,8 +16,6 @@
 
 package com.android.build.gradle.internal.dsl;
 
-import static com.android.build.gradle.AndroidGradleOptions.USE_DEPRECATED_NDK;
-
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.internal.LoggingUtil;
@@ -421,14 +419,6 @@ public class ProductFlavor extends DefaultProductFlavor implements CoreProductFl
 
     public void ndk(Action<NdkOptions> action) {
         action.execute(ndkConfig);
-        if (!project.hasProperty(USE_DEPRECATED_NDK)) {
-            throw new RuntimeException(
-                    "Error: NDK integration is deprecated in the current plugin.  Consider trying " +
-                            "the new experimental plugin.  For details, see " +
-                            "http://tools.android.com/tech-docs/new-build-system/gradle-experimental.  " +
-                            "Set \"" + USE_DEPRECATED_NDK + "=true\" in gradle.properties to " +
-                            "continue using the current NDK integration.");
-        }
     }
 
     /**

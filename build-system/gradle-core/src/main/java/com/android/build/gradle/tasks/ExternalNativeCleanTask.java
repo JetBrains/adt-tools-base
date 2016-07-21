@@ -20,6 +20,8 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.android.annotations.NonNull;
 import com.android.build.gradle.external.gson.NativeBuildConfigValue;
+import com.android.build.gradle.internal.core.Abi;
+import com.android.build.gradle.internal.ndk.NdkHandler;
 import com.android.build.gradle.internal.scope.TaskConfigAction;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.variant.BaseVariantData;
@@ -138,7 +140,17 @@ public class ExternalNativeCleanTask extends ExternalNativeBaseTask {
             final BaseVariantData<? extends BaseVariantOutputData> variantData =
                     scope.getVariantData();
             task.setVariantName(variantData.getName());
-            task.setNativeBuildConfigurationsJsons(generator.getNativeBuildConfigurationsJsons());
+            
+            // Attempt to clean every possible ABI even those that aren't currently built.
+            // This covers cases where user has changed abiFilters or platform. We don't want
+            // to leave stale results hanging around.
+            List<String> abiNames = Lists.newArrayList();
+            for(Abi abi : NdkHandler.getAbiList()) {
+                abiNames.add(abi.getName());
+            }
+            task.setNativeBuildConfigurationsJsons(ExternalNativeBuildTaskUtils.getOutputJsons(
+                    generator.getJsonFolder(),
+                    abiNames));
             task.setAndroidBuilder(androidBuilder);
         }
     }
