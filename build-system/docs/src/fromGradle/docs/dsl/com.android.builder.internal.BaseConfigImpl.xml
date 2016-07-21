@@ -25,6 +25,8 @@
             <tr><td>consumerProguardFiles</td></tr>
             <tr><td>manifestPlaceholders</td></tr>
             <tr><td>multiDexEnabled</td></tr>
+            <tr><td>multiDexKeepFile</td></tr>
+            <tr><td>multiDexKeepProguard</td></tr>
         </table>
     </section>
     <section>
