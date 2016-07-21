@@ -22,10 +22,24 @@ import com.google.common.util.concurrent.ListenableFuture;
 import java.io.File;
 
 /**
- * Partial copy of builder library {@code Aapt} interface.
+ * Compiler that will process individual resource files. A compiler will produce an optional
+ * output file for an input file.
  */
 @FunctionalInterface
-public interface AaptCompiler {
+public interface ResourceCompiler {
+
+    /**
+     * Produces an optional output file for an input file. Not all files are compilable. An
+     * individual resource compiler will know if a file is compilable or not.
+     *
+     * @param file the resource file to compile
+     * @param output the directory where the compiled file should be placed; the actual output
+     * file will be decided by the compiler
+     * @return a future for the output file, which may be produced asynchronously; if the
+     * future is computed as {@code null}, then the file is not compilable; this future may hol
+     * an exception if compilation fails
+     * @throws Exception failed to process the compilation request
+     */
     @NonNull
     ListenableFuture<File> compile(@NonNull File file, @NonNull File output)
             throws Exception;
