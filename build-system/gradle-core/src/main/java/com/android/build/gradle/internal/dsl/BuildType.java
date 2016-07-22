@@ -48,7 +48,7 @@ public class BuildType extends DefaultBuildType implements CoreBuildType, Serial
     @NonNull
     private final Logger logger;
 
-    @Nullable
+    @NonNull
     private final NdkOptions ndkConfig;
 
     @NonNull
@@ -94,12 +94,12 @@ public class BuildType extends DefaultBuildType implements CoreBuildType, Serial
         jackOptions = new JackOptions();
         javaCompileOptions = new JavaCompileOptions();
         shaderOptions = new ShaderOptions();
-        ndkConfig = null;
-        externalNativeBuildOptions = null;
+        ndkConfig = new NdkOptions();
+        externalNativeBuildOptions = new ExternalNativeBuildOptions();
     }
 
     @Override
-    @Nullable
+    @NonNull
     public CoreNdkOptions getNdkConfig() {
         return ndkConfig;
     }
@@ -155,6 +155,7 @@ public class BuildType extends DefaultBuildType implements CoreBuildType, Serial
     protected void _initWith(@NonNull BaseConfig that) {
         super._initWith(that);
         BuildType thatBuildType = (BuildType) that;
+        ndkConfig._initWith(thatBuildType.getNdkConfig());
         jackOptions._initWith(thatBuildType.getJackOptions());
         javaCompileOptions.getAnnotationProcessorOptions()._initWith(
                 thatBuildType.getJavaCompileOptions().getAnnotationProcessorOptions());
@@ -177,6 +178,7 @@ public class BuildType extends DefaultBuildType implements CoreBuildType, Serial
         if (!(o instanceof BuildType)) return false;
         if (!super.equals(o)) return false;
         BuildType other = (BuildType) o;
+        if (!ndkConfig.equals(other.ndkConfig)) return false;
         if (!jackOptions.equals(other.jackOptions)) return false;
         if (!javaCompileOptions.equals(other.javaCompileOptions)) return false;
         if (shrinkResources != other.isShrinkResources()) return false;
