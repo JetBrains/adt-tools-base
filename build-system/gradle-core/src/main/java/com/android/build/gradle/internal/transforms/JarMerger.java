@@ -24,6 +24,7 @@ import com.android.utils.FileUtils;
 import com.android.utils.ILogger;
 import com.google.common.io.Closer;
 
+import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -61,7 +62,8 @@ public class JarMerger {
             closer = Closer.create();
 
             FileOutputStream fos = closer.register(new FileOutputStream(jarFile));
-            jarOutputStream = closer.register(new JarOutputStream(fos));
+            BufferedOutputStream bos = closer.register(new BufferedOutputStream(fos));
+            jarOutputStream = closer.register(new JarOutputStream(bos));
         }
     }
 

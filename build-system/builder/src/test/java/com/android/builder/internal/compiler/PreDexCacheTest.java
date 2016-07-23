@@ -60,6 +60,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
+import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -531,7 +532,8 @@ public class PreDexCacheTest {
     private File createInputFile(String content) throws IOException {
         File input = mTemporaryFolder.newFile();
 
-        try (JarOutputStream jarOutputStream = new JarOutputStream(new FileOutputStream(input))) {
+        try (JarOutputStream jarOutputStream = new JarOutputStream(
+                new BufferedOutputStream(new FileOutputStream(input)))) {
             jarOutputStream.putNextEntry(new ZipEntry("content.class"));
             jarOutputStream.write(content.getBytes(Charsets.UTF_8));
             jarOutputStream.closeEntry();

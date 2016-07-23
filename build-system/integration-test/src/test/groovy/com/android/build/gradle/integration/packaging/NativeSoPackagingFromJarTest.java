@@ -43,6 +43,7 @@ import org.objectweb.asm.FieldVisitor;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 
+import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.util.Collection;
@@ -109,7 +110,8 @@ public class NativeSoPackagingFromJarTest {
         File jarFile = new File(folder, fileName);
 
         try (FileOutputStream fos = new FileOutputStream(jarFile);
-                JarOutputStream jarOutputStream = new JarOutputStream(fos)) {
+                JarOutputStream jarOutputStream = new JarOutputStream(
+                        new BufferedOutputStream(fos))) {
             jarOutputStream.putNextEntry(new JarEntry(LIB_X86_LIBHELLO_SO));
             jarOutputStream.write("hello".getBytes());
             jarOutputStream.closeEntry();

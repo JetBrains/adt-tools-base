@@ -45,6 +45,7 @@ import com.google.common.io.Files;
 
 import org.gradle.api.logging.Logger;
 
+import java.io.BufferedOutputStream;
 import java.io.Closeable;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -181,7 +182,8 @@ public class InstantRunDex extends Transform {
 
         void add(File inputDir, File file) throws IOException {
             if (jarOutputStream == null) {
-                jarOutputStream = new JarOutputStream(new FileOutputStream(outputFile));
+                jarOutputStream = new JarOutputStream(
+                        new BufferedOutputStream(new FileOutputStream(outputFile)));
             }
             empty = false;
             copyFileInJar(inputDir, file, jarOutputStream);

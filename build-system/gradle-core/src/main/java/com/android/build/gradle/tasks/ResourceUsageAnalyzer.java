@@ -65,6 +65,7 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
+import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -389,7 +390,7 @@ public class ResourceUsageAnalyzer {
             try {
                 FileOutputStream fos = new FileOutputStream(dest);
                 zis = new JarInputStream(fis);
-                JarOutputStream zos = new JarOutputStream(fos);
+                JarOutputStream zos = new JarOutputStream(new BufferedOutputStream(fos));
                 try {
                     // Rather than using Deflater.DEFAULT_COMPRESSION we use 9 here,
                     // since that seems to match the compressed sizes we observe in source

@@ -99,6 +99,7 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 
+import java.io.BufferedOutputStream;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
@@ -737,7 +738,7 @@ public class Extractor {
     private boolean writeExternalAnnotations(@NonNull File annotationsZip) {
         try {
             FileOutputStream fileOutputStream = new FileOutputStream(annotationsZip);
-            JarOutputStream zos = new JarOutputStream(fileOutputStream);
+            JarOutputStream zos = new JarOutputStream(new BufferedOutputStream(fileOutputStream));
 
             try {
                 // TODO: Extract to share with keep rules

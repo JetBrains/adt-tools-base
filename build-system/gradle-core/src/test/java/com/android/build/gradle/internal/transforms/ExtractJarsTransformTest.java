@@ -53,6 +53,7 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.runners.MockitoJUnitRunner;
 
+import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -89,7 +90,8 @@ public class ExtractJarsTransformTest {
     public void checkWarningForPotentialIssuesOnCaseSensitiveFileSystems()
             throws Exception {
         File jar = temporaryFolder.newFile("Jar with case issues.jar");
-        try (JarOutputStream jarOutputStream = new JarOutputStream(new FileOutputStream(jar))) {
+        try (JarOutputStream jarOutputStream = new JarOutputStream(
+                new BufferedOutputStream(new FileOutputStream(jar)))) {
             jarOutputStream.putNextEntry(new ZipEntry("com/example/a.class"));
             jarOutputStream.closeEntry();
             jarOutputStream.putNextEntry(new ZipEntry("com/example/A.class"));
@@ -104,7 +106,8 @@ public class ExtractJarsTransformTest {
     public void checkNoWarningWhenWillNotHaveIssuesOnCaseSensitiveFileSystems()
             throws Exception {
         File jar = temporaryFolder.newFile("Jar without case issues.jar");
-        try (JarOutputStream jarOutputStream = new JarOutputStream(new FileOutputStream(jar))) {
+        try (JarOutputStream jarOutputStream = new JarOutputStream(
+                new BufferedOutputStream(new FileOutputStream(jar)))) {
             jarOutputStream.putNextEntry(new ZipEntry("com/example/a.class"));
             jarOutputStream.closeEntry();
             jarOutputStream.putNextEntry(new ZipEntry("com/example/B.class"));
