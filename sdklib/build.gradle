@@ -1,3 +1,5 @@
+import com.google.common.collect.ImmutableMap
+
 apply plugin: 'java'
 apply plugin: 'jacoco'
 apply plugin: 'sdk-java-lib'
@@ -59,6 +61,35 @@ task initSdkForTests(type: JavaExec) {
                 'cmake;3.4']
     }
 }
+
+def offline_repo_files = ["extras;m2repository;com;android;support;constraint;constraint-layout;1.0.0-alpha4",
+                          "extras;m2repository;com;android;support;constraint;constraint-layout-solver;1.0.0-alpha4"]
+def offline_sdk_targets = [["macosx", "64", "darwin-x86_64"],
+                           ["macosx", "32", "darwin-x86"],
+                           ["windows", "64", "windows-x86_64"],
+                           ["windows", "32", "windows"],
+                           ["linux", "64", "linux-x86_64"],
+                           ["linux", "32", "linux-x86"]]
+
+// Parent task to update the packages in prebuilts/tools/*/offline-sdk
+// based on the values of offline_repo_files and offline_sdk_targets above.
+task updateOfflineRepo {}
+
+offline_sdk_targets.each { config ->
+    def os = config[0]
+    def arch = config[1]
+    def dest = "$rootDir/../prebuilts/tools/" + config[2] + "/offline-sdk"
+    task "updateOfflineRepo$os$arch"(type: JavaExec) {
+        print "Update $os $arch"
+        classpath = sourceSets.main.runtimeClasspath
+        main = "com.android.sdklib.tool.OfflineRepoCreator"
+        args = ["--dest", dest] + offline_repo_files
+        environment("REPO_OS_OVERRIDE", os)
+        systemProperties(ImmutableMap.of("os.arch", arch))
+    }
+    updateOfflineRepo.dependsOn "updateOfflineRepo$os$arch"
+}
+
 // TODO: needed?
 task copyXsd(type: Copy) {
     from sourceSets.main.resources.srcDirs

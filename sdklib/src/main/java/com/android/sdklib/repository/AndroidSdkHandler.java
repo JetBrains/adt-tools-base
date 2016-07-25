@@ -55,9 +55,12 @@ import java.io.File;
 import java.net.URISyntaxException;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
 import java.util.Optional;
+import java.util.Set;
+import java.util.function.Function;
 
 
 /**
@@ -223,14 +226,14 @@ public final class AndroidSdkHandler {
         mLocation = localPath;
     }
 
-  /**
-   * Don't use this either, unless you're in a unit test and need to specify a custom
-   * {@link RepoManager}.
-   * @see #AndroidSdkHandler(File, FileOp)
-   */
+    /**
+     * Don't use this either, unless you're in a unit test and need to specify a custom
+     * {@link RepoManager}.
+     * @see #AndroidSdkHandler(File, FileOp)
+     */
     @VisibleForTesting
     public AndroidSdkHandler(@Nullable File localPath, @NonNull FileOp fop,
-      @NonNull RepoManager repoManager) {
+            @NonNull RepoManager repoManager) {
         this(localPath, fop);
         mRepoManager = repoManager;
     }
@@ -471,6 +474,18 @@ public final class AndroidSdkHandler {
         return SYS_IMG_MODULE;
     }
 
+    /**
+     * @return A list of all the known {@link SchemaModule}s
+     */
+    @NonNull
+    public static List<SchemaModule> getAllModules() {
+        return ImmutableList.of(AndroidSdkHandler.getRepositoryModule(),
+                AndroidSdkHandler.getAddonModule(),
+                AndroidSdkHandler.getSysImgModule(),
+                RepoManager.getCommonModule(),
+                RepoManager.getGenericModule());
+    }
+
     @NonNull
     @VisibleForTesting
     RemoteListSourceProvider getRemoteListSourceProvider(@NonNull ProgressIndicator progress) {
@@ -497,8 +512,19 @@ public final class AndroidSdkHandler {
         return mUserSourceProvider;
     }
 
+    /**
+     * Add another {@link RepositorySourceProvider}. All existing {@link AndroidSdkHandler}s and
+     * {@link RepoManager}s are invalidated, and all future instances will include the new
+     * provider.
+     */
+    public static void addCustomSourceProvider(@NonNull RepositorySourceProvider provider,
+            @NonNull ProgressIndicator progress) {
+        getRepoConfig(progress).addCustomSourceProvider(provider);
+        invalidateAll();
+    }
+
     @NonNull
-    private RepoConfig getRepoConfig(@NonNull ProgressIndicator progress) {
+    private static RepoConfig getRepoConfig(@NonNull ProgressIndicator progress) {
         if (sRepoConfig == null) {
             sRepoConfig = new RepoConfig(progress);
         }
@@ -522,6 +548,11 @@ public final class AndroidSdkHandler {
          * Provider for the main new-style {@link RepositorySource}
          */
         private ConstantSourceProvider mRepositorySourceProvider;
+
+        /**
+         * Extra source providers that were added externally.
+         */
+        private Set<RepositorySourceProvider> mCustomSourceProviders = new HashSet<>();
 
         /**
          * Sets up our {@link SchemaModule}s and {@link RepositorySourceProvider}s if they haven't
@@ -549,7 +580,7 @@ public final class AndroidSdkHandler {
             }
 
             String url = String.format(REPO_URL_PATTERN, getBaseUrl(progress),
-                                       REPOSITORY_MODULE.getNamespaceVersionMap().size());
+                    REPOSITORY_MODULE.getNamespaceVersionMap().size());
             mRepositorySourceProvider = new ConstantSourceProvider(url, "Android Repository",
                     ImmutableSet.of(REPOSITORY_MODULE, RepoManager.getGenericModule()));
         }
@@ -602,6 +633,15 @@ public final class AndroidSdkHandler {
             return mAddonsListSourceProvider;
         }
 
+        /**
+         * Add a {@link RepositorySourceProvider} to this config. It will be added to any {@link
+         * RepoManager} created by {@link #createRepoManager(ProgressIndicator, File,
+         * LocalSourceProvider, FileOp)}
+         */
+        public void addCustomSourceProvider(@NonNull RepositorySourceProvider provider) {
+            mCustomSourceProviders.add(provider);
+        }
+
         @NonNull
         public RepoManager createRepoManager(@NonNull ProgressIndicator progress,
                 @Nullable File localLocation,
@@ -615,6 +655,7 @@ public final class AndroidSdkHandler {
             result.registerSchemaModule(COMMON_MODULE);
 
             result.registerSourceProvider(mRepositorySourceProvider);
+            mCustomSourceProviders.forEach(result::registerSourceProvider);
             String customSourceUrl = System.getProperty(CUSTOM_SOURCE_PROPERTY);
             if (customSourceUrl != null && !customSourceUrl.isEmpty()) {
                 result.registerSourceProvider(
@@ -656,7 +697,7 @@ public final class AndroidSdkHandler {
      */
     @Nullable
     public BuildToolInfo getLatestBuildTool(@NonNull ProgressIndicator progress,
-                                            boolean allowPreview) {
+            boolean allowPreview) {
         if (!allowPreview && mLatestBuildTool != null) {
             return mLatestBuildTool;
         }
