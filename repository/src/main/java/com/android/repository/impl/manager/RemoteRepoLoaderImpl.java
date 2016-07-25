@@ -30,6 +30,7 @@ import com.android.repository.api.RepositorySourceProvider;
 import com.android.repository.api.SchemaModule;
 import com.android.repository.api.SettingsController;
 import com.android.repository.impl.meta.SchemaModuleUtil;
+import com.android.repository.util.InstallerUtil;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
@@ -147,10 +148,21 @@ public class RemoteRepoLoaderImpl implements RemoteRepoLoader {
                                     // pick the latest.
                                     continue;
                                 }
-                                if (compare == 0 && legacy) {
-                                    // If legacy and non-legacy packages are available with the same
-                                    // version, pick the non-legacy one.
-                                    continue;
+                                if (compare == 0) {
+                                    if (legacy) {
+                                        // If legacy and non-legacy packages are available with the
+                                        // same version, pick the non-legacy one.
+                                        continue;
+                                    }
+                                    URL existingUrl = InstallerUtil.resolveCompleteArchiveUrl(
+                                            existing, progress);
+                                    if (existingUrl != null) {
+                                        String existingProtocol = existingUrl.getProtocol();
+                                        if (existingProtocol.equals("file")) {
+                                            // If the existing package is local, use it.
+                                            continue;
+                                        }
+                                    }
                                 }
                             }
                             Channel settingsChannel =
