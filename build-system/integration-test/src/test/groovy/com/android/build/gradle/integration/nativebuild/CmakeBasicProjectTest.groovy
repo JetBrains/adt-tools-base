@@ -25,6 +25,7 @@ import com.android.builder.model.AndroidProject
 import com.android.builder.model.NativeAndroidProject
 import com.android.builder.model.NativeArtifact
 import com.google.common.collect.ArrayListMultimap
+import com.google.common.collect.Lists
 import com.google.common.collect.Multimap
 import groovy.transform.CompileStatic
 import org.junit.Before
@@ -81,9 +82,9 @@ $modelBefore
         defaultConfig {
           externalNativeBuild {
               cmake {
+                abiFilters.addAll("armeabi-v7a", "armeabi", "x86");
                 cFlags.addAll("-DTEST_C_FLAG", "-DTEST_C_FLAG_2")
                 cppFlags.addAll("-DTEST_CPP_FLAG")
-                abiFilters.addAll("armeabi-v7a", "armeabi", "x86")
                 targets.addAll("hello-jni")
               }
           }
@@ -182,5 +183,46 @@ android {
         assertThat(model).noBuildOutputsExist();
         assertThat(model).hasExactObjectFiles();
         assertThat(model).hasExactSharedObjectFiles();
+    }
+
+    @Test
+    public void checkCleanAfterAbiSubset() {
+        project.execute("clean", "assembleDebug", "assembleRelease")
+        NativeAndroidProject model = project.model().getSingle(NativeAndroidProject.class);
+        assertThat(model).hasBuildOutputCountEqualTo(6);
+
+        List<File> allBuildOutputs = Lists.newArrayList();
+        for (NativeArtifact artifact : model.artifacts) {
+            assertThat(artifact.outputFile).isFile();
+            allBuildOutputs.add(artifact.outputFile);
+        }
+
+        // Change the build file to only have "x86"
+        String plugin = isModel ? "apply plugin: 'com.android.model.application'"
+                : "apply plugin: 'com.android.application'";
+        String modelBefore = isModel ? "model { " : ""
+        String modelAfter = isModel ? " }" : ""
+        project.buildFile <<
+                """
+$plugin
+$modelBefore
+    android {
+        defaultConfig {
+          externalNativeBuild {
+              cmake {
+                abiFilters.clear();
+                abiFilters.addAll("x86");
+              }
+          }
+        }
+    }
+$modelAfter
+""";
+        project.execute("clean");
+
+        // All build outputs should no longer exist, even the non-x86 outputs
+        for (File output : allBuildOutputs) {
+            assertThat(output).doesNotExist();
+        };
     }
 }
