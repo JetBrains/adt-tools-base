@@ -16,19 +16,21 @@
 
 package com.android.build.gradle.integration.component
 
+import com.android.build.OutputFile
 import com.android.build.gradle.integration.common.category.DeviceTests
 import com.android.build.gradle.integration.common.category.SmokeTests
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
-import groovy.transform.CompileStatic
+import com.android.builder.model.AndroidArtifact
 import com.android.builder.model.AndroidProject
+import com.android.builder.model.Variant
+import groovy.transform.CompileStatic
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.experimental.categories.Category
 
 import static com.google.common.truth.Truth.assertThat
-
 /**
  * Basic integration test for AppComponentModelPlugin.
  */
@@ -65,6 +67,20 @@ model {
         assertThat(model.getBuildTypes()).hasSize(2)
         assertThat(model.getProductFlavors()).hasSize(0)
         assertThat(model.getVariants()).hasSize(2)
+        for (Variant variant : model.getVariants()) {
+            AndroidArtifact artifact = variant.getMainArtifact()
+            Collection<File> outputFiles =
+                    artifact.getOutputs()
+                            .collect{it -> it.getOutputs()}
+                            .flatten()
+                            .collect{it -> ((OutputFile)it).getOutputFile()}
+            List<String> dimensions = [variant.getBuildType()]
+            if (!artifact.isSigned()) {
+                dimensions.add("unsigned")
+            }
+            assertThat(outputFiles).containsExactly(project.getApk(dimensions as String[]))
+            assertThat(outputFiles.first().isFile()).isTrue()
+        }
     }
 
     @Test

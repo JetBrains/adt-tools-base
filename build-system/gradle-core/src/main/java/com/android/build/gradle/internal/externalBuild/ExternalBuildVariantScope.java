@@ -185,6 +185,10 @@ import java.util.Collections;
                 () -> new File(outputRootFolder, "/outputs/apk/debug.apk"));
     }
 
+    public File getIntermediateApk() {
+        return new File(outputRootFolder, "/outputs/apk/debug-unaligned.apk");
+    }
+
     public File getPreDexOutputDir() {
         return FileUtils.join(outputRootFolder, "intermediates", "pre-dexed");
     }

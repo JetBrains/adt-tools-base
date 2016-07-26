@@ -284,11 +284,15 @@ public class PackageApplication extends PackageAndroidArtifact {
 
         @Override
         public void execute(@NonNull final PackageApplication packageApplication) {
-            ConventionMappingHelper.map(
-                    packageApplication, "outputFile", packagingScope::getPackageApk);
-
             packageApplication.inOldMode =
                     AndroidGradleOptions.useOldPackaging(packagingScope.getProject());
+
+            ConventionMappingHelper.map(
+                    packageApplication,
+                    "outputFile",
+                    packageApplication.inOldMode
+                            ? packagingScope::getIntermediateApk
+                            : packagingScope::getOutputApk);
 
             super.execute(packageApplication);
         }

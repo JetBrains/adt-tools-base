@@ -176,8 +176,14 @@ public class DefaultGradlePackagingScope implements PackagingScope {
 
     @NonNull
     @Override
-    public File getPackageApk() {
-        return mVariantOutputScope.getPackageApk();
+    public File getOutputApk() {
+        return mVariantOutputScope.getFinalApk();
+    }
+
+    @NonNull
+    @Override
+    public File getIntermediateApk() {
+        return mVariantOutputScope.getIntermediateApk();
     }
 
     @NonNull
