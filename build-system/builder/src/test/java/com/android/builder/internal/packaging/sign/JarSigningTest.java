@@ -25,15 +25,16 @@ import com.android.utils.Pair;
 import com.google.common.base.Charsets;
 import com.google.common.hash.Hashing;
 
-import org.apache.commons.codec.binary.Base64;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.InputStream;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
+import java.util.Base64;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
 
@@ -111,8 +112,7 @@ public class JarSigningTest {
 
             byte[] manifestTextBytes = manifestEntry.read();
             byte[] manifestSha1Bytes = Hashing.sha1().hashBytes(manifestTextBytes).asBytes();
-            String manifestSha1 = new String(Base64.encodeBase64(manifestSha1Bytes),
-                    Charsets.US_ASCII);
+            String manifestSha1 = Base64.getEncoder().encodeToString(manifestSha1Bytes);
 
             assertEquals(manifestSha1,
                     signature.getMainAttributes().getValue("SHA1-Digest-Manifest"));
@@ -169,8 +169,7 @@ public class JarSigningTest {
 
             byte[] manifestTextBytes = manifestEntry.read();
             byte[] manifestSha256Bytes = Hashing.sha256().hashBytes(manifestTextBytes).asBytes();
-            String manifestSha256 = new String(Base64.encodeBase64(manifestSha256Bytes),
-                    Charsets.US_ASCII);
+            String manifestSha256 = Base64.getEncoder().encodeToString(manifestSha256Bytes);
 
             assertEquals(manifestSha256, signature.getMainAttributes().getValue(
                     "SHA-256-Digest-Manifest"));
@@ -208,6 +207,96 @@ public class JarSigningTest {
             verifyZFile.directFullyRead(
                     centralDirOffset - apkSigningBlockMagic.length, apkSigningBlockMagic);
             assertEquals("APK Sig Block 42", new String(apkSigningBlockMagic, "US-ASCII"));
+        }
+    }
+
+    @Test
+    public void v1ReSignOnFileChange() throws Exception {
+        File zipFile = new File(mTemporaryFolder.getRoot(), "a.zip");
+        Pair<PrivateKey, X509Certificate> p = SignatureTestUtils.generateSignaturePos18();
+
+        byte[] file1Contents = "I am a test file".getBytes(Charsets.US_ASCII);
+        String file1Name = "path/to/file1";
+        byte[] file1Sha = Hashing.sha256().hashBytes(file1Contents).asBytes();
+        String file1ShaTxt = Base64.getEncoder().encodeToString(file1Sha);
+
+        String builtBy = "Santa Claus";
+        String createdBy = "Uses Android";
+
+        try (ZFile zf1 = new ZFile(zipFile)) {
+            zf1.add(file1Name, new ByteArrayInputStream(file1Contents));
+            ManifestGenerationExtension me = new ManifestGenerationExtension(builtBy, createdBy);
+            me.register(zf1);
+            new SignatureExtension(me, 21, p.getSecond(), p.getFirst(), null).register();
+
+            zf1.update();
+
+            StoredEntry manifestEntry = zf1.get("META-INF/MANIFEST.MF");
+            assertNotNull(manifestEntry);
+
+            try (InputStream manifestIs = manifestEntry.open()) {
+                Manifest manifest = new Manifest(manifestIs);
+
+                assertEquals(1, manifest.getEntries().size());
+
+                Attributes file1Attrs = manifest.getEntries().get(file1Name);
+                assertNotNull(file1Attrs);
+                assertEquals(file1ShaTxt, file1Attrs.getValue("SHA-256-Digest"));
+            }
+
+            /*
+             * Change the file without closing the zip.
+             */
+            file1Contents = "I am a modified test file".getBytes(Charsets.US_ASCII);
+            file1Sha = Hashing.sha256().hashBytes(file1Contents).asBytes();
+            file1ShaTxt = Base64.getEncoder().encodeToString(file1Sha);
+
+            zf1.add(file1Name, new ByteArrayInputStream(file1Contents));
+
+            zf1.update();
+
+            manifestEntry = zf1.get("META-INF/MANIFEST.MF");
+            assertNotNull(manifestEntry);
+
+            try (InputStream manifestIs = manifestEntry.open()) {
+                Manifest manifest = new Manifest(manifestIs);
+
+                assertEquals(1, manifest.getEntries().size());
+
+                Attributes file1Attrs = manifest.getEntries().get(file1Name);
+                assertNotNull(file1Attrs);
+                assertEquals(file1ShaTxt, file1Attrs.getValue("SHA-256-Digest"));
+            }
+        }
+
+        /*
+         * Change the file closing the zip.
+         */
+        file1Contents = "I have changed again!".getBytes(Charsets.US_ASCII);
+        file1Sha = Hashing.sha256().hashBytes(file1Contents).asBytes();
+        file1ShaTxt = Base64.getEncoder().encodeToString(file1Sha);
+
+        try (ZFile zf2 = new ZFile(zipFile)) {
+            ManifestGenerationExtension me = new ManifestGenerationExtension(builtBy, createdBy);
+            me.register(zf2);
+            new SignatureExtension(me, 21, p.getSecond(), p.getFirst(), null).register();
+
+            zf2.add(file1Name, new ByteArrayInputStream(file1Contents));
+
+            zf2.update();
+
+            StoredEntry manifestEntry = zf2.get("META-INF/MANIFEST.MF");
+            assertNotNull(manifestEntry);
+
+            try (InputStream manifestIs = manifestEntry.open()) {
+                Manifest manifest = new Manifest(manifestIs);
+
+                assertEquals(1, manifest.getEntries().size());
+
+                Attributes file1Attrs = manifest.getEntries().get(file1Name);
+                assertNotNull(file1Attrs);
+                assertEquals(file1ShaTxt, file1Attrs.getValue("SHA-256-Digest"));
+            }
         }
     }
 }

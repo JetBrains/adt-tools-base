@@ -91,12 +91,20 @@ public class ManifestGenerationExtension {
      * Byte representation of the manifest. This is important because there is no guarantee that
      * two writes of the manifest will yield the same byte array (there is no guaranteed order
      * of entries in the manifest).
+     *
+     * <p>However, we want to ensure that two writes of the manifest will, if the manifest is not
+     * changed in-between, generate the exact same byte representation. Otherwise it would be
+     * difficult to build a signing extension.
      */
     @NonNull
     private CachedSupplier<byte[]> mManifestBytes;
 
     /**
-     * Has the current manifest been changed and not yet flushed?
+     * Has the current manifest been changed and not yet flushed? If {@link #mDirty} is
+     * {@code true}, then {@link #mManifestBytes} should not be valid. This means that
+     * marking the manifest as dirty should also invalidate {@link #mManifestBytes}. To avoid
+     * breaking the invariant, instead of setting {@link #mDirty}, {@link #markDirty()} should
+     * be called.
      */
     private boolean mDirty;
 
@@ -117,6 +125,7 @@ public class ManifestGenerationExtension {
         mBuiltBy = builtBy;
         mCreatedBy = createdBy;
         mManifest = new Manifest();
+        mDirty = false;
         mManifestBytes = new CachedSupplier<byte[]>() {
             @Override
             protected byte[] compute() throws IOException {
@@ -125,6 +134,15 @@ public class ManifestGenerationExtension {
                 return outBytes.toByteArray();
             }
         };
+    }
+
+    /**
+     * Marks the manifest as being dirty, <i>i.e.</i>, its data has changed since it was last
+     * read and/or written.
+     */
+    private void markDirty() {
+        mDirty = true;
+        mManifestBytes.reset();
     }
 
     /**
@@ -143,12 +161,7 @@ public class ManifestGenerationExtension {
             @Nullable
             @Override
             public IOExceptionRunnable beforeUpdate() {
-                return new IOExceptionRunnable() {
-                    @Override
-                    public void run() throws IOException {
-                        updateManifest();
-                    }
-                };
+                return ManifestGenerationExtension.this::updateManifest;
             }
         };
 
@@ -178,9 +191,9 @@ public class ManifestGenerationExtension {
         Attributes mainAttributes = mManifest.getMainAttributes();
         String currentVersion = mainAttributes.getValue(ManifestAttributes.MANIFEST_VERSION);
         if (currentVersion == null) {
-            mainAttributes.putValue(ManifestAttributes.MANIFEST_VERSION,
+            setMainAttribute(
+                    ManifestAttributes.MANIFEST_VERSION,
                     ManifestAttributes.CURRENT_MANIFEST_VERSION);
-            mDirty = true;
         } else {
             if (!currentVersion.equals(ManifestAttributes.CURRENT_MANIFEST_VERSION)) {
                 throw new IOException("Unsupported manifest version: " + currentVersion + ".");
@@ -192,12 +205,6 @@ public class ManifestGenerationExtension {
          */
         setMainAttribute(ManifestAttributes.BUILT_BY, mBuiltBy);
         setMainAttribute(ManifestAttributes.CREATED_BY, mCreatedBy);
-
-        /*
-         * Even if we don't have changes in the manifest, we have re-read it so it is safer to
-         * invalidate the cache.
-         */
-        mManifestBytes.reset();
     }
 
     /**
@@ -211,8 +218,7 @@ public class ManifestGenerationExtension {
         String current = mainAttributes.getValue(attribute);
         if (!value.equals(current)) {
             mainAttributes.putValue(attribute, value);
-            mDirty = true;
-            mManifestBytes.reset();
+            markDirty();
         }
     }
 
@@ -287,16 +293,14 @@ public class ManifestGenerationExtension {
         Attributes attrs = mManifest.getAttributes(entryName);
         if (attrs == null) {
             attrs = new Attributes();
-            mDirty = true;
-            mManifestBytes.reset();
+            markDirty();
             mManifest.getEntries().put(entryName, attrs);
         }
 
         String current = attrs.getValue(attr);
         if (!value.equals(current)) {
             attrs.putValue(attr, value);
-            mDirty = true;
-            mManifestBytes.reset();
+            markDirty();
         }
     }
 
@@ -330,8 +334,7 @@ public class ManifestGenerationExtension {
      */
     public void removeEntry(@NonNull String name) {
         if (mManifest.getEntries().remove(name) != null) {
-            mDirty = true;
-            mManifestBytes.reset();
+            markDirty();
         }
     }
 }

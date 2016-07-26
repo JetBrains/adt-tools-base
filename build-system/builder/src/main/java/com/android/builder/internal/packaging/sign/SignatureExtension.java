@@ -360,18 +360,16 @@ public class SignatureExtension {
         if (signatureEntry != null) {
             byte[] signatureData = signatureEntry.read();
             mSignatureFile.read(new ByteArrayInputStream(signatureData));
-            if (!SIGNATURE_VERSION_VALUE.equals(mSignatureFile.getMainAttributes().get(
-                    SIGNATURE_VERSION_NAME))) {
-                needsNewSignature = true;
-            } else if (!SIGNATURE_CREATED_BY_VALUE.equals(
-                    mSignatureFile.getMainAttributes().get(SIGNATURE_CREATED_BY_NAME))) {
-                needsNewSignature = true;
-            } else if (mSignatureFile.getMainAttributes().get(
-                    mDigestAlgorithm.manifestAttributeName) != null) {
-                needsNewSignature = true;
-            } else if (!Objects.equal(mApkSignedHeaderValue,
-                    mSignatureFile.getMainAttributes().getValue(
-                            SIGNATURE_ANDROID_APK_SIGNED_NAME))) {
+
+            Attributes mainAttrs = mSignatureFile.getMainAttributes();
+            String versionName = mainAttrs.getValue(SIGNATURE_VERSION_NAME);
+            String createdBy = mainAttrs.getValue(SIGNATURE_CREATED_BY_NAME);
+            String apkSigned = mainAttrs.getValue(SIGNATURE_ANDROID_APK_SIGNED_NAME);
+
+            if (!SIGNATURE_VERSION_VALUE.equals(versionName)
+                    || !SIGNATURE_CREATED_BY_VALUE.equals(createdBy)
+                    || mainAttrs.get(mDigestAlgorithm.manifestAttributeName) != null
+                    || !Objects.equal(mApkSignedHeaderValue, apkSigned)) {
                 needsNewSignature = true;
             }
         } else {
@@ -379,17 +377,16 @@ public class SignatureExtension {
         }
 
         if (needsNewSignature) {
-            mSignatureFile.getMainAttributes().putValue(SIGNATURE_CREATED_BY_NAME,
-                    SIGNATURE_CREATED_BY_VALUE);
-            mSignatureFile.getMainAttributes().putValue(SIGNATURE_VERSION_NAME,
-                    SIGNATURE_VERSION_VALUE);
+            Attributes mainAttrs = mSignatureFile.getMainAttributes();
+
+            mainAttrs.putValue(SIGNATURE_CREATED_BY_NAME, SIGNATURE_CREATED_BY_VALUE);
+            mainAttrs.putValue(SIGNATURE_VERSION_NAME, SIGNATURE_VERSION_VALUE);
             if (mApkSignedHeaderValue != null) {
-                mSignatureFile.getMainAttributes().putValue(
-                        SIGNATURE_ANDROID_APK_SIGNED_NAME,
-                        mApkSignedHeaderValue);
+                mainAttrs.putValue(SIGNATURE_ANDROID_APK_SIGNED_NAME, mApkSignedHeaderValue);
             } else {
-                mSignatureFile.getMainAttributes().remove(SIGNATURE_ANDROID_APK_SIGNED_NAME);
+                mainAttrs.remove(SIGNATURE_ANDROID_APK_SIGNED_NAME);
             }
+
             mDirty = true;
         }
 
@@ -399,8 +396,15 @@ public class SignatureExtension {
          *
          * Now, check we have the same files in the zip as in the signature file and that all
          * digests match. While we do this, make sure the manifest is also up-do-date.
+         *
+         * We ignore all signature-related files that exist in the zip that are signature-related.
+         * This are defined in the jar format specification.
          */
-        Set<StoredEntry> allEntries = mManifestExtension.zFile().entries();
+        Set<StoredEntry> allEntries =
+                mManifestExtension.zFile().entries().stream()
+                        .filter(se -> !isIgnoredFile(se.getCentralDirectoryHeader().getName()))
+                        .collect(Collectors.toSet());
+
         Set<String> sigEntriesToRemove = Sets.newHashSet(mSignatureFile.getEntries().keySet());
         Set<String> manEntriesToRemove = Sets.newHashSet(mManifestExtension.allEntries().keySet());
         for (StoredEntry se : allEntries) {
@@ -442,8 +446,9 @@ public class SignatureExtension {
 
         if (!manifestDataDigestTxt.equals(mSignatureFile.getMainAttributes().getValue(
                 mDigestAlgorithm.manifestAttributeName))) {
-            mSignatureFile.getMainAttributes().putValue(mDigestAlgorithm.manifestAttributeName,
-                    manifestDataDigestTxt);
+            mSignatureFile
+                    .getMainAttributes()
+                    .putValue(mDigestAlgorithm.manifestAttributeName, manifestDataDigestTxt);
             mDirty = true;
         }
 
@@ -454,13 +459,15 @@ public class SignatureExtension {
         ByteArrayOutputStream signatureBytes = new ByteArrayOutputStream();
         mSignatureFile.write(signatureBytes);
 
-        mManifestExtension.zFile().add(SIGNATURE_FILE,
+        mManifestExtension.zFile().add(
+                SIGNATURE_FILE,
                 new ByteArrayInputStream(signatureBytes.toByteArray()));
 
         String digitalSignatureFile = SIGNATURE_BASE + "." + mPrivateKey.getAlgorithm();
         try {
-            mManifestExtension.zFile().add(digitalSignatureFile, new ByteArrayInputStream(
-                            computePkcs7Signature(signatureBytes.toByteArray())));
+            mManifestExtension.zFile().add(
+                    digitalSignatureFile,
+                    new ByteArrayInputStream(computePkcs7Signature(signatureBytes.toByteArray())));
         } catch (CertificateEncodingException | OperatorCreationException | CMSException e) {
             throw new IOException("Failed to digitally sign signature file.", e);
         }
