@@ -140,7 +140,7 @@ public class OfflineRepoCreator {
 
     private void writeRepoXml(@NonNull List<RemotePackageImpl> toWrite, @NonNull RepoManager mgr,
             @NonNull ProgressIndicator progress) throws IOException {
-        CommonFactory factory = RepoManager.getCommonModule().createLatestFactory();
+        CommonFactory factory = (CommonFactory)RepoManager.getCommonModule().createLatestFactory();
         Repository repo = factory.createRepositoryType();
         Set<String> seenLicenses = new HashSet<>();
         for (RemotePackageImpl remote : toWrite) {
