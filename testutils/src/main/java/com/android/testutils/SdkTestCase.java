@@ -22,7 +22,6 @@ import com.google.common.collect.Sets;
 import com.google.common.io.ByteStreams;
 import com.google.common.io.Closeables;
 import com.google.common.io.Files;
-import com.google.common.io.InputSupplier;
 import junit.framework.TestCase;
 
 import java.io.ByteArrayInputStream;
@@ -348,13 +347,7 @@ public abstract class SdkTestCase extends TestCase {
             tempFile.delete();
         }
 
-        Files.copy(new InputSupplier<InputStream>() {
-            @Override
-            public InputStream getInput() throws IOException {
-                return contents;
-            }
-        }, tempFile);
-
+        Files.asByteSink(tempFile).writeFrom(contents);
         return tempFile;
     }
 
