@@ -18,25 +18,19 @@ package com.android.testutils;
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.google.common.base.Charsets;
 import com.google.common.collect.Sets;
 import com.google.common.io.ByteStreams;
 import com.google.common.io.Closeables;
 import com.google.common.io.Files;
 import com.google.common.io.InputSupplier;
-
 import junit.framework.TestCase;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Set;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
 
 /**
  * Common test case for SDK unit tests. Contains a number of general utility methods
@@ -177,7 +171,7 @@ public abstract class SdkTestCase extends TestCase {
             return null;
         }
 
-        String xml = new String(ByteStreams.toByteArray(stream), Charsets.UTF_8);
+        String xml = new String(ByteStreams.toByteArray(stream), StandardCharsets.UTF_8);
         try {
             Closeables.close(stream, true /* swallowIOException */);
         } catch (IOException e) {
@@ -218,7 +212,7 @@ public abstract class SdkTestCase extends TestCase {
         if (expected == null) {
             File expectedPath = new File(
                     UPDATE_MISSING_FILES ? getTargetDir() : getTempDir(), expectedName);
-            Files.write(actual, expectedPath, Charsets.UTF_8);
+            Files.write(actual, expectedPath, StandardCharsets.UTF_8);
             System.out.println("Expected - written to " + expectedPath + ":\n");
             System.out.println(actual);
             fail("Did not find golden file (" + expectedName + "): Wrote contents as "
@@ -228,11 +222,11 @@ public abstract class SdkTestCase extends TestCase {
                 File expectedPath = new File(getTempDir(), expectedName);
                 File actualPath = new File(getTempDir(),
                         expectedName.replace("expected", "actual"));
-                Files.write(expected, expectedPath, Charsets.UTF_8);
-                Files.write(actual, actualPath, Charsets.UTF_8);
+                Files.write(expected, expectedPath, StandardCharsets.UTF_8);
+                Files.write(actual, actualPath, StandardCharsets.UTF_8);
                 // Also update data dir with the current value
                 if (UPDATE_DIFFERENT_FILES) {
-                    Files.write(actual, new File(getTargetDir(), expectedName), Charsets.UTF_8);
+                    Files.write(actual, new File(getTargetDir(), expectedName), StandardCharsets.UTF_8);
                 }
                 System.out.println("The files differ: diff " + expectedPath + " "
                         + actualPath);
@@ -412,7 +406,7 @@ public abstract class SdkTestCase extends TestCase {
         public File createFile(@NonNull File targetDir) throws IOException {
             InputStream stream;
             if (contents != null) {
-                stream = new ByteArrayInputStream(contents.getBytes(Charsets.UTF_8));
+                stream = new ByteArrayInputStream(contents.getBytes(StandardCharsets.UTF_8));
             } else {
                 stream = getTestResource(sourceRelativePath, true);
                 assertNotNull(sourceRelativePath + " does not exist", stream);
@@ -436,7 +430,7 @@ public abstract class SdkTestCase extends TestCase {
                 InputStream stream = getTestResource(sourceRelativePath, true);
                 if (stream != null) {
                     try {
-                        return new String(ByteStreams.toByteArray(stream), Charsets.UTF_8);
+                        return new String(ByteStreams.toByteArray(stream), StandardCharsets.UTF_8);
                     } catch (IOException ignore) {
                         return "<couldn't open test file " + sourceRelativePath + ">";
                     }
