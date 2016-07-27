@@ -142,10 +142,9 @@ public class ModelBuilder implements ToolingModelBuilder {
     public Object buildAll(String modelName, Project project) {
         Integer modelLevelInt = AndroidGradleOptions.buildModelOnlyVersion(project);
         if (modelLevelInt != null) {
-            DependenciesImpl.setModelLevel(modelLevelInt);
+            modelLevel = modelLevelInt;
         }
-
-        Collection<? extends SigningConfig> signingConfigs = config.getSigningConfigs();
+        DependenciesImpl.setModelLevel(modelLevel);
 
         // Get the boot classpath. This will ensure the target is configured.
         List<String> bootClasspath = androidBuilder.getBootClasspathAsStrings(false);
@@ -479,8 +478,10 @@ public class ModelBuilder implements ToolingModelBuilder {
                 scope.getVariantData().getJavaResourcesForUnitTesting(),
                 DependenciesImpl.cloneDependencies(variantDependency.getCompileDependencies(),
                         variantConfiguration, androidBuilder),
-                DependenciesImpl.cloneDependencies(variantDependency.getPackageDependencies(),
-                        variantConfiguration, androidBuilder),
+                (modelLevel >= AndroidProject.MODEL_LEVEL_2_DEP_GRAPH ?
+                        DependenciesImpl.cloneDependencies(variantDependency.getPackageDependencies(),
+                        variantConfiguration, androidBuilder) :
+                        DependenciesImpl.getEmpty()),
                 sourceProviders.variantSourceProvider,
                 sourceProviders.multiFlavorSourceProvider,
                 variantConfiguration.getSupportedAbis(),

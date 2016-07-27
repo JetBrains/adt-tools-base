@@ -115,17 +115,10 @@ public class AppWithCompileIndirectJavaProjectTest {
         assertThat(appAndroidLibrary.getProject()).named("app(androidlibs[0]) project").isEqualTo(":library");
 
         Collection<String> appProjectDeps = appDeps.getProjects();
-        assertThat(appProjectDeps).named("app(modules) count").hasSize(1);
-        String appProjectDep = Iterables.getOnlyElement(appProjectDeps);
-        assertThat(appProjectDep).named("app->:jar project").isEqualTo(":jar");
+        assertThat(appProjectDeps).named("app(modules) count").isEmpty();
 
         Collection<JavaLibrary> appJavaLibDeps = appDeps.getJavaLibraries();
-        assertThat(appJavaLibDeps).named("app(javalibs) count").hasSize(1);
-        JavaLibrary appJavaLibDep = Iterables.getOnlyElement(appJavaLibDeps);
-        assertThat(appJavaLibDep.getProject()).named("app->guava project").isNull();
-        assertThat(appJavaLibDep.getResolvedCoordinates())
-                .named("app->guava resolved coordinates")
-                .isEqualTo("com.google.guava", "guava", "17.0");
+        assertThat(appJavaLibDeps).named("app(javalibs) count").isEmpty();
 
         // ---
         // test the dependencies on the :library module.
@@ -143,12 +136,7 @@ public class AppWithCompileIndirectJavaProjectTest {
         assertThat(libProjectDep).named("lib->:jar project").isEqualTo(":jar");
 
         Collection<JavaLibrary> libJavaLibDeps = appDeps.getJavaLibraries();
-        assertThat(libJavaLibDeps).named("lib(javalibs) count").hasSize(1);
-        JavaLibrary libJavaLibDep = Iterables.getOnlyElement(appJavaLibDeps);
-        assertThat(libJavaLibDep.getProject()).named("lib->guava project").isNull();
-        assertThat(libJavaLibDep.getResolvedCoordinates())
-                .named("lib->guava resolved coordinates")
-                .isEqualTo("com.google.guava", "guava", "17.0");
+        assertThat(libJavaLibDeps).named("lib(javalibs) count").isEmpty();
     }
 
     @Test

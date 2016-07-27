@@ -94,11 +94,7 @@ public class AppWithCompileIndirectJarTest {
         assertThat(deps.getProjects()).named("app module dependency count").isEmpty();
 
         Collection<JavaLibrary> javaLibraries = deps.getJavaLibraries();
-        assertThat(javaLibraries).named("app java dependency count").hasSize(1);
-        JavaLibrary javaLib = Iterables.getOnlyElement(javaLibraries);
-        assertThat(javaLib.getResolvedCoordinates())
-                .named("app java lib resolved coordinates")
-                .isEqualTo("com.google.guava", "guava", "18.0");
+        assertThat(javaLibraries).named("app java dependency count").isEmpty();
 
         // ---
 
@@ -111,7 +107,7 @@ public class AppWithCompileIndirectJarTest {
 
         javaLibraries = deps.getJavaLibraries();
         assertThat(javaLibraries).named("lib java dependency count").hasSize(1);
-        javaLib = Iterables.getOnlyElement(javaLibraries);
+        JavaLibrary javaLib = Iterables.getOnlyElement(javaLibraries);
         assertThat(javaLib.getResolvedCoordinates())
                 .named("lib java lib resolved coordinates")
                 .isEqualTo("com.google.guava", "guava", "18.0");

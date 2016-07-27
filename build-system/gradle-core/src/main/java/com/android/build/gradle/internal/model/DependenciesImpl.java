@@ -24,7 +24,6 @@ import com.android.annotations.concurrency.Immutable;
 import com.android.builder.core.AndroidBuilder;
 import com.android.builder.core.VariantConfiguration;
 import com.android.builder.dependency.DependencyContainer;
-import com.android.builder.dependency.JarDependency;
 import com.android.builder.dependency.MavenCoordinatesImpl;
 import com.android.builder.model.AndroidLibrary;
 import com.android.builder.model.AndroidProject;
@@ -53,24 +52,11 @@ public class DependenciesImpl implements Dependencies, Serializable {
     private static final long serialVersionUID = 1L;
 
     private static final CreatingCache<AndroidLibrary, AndroidLibraryImpl> sLibCache
-            = new CreatingCache<AndroidLibrary, AndroidLibraryImpl>(
-            new CreatingCache.ValueFactory<AndroidLibrary, AndroidLibraryImpl>() {
-                @Override
-                @NonNull
-                public AndroidLibraryImpl create(@NonNull AndroidLibrary key) {
-                    return convertAndroidLibrary(key);
-                }
-            });
+            = new CreatingCache<AndroidLibrary, AndroidLibraryImpl>(DependenciesImpl::convertAndroidLibrary);
     private static final CreatingCache<JavaLibrary, JavaLibraryImpl> sJarCache
-            = new CreatingCache<JavaLibrary, JavaLibraryImpl>(
-            new CreatingCache.ValueFactory<JavaLibrary, JavaLibraryImpl>() {
-                @Override
-                @NonNull
-                public JavaLibraryImpl create(@NonNull JavaLibrary key) {
-                    return convertJarLibrary(key);
-                }
-            });
-
+            = new CreatingCache<JavaLibrary, JavaLibraryImpl>(DependenciesImpl::convertJarLibrary);
+    private static final CreatingCache<JavaLibrary, JavaLibraryImpl> sFlatJarCache
+            = new CreatingCache<JavaLibrary, JavaLibraryImpl>(DependenciesImpl::convertFlatJarLibrary);
 
     @NonNull
     private final List<AndroidLibrary> libraries;
@@ -88,6 +74,12 @@ public class DependenciesImpl implements Dependencies, Serializable {
     public static void clearCaches() {
         sLibCache.clear();
         sJarCache.clear();
+        sFlatJarCache.clear();
+    }
+
+    @NonNull
+    static DependenciesImpl getEmpty() {
+        return new DependenciesImpl(ImmutableList.of(), ImmutableList.of(), ImmutableList.of());
     }
 
     @NonNull
@@ -127,7 +119,9 @@ public class DependenciesImpl implements Dependencies, Serializable {
         // for the java dependencies, and put them in the cloned java libraries list.
         if (sModelLevel < AndroidProject.MODEL_LEVEL_2_DEP_GRAPH) {
             for (AndroidLibrary androidLibrary : androidLibraries) {
-                handleFlatClonedAndroidLib(androidLibrary, clonedJavaLibraries, clonedProjects);
+                if (androidLibrary.getProject() == null) {
+                    handleFlatClonedAndroidLib(androidLibrary, clonedJavaLibraries, clonedProjects);
+                }
             }
         }
 
@@ -200,26 +194,17 @@ public class DependenciesImpl implements Dependencies, Serializable {
             @NonNull List<String> clonedProjects) {
         boolean customArtifact = javaLibrary.getResolvedCoordinates().getClassifier() != null;
 
-        File jarFile = javaLibrary.getJarFile();
         if (!customArtifact && javaLibrary.getProject() != null) {
-            clonedProjects.add(javaLibrary.getProject());
+            clonedProjects.add(javaLibrary.getProject().intern());
         } else {
-            JavaLibraryImpl clonedJavaLib = new JavaLibraryImpl(
-                    jarFile,
-                    null /*project*/,
-                    ImmutableList.of(),
-                    null,
-                    javaLibrary.getResolvedCoordinates(),
-                    javaLibrary.isSkipped(),
-                    javaLibrary.isProvided());
-            if (!clonedJavaLibraries.contains(clonedJavaLib)) {
+            JavaLibrary clonedJavaLib = sFlatJarCache.get(javaLibrary);
+            if (clonedJavaLib != null && !clonedJavaLibraries.contains(clonedJavaLib)) {
                 clonedJavaLibraries.add(clonedJavaLib);
             }
-        }
-
-        // then recursively go through the rest.
-        for (JavaLibrary javaDependency : javaLibrary.getDependencies()) {
-            handleFlatClonedJavaLib(javaDependency, clonedJavaLibraries, clonedProjects);
+            // then recursively go through the rest.
+            for (JavaLibrary javaDependency : javaLibrary.getDependencies()) {
+                handleFlatClonedJavaLib(javaDependency, clonedJavaLibraries, clonedProjects);
+            }
         }
     }
 
@@ -253,28 +238,34 @@ public class DependenciesImpl implements Dependencies, Serializable {
     @NonNull
     private static AndroidLibraryImpl convertAndroidLibrary(
             @NonNull AndroidLibrary libraryDependency) {
-        List<? extends AndroidLibrary> deps = libraryDependency.getLibraryDependencies();
-        List<AndroidLibrary> clonedDeps = Lists.newArrayListWithCapacity(deps.size());
-        for (AndroidLibrary child : deps) {
-            AndroidLibrary clonedLib = sLibCache.get(child);
-            if (clonedLib != null) {
-                clonedDeps.add(clonedLib);
-            }
-        }
+        boolean newDepModel = sModelLevel >= AndroidProject.MODEL_LEVEL_2_DEP_GRAPH;
 
-        // get the clones of the Java libraries
-        List<JavaLibrary> clonedJavaLibraries;
-        if (sModelLevel >= AndroidProject.MODEL_LEVEL_2_DEP_GRAPH) {
-            Collection<? extends JavaLibrary> jarDeps = libraryDependency.getJavaDependencies();
-            clonedJavaLibraries = Lists.newArrayListWithCapacity(jarDeps.size());
-            for (JavaLibrary javaLibrary : jarDeps) {
-                JavaLibraryImpl clonedJar = sJarCache.get(javaLibrary);
-                if (clonedJar != null) {
-                    clonedJavaLibraries.add(clonedJar);
+        List<JavaLibrary> clonedJavaLibraries = ImmutableList.of();
+        List<AndroidLibrary> clonedDeps = ImmutableList.of();
+
+        // if this is a sub-project, no need to include the children.
+        if (newDepModel || libraryDependency.getProject() == null) {
+            List<? extends AndroidLibrary> deps = libraryDependency.getLibraryDependencies();
+            clonedDeps = Lists.newArrayListWithCapacity(deps.size());
+            for (AndroidLibrary child : deps) {
+                AndroidLibrary clonedLib = sLibCache.get(child);
+                if (clonedLib != null) {
+                    clonedDeps.add(clonedLib);
                 }
             }
-        } else {
-            clonedJavaLibraries = ImmutableList.of();
+
+            // get the clones of the Java libraries, only in level2. In level1, this is passed
+            // as direct dependencies since we don't care about order.
+            if (newDepModel) {
+                Collection<? extends JavaLibrary> jarDeps = libraryDependency.getJavaDependencies();
+                clonedJavaLibraries = Lists.newArrayListWithCapacity(jarDeps.size());
+                for (JavaLibrary javaLibrary : jarDeps) {
+                    JavaLibraryImpl clonedJar = sJarCache.get(javaLibrary);
+                    if (clonedJar != null) {
+                        clonedJavaLibraries.add(clonedJar);
+                    }
+                }
+            }
         }
 
         // compute local jar even if the bundle isn't exploded.
@@ -289,7 +280,6 @@ public class DependenciesImpl implements Dependencies, Serializable {
 
     @NonNull
     private static JavaLibraryImpl convertJarLibrary(@NonNull JavaLibrary javaLibrary) {
-        // don't include package-only dependencies
         List<? extends JavaLibrary> javaDependencies = javaLibrary.getDependencies();
         List<JavaLibrary> clonedDependencies = Lists.newArrayListWithCapacity(
                 javaDependencies.size());
@@ -305,6 +295,19 @@ public class DependenciesImpl implements Dependencies, Serializable {
                 javaLibrary.getJarFile(),
                 javaLibrary.getProject(),
                 clonedDependencies,
+                javaLibrary.getRequestedCoordinates(),
+                javaLibrary.getResolvedCoordinates(),
+                javaLibrary.isSkipped(),
+                javaLibrary.isProvided());
+    }
+
+
+    @NonNull
+    private static JavaLibraryImpl convertFlatJarLibrary(@NonNull JavaLibrary javaLibrary) {
+        return new JavaLibraryImpl(
+                javaLibrary.getJarFile(),
+                null /*project*/,
+                ImmutableList.of(),
                 javaLibrary.getRequestedCoordinates(),
                 javaLibrary.getResolvedCoordinates(),
                 javaLibrary.isSkipped(),

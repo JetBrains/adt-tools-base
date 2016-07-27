@@ -26,7 +26,6 @@ import com.google.common.collect.ImmutableList;
 
 import java.io.File;
 import java.io.Serializable;
-import java.util.Collections;
 import java.util.List;
 
 /**

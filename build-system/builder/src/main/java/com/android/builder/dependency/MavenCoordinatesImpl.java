@@ -58,11 +58,11 @@ public class MavenCoordinatesImpl implements MavenCoordinates, Serializable {
             @NonNull String version,
             @Nullable String packaging,
             @Nullable String classifier) {
-        this.groupId = groupId;
-        this.artifactId = artifactId;
-        this.version = version;
-        this.packaging = packaging != null ? packaging : SdkConstants.EXT_JAR;
-        this.classifier = classifier;
+        this.groupId = groupId.intern();
+        this.artifactId = artifactId.intern();
+        this.version = version.intern();
+        this.packaging = packaging != null ? packaging.intern() : SdkConstants.EXT_JAR;
+        this.classifier = classifier != null ? classifier.intern() : null;
     }
 
     @NonNull
