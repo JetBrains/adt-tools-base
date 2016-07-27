@@ -814,7 +814,7 @@ public abstract class BasePlugin implements ToolingRegistryProvider {
 
     private void checkPathForErrors() {
         // See if we're on Windows:
-        if (System.getProperty("os.name").toLowerCase(Locale.US).contains("windows")) {
+        if (!System.getProperty("os.name").toLowerCase(Locale.US).contains("windows")) {
             return;
         }
 
