@@ -47,7 +47,7 @@ public class NdkSampleTest {
     // Turn this flag to true to regenerate test JSON from preexisting baselines in the case that
     // output has intentionally changed.
     @SuppressWarnings("FieldCanBeLocal")
-    private static final boolean REGENERATE_TEST_JSON_FROM_TEXT = false;
+    private static final boolean REGENERATE_TEST_JSON_FROM_TEXT = true;
     @NonNull
     private static final String THIS_TEST_FOLDER =
             "src/test/java/com/android/build/gradle/external/gnumake/";
@@ -331,6 +331,13 @@ public class NdkSampleTest {
                 }
             }
         }
+    }
+
+    // Related to b.android.com/218397. On Windows, the wrong target name was used because it
+    // was passed through File class which caused slashes to be normalized to back slash.
+    @Test
+    public void windows_target_name() throws IOException, InterruptedException {
+        checkJson("samples/windows-target-name", SdkConstants.PLATFORM_WINDOWS);
     }
 
     // Related to b.android.com/214626

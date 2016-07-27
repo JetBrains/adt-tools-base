@@ -123,7 +123,7 @@ public class NativeBuildConfigValueBuilder {
             boolean isWin32) {
         ListMultimap<String, List<BuildStepInfo>> outputs = FlowAnalyzer.analyze(commands, isWin32);
         for (Map.Entry<String, List<BuildStepInfo>> entry : outputs.entries()) {
-            this.outputs.add(new Output(new File(entry.getKey()), entry.getValue(),
+            this.outputs.add(new Output(entry.getKey(), entry.getValue(),
                     buildCommand, variantName));
         }
         return this;
@@ -172,8 +172,9 @@ public class NativeBuildConfigValueBuilder {
         for (Output output : outputs) {
             // This pattern is for standard ndk-build and should give names like:
             //  mips64-test-libstl-release
-            String abi = output.outputFile.getParentFile().getName();
-            output.artifactName = NdkUtils.getTargetNameFromBuildOutputFile(output.outputFile);
+            File outputFile = new File(output.outputFileName);
+            String abi = outputFile.getParentFile().getName();
+            output.artifactName = NdkUtils.getTargetNameFromBuildOutputFile(outputFile);
             output.libraryName = String.format("%s-%s-%s", output.artifactName,
                     output.variantName, abi);
         }
@@ -245,13 +246,13 @@ public class NativeBuildConfigValueBuilder {
     }
 
     @NonNull
-    private static String findToolChainName(@NonNull File output) {
-        return "toolchain-" + output.getParentFile().getName();
+    private static String findToolChainName(@NonNull String outputFileName) {
+        return "toolchain-" + new File(outputFileName).getParentFile().getName();
     }
 
     private void findToolchainNames() {
         for (Output output : outputs) {
-            output.toolchain = findToolChainName(output.outputFile);
+            output.toolchain = findToolChainName(output.outputFileName);
         }
     }
 
@@ -272,12 +273,13 @@ public class NativeBuildConfigValueBuilder {
 
         for (Output output : outputs) {
             NativeLibraryValue value = new NativeLibraryValue();
+            File outputFile = new File(output.outputFileName);
             librariesMap.put(output.libraryName, value);
-            value.buildCommand = output.buildCommand + " " + output.outputFile;
-            value.abi = output.outputFile.getParentFile().getName();
+            value.buildCommand = output.buildCommand + " " + output.outputFileName;
+            value.abi = outputFile.getParentFile().getName();
             value.artifactName = output.artifactName;
             value.toolchain = output.toolchain;
-            value.output = output.outputFile;
+            value.output = outputFile;
             value.files = new ArrayList<>();
 
             for (BuildStepInfo input : output.commandInputs) {
@@ -340,7 +342,7 @@ public class NativeBuildConfigValueBuilder {
     }
 
     private static class Output {
-        private final File outputFile;
+        private final String outputFileName;
         private final List<BuildStepInfo> commandInputs;
         private final String buildCommand;
         private final String variantName;
@@ -348,9 +350,9 @@ public class NativeBuildConfigValueBuilder {
         private String libraryName;
         private String toolchain;
 
-        private Output(File outputFile, List<BuildStepInfo> commandInputs,
+        private Output(String outputFileName, List<BuildStepInfo> commandInputs,
                 String buildCommand, String variantName) {
-            this.outputFile = outputFile;
+            this.outputFileName = outputFileName;
             this.commandInputs = commandInputs;
             this.buildCommand = buildCommand;
             this.variantName = variantName;
