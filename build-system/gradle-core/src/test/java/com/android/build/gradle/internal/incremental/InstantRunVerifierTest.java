@@ -57,9 +57,9 @@ import org.objectweb.asm.tree.AnnotationNode;
 
 import java.io.IOException;
 
-/**
- * Tests for the {@link InstantRunVerifier}
- */
+import Lpackage.AnyClassWithMethodInvocation;
+
+/** Tests for the {@link InstantRunVerifier} */
 public class InstantRunVerifierTest {
 
     VerifierHarness harness = new VerifierHarness(true);
@@ -451,4 +451,9 @@ public class InstantRunVerifierTest {
                         InstantRunVerifier.ANNOTATION_COMPARATOR));
     }
 
+    @Test
+    public void testClassWithObjectTypePrefix() throws IOException {
+        InstantRunVerifierStatus changes = harness.verify(AnyClassWithMethodInvocation.class, null);
+        assertEquals(COMPATIBLE, changes);
+    }
 }

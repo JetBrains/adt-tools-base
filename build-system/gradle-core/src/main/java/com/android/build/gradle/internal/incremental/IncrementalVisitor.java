@@ -72,15 +72,17 @@ public class IncrementalVisitor extends ClassVisitor {
     public static final String ABSTRACT_PATCHES_LOADER_IMPL =
             PACKAGE + "/AbstractPatchesLoaderImpl";
     public static final String APP_PATCHES_LOADER_IMPL = PACKAGE + "/AppPatchesLoaderImpl";
+
     protected static final Type INSTANT_RELOAD_EXCEPTION =
-            Type.getType(PACKAGE + "/InstantReloadException");
-    protected static final Type RUNTIME_TYPE = Type.getType("L" + PACKAGE + "/AndroidInstantRuntime;");
+            Type.getObjectType(PACKAGE + "/InstantReloadException");
+    protected static final Type RUNTIME_TYPE =
+            Type.getObjectType(PACKAGE + "/AndroidInstantRuntime");
     public static final Type DISABLE_ANNOTATION_TYPE =
-            Type.getType("Lcom/android/tools/ir/api/DisableInstantRun;");
+            Type.getObjectType("com/android/tools/ir/api/DisableInstantRun");
 
     protected static final boolean TRACING_ENABLED = Boolean.getBoolean("FDR_TRACING");
 
-    public static final Type CHANGE_TYPE = Type.getType("L" + PACKAGE + "/IncrementalChange;");
+    public static final Type CHANGE_TYPE = Type.getObjectType(PACKAGE + "/IncrementalChange");
 
     protected String visitedClassName;
     protected String visitedSuperName;
@@ -168,7 +170,7 @@ public class IncrementalVisitor extends ClassVisitor {
 
     protected static void trace(@NonNull GeneratorAdapter mv, @Nullable String s) {
         mv.push(s);
-        mv.invokeStatic(Type.getType(PACKAGE + ".AndroidInstantRuntime"),
+        mv.invokeStatic(Type.getObjectType(PACKAGE + "/AndroidInstantRuntime"),
                 Method.getMethod("void trace(String)"));
     }
 
@@ -176,7 +178,7 @@ public class IncrementalVisitor extends ClassVisitor {
             @Nullable String s2) {
         mv.push(s1);
         mv.push(s2);
-        mv.invokeStatic(Type.getType(PACKAGE + ".AndroidInstantRuntime"),
+        mv.invokeStatic(Type.getObjectType(PACKAGE + "/AndroidInstantRuntime"),
                 Method.getMethod("void trace(String, String)"));
     }
 
@@ -185,7 +187,7 @@ public class IncrementalVisitor extends ClassVisitor {
         mv.push(s1);
         mv.push(s2);
         mv.push(s3);
-        mv.invokeStatic(Type.getType(PACKAGE + ".AndroidInstantRuntime"),
+        mv.invokeStatic(Type.getObjectType(PACKAGE + "/AndroidInstantRuntime"),
                 Method.getMethod("void trace(String, String, String)"));
     }
 
@@ -195,7 +197,7 @@ public class IncrementalVisitor extends ClassVisitor {
         mv.push(s2);
         mv.push(s3);
         mv.push(s4);
-        mv.invokeStatic(Type.getType(PACKAGE + ".AndroidInstantRuntime"),
+        mv.invokeStatic(Type.getObjectType(PACKAGE + "/AndroidInstantRuntime"),
                 Method.getMethod("void trace(String, String, String, String)"));
     }
 
@@ -205,7 +207,7 @@ public class IncrementalVisitor extends ClassVisitor {
             methodSignature.append(", String");
         }
         methodSignature.append(")");
-        mv.invokeStatic(Type.getType(PACKAGE + ".AndroidInstantRuntime"),
+        mv.invokeStatic(Type.getObjectType(PACKAGE + "/AndroidInstantRuntime"),
                 Method.getMethod(methodSignature.toString()));
     }
 

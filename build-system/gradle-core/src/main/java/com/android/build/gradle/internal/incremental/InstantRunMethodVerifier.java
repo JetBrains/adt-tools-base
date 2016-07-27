@@ -64,7 +64,7 @@ public class InstantRunMethodVerifier {
         public void visitMethodInsn(int opcode, String owner, String name, String desc,
                 boolean itf) {
 
-            Type receiver = Type.getType(owner);
+            Type receiver = Type.getObjectType(owner);
             if (!incompatibleChange.isPresent()) {
                 if (opcode == Opcodes.INVOKEVIRTUAL && blackListedMethods.containsKey(receiver)) {
                     for (Method method : blackListedMethods.get(receiver)) {
@@ -87,26 +87,26 @@ public class InstantRunMethodVerifier {
     // at this point, we just don't enable InstantRun on those.
     private static final ImmutableMultimap<Type, Method> blackListedMethods =
             ImmutableMultimap.<Type, Method>builder()
-                .put(Type.getType("java/lang/reflect/Field"), Method.getMethod("Object get(Object)"))
-                .put(Type.getType("java/lang/reflect/Field"), Method.getMethod("boolean getBoolean(Object)"))
-                .put(Type.getType("java/lang/reflect/Field"), Method.getMethod("byte getByte(Object)"))
-                .put(Type.getType("java/lang/reflect/Field"), Method.getMethod("char getChar(Object)"))
-                .put(Type.getType("java/lang/reflect/Field"), Method.getMethod("double getDouble(Object)"))
-                .put(Type.getType("java/lang/reflect/Field"), Method.getMethod("float getFloat(Object)"))
-                .put(Type.getType("java/lang/reflect/Field"), Method.getMethod("int getInt(Object)"))
-                .put(Type.getType("java/lang/reflect/Field"), Method.getMethod("long getLong(Object)"))
-                .put(Type.getType("java/lang/reflect/Field"), Method.getMethod("short getShort(Object)"))
-                .put(Type.getType("java/lang/reflect/Field"), Method.getMethod("void set(Object, Object)"))
-                .put(Type.getType("java/lang/reflect/Field"), Method.getMethod("void setBoolean(Object, boolean)"))
-                .put(Type.getType("java/lang/reflect/Field"), Method.getMethod("void setByte(Object, byte)"))
-                .put(Type.getType("java/lang/reflect/Field"), Method.getMethod("void setChar(Object, char)"))
-                .put(Type.getType("java/lang/reflect/Field"), Method.getMethod("void setDouble(Object, double)"))
-                .put(Type.getType("java/lang/reflect/Field"), Method.getMethod("void setFloat(Object, float)"))
-                .put(Type.getType("java/lang/reflect/Field"), Method.getMethod("void setInt(Object, int)"))
-                .put(Type.getType("java/lang/reflect/Field"), Method.getMethod("void setLong(Object, long)"))
-                .put(Type.getType("java/lang/reflect/Field"), Method.getMethod("void setShort(Object, short)"))
-                .put(Type.getType("java/lang/reflect/Constructor"), Method.getMethod("Object newInstance(Object[])"))
-                .put(Type.getType("java/lang/Class"), Method.getMethod("Object newInstance()"))
-                .put(Type.getType("java/lang/reflect/Method"), Method.getMethod("Object invoke(Object, Object[])"))
+                .put(Type.getObjectType("java/lang/reflect/Field"), Method.getMethod("Object get(Object)"))
+                .put(Type.getObjectType("java/lang/reflect/Field"), Method.getMethod("boolean getBoolean(Object)"))
+                .put(Type.getObjectType("java/lang/reflect/Field"), Method.getMethod("byte getByte(Object)"))
+                .put(Type.getObjectType("java/lang/reflect/Field"), Method.getMethod("char getChar(Object)"))
+                .put(Type.getObjectType("java/lang/reflect/Field"), Method.getMethod("double getDouble(Object)"))
+                .put(Type.getObjectType("java/lang/reflect/Field"), Method.getMethod("float getFloat(Object)"))
+                .put(Type.getObjectType("java/lang/reflect/Field"), Method.getMethod("int getInt(Object)"))
+                .put(Type.getObjectType("java/lang/reflect/Field"), Method.getMethod("long getLong(Object)"))
+                .put(Type.getObjectType("java/lang/reflect/Field"), Method.getMethod("short getShort(Object)"))
+                .put(Type.getObjectType("java/lang/reflect/Field"), Method.getMethod("void set(Object, Object)"))
+                .put(Type.getObjectType("java/lang/reflect/Field"), Method.getMethod("void setBoolean(Object, boolean)"))
+                .put(Type.getObjectType("java/lang/reflect/Field"), Method.getMethod("void setByte(Object, byte)"))
+                .put(Type.getObjectType("java/lang/reflect/Field"), Method.getMethod("void setChar(Object, char)"))
+                .put(Type.getObjectType("java/lang/reflect/Field"), Method.getMethod("void setDouble(Object, double)"))
+                .put(Type.getObjectType("java/lang/reflect/Field"), Method.getMethod("void setFloat(Object, float)"))
+                .put(Type.getObjectType("java/lang/reflect/Field"), Method.getMethod("void setInt(Object, int)"))
+                .put(Type.getObjectType("java/lang/reflect/Field"), Method.getMethod("void setLong(Object, long)"))
+                .put(Type.getObjectType("java/lang/reflect/Field"), Method.getMethod("void setShort(Object, short)"))
+                .put(Type.getObjectType("java/lang/reflect/Constructor"), Method.getMethod("Object newInstance(Object[])"))
+                .put(Type.getObjectType("java/lang/Class"), Method.getMethod("Object newInstance()"))
+                .put(Type.getObjectType("java/lang/reflect/Method"), Method.getMethod("Object invoke(Object, Object[])"))
                 .build();
 }
