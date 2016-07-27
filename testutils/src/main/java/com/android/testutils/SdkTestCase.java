@@ -347,7 +347,12 @@ public abstract class SdkTestCase extends TestCase {
             tempFile.delete();
         }
 
-        Files.asByteSink(tempFile).writeFrom(contents);
+        try {
+            Files.asByteSink(tempFile).writeFrom(contents);
+        }
+        finally {
+            contents.close();
+        }
         return tempFile;
     }
 
