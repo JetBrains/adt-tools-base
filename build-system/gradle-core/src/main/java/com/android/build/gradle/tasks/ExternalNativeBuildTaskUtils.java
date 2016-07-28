@@ -27,6 +27,7 @@ import com.android.build.gradle.external.gson.NativeLibraryValue;
 import com.android.build.gradle.external.gson.PlainFileGsonTypeAdaptor;
 import com.android.build.gradle.internal.model.CoreExternalNativeBuild;
 import com.android.builder.core.AndroidBuilder;
+import com.android.ide.common.process.BuildCommandException;
 import com.android.ide.common.process.LoggedProcessOutputHandler;
 import com.android.ide.common.process.ProcessException;
 import com.android.ide.common.process.ProcessInfo;
@@ -210,13 +211,13 @@ public class ExternalNativeBuildTaskUtils {
     /**
      * Execute an external process and log the result in the case of a process exceptions.
      * Returns the info part of the log so that it can be parsed by ndk-build parser;
-     * @throws ProcessException when the build failed.
+     * @throws BuildCommandException when the build failed.
      */
     @NonNull
     public static String executeBuildProcessAndLogError(
             @NonNull AndroidBuilder androidBuilder,
             @NonNull ProcessInfo process)
-            throws ProcessException {
+            throws BuildCommandException {
         ExecuteBuildProcessLogger logger =
                 new ExecuteBuildProcessLogger(androidBuilder.getLogger());
         try {
@@ -227,7 +228,7 @@ public class ExternalNativeBuildTaskUtils {
             // Also, add process output to the process exception so that it can be analyzed by
             // caller
             String combinedMessage = String.format("%s\n%s", e.getMessage(), logger.getOutput());
-            throw new ProcessException(combinedMessage);
+            throw new BuildCommandException(combinedMessage);
         }
     }
 
