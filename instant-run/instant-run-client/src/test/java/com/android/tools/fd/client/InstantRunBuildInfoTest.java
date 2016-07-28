@@ -66,6 +66,8 @@ public class InstantRunBuildInfoTest {
         List<InstantRunArtifact> artifacts = info.getArtifacts();
         assertEquals(11, artifacts.size());
         assertTrue(info.hasMainApk());
+        assertTrue(
+                artifacts.stream().filter(p -> p.timestamp.equals("1451508349243")).count() == 11);
     }
 
     @Test
@@ -78,6 +80,10 @@ public class InstantRunBuildInfoTest {
         assertEquals(12, artifacts.size());
         assertTrue(info.hasMainApk());
         assertTrue(info.hasOneOf(InstantRunArtifactType.SPLIT));
+        assertTrue(
+                artifacts.stream().filter(p -> p.timestamp.equals("1452207930094")).count() == 1);
+        assertTrue(
+                artifacts.stream().filter(p -> p.timestamp.equals("1452205343311")).count() == 11);
     }
 
     @NonNull

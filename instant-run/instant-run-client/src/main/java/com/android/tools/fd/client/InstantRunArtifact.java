@@ -16,7 +16,7 @@
 package com.android.tools.fd.client;
 
 import com.android.annotations.NonNull;
-
+import com.google.common.base.MoreObjects;
 import java.io.File;
 
 public class InstantRunArtifact {
@@ -27,13 +27,22 @@ public class InstantRunArtifact {
     @NonNull
     public final File file;
 
-    public InstantRunArtifact(@NonNull InstantRunArtifactType type, @NonNull File file) {
+    @NonNull
+    public final String timestamp;
+
+    public InstantRunArtifact(
+            @NonNull InstantRunArtifactType type, @NonNull File file, @NonNull String timestamp) {
         this.type = type;
         this.file = file;
+        this.timestamp = timestamp;
     }
 
     @Override
     public String toString() {
-        return String.format("Artifact %s: %s", type, file.getPath());
+        return MoreObjects.toStringHelper(InstantRunArtifact.class)
+                .add("type", type)
+                .add("file", file)
+                .add("timestamp", timestamp)
+                .toString();
     }
 }

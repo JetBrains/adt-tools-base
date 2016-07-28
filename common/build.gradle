@@ -4,7 +4,7 @@ apply plugin: 'sdk-java-lib'
 
 dependencies {
     compile project(':base:annotations')
-    compile 'com.google.guava:guava:17.0'
+    compile 'com.google.guava:guava:18.0'
 
     testCompile 'junit:junit:4.12'
     testCompile 'com.google.truth:truth:0.28'
