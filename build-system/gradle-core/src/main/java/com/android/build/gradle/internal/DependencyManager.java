@@ -45,6 +45,7 @@ import com.android.builder.model.SyncIssue;
 import com.android.builder.sdk.SdkLibData;
 import com.android.repository.api.RepoManager;
 import com.android.repository.api.RepoPackage;
+import com.android.sdklib.repository.meta.DetailsTypes;
 import com.android.utils.ILogger;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ArrayListMultimap;
@@ -554,13 +555,8 @@ public class DependencyManager {
      * @return a {@code String} containing the path.
      */
     private static String getRepositoryPath(ModuleVersionSelector selector) {
-        return String.join(
-                String.valueOf(RepoPackage.PATH_SEPARATOR),
-                SdkConstants.FD_EXTRAS,
-                SdkConstants.FD_M2_REPOSITORY,
-                selector.getGroup().replace('.', RepoPackage.PATH_SEPARATOR),
-                selector.getName(),
-                selector.getVersion());
+        return DetailsTypes.MavenType.getRepositoryPath(
+                selector.getGroup(), selector.getName(), selector.getVersion());
     }
 
     private boolean isGoogleOwnedDependency(ModuleVersionSelector selector) {

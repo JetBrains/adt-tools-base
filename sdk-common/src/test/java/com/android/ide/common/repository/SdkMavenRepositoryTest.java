@@ -22,6 +22,7 @@ import com.android.repository.testframework.FakePackage;
 import com.android.repository.testframework.FakeProgressIndicator;
 import com.android.repository.testframework.MockFileOp;
 import com.android.sdklib.repository.AndroidSdkHandler;
+import com.android.sdklib.repository.meta.DetailsTypes;
 import com.google.common.collect.ImmutableList;
 
 import junit.framework.TestCase;
@@ -172,11 +173,13 @@ public class SdkMavenRepositoryTest extends TestCase {
     public void testGetSdkPath() throws Exception {
         GradleCoordinate coord = new GradleCoordinate("foo.bar.baz", "artifact1",
                 GradleCoordinate.parseRevisionNumber("1.2.3-alpha1"), null);
-        String result = SdkMavenRepository.getSdkPath(coord);
+        String result = DetailsTypes.MavenType.getRepositoryPath(
+                coord.getGroupId(), coord.getArtifactId(), coord.getRevision());
         assertEquals("extras;m2repository;foo;bar;baz;artifact1;1.2.3-alpha1", result);
 
         coord = new GradleCoordinate("foo.bar.baz", "artifact1", 1);
-        result = SdkMavenRepository.getSdkPath(coord);
+        result = DetailsTypes.MavenType.getRepositoryPath(
+                coord.getGroupId(), coord.getArtifactId(), coord.getRevision());
         assertEquals("extras;m2repository;foo;bar;baz;artifact1;1", result);
     }
 

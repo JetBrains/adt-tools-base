@@ -192,21 +192,6 @@ public enum SdkMavenRepository {
     }
 
     /**
-     * Given a GradleCoordinate, return the {@link RepoPackage}-style
-     * {@link RepoPackage#getPath() path} for the corresponding package. Note that there may not
-     * actually be such a package installed or available.
-     */
-    @NonNull
-    public static String getSdkPath(@NonNull GradleCoordinate coordinate) {
-        return String.join(Character.toString(RepoPackage.PATH_SEPARATOR),
-                FD_EXTRAS,
-                FD_M2_REPOSITORY,
-                coordinate.getGroupId().replace('.', RepoPackage.PATH_SEPARATOR),
-                coordinate.getArtifactId(),
-                coordinate.getRevision());
-    }
-
-    /**
      * Given {@link RepoPackage}-style {@link RepoPackage#getPath() path}, get the
      * {@link GradleCoordinate} for the package (assuming it is a maven-style package).
 

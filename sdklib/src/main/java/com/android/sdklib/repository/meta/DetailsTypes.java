@@ -25,9 +25,7 @@ import com.android.repository.impl.meta.TypeDetails;
 import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.IAndroidTarget;
 import com.android.sdklib.repository.IdDisplay;
-
 import java.util.List;
-
 import javax.xml.bind.annotation.XmlTransient;
 
 /**
@@ -239,7 +237,16 @@ public final class DetailsTypes {
      */
     @XmlTransient
     public interface MavenType {
-
+        static String getRepositoryPath(
+                @NonNull String groupId, @NonNull String artifactId, @NonNull String version) {
+            return String.join(
+                    String.valueOf(RepoPackage.PATH_SEPARATOR),
+                    SdkConstants.FD_EXTRAS,
+                    SdkConstants.FD_M2_REPOSITORY,
+                    groupId.replace('.', RepoPackage.PATH_SEPARATOR),
+                    artifactId,
+                    version);
+        }
     }
 
     /**
