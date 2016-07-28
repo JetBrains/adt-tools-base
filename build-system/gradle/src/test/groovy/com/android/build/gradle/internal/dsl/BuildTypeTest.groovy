@@ -89,6 +89,7 @@ public class BuildTypeTest extends BaseTest {
         object1.setZipAlignEnabled(false)
         object1.setShrinkResources(true)
         object1.getJackOptions().setEnabled(Boolean.FALSE)
+        object1.ndk { ndk -> ndk.abiFilters "x86" }
 
         com.android.build.gradle.internal.dsl.BuildType object2 =
                 new com.android.build.gradle.internal.dsl.BuildType(object1.name, project, project.getLogger())
