@@ -445,4 +445,14 @@ public class PlatformTarget implements IAndroidTarget {
         }
         return o.isPlatform() ? 0 : -1;
     }
+
+    @Override
+    public boolean equals(Object obj) {
+        return obj instanceof PlatformTarget && compareTo((PlatformTarget)obj) == 0;
+    }
+
+    @Override
+    public int hashCode() {
+        return hashString().hashCode();
+    }
 }

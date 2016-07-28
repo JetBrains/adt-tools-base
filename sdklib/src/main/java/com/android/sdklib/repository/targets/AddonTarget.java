@@ -341,4 +341,14 @@ public class AddonTarget implements IAndroidTarget {
 
         return versionDiff;
     }
+
+    @Override
+    public boolean equals(Object obj) {
+        return obj instanceof AddonTarget && compareTo((AddonTarget)obj) == 0;
+    }
+
+    @Override
+    public int hashCode() {
+        return hashString().hashCode();
+    }
 }
