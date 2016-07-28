@@ -18,6 +18,7 @@ package com.android.build.gradle.internal.incremental;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.builder.Version;
 import com.android.ide.common.xml.XmlPrettyPrinter;
 import com.android.utils.XmlUtils;
 import com.google.common.annotations.VisibleForTesting;
@@ -63,6 +64,7 @@ public class InstantRunBuildContext {
     static final String TAG_BUILD = "build";
     static final String TAG_ARTIFACT = "artifact";
     static final String TAG_TASK = "task";
+    static final String ATTR_PLUGIN_VERSION = "plugin-version";
     static final String ATTR_NAME = "name";
     static final String ATTR_DURATION = "duration";
     static final String ATTR_TIMESTAMP = "timestamp";
@@ -627,6 +629,7 @@ public class InstantRunBuildContext {
     public void loadFromXmlFile(@NonNull File persistedState)
             throws IOException, ParserConfigurationException, SAXException {
         if (!persistedState.exists()) {
+            setVerifierResult(InstantRunVerifierStatus.INITIAL_BUILD);
             return;
         }
         loadFromDocument(XmlUtils.parseUtfXmlFile(persistedState, false));
@@ -647,6 +650,16 @@ public class InstantRunBuildContext {
             // Don't load if we've changed api level.
             Logging.getLogger(InstantRunBuildContext.class)
                     .quiet("Instant Run: Target device API level has changed.");
+            setVerifierResult(InstantRunVerifierStatus.INITIAL_BUILD);
+            return;
+        }
+
+        if (!(Version.ANDROID_GRADLE_PLUGIN_VERSION.equals(
+                instantRun.getAttribute(ATTR_PLUGIN_VERSION)))) {
+            // Don't load if the plugin version has changed.
+            Logging.getLogger(InstantRunBuildContext.class)
+                    .quiet("Instant Run: Android plugin version has changed.");
+            setVerifierResult(InstantRunVerifierStatus.INITIAL_BUILD);
             return;
         }
 
@@ -803,6 +816,7 @@ public class InstantRunBuildContext {
             instantRun.setAttribute(ATTR_TOKEN, token.toString());
         }
         instantRun.setAttribute(ATTR_FORMAT, CURRENT_FORMAT);
+        instantRun.setAttribute(ATTR_PLUGIN_VERSION, Version.ANDROID_GRADLE_PLUGIN_VERSION);
 
         switch(persistenceMode) {
             case FULL_BUILD:
