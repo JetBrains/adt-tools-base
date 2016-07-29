@@ -133,6 +133,7 @@ public class InstantRunBuildInfo {
             long oldestTimeStamp = Long.MAX_VALUE;
 
             NodeList children = mRoot.getChildNodes();
+            String currentBuildTimestamp = mRoot.getAttribute(ATTR_TIMESTAMP);
             for (int i = 0, n = children.getLength(); i < n; i++) {
                 Node child = children.item(i);
                 if (child.getNodeType() == Node.ELEMENT_NODE) {
@@ -140,10 +141,10 @@ public class InstantRunBuildInfo {
                     String tagName = element.getTagName();
                     if (!TAG_ARTIFACT.equals(tagName)) {
                         if (!BUILDS_ARE_SORTED && TAG_BUILD.equals(tagName)) {
-                            String timestamp = element.getAttribute(ATTR_TIMESTAMP);
-                            if (!timestamp.isEmpty()) {
+                            currentBuildTimestamp = element.getAttribute(ATTR_TIMESTAMP);
+                            if (!Strings.isNullOrEmpty(currentBuildTimestamp)) {
                                 try {
-                                    long time = Long.parseLong(timestamp);
+                                    long time = Long.parseLong(currentBuildTimestamp);
                                     if (time < oldestTimeStamp) {
                                         oldestTimeStamp = time;
                                         oldestBuild = element;
@@ -158,7 +159,9 @@ public class InstantRunBuildInfo {
                     String location = element.getAttribute(ATTR_ARTIFACT_LOCATION);
                     String typeAttribute = element.getAttribute(ATTR_ARTIFACT_TYPE);
                     InstantRunArtifactType type = InstantRunArtifactType.valueOf(typeAttribute);
-                    artifacts.add(new InstantRunArtifact(type, new File(location)));
+                    artifacts.add(
+                            new InstantRunArtifact(
+                                    type, new File(location), currentBuildTimestamp));
                 }
             }
 
@@ -191,6 +194,7 @@ public class InstantRunBuildInfo {
                     }
 
                     NodeList nestedChildren = oldestBuild.getChildNodes();
+                    String buildTimestamp = oldestBuild.getAttribute(ATTR_TIMESTAMP);
                     for (int j = 0, n = nestedChildren.getLength(); j < n; j++) {
                         Node nestedChild = nestedChildren.item(j);
                         if (nestedChild.getNodeType() == Node.ELEMENT_NODE) {
@@ -205,7 +209,9 @@ public class InstantRunBuildInfo {
                             if (type == InstantRunArtifactType.SPLIT) {
                                 String location = artifactElement
                                         .getAttribute(ATTR_ARTIFACT_LOCATION);
-                                artifacts.add(new InstantRunArtifact(type, new File(location)));
+                                artifacts.add(
+                                        new InstantRunArtifact(
+                                                type, new File(location), buildTimestamp));
                             }
                         }
                     }

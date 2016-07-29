@@ -42,6 +42,7 @@ import com.android.utils.NullLogger;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.CharMatcher;
 import com.google.common.base.Charsets;
+import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import com.google.common.base.Throwables;
 import com.google.common.collect.Lists;
@@ -291,6 +292,7 @@ public class InstantRunClient {
         }
 
         List<InstantRunArtifact> artifacts = buildInfo.getArtifacts();
+        mLogger.info("Artifacts from build-info.xml: " + Joiner.on("-").join(artifacts));
         for (InstantRunArtifact artifact : artifacts) {
             InstantRunArtifactType type = artifact.type;
             File file = artifact.file;
