@@ -31,6 +31,7 @@ import com.android.repository.util.InstallerUtil;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
+import java.nio.file.Paths;
 
 /**
  * A simple {@link Installer} that just unzips the {@code complete} version of an {@link
@@ -62,7 +63,9 @@ class BasicInstaller extends AbstractInstaller {
         Archive archive = getPackage().getArchive();
         assert archive != null;
         try {
-            File downloadLocation = new File(installTempPath, url.getFile());
+            String fileName = url.getPath();
+            fileName = fileName.substring(fileName.lastIndexOf('/') + 1);
+            File downloadLocation = new File(installTempPath, fileName);
             // TODO: allow resuming of partial downloads
             String checksum = archive.getComplete().getChecksum();
             getDownloader().downloadFully(url, downloadLocation, checksum, progress);
