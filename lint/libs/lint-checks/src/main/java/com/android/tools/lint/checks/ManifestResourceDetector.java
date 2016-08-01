@@ -26,6 +26,7 @@ import static com.android.SdkConstants.ATTR_TYPE;
 import static com.android.SdkConstants.PREFIX_RESOURCE_REF;
 import static com.android.SdkConstants.TAG_ITEM;
 import static com.android.utils.SdkUtils.endsWithIgnoreCase;
+import static com.android.xml.AndroidManifest.NODE_METADATA;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
@@ -129,6 +130,10 @@ public class ManifestResourceDetector extends ResourceXmlDetector {
 
     private void visit(@NonNull XmlContext context, @NonNull Element element,
             @Nullable AbstractResourceRepository repository) {
+        if (NODE_METADATA.equals(element.getTagName())) {
+            return;
+        }
+
         NamedNodeMap attributes = element.getAttributes();
         for (int i = 0, n = attributes.getLength(); i < n; i++) {
             Node node = attributes.item(i);

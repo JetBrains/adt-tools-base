@@ -252,6 +252,44 @@ public class ManifestResourceDetectorTest extends AbstractCheckTest {
                                 + "    <string name=\"permdesc_readContacts\">\"Lar appen lese...</string>"
                                 + "</resources>")
                 ));
+    }
 
+    public void testAllowMetadataResources() throws Exception {
+        // Regression test for https://code.google.com/p/android/issues/detail?id=216279
+        // <meta-data> elements are free to reference resources as they see fit.
+        assertEquals("No warnings.",
+                lintProjectIncrementally(
+                        "AndroidManifest.xml",
+                        xml("AndroidManifest.xml", ""
+                                + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                                + "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                                + "          xmlns:tools=\"http://schemas.android.com/tools\"\n"
+                                + "          package=\"foo.bar2\">\n"
+                                + "    <application>\n"
+                                + "        <receiver android:name=\".MyReceiver\"\n"
+                                + "                  android:label=\"@string/app_name\">\n"
+                                + "            <meta-data\n"
+                                + "                    android:name=\"com.example.sdk.ApplicationId\"\n"
+                                + "                    android:value=\"@string/app_id\"/>\n"
+                                + "            <meta-data\n"
+                                + "                    android:name=\"com.android.systemui.action_assist_icon\"\n"
+                                + "                    android:resource=\"@mipmap/ic_launcher\"/>\n"
+                                + "        </receiver>\n"
+                                + "    </application>\n"
+                                + "</manifest>\n"),
+                        xml("res/values/values.xml", ""
+                                + "<resources>\n"
+                                + "    <string name=\"app_id\">Id</string>\n"
+                                + "    <mipmap name=\"ic_launcher\">@mipmap/other</mipmap>\n"
+                                + "</resources>"),
+                        xml("res/values-nb/values.xml", ""
+                                + "<resources>\n"
+                                + "    <string name=\"app_id\">\"Id\"</string>\n"
+                                + "</resources>"),
+                        xml("res/values-hdpi/values.xml", ""
+                                + "<resources>\n"
+                                + "    <mipmap name=\"ic_launcher\">@mipmap/other</mipmap>\n"
+                                + "</resources>")
+                ));
     }
 }
