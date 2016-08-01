@@ -26,9 +26,7 @@ import com.android.builder.internal.utils.CachedFileContents;
 import com.android.builder.internal.utils.IOExceptionFunction;
 import com.android.builder.internal.utils.IOExceptionRunnable;
 import com.android.utils.FileUtils;
-import com.google.common.base.Charsets;
 import com.google.common.base.Preconditions;
-import com.google.common.base.Strings;
 import com.google.common.base.Verify;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -57,6 +55,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.function.Function;
@@ -226,27 +225,6 @@ public class ZFile implements Closeable {
      * Header ID for field with zip alignment.
      */
     private static final int ALIGNMENT_ZIP_EXTRA_DATA_FIELD_HEADER_ID = 0xd935;
-
-    /**
-     * Explanation to write in the file contents of virtual files.
-     */
-    private static final String VIRTUAL_FILE_EXPLANATION =
-            "If you are seeing this file, then the zip utility that was used to uncompress the "
-                    + "zip file is non-compliant with the zip standard. This file exists only to "
-                    + "cover unused space in the zip file and should not have been created during "
-                    + "expansion. These spaces are the result of incrementally updating a zip. "
-                    + "For example, removing a file and adding a bigger one that doesn't fit in "
-                    + "space left by the removed file will yield an empty area in the zip file.";
-
-    /**
-     * Name prefix of a virtual file.
-     */
-    private static final String VIRTUAL_FILE_NAME_PREFIX = "__this_file_does_not_exist_";
-
-    /**
-     * Name suffix of a virtual file.
-     */
-    private static final String VIRTUAL_FILE_NAME_SUFFIX = ".txt";
 
     /**
      * Maximum size of the extra field.
@@ -840,14 +818,22 @@ public class ZFile implements Closeable {
          */
         processAllReadyEntriesWithWait();
 
+
         if (!mDirty) {
             return;
         }
 
         reopenRw();
 
+        /*
+         * At this point, no more files can be added. We may need to repack to remove extra
+         * empty spaces or sort. If we sort, we don't need to repack as sorting forces the
+         * zip file to be as compact as possible.
+         */
         if (mAutoSortFiles) {
             sortZipContents();
+        } else {
+            packIfNecessary();
         }
 
         /*
@@ -858,11 +844,6 @@ public class ZFile implements Closeable {
         mMap.truncate();
 
         /*
-         * If we need to add virtual entries, register them here.
-         */
-        Set<FileUseMapEntry<StoredEntry>> addedVirtualEntries = new HashSet<>();
-
-        /*
          * If we need to use the extra field to cover empty spaces, we do the processing here.
          */
         if (mCoverEmptySpaceUsingExtraField) {
@@ -870,11 +851,7 @@ public class ZFile implements Closeable {
             /* We will go over all files in the zip and check whether there is empty space before
              * them. If there is, then we will move the entry to the beginning of the empty space
              * (covering it) and extend the extra field with the size of the empty space.
-             *
-             * If the empty space is too large to use the extra field, we'll create a virtual
-             * file.
              */
-            int virtualFileCount = 0;
             for (FileUseMapEntry<StoredEntry> entry : new HashSet<>(mEntries.values())) {
                 StoredEntry storedEntry = entry.getStore();
                 assert storedEntry != null;
@@ -886,36 +863,32 @@ public class ZFile implements Closeable {
 
                 int localExtraSize =
                         storedEntry.getLocalExtra().length + Ints.checkedCast(before.getSize());
-                if (localExtraSize > MAX_LOCAL_EXTRA_FIELD_CONTENTS_SIZE) {
-                    /*
-                     * We can't use the local extra field for this one. Create a virtual file.
-                     */
-                    String vfName = VIRTUAL_FILE_NAME_PREFIX + virtualFileCount
-                            + VIRTUAL_FILE_NAME_SUFFIX;
 
-                    StoredEntry virtualEntry = makeVirtual(vfName, before.getSize());
-                    FileUseMapEntry<StoredEntry> virtualEntryInMap =
-                            mMap.add(before.getStart(), before.getEnd(), virtualEntry);
-                    addedVirtualEntries.add(virtualEntryInMap);
+                /*
+                 * Sorting or packing should have ensured this never happens.
+                 */
+                Verify.verify(localExtraSize <= MAX_LOCAL_EXTRA_FIELD_CONTENTS_SIZE);
 
-                    mEntries.put(vfName, virtualEntryInMap);
-                } else {
-                    long newStart = before.getStart();
-                    long newSize = entry.getSize() + before.getSize();
+                /*
+                 * Move file back in the zip.
+                 */
+                storedEntry.loadSourceIntoMemory();
 
-                    String name = storedEntry.getCentralDirectoryHeader().getName();
-                    mMap.remove(entry);
-                    Verify.verify(entry == mEntries.remove(name));
+                long newStart = before.getStart();
+                long newSize = entry.getSize() + before.getSize();
 
-                    storedEntry.setLocalExtra(
-                            makeExtraAlignmentBlock(localExtraSize, chooseAlignment(storedEntry)));
-                    mEntries.put(name, mMap.add(newStart, newStart + newSize, storedEntry));
+                String name = storedEntry.getCentralDirectoryHeader().getName();
+                mMap.remove(entry);
+                Verify.verify(entry == mEntries.remove(name));
 
-                    /*
-                     * Reset the offset to force the file to be rewritten.
-                     */
-                    storedEntry.getCentralDirectoryHeader().setOffset(-1);
-                }
+                storedEntry.setLocalExtra(
+                        makeExtraAlignmentBlock(localExtraSize, chooseAlignment(storedEntry)));
+                mEntries.put(name, mMap.add(newStart, newStart + newSize, storedEntry));
+
+                /*
+                 * Reset the offset to force the file to be rewritten.
+                 */
+                storedEntry.getCentralDirectoryHeader().setOffset(-1);
             }
         }
 
@@ -960,16 +933,6 @@ public class ZFile implements Closeable {
             }
         }
 
-        /*
-         * Remove all virtual entries.
-         */
-        for (FileUseMapEntry<StoredEntry> virtualEntryInMap : addedVirtualEntries) {
-            mMap.remove(virtualEntryInMap);
-            StoredEntry entry = virtualEntryInMap.getStore();
-            assert entry != null;
-            mEntries.remove(entry.getCentralDirectoryHeader().getName());
-        }
-
         boolean hasCentralDirectory;
         int extensionBugDetector = MAXIMUM_EXTENSION_CYCLE_COUNT;
         do {
@@ -1001,6 +964,66 @@ public class ZFile implements Closeable {
            ext.updated();
             return null;
         });
+    }
+
+    /**
+     * Reorganizes the zip so that there are no gaps between files bigger than
+     * {@link #MAX_LOCAL_EXTRA_FIELD_CONTENTS_SIZE} if {@link #mCoverEmptySpaceUsingExtraField}
+     * is set to {@code true}.
+     *
+     * @throws IOException failed to repack
+     */
+    private void packIfNecessary() throws IOException {
+        if (!mCoverEmptySpaceUsingExtraField) {
+            return;
+        }
+
+        SortedSet<FileUseMapEntry<StoredEntry>> entriesByLocation =
+                new TreeSet<>(FileUseMapEntry.COMPARE_BY_START);
+        entriesByLocation.addAll(mEntries.values());
+
+        for (FileUseMapEntry<StoredEntry> entry : entriesByLocation) {
+            StoredEntry storedEntry = entry.getStore();
+            assert storedEntry != null;
+
+            FileUseMapEntry<?> before = mMap.before(entry);
+            if (before == null || !before.isFree()) {
+                continue;
+            }
+
+            int localExtraSize =
+                    storedEntry.getLocalExtra().length + Ints.checkedCast(before.getSize());
+            if (localExtraSize > MAX_LOCAL_EXTRA_FIELD_CONTENTS_SIZE) {
+                /*
+                 * This entry is too far from the previous one. Remove it and re-add it to the
+                 * zip file.
+                 */
+                reAdd(storedEntry);
+            }
+        }
+    }
+
+    /**
+     * Removes a stored entry from the zip and adds it back again. This will force the entry to be
+     * loaded into memory and repositioned in the zip file. It will also mark the archive as
+     * being dirty.
+     *
+     * @param entry the entry
+     * @throws IOException failed to load the entry into memory
+     */
+    private void reAdd(@NonNull StoredEntry entry) throws IOException {
+        String name = entry.getCentralDirectoryHeader().getName();
+        FileUseMapEntry<StoredEntry> mapEntry = mEntries.get(name);
+        Preconditions.checkNotNull(mapEntry);
+        Preconditions.checkState(mapEntry.getStore() == entry);
+
+        entry.loadSourceIntoMemory();
+
+        mMap.remove(mapEntry);
+        mEntries.remove(name);
+        FileUseMapEntry<StoredEntry> positioned = positionInFile(entry);
+        mEntries.put(name, positioned);
+        mDirty = true;
     }
 
     /**
@@ -2257,42 +2280,5 @@ public class ZFile implements Closeable {
          */
 
         return data;
-    }
-
-    /**
-     * Creates a virtual file.
-     *
-     * @param name the file name
-     * @param totalSize the total size to be occupied by the file, including header
-     * @return the created entry
-     * @throws IOException failed to create the entry
-     */
-    private StoredEntry makeVirtual(@NonNull String name, long totalSize)
-            throws IOException {
-        Preconditions.checkArgument(totalSize > 0, "totalSize <= 0");
-
-        boolean encodeWithUtf8 = !EncodeUtils.canAsciiEncode(name);
-        GPFlags flags = GPFlags.make(encodeWithUtf8);
-        byte[] encodedName = EncodeUtils.encode(name, flags);
-
-        long contentsSize = totalSize - StoredEntry.FIXED_LOCAL_FILE_HEADER_SIZE
-                - encodedName.length;
-        if (contentsSize <= VIRTUAL_FILE_EXPLANATION.length()) {
-            throw new IllegalArgumentException("Virtual file size '" + totalSize + "' is too "
-                    + "small");
-        }
-
-        /*
-         * We make use of the fact that under ASCII encoding, each character is one byte.
-         */
-        byte[] contents = Charsets.US_ASCII.encode(
-                Strings.padEnd(
-                    VIRTUAL_FILE_EXPLANATION,
-                    Ints.checkedCast(contentsSize),
-                    ' '))
-                .array();
-        Verify.verify(contents.length == contentsSize);
-
-        return makeStoredEntry(name, new ByteArrayInputStream(contents), false);
     }
 }

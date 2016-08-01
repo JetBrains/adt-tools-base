@@ -501,7 +501,7 @@ public class AlignmentTest {
 
         byte[] recognizable1 = new byte[] { 1, 2, 3, 4, 4, 3, 2, 1 };
         byte[] recognizable2 = new byte[] { 9, 8, 7, 6, 5, 4, 3, 2 };
-        byte[] bigEmpty = new byte[128 * 1024];
+        byte[] bigEmpty = new byte[10 * 1024];
 
         ZFileOptions options = new ZFileOptions();
         options.setCoverEmptySpaceUsingExtraField(true);
