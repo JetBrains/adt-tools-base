@@ -1051,6 +1051,27 @@ public class AndroidBuilder {
                 Charsets.UTF_8);
     }
 
+    public void generateUnbundledWearApkData(
+            @NonNull File outResFolder,
+            @NonNull String mainPkgName) throws ProcessException, IOException {
+
+        String content = String.format(
+                "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +
+                        "<wearableApp package=\"%1$s\">\n" +
+                        "    <unbundled />\n" +
+                        "</wearableApp>",
+                mainPkgName);
+
+        // xml folder
+        File resXmlFile = new File(outResFolder, FD_RES_XML);
+        FileUtils.mkdirs(resXmlFile);
+
+        Files.write(
+                content,
+                new File(resXmlFile, ANDROID_WEAR_MICRO_APK + DOT_XML),
+                Charsets.UTF_8);
+    }
+
     public static void generateApkDataEntryInManifest(
             int minSdkVersion,
             int targetSdkVersion,

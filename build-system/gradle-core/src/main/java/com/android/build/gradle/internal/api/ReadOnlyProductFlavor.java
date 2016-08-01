@@ -184,4 +184,10 @@ public class ReadOnlyProductFlavor extends ReadOnlyBaseConfig implements Product
     public String getFlavorDimension() {
         return productFlavor.getDimension();
     }
+
+    @Nullable
+    @Override
+    public Boolean getWearAppUnbundled() {
+        return productFlavor.getWearAppUnbundled();
+    }
 }

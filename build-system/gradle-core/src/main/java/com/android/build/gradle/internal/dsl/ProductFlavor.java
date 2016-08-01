@@ -616,4 +616,14 @@ public class ProductFlavor extends DefaultProductFlavor implements CoreProductFl
     public VectorDrawablesOptions getVectorDrawables() {
         return (VectorDrawablesOptions) super.getVectorDrawables();
     }
+
+    /**
+     * Sets whether to enable unbundling mode for embedded wear app.
+     *
+     * If true, this enables the app to transition from an embedded wear app to one
+     * distributed by the play store directly.
+     */
+    public void wearAppUnbundled(@Nullable Boolean wearAppUnbundled) {
+        setWearAppUnbundled(wearAppUnbundled);
+    }
 }

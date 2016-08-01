@@ -1166,14 +1166,26 @@ public abstract class TaskManager {
         }
     }
 
+    /**
+     * Creates the task that will handle micro apk.
+     *
+     * New in 2.2, it now supports the unbundled mode, in which the apk is not bundled
+     * anymore, but we still have an XML resource packaged, and a custom entry in the manifest.
+     * This is triggered by passing a null {@link Configuration} object.
+     *
+     * @param tasks the task factory
+     * @param scope the variant scope
+     * @param config an optional Configuration object. if non null, this will embed the micro apk,
+     *               if null this will trigger the unbundled mode.
+     */
     public void createGenerateMicroApkDataTask(
             @NonNull TaskFactory tasks,
             @NonNull VariantScope scope,
-            @NonNull Configuration config) {
+            @Nullable Configuration config) {
         AndroidTask<GenerateApkDataTask> generateMicroApkTask = androidTasks.create(tasks,
                 new GenerateApkDataTask.ConfigAction(scope, config));
         scope.setMicroApkTask(generateMicroApkTask);
-        generateMicroApkTask.dependsOn(tasks, config);
+        generateMicroApkTask.optionalDependsOn(tasks, config);
 
         // the merge res task will need to run after this one.
         scope.getResourceGenTask().dependsOn(tasks, generateMicroApkTask);

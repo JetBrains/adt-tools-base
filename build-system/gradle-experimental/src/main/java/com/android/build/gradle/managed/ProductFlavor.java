@@ -218,4 +218,13 @@ public interface ProductFlavor extends DimensionAware, BaseConfig {
 
     @NonNull
     VectorDrawablesOptions getVectorDrawables();
+
+    /**
+     * Returns whether to enable unbundling mode for embedded wear app.
+     *
+     * If true, this enables the app to transition from an embedded wear app to one
+     * distributed by the play store directly.
+     */
+    Boolean getWearAppUnbundled();
+    void setWearAppUnbundled(Boolean wearAppUnbundled);
 }

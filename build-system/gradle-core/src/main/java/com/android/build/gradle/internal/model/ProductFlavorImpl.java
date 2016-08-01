@@ -57,6 +57,7 @@ class ProductFlavorImpl extends BaseConfigImpl implements ProductFlavor, Seriali
     private Boolean mTestFunctionalTest = null;
     private Set<String> mResourceConfigurations = null;
     private DefaultVectorDrawablesOptions mVectorDrawablesOptions = null;
+    private Boolean mWearAppUnbundled = null;
 
     @NonNull
     static ProductFlavorImpl cloneFlavor(
@@ -98,6 +99,8 @@ class ProductFlavorImpl extends BaseConfigImpl implements ProductFlavor, Seriali
 
         clonedFlavor.mVectorDrawablesOptions =
                 DefaultVectorDrawablesOptions.copyOf(productFlavor.getVectorDrawables());
+
+        clonedFlavor.mWearAppUnbundled = productFlavor.getWearAppUnbundled();
 
         return clonedFlavor;
     }
@@ -220,6 +223,12 @@ class ProductFlavorImpl extends BaseConfigImpl implements ProductFlavor, Seriali
 
     @Nullable
     @Override
+    public Boolean getWearAppUnbundled() {
+        return mWearAppUnbundled;
+    }
+
+    @Nullable
+    @Override
     public String getDimension() {
         return mDimension;
     }
@@ -245,6 +254,7 @@ class ProductFlavorImpl extends BaseConfigImpl implements ProductFlavor, Seriali
                 ", mTestFunctionalTest=" + mTestFunctionalTest +
                 ", mResourceConfigurations=" + mResourceConfigurations +
                 ", mVectorDrawablesOptions=" + mVectorDrawablesOptions +
+                ", mWearAppUnbundled=" + mWearAppUnbundled +
                 "} " + super.toString();
     }
 }
