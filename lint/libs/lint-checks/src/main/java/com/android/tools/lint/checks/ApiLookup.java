@@ -760,8 +760,7 @@ public class ApiLookup {
         //noinspection VariableNotUsedInsideIf
         if (mData != null) {
             return getClassVersion(findClass(className));
-        }  else {
-            assert mInfo != null;
+        }  else if (mInfo != null) {
             ApiClass clz = mInfo.getClass(className);
             if (clz != null) {
                 int since = clz.getSince();
@@ -829,8 +828,7 @@ public class ApiLookup {
                     return getClassVersion(classNumber);
                 }
             }
-        }  else {
-            assert mInfo != null;
+        }  else if (mInfo != null) {
             ApiClass clz = mInfo.getClass(sourceClass);
             if (clz != null) {
                 List<Pair<String, Integer>> interfaces = clz.getInterfaces();
@@ -867,8 +865,7 @@ public class ApiLookup {
                 int deprecatedIn = UnsignedBytes.toInt(mData[offset]);
                 return deprecatedIn != 0 ? deprecatedIn : -1;
             }
-        }  else {
-            assert mInfo != null;
+        }  else if (mInfo != null) {
             ApiClass clz = mInfo.getClass(className);
             if (clz != null) {
                 int deprecatedIn = clz.getDeprecatedIn();
@@ -911,8 +908,7 @@ public class ApiLookup {
                 }
                 return api;
             }
-        }  else {
-            assert mInfo != null;
+        }  else if (mInfo != null) {
             ApiClass clz = mInfo.getClass(owner);
             if (clz != null) {
                 String signature = name + desc;
@@ -950,8 +946,7 @@ public class ApiLookup {
                 int deprecatedIn = findMemberDeprecatedIn(classNumber, name, desc);
                 return deprecatedIn != 0 ? deprecatedIn : -1;
             }
-        }  else {
-            assert mInfo != null;
+        }  else if (mInfo != null) {
             ApiClass clz = mInfo.getClass(owner);
             if (clz != null) {
                 String signature = name + desc;
@@ -992,8 +987,7 @@ public class ApiLookup {
                 }
                 return api;
             }
-        }  else {
-            assert mInfo != null;
+        }  else if (mInfo != null) {
             ApiClass clz = mInfo.getClass(owner);
             if (clz != null) {
                 int since = clz.getField(name, mInfo);
@@ -1028,8 +1022,7 @@ public class ApiLookup {
                 int deprecatedIn = findMemberDeprecatedIn(classNumber, name, null);
                 return deprecatedIn != 0 ? deprecatedIn : -1;
             }
-        }  else {
-            assert mInfo != null;
+        }  else if (mInfo != null) {
             ApiClass clz = mInfo.getClass(owner);
             if (clz != null) {
                 int deprecatedIn = clz.getMemberDeprecatedIn(name, mInfo);
