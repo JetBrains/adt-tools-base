@@ -504,6 +504,10 @@ public class MonkeyPatcher {
             if (SDK_INT >= M) {
                 pruneResourceCache(resources, "mAnimatorCache");
                 pruneResourceCache(resources, "mStateListAnimatorCache");
+            } else if (SDK_INT == KITKAT) {
+                pruneResourceCache(resources, "sPreloadedDrawables");
+                pruneResourceCache(resources, "sPreloadedColorDrawables");
+                pruneResourceCache(resources, "sPreloadedColorStateLists");
             }
         }
     }
@@ -550,10 +554,28 @@ public class MonkeyPatcher {
                     clearArrayMap.invoke(resources, cache, -1);
                     return true;
                 } else if (type.isAssignableFrom(LongSparseArray.class)) {
-                    Method clearSparseMap = Resources.class.getDeclaredMethod(
-                            "clearDrawableCachesLocked", LongSparseArray.class, Integer.TYPE);
-                    clearSparseMap.setAccessible(true);
-                    clearSparseMap.invoke(resources, cache, -1);
+                    try {
+                        Method clearSparseMap = Resources.class.getDeclaredMethod(
+                                "clearDrawableCachesLocked", LongSparseArray.class, Integer.TYPE);
+                        clearSparseMap.setAccessible(true);
+                        clearSparseMap.invoke(resources, cache, -1);
+                        return true;
+                    } catch (NoSuchMethodException e) {
+                        if (cache instanceof LongSparseArray) {
+                            //noinspection AndroidLintNewApi
+                            ((LongSparseArray)cache).clear();
+                            return true;
+                        }
+                    }
+                } else if (type.isArray() &&
+                        type.getComponentType().isAssignableFrom(LongSparseArray.class)) {
+                    LongSparseArray[] arrays = (LongSparseArray[])cache;
+                    for (LongSparseArray array : arrays) {
+                        if (array != null) {
+                            //noinspection AndroidLintNewApi
+                            array.clear();
+                        }
+                    }
                     return true;
                 }
             } else {
