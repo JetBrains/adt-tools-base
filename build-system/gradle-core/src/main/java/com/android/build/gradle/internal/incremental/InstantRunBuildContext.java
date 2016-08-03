@@ -394,6 +394,11 @@ public class InstantRunBuildContext {
         if (patchingPolicy == null) {
             return;
         }
+        // if the verifier has not ran (because of no code changes) but some files are built
+        // (probably resource.ap_), we should record the compatible flag to not confuse the IDE
+        if (!currentBuild.verifierStatus.isPresent()) {
+            currentBuild.verifierStatus = Optional.of(InstantRunVerifierStatus.COMPATIBLE);
+        }
         // make sure we don't add the same artifacts twice.
         for (Artifact artifact : currentBuild.artifacts) {
             if (artifact.getType() == fileType
