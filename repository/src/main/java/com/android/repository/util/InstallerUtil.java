@@ -42,10 +42,6 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
-
-import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
-import org.apache.commons.compress.archivers.zip.ZipFile;
-
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
@@ -63,9 +59,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
-
 import javax.xml.bind.JAXBElement;
 import javax.xml.bind.JAXBException;
+import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
+import org.apache.commons.compress.archivers.zip.ZipFile;
 
 /**
  * Utility methods for {@link PackageOperation} implementations.
@@ -326,6 +323,10 @@ public class InstallerUtil {
         Queue<RemotePackage> current = Lists.newLinkedList();
         for (RemotePackage request : requests) {
             UpdatablePackage updatable = consolidatedPackages.get(request.getPath());
+            if (updatable == null) {
+                logger.logWarning(String.format("No package with key %s found!", request.getPath()));
+                return null;
+            }
             if (!updatable.hasLocal() || updatable.isUpdate()) {
                 current.add(request);
                 roots.add(request);
@@ -389,7 +390,14 @@ public class InstallerUtil {
             for (Dependency d : root.getAllDependencies()) {
                 Collection<Dependency> nodeDeps = allDependencies.get(d.getPath());
                 if (nodeDeps.size() == 1) {
-                    roots.add(consolidatedPackages.get(d.getPath()).getRemote());
+                    UpdatablePackage newRoot = consolidatedPackages.get(d.getPath());
+                    if (newRoot == null) {
+                        logger.logWarning(
+                                String.format("Package with key %s not found!", d.getPath()));
+                        return null;
+                    }
+
+                    roots.add(newRoot.getRemote());
                 }
                 nodeDeps.remove(d);
             }
