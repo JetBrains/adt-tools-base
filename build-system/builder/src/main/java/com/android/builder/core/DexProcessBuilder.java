@@ -29,7 +29,6 @@ import com.android.sdklib.BuildToolInfo;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
-
 import java.io.File;
 import java.util.Collection;
 import java.util.Collections;
@@ -64,8 +63,12 @@ public class DexProcessBuilder extends ProcessEnvBuilder<DexProcessBuilder> {
     }
 
     @NonNull
-    public DexProcessBuilder setNoOptimize(boolean noOptimize) {
-        mNoOptimize = noOptimize;
+    public DexProcessBuilder setNoOptimize(
+            @SuppressWarnings("UnusedParameters") boolean noOptimize) {
+        // --no-optimize creates incorrect local debug information.  mNoOptimize should always be
+        // false.
+        // b.android.com/82031
+        //mNoOptimize = noOptimize;
         return this;
     }
 
@@ -162,6 +165,8 @@ public class DexProcessBuilder extends ProcessEnvBuilder<DexProcessBuilder> {
 
         if (mNoOptimize) {
             builder.addArgs("--no-optimize");
+            throw new UnsupportedOperationException("Should be unreachable.  --no-optimize creates "
+                    + "incorrect local debug information.");
         }
 
         // only change thread count is build tools is 22.0.2+

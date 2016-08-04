@@ -95,6 +95,9 @@ public class PreDexCache extends PreProcessCache<DxDexKey> {
         checkState(!multiDex || outFile.isDirectory());
         checkState(builder.getTargetInfo() != null);
 
+        // Forcing optimize to true as it has no effect due to b.android.com/82031.
+        optimize = true;
+
         DxDexKey itemKey = DxDexKey.of(
                 inputFile,
                 builder.getTargetInfo().getBuildTools().getRevision(),
