@@ -15,16 +15,31 @@
  */
 package com.android.ide.common.res2;
 
-import junit.framework.TestCase;
+import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
+import com.android.utils.ILogger;
 import static com.android.ide.common.res2.DataSet.isIgnored;
 import static java.io.File.separator;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 import com.android.testutils.TestUtils;
-import com.google.common.io.Files;
 
 import java.io.File;
+import org.junit.Assert;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
+import org.w3c.dom.Node;
 
-public class DataSetTest extends TestCase {
+public class DataSetTest {
+
+    @Rule
+    public TemporaryFolder mTemporaryFolder = new TemporaryFolder();
+
+    @Test
     public void testIsIgnored() throws Exception {
         assertNull("Environment variable $ANDROID_AAPT_IGNORE should not be set while "
                         + "running test; can interfere with results",
@@ -61,5 +76,65 @@ public class DataSetTest extends TestCase {
         File dir = new File(TestUtils.createTempDirDeletedOnExit(), "_test");
         assertTrue(dir.mkdirs());
         assertTrue(isIgnored(dir));
+    }
+
+    @Test
+    public void testLongestPath() {
+        DataSet dataSet = new DataSet("foo", false) {
+
+            @Override
+            protected DataSet createSet(String name) {
+                return null;
+            }
+
+            @Override
+            protected DataFile createFileAndItemsFromXml(@NonNull File file, @NonNull Node fileNode)
+                    throws MergingException {
+                return null;
+            }
+
+            @Override
+            protected void readSourceFolder(File sourceFolder, ILogger logger)
+                    throws MergingException {
+
+            }
+
+            @Nullable
+            @Override
+            protected DataFile createFileAndItems(File sourceFolder, File file, ILogger logger)
+                    throws MergingException {
+                return null;
+            }
+        };
+
+        File res = new File(mTemporaryFolder.getRoot(), "res");
+        assertTrue(res.mkdirs());
+
+        File foo = new File(mTemporaryFolder.getRoot(), "foo");
+        assertTrue(foo.mkdirs());
+
+        File customRes = new File(mTemporaryFolder.getRoot(), "res/layouts/shared");
+        assertTrue(customRes.mkdirs());
+
+        dataSet.addSource(res);
+        dataSet.addSource(foo);
+        dataSet.addSource(customRes);
+
+        assertEquals(res.getAbsolutePath(), dataSet.findMatchingSourceFile(
+                new File(mTemporaryFolder.getRoot(), "res/any.xml")).getPath());
+        assertEquals(res.getAbsolutePath(), dataSet.findMatchingSourceFile(
+                new File(mTemporaryFolder.getRoot(), "res/layout/activity.xml")).getPath());
+        assertEquals(res.getAbsolutePath(), dataSet.findMatchingSourceFile(
+                new File(mTemporaryFolder.getRoot(), "res/layout/foo/bar/activity.xml")).getPath());
+        assertEquals(customRes.getAbsolutePath(), dataSet.findMatchingSourceFile(
+                new File(mTemporaryFolder.getRoot(), "res/layouts/shared/any.xml")).getPath());
+        assertEquals(customRes.getAbsolutePath(), dataSet.findMatchingSourceFile(
+                new File(mTemporaryFolder.getRoot(),
+                        "res/layouts/shared/layout/activity.xml")).getPath());
+        assertEquals(customRes.getAbsolutePath(), dataSet.findMatchingSourceFile(
+                new File(mTemporaryFolder.getRoot(),
+                        "res/layouts/shared/layout/foo/bar/activity.xml")).getPath());
+        assertNull(dataSet.findMatchingSourceFile(
+                new File(mTemporaryFolder.getRoot(), "funky/shared/layout/foo/bar/activity.xml")));
     }
 }

@@ -167,28 +167,34 @@ abstract class DataSet<I extends DataItem<F>, F extends DataFile<I>> implements 
     }
 
     /**
-     * Returns a matching Source file that contains a given file.
+     * Returns the longest path matching Source file that contains a given file.
      *
      * "contains" means that the source file/folder is the root folder
      * of this file. The folder and/or file doesn't have to exist.
+     * "longest" means that if two source folder satisfy the contains predicate above, the longest
+     * absolute path will be returned.
      *
      * @param file the file to search for
      * @return the Source file or null if no match is found.
      */
     @Override
     public File findMatchingSourceFile(File file) {
+        File matchingSourceFile = null;
         for (File sourceFile : mSourceFiles) {
             if (sourceFile.equals(file)) {
                 return sourceFile;
             } else if (sourceFile.isDirectory()) {
                 String sourcePath = sourceFile.getAbsolutePath() + File.separator;
-                if (file.getAbsolutePath().startsWith(sourcePath)) {
-                    return sourceFile;
+                if (file.getAbsolutePath().startsWith(sourcePath) &&
+                        (matchingSourceFile == null ||
+                        matchingSourceFile.getAbsolutePath().length()
+                                < sourceFile.getAbsolutePath().length())) {
+                    matchingSourceFile = sourceFile;
                 }
             }
         }
 
-        return null;
+        return matchingSourceFile;
     }
 
     /**
