@@ -1156,7 +1156,8 @@ public final class SdkConstants {
     public static final String ATTR_GUIDELINE_ORIENTATION_VERTICAL = "vertical"; //$NON-NLS-1$
     public static final String LAYOUT_CONSTRAINT_GUIDE_BEGIN = "layout_constraintGuide_begin"; //$NON-NLS-1$
     public static final String LAYOUT_CONSTRAINT_GUIDE_END = "layout_constraintGuide_end"; //$NON-NLS-1$
-    public static final String LAYOUT_CONSTRAINT_GUIDE_PERCENT = "layout_constraintGuide_Percent"; //$NON-NLS-1$
+    public static final String LAYOUT_CONSTRAINT_GUIDE_PERCENT = "layout_constraintGuide_percent"; //$NON-NLS-1$
+    public static final String LAYOUT_CONSTRAINT_DEPRECATED_GUIDE_PERCENT = "layout_constraintGuide_Percent"; //$NON-NLS-1$
 
     // TableRow
     public static final String ATTR_LAYOUT_SPAN = "layout_span";       //$NON-NLS-1$
