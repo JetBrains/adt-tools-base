@@ -25,6 +25,7 @@ import javax.swing.UnsupportedLookAndFeelException;
 public class Application {
     private static void initUserInterface() {
         System.setProperty("apple.laf.useScreenMenuBar", "true");
+        System.setProperty("apple.awt.fileDialogForDirectories", "true");
         System.setProperty("com.apple.mrj.application.apple.menu.about.name", "Draw 9-patch");
 
         try {
