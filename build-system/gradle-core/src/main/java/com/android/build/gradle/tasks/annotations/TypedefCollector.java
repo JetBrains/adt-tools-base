@@ -115,20 +115,14 @@ public class TypedefCollector extends ASTVisitor {
                                 }
                             }
                         }
-                        boolean hasSourceRetention = Extractor.hasSourceRetention(annotations);
                         if (mRequireSourceRetention
-                                && !hasSourceRetention) {
+                                && !Extractor.hasSourceRetention(annotations)) {
                             Extractor.warning(getFileName()
                                     + ": The typedef annotation " + fqn
                                     + " should have @Retention(RetentionPolicy.SOURCE)");
                         }
                         if (declaration.binding != null
-                                && ((declaration.modifiers & ClassFileConstants.AccPublic) == 0)
-                                    // If the annotation has source retention, or contains one or
-                                    // more IntDef annotations, we don't want to keep the
-                                    // annotation class
-                                    || "android.support.annotation.IntDef".equals(typeName)
-                                    || hasSourceRetention) {
+                                && (declaration.modifiers & ClassFileConstants.AccPublic) == 0) {
                             StringBuilder sb = new StringBuilder(100);
                             for (char c : declaration.binding.qualifiedPackageName()) {
                                 if (c == '.') {
