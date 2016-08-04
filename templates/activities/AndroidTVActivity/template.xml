@@ -3,8 +3,8 @@
     format="5"
     revision="6"
     name="Android TV Activity"
-    minApi="7"
-    minBuildApi="19"
+    minApi="21"
+    minBuildApi="21"
     description="Creates a new Android TV activity using Leanback Support library.">
 
     <category value="Activity" />
