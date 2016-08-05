@@ -47,6 +47,10 @@ public class TrimStringAdapterTest extends TestCase {
         assertEquals("foo\n\nbar baz", evaluate("foo\n   \n  bar\n baz"));
     }
 
+    public void testInterning() {
+        assertTrue(evaluate("foo") == evaluate("  foo\n  "));
+    }
+
     private static String evaluate(String in) {
         return new TrimStringAdapter().unmarshal(in);
     }
