@@ -19,6 +19,7 @@ package com.android.builder.internal.aapt.v1;
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.annotations.VisibleForTesting;
 import com.android.builder.core.VariantType;
 import com.android.builder.internal.aapt.AaptException;
 import com.android.builder.internal.aapt.AaptPackageConfig;
@@ -114,7 +115,8 @@ public class AaptV1 extends AbstractProcessExecutionAapt {
      * Buildtools version for which {@code aapt} can run in server mode and, therefore,
      * {@link QueuedCruncher} can be used.
      */
-    private static final Revision VERSION_FOR_SERVER_AAPT = new Revision(22, 0, 0);
+    @VisibleForTesting
+    static final Revision VERSION_FOR_SERVER_AAPT = new Revision(22, 0, 0);
 
     /**
      * Build tools.
