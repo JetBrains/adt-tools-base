@@ -1785,7 +1785,7 @@ public final class SdkConstants {
     public static final String CARD_VIEW_LIB_ARTIFACT = "com.android.support:cardview-v7";
     public static final String GRID_LAYOUT_LIB_ARTIFACT = "com.android.support:gridlayout-v7";
     public static final String RECYCLER_VIEW_LIB_ARTIFACT = "com.android.support:recyclerview-v7";
-    public static final String MAPS_ARTIFACT = "com.google.android.gms:play-services";
+    public static final String MAPS_ARTIFACT = "com.google.android.gms:play-services-maps";
     public static final String ADS_ARTIFACT = "com.google.android.gms:play-services-ads";
     public static final String LEANBACK_V17_ARTIFACT = "com.android.support:leanback-v17";
     public static final String ANNOTATIONS_LIB_ARTIFACT = "com.android.support:support-annotations";
