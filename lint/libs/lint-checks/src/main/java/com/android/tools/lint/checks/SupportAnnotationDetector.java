@@ -1922,14 +1922,6 @@ public class SupportAnnotationDetector extends Detector implements JavaPsiScanne
                             || a.equals(PERMISSION_ANNOTATION)
                             || a.equals(INT_RANGE_ANNOTATION)
                             || a.equals(STRING_DEF_ANNOTATION)) {
-                        if ("android.support.design.widget.Snackbar.Duration".equals(signature)) {
-                            // @Snackbar.Duration shouldn't have been bundled and can't be used;
-                            // it's incorrect. It combines a range annotation and an IntDef
-                            // annotation, but the IntDef data is missing (source retention) so
-                            // we may incorrectly apply only the range constraint.
-                            // See https://code.google.com/p/android/issues/detail?id=216372
-                            continue;
-                        }
                         if (length == 1 && j == innerAnnotations.length - 1) {
                             return innerAnnotations;
                         }
