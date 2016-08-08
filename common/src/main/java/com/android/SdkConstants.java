@@ -655,7 +655,7 @@ public final class SdkConstants {
     public static final String CONSTRAINT_LAYOUT_LIB_ARTIFACT_ID = "constraint-layout";
     public static final String CONSTRAINT_LAYOUT_LIB_ARTIFACT = CONSTRAINT_LAYOUT_LIB_GROUP_ID + ":" + CONSTRAINT_LAYOUT_LIB_ARTIFACT_ID;
     /** Latest known version of the ConstraintLayout library (as a string) */
-    public static final String LATEST_CONSTRAINT_LAYOUT_VERSION = "1.0.0-alpha5";
+    public static final String LATEST_CONSTRAINT_LAYOUT_VERSION = "1.0.0-alpha6";
 
     /** Returns the appropriate name for the 'android' command, which is 'android.exe' for
      * Windows and 'android' for all other platforms. */
