@@ -154,9 +154,13 @@ public class JarDependency implements JavaLibrary, SkippableLibrary {
 
     @Override
     public int hashCode() {
-        return Objects
-                .hashCode(mJarFile, mIsProvided, mProjectPath, mDependencies, mResolvedCoordinates,
-                        skipped);
+        return Objects.hashCode(
+                mJarFile,
+                mIsProvided,
+                mProjectPath,
+                mDependencies,
+                mResolvedCoordinates,
+                isSkipped()); // AtomicBoolean does not implements hashCode!
     }
 
     @Override

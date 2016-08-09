@@ -187,20 +187,23 @@ public class LibraryDependency extends AbstractBundleDependency implements Andro
             return false;
         }
         LibraryDependency that = (LibraryDependency) o;
-        return mIsProvided == that.mIsProvided;
+        return mIsProvided == that.mIsProvided &&
+                Objects.equal(isSkipped(), that.isSkipped());  // AtomicBoolean does not implements equals!
     }
 
     @Override
     public int hashCode() {
         return Objects.hashCode(
                 super.hashCode(),
-                mIsProvided);
+                mIsProvided,
+                isSkipped()); // AtomicBoolean does not implements hashCode!
     }
 
     @Override
     public String toString() {
         return Objects.toStringHelper(this)
                 .add("mIsProvided", mIsProvided)
+                .add("isSkipped", mSkipped)
                 .add("super", super.toString())
                 .toString();
     }

@@ -173,7 +173,7 @@ public abstract class AbstractBundleDependency implements AndroidBundle {
                 Objects.equal(mProjectPath, that.mProjectPath) &&
                 Objects.equal(mProjectVariant, that.mProjectVariant) &&
                 Objects.equal(mRequestedCoordinates, that.mRequestedCoordinates) &&
-                Objects.equal(mResolvedCoordinates, that.mRequestedCoordinates);
+                Objects.equal(mResolvedCoordinates, that.mResolvedCoordinates);
     }
 
     @Override
