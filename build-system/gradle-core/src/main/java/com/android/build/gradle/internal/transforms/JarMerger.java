@@ -29,6 +29,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.file.attribute.FileTime;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
 import java.util.zip.ZipEntry;
@@ -40,6 +41,8 @@ import java.util.zip.ZipInputStream;
 public class JarMerger {
 
     private final byte[] buffer = new byte[8192];
+
+    private static final FileTime ZERO_TIME = FileTime.fromMillis(0);
 
     @NonNull
     private final ILogger logger = LoggerWrapper.getLogger(JarMerger.class);
@@ -75,15 +78,19 @@ public class JarMerger {
     }
 
     public void addFolder(@NonNull File folder) throws IOException {
+        addFolder(folder, true);
+    }
+
+    public void addFolder(@NonNull File folder, boolean removeEntryTimestamp) throws IOException {
         init();
         try {
-            addFolder(folder, "");
+            addFolder(folder, "", removeEntryTimestamp);
         } catch (ZipAbortException e) {
             throw new IOException(e);
         }
     }
 
-    private void addFolder(@NonNull File folder, @NonNull String path)
+    private void addFolder(@NonNull File folder, @NonNull String path, boolean removeEntryTimestamp)
             throws IOException, ZipAbortException {
         logger.verbose("addFolder(%1$s, %2$s)", folder, path);
         File[] files = folder.listFiles();
@@ -94,7 +101,13 @@ public class JarMerger {
                     if (filter == null || filter.checkEntry(entryPath)) {
                         logger.verbose("addFolder(%1$s, %2$s): entry %3$s", folder, path, entryPath);
                         // new entry
-                        jarOutputStream.putNextEntry(new JarEntry(entryPath));
+                        final JarEntry jarEntry = new JarEntry(entryPath);
+                        if (removeEntryTimestamp) {
+                            jarEntry.setLastModifiedTime(ZERO_TIME);
+                            jarEntry.setLastAccessTime(ZERO_TIME);
+                            jarEntry.setCreationTime(ZERO_TIME);
+                        }
+                        jarOutputStream.putNextEntry(jarEntry);
 
                         // put the file content
                         try (Closer localCloser = Closer.create()) {
@@ -109,7 +122,7 @@ public class JarMerger {
                         jarOutputStream.closeEntry();
                     }
                 } else if (file.isDirectory()) {
-                    addFolder(file, path + file.getName() + "/");
+                    addFolder(file, path + file.getName() + "/", removeEntryTimestamp);
                 }
             }
         }
@@ -150,7 +163,9 @@ public class JarMerger {
                     newEntry = new JarEntry(name);
                 }
                 if (removeEntryTimestamp) {
-                    newEntry.setTime(0);
+                    newEntry.setLastModifiedTime(ZERO_TIME);
+                    newEntry.setLastAccessTime(ZERO_TIME);
+                    newEntry.setCreationTime(ZERO_TIME);
                 }
 
                 // add the entry to the jar archive

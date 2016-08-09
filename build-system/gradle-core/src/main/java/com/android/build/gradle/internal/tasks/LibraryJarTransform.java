@@ -42,6 +42,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.file.attribute.FileTime;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
@@ -206,9 +207,9 @@ public class LibraryJarTransform extends Transform {
 
         for (QualifiedContent content : qualifiedContentList) {
             if (content instanceof JarInput) {
-                jarMerger.addJar(content.getFile());
+                jarMerger.addJar(content.getFile(), true);
             } else {
-                jarMerger.addFolder(content.getFile());
+                jarMerger.addFolder(content.getFile(), true);
             }
         }
 
@@ -246,7 +247,7 @@ public class LibraryJarTransform extends Transform {
             JarMerger jarMerger = new JarMerger(new File(localJarsLocation, "otherclasses.jar"));
             jarMerger.setFilter(classOnlyFilter);
             for (QualifiedContent content : qualifiedContentList) {
-                jarMerger.addFolder(content.getFile());
+                jarMerger.addFolder(content.getFile(), true);
             }
             jarMerger.close();
         }
@@ -256,7 +257,7 @@ public class LibraryJarTransform extends Transform {
             throws IOException {
         JarMerger jarMerger = new JarMerger(mainClassLocation);
         jarMerger.setFilter(archivePath -> checkEntry(excludes, archivePath));
-        jarMerger.addFolder(file);
+        jarMerger.addFolder(file, true);
         jarMerger.close();
     }
 
@@ -274,6 +275,7 @@ public class LibraryJarTransform extends Transform {
             @NonNull File to,
             @Nullable ZipEntryFilter filter) throws IOException {
         byte[] buffer = new byte[4096];
+        FileTime zeroTime = FileTime.fromMillis(0);
 
         try (Closer closer = Closer.create()) {
             FileOutputStream fos = closer.register(new FileOutputStream(to));
@@ -302,6 +304,10 @@ public class LibraryJarTransform extends Transform {
                     // Create a new entry so that the compressed len is recomputed.
                     newEntry = new JarEntry(name);
                 }
+
+                newEntry.setLastModifiedTime(zeroTime);
+                newEntry.setLastAccessTime(zeroTime);
+                newEntry.setCreationTime(zeroTime);
 
                 // add the entry to the jar archive
                 zos.putNextEntry(newEntry);
