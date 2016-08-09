@@ -335,6 +335,11 @@ public class GradleCoordinate {
         this(groupId, artifactId, Arrays.asList(revisions), null);
     }
 
+    public GradleCoordinate(@NonNull String groupId, @NonNull String artifactId,
+            @NonNull String revision) {
+        this(groupId, artifactId, parseRevisionNumber(revision), null);
+    }
+
     /**
      * Constructor
      */
