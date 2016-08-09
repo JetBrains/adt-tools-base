@@ -17,8 +17,16 @@
 package com.android.build.gradle.internal.incremental;
 
 import com.android.annotations.NonNull;
+import com.android.build.gradle.internal.LoggerWrapper;
 import com.android.utils.AsmUtils;
-
+import com.android.utils.ILogger;
+import java.io.IOException;
+import java.io.ObjectStreamClass;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.FieldVisitor;
@@ -29,16 +37,10 @@ import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.GeneratorAdapter;
 import org.objectweb.asm.commons.Method;
 import org.objectweb.asm.tree.ClassNode;
+import org.objectweb.asm.tree.FieldNode;
 import org.objectweb.asm.tree.LabelNode;
 import org.objectweb.asm.tree.LineNumberNode;
 import org.objectweb.asm.tree.MethodNode;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 /**
  * Visitor for classes that will eventually be replaceable at runtime.
@@ -55,6 +57,9 @@ import java.util.Map;
  * {@code IncrementalChange#access$dispatch(String, Object...)} method.
  */
 public class IncrementalSupportVisitor extends IncrementalVisitor {
+
+    @NonNull
+    private static final ILogger LOG = LoggerWrapper.getLogger(IncrementalSupportVisitor.class);
 
     private boolean disableRedirectionForClass = false;
 
@@ -85,8 +90,8 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
         }
     }
 
-    public static final IncrementalVisitor.VisitorBuilder VISITOR_BUILDER =
-            new VisitorBuilder();
+    @NonNull
+    public static final IncrementalVisitor.VisitorBuilder VISITOR_BUILDER = new VisitorBuilder();
 
     public IncrementalSupportVisitor(
             @NonNull ClassNode classNode,
@@ -96,11 +101,18 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
     }
 
     /**
-     * Ensures that the class contains a $change field used for referencing the
-     * IncrementalChange dispatcher.
-     * <p>
-     * Also updates package_private visiblity to public so we can call into this class from
+     * Ensures that the class contains a $change field used for referencing the IncrementalChange
+     * dispatcher.
+     *
+     * <p>Also updates package_private visibility to public so we can call into this class from
      * outside the package.
+     *
+     * <p>All classes will have a serialVersionUID added (if one does not already exist), as
+     * otherwise, serialVersionUID would be different for instrumented and non-instrumented classes.
+     * We do this for all classes. Due to incremental changes, there could be a class that starts
+     * implementing {@link java.io.Serializable}, thus making all of its subclasses serializable as
+     * well. Those subclasses might be used for persistence, and we need to make sure their
+     * serialVersionUID are stable across instant run and non-instant run builds.
      */
     @Override
     public void visit(int version, int access, String name, String signature, String superName,
@@ -108,6 +120,7 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
         visitedClassName = name;
         visitedSuperName = superName;
 
+        addSerialUidIfMissing();
         super.visitField(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC
                 | Opcodes.ACC_VOLATILE | Opcodes.ACC_SYNTHETIC | Opcodes.ACC_TRANSIENT,
             "$change", getRuntimeTypeName(CHANGE_TYPE), null, null);
@@ -614,9 +627,49 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
     }
 
     /**
-     * Command line invocation entry point. Expects 2 parameters, first is the source directory
-     * with .class files as produced by the Java compiler, second is the output directory where to
-     * store the bytecode enhanced version.
+     * Adds serialVersionUID for the classes that does not define one. Reason for this is that if a
+     * class does not define a serialVersionUID value, and is used for serialization, instrumented
+     * and non-instrumented class will have different serialVersionUID values, and that will break
+     * serialization.
+     */
+    private void addSerialUidIfMissing() {
+        // noinspection unchecked
+        for (FieldNode f : (List<FieldNode>) classNode.fields) {
+            if (f.name.equals("serialVersionUID")) {
+                // We should not generate serial uuid, field already exists. Although it might
+                // not be static, final, and long, adding would break the instrumented class.
+                return;
+            }
+        }
+        try {
+            Class<?> clazz =
+                    Thread.currentThread()
+                            .getContextClassLoader()
+                            .loadClass(Type.getObjectType(classNode.name).getClassName());
+            ObjectStreamClass objectStreamClass = ObjectStreamClass.lookupAny(clazz);
+
+            long serialUuid = objectStreamClass.getSerialVersionUID();
+
+            // adds the field
+            super.visitField(
+                    Opcodes.ACC_PUBLIC
+                            | Opcodes.ACC_STATIC
+                            | Opcodes.ACC_FINAL,
+                    "serialVersionUID",
+                    Type.LONG_TYPE.getDescriptor(),
+                    null,
+                    serialUuid);
+
+        } catch (ClassNotFoundException ex) {
+            LOG.info("Unable to add auto-generated serialVersionUID for " + classNode.name);
+        }
+    }
+
+    /**
+     * Command line invocation entry point. Expects 2 parameters, first is the source directory with
+     * .class files as produced by the Java compiler, second is the output directory where to store
+     * the bytecode enhanced version.
+     *
      * @param args the command line arguments.
      * @throws IOException if some files cannot be read or written.
      */

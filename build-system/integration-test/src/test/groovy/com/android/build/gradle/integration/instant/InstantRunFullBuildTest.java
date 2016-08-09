@@ -30,15 +30,13 @@ import com.android.tools.fd.client.InstantRunArtifactType;
 import com.android.tools.fd.client.InstantRunBuildInfo;
 import com.android.utils.Pair;
 import com.google.common.truth.Expect;
-
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-
 import java.io.File;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
 
 public class InstantRunFullBuildTest {
 
@@ -63,7 +61,7 @@ public class InstantRunFullBuildTest {
     }
 
     @Test
-    public void testMutiDex() throws Exception {
+    public void testMultiDex() throws Exception {
         doTest(23);
     }
 
@@ -93,7 +91,6 @@ public class InstantRunFullBuildTest {
         assertThat(toSet(secondContext.getArtifacts()))
                 .containsExactlyElementsIn(toSet(initialContext.getArtifacts()));
     }
-
 
     @NonNull
     private static Set<Pair<InstantRunArtifactType, File>> toSet(
