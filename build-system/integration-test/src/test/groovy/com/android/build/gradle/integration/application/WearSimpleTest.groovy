@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.integration.application
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
+import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.build.gradle.integration.common.utils.ZipHelper
 import groovy.transform.CompileStatic
 import org.junit.AfterClass
@@ -28,6 +29,7 @@ import static com.android.SdkConstants.FD_RES
 import static com.android.SdkConstants.FD_RES_RAW
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk
 import static com.android.builder.core.BuilderConstants.ANDROID_WEAR_MICRO_APK
+import static org.junit.Assert.assertFalse
 import static org.junit.Assert.assertNotNull
 import static org.junit.Assert.assertNull
 /**
@@ -42,7 +44,13 @@ class WearSimpleTest {
 
     @BeforeClass
     static void setUp() {
-        project.execute("clean", ":main:assemble")
+        def mainAppBuildGradle = project.file("main/build.gradle");
+
+        TestFileUtils.appendToFile(mainAppBuildGradle, """
+dependencies {
+  wearApp project(':wear')
+}
+""")
     }
 
     @AfterClass
@@ -51,7 +59,9 @@ class WearSimpleTest {
     }
 
     @Test
-    void "check embedded"() {
+    void "check default embedding"() {
+        project.execute("clean", ":main:assemble")
+
         String embeddedApkPath = FD_RES + '/' + FD_RES_RAW + '/' + ANDROID_WEAR_MICRO_APK +
                 DOT_ANDROID_PACKAGE
 
@@ -78,5 +88,11 @@ class WearSimpleTest {
             // check for the versionName
             assertThatApk(embeddedApk).hasVersionName(data[1])
         }
+    }
+
+    @Test
+    void "check wear-release not built with main-debug"() {
+        project.execute("clean", ":main:assembleDebug")
+        assertFalse(project.getStdout().contains(":wear:packageRelease"))
     }
 }

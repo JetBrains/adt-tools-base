@@ -176,6 +176,12 @@ public class ProductFlavorAdaptor extends BaseConfigAdaptor implements CoreProdu
         return productFlavor.getVectorDrawables();
     }
 
+    @Nullable
+    @Override
+    public Boolean getWearAppUnbundled() {
+        return productFlavor.getWearAppUnbundled();
+    }
+
     @Override
     public CoreNdkOptions getNdkConfig() {
         return new NdkOptionsAdaptor(productFlavor.getNdk());

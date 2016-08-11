@@ -6,7 +6,3 @@ android {
 
 }
 
-dependencies {
-  wearApp project(':wear')
-}
-

@@ -21,6 +21,7 @@ import static com.android.SdkConstants.FD_RES_RAW;
 import static com.android.builder.core.BuilderConstants.ANDROID_WEAR_MICRO_APK;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.build.gradle.internal.scope.ConventionMappingHelper;
 import com.android.build.gradle.internal.scope.TaskConfigAction;
 import com.android.build.gradle.internal.scope.VariantScope;
@@ -34,6 +35,7 @@ import com.google.common.io.Files;
 import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.InputFile;
+import org.gradle.api.tasks.Optional;
 import org.gradle.api.tasks.OutputDirectory;
 import org.gradle.api.tasks.OutputFile;
 import org.gradle.api.tasks.ParallelizableTask;
@@ -69,22 +71,26 @@ public class GenerateApkDataTask extends BaseTask {
     @TaskAction
     void generate() throws IOException, ProcessException, LoggedErrorException,
             InterruptedException {
+        AndroidBuilder builder = getBuilder();
+
         // always empty output dir.
         File outDir = getResOutputDir();
         FileUtils.cleanOutputDir(outDir);
 
         File apk = getApkFile();
-        // copy the file into the destination, by sanitizing the name first.
-        File rawDir = new File(outDir, FD_RES_RAW);
-        rawDir.mkdirs();
+        if (apk != null) {
+            // copy the file into the destination, by sanitizing the name first.
+            File rawDir = new File(outDir, FD_RES_RAW);
+            FileUtils.mkdirs(rawDir);
 
-        File to = new File(rawDir, ANDROID_WEAR_MICRO_APK + DOT_ANDROID_PACKAGE);
-        Files.copy(apk, to);
+            File to = new File(rawDir, ANDROID_WEAR_MICRO_APK + DOT_ANDROID_PACKAGE);
+            Files.copy(apk, to);
 
-        // now create the matching XML and the manifest entry.
-        AndroidBuilder builder = getBuilder();
+            builder.generateApkData(apk, outDir, getMainPkgName(), ANDROID_WEAR_MICRO_APK);
+        } else {
+            builder.generateUnbundledWearApkData(outDir, getMainPkgName());
+        }
 
-        builder.generateApkData(apk, outDir, getMainPkgName(), ANDROID_WEAR_MICRO_APK);
         AndroidBuilder.generateApkDataEntryInManifest(getMinSdkVersion(),
                 getTargetSdkVersion(),
                 getManifestFile());
@@ -100,6 +106,7 @@ public class GenerateApkDataTask extends BaseTask {
     }
 
     @InputFile
+    @Optional
     public File getApkFile() {
         return apkFile;
     }
@@ -149,10 +156,10 @@ public class GenerateApkDataTask extends BaseTask {
         @NonNull
         VariantScope scope;
 
-        @NonNull
+        @Nullable
         Configuration config;
 
-        public ConfigAction(@NonNull VariantScope scope, @NonNull Configuration config) {
+        public ConfigAction(@NonNull VariantScope scope, @Nullable Configuration config) {
             this.scope = scope;
             this.config = config;
         }
@@ -178,13 +185,17 @@ public class GenerateApkDataTask extends BaseTask {
             task.setVariantName(scope.getVariantConfiguration().getFullName());
 
             task.setResOutputDir(scope.getMicroApkResDirectory());
-            ConventionMappingHelper.map(task, "apkFile", new Callable<File>() {
-                @Override
-                public File call() throws Exception {
-                    // only care about the first one. There shouldn't be more anyway.
-                    return config.getFiles().iterator().next();
-                }
-            });
+
+            if (config != null) {
+                ConventionMappingHelper.map(task, "apkFile", new Callable<File>() {
+                    @Override
+                    public File call() throws Exception {
+                        // only care about the first one. There shouldn't be more anyway.
+                        return config.getFiles().iterator().next();
+                    }
+                });
+            }
+
             task.setManifestFile(scope.getMicroApkManifestFile());
             ConventionMappingHelper.map(task, "mainPkgName", new Callable<String>() {
                 @Override

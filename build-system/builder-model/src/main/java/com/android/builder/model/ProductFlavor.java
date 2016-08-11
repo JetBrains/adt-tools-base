@@ -24,10 +24,10 @@ import java.util.Map;
 
 /**
  * a Product Flavor. This is only the configuration of the flavor.
- *
+ * <p>
  * It does not include the sources or the dependencies. Those are available on the container
  * or in the artifact info.
- *
+ * </p>
  * @see ProductFlavorContainer
  * @see BaseArtifact#getDependencies()
  */
@@ -173,8 +173,9 @@ public interface ProductFlavor extends BaseConfig, DimensionAware {
 
     /**
      * Returns the resource configuration for this variant.
-     *
+     * <p>
      * This is the list of -c parameters for aapt.
+     * </p>
      *
      * @return the resource configuration options.
      */
@@ -189,4 +190,14 @@ public interface ProductFlavor extends BaseConfig, DimensionAware {
 
     @NonNull
     VectorDrawablesOptions getVectorDrawables();
+
+    /**
+     * Returns whether to enable unbundling mode for embedded wear app.
+     * <p>
+     * If true, this enables the app to transition from an embedded wear app to one
+     * distributed by the play store directly.
+     * </p>
+     */
+    @Nullable
+    Boolean getWearAppUnbundled();
 }

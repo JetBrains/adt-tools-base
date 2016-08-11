@@ -47,4 +47,20 @@ public class GradleExceptionsHelper {
                         "Exception was not caused by a task failure: \n%s",
                         Throwables.getStackTraceAsString(e)));
     }
+
+    public static String getFailureMessage(GradleConnectionException e, Class<?> exceptionType) {
+        for (Throwable throwable : Throwables.getCausalChain(e)) {
+            // Because of different class loaders involved, we are forced to do stringly-typed
+            // programming.
+            if (throwable.getClass().getName().equals(exceptionType.getName())) {
+                return throwable.getMessage();
+            }
+        }
+
+        throw new AssertionError(
+                String.format(
+                        "Exception was not caused by a '%s' failure: \n%s",
+                        exceptionType.getName(),
+                        Throwables.getStackTraceAsString(e)));
+    }
 }

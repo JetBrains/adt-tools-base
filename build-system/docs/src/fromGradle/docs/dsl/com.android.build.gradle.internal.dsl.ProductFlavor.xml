@@ -24,6 +24,7 @@
             <tr><td>versionCode</td></tr>
             <tr><td>versionName</td></tr>
             <tr><td>versionNameSuffix</td></tr>
+            <tr><td>wearAppUnbundled</td></tr>
         </table>
     </section>
     <section>

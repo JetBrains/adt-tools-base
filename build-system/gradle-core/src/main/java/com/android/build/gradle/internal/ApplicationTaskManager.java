@@ -20,6 +20,7 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.api.transform.QualifiedContent.Scope;
 import com.android.build.gradle.AndroidConfig;
+import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.dsl.CoreJackOptions;
 import com.android.build.gradle.internal.incremental.InstantRunPatchingPolicy;
 import com.android.build.gradle.internal.incremental.InstantRunWrapperTask;
@@ -387,7 +388,21 @@ public class ApplicationTaskManager extends TaskManager {
             @NonNull TaskFactory tasks,
             @NonNull VariantScope scope) {
         BaseVariantData<? extends BaseVariantOutputData> variantData = scope.getVariantData();
-        if (variantData.getVariantConfiguration().getBuildType().isEmbedMicroApp()) {
+        GradleVariantConfiguration variantConfiguration = variantData.getVariantConfiguration();
+        Boolean unbundledWearApp = variantConfiguration.getMergedFlavor().getWearAppUnbundled();
+        if (Boolean.TRUE.equals(unbundledWearApp)) {
+            if (hasWearAppDependency(variantData)) {
+                androidBuilder.getErrorReporter().handleSyncError(
+                        scope.getFullVariantName(),
+                        SyncIssue.TYPE_DEPENDENCY_WEAR_APK_WITH_UNBUNDLED,
+                        String.format(
+                                "Wear app unbundling is turned on but a dependency "
+                                        + "on a wear App has been found for variant %s",
+                                scope.getFullVariantName()));
+            } else {
+                createGenerateMicroApkDataTask(tasks, scope, null);
+            }
+        } else if (variantConfiguration.getBuildType().isEmbedMicroApp()) {
             // get all possible configurations for the variant. We'll take the highest priority
             // of them that have a file.
             List<String> wearConfigNames = variantData.getWearConfigNames();
@@ -408,10 +423,34 @@ public class ApplicationTaskManager extends TaskManager {
                     // found one, bail out.
                     return;
                 } else if (count > 1) {
-                    throw new RuntimeException(String.format(
-                            "Configuration '%s' resolves to more than one apk.", configName));
+                    androidBuilder.getErrorReporter().handleSyncError(
+                            configName,
+                            SyncIssue.TYPE_DEPENDENCY_WEAR_APK_TOO_MANY,
+                            String.format(
+                                    "Configuration '%s' resolves to more than one apk.", configName));
                 }
             }
         }
+    }
+
+    private boolean hasWearAppDependency(BaseVariantData<? extends BaseVariantOutputData> variantData) {
+        // get all possible configurations for the variant. We'll take the highest priority
+        // of them that have a file.
+        List<String> wearConfigNames = variantData.getWearConfigNames();
+
+        for (String configName : wearConfigNames) {
+            Configuration config =
+                    project.getConfigurations().findByName(configName);
+            // this shouldn't happen, but better safe.
+            if (config == null) {
+                continue;
+            }
+
+            if (!config.getFiles().isEmpty()) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

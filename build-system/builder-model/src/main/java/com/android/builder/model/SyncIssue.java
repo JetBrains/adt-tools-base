@@ -91,8 +91,15 @@ public interface SyncIssue {
     // Cannot use Java 8 Language features without Jack.
     int TYPE_JACK_REQUIRED_FOR_JAVA_8_LANGUAGE_FEATURES = 18;
 
+    // a wearApp configuration was resolved and found more than one apk.
+    // data is the configuration name
+    int TYPE_DEPENDENCY_WEAR_APK_TOO_MANY = 19;
 
-    int TYPE_MAX                      = 18; // increment when adding new types.
+    // a wearApp configuration was resolved and found an apk even though unbundled mode is on.
+    int TYPE_DEPENDENCY_WEAR_APK_WITH_UNBUNDLED = 20;
+
+
+    int TYPE_MAX                      = 20; // increment when adding new types.
 
     /**
      * Returns the severity of the issue.
