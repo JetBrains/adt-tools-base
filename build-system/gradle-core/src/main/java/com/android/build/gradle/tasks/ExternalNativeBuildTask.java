@@ -77,10 +77,12 @@ public class ExternalNativeBuildTask extends ExternalNativeBaseTask {
         List<String> buildCommands = Lists.newArrayList();
         List<String> libraryNames = Lists.newArrayList();
 
-        // Check the resulting JSON targets against the targets specified in ndkBuild.targets or
-        // cmake.targets. If a target name specified by the user isn't present then provide an
-        // error to the user that lists
-        if (!targets.isEmpty()) {
+        if (targets.isEmpty()) {
+            diagnostic("executing build commands for targets that produce .so files");
+        } else {
+            // Check the resulting JSON targets against the targets specified in ndkBuild.targets or
+            // cmake.targets. If a target name specified by the user isn't present then provide an
+            // error to the user that lists the valid target names.
             diagnostic("executing build commands for targets: '%s'", Joiner.on(", ").join(targets));
 
             // Search libraries for matching targets.
@@ -127,11 +129,32 @@ public class ExternalNativeBuildTask extends ExternalNativeBaseTask {
                     continue;
 
                 }
+                if (targets.isEmpty()) {
+                    if (libraryValue.output == null) {
+                        diagnostic("not building target %s because no targets are specified and "
+                                + "library build output file is null",
+                                libraryValue.artifactName);
+                        continue;
+                    }
+                    String extension = Files.getFileExtension(libraryValue.output.getName());
+                    if (!extension.equals("so")) {
+                        diagnostic("not building target %s because no targets are specified and "
+                                + "library build output file extension isn't 'so'. "
+                                + "Output file is %s",
+                                libraryValue.artifactName, libraryValue.output);
+                        continue;
+                    }
+                    diagnostic("building target %s because no targets are specified and "
+                            + "library build output file extension is 'so'.",
+                            libraryValue.artifactName);
+                }
+
                 buildCommands.add(libraryValue.buildCommand);
                 libraryNames.add(checkNotNull(libraryValue.output).getPath());
                 diagnostic("about to build %s", libraryValue.buildCommand);
             }
         }
+
         executeProcessBatch(libraryNames, buildCommands);
 
         diagnostic("copying build outputs from JSON-defined locations to expected locations");
