@@ -178,10 +178,13 @@ public class AndroidGradleOptions {
      */
     @Nullable
     public static Integer buildModelOnlyVersion(@NonNull Project project) {
+        /*
+        Disabled in 2.2 as level 2 is not fully frozen.
         String revision = getString(project, AndroidProject.PROPERTY_BUILD_MODEL_ONLY_VERSIONED);
         if (revision != null) {
             return Integer.parseInt(revision);
         }
+        */
 
         if (getBoolean(project, AndroidProject.PROPERTY_BUILD_MODEL_ONLY_ADVANCED)) {
             return AndroidProject.MODEL_LEVEL_1_SYNC_ISSUE;
