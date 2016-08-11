@@ -20,24 +20,22 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertNotNull;
 
 import com.android.build.gradle.internal.incremental.InstantRunBuildContext.Build;
+import com.android.builder.Version;
 import com.android.utils.XmlUtils;
 import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.common.io.Files;
-
+import java.io.File;
+import java.io.IOException;
+import java.util.List;
+import javax.xml.parsers.ParserConfigurationException;
 import org.junit.Test;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
-
-import java.io.File;
-import java.io.IOException;
-import java.util.List;
-
-import javax.xml.parsers.ParserConfigurationException;
 
 /**
  * Tests for the {@link InstantRunBuildContext}
@@ -97,9 +95,35 @@ public class InstantRunBuildContextTest {
     public void testLoadingFromCleanState()
             throws ParserConfigurationException, SAXException, IOException {
         InstantRunBuildContext instantRunBuildContext = new InstantRunBuildContext();
+        instantRunBuildContext.setApiLevel(23, ColdswapMode.MULTIAPK.name(), null);
         File file = new File("/path/to/non/existing/file");
         instantRunBuildContext.loadFromXmlFile(file);
         assertThat(instantRunBuildContext.getBuildId()).isAtLeast(1L);
+        assertThat(instantRunBuildContext.getVerifierResult().get())
+                .isEqualTo(InstantRunVerifierStatus.INITIAL_BUILD);
+    }
+
+    @Test
+    public void testLoadingFromADifferentPluginVersion() throws Exception {
+        String xml;
+        {
+            InstantRunBuildContext context = new InstantRunBuildContext();
+            context.setApiLevel(23, ColdswapMode.MULTIDEX.name(), null);
+            context.addChangedFile(
+                    InstantRunBuildContext.FileType.MAIN, new File("/tmp/main.apk"));
+            context.close();
+            assertThat(context.getPreviousBuilds()).isNotEmpty();
+            xml = context.toXml();
+        }
+        xml = xml.replace(Version.ANDROID_GRADLE_PLUGIN_VERSION, "Other");
+        {
+            InstantRunBuildContext context = new InstantRunBuildContext();
+            context.setApiLevel(23, ColdswapMode.MULTIDEX.name(), null);
+            context.loadFromXml(xml);
+            assertThat(context.getVerifierResult().get())
+                    .isEqualTo(InstantRunVerifierStatus.INITIAL_BUILD);
+            assertThat(context.getPreviousBuilds()).isEmpty();
+        }
     }
 
     @Test
