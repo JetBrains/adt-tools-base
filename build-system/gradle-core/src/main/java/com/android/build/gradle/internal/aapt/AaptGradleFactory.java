@@ -83,11 +83,13 @@ public final class AaptGradleFactory {
             @NonNull File intermediateDir) {
         return make(
                 builder,
+                new LoggedProcessOutputHandler(new FilteringLogger(builder.getLogger())),
                 crunchPng,
                 process9Patch,
                 scope.getGlobalScope().getProject(),
                 scope.getVariantConfiguration().getType(),
-                intermediateDir);
+                intermediateDir,
+                scope.getGlobalScope().getExtension().getAaptOptions().getCruncherProcesses());
     }
 
     /**
@@ -99,6 +101,8 @@ public final class AaptGradleFactory {
      * @param project the Gradle project
      * @param variantType type of the variant to process
      * @param intermediateDir intermediate directory for aapt to use
+     * @param cruncherProcesses the number of cruncher processes to use, if cruncher processes are
+     * used
      * @return the newly-created instance
      */
     @NonNull
@@ -108,7 +112,8 @@ public final class AaptGradleFactory {
             boolean process9Patch,
             @NonNull Project project,
             @NonNull VariantType variantType,
-            @NonNull File intermediateDir) {
+            @NonNull File intermediateDir,
+            int cruncherProcesses) {
         return make(
                 builder,
                 new LoggedProcessOutputHandler(new FilteringLogger(builder.getLogger())),
@@ -116,7 +121,8 @@ public final class AaptGradleFactory {
                 process9Patch,
                 project,
                 variantType,
-                intermediateDir);
+                intermediateDir,
+                cruncherProcesses);
     }
 
     /**
@@ -129,6 +135,8 @@ public final class AaptGradleFactory {
      * @param project the Gradle project
      * @param variantType type of the variant to process
      * @param intermediateDir intermediate directory for aapt to use
+     * @param cruncherProcesses the number of cruncher processes to use, if cruncher processes are
+     * used
      * @return the newly-created instance
      */
     @NonNull
@@ -139,7 +147,8 @@ public final class AaptGradleFactory {
             boolean process9Patch,
             @NonNull Project project,
             @NonNull VariantType variantType,
-            @NonNull File intermediateDir) {
+            @NonNull File intermediateDir,
+            int cruncherProcesses) {
         TargetInfo target = builder.getTargetInfo();
         Preconditions.checkNotNull(target, "target == null");
         BuildToolInfo buildTools = target.getBuildTools();
@@ -167,7 +176,8 @@ public final class AaptGradleFactory {
                     outputHandler,
                     buildTools,
                     new FilteringLogger(builder.getLogger()),
-                    processMode);
+                    processMode,
+                    cruncherProcesses);
         }
     }
 

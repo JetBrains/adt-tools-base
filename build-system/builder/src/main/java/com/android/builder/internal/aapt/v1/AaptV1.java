@@ -151,13 +151,16 @@ public class AaptV1 extends AbstractProcessExecutionAapt {
      * @param buildToolInfo the build tools to use
      * @param logger logger to use
      * @param processMode the process mode to run {@code aapt} on
+     * @param cruncherProcesses if using build tools that support crunching processes, how many
+     * processes to use; if set to {@code 0}, the default number will be used
      */
     public AaptV1(
             @NonNull ProcessExecutor processExecutor,
             @NonNull ProcessOutputHandler processOutputHandler,
             @NonNull BuildToolInfo buildToolInfo,
             @NonNull ILogger logger,
-            @NonNull PngProcessMode processMode) {
+            @NonNull PngProcessMode processMode,
+            int cruncherProcesses) {
         super(processExecutor, processOutputHandler);
 
         mBuildToolInfo = buildToolInfo;
@@ -171,7 +174,10 @@ public class AaptV1 extends AbstractProcessExecutionAapt {
 
         if (buildToolInfo.getRevision().compareTo(VERSION_FOR_SERVER_AAPT) >= 0) {
             mCruncher =
-                    QueuedCruncher.Builder.INSTANCE.newCruncher(getAaptExecutablePath(), logger);
+                    QueuedCruncher.Builder.INSTANCE.newCruncher(
+                            getAaptExecutablePath(),
+                            logger,
+                            cruncherProcesses);
         } else {
             mCruncher = null;
         }

@@ -293,7 +293,8 @@ public class InstantRunSplitApkBuilder extends BaseTask {
                             packagingScope.getVariantType(),
                             FileUtils.mkdirs(new File(
                                     packagingScope.getIncrementalDir(getName()),
-                                    "aapt-temp")));
+                                    "aapt-temp")),
+                            0);
 
             ConventionMappingHelper.map(task, "zipAlignExe", () -> {
                 final TargetInfo info = androidBuilder.getTargetInfo();
