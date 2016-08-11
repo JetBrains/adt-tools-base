@@ -18,7 +18,6 @@ package com.android.sdklib;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.google.common.base.Strings;
-
 import java.util.Locale;
 
 /** Information about available SDK Versions */
@@ -394,5 +393,30 @@ public class SdkVersionInfo {
             codeName = getCodeName(version.getApiLevel());
         }
         return codeName;
+    }
+
+    /**
+     * Returns a user-friendly description of this version, like "Android 5.1 (Lollipop)",
+     * or "Android 6.X (N) Preview".
+     */
+    public static String getVersionWithCodename(AndroidVersion version) {
+        StringBuilder result = new StringBuilder();
+        result.append("Android ");
+        if (version.isPreview()) {
+            result.append(version.getCodename());
+            result.append(" Preview");
+        } else {
+            result.append(getVersionString(version.getFeatureLevel()));
+            String codeName = version.getCodename();
+            if (codeName == null) {
+                codeName = getCodeName(version.getFeatureLevel());
+            }
+            if (codeName != null) {
+                result.append(" (");
+                result.append(codeName);
+                result.append(")");
+            }
+        }
+        return result.toString();
     }
 }
