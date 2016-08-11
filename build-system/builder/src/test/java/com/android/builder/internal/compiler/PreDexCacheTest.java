@@ -463,8 +463,9 @@ public class PreDexCacheTest {
 
         // check the hit/miss
         PreDexCache cache = PreDexCache.getCache();
-        assertEquals(1, cache.getMisses());
-        assertEquals(0, cache.getHits());
+        // We expect a cache hit because optimize do not have any effect due to b.android.com/82031.
+        assertEquals(0, cache.getMisses());
+        assertEquals(1, cache.getHits());
     }
 
     @Test
