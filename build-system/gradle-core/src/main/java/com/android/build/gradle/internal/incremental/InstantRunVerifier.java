@@ -34,7 +34,6 @@ import static com.android.build.gradle.internal.incremental.InstantRunVerifierSt
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
-import com.android.utils.AsmUtils;
 import com.google.common.base.Objects;
 import com.google.common.io.ByteStreams;
 import com.google.common.io.Closeables;
@@ -280,7 +279,7 @@ public class InstantRunVerifier {
                 // it anymore BUT the application might be using reflection to get the list of
                 // methods and would still see the deleted methods. To be prudent, restart.
                 // However, if the class initializer got removed, it's always fine.
-                return methodNode.name.equals(AsmUtils.CLASS_INITIALIZER)
+                return methodNode.name.equals(ByteCodeUtils.CLASS_INITIALIZER)
                         ? COMPATIBLE
                         : METHOD_DELETED;
             }
@@ -288,7 +287,7 @@ public class InstantRunVerifier {
             // remove the method from the visited ones on the updated class.
             nonVisitedMethodsOnUpdatedClass.remove(updatedMethod);
 
-            InstantRunVerifierStatus change = methodNode.name.equals(AsmUtils.CLASS_INITIALIZER)
+            InstantRunVerifierStatus change = methodNode.name.equals(ByteCodeUtils.CLASS_INITIALIZER)
                     ? visitClassInitializer(methodNode, updatedMethod)
                     : verifyMethod(methodNode, updatedMethod);
 

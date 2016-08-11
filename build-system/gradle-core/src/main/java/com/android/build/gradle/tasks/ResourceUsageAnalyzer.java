@@ -34,6 +34,7 @@ import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
+import com.android.build.gradle.internal.incremental.ByteCodeUtils;
 import com.android.ide.common.xml.XmlPrettyPrinter;
 import com.android.resources.FolderTypeRelationship;
 import com.android.resources.ResourceFolderType;
@@ -41,7 +42,6 @@ import com.android.resources.ResourceType;
 import com.android.tools.lint.checks.ResourceUsageModel;
 import com.android.tools.lint.checks.ResourceUsageModel.Resource;
 import com.android.tools.lint.checks.StringFormatDetector;
-import com.android.utils.AsmUtils;
 import com.android.utils.Pair;
 import com.android.utils.XmlUtils;
 import com.google.common.base.Charsets;
@@ -1257,7 +1257,7 @@ public class ResourceUsageAnalyzer {
                 end = line.length();
             }
             String target = line.substring(arrow + ARROW.length(), end).trim();
-            String ownerName = AsmUtils.toInternalName(target);
+            String ownerName = ByteCodeUtils.toInternalName(target);
 
             nameMap = Maps.newHashMap();
             Pair<ResourceType, Map<String, String>> pair = Pair.of(type, nameMap);

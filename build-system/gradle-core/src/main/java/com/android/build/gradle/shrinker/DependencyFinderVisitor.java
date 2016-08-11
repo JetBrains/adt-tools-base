@@ -20,8 +20,8 @@ import static com.android.build.gradle.shrinker.AbstractShrinker.isSdkPackage;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.build.gradle.internal.incremental.ByteCodeUtils;
 import com.android.build.gradle.shrinker.PostProcessingData.UnresolvedReference;
-import com.android.utils.AsmUtils;
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableMap;
 
@@ -99,7 +99,7 @@ abstract class DependencyFinderVisitor<T> extends ClassVisitor {
             String[] exceptions) {
         T method = mGraph.getMemberReference(mClassName, name, desc);
 
-        if ((access & Opcodes.ACC_STATIC) == 0 && !name.equals(AsmUtils.CONSTRUCTOR)) {
+        if ((access & Opcodes.ACC_STATIC) == 0 && !name.equals(ByteCodeUtils.CONSTRUCTOR)) {
             handleVirtualMethod(method);
         }
 
@@ -109,7 +109,7 @@ abstract class DependencyFinderVisitor<T> extends ClassVisitor {
             handleDeclarationType(method, argType);
         }
 
-        if (name.equals(AsmUtils.CLASS_INITIALIZER)) {
+        if (name.equals(ByteCodeUtils.CLASS_INITIALIZER)) {
             handleDependency(mKlass, method, DependencyType.REQUIRED_CLASS_STRUCTURE);
         }
 
@@ -319,7 +319,7 @@ abstract class DependencyFinderVisitor<T> extends ClassVisitor {
                 T target = mGraph.getMemberReference(owner, name, desc);
 
                 if (opcode == Opcodes.INVOKESPECIAL
-                        && (name.equals(AsmUtils.CONSTRUCTOR) || owner.equals(mClassName))) {
+                        && (name.equals(ByteCodeUtils.CONSTRUCTOR) || owner.equals(mClassName))) {
                     // The "invokenonvirtual" semantics of invokespecial, for calling constructors
                     // and private methods.
                     handleDependency(mMethod, target, DependencyType.REQUIRED_CODE_REFERENCE);
@@ -551,7 +551,7 @@ abstract class DependencyFinderVisitor<T> extends ClassVisitor {
                     return null;
                 }
 
-                return graph.getClassReference(AsmUtils.toInternalName((String) stack.pop()));
+                return graph.getClassReference(ByteCodeUtils.toInternalName((String) stack.pop()));
             }
         },
         ATOMIC_INTEGER_FIELD_UPDATER(

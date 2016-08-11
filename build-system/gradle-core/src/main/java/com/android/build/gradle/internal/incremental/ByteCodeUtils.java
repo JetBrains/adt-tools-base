@@ -17,8 +17,12 @@
 package com.android.build.gradle.internal.incremental;
 
 import com.android.annotations.NonNull;
+import com.google.common.base.Joiner;
+import com.google.common.base.Preconditions;
+import com.google.common.base.Splitter;
 import com.google.common.collect.Lists;
-
+import java.util.List;
+import java.util.Optional;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.GeneratorAdapter;
@@ -27,13 +31,13 @@ import org.objectweb.asm.tree.MethodNode;
 import org.objectweb.asm.util.Textifier;
 import org.objectweb.asm.util.TraceMethodVisitor;
 
-import java.util.List;
-
 /**
  * Bytecode generation utilities to work around some ASM / Dex issues.
  */
 public class ByteCodeUtils {
 
+    public static final String CONSTRUCTOR = "<init>";
+    public static final String CLASS_INITIALIZER = "<clinit>";
     private static final Type NUMBER_TYPE = Type.getObjectType("java/lang/Number");
     private static final Method SHORT_VALUE = Method.getMethod("short shortValue()");
     private static final Method BYTE_VALUE = Method.getMethod("byte byteValue()");
@@ -166,5 +170,39 @@ public class ByteCodeUtils {
                 return Type.getType(Object.class);
         }
         return null;
+    }
+
+    /**
+     * Converts a class name from the Java language naming convention (foo.bar.baz) to the JVM
+     * internal naming convention (foo/bar/baz).
+     */
+    @NonNull
+    public static String toInternalName(@NonNull String className) {
+        return className.replace('.', '/');
+    }
+
+    /**
+     * Gets the class name from a class member internal name, like {@code com/foo/Bar.baz:(I)V}.
+     */
+    @NonNull
+    public static String getClassName(@NonNull String memberName) {
+        Preconditions.checkArgument(memberName.contains(":"), "Class name passed as argument.");
+        return memberName.substring(0, memberName.indexOf('.'));
+    }
+
+    /**
+     * Returns the package name, based on the internal class name. For example, given 'com/foo/Bar'
+     * return 'com.foo'.
+     *
+     * <p>Returns {@link Optional#empty()} for classes in the anonymous package.
+     */
+    @NonNull
+    public static Optional<String> getPackageName(@NonNull String internalName) {
+        List<String> parts = Splitter.on('/').splitToList(internalName);
+        if (parts.size() == 1) {
+            return Optional.empty();
+        }
+
+        return Optional.of(Joiner.on('.').join(parts.subList(0, parts.size() - 1)));
     }
 }

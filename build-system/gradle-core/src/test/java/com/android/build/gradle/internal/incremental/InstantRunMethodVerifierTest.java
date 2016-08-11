@@ -18,8 +18,6 @@ package com.android.build.gradle.internal.incremental;
 
 import static org.junit.Assert.assertEquals;
 
-import com.android.utils.AsmUtils;
-
 import org.junit.Before;
 import org.junit.Test;
 import org.objectweb.asm.ClassReader;
@@ -48,7 +46,7 @@ public class InstantRunMethodVerifierTest {
 
         //noinspection unchecked
         for (MethodNode method : (List<MethodNode>) targetClass.methods) {
-            if (method.name.equals(AsmUtils.CONSTRUCTOR)) {
+            if (method.name.equals(ByteCodeUtils.CONSTRUCTOR)) {
                 continue;
             }
             assertEquals("Failed when checking " + method.name, InstantRunVerifierStatus.REFLECTION_USED,

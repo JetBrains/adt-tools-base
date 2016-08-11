@@ -18,15 +18,18 @@ package com.android.build.gradle.internal.incremental;
 
 import com.android.annotations.NonNull;
 import com.android.build.gradle.internal.LoggerWrapper;
-import com.android.utils.AsmUtils;
 import com.android.utils.ILogger;
+import com.google.common.base.Objects;
+
 import java.io.IOException;
 import java.io.ObjectStreamClass;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+
 import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.FieldVisitor;
@@ -171,7 +174,7 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
 
         if (hasIncompatibleChange || disableRedirectionForClass
                 || !isAccessCompatibleWithInstantRun(access)
-                || name.equals(AsmUtils.CLASS_INITIALIZER)) {
+                || name.equals(ByteCodeUtils.CLASS_INITIALIZER)) {
             return defaultVisitor;
         } else {
             ArrayList<Type> args = new ArrayList<Type>(Arrays.asList(Type.getArgumentTypes(desc)));
@@ -182,7 +185,7 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
 
 
             ISMethodVisitor mv = new ISMethodVisitor(defaultVisitor, access, name, desc);
-            if (name.equals(AsmUtils.CONSTRUCTOR)) {
+            if (name.equals(ByteCodeUtils.CONSTRUCTOR)) {
                 Constructor constructor = ConstructorBuilder.build(visitedClassName, method);
                 LabelNode start = new LabelNode();
                 method.instructions.insert(constructor.loadThis, start);
@@ -402,16 +405,15 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
         // Gather all methods from itself and its superclasses to generate a giant access$super
         // implementation.
         // This will work fine as long as we don't support adding methods to a class.
-        final Map<String, MethodReference> uniqueMethods =
-                new HashMap<>();
+        final Map<String, MethodReference> uniqueMethods = new HashMap<>();
         if (parentNodes.isEmpty()) {
             // if we cannot determine the parents for this class, let's blindly add all the
             // method of the current class as a gateway to a possible parent version.
-            addAllNewMethods(uniqueMethods, classNode);
+            addAllNewMethods(classNode, classNode, uniqueMethods);
         } else {
             // otherwise, use the parent list.
             for (ClassNode parentNode : parentNodes) {
-                addAllNewMethods(uniqueMethods, parentNode);
+                addAllNewMethods(classNode, parentNode, uniqueMethods);
             }
         }
 
@@ -441,10 +443,14 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
                     trace(mv, "super selected ", methodRef.owner.name,
                             methodRef.method.name, methodRef.method.desc);
                 }
+                String parentName = findParentClassForMethod(methodRef);
+                LOG.verbose("Generating access$super for " + methodRef.method.name + " recv "
+                        + parentName);
+
                 // Call super on the other object, yup this works cos we are on the right place to
                 // call from.
                 mv.visitMethodInsn(Opcodes.INVOKESPECIAL,
-                        methodRef.owner.name,
+                        parentName,
                         methodRef.method.name,
                         methodRef.method.desc, false);
 
@@ -507,7 +513,7 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
 
         int access = Opcodes.ACC_PUBLIC | Opcodes.ACC_SYNTHETIC;
 
-        Method m = new Method(AsmUtils.CONSTRUCTOR,
+        Method m = new Method(ByteCodeUtils.CONSTRUCTOR,
                 ConstructorRedirection.DISPATCHING_THIS_SIGNATURE);
         MethodVisitor visitor = super.visitMethod(0, m.getName(), m.getDescriptor(), null, null);
         final GeneratorAdapter mv = new GeneratorAdapter(access, m, visitor);
@@ -549,7 +555,7 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
                     argc++;
                 }
 
-                mv.visitMethodInsn(Opcodes.INVOKESPECIAL, owner, AsmUtils.CONSTRUCTOR,
+                mv.visitMethodInsn(Opcodes.INVOKESPECIAL, owner, ByteCodeUtils.CONSTRUCTOR,
                         methodNode.desc, false);
 
                 mv.visitInsn(Opcodes.RETURN);
@@ -573,23 +579,148 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
     }
 
     /**
-     * Add all unseen methods from the passed ClassNode's methods. {@see ClassNode#methods}
-     * @param methods the methods already encountered in the ClassNode hierarchy
-     * @param classNode the class to save all new methods from.
+     * Find a suitable parent for a method reference. The method owner is not always a valid
+     * parent to dispatch to. For instance, take the following example :
+     * <code>
+     * package a;
+     * public class A {
+     *     public void publicMethod();
+     * }
+     *
+     * package a;
+     * class B extends A {
+     *     public void publicMethod();
+     * }
+     *
+     * package b;
+     * public class C extends B {
+     *     ...
+     * }
+     * </code>
+     * when instrumenting C, the first method reference for "publicMethod" is on class B which we
+     * cannot invoke directly since it's present on a private package B which is not located in the
+     * same package as C. However C can still call the "publicMethod" since it's defined on A which
+     * is a public class.
+     *
+     * We cannot just blindly take the top most definition of "publicMethod" hoping this is the
+     * accessible one since you can very well do :
+     * <code>
+     * package a;
+     * class A {
+     *     public void publicMethod();
+     * }
+     *
+     * package a;
+     * public class B extends A {
+     *     public void publicMethod();
+     * }
+     *
+     * package b;
+     * public class C extends B {
+     *     ...
+     * }
+     * </code>
+     *
+     * In that case, the top most parent class is the one defined the unaccessible method reference.
+     *
+     * Therefore, the solution is to walk up the hierarchy until we find the same method defined on
+     * an accessible class, if we cannot find such a method, the suitable parent is the parent class
+     * of the visited class which is legal (but might consume a DEX id).
+     *
+     * @param methodReference the method reference to find a suitable parent for.
+     * @return the parent class name
      */
-    private static void addAllNewMethods(Map<String, MethodReference> methods, ClassNode classNode) {
+    @NonNull
+    String findParentClassForMethod(@NonNull MethodReference methodReference) {
+        LOG.verbose("MethodRef %1$s access(%2$d) -> owner %3$s access(%4$d)",
+                methodReference.method.name, methodReference.method.access,
+                methodReference.owner.name, methodReference.owner.access);
+        // if the method owner class is accessible from the visited class, just use that.
+        if (isParentClassVisible(methodReference.owner, classNode)) {
+            return methodReference.owner.name;
+        }
+        LOG.verbose("Found an inaccessible methodReference " + methodReference.method.name);
+        // walk up the hierarchy, starting at the method reference owner.
+        Iterator<ClassNode> parentIterator = parentNodes.iterator();
+        ClassNode parent = parentIterator.next();
+        while(!parent.name.equals(methodReference.owner.name)
+            && parentIterator.hasNext()) {
+            parent = parentIterator.next();
+        }
+        while (parentIterator.hasNext()) {
+            ClassNode node = parentIterator.next();
+            // check that this parent is visible, there might be several layers of package
+            // private classes.
+            if (isParentClassVisible(node, classNode)) {
+                for (MethodNode methodNode : (List<MethodNode>) node.methods) {
+                    // do not reference bridge methods, they might not be translated into dex, or
+                    // might disappear in the next javac compiler for that use case.
+                    if (methodNode.name.equals(methodReference.method.name)
+                            && methodNode.desc.equals(methodReference.method.desc)
+                            && (methodNode.access
+                                    & (Opcodes.ACC_BRIDGE | Opcodes.ACC_ABSTRACT)) == 0 ) {
+                        LOG.verbose("Using class %1$s for dispatching %2$s:%3$s",
+                                node.name,
+                                methodReference.method.name,
+                                methodReference.method.desc);
+                        return node.name;
+                    }
+                }
+            }
+        }
+        LOG.verbose("Using immediate parent for dispatching %1$s", methodReference.method.desc);
+        return classNode.superName;
+    }
+
+    private static boolean isParentClassVisible(@NonNull ClassNode parent,
+            @NonNull ClassNode child) {
+
+        return ((parent.access & (Opcodes.ACC_PUBLIC | Opcodes.ACC_PROTECTED)) != 0 ||
+                Objects.equal(ByteCodeUtils.getPackageName(parent.name),
+                        ByteCodeUtils.getPackageName(child.name)));
+    }
+
+    /**
+     * Add all unseen methods from the passed ClassNode's methods.
+     *
+     * @see ClassNode#methods
+     * @param instrumentedClass class that is being visited
+     * @param superClass the class to save all new methods from
+     * @param methods the methods already encountered in the ClassNode hierarchy
+     */
+    private static void addAllNewMethods(
+            ClassNode instrumentedClass,
+            ClassNode superClass,
+            Map<String, MethodReference> methods) {
         //noinspection unchecked
-        for (MethodNode method : (List<MethodNode>) classNode.methods) {
-            if (method.name.equals(AsmUtils.CONSTRUCTOR) || method.name.equals("<clinit>")) {
+        for (MethodNode method : (List<MethodNode>) superClass.methods) {
+            if (method.name.equals(ByteCodeUtils.CONSTRUCTOR) || method.name.equals("<clinit>")) {
                 continue;
             }
             String name = method.name + "." + method.desc;
             if (isAccessCompatibleWithInstantRun(method.access)
-                    && !methods.containsKey(name) &&
-                    (method.access & Opcodes.ACC_STATIC) == 0 &&
-                    (method.access & Opcodes.ACC_PRIVATE) == 0) {
-                methods.put(name, new MethodReference(method, classNode));
+                    && !methods.containsKey(name)
+                    && (method.access & Opcodes.ACC_STATIC) == 0
+                    && isCallableFromSubclass(method, superClass, instrumentedClass)) {
+                methods.put(name, new MethodReference(method, superClass));
             }
+        }
+    }
+
+    @SuppressWarnings("SimplifiableIfStatement")
+    private static boolean isCallableFromSubclass(
+            @NonNull MethodNode method,
+            @NonNull ClassNode superClass,
+            @NonNull ClassNode subclass) {
+        if ((method.access & Opcodes.ACC_PRIVATE) != 0) {
+            return false;
+        } else if ((method.access & (Opcodes.ACC_PUBLIC | Opcodes.ACC_PROTECTED)) != 0) {
+            return true;
+        } else {
+            // "package private" access modifier.
+            return Objects.equal(
+                    ByteCodeUtils.getPackageName(superClass.name),
+                    ByteCodeUtils.getPackageName(subclass.name));
         }
     }
 
@@ -603,7 +734,7 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
             boolean keepPrivateConstructors) {
         //noinspection unchecked
         for (MethodNode method : (List<MethodNode>) classNode.methods) {
-            if (!method.name.equals(AsmUtils.CONSTRUCTOR)) {
+            if (!method.name.equals(ByteCodeUtils.CONSTRUCTOR)) {
                 continue;
             }
 

@@ -21,10 +21,10 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.build.gradle.internal.incremental.ByteCodeUtils;
 import com.android.build.gradle.shrinker.AbstractShrinker.CounterSet;
 import com.android.build.gradle.shrinker.IncrementalShrinker.IncrementalRunImpossibleException;
 import com.android.ide.common.internal.WaitableExecutor;
-import com.android.utils.AsmUtils;
 import com.android.utils.FileUtils;
 import com.google.common.base.Preconditions;
 import com.google.common.cache.CacheBuilder;
@@ -389,7 +389,7 @@ public class JavaSerializationShrinkerGraph implements ShrinkerGraph<String> {
     @NonNull
     @Override
     public String getOwnerClass(@NonNull String member) {
-        return AsmUtils.getClassName(member);
+        return ByteCodeUtils.getClassName(member);
     }
 
     @NonNull
