@@ -1147,8 +1147,6 @@ public final class SdkConstants {
     public static final String ATTR_LAYOUT_BOTTOM_TO_TOP_OF = "layout_constraintBottom_toTopOf";       //$NON-NLS-1$
     public static final String ATTR_LAYOUT_BOTTOM_TO_BOTTOM_OF = "layout_constraintBottom_toBottomOf"; //$NON-NLS-1$
     public static final String ATTR_LAYOUT_BASELINE_TO_BASELINE_OF = "layout_constraintBaseline_toBaselineOf"; //$NON-NLS-1$
-    public static final String ATTR_LAYOUT_CENTER_X_TO_CENTER_X_OF = "layout_constraintCenterX_toCenterX"; //$NON-NLS-1$
-    public static final String ATTR_LAYOUT_CENTER_Y_TO_CENTER_Y_OF = "layout_constraintCenterY_toCenterY"; //$NON-NLS-1$
     public static final String ATTR_LAYOUT_HORIZONTAL_BIAS = "layout_constraintHorizontal_bias"; //$NON-NLS-1$
     public static final String ATTR_LAYOUT_VERTICAL_BIAS = "layout_constraintVertical_bias"; //$NON-NLS-1$
     public static final String ATTR_LAYOUT_DIMENSION_RATIO = "layout_constraintDimensionRatio"; //$NON-NLS-1$
