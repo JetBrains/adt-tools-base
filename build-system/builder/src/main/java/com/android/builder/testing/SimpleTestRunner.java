@@ -203,7 +203,7 @@ public class SimpleTestRunner implements TestRunner {
                     SimpleTestCallable testCallable = new SimpleTestCallable(
                             runners.getKey(), projectName, variantName, testApk, runners.getValue(),
                             testData,
-                            resultsDir, coverageDir, timeoutInMs, logger);
+                            resultsDir, coverageDir, timeoutInMs, installOptions, logger);
                     executor.execute(testCallable);
                 }
             }
