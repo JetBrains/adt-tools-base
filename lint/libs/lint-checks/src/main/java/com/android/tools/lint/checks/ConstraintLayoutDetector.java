@@ -23,6 +23,7 @@ import static com.android.SdkConstants.CONSTRAINT_LAYOUT;
 import static com.android.SdkConstants.CONSTRAINT_LAYOUT_LIB_ARTIFACT_ID;
 import static com.android.SdkConstants.CONSTRAINT_LAYOUT_LIB_GROUP_ID;
 import static com.android.SdkConstants.TOOLS_URI;
+import static com.android.ide.common.repository.GradleCoordinate.*;
 
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
@@ -30,7 +31,12 @@ import com.android.builder.model.AndroidLibrary;
 import com.android.builder.model.Dependencies;
 import com.android.builder.model.MavenCoordinates;
 import com.android.builder.model.Variant;
+import com.android.ide.common.repository.GradleCoordinate;
 import com.android.ide.common.repository.GradleVersion;
+import com.android.ide.common.repository.SdkMavenRepository;
+import com.android.repository.api.ProgressIndicator;
+import com.android.repository.api.RepoPackage;
+import com.android.sdklib.repository.AndroidSdkHandler;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
@@ -39,13 +45,11 @@ import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
 import com.android.tools.lint.detector.api.TextFormat;
 import com.android.tools.lint.detector.api.XmlContext;
-
+import java.util.Collection;
+import java.util.Collections;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
-
-import java.util.Collection;
-import java.util.Collections;
 
 /**
  * Check which looks for potential errors in declarations of ConstraintLayout, such as
@@ -74,8 +78,11 @@ public class ConstraintLayoutDetector extends LayoutDetector {
     /** Latest known version of the ConstraintLayout library (as a {@link GradleVersion} */
     @SuppressWarnings("ConstantConditions")
     @NonNull
-    public static final GradleVersion LATEST_KNOWN_VERSION =
-            GradleVersion.tryParse(SdkConstants.LATEST_CONSTRAINT_LAYOUT_VERSION);
+    public static final GradleCoordinate LATEST_KNOWN_VERSION =
+            new GradleCoordinate(
+                    CONSTRAINT_LAYOUT_LIB_GROUP_ID,
+                    CONSTRAINT_LAYOUT_LIB_ARTIFACT_ID,
+                    SdkConstants.LATEST_CONSTRAINT_LAYOUT_VERSION);
 
     /** Constructs a new {@link ConstraintLayoutDetector} check */
     public ConstraintLayoutDetector() {
@@ -90,6 +97,8 @@ public class ConstraintLayoutDetector extends LayoutDetector {
     public void visitElement(@NonNull XmlContext context, @NonNull Element layout) {
         // Make sure we're using the current version
         Variant variant = context.getMainProject().getCurrentVariant();
+        GradleCoordinate latestAvailable = null;
+
         if (variant != null) {
             Dependencies dependencies = GradleDetector.getCompileDependencies(
                     variant.getMainArtifact(), context.getMainProject().getGradleModelVersion());
@@ -97,16 +106,16 @@ public class ConstraintLayoutDetector extends LayoutDetector {
                 MavenCoordinates rc = library.getResolvedCoordinates();
                 if (CONSTRAINT_LAYOUT_LIB_GROUP_ID.equals(rc.getGroupId())
                     && CONSTRAINT_LAYOUT_LIB_ARTIFACT_ID.equals(rc.getArtifactId())) {
-                    String version = rc.getVersion();
-                    if (SdkConstants.LATEST_CONSTRAINT_LAYOUT_VERSION.equals(version)) {
-                        continue;
+                    if (latestAvailable == null) {
+                        latestAvailable = getLatestVersion(context);
                     }
-                    if ("1.0.0-alpha1".equals(version)
-                            || "1.0.0.-alpha2".equals(version)
-                            || "1.0.0-alpha3".equals(version)
-                            || LATEST_KNOWN_VERSION.compareTo(version) > 0) {
+                    GradleCoordinate version = new GradleCoordinate(
+                            CONSTRAINT_LAYOUT_LIB_GROUP_ID,
+                            CONSTRAINT_LAYOUT_LIB_ARTIFACT_ID,
+                            rc.getVersion());
+                    if (COMPARE_PLUS_LOWER.compare(latestAvailable, version) > 0) {
                         // Keep in sync with #isUpgradeDependencyError below
-                        String message = "Using version " + version
+                        String message = "Using version " + version.getRevision()
                                          + " of the constraint library, which is obsolete";
                         context.report(ISSUE, layout, context.getLocation(layout), message);
                     }
@@ -193,6 +202,26 @@ public class ConstraintLayoutDetector extends LayoutDetector {
                 context.report(ISSUE, element, context.getLocation(element), message);
             }
         }
+    }
+
+    @NonNull
+    private static GradleCoordinate getLatestVersion(@NonNull XmlContext context) {
+        GradleCoordinate latestAvailable = LATEST_KNOWN_VERSION;
+        AndroidSdkHandler sdkHandler = context.getClient().getSdk();
+        if (sdkHandler != null) {
+            ProgressIndicator progress = context.getClient().getRepositoryLogger();
+            RepoPackage latestPackage = SdkMavenRepository
+                    .findLatestVersion(LATEST_KNOWN_VERSION, sdkHandler, progress);
+            if (latestPackage != null) {
+                GradleCoordinate fromPackage = SdkMavenRepository
+                        .getCoordinateFromSdkPath(latestPackage.getPath());
+                if (fromPackage != null &&
+                        COMPARE_PLUS_LOWER.compare(latestAvailable, fromPackage) < 0) {
+                    latestAvailable = fromPackage;
+                }
+            }
+        }
+        return latestAvailable;
     }
 
     /**

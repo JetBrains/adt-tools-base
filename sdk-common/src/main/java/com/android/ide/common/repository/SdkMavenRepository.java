@@ -23,14 +23,16 @@ import static java.io.File.separator;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.repository.api.ConsoleProgressIndicator;
+import com.android.repository.api.LocalPackage;
 import com.android.repository.api.ProgressIndicator;
+import com.android.repository.api.RemotePackage;
 import com.android.repository.api.RepoManager;
 import com.android.repository.api.RepoPackage;
 import com.android.repository.io.FileOp;
 import com.android.repository.io.FileOpUtils;
 import com.android.sdklib.repository.AndroidSdkHandler;
+import com.android.sdklib.repository.meta.DetailsTypes;
 import com.google.common.collect.Lists;
-
 import java.io.File;
 import java.util.Collection;
 import java.util.List;
@@ -236,5 +238,80 @@ public enum SdkMavenRepository {
             }
         }
         return result;
+    }
+
+    /**
+     * Finds the latest installed version of the SDK package identified by the given
+     * {@link GradleCoordinate}. Preview versions will only be included if the given coordinate is
+     * a preview.
+     * E.g. if {@code coordinate} is {@code com.android.support.constraint:constraint-layout:1.0.0}
+     * and {@code com.android.support.constraint:constraint-layout:1.1.0} and
+     * {@code com.android.support.constraint:constraint-layout:1.2.0-alpha1} are also installed, the
+     * SDK package
+     * {@code extras;m2repository;com;android;support;constraint;constraint-layout;1.1.0} will be
+     * returned, since the provided coordinate is not a preview. If
+     * {@code com.android.support.constraint:constraint-layout:1.0.0-alpha1} is passed in,
+     * {@code extras;m2repository;com;android;support;constraint;constraint-layout;1.1.0-alpha1}
+     * will be returned.
+     *
+     * @param coordinate The {@link GradleCoordinate} identifying the artifact we're interested in.
+     * @param sdkHandler {@link AndroidSdkHandler} instance.
+     * @param progress {@link ProgressIndicator}, for logging.
+     * @return The {@link LocalPackage} with the same {@code groupId} and {@code artifactId} as the
+     * given {@code coordinate} and the highest version.
+     */
+    @Nullable
+    public static LocalPackage findLatestLocalVersion(@NonNull GradleCoordinate coordinate,
+            @NonNull AndroidSdkHandler sdkHandler, @NonNull ProgressIndicator progress) {
+        if (coordinate.getGroupId() == null || coordinate.getArtifactId() == null) {
+            return null;
+        }
+        String prefix = DetailsTypes.MavenType.getRepositoryPath(
+                coordinate.getGroupId(), coordinate.getArtifactId(), null);
+        return sdkHandler.getLatestLocalPackageForPrefix(
+                prefix, coordinate.isPreview(), GradleCoordinate::parseVersionOnly,
+                GradleCoordinate.COMPARE_PLUS_LOWER, progress);
+
+    }
+
+    /**
+     * Like {@link #findLatestLocalVersion(GradleCoordinate, AndroidSdkHandler, ProgressIndicator)},
+     * but for available {@link RemotePackage}s.
+     */
+    @Nullable
+    public static RemotePackage findLatestRemoteVersion(@NonNull GradleCoordinate coordinate,
+            @NonNull AndroidSdkHandler sdkHandler, @NonNull ProgressIndicator progress) {
+        if (coordinate.getGroupId() == null || coordinate.getArtifactId() == null) {
+            return null;
+        }
+        String prefix = DetailsTypes.MavenType.getRepositoryPath(
+                coordinate.getGroupId(), coordinate.getArtifactId(), null);
+        return sdkHandler.getLatestRemotePackageForPrefix(
+                prefix, coordinate.isPreview(), GradleCoordinate::parseVersionOnly,
+                GradleCoordinate.COMPARE_PLUS_LOWER, progress);
+
+    }
+
+    /**
+     * Like {@link #findLatestLocalVersion(GradleCoordinate, AndroidSdkHandler, ProgressIndicator)},
+     * but returns the most recent package available either locally or remotely.
+     */
+    @Nullable
+    public static RepoPackage findLatestVersion(@NonNull GradleCoordinate coordinate,
+            @NonNull AndroidSdkHandler sdkHandler, @NonNull ProgressIndicator progress) {
+        LocalPackage local = findLatestLocalVersion(coordinate, sdkHandler, progress);
+        RemotePackage remote = findLatestRemoteVersion(coordinate, sdkHandler, progress);
+        if (local == null) {
+            return remote;
+        }
+        if (remote == null) {
+            return local;
+        }
+        GradleCoordinate localCoordinate = getCoordinateFromSdkPath(local.getPath());
+        GradleCoordinate remoteCoordinate = getCoordinateFromSdkPath(remote.getPath());
+        if (GradleCoordinate.COMPARE_PLUS_LOWER.compare(localCoordinate, remoteCoordinate) < 0) {
+            return remote;
+        }
+        return local;
     }
 }
