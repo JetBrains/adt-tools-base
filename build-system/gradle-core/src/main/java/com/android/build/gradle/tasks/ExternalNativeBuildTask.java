@@ -33,7 +33,7 @@ import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.builder.core.AndroidBuilder;
 import com.android.builder.model.SyncIssue;
-import com.android.ide.common.process.ProcessException;
+import com.android.ide.common.process.BuildCommandException;
 import com.android.ide.common.process.ProcessInfoBuilder;
 import com.android.utils.StringHelper;
 import com.google.common.base.Joiner;
@@ -67,7 +67,7 @@ public class ExternalNativeBuildTask extends ExternalNativeBaseTask {
     private Set<String> targets;
 
     @TaskAction
-    void build() throws ProcessException, IOException {
+    void build() throws BuildCommandException, IOException {
         diagnostic("starting build");
         diagnostic("bringing JSON up-to-date");
         checkNotNull(getVariantName());
@@ -208,7 +208,7 @@ public class ExternalNativeBuildTask extends ExternalNativeBaseTask {
      */
     protected void executeProcessBatch(
             @NonNull List<String> libraryNames,
-            @NonNull List<String> commands) throws ProcessException {
+            @NonNull List<String> commands) throws BuildCommandException {
         // Order of building doesn't matter to final result but building in reverse order causes
         // the dependencies to be built first for CMake and ndk-build. This gives better progress
         // visibility to the user because they will see "building XXXXX.a" before
