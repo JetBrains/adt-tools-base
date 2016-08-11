@@ -31,13 +31,6 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
 import com.google.common.io.Files;
-
-import org.junit.rules.TestRule;
-import org.junit.runner.Description;
-import org.junit.runners.model.Statement;
-import org.objectweb.asm.ClassReader;
-import org.objectweb.asm.util.TraceClassVisitor;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -49,6 +42,11 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.Map;
 import java.util.logging.Logger;
+import org.junit.rules.TestRule;
+import org.junit.runner.Description;
+import org.junit.runners.model.Statement;
+import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.util.TraceClassVisitor;
 
 public class ClassEnhancement implements TestRule {
 
@@ -289,5 +287,14 @@ public class ClassEnhancement implements TestRule {
         } finally {
             inputStream.close();
         }
+    }
+
+    /** Gets the file containing the base version of the class with the specified class name. */
+    @NonNull
+    public static File getBaseClassFile(@NonNull String className) {
+        File classes = new File(ClassEnhancement.class.getResource("/").getFile()).getParentFile();
+        File baseFolder = FileUtils.join(classes, "incremental-test", "base");
+
+        return new File(baseFolder, className.replace('.', File.separatorChar) + ".class");
     }
 }
