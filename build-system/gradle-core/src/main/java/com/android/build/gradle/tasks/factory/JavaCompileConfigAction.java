@@ -169,6 +169,10 @@ public class JavaCompileConfigAction implements TaskConfigAction<AndroidJavaComp
                 LOG.info("Incremental Java compilation disabled in variant %1$s "
                                 + "as you are using an incompatible plugin",
                         scope.getVariantConfiguration().getFullName());
+            } else if (scope.getTestedVariantData() != null) {
+                // Incremental javac is currently (Gradle 2.14-2.14.1) broken for invocations
+                // that have directories on their classpath.
+                incremental = false;
             } else {
                 // For now, default to true, unless the use uses several source folders,
                 // in that case, we cannot guarantee that the incremental java works fine.

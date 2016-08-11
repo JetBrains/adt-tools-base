@@ -79,7 +79,7 @@ class HelloWorldShrinkerTest {
 
     @Test
     public void "APK is correct"() throws Exception {
-        project.execute("assembleDebug")
+        project.execute("assembleDebug", "assembleDebugAndroidTest")
         File helloWorld = findHelloWorld()
         File utils = findUtils()
 
@@ -92,7 +92,7 @@ class HelloWorldShrinkerTest {
                 "test log entry",
                 "CHANGE")
 
-        project.execute("assembleDebug")
+        project.execute("assembleDebug", "assembleDebugAndroidTest")
         checkShrinkerWasUsed(project)
 
         assertThatApk(project.getApk("debug")).containsClass("Lcom/example/helloworld/HelloWorld;")
@@ -103,7 +103,7 @@ class HelloWorldShrinkerTest {
                 "Utils.helper\\(\\);",
                 "// onCreate")
 
-        project.execute("assembleDebug")
+        project.execute("assembleDebug", "assembleDebugAndroidTest")
         checkShrinkerWasUsed(project)
 
         assertThatApk(project.getApk("debug")).containsClass("Lcom/example/helloworld/HelloWorld;")
@@ -111,14 +111,14 @@ class HelloWorldShrinkerTest {
         assertThat(helloWorld).isNewerThan(utils)
 
         FileUtils.delete(project.file("src/main/java/com/example/helloworld/Utils.java"))
-        project.execute("assembleDebug")
+        project.execute("assembleDebug", "assembleDebugAndroidTest")
 
         checkShrinkerWasUsed(project)
         assertThatApk(project.getApk("debug")).containsClass("Lcom/example/helloworld/HelloWorld;")
         assertThatApk(project.getApk("debug")).doesNotContainClass("Lcom/example/helloworld/Utils;")
 
         addUtilityClass()
-        project.execute("assembleDebug")
+        project.execute("assembleDebug", "assembleDebugAndroidTest")
 
         checkShrinkerWasUsed(project)
         assertThatApk(project.getApk("debug")).containsClass("Lcom/example/helloworld/HelloWorld;")
