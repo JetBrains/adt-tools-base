@@ -24,12 +24,10 @@ import com.android.build.gradle.external.gson.NativeToolchainValue;
 import com.android.utils.NativeSourceFileExtensions;
 import com.android.utils.NdkUtils;
 import com.android.utils.StringHelper;
-import com.google.common.base.Strings;
 import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.common.io.Files;
-
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -56,7 +54,7 @@ import java.util.stream.Collectors;
  recognizes. This will typically be calls to clang, gcc or gcc-ar. Once a command is recognized,
  its file inputs and outputs are recorded. The result is a list of Classification.
 
- (3) FlowAnaylzer.analyze accepts the output of (2). It traces the flow of inputs and ouputs. This
+ (3) FlowAnalyzer.analyze accepts the output of (2). It traces the flow of inputs and outputs. This
  flow tracing will involve intermediate steps through linking and possibly archiving (gcc-ar).
  Files involved are typically .c, .cpp, .o, .a and .so. The result of this step is a map from
  terminal outputs (.so) to original inputs (.c and .cpp).
@@ -157,17 +155,6 @@ public class NativeBuildConfigValueBuilder {
         return extensionList;
     }
 
-    private boolean areLibraryNamesUnique() {
-        Set<String> uniqueNames = new HashSet<>();
-        for (Output output : outputs) {
-            if (Strings.isNullOrEmpty(output.libraryName)) {
-                return false;
-            }
-            uniqueNames.add(output.libraryName);
-        }
-        return uniqueNames.size() == outputs.size();
-    }
-
     private void findLibraryNames() {
         for (Output output : outputs) {
             // This pattern is for standard ndk-build and should give names like:
@@ -178,12 +165,6 @@ public class NativeBuildConfigValueBuilder {
             output.libraryName = String.format("%s-%s-%s", output.artifactName,
                     output.variantName, abi);
         }
-
-        if (areLibraryNamesUnique()) {
-            return;
-        }
-
-        throw new RuntimeException("Library names not unique");
     }
 
     private void findToolChainCompilers() {

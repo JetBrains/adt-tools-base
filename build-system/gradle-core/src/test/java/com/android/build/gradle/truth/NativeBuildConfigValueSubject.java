@@ -16,18 +16,20 @@
 
 package com.android.build.gradle.truth;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
+import com.android.annotations.NonNull;
 import com.android.build.gradle.external.gson.NativeBuildConfigValue;
 import com.android.build.gradle.external.gson.NativeLibraryValue;
 import com.android.build.gradle.external.gson.NativeSourceFileValue;
 import com.android.build.gradle.external.gson.NativeSourceFolderValue;
 import com.android.build.gradle.external.gson.NativeToolchainValue;
-import com.android.utils.FileUtils;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import com.google.common.truth.FailureStrategy;
 import com.google.common.truth.Subject;
 import com.google.common.truth.SubjectFactory;
-
 import java.io.File;
 import java.lang.reflect.Field;
 import java.util.Collections;
@@ -43,7 +45,7 @@ import java.util.Set;
  */
 public class NativeBuildConfigValueSubject
         extends Subject<NativeBuildConfigValueSubject, NativeBuildConfigValue> {
-    private static ImmutableSet<String> UNORDERED_LISTS = ImmutableSet.of(
+    private static final ImmutableSet<String> UNORDERED_LISTS = ImmutableSet.of(
             "/cFileExtensions",
             "/cppFileExtensions");
 
@@ -61,6 +63,7 @@ public class NativeBuildConfigValueSubject
         super(failureStrategy, subject);
     }
 
+    @SuppressWarnings("NonBooleanMethodNameMayNotStartWithQuestion")
     public void isEqualTo(NativeBuildConfigValue other) {
 
         try {
@@ -104,14 +107,15 @@ public class NativeBuildConfigValueSubject
 
         if (expected instanceof Map) {
             check().that(actual).isInstanceOf(Map.class);
-            Map<String, ?> actualMap = (Map) actual;
-            Map<String, ?> expectedMap = (Map) expected;
+            @SuppressWarnings("unchecked") Map<String, ?> actualMap = (Map) actual;
+            @SuppressWarnings("unchecked") Map<String, ?> expectedMap = (Map) expected;
             Set<String> actualKeys = actualMap.keySet();
             Set<String> expectedKeys = expectedMap.keySet();
             check().that(actualKeys)
                 .named(levelDescription + ".keys")
                 .containsAllIn(expectedKeys);
             for (Object key : actualMap.keySet()) {
+                //noinspection SuspiciousMethodCalls,SuspiciousMethodCalls
                 assertEqual(levelDescription + "[" + key + "]",
                         actualMap.get(key), expectedMap.get(key));
             }
@@ -148,4 +152,102 @@ public class NativeBuildConfigValueSubject
         }
     }
 
+    @NonNull
+    private Set<String> getIntermediatesNames() {
+        Set<String> names = Sets.newHashSet();
+        checkNotNull(getSubject().libraries);
+        for (NativeLibraryValue library : getSubject().libraries.values()) {
+            if (library.output != null) {
+                names.add(library.output.toString());
+            }
+        }
+        return names;
+    }
+
+    @NonNull
+    private Set<String> getLibraryNames() {
+        Set<String> names = Sets.newHashSet();
+        checkNotNull(getSubject().libraries);
+        for (String library : getSubject().libraries.keySet()) {
+            names.add(library);
+        }
+        return names;
+    }
+
+    @SuppressWarnings("NonBooleanMethodNameMayNotStartWithQuestion")
+    private void hasExactOutputFiles(String... baseName) {
+        Set<String> intermediateNames = getIntermediatesNames();
+        Set<String> expected = Sets.newHashSet(baseName);
+        Set<String> expectedNotFound = Sets.newHashSet();
+        expectedNotFound.addAll(expected);
+        expectedNotFound.removeAll(intermediateNames);
+        if (!expectedNotFound.isEmpty()) {
+            failWithRawMessage("Not true that %s build outputs was %s. Set %s was missing %s",
+                    getDisplaySubject(),
+                    expected,
+                    intermediateNames,
+                    expectedNotFound);
+        }
+
+        Set<String> foundNotExpected = Sets.newHashSet();
+        foundNotExpected.addAll(intermediateNames);
+        foundNotExpected.removeAll(expected);
+        if (!foundNotExpected.isEmpty()) {
+            failWithRawMessage("Not true that %s build outputs was %s. It had extras %s",
+                    getDisplaySubject(),
+                    expected,
+                    foundNotExpected);
+        }
+    }
+
+    @SuppressWarnings("NonBooleanMethodNameMayNotStartWithQuestion")
+    public void hasExactLibraryOutputs(String... baseName) {
+        hasExactOutputFiles(baseName);
+    }
+
+    @SuppressWarnings("NonBooleanMethodNameMayNotStartWithQuestion")
+    public void hasExactLibrariesNamed(String... targets) {
+        Set<String> intermediateNames = getLibraryNames();
+        Set<String> expected = Sets.newHashSet(targets);
+        Set<String> expectedNotFound = Sets.newHashSet();
+        expectedNotFound.addAll(expected);
+        expectedNotFound.removeAll(intermediateNames);
+        if (!expectedNotFound.isEmpty()) {
+            failWithRawMessage("Not true that %s build targets was %s. Set %s was missing %s",
+                    getDisplaySubject(),
+                    expected,
+                    intermediateNames,
+                    expectedNotFound);
+        }
+
+        Set<String> foundNotExpected = Sets.newHashSet();
+        foundNotExpected.addAll(intermediateNames);
+        foundNotExpected.removeAll(expected);
+        if (!foundNotExpected.isEmpty()) {
+            failWithRawMessage("Not true that %s build targets was %s. It had extras %s",
+                    getDisplaySubject(),
+                    expected,
+                    foundNotExpected);
+        }
+    }
+
+    @SuppressWarnings("NonBooleanMethodNameMayNotStartWithQuestion")
+    public void hasUniqueLibraryNames() {
+        Set<String> names = Sets.newHashSet();
+        Set<String> duplicates = Sets.newHashSet();
+        checkNotNull(getSubject().libraries);
+        for (String library : getSubject().libraries.keySet()) {
+            if (names.contains(library)) {
+                duplicates.add(library);
+            }
+            names.add(library);
+        }
+
+        if (!duplicates.isEmpty()) {
+            failWithRawMessage(
+                    "Not true that %s libraries have unique names. It had duplications %s",
+                    getDisplaySubject(),
+                    duplicates);
+        }
+    }
 }

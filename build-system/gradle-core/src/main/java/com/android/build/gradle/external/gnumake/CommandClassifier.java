@@ -18,14 +18,14 @@ package com.android.build.gradle.external.gnumake;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.annotations.VisibleForTesting;
 import com.google.common.base.Joiner;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
-
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
-
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 
@@ -34,29 +34,24 @@ import joptsimple.OptionSet;
  * line rules of that tool.
  */
 class CommandClassifier {
+    // Native tool is static here to share with CCacheBuildTool
     @NonNull
-    static final NativeCompilerBuildTool sNativeCompilerBuildTool =
+    final private static NativeCompilerBuildTool sNativeCompilerBuildTool =
             new NativeCompilerBuildTool();
-    @NonNull
-    private static final GccArBuildTool sGccArBuildTool =
-            new GccArBuildTool();
-    @NonNull
-    private static final CCacheBuildTool sCCacheBuildTool =
-            new CCacheBuildTool();
 
     @NonNull
-    private static final BuildTool[] classifiers = {
+    @VisibleForTesting
+    static final ImmutableList<BuildTool> DEFAULT_CLASSIFIERS = ImmutableList.of(
             sNativeCompilerBuildTool,
-            sGccArBuildTool,
-            sCCacheBuildTool
-    };
+            new ArBuildTool(),
+            new CCacheBuildTool());
 
-    /**
-     * Give a string that contains a list of commands recognize the interesting calls and record
-     * information about inputs and outputs.
-     */
     @NonNull
-    static List<BuildStepInfo> classify(String commands, boolean isWin32) {
+    @VisibleForTesting
+    static List<BuildStepInfo> classify(
+            String commands,
+            boolean isWin32,
+            List<BuildTool> classifiers) {
         List<CommandLine> commandLines = CommandLineParser.parse(commands, isWin32);
 
         List<BuildStepInfo> commandSummaries = new ArrayList<>();
@@ -74,7 +69,18 @@ class CommandClassifier {
         return commandSummaries;
     }
 
-    private interface BuildTool {
+    /**
+     * Give a string that contains a list of commands recognize the interesting calls and record
+     * information about inputs and outputs.
+     */
+    @NonNull
+    static List<BuildStepInfo> classify(
+            String commands,
+            boolean isWin32) {
+        return classify(commands, isWin32, DEFAULT_CLASSIFIERS);
+    }
+
+    interface BuildTool {
         @Nullable
         BuildStepInfo createCommand(@NonNull CommandLine command);
 
@@ -86,7 +92,7 @@ class CommandClassifier {
      * We care about the cases where the command specifies 'c' for create.
      * In this case, we pull out the inputs (typically .o) and output (.a).
      */
-    static class GccArBuildTool implements BuildTool {
+    static class ArBuildTool implements BuildTool {
         @NonNull
         private static final OptionParser PARSER = new OptionParser("cSE");
 
@@ -117,13 +123,16 @@ class CommandClassifier {
             arr = command.args.toArray(arr);
             @SuppressWarnings("unchecked")
             List<String> options = (List<String>) PARSER.parse(arr).nonOptionArguments();
-            if (options.size() < 3) {
-                // Not enough space for <command> <archive> <input>
+
+            if (!options.get(0).contains("c") || options.size() < 2) { // Only match about 'create'
                 return null;
             }
 
-            if (!options.get(0).contains("c")) { // Only care about 'create'
-                return null;
+            if (options.size() == 2) {
+                // There is a real-world case where archive has zero inputs (see native_codec in
+                // NdkSamplesTest). Since there are no inputs the archive is not useful so don't
+                // declare an output in the final JSON.
+                return new BuildStepInfo(command, Lists.newArrayList(), Lists.newArrayList());
             }
 
             List<String> inputs = new ArrayList<>();
@@ -143,7 +152,9 @@ class CommandClassifier {
 
         @Override
         public boolean isMatch(@NonNull CommandLine command) {
-            return command.executable.endsWith("gcc-ar");
+            return command.executable.endsWith("gcc-ar")
+                    || command.executable.endsWith("android-ar")
+                    || command.executable.endsWith("androideabi-ar");
         }
     }
 
@@ -256,8 +267,8 @@ class CommandClassifier {
                     || executable.endsWith("clang++")
                     || executable.endsWith("clang.exe")
                     || executable.endsWith("clang++.exe")
-                    || executable.contains("-gcc-")
-                    || executable.contains("-g++-");
+                    || (executable.contains("-gcc-") && !executable.endsWith("-ar"))
+                    || (executable.contains("-g++-") && !executable.endsWith("-ar"));
         }
     }
 }

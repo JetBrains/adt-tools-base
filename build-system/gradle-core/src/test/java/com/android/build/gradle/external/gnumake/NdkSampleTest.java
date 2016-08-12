@@ -15,22 +15,27 @@
  */
 package com.android.build.gradle.external.gnumake;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.truth.Truth.assert_;
+
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.external.gson.NativeBuildConfigValue;
+import com.android.build.gradle.external.gson.NativeLibraryValue;
 import com.android.build.gradle.truth.NativeBuildConfigValueSubject;
 import com.android.utils.FileUtils;
 import com.google.common.base.Charsets;
 import com.google.common.base.Joiner;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 import com.google.common.io.Files;
 import com.google.common.truth.Truth;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-
-import org.junit.Test;
-
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -38,8 +43,12 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import org.junit.Test;
+
 
 public class NdkSampleTest {
+
     // Turn this flag to true to regenerate test baselines in the case that output has intentionally
     // changed. Should never be checked in as 'true'.
     @SuppressWarnings("FieldCanBeLocal")
@@ -47,12 +56,72 @@ public class NdkSampleTest {
     // Turn this flag to true to regenerate test JSON from preexisting baselines in the case that
     // output has intentionally changed.
     @SuppressWarnings("FieldCanBeLocal")
-    private static final boolean REGENERATE_TEST_JSON_FROM_TEXT = true;
+    private static final boolean REGENERATE_TEST_JSON_FROM_TEXT = false;
     @NonNull
     private static final String THIS_TEST_FOLDER =
             "src/test/java/com/android/build/gradle/external/gnumake/";
     private static final boolean isWindows =
             SdkConstants.currentPlatform() == SdkConstants.PLATFORM_WINDOWS;
+
+    private static final ImmutableList<CommandClassifier.BuildTool> extraTestClassifiers =
+            ImmutableList.of(
+                new NdkBuildWarningBuildTool(),
+                new NoOpBuildTool("bcc_compat"), // Renderscript
+                new NoOpBuildTool("llvm-rs-cc"), // Renderscript
+                new NoOpBuildTool("rm"),
+                new NoOpBuildTool("cd"),
+                new NoOpBuildTool("cp"),
+                new NoOpBuildTool("md"),
+                new NoOpBuildTool("del"),
+                new NoOpBuildTool("echo.exe"),
+                new NoOpBuildTool("mkdir"),
+                new NoOpBuildTool("echo"),
+                new NoOpBuildTool("copy"),
+                new NoOpBuildTool("install"),
+                new NoOpBuildTool("androideabi-strip"),
+                new NoOpBuildTool("android-strip"));
+
+    /**
+     * This build tool skips warning that can be emitted by ndk-build during -n -B processing.
+     * Example,
+     *   Android NDK: WARNING: APP_PLATFORM android-19 is larger than android:minSdkVersion
+     *   14 in {ndkPath}/samples/HelloComputeNDK/AndroidManifest.xml
+     */
+    static class NdkBuildWarningBuildTool implements CommandClassifier.BuildTool {
+        @NonNull
+        @Override
+        public BuildStepInfo createCommand(@NonNull CommandLine command) {
+            return new BuildStepInfo(command, Lists.newArrayList(), Lists.newArrayList());
+        }
+
+        @Override
+        public boolean isMatch(@NonNull CommandLine command) {
+            return command.executable.equals("Android");
+        }
+    }
+
+    /**
+     * This build tool recognizes a particular command and treats it as a build step with no
+     * inputs and no outputs.
+     */
+    static class NoOpBuildTool implements CommandClassifier.BuildTool {
+        @NonNull private final String executable;
+        NoOpBuildTool(@NonNull String executable) {
+            this.executable = executable;
+        }
+
+        @NonNull
+        @Override
+        public BuildStepInfo createCommand(@NonNull CommandLine command) {
+            return new BuildStepInfo(command, Lists.newArrayList(), Lists.newArrayList(), false);
+        }
+
+        @Override
+        public boolean isMatch(@NonNull CommandLine command) {
+            return command.executable.endsWith(executable);
+        }
+    }
+
 
     private static class Spawner {
         private static final int THREAD_JOIN_TIMEOUT_MILLIS = 2000;
@@ -186,6 +255,7 @@ public class NdkSampleTest {
                 return "unknown";
         }
     }
+
     @NonNull
     private static File getJsonFile(@NonNull File testPath, int operatingSystem) {
         return new File(
@@ -203,14 +273,14 @@ public class NdkSampleTest {
         return Spawner.spawn(command);
     }
 
-
-    private static void checkJson(String path)
+    private static NativeBuildConfigValue checkJson(String path)
             throws IOException, InterruptedException {
-        checkJson(path, SdkConstants.PLATFORM_LINUX);
+        return checkJson(path, SdkConstants.PLATFORM_LINUX);
     }
 
-    private static void checkJson(String path, int operatingSystem)
+    private static NativeBuildConfigValue checkJson(String path, int operatingSystem)
             throws IOException, InterruptedException {
+
 
         if (isWindows) {
             path = path.replace("/", "\\");
@@ -252,16 +322,35 @@ public class NdkSampleTest {
             File variantBuildOutputFile = getVariantBuildOutputFile(testPath, variantName, operatingSystem);
             String variantBuildOutputText = Joiner.on('\n')
                     .join(Files.readLines(variantBuildOutputFile, Charsets.UTF_8));
-            builder.addCommands("echo build command", variantName, variantBuildOutputText, true);
 
-            checkExpectedCompilerParserBehavior(CommandLineParser.parse(variantBuildOutputText,
-                    operatingSystem == SdkConstants.PLATFORM_WINDOWS));
+            builder.addCommands(
+                    "echo build command",
+                    variantName,
+                    variantBuildOutputText,
+                    true);
+
+
+            // Add extra command classifiers that are supposed to match all commands in the test.
+            // The checks below well see whether there are extra commands we don't know about.
+            // If there are unknown commands we need to evaluate whether they should be understood
+            // by the parser or just ignored (added to extraTestClassifiers)
+            List<CommandClassifier.BuildTool> testClassifiers = Lists.newArrayList();
+            testClassifiers.addAll(CommandClassifier.DEFAULT_CLASSIFIERS);
+            testClassifiers.addAll(extraTestClassifiers);
+            List<CommandLine> commandLines = CommandLineParser.parse(variantBuildOutputText,
+                    operatingSystem == SdkConstants.PLATFORM_WINDOWS);
+            List<BuildStepInfo> recognized = CommandClassifier.classify(variantBuildOutputText,
+                    operatingSystem == SdkConstants.PLATFORM_WINDOWS, testClassifiers);
+            checkAllCommandsRecognized(commandLines, recognized);
+            checkExpectedCompilerParserBehavior(commandLines);
         }
+
         NativeBuildConfigValue actualConfig = builder.build();
         String actualResult = new GsonBuilder()
                 .setPrettyPrinting()
                 .create()
                 .toJson(actualConfig);
+        checkOutputsHaveWhitelistedExtensions(actualConfig);
 
         String testPathString = testPath.toString();
 
@@ -288,14 +377,58 @@ public class NdkSampleTest {
 
         NativeBuildConfigValue baselineConfig = new Gson()
                 .fromJson(baselineResult, NativeBuildConfigValue.class);
-        Truth.assert_().about(NativeBuildConfigValueSubject.FACTORY)
-                .that(actualConfig).isEqualTo(baselineConfig);
+        assertThat(actualConfig).isEqualTo(baselineConfig);
+        assertThat(actualConfig).hasUniqueLibraryNames();
+        return actualConfig;
+    }
+
+    private static void checkOutputsHaveWhitelistedExtensions(NativeBuildConfigValue config) {
+        checkNotNull(config.libraries);
+        for (NativeLibraryValue library : config.libraries.values()) {
+            // These are the three extensions that should occur. These align with what CMake does.
+            checkNotNull(library.output);
+            if (library.output.toString().endsWith(".so")) {
+                continue;
+            }
+            if (library.output.toString().endsWith(".a")) {
+                continue;
+            }
+            if (!library.output.toString().contains(".")) {
+                continue;
+            }
+            throw new RuntimeException(
+                    String.format("Library output %s had an unexpected extension", library.output));
+        }
+    }
+
+    private static void checkAllCommandsRecognized(List<CommandLine> commandLines,
+            List<BuildStepInfo> recognizedBuildSteps) {
+
+        // Check that outputs occur only once
+        Map<String, BuildStepInfo> outputs = Maps.newHashMap();
+        for (BuildStepInfo recognizedBuildStep : recognizedBuildSteps) {
+            for (String output : recognizedBuildStep.getOutputs()) {
+                // Check for duplicate names
+                Truth.assertThat(outputs.keySet()).doesNotContain(output);
+                outputs.put(output, recognizedBuildStep);
+            }
+        }
+
+        if (commandLines.size() != recognizedBuildSteps.size()) {
+            // Build a set of executable commands that were classified.
+            Set<String> recognizedCommandLines = Sets.newHashSet();
+            for (BuildStepInfo recognizedBuildStep : recognizedBuildSteps) {
+                recognizedCommandLines.add(recognizedBuildStep.getCommand().executable);
+            }
+
+            Truth.assertThat(recognizedCommandLines).containsAllIn(commandLines);
+        }
     }
 
     // Find the compiler commands and check their parse against expected parse.
     private static void checkExpectedCompilerParserBehavior(List<CommandLine> commands) {
         for (CommandLine command : commands) {
-            if (CommandClassifier.sNativeCompilerBuildTool.isMatch(command)) {
+            if (new CommandClassifier.NativeCompilerBuildTool().isMatch(command)) {
                 for (String arg : command.args) {
                     if (arg.startsWith("-")) {
                         String trimmed = arg;
@@ -333,11 +466,81 @@ public class NdkSampleTest {
         }
     }
 
+    @NonNull
+    public static NativeBuildConfigValueSubject assertThat(@Nullable NativeBuildConfigValue project) {
+        return assert_().about(NativeBuildConfigValueSubject.FACTORY).that(project);
+    }
+
+    // Related to b.android.com/216676. Same source file name produces same target name.
+    @Test
+    public void duplicate_source_names() throws IOException, InterruptedException {
+        NativeBuildConfigValue config = checkJson("samples/duplicate-source-names");
+        assertThat(config).hasExactLibrariesNamed(
+                "apple-release-mips64",
+                "apple-debug-mips",
+                "apple-release-armeabi",
+                "banana-release-arm64-v8a",
+                "hello-jni-debug-armeabi",
+                "hello-jni-debug-x86_64",
+                "banana-debug-armeabi",
+                "hello-jni-release-arm64-v8a",
+                "banana-release-x86",
+                "banana-debug-mips64",
+                "banana-release-armeabi-v7a",
+                "hello-jni-debug-x86",
+                "apple-release-armeabi-v7a",
+                "hello-jni-release-mips",
+                "banana-release-armeabi",
+                "hello-jni-debug-mips",
+                "apple-release-mips",
+                "hello-jni-release-mips64",
+                "hello-jni-debug-armeabi-v7a",
+                "banana-debug-x86_64",
+                "apple-debug-arm64-v8a",
+                "apple-release-x86_64",
+                "apple-debug-armeabi",
+                "hello-jni-release-armeabi",
+                "apple-release-x86",
+                "hello-jni-release-x86",
+                "banana-debug-arm64-v8a",
+                "hello-jni-debug-mips64",
+                "hello-jni-release-x86_64",
+                "banana-debug-mips",
+                "apple-debug-mips64",
+                "apple-debug-x86",
+                "apple-release-arm64-v8a",
+                "banana-debug-x86",
+                "banana-release-mips64",
+                "hello-jni-debug-arm64-v8a",
+                "banana-debug-armeabi-v7a",
+                "hello-jni-release-armeabi-v7a",
+                "banana-release-x86_64",
+                "apple-debug-armeabi-v7a",
+                "apple-debug-x86_64",
+                "banana-release-mips");
+    }
+
     // Related to b.android.com/218397. On Windows, the wrong target name was used because it
     // was passed through File class which caused slashes to be normalized to back slash.
     @Test
     public void windows_target_name() throws IOException, InterruptedException {
-        checkJson("samples/windows-target-name", SdkConstants.PLATFORM_WINDOWS);
+        NativeBuildConfigValue config = checkJson("samples/windows-target-name",
+                SdkConstants.PLATFORM_WINDOWS);
+        assertThat(config).hasExactLibrariesNamed(
+                "hello-jni-debug-mips",
+                "hello-jni-release-mips64",
+                "hello-jni-debug-armeabi-v7a",
+                "hello-jni-debug-armeabi",
+                "hello-jni-debug-x86_64",
+                "hello-jni-release-arm64-v8a",
+                "hello-jni-release-armeabi",
+                "hello-jni-release-x86",
+                "hello-jni-debug-mips64",
+                "hello-jni-release-x86_64",
+                "hello-jni-debug-arm64-v8a",
+                "hello-jni-debug-x86",
+                "hello-jni-release-armeabi-v7a",
+                "hello-jni-release-mips");
     }
 
     // Related to b.android.com/214626
@@ -365,7 +568,12 @@ public class NdkSampleTest {
 
     @Test
     public void google_test_example() throws IOException, InterruptedException {
-        checkJson("samples/google-test-example");
+       NativeBuildConfigValue config = checkJson("samples/google-test-example");
+       assertThat(config).hasExactLibraryOutputs(
+               "{NDK}/debug/obj/local/arm64-v8a/libgoogletest_static.a",
+               "{NDK}/debug/obj/local/arm64-v8a/sample1_unittest",
+               "{NDK}/debug/obj/local/arm64-v8a/libsample1.so",
+               "{NDK}/debug/obj/local/arm64-v8a/libgoogletest_main.a");
     }
 
     @Test
@@ -422,7 +630,14 @@ public class NdkSampleTest {
     // input: support-files/ndk-sample-baselines/HelloComputeNDK.json
     @Test
     public void HelloComputeNDK() throws IOException, InterruptedException {
-        checkJson("samples/HelloComputeNDK");
+        NativeBuildConfigValue config = checkJson("samples/HelloComputeNDK");
+        assertThat(config).hasExactLibraryOutputs(
+                "{ndkPath}/samples/HelloComputeNDK/obj/local/x86/libhellocomputendk.so",
+                "{ndkPath}/samples/HelloComputeNDK/libs/armeabi-v7a/librs.mono.so",
+                "{ndkPath}/samples/HelloComputeNDK/obj/local/mips/libhellocomputendk.so",
+                "{ndkPath}/samples/HelloComputeNDK/libs/mips/librs.mono.so",
+                "{ndkPath}/samples/HelloComputeNDK/libs/x86/librs.mono.so",
+                "{ndkPath}/samples/HelloComputeNDK/obj/local/armeabi-v7a/libhellocomputendk.so");
     }
     // input: support-files/ndk-sample-baselines/test-libstdc++.json
     @Test
