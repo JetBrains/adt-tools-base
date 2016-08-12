@@ -35,6 +35,10 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
+import org.gradle.api.logging.Logger;
+import org.gradle.api.logging.Logging;
+import org.gradle.api.tasks.incremental.InputFileDetails;
+
 import java.io.File;
 import java.io.FileFilter;
 import java.util.List;
@@ -216,6 +220,8 @@ public class IntermediateFolderUtils {
                     fileSegments.subList(0, rootLocationSegments.size() + 4)));
             MutableDirectoryInput folder = new MutableDirectoryInput(name, root, types, scopes);
             // add this file to it.
+            Logging.getLogger(TransformManager.class).info(
+                    "Tagged" + file.getAbsolutePath() + " as removed");
             folder.addChangedFile(file, Status.REMOVED);
 
             // add it to the list.
@@ -499,5 +505,13 @@ public class IntermediateFolderUtils {
         }
 
         return String.format("%x", value);
+    }
+
+    @NonNull
+    static Status inputFileDetailsToStatus(@NonNull InputFileDetails inputFileDetails) {
+        if (inputFileDetails.isAdded()) return Status.ADDED;
+        if (inputFileDetails.isModified()) return Status.CHANGED;
+        if (inputFileDetails.isRemoved()) return Status.REMOVED;
+        return Status.NOTCHANGED;
     }
 }
