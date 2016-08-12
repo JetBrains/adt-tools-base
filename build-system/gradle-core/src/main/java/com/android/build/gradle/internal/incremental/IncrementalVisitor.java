@@ -289,13 +289,13 @@ public class IncrementalVisitor extends ClassVisitor {
      *
      * - If the method is a bridge method, we do not enable it for instantReload.
      *   it is most likely only calling a twin method (same name, same parameters).
-     * - if the method is abstract, we don't add a redirection.
+     * - if the method is abstract or native, we don't add a redirection.
      *
      * @param access the method access flags
      * @return true if the method should be InstantRun enabled, false otherwise.
      */
-    protected static boolean  isAccessCompatibleWithInstantRun(int access) {
-        return ((access & Opcodes.ACC_ABSTRACT) == 0) && ((access & Opcodes.ACC_BRIDGE) == 0);
+    protected static boolean isAccessCompatibleWithInstantRun(int access) {
+        return (access & (Opcodes.ACC_ABSTRACT | Opcodes.ACC_BRIDGE | Opcodes.ACC_NATIVE)) == 0;
     }
 
     @Nullable
