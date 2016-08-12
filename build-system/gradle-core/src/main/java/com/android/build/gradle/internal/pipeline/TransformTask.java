@@ -40,6 +40,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
+import org.gradle.api.logging.Logger;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.InputFiles;
 import org.gradle.api.tasks.OutputDirectories;
@@ -122,7 +123,7 @@ public class TransformTask extends StreamBasedTask implements Context {
                         Set<File> removedFiles = Sets.newHashSet();
                         if (isIncremental.getValue()) {
                             // gather the changed files first.
-                            gatherChangedFiles(incrementalTaskInputs, changedMap, removedFiles);
+                            gatherChangedFiles(getLogger(), incrementalTaskInputs, changedMap, removedFiles);
 
                             // and check against secondary files, which disables
                             // incremental mode.
@@ -269,10 +270,14 @@ public class TransformTask extends StreamBasedTask implements Context {
     }
 
     private static void gatherChangedFiles(
+            @NonNull Logger logger,
             @NonNull IncrementalTaskInputs incrementalTaskInputs,
             @NonNull final Map<File, Status> changedFileMap,
             @NonNull final Set<File> removedFiles) {
+        logger.info("Transform inputs calculations based on following changes");
         incrementalTaskInputs.outOfDate(inputFileDetails -> {
+            logger.info(inputFileDetails.getFile().getAbsolutePath() + ":"
+                    + IntermediateFolderUtils.inputFileDetailsToStatus(inputFileDetails));
             if (inputFileDetails.isAdded()) {
                 changedFileMap.put(inputFileDetails.getFile(), Status.ADDED);
             } else if (inputFileDetails.isModified()) {
@@ -281,7 +286,10 @@ public class TransformTask extends StreamBasedTask implements Context {
         });
 
         incrementalTaskInputs.removed(
-                inputFileDetails -> removedFiles.add(inputFileDetails.getFile()));
+                inputFileDetails -> {
+                        logger.info(inputFileDetails.getFile().getAbsolutePath() + ":REMOVED");
+                        removedFiles.add(inputFileDetails.getFile());
+                });
     }
 
     private boolean checkSecondaryFiles(
