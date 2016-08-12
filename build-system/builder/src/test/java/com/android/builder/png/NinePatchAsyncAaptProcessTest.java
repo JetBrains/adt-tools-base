@@ -88,7 +88,7 @@ public class NinePatchAsyncAaptProcessTest {
     private static PngCruncher getCruncher() {
         ILogger logger = new StdLogger(StdLogger.Level.VERBOSE);
         File aapt = NinePatchAaptProcessorTestUtils.getAapt(Revision.parseRevision("22.0.1"));
-        return QueuedCruncher.Builder.INSTANCE.newCruncher(aapt.getAbsolutePath(), logger);
+        return QueuedCruncher.Builder.INSTANCE.newCruncher(aapt.getAbsolutePath(), logger, 0);
     }
 
     @Parameters(name = "{1}")

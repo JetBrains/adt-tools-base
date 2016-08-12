@@ -46,6 +46,8 @@ public class AaptOptions implements com.android.builder.model.AaptOptions {
     @Nullable
     private List<String> additionalParameters;
 
+    private int cruncherProcesses = 0;
+
     public void setIgnoreAssetsPattern(@Nullable String ignoreAssetsPattern) {
         this.ignoreAssetsPattern = ignoreAssetsPattern;
     }
@@ -196,5 +198,19 @@ public class AaptOptions implements com.android.builder.model.AaptOptions {
     @Input
     public List<String> getAdditionalParameters() {
         return additionalParameters;
+    }
+
+    public void setCruncherProcesses(int cruncherProcesses) {
+        this.cruncherProcesses = cruncherProcesses;
+    }
+
+    /**
+     * Obtains the number of cruncher processes to use. More cruncher processes will crunch files
+     * faster, but will require more memory and CPU.
+     *
+     * @return the number of cruncher processes, {@code 0} to use the default
+     */
+    public int getCruncherProcesses() {
+        return cruncherProcesses;
     }
 }

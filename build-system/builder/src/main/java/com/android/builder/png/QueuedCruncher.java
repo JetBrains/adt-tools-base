@@ -44,30 +44,34 @@ public class QueuedCruncher implements PngCruncher {
     /**
      * Number of concurrent cruncher processes to launch.
      */
-    public static final int NUMBER_CRUNCHER_PROCESSES = 5;
+    private static final int DEFAULT_NUMBER_CRUNCHER_PROCESSES = 5;
 
     // use an enum to ensure singleton.
     public enum Builder {
         INSTANCE;
 
-        private final Map<String, QueuedCruncher> sInstances =
-                new ConcurrentHashMap<String, QueuedCruncher>();
+        private final Map<String, QueuedCruncher> sInstances = new ConcurrentHashMap<>();
         private final Object sLock = new Object();
 
         /**
          * Creates a new {@link com.android.builder.png.QueuedCruncher} or return an existing one
          * based on the underlying AAPT executable location.
+         *
          * @param aaptLocation the AAPT executable location.
          * @param logger the logger to use
+         * @param cruncherProcesses number of cruncher processes to use; {@code 0} to use the
+         * default number
          * @return a new of existing instance of the {@link com.android.builder.png.QueuedCruncher}
          */
         public QueuedCruncher newCruncher(
                 @NonNull String aaptLocation,
-                @NonNull ILogger logger) {
+                @NonNull ILogger logger,
+                int cruncherProcesses) {
             synchronized (sLock) {
                 logger.info("QueuedCruncher is using %1$s", aaptLocation);
                 if (!sInstances.containsKey(aaptLocation)) {
-                    QueuedCruncher queuedCruncher = new QueuedCruncher(aaptLocation, logger);
+                    QueuedCruncher queuedCruncher =
+                            new QueuedCruncher(aaptLocation, logger, cruncherProcesses);
                     sInstances.put(aaptLocation, queuedCruncher);
                 }
                 return sInstances.get(aaptLocation);
@@ -96,14 +100,15 @@ public class QueuedCruncher implements PngCruncher {
 
     private QueuedCruncher(
             @NonNull final String aaptLocation,
-            @NonNull ILogger iLogger) {
+            @NonNull ILogger iLogger,
+            int cruncherProcesses) {
         mAaptLocation = aaptLocation;
         mLogger = iLogger;
         QueueThreadContext<AaptProcess> queueThreadContext = new QueueThreadContext<AaptProcess>() {
 
             // move this to a TLS, but do not store instances of AaptProcess in it.
             @NonNull private final Map<String, AaptProcess> mAaptProcesses =
-                    new ConcurrentHashMap<String, AaptProcess>();
+                    new ConcurrentHashMap<>();
 
             @Override
             public void creation(@NonNull Thread t) throws IOException {
@@ -162,13 +167,21 @@ public class QueuedCruncher implements PngCruncher {
                 mAaptProcesses.clear();
             }
         };
+
+        int cruncherProcessToUse;
+        if (cruncherProcesses > 0) {
+            cruncherProcessToUse = cruncherProcesses;
+        } else {
+            cruncherProcessToUse = DEFAULT_NUMBER_CRUNCHER_PROCESSES;
+        }
+
         mCrunchingRequests =
                 new WorkQueue<>(
                         mLogger,
                         queueThreadContext,
                         "png-cruncher",
-                        NUMBER_CRUNCHER_PROCESSES,
-                        2f);
+                        cruncherProcessToUse,
+                        0);
     }
 
     private static final class QueuedJob extends Job<AaptProcess> {
