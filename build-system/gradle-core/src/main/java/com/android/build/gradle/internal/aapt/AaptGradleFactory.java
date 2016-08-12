@@ -28,17 +28,16 @@ import com.android.builder.internal.aapt.v2.OutOfProcessAaptV2;
 import com.android.builder.sdk.TargetInfo;
 import com.android.ide.common.process.LoggedProcessOutputHandler;
 import com.android.ide.common.process.ProcessOutputHandler;
+import com.android.ide.common.process.TeeProcessOutputHandler;
 import com.android.sdklib.BuildToolInfo;
 import com.android.utils.ILogger;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
-
-import org.gradle.api.Project;
-
 import java.io.File;
 import java.util.List;
 import java.util.regex.Pattern;
+import org.gradle.api.Project;
 
 /**
  * Factory that creates instances of {@link com.android.builder.internal.aapt.Aapt} by looking
@@ -111,7 +110,7 @@ public final class AaptGradleFactory {
             @NonNull File intermediateDir) {
         return make(
                 builder,
-                new LoggedProcessOutputHandler(new FilteringLogger(builder.getLogger())),
+                null,
                 crunchPng,
                 process9Patch,
                 project,
@@ -134,7 +133,7 @@ public final class AaptGradleFactory {
     @NonNull
     public static Aapt make(
             @NonNull AndroidBuilder builder,
-            @NonNull ProcessOutputHandler outputHandler,
+            @Nullable ProcessOutputHandler outputHandler,
             boolean crunchPng,
             boolean process9Patch,
             @NonNull Project project,
@@ -144,11 +143,16 @@ public final class AaptGradleFactory {
         Preconditions.checkNotNull(target, "target == null");
         BuildToolInfo buildTools = target.getBuildTools();
 
+        ProcessOutputHandler teeOutputHandler =
+                new TeeProcessOutputHandler(
+                        outputHandler,
+                        new LoggedProcessOutputHandler(new FilteringLogger(builder.getLogger())));
+
         if (AndroidGradleOptions.isAapt2Enabled(project) &&
                 BuildToolInfo.PathId.AAPT2.isPresentIn(buildTools.getRevision())) {
             return new OutOfProcessAaptV2(
                     builder.getProcessExecutor(),
-                    outputHandler,
+                    teeOutputHandler,
                     buildTools,
                     intermediateDir,
                     new FilteringLogger(builder.getLogger()));
@@ -164,7 +168,7 @@ public final class AaptGradleFactory {
 
             return new AaptV1(
                     builder.getProcessExecutor(),
-                    outputHandler,
+                    teeOutputHandler,
                     buildTools,
                     new FilteringLogger(builder.getLogger()),
                     processMode);
