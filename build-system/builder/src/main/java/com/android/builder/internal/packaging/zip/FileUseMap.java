@@ -22,10 +22,11 @@ import com.google.common.base.Preconditions;
 import com.google.common.base.Verify;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
-
+import com.google.common.primitives.Ints;
 import java.util.List;
 import java.util.Set;
 import java.util.SortedSet;
+import java.util.StringJoiner;
 import java.util.TreeSet;
 
 /**
@@ -54,8 +55,8 @@ class FileUseMap {
     private long mSize;
 
     /**
-     * Tree with all intervals. Contains coverage from 0 up to {@link #mSize}. If
-     * {@link #mSize} is zero then this set is empty. This is the only situation in which the map
+     * Tree with all intervals ordered by position. Contains coverage from 0 up to {@link #mSize}.
+     * If {@link #mSize} is zero then this set is empty. This is the only situation in which the map
      * will be empty.
      */
     @NonNull
@@ -367,21 +368,35 @@ class FileUseMap {
     /**
      * Locates a free area in the map with at least {@code size} bytes such that
      * {@code ((start + alignOffset) % align == 0} and such that the free space before {@code start}
-     * is not smaller than the minimum free entry size. This method will try a
-     * best-fit algorithm. If no free contiguous block exists in the map that can hold the provided
+     * is not smaller than the minimum free entry size. This method will follow the algorithm
+     * specified by {@code alg}.
+     *
+     * <p>If no free contiguous block exists in the map that can hold the provided
      * size then the first free index at the end of the map is provided. This means that the map
      * may need to be extended before data can be added.
      *
      * @param size the size of the contiguous area requested
      * @param alignOffset an offset to which alignment needs to be computed (see method description)
      * @param align alignment at the offset (see method description)
+     * @param alg which algorithm to use
      * @return the location of the contiguous area; this may be located at the end of the map
      */
-    long locateFree(long size, long alignOffset, long align) {
+    long locateFree(long size, long alignOffset, long align, @NonNull PositionAlgorithm alg) {
         Preconditions.checkArgument(size > 0, "size <= 0");
 
         FileUseMapEntry<?> minimumSizedEntry = FileUseMapEntry.makeFree(0, size);
-        SortedSet<FileUseMapEntry<?>> matches = mFree.tailSet(minimumSizedEntry);
+        SortedSet<FileUseMapEntry<?>> matches;
+
+        switch (alg) {
+            case BEST_FIT:
+                matches = mFree.tailSet(minimumSizedEntry);
+                break;
+            case FIRST_FIT:
+                matches = mMap;
+                break;
+            default:
+                throw new AssertionError();
+        }
 
         FileUseMapEntry<?> best = null;
         long bestExtraSize = 0;
@@ -405,16 +420,21 @@ class FileUseMap {
             }
 
             /*
-             * We don't care about blocks where we don't fit in.
+             * We can't leave than mMinFreeSize before. So if the extraSize is less than
+             * mMinFreeSize, we have to increase it by 'align' as many times as needed. For
+             * example, if mMinFreeSize is 20, align 4 and extraSize is 5. We need to increase it
+             * to 21 (5 + 4 * 4)
              */
-            if (curr.getSize() < (size + extraSize)) {
-                continue;
+            if (extraSize > 0 && extraSize < mMinFreeSize) {
+                int addAlignBlocks =
+                        Ints.checkedCast((mMinFreeSize - extraSize + align - 1) / align);
+                extraSize += addAlignBlocks * align;
             }
 
             /*
-             * We don't care about blocks that leave less than the minimum free size before.
+             * We don't care about blocks where we don't fit in.
              */
-            if (extraSize > 0 && extraSize < mMinFreeSize) {
+            if (curr.getSize() < (size + extraSize)) {
                 continue;
             }
 
@@ -423,11 +443,10 @@ class FileUseMap {
              * two exceptions: (1) this is the last block and (2) the next block is free in which
              * case, after coalescing, the free block with have at least the minimum size.
              */
-            if (mMinFreeSize > 0) {
+            long emptySpaceLeft = curr.getSize() - (size + extraSize);
+            if (emptySpaceLeft > 0 && emptySpaceLeft < mMinFreeSize) {
                 FileUseMapEntry<?> next = mMap.higher(curr);
-                if (next != null
-                        && !next.isFree()
-                        && curr.getSize() - (size + extraSize) < mMinFreeSize) {
+                if (next != null && !next.isFree()) {
                     continue;
                 }
             }
@@ -442,6 +461,13 @@ class FileUseMap {
 
             best = curr;
             bestExtraSize = extraSize;
+
+            /*
+             * If we're doing first fit, we don't want to search for a better one :)
+             */
+            if (alg == PositionAlgorithm.FIRST_FIT) {
+                break;
+            }
         }
 
         /*
@@ -510,5 +536,29 @@ class FileUseMap {
         Preconditions.checkNotNull(entry, "entry == null");
 
         return mMap.lower(entry);
+    }
+
+    @Override
+    public String toString() {
+        StringJoiner j = new StringJoiner(", ");
+        mMap.stream()
+                .map(e -> e.getStart() + " - " + e.getEnd() + ": " + e.getStore())
+                .forEach(j::add);
+        return "FileUseMap[" + j.toString() + "]";
+    }
+
+    /**
+     * Algorithms used to position entries in blocks.
+     */
+    public enum PositionAlgorithm {
+        /**
+         * Best fit: finds the smallest free block that can receive the entry.
+         */
+        BEST_FIT,
+
+        /**
+         * First fit: finds the first free block that can receive the entry.
+         */
+        FIRST_FIT
     }
 }

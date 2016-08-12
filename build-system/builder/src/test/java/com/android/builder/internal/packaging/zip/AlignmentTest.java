@@ -537,4 +537,247 @@ public class AlignmentTest {
                 recognizable2,
                 FileUtils.readSegment(zipFile, recognizable2Start, recognizable2.length));
     }
+
+    @Test
+    public void fillHoleWithExactEntry() throws Exception {
+        File zipFile = new File(mTemporaryFolder.getRoot(), "a.zip");
+
+        Random random = new Random();
+
+        byte[] fourtyFour = new byte[44];
+        random.nextBytes(fourtyFour);
+        byte[] recognizable = new byte[] { 1, 5, 5, 1, 5, 1, 1, 5 };
+        byte[] twoHundred = new byte[200];
+        random.nextBytes(twoHundred);
+
+        /*
+         * Start | Header End | Name end | Contents End | Name
+         * 0     | 30         | 59       | 103          | "File taking exactly 103 bytes"
+         * 103   | 133        | 136      | 144          | "foo"
+         * 144   | 174        | 196      | 396          | "File taking more space"
+         */
+        try (ZFile zf = new ZFile(zipFile)) {
+            zf.add("File taking exactly 103 bytes", new ByteArrayInputStream(fourtyFour), false);
+            zf.add("foo", new ByteArrayInputStream(recognizable), false);
+            zf.add("File taking more space", new ByteArrayInputStream(twoHundred), false);
+        }
+
+        assertArrayEquals(fourtyFour, FileUtils.readSegment(zipFile, 59, fourtyFour.length));
+        assertArrayEquals(recognizable, FileUtils.readSegment(zipFile, 136, recognizable.length));
+        assertArrayEquals(twoHundred, FileUtils.readSegment(zipFile, 196, twoHundred.length));
+
+        /*
+         * Remove the middle file.
+         */
+        try (ZFile zf = new ZFile(zipFile)) {
+            StoredEntry fooEntry = zf.get("foo");
+            assertNotNull(fooEntry);
+            fooEntry.delete();
+        }
+
+        /*
+         * Add the file again with 4-byte alignment. Because the file fits exactly in the hole, it
+         * is placed there.
+         */
+        byte[] recognizable2 = new byte[] { 2, 6, 6, 2, 6, 2, 2, 6 };
+
+        ZFileOptions zfo = new ZFileOptions();
+        zfo.setCoverEmptySpaceUsingExtraField(true);
+        zfo.setAlignmentRule(AlignmentRules.constant(4));
+        try (ZFile zf = new ZFile(zipFile, zfo)) {
+            zf.add("bar", new ByteArrayInputStream(recognizable2), false);
+        }
+
+        assertArrayEquals(fourtyFour, FileUtils.readSegment(zipFile, 59, fourtyFour.length));
+        assertArrayEquals(recognizable2, FileUtils.readSegment(zipFile, 136, recognizable2.length));
+        assertArrayEquals(twoHundred, FileUtils.readSegment(zipFile, 196, twoHundred.length));
+    }
+
+    @Test
+    public void fillHoleWithSmallEntry() throws Exception {
+        File zipFile = new File(mTemporaryFolder.getRoot(), "a.zip");
+
+        Random random = new Random();
+
+        byte[] fourtyFour = new byte[44];
+        random.nextBytes(fourtyFour);
+        byte[] recognizable = new byte[] { 1, 5, 5, 1, 5, 1, 1, 5, 1, 5, 5, 1, 5, 1, 1, 5 };
+        byte[] twoHundred = new byte[200];
+        random.nextBytes(twoHundred);
+
+        /*
+         * Start | Header End | Name end | Contents End | Name
+         * 0     | 30         | 59       | 103          | "File taking exactly 103 bytes"
+         * 103   | 133        | 136      | 152          | "foo"
+         * 152   | 182        | 204      | 404          | "File taking more space"
+         */
+        try (ZFile zf = new ZFile(zipFile)) {
+            zf.add("File taking exactly 103 bytes", new ByteArrayInputStream(fourtyFour), false);
+            zf.add("foo", new ByteArrayInputStream(recognizable), false);
+            zf.add("File taking more space", new ByteArrayInputStream(twoHundred), false);
+        }
+
+        assertArrayEquals(fourtyFour, FileUtils.readSegment(zipFile, 59, fourtyFour.length));
+        assertArrayEquals(recognizable, FileUtils.readSegment(zipFile, 136, recognizable.length));
+        assertArrayEquals(twoHundred, FileUtils.readSegment(zipFile, 204, twoHundred.length));
+
+        /*
+         * Remove the middle file.
+         */
+        try (ZFile zf = new ZFile(zipFile)) {
+            StoredEntry fooEntry = zf.get("foo");
+            assertNotNull(fooEntry);
+            fooEntry.delete();
+        }
+
+        /*
+         * Add a smaller file. It should fit nicely as:
+         *
+         * Start | Header End | Name end | Contents End | Name
+         * 0     | 30         | 59       | 103          | "File taking exactly 103 bytes"
+         * 103   | 133        | 136      | 140          | "bar"
+         * 140 - 152 (empty)
+         * 152   | 182        | 204      | 404          | "File taking more space"
+         */
+        byte[] recognizable2 = new byte[] { 7, 7, 7, 7 };
+
+        ZFileOptions zfo = new ZFileOptions();
+        zfo.setCoverEmptySpaceUsingExtraField(true);
+        zfo.setAlignmentRule(AlignmentRules.constant(4));
+        try (ZFile zf = new ZFile(zipFile, zfo)) {
+            zf.add("bar", new ByteArrayInputStream(recognizable2), false);
+        }
+
+        assertArrayEquals(fourtyFour, FileUtils.readSegment(zipFile, 59, fourtyFour.length));
+        assertArrayEquals(recognizable2, FileUtils.readSegment(zipFile, 136, recognizable2.length));
+        assertArrayEquals(twoHundred, FileUtils.readSegment(zipFile, 204, twoHundred.length));
+    }
+
+    @Test
+    public void fillHoleWithSmallerEntryNotEnoughFreeSpace() throws Exception {
+        File zipFile = new File(mTemporaryFolder.getRoot(), "a.zip");
+
+        Random random = new Random();
+
+        byte[] fourtyFour = new byte[44];
+        random.nextBytes(fourtyFour);
+        byte[] recognizable = new byte[] { 1, 5, 5, 1, 5, 1, 1, 5, 1, 5, 5, 1, 5, 1, 1, 5 };
+        byte[] twoHundred = new byte[200];
+        random.nextBytes(twoHundred);
+
+        /*
+         * Start | Header End | Name end | Contents End | Name
+         * 0     | 30         | 59       | 103          | "File taking exactly 103 bytes"
+         * 103   | 133        | 136      | 152          | "foo"
+         * 152   | 182        | 204      | 404          | "File taking more space"
+         */
+        try (ZFile zf = new ZFile(zipFile)) {
+            zf.add("File taking exactly 103 bytes", new ByteArrayInputStream(fourtyFour), false);
+            zf.add("foo", new ByteArrayInputStream(recognizable), false);
+            zf.add("File taking more space", new ByteArrayInputStream(twoHundred), false);
+        }
+
+        assertArrayEquals(fourtyFour, FileUtils.readSegment(zipFile, 59, fourtyFour.length));
+        assertArrayEquals(recognizable, FileUtils.readSegment(zipFile, 136, recognizable.length));
+        assertArrayEquals(twoHundred, FileUtils.readSegment(zipFile, 204, twoHundred.length));
+
+        /*
+         * Remove the middle file.
+         */
+        try (ZFile zf = new ZFile(zipFile)) {
+            StoredEntry fooEntry = zf.get("foo");
+            assertNotNull(fooEntry);
+            fooEntry.delete();
+        }
+
+        /*
+         * Add a smaller file. But it can't fit because it would leave less than 6 bytes to
+         * cover in the next file:
+         *
+         * Start | Header End | Name end | Contents End | Name
+         * 0     | 30         | 59       | 103          | "File taking exactly 103 bytes"
+         * 103   | 133        | 136      | 148          | "foo"
+         * 148 - 152 (empty)
+         * 152   | 182        | 204      | 404          | "File taking more space"
+         *
+         * So we end up with:
+         *
+         * Start | Header End | Name end | Contents End | Name
+         * 0     | 30         | 59       | 103          | "File taking exactly 103 bytes"
+         * 152   | 182        | 204      | 404          | "File taking more space"
+         * 404   | 434 -> 441 | 444      | 456          | "bar"
+         */
+        byte[] recognizable2 = new byte[] { 7, 7, 7, 7, 8, 8, 8, 8, 9, 9, 9, 9 };
+
+        ZFileOptions zfo = new ZFileOptions();
+        zfo.setCoverEmptySpaceUsingExtraField(true);
+        zfo.setAlignmentRule(AlignmentRules.constant(4));
+        try (ZFile zf = new ZFile(zipFile, zfo)) {
+            zf.add("bar", new ByteArrayInputStream(recognizable2), false);
+        }
+
+        assertArrayEquals(fourtyFour, FileUtils.readSegment(zipFile, 59, fourtyFour.length));
+        assertArrayEquals(recognizable2, FileUtils.readSegment(zipFile, 444, recognizable2.length));
+        assertArrayEquals(twoHundred, FileUtils.readSegment(zipFile, 204, twoHundred.length));
+    }
+
+    @Test
+    public void fillHoleWithSmallerEntryEnoughFreeSpaceButRequiresExtraOffset() throws Exception {
+        File zipFile = new File(mTemporaryFolder.getRoot(), "a.zip");
+
+        Random random = new Random();
+
+        byte[] fourtyFour = new byte[44];
+        random.nextBytes(fourtyFour);
+        byte[] recognizable = new byte[] { 1, 5, 5, 1, 5, 1, 1, 5, 1, 5, 5, 1, 5, 1, 1, 5 };
+        byte[] twoHundred = new byte[200];
+        random.nextBytes(twoHundred);
+
+        /*
+         * Start | Header End | Name end | Contents End | Name
+         * 0     | 30         | 59       | 103          | "File taking exactly 103 bytes"
+         * 103   | 133        | 136      | 152          | "foo"
+         * 152   | 182        | 204      | 404          | "File taking more space"
+         */
+        try (ZFile zf = new ZFile(zipFile)) {
+            zf.add("File taking exactly 103 bytes", new ByteArrayInputStream(fourtyFour), false);
+            zf.add("foo", new ByteArrayInputStream(recognizable), false);
+            zf.add("File taking more space", new ByteArrayInputStream(twoHundred), false);
+        }
+
+        assertArrayEquals(fourtyFour, FileUtils.readSegment(zipFile, 59, fourtyFour.length));
+        assertArrayEquals(recognizable, FileUtils.readSegment(zipFile, 136, recognizable.length));
+        assertArrayEquals(twoHundred, FileUtils.readSegment(zipFile, 204, twoHundred.length));
+
+        /*
+         * Remove the middle file.
+         */
+        try (ZFile zf = new ZFile(zipFile)) {
+            StoredEntry fooEntry = zf.get("foo");
+            assertNotNull(fooEntry);
+            fooEntry.delete();
+        }
+
+        /*
+         * Add a smaller file. It will fit, but not aligned at 140 because that would require
+         * adding less than 6 bytes in the local header. It has to move to 150.
+         *
+         * Start | Header End | Name end | Contents End | Name
+         * 0     | 30         | 59       | 103          | "File taking exactly 103 bytes"
+         * 103   | 133        | 150      | 152          | "foo"
+         * 152   | 182        | 204      | 404          | "File taking more space"
+         */
+        byte[] recognizable2 = new byte[] { 10, 10 };
+
+        ZFileOptions zfo = new ZFileOptions();
+        zfo.setCoverEmptySpaceUsingExtraField(true);
+        zfo.setAlignmentRule(AlignmentRules.constant(10));
+        try (ZFile zf = new ZFile(zipFile, zfo)) {
+            zf.add("bar", new ByteArrayInputStream(recognizable2), false);
+        }
+
+        assertArrayEquals(fourtyFour, FileUtils.readSegment(zipFile, 59, fourtyFour.length));
+        assertArrayEquals(recognizable2, FileUtils.readSegment(zipFile, 150, recognizable2.length));
+        assertArrayEquals(twoHundred, FileUtils.readSegment(zipFile, 204, twoHundred.length));
+    }
 }

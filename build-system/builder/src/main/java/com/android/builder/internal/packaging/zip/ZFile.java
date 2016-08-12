@@ -40,7 +40,6 @@ import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
-
 import java.io.ByteArrayInputStream;
 import java.io.Closeable;
 import java.io.File;
@@ -802,6 +801,7 @@ public class ZFile implements Closeable {
     /**
      * Updates the file writing new entries and removing deleted entries. This will force
      * reopening the file as read/write if the file wasn't open in read/write mode.
+     * 
      * @throws IOException failed to update the file; this exception may have been thrown by
      * the compressor but only reported here
      */
@@ -998,7 +998,7 @@ public class ZFile implements Closeable {
                  * This entry is too far from the previous one. Remove it and re-add it to the
                  * zip file.
                  */
-                reAdd(storedEntry);
+                reAdd(storedEntry, PositionHint.LOWEST_OFFSET);
             }
         }
     }
@@ -1009,9 +1009,11 @@ public class ZFile implements Closeable {
      * being dirty.
      *
      * @param entry the entry
+     * @param positionHint hint to where the file should be positioned when re-adding
      * @throws IOException failed to load the entry into memory
      */
-    private void reAdd(@NonNull StoredEntry entry) throws IOException {
+    private void reAdd(@NonNull StoredEntry entry, @NonNull PositionHint positionHint)
+            throws IOException {
         String name = entry.getCentralDirectoryHeader().getName();
         FileUseMapEntry<StoredEntry> mapEntry = mEntries.get(name);
         Preconditions.checkNotNull(mapEntry);
@@ -1021,9 +1023,33 @@ public class ZFile implements Closeable {
 
         mMap.remove(mapEntry);
         mEntries.remove(name);
-        FileUseMapEntry<StoredEntry> positioned = positionInFile(entry);
+        FileUseMapEntry<StoredEntry> positioned = positionInFile(entry, positionHint);
         mEntries.put(name, positioned);
         mDirty = true;
+    }
+
+    /**
+     * Invoked from {@link StoredEntry} when entry has changed in a way that forces the local
+     * header to be rewritten
+     *
+     * @param entry the entry that changed
+     * @param resized was the local header resized?
+     * @throws IOException failed to load the entry into memory
+     */
+    void localHeaderChanged(@NonNull StoredEntry entry, boolean resized) throws IOException {
+        mDirty = true;
+
+        if (resized) {
+            reAdd(entry, PositionHint.ANYWHERE);
+        }
+    }
+
+    /**
+     * Invoked when the central directory has changed and needs to be rewritten.
+     */
+    void centralDirectoryChanged() {
+        mDirty = true;
+        deleteDirectoryAndEocd();
     }
 
     /**
@@ -1591,7 +1617,8 @@ public class ZFile implements Closeable {
             replaceStore = null;
         }
 
-        FileUseMapEntry<StoredEntry> fileUseMapEntry = positionInFile(newEntry);
+        FileUseMapEntry<StoredEntry> fileUseMapEntry =
+                positionInFile(newEntry, PositionHint.ANYWHERE);
         mEntries.put(newEntry.getCentralDirectoryHeader().getName(), fileUseMapEntry);
 
         mDirty = true;
@@ -1610,17 +1637,33 @@ public class ZFile implements Closeable {
      * when updating the file and would create a hole in the zip. Me no like holes. Holes are evil.
      *
      * @param entry the entry to place in the zip
+     * @param positionHint hint to where the file should be positioned
      * @return the position in the file where the entry should be placed
      */
     @NonNull
-    private FileUseMapEntry<StoredEntry> positionInFile(@NonNull StoredEntry entry)
+    private FileUseMapEntry<StoredEntry> positionInFile(
+            @NonNull StoredEntry entry,
+            @NonNull PositionHint positionHint)
             throws IOException {
         deleteDirectoryAndEocd();
         long size = entry.getInFileSize();
         int localHeaderSize = entry.getLocalHeaderSize();
         int alignment = chooseAlignment(entry);
 
-        long newOffset = mMap.locateFree(size, localHeaderSize, alignment);
+        FileUseMap.PositionAlgorithm algorithm;
+
+        switch (positionHint) {
+            case LOWEST_OFFSET:
+                algorithm = FileUseMap.PositionAlgorithm.FIRST_FIT;
+                break;
+            case ANYWHERE:
+                algorithm = FileUseMap.PositionAlgorithm.BEST_FIT;
+                break;
+            default:
+                throw new AssertionError();
+        }
+
+        long newOffset = mMap.locateFree(size, localHeaderSize, alignment, algorithm);
         long newEnd = newOffset + entry.getInFileSize();
         if (newEnd > mMap.size()) {
             mMap.extend(newEnd);
@@ -1803,9 +1846,8 @@ public class ZFile implements Closeable {
      * file
      */
     boolean realign(@NonNull StoredEntry entry) throws IOException {
-
-        FileUseMapEntry<StoredEntry> mapEntry = mEntries.get(
-                entry.getCentralDirectoryHeader().getName());
+        FileUseMapEntry<StoredEntry> mapEntry =
+                mEntries.get(entry.getCentralDirectoryHeader().getName());
         Verify.verify(entry == mapEntry.getStore());
         long currentDataOffset = mapEntry.getStart() + entry.getLocalHeaderSize();
 
@@ -1824,8 +1866,12 @@ public class ZFile implements Closeable {
              * than find another place in the map.
              */
             mMap.remove(mapEntry);
-            long newStart = mMap.locateFree(mapEntry.getSize(), entry.getLocalHeaderSize(),
-                    expectedAlignment);
+            long newStart =
+                    mMap.locateFree(
+                            mapEntry.getSize(),
+                            entry.getLocalHeaderSize(),
+                            expectedAlignment,
+                            FileUseMap.PositionAlgorithm.BEST_FIT);
             mapEntry = mMap.add(newStart, newStart + entry.getInFileSize(), entry);
             mEntries.put(entry.getCentralDirectoryHeader().getName(), mapEntry);
 
@@ -2236,7 +2282,8 @@ public class ZFile implements Closeable {
         mEntries.clear();
         for (StoredEntry entry : sortedEntries) {
             String name = entry.getCentralDirectoryHeader().getName();
-            FileUseMapEntry<StoredEntry> positioned = positionInFile(entry);
+            FileUseMapEntry<StoredEntry> positioned =
+                    positionInFile(entry, PositionHint.LOWEST_OFFSET);
             mEntries.put(name, positioned);
         }
 
@@ -2280,5 +2327,20 @@ public class ZFile implements Closeable {
          */
 
         return data;
+    }
+
+    /**
+     * Hint to where files should be positioned.
+     */
+    enum PositionHint {
+        /**
+         * File may be positioned anywhere, caller doesn't care.
+         */
+        ANYWHERE,
+
+        /**
+         * File should be positioned at the lowest offset possible.
+         */
+        LOWEST_OFFSET
     }
 }
