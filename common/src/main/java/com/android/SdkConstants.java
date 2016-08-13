@@ -649,6 +649,7 @@ public final class SdkConstants {
 
     /* Android ConstraintLayout Constants */
     public static final String CLASS_CONSTRAINT_LAYOUT = "android.support.constraint.ConstraintLayout";     //$NON-NLS-1$
+    public static final String CLASS_CONSTRAINT_LAYOUT_PARAMS = "android.support.constraint.ConstraintLayout$LayoutParams";     //$NON-NLS-1$
     public static final String CLASS_TABLE_CONSTRAINT_LAYOUT = "android.support.constraint.TableConstraintLayout";     //$NON-NLS-1$
     public static final String CLASS_CONSTRAINT_LAYOUT_GUIDELINE = "android.support.constraint.Guideline";     //$NON-NLS-1$
     public static final String CONSTRAINT_LAYOUT_LIB_GROUP_ID = "com.android.support.constraint";
