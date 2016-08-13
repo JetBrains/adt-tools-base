@@ -116,8 +116,19 @@ public class AnnotationProcessorLib extends AbstractAndroidTestApp implements An
                     + "targetCompatibility = '1.7'\n"
                     + "sourceCompatibility = '1.7'\n");
 
-    public AnnotationProcessorLib() {
-        addFiles(annotation, metatinf, processor, buildGradle);
+    private  AnnotationProcessorLib(boolean isCompiler) {
+        addFiles(annotation, buildGradle);
+        if (isCompiler) {
+            addFiles(processor, metatinf);
+        }
+    }
+
+    public static AnnotationProcessorLib createCompiler() {
+        return new AnnotationProcessorLib(true);
+    }
+
+    public static AnnotationProcessorLib createLibrary() {
+        return new AnnotationProcessorLib(false);
     }
 
     @Override
