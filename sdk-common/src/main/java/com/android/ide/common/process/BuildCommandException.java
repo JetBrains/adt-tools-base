@@ -25,7 +25,7 @@ public class BuildCommandException extends ProcessException {
     private static final String BUILD_COMMAND_FAILED = "Build command failed.";
 
     public BuildCommandException(String message) {
-        super(message);
+        super(message.replaceAll("\r\n", "\n"));
     }
 
     /**
