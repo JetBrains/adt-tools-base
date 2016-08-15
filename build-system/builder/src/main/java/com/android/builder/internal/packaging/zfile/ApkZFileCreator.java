@@ -163,7 +163,6 @@ class ApkZFileCreator implements ApkCreator {
             return;
         }
 
-        mZip.sortZipContents();
         mZip.close();
         mClosed = true;
     }

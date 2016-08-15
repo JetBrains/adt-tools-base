@@ -19,6 +19,7 @@ package com.android.builder.internal.packaging.zip;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
@@ -1125,6 +1126,84 @@ public class ZFileTest {
             StoredEntry entry = zf.get("file");
             assertNotNull(entry);
             assertEquals(4, entry.getCentralDirectoryHeader().getUncompressedSize());
+        }
+    }
+
+    @Test
+    public void replaceVeryLargeFileWithBiggerInMiddleOfZip() throws Exception {
+        File zipFile = new File(mTemporaryFolder.getRoot(), "x");
+
+        long small1Offset;
+        long small2Offset;
+        ZFileOptions coverOptions = new ZFileOptions();
+        coverOptions.setCoverEmptySpaceUsingExtraField(true);
+        try (ZFile zf = new ZFile(zipFile, coverOptions)) {
+            zf.add("small1", new ByteArrayInputStream(new byte[] { 0, 1 }));
+        }
+
+        try (ZFile zf = new ZFile(zipFile, coverOptions)) {
+            zf.add("verybig", new ByteArrayInputStream(new byte[100_000]), false);
+        }
+
+        try (ZFile zf = new ZFile(zipFile, coverOptions)) {
+            zf.add("small2", new ByteArrayInputStream(new byte[] { 0, 1 }));
+        }
+
+        try (ZFile zf = new ZFile(zipFile, coverOptions)) {
+            StoredEntry se = zf.get("small1");
+            assertNotNull(se);
+            small1Offset = se.getCentralDirectoryHeader().getOffset();
+
+            se = zf.get("small2");
+            assertNotNull(se);
+            small2Offset = se.getCentralDirectoryHeader().getOffset();
+
+            se = zf.get("verybig");
+            assertNotNull(se);
+            se.delete();
+
+            zf.add("evenbigger", new ByteArrayInputStream(new byte[110_000]), false);
+        }
+
+        try (ZFile zf = new ZFile(zipFile, coverOptions)) {
+            StoredEntry se = zf.get("small1");
+            assertNotNull(se);
+            assertEquals(se.getCentralDirectoryHeader().getOffset(), small1Offset);
+
+            se = zf.get("small2");
+            assertNotNull(se);
+            assertNotEquals(se.getCentralDirectoryHeader().getOffset(), small2Offset);
+        }
+    }
+
+    @Test
+    public void regressionRepackingDoesNotFail() throws Exception {
+        File zipFile = new File(mTemporaryFolder.getRoot(), "x");
+
+        ZFileOptions coverOptions = new ZFileOptions();
+        coverOptions.setCoverEmptySpaceUsingExtraField(true);
+        try (ZFile zf = new ZFile(zipFile, coverOptions)) {
+            zf.add("small_1", new ByteArrayInputStream(new byte[] { 0, 1 }));
+            zf.add("very_big", new ByteArrayInputStream(new byte[100_000]), false);
+            zf.add("small_2", new ByteArrayInputStream(new byte[] { 0, 1 }));
+            zf.add("big", new ByteArrayInputStream(new byte[10_000]), false);
+            zf.add("small_3", new ByteArrayInputStream(new byte[] { 0, 1 }));
+        }
+
+        /*
+         * Regression we're covering is that small_2 cannot be extended to cover up for the space
+         * taken by very_big and needs to be repositioned. However, the algorithm to reposition
+         * will put it in the best-fitting block, which is the one in "big", failing to actually
+         * move it backwards in the file.
+         */
+        try (ZFile zf = new ZFile(zipFile, coverOptions)) {
+            StoredEntry se = zf.get("big");
+            assertNotNull(se);
+            se.delete();
+
+            se = zf.get("very_big");
+            assertNotNull(se);
+            se.delete();
         }
     }
 }

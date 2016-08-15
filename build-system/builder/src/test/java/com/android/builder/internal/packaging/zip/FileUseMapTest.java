@@ -76,7 +76,7 @@ public class FileUseMapTest {
 
             long blockSize = 1 + rand.nextInt(MAX_RANDOM_BLOCK_SIZE);
             long start = map.locateFree(blockSize, rand.nextInt(MAX_RANDOM_ALIGNMENT),
-                    rand.nextInt(MAX_RANDOM_ALIGNMENT));
+                    rand.nextInt(MAX_RANDOM_ALIGNMENT), FileUseMap.PositionAlgorithm.BEST_FIT);
             long end = start + blockSize;
             if (end >= mapSize) {
                 mapSize *= 2;
