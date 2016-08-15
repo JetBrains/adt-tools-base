@@ -919,4 +919,38 @@ public class StringFormatDetectorTest extends AbstractCheckTest {
                 ));
     }
 
+    public void testVarArgs() throws Exception {
+        // Regression test for https://code.google.com/p/android/issues/detail?id=219152
+        // Varargs wasn't handled correctly in some scenarios.
+        assertEquals("No warnings.",
+
+                lintProject(
+                        java("src/test/pkg/VarArgs.java", ""
+                                + "package test.pkg;\n"
+                                + "\n"
+                                + "import android.content.res.Resources;\n"
+                                + "\n"
+                                + "public class VarArgs {\n"
+                                + "    private static void test(Resources resources, int itemsCount) {\n"
+                                + "        String first = \"John\";\n"
+                                + "        String last = \"Doe\";\n"
+                                + "        String[] args = {first, last};\n"
+                                + "        resources.getString(R.string.some_string, first, last);\n"
+                                + "        resources.getString(R.string.some_string, args);\n"
+                                + "    }\n"
+                                + "\n"
+                                + "    public static final class R {\n"
+                                + "        public static final class string {\n"
+                                + "            public static final int some_string = 0x7f0a0000;\n"
+                                + "        }\n"
+                                + "    }\n"
+                                + "}\n"),
+                        xml("res/values/strings.xml", ""
+                                + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                                + "<resources>\n"
+                                + "    <string name=\"some_string\">First name: %1$s Last name: %2$s</string>\n"
+                                + "</resources>\n"
+                                + "\n")
+                ));
+    }
 }

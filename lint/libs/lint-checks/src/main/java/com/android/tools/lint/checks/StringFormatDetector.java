@@ -1162,11 +1162,13 @@ public class StringFormatDetector extends ResourceXmlDetector implements JavaPsi
                 boolean argWasReference = false;
                 if (lastArg instanceof PsiReference) {
                     PsiElement resolved = ((PsiReference) lastArg).resolve();
-
-
                     if (resolved instanceof PsiVariable) {
                         PsiExpression initializer = ((PsiVariable) resolved).getInitializer();
                         if (initializer instanceof PsiNewExpression) {
+                            argWasReference = true;
+                            // Now handled by check below
+                            lastArg = initializer;
+                        } else if (initializer instanceof PsiArrayInitializerExpression) {
                             argWasReference = true;
                             // Now handled by check below
                             lastArg = initializer;
@@ -1200,6 +1202,11 @@ public class StringFormatDetector extends ResourceXmlDetector implements JavaPsi
                     } else {
                         passingVarArgsArray = true;
                     }
+                } else if (lastArg instanceof PsiArrayInitializerExpression) {
+                    PsiArrayInitializerExpression initializer =
+                            (PsiArrayInitializerExpression) lastArg;
+                    callCount = initializer.getInitializers().length;
+                    passingVarArgsArray = true;
                 }
             }
         }
