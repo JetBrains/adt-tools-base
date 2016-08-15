@@ -44,23 +44,23 @@ import com.google.common.io.Files;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.SettableFuture;
-
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
-
 import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
-
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 
 /**
  * A {@link MergeWriter} for assets, using {@link ResourceItem}.
@@ -81,7 +81,7 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
     private DocumentBuilderFactory mFactory;
 
     @NonNull
-    private final AaptCompiler mAaptCompiler;
+    private final ResourceCompiler mResourceCompiler;
 
     /**
      * map of XML values files to write after parsing all the files. the key is the qualifier.
@@ -107,19 +107,45 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
     @NonNull
     private final File mTemporaryDirectory;
 
+    /**
+     * File where {@link #mCompiledFileMap} is read from and where its contents are written.
+     */
+    @NonNull
+    private final File mCompiledFileMapFile;
+
+    /**
+     * Maps resource files to their compiled files. Used to compiled resources that no longer
+     * exist.
+     */
+    private final Properties mCompiledFileMap;
+
     public MergedResourceWriter(@NonNull File rootFolder,
             @Nullable File publicFile,
             @Nullable File blameLogFolder,
             @NonNull ResourcePreprocessor preprocessor,
-            @NonNull AaptCompiler aaptCompiler,
+            @NonNull ResourceCompiler resourceCompiler,
             @NonNull File temporaryDirectory) {
         super(rootFolder);
-        mAaptCompiler = aaptCompiler;
+        mResourceCompiler = resourceCompiler;
         mPublicFile = publicFile;
         mMergingLog = blameLogFolder != null ? new MergingLog(blameLogFolder) : null;
         mPreprocessor = preprocessor;
         mCompiling = new ConcurrentLinkedDeque<>();
         mTemporaryDirectory = temporaryDirectory;
+
+        mCompiledFileMapFile = new File(temporaryDirectory, "compile-file-map.properties");
+        mCompiledFileMap = new Properties();
+        if (mCompiledFileMapFile.exists()) {
+            try (FileReader fr = new FileReader(mCompiledFileMapFile)) {
+                mCompiledFileMap.load(fr);
+            } catch (IOException e) {
+                /*
+                 * If we can't load the map, then we proceed without one. This means that
+                 * we won't be able to delete compiled resource files if the original ones
+                 * are deleted.
+                 */
+            }
+        }
     }
 
     public static MergedResourceWriter createWriterWithoutPngCruncher(
@@ -176,6 +202,12 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
         mValuesResMap = null;
         mQualifierWithDeletedValues = null;
         mFactory = null;
+
+        try (FileWriter fw = new FileWriter(mCompiledFileMapFile)) {
+            mCompiledFileMap.store(fw, null);
+        } catch (IOException e) {
+            throw new ConsumerException(e);
+        }
     }
 
     @Override
@@ -214,7 +246,7 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
 
                     try {
                         ListenableFuture<File> result =
-                                mAaptCompiler.compile(file, getRootFolder());
+                                mResourceCompiler.compile(file, getRootFolder());
                         mCompiling.add(result);
                         result.addListener(() -> {
                             try {
@@ -230,6 +262,10 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
                                 if (mMergingLog != null) {
                                     mMergingLog.logCopy(file, outFile);
                                 }
+
+                                mCompiledFileMap.put(
+                                        file.getAbsolutePath(),
+                                        outFile.getAbsolutePath());
                             } catch (Exception e) {
                                 /*
                                  * We will detect any exceptions (or generate them during copy)
@@ -383,7 +419,7 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
                     /*
                      * Now, compile the file using aapt.
                      */
-                    Future<File> f = mAaptCompiler.compile(outFile, getRootFolder());
+                    Future<File> f = mResourceCompiler.compile(outFile, getRootFolder());
                     File result = f.get();
                     if (result == null) {
                         /*
@@ -431,34 +467,44 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
                     ResourceFolderType.VALUES.getName() + RES_QUALIFIER_SEP + key :
                     ResourceFolderType.VALUES.getName();
 
-            removeOutFile(folderName, folderName + DOT_XML);
+            removeOutFile(FileUtils.join(getRootFolder(), folderName, folderName + DOT_XML));
         }
     }
 
     /**
      * Removes a file that already exists in the out res folder. This has to be a non value file.
      *
-     * @param resourceItem the source item that created the file to remove.
+     * @param resourceItem the source item that created the file to remove, this item must have
+     * a file associated with it
      * @return true if success.
      */
     private boolean removeOutFile(ResourceItem resourceItem) {
-        return removeOutFile(getFolderName(resourceItem), resourceItem.getFile().getName());
+        File fileToRemove;
+
+        File file = resourceItem.getFile();
+        String compiledFilePath = mCompiledFileMap.getProperty(file.getAbsolutePath());
+        if (compiledFilePath != null) {
+            fileToRemove = new File(compiledFilePath);
+        } else {
+            fileToRemove =
+                    FileUtils.join(getRootFolder(), getFolderName(resourceItem), file.getName());
+        }
+
+        return removeOutFile(fileToRemove);
     }
 
     /**
      * Removes a file from a folder based on a sub folder name and a filename
      *
-     * @param folderName the sub folder name
-     * @param fileName   the file name.
-     * @return true if success.
+     * @param fileToRemove the file to remove
+     * @return true if success
      */
-    private boolean removeOutFile(String folderName, String fileName) {
-        File valuesFolder = new File(getRootFolder(), folderName);
-        File outFile = new File(valuesFolder, fileName);
+    private boolean removeOutFile(@NonNull File fileToRemove) {
         if (mMergingLog != null) {
-            mMergingLog.logRemove(new SourceFile(outFile));
+            mMergingLog.logRemove(new SourceFile(fileToRemove));
         }
-        return outFile.delete();
+
+        return fileToRemove.delete();
     }
 
     /**
