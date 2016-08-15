@@ -16,19 +16,20 @@
 
 package com.android.utils;
 
+import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
+import com.android.SdkConstants;
 import com.google.common.base.Strings;
 import com.google.common.io.Files;
-
+import java.io.File;
+import java.io.IOException;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
-
-import java.io.File;
-import java.io.IOException;
 
 /**
  * Test cases for {@link FileUtils}.
@@ -57,54 +58,92 @@ public class FileUtilsTest {
     }
 
     @Test
-    public void testGetValidFileName() {
-        File folder = new File("/Users/foo");
+    public void testGetValidFileName() throws IOException {
+        File directory = new File("/Users/foo");
 
-        // Test difference cases
-        assertEquals("foo.txt", FileUtils.getValidFileName("foo", "txt", folder));
+        // Test the "normal" case
+        assertThat(FileUtils.getValidFileName("foo", "txt", directory)).isEqualTo("foo.txt");
 
-        assertEquals("foo_bar_9b26b3a10a2a56167a248302b46e3b89dfad1436.txt",
-                FileUtils.getValidFileName("foo/bar", "txt", folder));
+        // Test real-world file path
+        assertThat(
+                FileUtils.getValidFileName(
+                        "com.android.support/design/23.3.0/jars/classes.jar"
+                                + "_build=23.0_jumbo=false_multidex=true_optimize=false",
+                        "jar",
+                        directory))
+                .isEqualTo(
+                        "com_android_support_design_23_3_0_jars_classes_jar"
+                                + "_build_23_0_jumbo_false_multidex_true_optimize_false"
+                                + "_0979f3a79bbb13e755cfaa70190a4dbc116600f5.jar");
 
-        assertEquals("foo_txt_8cde625cbac2b10d192205d5ff4d4c7f0e0f6652",
-                FileUtils.getValidFileName("foo.txt", "", folder));
+        // Test Windows-based file path
+        assertThat(
+                FileUtils.getValidFileName(
+                        "com.android.support\\design\\23.3.0\\jars\\classes.jar"
+                                + "_build=23.0_jumbo=false_multidex=true_optimize=false",
+                        "jar",
+                        directory))
+                .isEqualTo(
+                        "com_android_support_design_23_3_0_jars_classes_jar"
+                                + "_build_23_0_jumbo_false_multidex_true_optimize_false"
+                                + "_48d7fda3351450337c26a2990bef21df95f65685.jar");
 
-        assertEquals("0e90102b9cef85ad1b63495b745fd88493434e27.txt",
-                FileUtils.getValidFileName(Strings.repeat("a", 252), "txt", folder));
+        // Test unusual file name
+        assertThat(
+                FileUtils.getValidFileName(
+                        "foo`-=[]\\\\;',./~!@#$%^&*()_+{}|:\\\"<>?", "...!@#", directory))
+                .isEqualTo(
+                        "foo__________________________________"
+                                + "_387e0d11003e554ddceaeca12af15839dbd51643.______");
 
-        // Test with real-world strings
-        assertEquals("support_annotations_23_3_0_jar_b6069f782045b0d1d75f482dc7b50ab5a47ca301"
-                        + "_build_23_0_3_jumbo_true_multidex_false_optimize_true"
-                        + "_2a17141d2f7e7cf2f843981b64cdba23ff6a89eb",
-                FileUtils.getValidFileName("support-annotations-23.3.0.jar"
-                        + "_b6069f782045b0d1d75f482dc7b50ab5a47ca301"
-                        + "_build=23.0.3_jumbo=true_multidex=false_optimize=true", "", folder));
+        // Test empty extension
+        assertThat(FileUtils.getValidFileName("foo", "", directory)).isEqualTo("foo");
 
-        assertEquals("support_annotations_23_3_0_jar_b6069f782045b0d1d75f482dc7b50ab5a47ca301"
-                        + "_build_23_0_3_jumbo_true_multidex_false_optimize_true"
-                        + "_f4a3588c7a7c868d1744db3efec62a1a55a09feb.jar",
-                FileUtils.getValidFileName("support-annotations-23.3.0.jar"
-                        + "_b6069f782045b0d1d75f482dc7b50ab5a47ca301"
-                        + "_build=23.0.3_jumbo=true_multidex=false_optimize=true", "jar", folder));
+        // Test long file name
+        assertThat(FileUtils.getValidFileName(Strings.repeat("a", 252), "txt", directory))
+                .isEqualTo("7d872a53e320bcdb5adce13b87a7e7671fef6780.txt");
 
-        assertEquals("com_android_support_design_23_3_0_jars_classes_jar"
-                        + "_build_23_0_jumbo_false_multidex_true_optimize_false"
-                        + "_257309c81655b3994736fe539357cce8b601039b",
-                FileUtils.getValidFileName("com.android.support/design/23.3.0/jars/classes.jar"
-                        + "_build=23.0_jumbo=false_multidex=true_optimize=false", "", folder));
+        // Test long file path
+        try {
+            FileUtils.getValidFileName("foo", "txt", new File("/", Strings.repeat("a", 4088)));
+            fail("expected IOException");
+        } catch (IOException exception) {
+            assertTrue(exception.getMessage().startsWith("File name or file path is too long: "));
+        }
+    }
 
-        assertEquals("com_android_support_design_23_3_0_jars_classes_jar"
-                        + "_build_23_0_jumbo_false_multidex_true_optimize_false"
-                        + "_b96934d0692bb33631e089a71698a446d847ba2c.jar",
-                FileUtils.getValidFileName("com.android.support/design/23.3.0/jars/classes.jar"
-                        + "_build=23.0_jumbo=false_multidex=true_optimize=false", "jar", folder));
+    @Test
+    public void testIsFileNameTooLong() throws IOException {
+        assertFalse(FileUtils.isFileNameTooLong(Strings.repeat("a", 255)));
+        assertTrue(FileUtils.isFileNameTooLong(Strings.repeat("a", 256)));
     }
 
     @Test
     public void testIsFilePathTooLong() throws IOException {
-        File folder = new File("/Users/foo");
-        assertFalse(FileUtils.isFilePathTooLong("bar", folder));
-        assertTrue(FileUtils.isFilePathTooLong(Strings.repeat("a", 256), folder));
+        File directory = new File("/Users/foo");
+        assertFalse(FileUtils.isFilePathTooLong("bar", directory));
+
+        assertFalse(FileUtils.isFilePathTooLong(Strings.repeat("a", 255), directory));
+        assertTrue(FileUtils.isFilePathTooLong(Strings.repeat("a", 256), directory));
+
+        if (SdkConstants.currentPlatform() == SdkConstants.PLATFORM_WINDOWS) {
+            assertFalse(
+                    FileUtils.isFilePathTooLong(
+                            "foo.txt", new File("C:\\", Strings.repeat("a", 249))));
+            assertTrue(
+                    FileUtils.isFilePathTooLong(
+                            "foo.txt", new File("C:\\", Strings.repeat("a", 250))));
+        } else {
+            assertFalse(
+                    FileUtils.isFilePathTooLong(
+                            "foo.txt", new File("/", Strings.repeat("a", 4087))));
+            assertTrue(
+                    FileUtils.isFilePathTooLong(
+                            "foo.txt", new File("/", Strings.repeat("a", 4088))));
+        }
+
+        // Test Windows-based file path
+        assertFalse(FileUtils.isFilePathTooLong("bar", new File("C:\\Users\\foo")));
     }
 
     @Test

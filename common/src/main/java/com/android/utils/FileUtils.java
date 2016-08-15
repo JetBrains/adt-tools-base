@@ -36,6 +36,7 @@ import java.io.EOFException;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.StandardCopyOption;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -485,12 +486,12 @@ public final class FileUtils {
      * @param baseName the base name of the requested file name
      * @param extension the extension of the requested file name (empty string if not available)
      * @param directory the directory where the file will be located
+     * @throws IOException if the requested file name or file path is too long
      */
     @NonNull
     public static String getValidFileName(
-            @NonNull String baseName,
-            @NonNull String extension,
-            @NonNull File directory) {
+            @NonNull String baseName, @NonNull String extension, @NonNull File directory)
+            throws IOException {
         String fileName = (extension.isEmpty() ? baseName : (baseName + "." + extension));
 
         String validBaseName = baseName.replaceAll("[^a-zA-Z0-9]", "_");
@@ -500,7 +501,7 @@ public final class FileUtils {
 
         // Add a hash code to the returned file name to avoid accidental collision (when two
         // different requested file names produce the same returned file name)
-        String fileHash = Hashing.sha1().hashString(fileName, Charsets.UTF_16LE).toString();
+        String fileHash = Hashing.sha1().hashString(fileName, StandardCharsets.UTF_8).toString();
         if (!validFileName.equals(fileName)) {
             validFileName = validBaseName + "_" + fileHash + validExtensionWithDot;
         }
@@ -512,12 +513,21 @@ public final class FileUtils {
 
             // If the file name/file path is still too long, throw a RuntimeException
             if (isFilePathTooLong(validFileName, directory)) {
-                throw new RuntimeException("File name or file path is too long: "
+                throw new IOException("File name or file path is too long: "
                         + new File(directory, validFileName).getAbsolutePath());
             }
         }
 
         return validFileName;
+    }
+
+    /**
+     * Returns <code>true</code> if the file name is too long.
+     *
+     * @param fileName the file name
+     */
+    public static boolean isFileNameTooLong(@NonNull String fileName) {
+        return fileName.length() > 255;
     }
 
     /**
@@ -527,9 +537,15 @@ public final class FileUtils {
      * @param directory the directory where the file will be located
      */
     public static boolean isFilePathTooLong(@NonNull String fileName, @NonNull File directory) {
-        return (fileName.length() > 255
-                || (new File(directory, fileName).getAbsolutePath().length() > 240
-                        && SdkConstants.currentPlatform() == SdkConstants.PLATFORM_WINDOWS));
-    }
+        if (isFileNameTooLong(fileName)) {
+            return true;
+        }
 
+        int filePathLength = new File(directory, fileName).getAbsolutePath().length();
+        if (SdkConstants.currentPlatform() == SdkConstants.PLATFORM_WINDOWS) {
+            return filePathLength > 260;
+        } else {
+            return filePathLength > 4096;
+        }
+    }
 }
