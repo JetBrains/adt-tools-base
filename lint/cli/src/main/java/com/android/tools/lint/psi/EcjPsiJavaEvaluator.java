@@ -25,6 +25,7 @@ import com.google.common.collect.Lists;
 import com.intellij.psi.PsiAnnotation;
 import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiClassType;
+import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiMethod;
 import com.intellij.psi.PsiModifierList;
@@ -37,7 +38,10 @@ import org.eclipse.jdt.internal.compiler.ast.AbstractMethodDeclaration;
 import org.eclipse.jdt.internal.compiler.ast.TypeDeclaration;
 import org.eclipse.jdt.internal.compiler.lookup.AnnotationBinding;
 import org.eclipse.jdt.internal.compiler.lookup.Binding;
+import org.eclipse.jdt.internal.compiler.lookup.FieldBinding;
+import org.eclipse.jdt.internal.compiler.lookup.LocalVariableBinding;
 import org.eclipse.jdt.internal.compiler.lookup.MethodBinding;
+import org.eclipse.jdt.internal.compiler.lookup.PackageBinding;
 import org.eclipse.jdt.internal.compiler.lookup.ReferenceBinding;
 
 import java.io.File;
@@ -379,10 +383,87 @@ public class EcjPsiJavaEvaluator extends JavaEvaluator {
     }
 
     @NonNull
-    private static PsiAnnotation[] getDirectAnnotations(@NonNull PsiModifierListOwner owner) {
+    private PsiAnnotation[] getDirectAnnotations(@NonNull PsiModifierListOwner owner) {
+        // Look up external annotations to merge in
+        ExternalAnnotationRepository repository = mManager.getAnnotationRepository();
+        Collection<PsiAnnotation> annotations = null;
+        if (repository != null) {
+            if (owner instanceof EcjPsiMethod) {
+                MethodBinding binding = ((EcjPsiMethod) owner).getBinding();
+                if (binding != null) {
+                    annotations = repository.getAnnotations(binding);
+                }
+            } else if (owner instanceof EcjPsiBinaryMethod) {
+                MethodBinding binding = ((EcjPsiBinaryMethod) owner).getBinding();
+                annotations = repository.getAnnotations(binding);
+            } else if (owner instanceof EcjPsiClass) {
+                ReferenceBinding binding = ((EcjPsiClass) owner).getBinding();
+                if (binding != null) {
+                    annotations = repository.getAnnotations(binding);
+                }
+            } else if (owner instanceof EcjPsiBinaryClass) {
+                ReferenceBinding binding = ((EcjPsiBinaryClass) owner).getTypeBinding();
+                annotations = repository.getAnnotations(binding);
+            } else if (owner instanceof EcjPsiField) {
+                FieldBinding binding = ((EcjPsiField) owner).getFieldBinding();
+                if (binding != null) {
+                    annotations = repository.getAnnotations(binding);
+                }
+            } else if (owner instanceof EcjPsiParameter) {
+                EcjPsiParameter parameter = (EcjPsiParameter) owner;
+                EcjPsiSourceElement parent = parameter.getParent();
+                LocalVariableBinding binding = parameter.getVariableBinding();
+                if (parent instanceof PsiParameterList && binding != null) {
+                    int index = ((PsiParameterList) parent).getParameterIndex(parameter);
+                    MethodBinding enclosingMethod = binding.getEnclosingMethod();
+                    if (enclosingMethod != null) {
+                        if (index != -1) {
+                            annotations = repository.getParameterAnnotations(enclosingMethod,
+                                    index);
+                        }
+                    }
+                }
+            } else if (owner instanceof EcjPsiBinaryParameter) {
+                EcjPsiBinaryParameter parameter = (EcjPsiBinaryParameter) owner;
+                PsiElement parent = parameter.getParent();
+                EcjPsiBinaryMethod method = parameter.getOwnerMethod();
+                MethodBinding enclosingMethod = method.getBinding();
+                if (parent instanceof PsiParameterList) {
+                    int index = ((PsiParameterList) parent).getParameterIndex(parameter);
+                    if (index != -1) {
+                        annotations = repository.getParameterAnnotations(enclosingMethod, index);
+                    }
+                }
+            } else if (owner instanceof EcjPsiBinaryField) {
+                FieldBinding binding = ((EcjPsiBinaryField) owner).getBinding();
+                if (binding != null) {
+                    annotations = repository.getAnnotations(binding);
+                }
+            } else if (owner instanceof EcjPsiPackage) {
+                PackageBinding binding = ((EcjPsiPackage) owner).getPackageBinding();
+                if (binding != null) {
+                    annotations = repository.getAnnotations(binding);
+                }
+            }
+        }
+
         PsiModifierList modifierList = owner.getModifierList();
         if (modifierList != null) {
-            return modifierList.getAnnotations();
+            PsiAnnotation[] modifierAnnotations = modifierList.getAnnotations();
+            if (modifierAnnotations.length > 0) {
+                if (annotations != null && !annotations.isEmpty()) {
+                    List<PsiAnnotation> combined = Lists.newArrayList(modifierAnnotations);
+                    combined.addAll(annotations);
+                    return combined.toArray(PsiAnnotation.EMPTY_ARRAY);
+                } else {
+                    return modifierAnnotations;
+                }
+            } else if (annotations != null && !annotations.isEmpty()) {
+                return annotations.toArray(PsiAnnotation.EMPTY_ARRAY);
+            }
+            return modifierAnnotations;
+        } else if (annotations != null && !annotations.isEmpty()) {
+            return annotations.toArray(PsiAnnotation.EMPTY_ARRAY);
         } else {
             return PsiAnnotation.EMPTY_ARRAY;
         }

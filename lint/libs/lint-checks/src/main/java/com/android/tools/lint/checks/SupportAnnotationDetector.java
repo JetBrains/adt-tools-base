@@ -1865,7 +1865,7 @@ public class SupportAnnotationDetector extends Detector implements JavaPsiScanne
 
     @NonNull
     static PsiAnnotation[] filterRelevantAnnotations(
-            @NonNull PsiAnnotation[] annotations) {
+            @NonNull JavaEvaluator evaluator, @NonNull PsiAnnotation[] annotations) {
         List<PsiAnnotation> result = null;
         int length = annotations.length;
         if (length == 0) {
@@ -1890,7 +1890,7 @@ public class SupportAnnotationDetector extends Detector implements JavaPsiScanne
                     return annotations;
                 }
                 if (result == null) {
-                    result = new ArrayList<PsiAnnotation>(2);
+                    result = new ArrayList<>(2);
                 }
                 result.add(annotation);
             }
@@ -1909,27 +1909,25 @@ public class SupportAnnotationDetector extends Detector implements JavaPsiScanne
                 continue;
             }
             PsiClass cls = (PsiClass)resolved;
-            PsiModifierList modifierList = cls.getModifierList();
-            if (modifierList != null) {
-                PsiAnnotation[] innerAnnotations = modifierList.getAnnotations();
-                for (int j = 0; j < innerAnnotations.length; j++) {
-                    PsiAnnotation inner = innerAnnotations[j];
-                    String a = inner.getQualifiedName();
-                    if (a == null) {
-                        continue;
+            PsiAnnotation[] innerAnnotations = evaluator.getAllAnnotations(cls, false);
+            for (int j = 0; j < innerAnnotations.length; j++) {
+                PsiAnnotation inner = innerAnnotations[j];
+                String a = inner.getQualifiedName();
+                if (a == null || a.startsWith("java.")) {
+                    // @Override, @SuppressWarnings etc. Ignore
+                    continue;
+                }
+                if (a.equals(INT_DEF_ANNOTATION)
+                        || a.equals(PERMISSION_ANNOTATION)
+                        || a.equals(INT_RANGE_ANNOTATION)
+                        || a.equals(STRING_DEF_ANNOTATION)) {
+                    if (length == 1 && j == innerAnnotations.length - 1 && result == null) {
+                        return innerAnnotations;
                     }
-                    if (a.equals(INT_DEF_ANNOTATION)
-                            || a.equals(PERMISSION_ANNOTATION)
-                            || a.equals(INT_RANGE_ANNOTATION)
-                            || a.equals(STRING_DEF_ANNOTATION)) {
-                        if (length == 1 && j == innerAnnotations.length - 1) {
-                            return innerAnnotations;
-                        }
-                        if (result == null) {
-                            result = new ArrayList<>(2);
-                        }
-                        result.add(inner);
+                    if (result == null) {
+                        result = new ArrayList<>(2);
                     }
+                    result.add(inner);
                 }
             }
         }
@@ -1942,10 +1940,8 @@ public class SupportAnnotationDetector extends Detector implements JavaPsiScanne
 
     @Override
     public List<Class<? extends PsiElement>> getApplicablePsiTypes() {
-        List<Class<? extends PsiElement>> types = new ArrayList<Class<? extends PsiElement>>(3);
+        List<Class<? extends PsiElement>> types = new ArrayList<Class<? extends PsiElement>>(2);
         types.add(PsiCallExpression.class);
-        //types.add(PsiMethodCallExpression.class);
-        //types.add(PsiNewExpression.class);
         types.add(PsiEnumConstant.class);
         return types;
     }
@@ -1983,7 +1979,7 @@ public class SupportAnnotationDetector extends Detector implements JavaPsiScanne
             JavaEvaluator evaluator = mContext.getEvaluator();
 
             PsiAnnotation[] methodAnnotations = evaluator.getAllAnnotations(method, true);
-            methodAnnotations = filterRelevantAnnotations(methodAnnotations);
+            methodAnnotations = filterRelevantAnnotations(evaluator, methodAnnotations);
 
             // Look for annotations on the class as well: these trickle
             // down to all the methods in the class
@@ -1991,7 +1987,7 @@ public class SupportAnnotationDetector extends Detector implements JavaPsiScanne
             PsiAnnotation[] classAnnotations;
             if (containingClass != null) {
                 classAnnotations = evaluator.getAllAnnotations(containingClass, true);
-                classAnnotations = filterRelevantAnnotations(classAnnotations);
+                classAnnotations = filterRelevantAnnotations(evaluator, classAnnotations);
             } else {
                 classAnnotations = PsiAnnotation.EMPTY_ARRAY;
             }
@@ -2020,7 +2016,7 @@ public class SupportAnnotationDetector extends Detector implements JavaPsiScanne
                     PsiExpression argument = arguments[i];
                     PsiParameter parameter = parameters[i];
                     annotations = evaluator.getAllAnnotations(parameter, true);
-                    annotations = filterRelevantAnnotations(annotations);
+                    annotations = filterRelevantAnnotations(evaluator, annotations);
                     checkParameterAnnotations(mContext, argument, call, method, annotations);
                 }
                 if (annotations != null) {

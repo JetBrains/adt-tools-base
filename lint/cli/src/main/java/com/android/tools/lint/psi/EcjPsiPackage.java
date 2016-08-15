@@ -142,4 +142,9 @@ class EcjPsiPackage extends EcjPsiBinaryElement implements PsiPackage, PsiModifi
         }
         return null;
     }
+
+    @Nullable
+    public PackageBinding getPackageBinding() {
+        return mPackageBinding;
+    }
 }

@@ -712,4 +712,9 @@ class EcjPsiClass extends EcjPsiSourceElement implements PsiClass {
         SourceTypeBinding binding = ((TypeDeclaration) mNativeNode).binding;
         return binding != null ? binding.hashCode() : 0;
     }
+
+    @Nullable
+    public ReferenceBinding getBinding() {
+        return ((TypeDeclaration) mNativeNode).binding;
+    }
 }

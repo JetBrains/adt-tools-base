@@ -54,6 +54,7 @@ import static com.android.tools.lint.detector.api.ResourceEvaluator.RES_SUFFIX;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.tools.lint.client.api.IssueRegistry;
+import com.android.tools.lint.client.api.JavaEvaluator;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.ConstantEvaluator;
 import com.android.tools.lint.detector.api.Detector;
@@ -512,7 +513,7 @@ public class AnnotationDetector extends Detector implements JavaPsiScanner {
                     PsiAnnotation[] annotations = mContext.getEvaluator().getAllAnnotations(
                             (PsiModifierListOwner)resolved, true);
                     PsiAnnotation annotation = SupportAnnotationDetector.findIntDef(
-                            filterRelevantAnnotations(annotations));
+                            filterRelevantAnnotations(mContext.getEvaluator(), annotations));
                     if (annotation != null) {
                         return annotation;
                     }
@@ -570,9 +571,10 @@ public class AnnotationDetector extends Detector implements JavaPsiScanner {
             } else if (node instanceof PsiMethodCallExpression) {
                 PsiMethod method = ((PsiMethodCallExpression) node).resolveMethod();
                 if (method != null) {
-                    PsiAnnotation[] annotations = mContext.getEvaluator().getAllAnnotations(method, true);
+                    JavaEvaluator evaluator = mContext.getEvaluator();
+                    PsiAnnotation[] annotations = evaluator.getAllAnnotations(method, true);
                     PsiAnnotation annotation = SupportAnnotationDetector.findIntDef(
-                            filterRelevantAnnotations(annotations));
+                            filterRelevantAnnotations(evaluator, annotations));
                     if (annotation != null) {
                         return annotation;
                     }

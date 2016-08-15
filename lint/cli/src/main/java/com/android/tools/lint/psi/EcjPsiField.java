@@ -177,4 +177,9 @@ class EcjPsiField extends EcjPsiMember implements PsiField {
     public int hashCode() {
         return mDeclaration.binding != null ? mDeclaration.binding.hashCode() : 0;
     }
+
+    @Nullable
+    FieldBinding getFieldBinding() {
+        return mDeclaration.binding;
+    }
 }

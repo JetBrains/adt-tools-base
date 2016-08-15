@@ -2054,4 +2054,57 @@ public class SupportAnnotationDetectorTest extends AbstractCheckTest {
                                 + "}\n")
                 ));
     }
+
+    public void testSnackbarDuration() throws Exception {
+        assertEquals(""
+                + "src/test/pkg/SnackbarTest.java:13: Error: Must be one of: Snackbar.LENGTH_INDEFINITE, Snackbar.LENGTH_SHORT, Snackbar.LENGTH_LONG or value must be ≥ 1 (was -100) [WrongConstant]\n"
+                + "        makeSnackbar(-100); // ERROR\n"
+                + "                     ~~~~\n"
+                + "1 errors, 0 warnings\n",
+                lintProject(
+                        java("src/test/pkg/SnackbarTest.java", ""
+                                + "package test.pkg;\n"
+                                + "\n"
+                                + "import android.support.design.widget.Snackbar;\n"
+                                + "\n"
+                                + "public class SnackbarTest {\n"
+                                + "    public Snackbar makeSnackbar(@Snackbar.Duration int duration) {\n"
+                                + "        return null;\n"
+                                + "    }\n"
+                                + "\n"
+                                + "    public void test() {\n"
+                                + "        makeSnackbar(Snackbar.LENGTH_LONG); // OK\n"
+                                + "        makeSnackbar(100); // OK\n"
+                                + "        makeSnackbar(-100); // ERROR\n"
+                                + "    }\n"
+                                + "}\n"),
+                        java("src/android/support/design/widget/Snackbar.java", ""
+                                + "package android.support.design.widget;\n"
+                                + "\n"
+                                + "import android.support.annotation.IntDef;\n"
+                                + "import android.support.annotation.IntRange;\n"
+                                + "\n"
+                                + "import java.lang.annotation.Retention;\n"
+                                + "import java.lang.annotation.RetentionPolicy;\n"
+                                + "\n"
+                                + "public class Snackbar {\n"
+                                // In the real class definition, this annotation is there,
+                                // but in the compiled design library, since it has source
+                                // retention, the @IntDef is missing and only the @IntRange
+                                // remains. Therefore, it's been extracted into the external
+                                // database. We don't want to count it twice so don't repeat
+                                // it here:
+                                //+ "    @IntDef({LENGTH_INDEFINITE, LENGTH_SHORT, LENGTH_LONG})\n"
+                                + "    @IntRange(from = 1)\n"
+                                + "    @Retention(RetentionPolicy.SOURCE)\n"
+                                + "    public @interface Duration {}\n"
+                                + "\n"
+                                + "    public static final int LENGTH_INDEFINITE = -2;\n"
+                                + "    public static final int LENGTH_SHORT = -1;\n"
+                                + "    public static final int LENGTH_LONG = 0;\n"
+                                + "}\n"),
+                        copy("src/android/support/annotation/IntDef.java.txt", "src/android/support/annotation/IntDef.java"),
+                        copy("src/android/support/annotation/IntRange.java.txt", "src/android/support/annotation/IntRange.java")
+                ));
+    }
 }

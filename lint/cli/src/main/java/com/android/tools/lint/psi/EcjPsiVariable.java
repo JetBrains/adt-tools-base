@@ -140,4 +140,9 @@ abstract class EcjPsiVariable extends EcjPsiSourceElement implements PsiVariable
     public int hashCode() {
         return mVariable.binding != null ? mVariable.binding.hashCode() : 0;
     }
+
+    @Nullable
+    LocalVariableBinding getVariableBinding() {
+        return mVariable != null ? mVariable.binding : null;
+    }
 }

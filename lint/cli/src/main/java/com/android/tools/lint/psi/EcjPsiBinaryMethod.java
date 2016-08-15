@@ -62,6 +62,7 @@ class EcjPsiBinaryMethod extends EcjPsiBinaryElement implements PsiMethod, PsiPa
         mMethodBinding = binding;
     }
 
+    @NonNull
     @Override
     public MethodBinding getBinding() {
         return mMethodBinding;
