@@ -307,12 +307,12 @@ public class ProGuardTransform extends BaseProguardAction {
             if (filter != null) {
                 builder.addAll(filter);
             }
-            builder.add("!**/*.class");
+            builder.add("!**.class");
             filter = builder.build();
         } else if (!content.getContentTypes().contains(DefaultContentType.RESOURCES)) {
             // if the content is not meant to contain resources, we ignore them
             // in case they are present (by accepting only classes.)
-            filter = ImmutableList.of("**/*.class");
+            filter = ImmutableList.of("**.class");
         }
 
         inputJar(classPath, content.getFile(), filter);

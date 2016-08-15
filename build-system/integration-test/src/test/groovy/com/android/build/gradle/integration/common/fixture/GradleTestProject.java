@@ -509,6 +509,14 @@ public class GradleTestProject implements TestRule {
     }
 
     /**
+     * Return the path to the default Java main source dir.
+     */
+    public File getMainSrcDir() {
+        assertThat(testDir).isNotNull();
+        return FileUtils.join(testDir, "src", "main", "java");
+    }
+
+    /**
      * Return the build.gradle of the test project.
      */
     public File getSettingsFile() {
