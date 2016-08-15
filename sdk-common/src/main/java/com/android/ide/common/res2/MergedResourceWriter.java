@@ -303,9 +303,18 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
             case GENERATED_FILES:
                 if (replacedType == DataFile.FileType.SINGLE_FILE
                         || replacedType == DataFile.FileType.GENERATED_FILES) {
-                    // Save one IO operation and don't delete a file that will be overwritten
-                    // anyway.
-                    break;
+
+                    File removedFile = getResourceOutputFile(removedItem);
+                    File replacedFile = getResourceOutputFile(replacedBy);
+                    if (removedFile.equals(replacedFile)) {
+                        /*
+                         * There are two reasons to skip this: 1. we save an IO operation by
+                         * deleting a file that will be overwritten. 2. if we did delete the file,
+                         * we would have to be careful about concurrency to make sure we would be
+                         * deleting the *old* file and not the overwritten version.
+                         */
+                        break;
+                    }
                 }
                 removeOutFile(removedItem);
                 break;
@@ -472,6 +481,23 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
     }
 
     /**
+     * Obtains the where te merged resource is located.
+     *
+     * @param resourceItem the resource item
+     * @return the file
+     */
+    @NonNull
+    private File getResourceOutputFile(@NonNull ResourceItem resourceItem) {
+        File file = resourceItem.getFile();
+        String compiledFilePath = mCompiledFileMap.getProperty(file.getAbsolutePath());
+        if (compiledFilePath != null) {
+            return new File(compiledFilePath);
+        } else {
+            return FileUtils.join(getRootFolder(), getFolderName(resourceItem), file.getName());
+        }
+    }
+
+    /**
      * Removes a file that already exists in the out res folder. This has to be a non value file.
      *
      * @param resourceItem the source item that created the file to remove, this item must have
@@ -479,17 +505,7 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
      * @return true if success.
      */
     private boolean removeOutFile(ResourceItem resourceItem) {
-        File fileToRemove;
-
-        File file = resourceItem.getFile();
-        String compiledFilePath = mCompiledFileMap.getProperty(file.getAbsolutePath());
-        if (compiledFilePath != null) {
-            fileToRemove = new File(compiledFilePath);
-        } else {
-            fileToRemove =
-                    FileUtils.join(getRootFolder(), getFolderName(resourceItem), file.getName());
-        }
-
+        File fileToRemove = getResourceOutputFile(resourceItem);
         return removeOutFile(fileToRemove);
     }
 
