@@ -688,6 +688,12 @@ public class VariantScopeImpl extends GenericVariantScopeImpl implements Variant
 
     @NonNull
     @Override
+    public File getTypedefFile() {
+        return new File(globalScope.getIntermediatesDir(), "typedefs.txt");
+    }
+
+    @NonNull
+    @Override
     public File getJackEcjOptionsFile() {
         return new File(globalScope.getIntermediatesDir(),
                 "jack/" + getDirName() + "/ecj-options.txt");

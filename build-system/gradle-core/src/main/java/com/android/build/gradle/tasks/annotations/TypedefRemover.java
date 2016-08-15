@@ -20,7 +20,8 @@ import static com.android.SdkConstants.DOT_CLASS;
 import static org.objectweb.asm.Opcodes.ASM5;
 
 import com.android.annotations.NonNull;
-import com.google.common.collect.Lists;
+import com.android.annotations.Nullable;
+import com.google.common.base.Charsets;
 import com.google.common.collect.Sets;
 import com.google.common.io.Files;
 
@@ -28,8 +29,11 @@ import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
@@ -42,13 +46,36 @@ import java.util.Set;
  */
 @SuppressWarnings("SpellCheckingInspection")
 public class TypedefRemover {
-    private final Extractor mExtractor;
+    @Nullable private final Extractor mExtractor;
     private final boolean mQuiet;
     private final boolean mVerbose;
     private final boolean mDryRun;
 
+    /**
+     * Set of typedef classes to be removed. The names are in internal
+     * format (e.g. using / to separate packages and $ to separate inner classes).
+     */
+    private Set<String> mAnnotationNames = Sets.newHashSet();
+
+    /**
+     * List of relative paths to the typedef classes to be removed, using
+     * / (not File.separator) as the path separator, to match the .zip file paths.
+     * This is identical to {@link #mAnnotationNames}, except the file extensions
+     * are .class.
+     */
+    private Set<String> mAnnotationClassFiles = Sets.newHashSet();
+
+    /**
+     * List of classes <b>containing</b> removed typedefs. These need to be
+     * rewritten to remove .class file references to the inner classes that are being
+     * deleted.
+     * <p>
+     * These are relative paths using / rather than File.separator as the file separator.
+     */
+    private Set<String> mAnnotationOuterClassFiles = Sets.newHashSet();
+
     public TypedefRemover(
-            @NonNull Extractor extractor,
+            @Nullable Extractor extractor,
             boolean quiet,
             boolean verbose,
             boolean dryRun) {
@@ -58,47 +85,102 @@ public class TypedefRemover {
         mDryRun = dryRun;
     }
 
-    private Set<String> mAnnotationNames = Sets.newHashSet();
-    private List<File> mAnnotationClassFiles = Lists.newArrayList();
-    private Set<File> mAnnotationOuterClassFiles = Sets.newHashSet();
+    public TypedefRemover() {
+        this(null, true, false, false);
+    }
+
+    private void info(@NonNull String message) {
+        if (mExtractor != null) {
+            mExtractor.info(message);
+        } else {
+            System.out.println(message);
+        }
+    }
+
+    @NonNull
+    public TypedefRemover setTypedefFile(@NonNull File file) {
+        try {
+            for (String line : Files.readLines(file, Charsets.UTF_8)) {
+                if (line.startsWith("D ")) {
+                    String clz = line.substring(2).trim();
+                    addTypeDef(clz);
+                }
+            }
+        } catch (IOException e) {
+            Extractor.error("Could not read " + file + ": " + e.getLocalizedMessage());
+        }
+        return this;
+    }
+
+    /**
+     * Filter the given file (given by a path).
+     *
+     * @param path  the path within the jar file
+     * @param input the contents of the file
+     * @return a stream which provides the content of the file, which may be null (to delete/not
+     * package the file), or the original input stream if the file should be packaged as is, or
+     * possibly a different input stream with the file rewritten
+     */
+    @Nullable
+    public InputStream filter(@NonNull String path, @NonNull InputStream input) {
+        if (mAnnotationClassFiles.contains(path)) {
+            return null;
+        }
+
+        if (!mAnnotationOuterClassFiles.contains(path)) {
+            return input;
+        }
+
+        // Transform
+        try {
+            ClassReader reader = new ClassReader(input);
+            byte[] rewritten = rewriteOuterClass(reader);
+            return new ByteArrayInputStream(rewritten);
+        } catch (IOException ioe) {
+            Extractor.error("Could not process " + path + ": " + ioe.getLocalizedMessage());
+            return input;
+        }
+    }
+
+    public boolean isRemoved(@NonNull String path) {
+        return mAnnotationClassFiles.contains(path);
+    }
+
+    public void removeFromTypedefFile(@NonNull File classDir, @NonNull File file) {
+        setTypedefFile(file);
+        remove(classDir, Collections.emptyList());
+    }
 
     public void remove(@NonNull File classDir, @NonNull List<String> owners) {
         if (!mQuiet) {
-            mExtractor.info("Deleting @IntDef and @StringDef annotation class files");
+            info("Deleting @IntDef and @StringDef annotation class files");
         }
 
         // Record typedef annotation names and files
         for (String owner : owners) {
-            File file = new File(classDir, owner.replace('/', File.separatorChar) + DOT_CLASS);
-            addTypeDef(owner, file);
+            addTypeDef(owner);
         }
 
         // Rewrite the .class files for any classes that *contain* typedefs as innerclasses
-        rewriteOuterClasses();
+        rewriteOuterClasses(classDir);
 
         // Removes the actual .class files for the typedef annotations
-        deleteAnnotationClasses();
+        deleteAnnotationClasses(classDir);
     }
 
     /**
      * Records the given class name (internal name) and class file path as corresponding to a
      * typedef annotation
      * */
-    private void addTypeDef(String name, File file) {
-        mAnnotationClassFiles.add(file);
-        mAnnotationNames.add(name);
+    private void addTypeDef(String owner) {
+        mAnnotationClassFiles.add(owner + DOT_CLASS);
+        mAnnotationNames.add(owner);
 
-        String fileName = file.getName();
-        int index = fileName.lastIndexOf('$');
+        int index = owner.lastIndexOf('$');
         if (index != -1) {
-            File parentFile = file.getParentFile();
-            assert parentFile != null : file;
-            File container = new File(parentFile, fileName.substring(0, index) + ".class");
-            if (container.exists()) {
-                mAnnotationOuterClassFiles.add(container);
-            } else {
-                Extractor.error("Warning: Could not find outer class " + container
-                        + " for typedef " + file);
+            String outer = owner.substring(0, index) + DOT_CLASS;
+            if (!mAnnotationOuterClassFiles.contains(outer)) {
+                mAnnotationOuterClassFiles.add(outer);
             }
         }
     }
@@ -107,8 +189,13 @@ public class TypedefRemover {
      * Rewrites the outer classes containing the typedefs such that they no longer refer to
      * the (now removed) typedef annotation inner classes
      */
-    private void rewriteOuterClasses() {
-        for (File file : mAnnotationOuterClassFiles) {
+    private void rewriteOuterClasses(@NonNull File classDir) {
+        for (String relative : mAnnotationOuterClassFiles) {
+            File file = new File(classDir, relative.replace('/', File.separatorChar));
+            if (!file.isFile()) {
+                Extractor.error("Warning: Could not find outer class " + file + " for typedef");
+                continue;
+            }
             byte[] bytes;
             try {
                 bytes = Files.toByteArray(file);
@@ -117,19 +204,8 @@ public class TypedefRemover {
                 continue;
             }
 
-            ClassWriter classWriter = new ClassWriter(ASM5);
-            ClassVisitor classVisitor = new ClassVisitor(ASM5, classWriter) {
-                @Override
-                public void visitInnerClass(String name, String outerName, String innerName,
-                        int access) {
-                    if (!mAnnotationNames.contains(name)) {
-                        super.visitInnerClass(name, outerName, innerName, access);
-                    }
-                }
-            };
             ClassReader reader = new ClassReader(bytes);
-            reader.accept(classVisitor, 0);
-            byte[] rewritten = classWriter.toByteArray();
+            byte[] rewritten = rewriteOuterClass(reader);
             try {
                 Files.write(rewritten, file);
             } catch (IOException e) {
@@ -140,23 +216,43 @@ public class TypedefRemover {
         }
     }
 
+    private byte[] rewriteOuterClass(@NonNull ClassReader reader) {
+        ClassWriter classWriter = new ClassWriter(ASM5);
+        ClassVisitor classVisitor = new ClassVisitor(ASM5, classWriter) {
+            @Override
+            public void visitInnerClass(String name, String outerName, String innerName,
+                    int access) {
+                if (!mAnnotationNames.contains(name)) {
+                    super.visitInnerClass(name, outerName, innerName, access);
+                }
+            }
+        };
+        reader.accept(classVisitor, 0);
+        return classWriter.toByteArray();
+    }
+
     /**
      * Performs the actual deletion (or display, if in dry-run mode) of the typedef annotation
      * files
      */
-    private void deleteAnnotationClasses() {
-        for (File mFile : mAnnotationClassFiles) {
+    private void deleteAnnotationClasses(@NonNull File classDir) {
+        for (String relative : mAnnotationClassFiles) {
+            File file = new File(classDir, relative.replace('/', File.separatorChar));
+            if (!file.isFile()) {
+                Extractor.error("Warning: Could not find class file " + file + " for typedef");
+                continue;
+            }
             if (mVerbose) {
                 if (mDryRun) {
-                    mExtractor.info("Would delete " + mFile);
+                    info("Would delete " + file);
                 } else {
-                    mExtractor.info("Deleting " + mFile);
+                    info("Deleting " + file);
                 }
             }
             if (!mDryRun) {
-                boolean deleted = mFile.delete();
+                boolean deleted = file.delete();
                 if (!deleted) {
-                    Extractor.warning("Could not delete " + mFile);
+                    Extractor.warning("Could not delete " + file);
                 }
             }
         }

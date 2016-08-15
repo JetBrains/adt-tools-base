@@ -17,7 +17,9 @@
 package com.android.build.gradle.internal.transforms;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.build.gradle.internal.LoggerWrapper;
+import com.android.build.gradle.tasks.annotations.TypedefRemover;
 import com.android.builder.packaging.ZipEntryFilter;
 import com.android.builder.packaging.ZipAbortException;
 import com.android.utils.FileUtils;
@@ -29,6 +31,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.attribute.FileTime;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
@@ -53,9 +56,14 @@ public class JarMerger {
     private JarOutputStream jarOutputStream;
 
     private ZipEntryFilter filter;
+    private TypedefRemover typedefRemover;
 
     public JarMerger(@NonNull File jarFile) throws IOException {
         this.jarFile = jarFile;
+    }
+
+    public void setTypedefRemover(@Nullable TypedefRemover typedefRemover) {
+        this.typedefRemover = typedefRemover;
     }
 
     private void init() throws IOException {
@@ -100,6 +108,11 @@ public class JarMerger {
                     String entryPath = path + file.getName();
                     if (filter == null || filter.checkEntry(entryPath)) {
                         logger.verbose("addFolder(%1$s, %2$s): entry %3$s", folder, path, entryPath);
+
+                        if (typedefRemover != null && typedefRemover.isRemoved(entryPath)) {
+                            continue;
+                        }
+
                         // new entry
                         final JarEntry jarEntry = new JarEntry(entryPath);
                         if (removeEntryTimestamp) {
@@ -111,7 +124,12 @@ public class JarMerger {
 
                         // put the file content
                         try (Closer localCloser = Closer.create()) {
-                            FileInputStream fis = localCloser.register(new FileInputStream(file));
+                            InputStream fis = localCloser.register(new FileInputStream(file));
+                            if (typedefRemover != null) {
+                                fis = typedefRemover.filter(entryPath, fis);
+                                assert fis != null; // because we checked isRemoved above
+                            }
+
                             int count;
                             while ((count = fis.read(buffer)) != -1) {
                                 jarOutputStream.write(buffer, 0, count);

@@ -19,18 +19,20 @@ package com.android.build.gradle.internal.tasks;
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.build.api.transform.TransformInvocation;
-import com.android.build.gradle.internal.pipeline.TransformManager;
-import com.android.build.gradle.internal.transforms.JarMerger;
 import com.android.build.api.transform.JarInput;
 import com.android.build.api.transform.QualifiedContent;
 import com.android.build.api.transform.QualifiedContent.ContentType;
 import com.android.build.api.transform.QualifiedContent.Scope;
+import com.android.build.api.transform.SecondaryFile;
 import com.android.build.api.transform.Transform;
 import com.android.build.api.transform.TransformException;
 import com.android.build.api.transform.TransformInput;
-import com.android.builder.packaging.ZipEntryFilter;
+import com.android.build.api.transform.TransformInvocation;
+import com.android.build.gradle.internal.pipeline.TransformManager;
+import com.android.build.gradle.internal.transforms.JarMerger;
+import com.android.build.gradle.tasks.annotations.TypedefRemover;
 import com.android.builder.packaging.ZipAbortException;
+import com.android.builder.packaging.ZipEntryFilter;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
@@ -70,6 +72,8 @@ public class LibraryJarTransform extends Transform {
     @NonNull
     private final String packagePath;
     private final boolean packageBuildConfig;
+    @NonNull
+    private final File typedefRecipe;
 
     @Nullable
     private List<ExcludeListProvider> excludeListProviders;
@@ -77,12 +81,24 @@ public class LibraryJarTransform extends Transform {
     public LibraryJarTransform(
             @NonNull File mainClassLocation,
             @NonNull File localJarsLocation,
+            @NonNull File typedefRecipe,
             @NonNull String packageName,
             boolean packageBuildConfig) {
         this.mainClassLocation = mainClassLocation;
         this.localJarsLocation = localJarsLocation;
+        this.typedefRecipe = typedefRecipe;
         this.packagePath = packageName.replace(".", "/");
         this.packageBuildConfig = packageBuildConfig;
+    }
+
+    @NonNull
+    @Override
+    public Collection<SecondaryFile> getSecondaryFiles() {
+        if (typedefRecipe.isFile()) {
+            return ImmutableList.of(SecondaryFile.nonIncremental(typedefRecipe));
+        } else {
+            return ImmutableList.of();
+        }
     }
 
     public void addExcludeListProvider(ExcludeListProvider provider) {
@@ -257,6 +273,9 @@ public class LibraryJarTransform extends Transform {
             throws IOException {
         JarMerger jarMerger = new JarMerger(mainClassLocation);
         jarMerger.setFilter(archivePath -> checkEntry(excludes, archivePath));
+        if (typedefRecipe.isFile()) {
+            jarMerger.setTypedefRemover(new TypedefRemover().setTypedefFile(typedefRecipe));
+        }
         jarMerger.addFolder(file, true);
         jarMerger.close();
     }

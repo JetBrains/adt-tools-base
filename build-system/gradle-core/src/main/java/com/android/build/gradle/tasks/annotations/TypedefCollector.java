@@ -17,6 +17,7 @@
 package com.android.build.gradle.tasks.annotations;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
@@ -30,7 +31,6 @@ import org.eclipse.jdt.internal.compiler.lookup.ClassScope;
 import org.eclipse.jdt.internal.compiler.lookup.CompilationUnitScope;
 import org.eclipse.jdt.internal.compiler.lookup.SourceTypeBinding;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -43,7 +43,7 @@ public class TypedefCollector extends ASTVisitor {
     private final boolean mRequireHide;
     private final boolean mRequireSourceRetention;
     private CompilationUnitDeclaration mCurrentUnit;
-    private List<String> mTypedefClasses = Lists.newArrayList();
+    private List<String> mPrivateTypedefs = Lists.newArrayList();
 
     public TypedefCollector(
             @NonNull Collection<CompilationUnitDeclaration> units,
@@ -59,8 +59,8 @@ public class TypedefCollector extends ASTVisitor {
         }
     }
 
-    public List<String> getNonPublicTypedefClasses() {
-        return mTypedefClasses;
+    public List<String> getPrivateTypedefClasses() {
+        return mPrivateTypedefs;
     }
 
     public Map<String,List<Annotation>> getTypedefs() {
@@ -102,18 +102,10 @@ public class TypedefCollector extends ASTVisitor {
                         }
                         list.add(annotation);
 
-                        if (mRequireHide) {
-                            Javadoc javadoc = declaration.javadoc;
-                            if (javadoc != null) {
-                                StringBuffer stringBuffer = new StringBuffer(200);
-                                javadoc.print(0, stringBuffer);
-                                String documentation = stringBuffer.toString();
-                                if (!documentation.contains("@hide")) {
-                                    Extractor.warning(getFileName()
-                                            + ": The typedef annotation " + fqn
-                                            + " should specify @hide in a doc comment");
-                                }
-                            }
+                        if (mRequireHide && !javadocContainsHide(declaration.javadoc)) {
+                            Extractor.warning(getFileName()
+                                    + ": The typedef annotation " + fqn
+                                    + " should specify @hide in a doc comment");
                         }
                         if (mRequireSourceRetention
                                 && !Extractor.hasSourceRetention(annotations)) {
@@ -121,8 +113,7 @@ public class TypedefCollector extends ASTVisitor {
                                     + ": The typedef annotation " + fqn
                                     + " should have @Retention(RetentionPolicy.SOURCE)");
                         }
-                        if (declaration.binding != null
-                                && (declaration.modifiers & ClassFileConstants.AccPublic) == 0) {
+                        if (declaration.binding != null && isHiddenTypeDef(declaration)) {
                             StringBuilder sb = new StringBuilder(100);
                             for (char c : declaration.binding.qualifiedPackageName()) {
                                 if (c == '.') {
@@ -139,13 +130,55 @@ public class TypedefCollector extends ASTVisitor {
                                     sb.append(c);
                                 }
                             }
-                            mTypedefClasses.add(sb.toString());
+                            String cls = sb.toString();
+                            if (!mPrivateTypedefs.contains(cls)) {
+                                mPrivateTypedefs.add(cls);
+                            }
                         }
                     }
                 }
             }
         }
         return true;
+    }
+
+    /**
+     * Returns true if this type declaration for a typedef is hidden (e.g. should not
+     * be extracted into an external annotation database)
+     *
+     * @param declaration the type declaration
+     * @return true if the type is hidden
+     */
+    @SuppressWarnings("RedundantIfStatement")
+    public static boolean isHiddenTypeDef(@NonNull TypeDeclaration declaration) {
+        if ((declaration.modifiers & ClassFileConstants.AccPublic) == 0) {
+            return true;
+        }
+
+        if (Extractor.REMOVE_HIDDEN_TYPEDEFS && javadocContainsHide(declaration.javadoc)) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Returns true if the given javadoc contains a {@code @hide} marker
+     *
+     * @param javadoc the javadoc
+     * @return true if the javadoc contains a hide marker
+     */
+    private static boolean javadocContainsHide(@Nullable Javadoc javadoc) {
+        if (javadoc != null) {
+            StringBuffer stringBuffer = new StringBuffer(200);
+            javadoc.print(0, stringBuffer);
+            String documentation = stringBuffer.toString();
+            if (documentation.contains("@hide")) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private String getFileName() {

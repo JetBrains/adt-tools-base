@@ -211,6 +211,14 @@ public interface VariantScope extends TransformVariantScope, InstantRunVariantSc
     File getPackagedAidlDir();
 
     /**
+     * Returns the path to an optional recipe file (only used for libraries) which describes
+     * typedefs defined in the library, and how to process them (typically which typedefs
+     * to omit during packaging).
+     */
+    @NonNull
+    File getTypedefFile();
+
+    /**
      * Returns a place to store incremental build data. The {@code name} argument has to be unique
      * per task, ideally generated with {@link TaskConfigAction#getName()}.
      */

@@ -434,6 +434,7 @@ public class LibraryTaskManager extends TaskManager {
                         LibraryJarTransform transform = new LibraryJarTransform(
                                 new File(variantBundleDir, FN_CLASSES_JAR),
                                 new File(variantBundleDir, LIBS_FOLDER),
+                                variantScope.getTypedefFile(),
                                 packageName,
                                 getExtension().getPackageBuildConfig());
                         excludeDataBindingClassesIfNecessary(variantScope, transform);
@@ -615,6 +616,7 @@ public class LibraryTaskManager extends TaskManager {
                 variantData.getScope().getGlobalScope().getIntermediatesDir(),
                 ANNOTATIONS + "/" + config.getDirName()));
         task.setOutput(new File(task.getDestinationDir(), FN_ANNOTATIONS_ZIP));
+        task.getTypedefFile(variantData.getScope().getTypedefFile());
         task.setClassDir(variantData.getScope().getJavaOutputDir());
         task.setSource(variantData.getJavaSources());
         task.setEncoding(getExtension().getCompileOptions().getEncoding());

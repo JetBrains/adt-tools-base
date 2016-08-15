@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.integration.application
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
+import com.android.build.gradle.tasks.annotations.Extractor
 import com.android.builder.model.AndroidProject
 import groovy.transform.CompileStatic
 import org.junit.AfterClass
@@ -30,7 +31,7 @@ import static com.android.build.gradle.integration.common.truth.TruthHelper.asse
  * Tip: To execute just this test after modifying the annotations extraction code:
  * <pre>
  *     $ cd tools
- *     $ ./gradlew :base:i:test -Dtest.single=ExtractAnnotationTest
+ *     $ ./gradlew :base:int:test --tests com.android.build.gradle.integration.application.ExtractAnnotationTest
  * </pre>
  */
 @CompileStatic
@@ -93,6 +94,16 @@ class ExtractAnnotationTest {
                 + "      <val name=\"value\" val=\"{0, com.android.tests.extractannotations.Constants.CONSTANT_1, com.android.tests.extractannotations.Constants.CONSTANT_3}\" />\n"
                 + "    </annotation>\n"
                 + "  </item>\n"
+                + "  <item name=\"com.android.tests.extractannotations.ExtractTest.StringMode\">\n"
+                + "    <annotation name=\"android.support.annotation.StringDef\">\n"
+                + "      <val name=\"value\" val=\"{com.android.tests.extractannotations.ExtractTest.STRING_1, com.android.tests.extractannotations.ExtractTest.STRING_2, &quot;literalValue&quot;, &quot;concatenated&quot;}\" />\n"
+                + "    </annotation>\n"
+                + "  </item>\n"
+                + "  <item name=\"com.android.tests.extractannotations.ExtractTest.Visibility\">\n"
+                + "    <annotation name=\"android.support.annotation.IntDef\">\n"
+                + "      <val name=\"value\" val=\"{com.android.tests.extractannotations.ExtractTest.VISIBLE, com.android.tests.extractannotations.ExtractTest.INVISIBLE, com.android.tests.extractannotations.ExtractTest.GONE, 5, 17, com.android.tests.extractannotations.Constants.CONSTANT_1}\" />\n"
+                + "    </annotation>\n"
+                + "  </item>\n"
                 + "  <item name=\"com.android.tests.extractannotations.TopLevelTypeDef\">\n"
                 + "    <annotation name=\"android.support.annotation.IntDef\">\n"
                 + "      <val name=\"flag\" val=\"true\" />\n"
@@ -118,6 +129,15 @@ class ExtractAnnotationTest {
                 "com/android/tests/extractannotations/ExtractTest\$Mask.class")
         assertThatZip(classesJar).doesNotContain(
                 "com/android/tests/extractannotations/ExtractTest\$NonMaskType.class")
+
+        // public but @hide marked typedefs: should have been removed
+        if (Extractor.REMOVE_HIDDEN_TYPEDEFS) {
+            assertThatZip(classesJar).doesNotContain(
+                    "com/android/tests/extractannotations/ExtractTest\$StringMode.class")
+        } else {
+            assertThatZip(classesJar).contains(
+                    "com/android/tests/extractannotations/ExtractTest\$StringMode.class")
+        }
 
         // Make sure the NonMask symbol (from a private typedef) is completely gone from the
         // outer class

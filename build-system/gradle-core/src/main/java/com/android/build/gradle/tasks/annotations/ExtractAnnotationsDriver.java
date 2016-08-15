@@ -78,6 +78,7 @@ public class ExtractAnnotationsDriver {
         output.println("--api-filter <api.txt>   : A framework API definition to restrict included APIs to");
         output.println("--hide-filtered          : If filtering out non-APIs, supply this flag to hide listing matches");
         output.println("--skip-class-retention   : Don't extract annotations that have class retention");
+        output.println("--typedef-file <path>    : Write a packaging recipe description to the given file");
         System.exit(-1);
     }
 
@@ -97,6 +98,7 @@ public class ExtractAnnotationsDriver {
         String encoding = Charsets.UTF_8.name();
         File output = null;
         File proguard = null;
+        File typedefFile = null;
         long languageLevel = EcjParser.getLanguageLevel(1, 7);
         if (args.length == 1 && "--help".equals(args[0])) {
             usage(System.out);
@@ -140,6 +142,7 @@ public class ExtractAnnotationsDriver {
                 case "--merge-zips":
                     mergePaths = getFiles(value);
                     break;
+
                 case "--output":
                     output = new File(value);
                     if (output.exists()) {
@@ -168,6 +171,9 @@ public class ExtractAnnotationsDriver {
                             .exists()) {
                         abort(proguard.getParentFile() + " does not exist");
                     }
+                    break;
+                case "--typedef-file":
+                    typedefFile = new File(value);
                     break;
                 case "--encoding":
                     encoding = value;
@@ -284,9 +290,17 @@ public class ExtractAnnotationsDriver {
             extractor.export(output, proguard);
 
             // Remove typedefs?
+            if (typedefFile != null) {
+                extractor.writeTypedefFile(typedefFile);
+            }
+
             //noinspection VariableNotUsedInsideIf
             if (rmTypeDefs != null) {
-                extractor.removeTypedefClasses();
+                if (typedefFile != null) {
+                    Extractor.removeTypedefClasses(rmTypeDefs, typedefFile);
+                } else {
+                    extractor.removeTypedefClasses();
+                }
             }
         } catch (IOException e) {
             e.printStackTrace();

@@ -16,18 +16,25 @@
 
 package com.android.build.gradle.tasks.annotations;
 
+import static com.android.testutils.TestUtils.deleteFile;
 import static com.android.utils.SdkUtils.fileToUrlString;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
-import com.android.testutils.SdkTestCase;
-import com.android.testutils.TestUtils;
+import com.android.utils.FileUtils;
 import com.google.common.base.Charsets;
 import com.google.common.io.ByteStreams;
 import com.google.common.io.Closeables;
 import com.google.common.io.Files;
 
 import org.eclipse.jdt.internal.compiler.impl.CompilerOptions;
+import org.junit.AssumptionViolatedException;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
 import java.io.IOException;
@@ -35,40 +42,33 @@ import java.io.InputStream;
 import java.net.URL;
 import java.util.List;
 
-public class ExtractAnnotationsDriverTest extends SdkTestCase {
-    private static boolean isValidEcj() {
-        // When this test is run from within Gradle's testing infrastructure, e.g.
-        // via "./gradlew :base:gradle-core:test", Gradle's own *internal* dependencies
-        // somehow end up on the classpath, and in particular, an ancient version of
-        // (ECJ (3.x)) take priority over our explicit lint dependency which should
-        // bring in ECJ 4.
-        //
-        // This causes the test to fail. For now, make the test only run when a valid
-        // ECJ is present.
+public class ExtractAnnotationsDriverTest {
+
+    @Rule
+    public TemporaryFolder mTemporaryFolder = new TemporaryFolder();
+
+    private static void checkValidEcj() {
         try {
             CompilerOptions.class.getField("originalComplianceLevel");
-            return true;
         } catch (Throwable t) {
-            return false;
+            throw new AssumptionViolatedException(
+                    "When this test is run as part of the gradle-core tests, \n"
+                            + "Gradle's own *internal* dependencies are the classpath, \n"
+                            + "which includes an older (3.x) version of ECJ.\n"
+                            + "This causes the test to fail. For now, make the test only run\n"
+                            + " when a valid ECJ is present.");
         }
     }
 
+    @Test
     public void testProGuard() throws Exception {
-        if (!isValidEcj()) {
-            return;
-        }
+        checkValidEcj();
 
         File androidJar = findAndroidJar(false);
-        if (androidJar == null) {
-            System.err.println("Skipping test " + this.getClass() + "#" + getName()
-                    + ": No android.jar found");
-            return;
-        }
 
         File project = createProject(mKeepTest, mKeepAnnotation);
 
-        File output = File.createTempFile("proguard", ".cfg");
-        output.deleteOnExit();
+        File output = mTemporaryFolder.newFile("proguard.cfg");
 
         List<String> list = java.util.Arrays.asList(
                 "--sources",
@@ -95,6 +95,8 @@ public class ExtractAnnotationsDriverTest extends SdkTestCase {
                         + "    void foo()\n"
                         + "}\n"
                         + "\n"
+                        + "-keep class test.pkg.KeepTest.MyAnnotation\n"
+                        + "\n"
                         + "-keep class test.pkg.KeepTest.MyClass\n"
                         + "\n"
                         + "-keep enum test.pkg.KeepTest.MyEnum\n"
@@ -109,17 +111,11 @@ public class ExtractAnnotationsDriverTest extends SdkTestCase {
         deleteFile(project);
     }
 
+    @Test
     public void testIncludeClassRetention() throws Exception {
-        if (!isValidEcj()) {
-            return;
-        }
+        checkValidEcj();
 
         File androidJar = findAndroidJar(false);
-        if (androidJar == null) {
-            System.err.println("Skipping test " + this.getClass() + "#" + getName()
-                    + ": No android.jar found");
-            return;
-        }
 
         File project = createProject(
                 mIntDefTest,
@@ -130,10 +126,8 @@ public class ExtractAnnotationsDriverTest extends SdkTestCase {
                 mIntRangeAnnotation,
                 mPermissionAnnotation);
 
-        File output = File.createTempFile("annotations", ".zip");
-        File proguard = File.createTempFile("proguard", ".cfg");
-        output.deleteOnExit();
-        proguard.deleteOnExit();
+        File output = mTemporaryFolder.newFile("annotations.zip");
+        File proguard = mTemporaryFolder.newFile("proguard.cfg");
 
         List<String> list = java.util.Arrays.asList(
                 "--sources",
@@ -199,17 +193,11 @@ public class ExtractAnnotationsDriverTest extends SdkTestCase {
         deleteFile(project);
     }
 
+    @Test
     public void testSkipClassRetention() throws Exception {
-        if (!isValidEcj()) {
-            return;
-        }
+        checkValidEcj();
 
         File androidJar = findAndroidJar(false);
-        if (androidJar == null) {
-            System.err.println("Skipping test " + this.getClass() + "#" + getName()
-                    + ": No android.jar found");
-            return;
-        }
 
         File project = createProject(
                 mIntDefTest,
@@ -220,10 +208,8 @@ public class ExtractAnnotationsDriverTest extends SdkTestCase {
                 mIntRangeAnnotation,
                 mPermissionAnnotation);
 
-        File output = File.createTempFile("annotations", ".zip");
-        File proguard = File.createTempFile("proguard", ".cfg");
-        output.deleteOnExit();
-        proguard.deleteOnExit();
+        File output = mTemporaryFolder.newFile("annotations.zip");
+        File proguard = mTemporaryFolder.newFile("proguard.cfg");
 
         List<String> list = java.util.Arrays.asList(
                 "--sources",
@@ -270,14 +256,57 @@ public class ExtractAnnotationsDriverTest extends SdkTestCase {
         deleteFile(project);
     }
 
-    @SuppressWarnings("SpellCheckingInspection")
-    @NonNull
-    private TestFile mksrc(@NonNull String to, @NonNull String source) {
-        return new TestFile().to(to).withSource(source);
+    @Test
+    public void testWriteJarRecipeFile() throws Exception {
+        checkValidEcj();
+
+        File androidJar = findAndroidJar(false);
+
+        File project = createProject(
+                mIntDefTest,
+                mPermissionsTest,
+                mManifest,
+                mKeepAnnotation,
+                mIntDefAnnotation,
+                mIntRangeAnnotation,
+                mPermissionAnnotation);
+
+        File output = mTemporaryFolder.newFile("annotations.zip");
+        File proguard = mTemporaryFolder.newFile("proguard.cfg");
+        File typedefFile = mTemporaryFolder.newFile("typedefs.txt");
+
+        List<String> list = java.util.Arrays.asList(
+                "--sources",
+                new File(project, "src").getPath(),
+                "--classpath",
+                androidJar.getPath(),
+
+                "--quiet",
+                "--language-level",
+                "1.6",
+                "--output",
+                output.getPath(),
+                "--proguard",
+                proguard.getPath(),
+                "--typedef-file",
+                typedefFile.getPath()
+        );
+        String[] args = list.toArray(new String[list.size()]);
+        assertNotNull(args);
+
+        new ExtractAnnotationsDriver().run(args);
+
+        // Check external annotations
+        assertEquals(""
+                + "D test/pkg/IntDefTest$DialogFlags\n"
+                + "D test/pkg/IntDefTest$DialogStyle\n",
+                Files.toString(typedefFile, Charsets.UTF_8));
+
+        deleteFile(project);
     }
 
-    private File createProject(TestFile... files) throws IOException {
-        File dir = TestUtils.createTempDirDeletedOnExit();
+    private File createProject(@NonNull TestFile... files) throws IOException {
+        File dir = mTemporaryFolder.newFolder();
 
         for (TestFile fp : files) {
             File file = fp.createFile(dir);
@@ -287,7 +316,8 @@ public class ExtractAnnotationsDriverTest extends SdkTestCase {
         return dir;
     }
 
-    private final TestFile mKeepAnnotation = mksrc("src/android/support/annotation/Keep.java", ""
+    private final TestFile mKeepAnnotation = new TestFile(
+            "src/android/support/annotation/Keep.java", ""
             + "package android.support.annotation;\n"
             + "import java.lang.annotation.Retention;\n"
             + "import java.lang.annotation.Target;\n"
@@ -298,7 +328,8 @@ public class ExtractAnnotationsDriverTest extends SdkTestCase {
             + "public @interface Keep {\n"
             + "}\n");
 
-    private final TestFile mIntDefAnnotation = mksrc("src/android/support/annotation/IntDef.java", ""
+    private final TestFile mIntDefAnnotation = new TestFile(
+            "src/android/support/annotation/IntDef.java", ""
             + "package android.support.annotation;\n"
             + "import java.lang.annotation.Retention;\n"
             + "import java.lang.annotation.RetentionPolicy;\n"
@@ -312,7 +343,8 @@ public class ExtractAnnotationsDriverTest extends SdkTestCase {
             + "    boolean flag() default false;\n"
             + "}\n");
 
-    private final TestFile mIntRangeAnnotation = mksrc("src/android/support/annotation/IntRange.java", ""
+    private final TestFile mIntRangeAnnotation = new TestFile(
+            "src/android/support/annotation/IntRange.java", ""
             + "package android.support.annotation;\n"
             + "\n"
             + "import java.lang.annotation.Retention;\n"
@@ -328,7 +360,7 @@ public class ExtractAnnotationsDriverTest extends SdkTestCase {
             + "    long to() default Long.MAX_VALUE;\n"
             + "}\n");
 
-    private final TestFile mPermissionAnnotation = mksrc(
+    private final TestFile mPermissionAnnotation = new TestFile(
             "src/android/support/annotation/RequiresPermission.java", ""
             + "package android.support.annotation;\n"
             + "import java.lang.annotation.Retention;\n"
@@ -353,7 +385,7 @@ public class ExtractAnnotationsDriverTest extends SdkTestCase {
             + "    }\n"
             + "}");
 
-    private final TestFile mIntDefTest = mksrc("src/test/pkg/IntDefTest.java", ""
+    private final TestFile mIntDefTest = new TestFile("src/test/pkg/IntDefTest.java", ""
             + "package test.pkg;\n"
             + "\n"
             + "import android.content.Context;\n"
@@ -396,7 +428,7 @@ public class ExtractAnnotationsDriverTest extends SdkTestCase {
             + "    public static final String UNRELATED_TYPE = \"other\";\n"
             + "}");
 
-    private final TestFile mPermissionsTest = mksrc("src/test/pkg/PermissionsTest.java", ""
+    private final TestFile mPermissionsTest = new TestFile("src/test/pkg/PermissionsTest.java", ""
             + "package test.pkg;\n"
             + "\n"
             + "import android.support.annotation.RequiresPermission;\n"
@@ -411,7 +443,7 @@ public class ExtractAnnotationsDriverTest extends SdkTestCase {
             + "    public static final String CONTENT_URI = \"\";\n"
             + "}\n");
 
-    private final TestFile mManifest = mksrc("src/test/pkg/Manifest.java", ""
+    private final TestFile mManifest = new TestFile("src/test/pkg/Manifest.java", ""
             + "package test.pkg;\n"
             + "\n"
             + "public class Manifest {\n"
@@ -422,7 +454,7 @@ public class ExtractAnnotationsDriverTest extends SdkTestCase {
             + "    }\n"
             + "}\n");
 
-    private final TestFile mKeepTest = mksrc("src/test/pkg/KeepTest.java", ""
+    private final TestFile mKeepTest = new TestFile("src/test/pkg/KeepTest.java", ""
             + "package test.pkg;\n"
             + "import android.support.annotation.Keep;\n"
             + "\n"
@@ -477,14 +509,14 @@ public class ExtractAnnotationsDriverTest extends SdkTestCase {
         }
     }
 
-    @Nullable
+    @NonNull
     private static File findAndroidJar(boolean requireExists) {
         String androidHomePath = System.getenv("ANDROID_HOME");
         assertNotNull("Must set $ANDROID_HOME to run this test", androidHomePath);
         File androidHome = new File(androidHomePath);
         if (!androidHome.exists()) {
             if (!requireExists) {
-                return null;
+                throw new AssumptionViolatedException("Android jar not present");
             }
             fail(androidHomePath + " does not exist");
         }
@@ -495,6 +527,7 @@ public class ExtractAnnotationsDriverTest extends SdkTestCase {
         return androidJar;
     }
 
+    @Test
     public void testGetRaw() throws Exception {
         assertEquals("", ApiDatabase.getRawClass(""));
         assertEquals("Foo", ApiDatabase.getRawClass("Foo"));
@@ -505,5 +538,24 @@ public class ExtractAnnotationsDriverTest extends SdkTestCase {
         assertEquals("Object,java.util.List,List,int[],Object[]",
                 ApiDatabase.getRawParameterList("Object<? extends java.util.List>,java.util.List<String>,"
                         + "List<? super Number>,int[],Object..."));
+    }
+
+    private static class TestFile {
+        @NonNull
+        private final String mTo;
+        @NonNull
+        private final String mSource;
+
+        public TestFile(@NonNull String to, @NonNull String source) {
+            mTo = to;
+            mSource = source;
+        }
+
+        public File createFile(@NonNull File root) throws IOException {
+            File out = new File(root, mTo);
+            FileUtils.mkdirs(out.getParentFile());
+            Files.write(mSource, out, Charsets.UTF_8);
+            return out;
+        }
     }
 }

@@ -154,6 +154,13 @@ public class Extractor {
     /** Whether we should include type args like &lt;T*gt; in external annotations signatures */
     private static final boolean INCLUDE_TYPE_ARGS = false;
 
+    /**
+     * If true, remove typedefs (even public ones) if they are marked with {@code @hide}.
+     * This is disabled because for some reason, the ECJ nodes do not provide valid
+     * contents of javadoc entries for classes.
+     */
+    public static final boolean REMOVE_HIDDEN_TYPEDEFS = false;
+
     /** Whether to sort annotation attributes (otherwise their declaration order is used) */
     private final boolean sortAnnotations;
 
@@ -215,7 +222,7 @@ public class Extractor {
     private final Set<String> ignoredAnnotations = Sets.newHashSet();
     private boolean listIgnored;
     private Map<String,List<Annotation>> typedefs;
-    private List<String> typedefClasses;
+    private List<String> typedefsToRemove;
     private Map<String,Boolean> sourceRetention;
     private final List<Item> keepItems = Lists.newArrayList();
 
@@ -233,7 +240,7 @@ public class Extractor {
         TypedefCollector collector = new TypedefCollector(units, false /*requireHide*/,
                 true /*requireSourceRetention*/);
         typedefs = collector.getTypedefs();
-        typedefClasses = collector.getNonPublicTypedefClasses();
+        typedefsToRemove = collector.getPrivateTypedefClasses();
 
         for (CompilationUnitDeclaration unit : units) {
             analyze(unit);
@@ -241,14 +248,60 @@ public class Extractor {
     }
 
     public void removeTypedefClasses() {
-        if (classDir != null && typedefClasses != null && !typedefClasses.isEmpty()) {
+        if (classDir != null && typedefsToRemove != null && !typedefsToRemove.isEmpty()) {
+            // Perform immediately
             boolean quiet = false;
             boolean verbose = false;
             boolean dryRun = false;
             //noinspection ConstantConditions
             TypedefRemover remover = new TypedefRemover(this, quiet, verbose, dryRun);
-            remover.remove(classDir, typedefClasses);
+            remover.remove(classDir, typedefsToRemove);
         }
+    }
+
+    public void writeTypedefFile(@NonNull File file) {
+        // Write typedef recipe file for later processing
+        String desc = "";
+        if (typedefsToRemove != null) {
+            Collections.sort(typedefsToRemove);
+            StringBuilder sb = new StringBuilder(typedefsToRemove.size() * 100);
+            for (String cls : typedefsToRemove) {
+                sb.append("D ");
+                sb.append(cls);
+                sb.append("\n");
+            }
+            desc = sb.toString();
+        }
+        if (file.exists()) {
+            boolean deleted = file.delete();
+            if (!deleted) {
+                Extractor.error("Could not delete old " + file);
+                return;
+            }
+        }
+        try {
+            File dir = file.getParentFile();
+            if (dir != null && !dir.exists()) {
+                boolean ok = dir.mkdirs();
+                if (!ok) {
+                    Extractor.error("Could not create directory " + dir);
+                    return;
+                }
+            }
+            Files.write(desc, file, Charsets.UTF_8);
+        } catch (IOException e) {
+            Extractor.error("Could not write " + file + ": " + e.getLocalizedMessage());
+        }
+    }
+
+    public static void removeTypedefClasses(@NonNull File classDir, @NonNull File typedefFile) {
+        // Perform immediately
+        boolean quiet = false;
+        boolean verbose = false;
+        boolean dryRun = false;
+        //noinspection ConstantConditions
+        TypedefRemover remover = new TypedefRemover(null, quiet, verbose, dryRun);
+        remover.removeFromTypedefFile(classDir, typedefFile);
     }
 
     public void export(@Nullable File annotationsZip, @Nullable File proguardCfg) {
@@ -274,7 +327,6 @@ public class Extractor {
                 info("Annotations written to " + annotationsZip);
             }
         }
-
     }
 
     public void writeStats() {
@@ -2466,6 +2518,14 @@ public class Extractor {
                     return true;
                 }
 
+                if (binding.isAnnotationType()
+                        // Public typedef annotation need to be kept; they're not
+                        // removed by TypedefCollector#recordTypedefs so users may
+                        // end up referencing the typedef annotation itself
+                        && TypedefCollector.isHiddenTypeDef(localTypeDeclaration)) {
+                    return true;
+                }
+
                 String fqn = getFqn(scope);
                 if (fqn == null) {
                     fqn = new String(localTypeDeclaration.binding.readableName());
@@ -2486,10 +2546,11 @@ public class Extractor {
                 if (!(binding instanceof MemberTypeBinding)) {
                     return true;
                 }
-                if (binding.isAnnotationType() || binding.isAnonymousType()) {
-                    return false;
+                if (binding.isAnnotationType()
+                        && TypedefCollector.isHiddenTypeDef(memberTypeDeclaration)
+                        || binding.isAnonymousType()) {
+                    return true;
                 }
-
                 String fqn = new String(memberTypeDeclaration.binding.readableName());
                 Item item = ClassItem.create(fqn, ClassKind.forType(memberTypeDeclaration));
                 addItem(fqn, item);
