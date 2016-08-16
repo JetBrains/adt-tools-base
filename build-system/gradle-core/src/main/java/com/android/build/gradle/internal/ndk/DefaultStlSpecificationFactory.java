@@ -21,11 +21,11 @@ import com.android.build.gradle.internal.core.Abi;
 import com.android.utils.FileUtils;
 import com.google.common.collect.ImmutableList;
 
-import java.util.Collection;
+import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * Default factory for creating STL specification.
+ * Default factory for creating STL specification for NDK r10.
  */
 public class DefaultStlSpecificationFactory implements StlSpecificationFactory {
 
@@ -91,22 +91,16 @@ public class DefaultStlSpecificationFactory implements StlSpecificationFactory {
             case CPP_SHARED:
                 return createSpec(
                         abi,
-                        ImmutableList.of(
-                                "llvm-libc++/libcxx/include",
-                                "gabi++/include",
-                                "../android/support/include"),
+                        getLibcxxIncludes(abi),
                         "llvm-libc++",
-                        ImmutableList.of(),
+                        getLibcxxStaticLibs(abi, /* staticStl = */ false),
                         ImmutableList.of("libc++_shared.so"));
             case CPP_STATIC:
                 return createSpec(
                         abi,
-                        ImmutableList.of(
-                                "llvm-libc++/libcxx/include",
-                                "gabi++/include",
-                                "../android/support/include"),
+                        getLibcxxIncludes(abi),
                         "llvm-libc++",
-                        ImmutableList.of("libc++_static.a"),
+                        getLibcxxStaticLibs(abi, /* staticStl = */ true),
                         ImmutableList.of());
             default:
                 throw new RuntimeException("Unreachable.  Unknown STL: " + stl + ".");
@@ -115,10 +109,10 @@ public class DefaultStlSpecificationFactory implements StlSpecificationFactory {
 
     protected static StlSpecification createSpec(
             @NonNull Abi abi,
-            @NonNull Collection<String> includes,
+            @NonNull List<String> includes,
             @NonNull String libPath,
-            @NonNull Collection<String> staticLibs,
-            @NonNull Collection<String> sharedLibs) {
+            @NonNull List<String> staticLibs,
+            @NonNull List<String> sharedLibs) {
         String base = "sources/cxx-stl";
         return new StlSpecification(
                 includes.stream()
@@ -130,5 +124,38 @@ public class DefaultStlSpecificationFactory implements StlSpecificationFactory {
                 sharedLibs.stream()
                         .map(lib -> FileUtils.join(base, libPath, "libs", abi.getName(), lib))
                         .collect(Collectors.toList()));
+    }
+
+    @NonNull
+    protected List<String> getLibcxxIncludes(@NonNull Abi abi) {
+        ImmutableList.Builder<String> builder = ImmutableList.builder();
+        builder.add("llvm-libc++/libcxx/include");
+
+        // The libc++abi in NDK r10 had issues with non-ARM architectures, so it uses gabi++ for
+        // those.
+        if (abi == Abi.ARMEABI || abi == Abi.ARMEABI_V7A || abi == Abi.ARM64_V8A) {
+            builder.add("llvm-libc++abi/libcxxabi/include");
+        } else {
+            builder.add("gabi++/include");
+        }
+
+        builder.add("../android/support/include");
+
+        return builder.build();
+    }
+
+    @NonNull
+    protected List<String> getLibcxxStaticLibs(@NonNull Abi abi, boolean staticStl) {
+        ImmutableList.Builder<String> builder = ImmutableList.builder();
+        if (staticStl) {
+            builder.add("libc++_static.a");
+        }
+
+        // This is nearly always needed for ARM5, so just link it by default.
+        if (abi == Abi.ARMEABI) {
+            builder.add("libatomic.a");
+        }
+
+        return builder.build();
     }
 }
