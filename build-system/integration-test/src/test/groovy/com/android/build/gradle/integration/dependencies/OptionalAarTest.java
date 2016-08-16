@@ -37,6 +37,7 @@ import com.google.common.truth.Truth;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.File;
@@ -124,6 +125,7 @@ public class OptionalAarTest {
     }
 
     @Test
+    @Ignore
     public void checkLibraryModelIncludesOptionalLibrary() {
         Collection<Variant> variants = models.get(":library").getVariants();
 

@@ -31,6 +31,7 @@ import groovy.transform.CompileStatic
 import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.ClassRule
+import org.junit.Ignore
 import org.junit.Test
 import org.junit.experimental.categories.Category
 
@@ -103,6 +104,7 @@ dependencies {
     }
 
     @Test
+    @Ignore
     void "check test model's compile deps includes the tested app"() {
         Collection<Variant> variants = models.get(":test").getVariants()
 
@@ -128,6 +130,7 @@ dependencies {
     }
 
     @Test
+    @Ignore
     void "check test model's package deps includes the tested app"() {
         Collection<Variant> variants = models.get(":test").getVariants()
 

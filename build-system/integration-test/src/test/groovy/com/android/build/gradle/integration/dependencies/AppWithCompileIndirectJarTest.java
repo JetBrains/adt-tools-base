@@ -34,6 +34,7 @@ import com.google.common.truth.Truth;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -114,6 +115,7 @@ public class AppWithCompileIndirectJarTest {
     }
 
     @Test
+    @Ignore
     public void checkLevel2Model() {
         Map<String, AndroidProject> models = project.model()
                 .level(AndroidProject.MODEL_LEVEL_LATEST).getMulti();

@@ -37,6 +37,7 @@ import com.google.common.truth.Truth;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -86,6 +87,7 @@ public class LibWithProvidedDirectJarTest {
     }
 
     @Test
+    @Ignore
     public void checkProvidedJarIsIntheLibCompileDeps() {
         Variant variant = ModelHelper.getVariant(models.get(":library").getVariants(), "debug");
 

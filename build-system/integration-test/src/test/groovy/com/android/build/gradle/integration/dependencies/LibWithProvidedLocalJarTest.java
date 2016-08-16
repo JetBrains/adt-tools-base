@@ -32,6 +32,7 @@ import com.google.common.truth.Truth;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -78,6 +79,7 @@ public class LibWithProvidedLocalJarTest {
     }
 
     @Test
+    @Ignore
     public void checkProvidedLocalJarIsInTheMainArtifactDependency() {
         Variant variant = ModelHelper.getVariant(model.getVariants(), "debug");
 

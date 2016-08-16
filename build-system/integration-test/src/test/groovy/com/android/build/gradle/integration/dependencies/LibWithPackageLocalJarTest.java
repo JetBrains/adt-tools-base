@@ -31,6 +31,7 @@ import com.google.common.truth.Truth;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -79,11 +80,17 @@ public class LibWithPackageLocalJarTest {
     }
 
     @Test
-    public void checkPackagedLocalJarIsNotInTheModel() {
+    public void checkPackagedLocalJarIsNotInTheCompileModel() {
         Variant variant = ModelHelper.getVariant(model.getVariants(), "debug");
 
         Dependencies compileDependencies = variant.getMainArtifact().getCompileDependencies();
         assertThat(compileDependencies.getJavaLibraries()).named("java libs").isEmpty();
+    }
+
+    @Test
+    @Ignore
+    public void checkPackagedLocalJarIsNotInThePackageModel() {
+        Variant variant = ModelHelper.getVariant(model.getVariants(), "debug");
 
         Dependencies packageDependencies = variant.getMainArtifact().getPackageDependencies();
         assertThat(packageDependencies.getJavaLibraries()).named("java libs").hasSize(1);

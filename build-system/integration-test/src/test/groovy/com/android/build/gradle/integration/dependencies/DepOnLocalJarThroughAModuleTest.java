@@ -34,6 +34,7 @@ import com.google.common.truth.Truth;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -74,6 +75,7 @@ public class DepOnLocalJarThroughAModuleTest {
     }
 
     @Test
+    @Ignore
     public void checkJarModuleIsInTheTestArtifactModel() {
         Variant variant = ModelHelper.getVariant(models.get(":app").getVariants(), "debug");
 

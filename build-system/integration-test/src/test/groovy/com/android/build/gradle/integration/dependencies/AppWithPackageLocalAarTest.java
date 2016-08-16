@@ -26,6 +26,7 @@ import com.android.builder.model.SyncIssue;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.File;
@@ -67,6 +68,7 @@ public class AppWithPackageLocalAarTest {
     }
 
     @Test
+    @Ignore
     public void checkModelFailedToLoad() {
         SyncIssue issue = assertThat(model).hasSingleIssue(
                 SyncIssue.SEVERITY_ERROR,

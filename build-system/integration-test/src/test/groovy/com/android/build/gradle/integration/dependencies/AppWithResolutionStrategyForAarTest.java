@@ -35,6 +35,7 @@ import com.google.common.io.Files;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -111,6 +112,7 @@ public class AppWithResolutionStrategyForAarTest {
     }
 
     @Test
+    @Ignore
     public void checkModelContainsCorrectDependencies() {
         AndroidProject appProject = models.get(":app");
         Collection<Variant> appVariants = appProject.getVariants();

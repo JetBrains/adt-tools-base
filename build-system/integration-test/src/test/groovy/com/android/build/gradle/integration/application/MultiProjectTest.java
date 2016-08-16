@@ -28,6 +28,7 @@ import com.google.common.collect.Iterables;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat;
@@ -57,6 +58,7 @@ public class MultiProjectTest {
     }
 
     @Test
+    @Ignore
     public void checkModel() {
 
         AndroidProject baseLibModel = models.get(":baseLibrary");

@@ -26,6 +26,7 @@ import com.android.builder.model.AndroidProject;
 import com.android.builder.model.SyncIssue;
 
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 
@@ -54,6 +55,7 @@ public class TestWithMismatchDep {
             " See http://g.co/androidstudio/app-test-app-conflict for details.";
 
     @Test
+    @Ignore
     public void testMismatchDependencyErrorIsInTheModel() {
         // Query the model to get the mismatch dep sync error.
         AndroidProject model = project.model().ignoreSyncIssues().getSingle();
