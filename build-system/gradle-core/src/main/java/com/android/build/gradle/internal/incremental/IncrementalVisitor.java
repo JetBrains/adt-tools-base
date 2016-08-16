@@ -23,6 +23,7 @@ import com.android.build.gradle.internal.LoggerWrapper;
 import com.android.utils.FileUtils;
 import com.android.utils.ILogger;
 import com.google.common.base.Splitter;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.io.Files;
@@ -372,7 +373,10 @@ public class IncrementalVisitor extends ClassVisitor {
             }
         }
 
-        if (isPackageInstantRunDisabled(inputFile, classNode)) {
+        List<ClassNode> parentsNodes = parseParents(inputFile, classNode);
+
+        // if we could not determine the parent hierarchy, disable instant run.
+        if (parentsNodes.isEmpty() || isPackageInstantRunDisabled(inputFile, classNode)) {
             if (visitorBuilder.getOutputType() == OutputType.INSTRUMENT) {
                 Files.createParentDirs(outputFile);
                 Files.write(classBytes, outputFile);
@@ -382,7 +386,6 @@ public class IncrementalVisitor extends ClassVisitor {
             }
         }
 
-        List<ClassNode> parentsNodes = parseParents(inputFile, classNode);
         outputFile = new File(outputDirectory, visitorBuilder.getMangledRelativeClassFilePath(path));
         Files.createParentDirs(outputFile);
         IncrementalVisitor visitor = visitorBuilder.build(classNode, parentsNodes, classWriter);
@@ -428,11 +431,11 @@ public class IncrementalVisitor extends ClassVisitor {
                     currentParentName = parentNode.superName;
                 } catch (IOException e) {
                     // Could not locate parent class. This is as far as we can go locating parents.
-                    LOG.error(null,
-                            "IncrementalVisitor parseParents could not locate %1$s "
-                                    + "which is an ancestor of project class %2$s.\n",
+                    LOG.warning("IncrementalVisitor parseParents could not locate %1$s "
+                            + "which is an ancestor of project class %2$s.\n"
+                            + "%2$s is not eligible for hot swap.",
                             currentParentName, classNode.name);
-                    currentParentName = null;
+                    return ImmutableList.of();
                 }
             }
         }
