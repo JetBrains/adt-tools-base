@@ -115,11 +115,10 @@ public class BootstrapApplication extends Application {
     private Application realApplication;
 
     public BootstrapApplication() {
-        if (Log.isLoggable(LOG_TAG, Log.VERBOSE)) {
-            Log.v(LOG_TAG, String.format(
-                    "BootstrapApplication created. Android package is %s, real application class is %s.",
-                    AppInfo.applicationId, AppInfo.applicationClass));
-        }
+        // always log such that we can debug issues like http://b.android.com/215805
+        Log.i(LOG_TAG, String.format(
+                "Instant Run Runtime started. Android package is %s, real application class is %s.",
+                AppInfo.applicationId, AppInfo.applicationClass));
     }
 
     private void createResources(long apkModified) {
@@ -183,6 +182,8 @@ public class BootstrapApplication extends Application {
                     nativeLibraryPath,
                     codeCacheDir,
                     dexList);
+        } else {
+            Log.w(LOG_TAG, "No instant run dex files added to classpath");
         }
     }
 
