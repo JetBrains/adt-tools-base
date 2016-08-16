@@ -20,6 +20,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.android.annotations.NonNull;
 import com.google.common.base.Joiner;
+import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
@@ -376,6 +377,17 @@ public class ProcessInfoBuilder extends ProcessEnvBuilder<ProcessInfoBuilder> {
         @Override
         public List<String> getJvmArgs() {
             return mJvmArgs;
+        }
+
+        @Override
+        public String toString() {
+            return MoreObjects.toStringHelper(this)
+                    .add("mClasspath", mClasspath)
+                    .add("mMain", mMain)
+                    .add("mArgs", mArgs)
+                    .add("mEnvironment", mEnvironment)
+                    .add("mJvmArgs", mJvmArgs)
+                    .toString();
         }
     }
 }

@@ -28,6 +28,8 @@ public interface DexOptions {
 
     boolean getDexInProcess();
 
+    boolean getKeepRuntimeAnnotatedClasses();
+
     @Nullable
     String getJavaMaxHeapSize();
 

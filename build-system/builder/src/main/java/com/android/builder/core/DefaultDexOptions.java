@@ -35,6 +35,8 @@ public class DefaultDexOptions implements DexOptions {
     // By default, all dexing will happen in process to get maximum feedback quickly.
     private boolean dexInProcess = true;
 
+    private boolean keepRuntimeAnnotatedClasses = true;
+
     private Integer threadCount = null;
 
     private Boolean optimize = null;
@@ -56,6 +58,8 @@ public class DefaultDexOptions implements DexOptions {
         result.setAdditionalParameters(dexOptions.getAdditionalParameters());
         result.setMaxProcessCount(dexOptions.getMaxProcessCount());
         result.setOptimize(dexOptions.getOptimize());
+        result.setKeepRuntimeAnnotatedClasses(
+                dexOptions.getKeepRuntimeAnnotatedClasses());
 
         return result;
     }
@@ -97,6 +101,28 @@ public class DefaultDexOptions implements DexOptions {
 
     public void setDexInProcess(boolean dexInProcess) {
         this.dexInProcess = dexInProcess;
+    }
+
+
+    /**
+     * Keep all classes with runtime annotations in the main dex in legacy multidex.
+     *
+     * <p>This is enabled by default and works around an issue that will cause the app to crash
+     * when using java.lang.reflect.Field.getDeclaredAnnotations on older android versions.
+     *
+     * <p>This can be disabled for for apps that do not use reflection and need more space in their
+     * main dex.
+     *
+     * <p>See <a href="http://b.android.com/78144">http://b.android.com/78144</a>.
+     */
+    @Override
+    public boolean getKeepRuntimeAnnotatedClasses() {
+        return keepRuntimeAnnotatedClasses;
+    }
+
+    public void setKeepRuntimeAnnotatedClasses(
+            boolean keepRuntimeAnnotatedClasses) {
+        this.keepRuntimeAnnotatedClasses = keepRuntimeAnnotatedClasses;
     }
 
     /**

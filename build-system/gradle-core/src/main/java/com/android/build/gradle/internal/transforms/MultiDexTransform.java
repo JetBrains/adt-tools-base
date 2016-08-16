@@ -29,8 +29,10 @@ import com.android.build.api.transform.SecondaryFile;
 import com.android.build.api.transform.TransformException;
 import com.android.build.api.transform.TransformInput;
 import com.android.build.api.transform.TransformInvocation;
+import com.android.build.gradle.internal.dsl.DexOptions;
 import com.android.build.gradle.internal.pipeline.TransformManager;
 import com.android.build.gradle.internal.scope.VariantScope;
+import com.android.builder.core.AndroidBuilder;
 import com.android.builder.sdk.TargetInfo;
 import com.android.ide.common.process.ProcessException;
 import com.google.common.base.Charsets;
@@ -43,12 +45,14 @@ import com.google.common.collect.Lists;
 import com.google.common.io.Files;
 
 import org.gradle.api.logging.LogLevel;
+import org.gradle.api.logging.Logging;
 import org.gradle.api.logging.LoggingManager;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -76,6 +80,8 @@ public class MultiDexTransform extends BaseProguardAction {
     @Nullable
     private final File includeInMainDexJarFile;
 
+    private final boolean keepRuntimeAnnotatedClasses;
+
     // Outputs
     @NonNull
     private final File configFileOut;
@@ -84,6 +90,7 @@ public class MultiDexTransform extends BaseProguardAction {
 
     public MultiDexTransform(
             @NonNull VariantScope variantScope,
+            @NonNull DexOptions dexOptions,
             @Nullable File includeInMainDexJarFile) {
         super(variantScope);
         this.manifestKeepListProguardFile = variantScope.getManifestKeepListProguardFile();
@@ -95,6 +102,7 @@ public class MultiDexTransform extends BaseProguardAction {
                 + "/multi-dex/" + variantScope.getVariantConfiguration().getDirName()
                 + "/components.flags");
         mainDexListFile = variantScope.getMainDexListFile();
+        keepRuntimeAnnotatedClasses = dexOptions.getKeepRuntimeAnnotatedClasses();
     }
 
     @NonNull
@@ -144,12 +152,13 @@ public class MultiDexTransform extends BaseProguardAction {
     @NonNull
     @Override
     public Map<String, Object> getParameterInputs() {
+        ImmutableMap.Builder<String, Object> params = ImmutableMap.builder();
+        params.put("keepRuntimeAnnotatedClasses", keepRuntimeAnnotatedClasses);
         TargetInfo targetInfo = variantScope.getGlobalScope().getAndroidBuilder().getTargetInfo();
-        if (targetInfo == null) {
-            return ImmutableMap.of();
+        if (targetInfo != null) {
+            params.put("build_tools", targetInfo.getBuildTools().getRevision().toString());
         }
-        return ImmutableMap.of(
-                "build_tools", targetInfo.getBuildTools().getRevision().toString());
+        return params.build();
     }
 
     @NonNull
@@ -286,7 +295,18 @@ public class MultiDexTransform extends BaseProguardAction {
     }
 
     private Set<String> callDx(File allClassesJarFile, File jarOfRoots) throws ProcessException {
+        EnumSet<AndroidBuilder.MainDexListOption> mainDexListOptions =
+                EnumSet.noneOf(AndroidBuilder.MainDexListOption.class);
+        if (!keepRuntimeAnnotatedClasses) {
+            mainDexListOptions.add(
+                    AndroidBuilder.MainDexListOption.DISABLE_ANNOTATION_RESOLUTION_WORKAROUND);
+            Logging.getLogger(MultiDexTransform.class).warn(
+                    "Not including classes with runtime retention annotations in the main dex.\n"
+                            + "This can cause issues with reflection in older platforms.");
+        }
+
+
         return variantScope.getGlobalScope().getAndroidBuilder().createMainDexList(
-                allClassesJarFile, jarOfRoots);
+                allClassesJarFile, jarOfRoots, mainDexListOptions);
     }
 }

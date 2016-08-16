@@ -236,6 +236,10 @@ public class DexTransform extends Transform {
         logger.info("JarInputs %s", Joiner.on(",").join(jarInputs));
         logger.info("DirInputs %s", Joiner.on(",").join(directoryInputs));
 
+        if (!dexOptions.getKeepRuntimeAnnotatedClasses() && mainDexListFile != null) {
+            logger.info("DexOptions.keepRuntimeAnnotatedClasses has no affect in native multidex.");
+        }
+
         ProcessOutputHandler outputHandler = new ParsingProcessOutputHandler(
                 new ToolOutputParser(new DexParser(), Message.Kind.ERROR, logger),
                 new ToolOutputParser(new DexParser(), logger),
