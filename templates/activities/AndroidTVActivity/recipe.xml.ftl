@@ -2,6 +2,7 @@
 <recipe>
 
     <dependency mavenUrl="com.android.support:appcompat-v7:${targetApi}.+"/>
+    <dependency mavenUrl="com.android.support:leanback-v17:${targetApi}.+"/>
     <dependency mavenUrl="com.github.bumptech.glide:glide:3.4.+"/>
 
     <merge from="root/AndroidManifest.xml.ftl"
