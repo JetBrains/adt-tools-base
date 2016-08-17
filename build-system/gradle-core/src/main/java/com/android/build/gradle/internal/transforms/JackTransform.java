@@ -43,6 +43,7 @@ import com.android.jack.api.ConfigNotSupportedException;
 import com.android.jack.api.v01.CompilationException;
 import com.android.jack.api.v01.ConfigurationException;
 import com.android.jack.api.v01.UnrecoverableException;
+import com.android.repository.Revision;
 import com.android.sdklib.BuildToolInfo;
 import com.android.utils.StringHelper;
 import com.google.common.base.Objects;
@@ -262,8 +263,9 @@ public class JackTransform extends Transform {
                         globalScope.getExtension().getDexOptions().getOptimize(), !isDebuggable));
         options.setMultiDex(config.isMultiDexEnabled());
         options.setMinSdkVersion(config.getMinSdkVersion().getApiLevel());
-        if (!Boolean.FALSE.equals(
-                globalScope.getExtension().getCompileOptions().getIncremental())) {
+        if (!Boolean.FALSE.equals(globalScope.getExtension().getCompileOptions().getIncremental())
+                && androidBuilder.getTargetInfo().getBuildTools().getRevision().compareTo(
+                        new Revision(24, 0, 2), Revision.PreviewComparison.IGNORE) >= 0) {
             String taskName = StringHelper.combineAsCamelCase(
                     ImmutableList.of(
                             "transformJackWith",
