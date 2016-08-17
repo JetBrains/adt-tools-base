@@ -368,12 +368,16 @@ public class MonkeyPatcher {
                         mtm.setAccessible(true);
                         mtm.invoke(activity);
 
-                        Method mCreateTheme = AssetManager.class.getDeclaredMethod("createTheme");
-                        mCreateTheme.setAccessible(true);
-                        Object internalTheme = mCreateTheme.invoke(newAssetManager);
-                        Field mTheme = Resources.Theme.class.getDeclaredField("mTheme");
-                        mTheme.setAccessible(true);
-                        mTheme.set(theme, internalTheme);
+                        if (SDK_INT < 24) { // As of API 24, mTheme is gone (but updates work
+                                            // without these changes
+                            Method mCreateTheme = AssetManager.class
+                                    .getDeclaredMethod("createTheme");
+                            mCreateTheme.setAccessible(true);
+                            Object internalTheme = mCreateTheme.invoke(newAssetManager);
+                            Field mTheme = Resources.Theme.class.getDeclaredField("mTheme");
+                            mTheme.setAccessible(true);
+                            mTheme.set(theme, internalTheme);
+                        }
                     } catch (Throwable e) {
                         Log.e(LOG_TAG, "Failed to update existing theme for activity " + activity,
                                 e);
