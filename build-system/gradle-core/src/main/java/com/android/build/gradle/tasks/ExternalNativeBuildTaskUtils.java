@@ -97,7 +97,9 @@ public class ExternalNativeBuildTaskUtils {
         List<String> lines = Files.readLines(json, Charsets.UTF_8);
         NativeBuildConfigValue config = gson.fromJson(Joiner.on("\n").join(lines),
                 NativeBuildConfigValue.class);
-        checkNotNull(config.libraries);
+        if (config.libraries == null) {
+            return config;
+        }
         for (NativeLibraryValue library : config.libraries.values()) {
             library.groupName = groupName;
         }
