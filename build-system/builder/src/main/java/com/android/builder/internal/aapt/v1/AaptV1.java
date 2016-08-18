@@ -477,6 +477,10 @@ public class AaptV1 extends AbstractProcessExecutionAapt {
             return null;
         }
 
+        if (!mProcessMode.shouldProcess(file)) {
+            return null;
+        }
+
         File outputFile = compileOutputFor(file, output);
 
         ProcessInfoBuilder builder = new ProcessInfoBuilder();
