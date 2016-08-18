@@ -43,6 +43,7 @@ import org.eclipse.jdt.internal.compiler.lookup.LocalVariableBinding;
 import org.eclipse.jdt.internal.compiler.lookup.MethodBinding;
 import org.eclipse.jdt.internal.compiler.lookup.PackageBinding;
 import org.eclipse.jdt.internal.compiler.lookup.ReferenceBinding;
+import org.eclipse.jdt.internal.compiler.problem.AbortCompilation;
 
 import java.io.File;
 import java.util.Collection;
@@ -70,7 +71,13 @@ public class EcjPsiJavaEvaluator extends JavaEvaluator {
             return false;
         }
         if (strict) {
-            binding = binding.superclass();
+            try {
+                binding = binding.superclass();
+            } catch (AbortCompilation ignore) {
+                // Encountered symbol that couldn't be resolved (e.g. compiled class references
+                // class not found on the classpath
+                return false;
+            }
         }
 
         for (; binding != null; binding = binding.superclass()) {
@@ -97,7 +104,13 @@ public class EcjPsiJavaEvaluator extends JavaEvaluator {
             return false;
         }
         if (strict) {
-            binding = binding.superclass();
+            try {
+                binding = binding.superclass();
+            } catch (AbortCompilation ignore) {
+                // Encountered symbol that couldn't be resolved (e.g. compiled class references
+                // class not found on the classpath
+                return false;
+            }
         }
         return isInheritor(binding, interfaceName);
     }
@@ -151,7 +164,7 @@ public class EcjPsiJavaEvaluator extends JavaEvaluator {
 
     /** Checks whether the given class extends or implements a class with the given name */
     private static boolean isInheritor(@Nullable ReferenceBinding cls, @NonNull String name) {
-        for (; cls != null; cls = cls.superclass()) {
+        while (cls != null) {
             ReferenceBinding[] interfaces = cls.superInterfaces();
             for (ReferenceBinding binding : interfaces) {
                 if (isInheritor(binding, name)) {
@@ -161,6 +174,14 @@ public class EcjPsiJavaEvaluator extends JavaEvaluator {
 
             if (equalsCompound(name, cls.compoundName)) {
                 return true;
+            }
+
+            try {
+                cls = cls.superclass();
+            } catch (AbortCompilation ignore) {
+                // Encountered symbol that couldn't be resolved (e.g. compiled class references
+                // class not found on the classpath
+                break;
             }
         }
 
@@ -306,7 +327,13 @@ public class EcjPsiJavaEvaluator extends JavaEvaluator {
                     }
                 }
 
-                cls = cls.superclass();
+                try {
+                    cls = cls.superclass();
+                } catch (AbortCompilation ignore) {
+                    // Encountered symbol that couldn't be resolved (e.g. compiled class references
+                    // class not found on the classpath
+                    break;
+                }
             }
 
             return EcjPsiManager.ensureUnique(all);

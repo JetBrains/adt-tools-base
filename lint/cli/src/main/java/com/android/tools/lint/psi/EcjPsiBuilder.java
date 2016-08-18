@@ -464,7 +464,7 @@ public class EcjPsiBuilder {
     private EcjPsiModifierList toModifierList(@NonNull EcjPsiSourceElement parent,
             @NonNull AbstractMethodDeclaration node) {
         EcjPsiModifierList modifierList = toModifierList(parent, node.modifiers, node.annotations);
-        int start = node.modifiersSourceStart != 0
+        int start = node.modifiersSourceStart > 0
                 ? node.modifiersSourceStart : node.declarationSourceStart;
         int end = start;
         if (node.javadoc != null) {
@@ -483,7 +483,7 @@ public class EcjPsiBuilder {
     private EcjPsiModifierList toModifierList(@NonNull EcjPsiSourceElement parent,
             @NonNull TypeDeclaration node) {
         EcjPsiModifierList modifierList = toModifierList(parent, node.modifiers, node.annotations);
-        int start = node.modifiersSourceStart != 0
+        int start = node.modifiersSourceStart > 0
                 ? node.modifiersSourceStart : node.declarationSourceStart;
         int end = start;
         if (node.javadoc != null) {
@@ -502,7 +502,7 @@ public class EcjPsiBuilder {
     private EcjPsiModifierList toModifierList(@NonNull EcjPsiSourceElement parent,
             @NonNull AbstractVariableDeclaration node) {
         EcjPsiModifierList modifierList = toModifierList(parent, node.modifiers, node.annotations);
-        int start = node.modifiersSourceStart != 0 ? node.modifiersSourceStart
+        int start = node.modifiersSourceStart > 0 ? node.modifiersSourceStart
                 : node.declarationSourceStart;
         int end = start;
         if (node.annotations != null && node.annotations.length > 0) {

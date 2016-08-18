@@ -674,6 +674,25 @@ public class EcjPsiBuilderTest extends TestCase {
         }
     }
 
+    @SuppressWarnings("ClassNameDiffersFromFileName")
+    public void testOffsets() throws Exception {
+        JavaContext context = LintUtilsTest.parsePsi(""
+                + "package test.pkg;\n"
+                + "\n"
+                + "public class MyClass {\n"
+                + "    @interface GAndDInstruction {\n"
+                + "        int ACTIVATE_MODE     = 0xA0;\n"
+                + "        int REQUEST_SLOTS     = 0xA1;\n"
+                + "    }\n"
+                + "\n"
+                + "    @interface GAndDEnvelopeInstruction {\n"
+                + "        int ACTIVATE_MODE = 0;\n"
+                + "        int REQUEST_SLOTS = 1;\n"
+                + "    }\n"
+                + "}\n");
+        assertNotNull(context);
+    }
+
     public void testLanguageConstructs() throws Exception {
         // Simple parse: make sure we can convert all the language constructs
         assertNotNull(mJavaFile);
