@@ -20,6 +20,7 @@ import com.android.annotations.NonNull;
 import com.android.build.gradle.ndk.internal.NdkNamingScheme;
 
 import org.gradle.api.Action;
+import org.gradle.api.file.FileCollection;
 import org.gradle.api.tasks.Copy;
 import org.gradle.nativeplatform.NativeBinarySpec;
 
@@ -38,16 +39,20 @@ public class MergeNativeLibrariesConfigAction implements Action<Copy> {
     @NonNull
     private final Collection<File> inputFiles;
     @NonNull
+    private final Collection<FileCollection> inputFileCollections;
+    @NonNull
     private final File buildDir;
 
     public MergeNativeLibrariesConfigAction(
             @NonNull NativeBinarySpec binary,
             @NonNull File inputFolder,
             @NonNull Collection<File> inputFiles,
+            @NonNull Collection<FileCollection> inputFileCollections,
             @NonNull File buildDir) {
         this.binary = binary;
         this.inputFolder = inputFolder;
         this.inputFiles = inputFiles;
+        this.inputFileCollections = inputFileCollections;
         this.buildDir = buildDir;
     }
 
@@ -55,6 +60,7 @@ public class MergeNativeLibrariesConfigAction implements Action<Copy> {
     public void execute(@NonNull Copy task) {
         task.from(inputFolder);
         task.from(inputFiles);
+        task.from(inputFileCollections);
         task.into(new File(
                 buildDir,
                 NdkNamingScheme.getOutputDirectoryName(binary)));

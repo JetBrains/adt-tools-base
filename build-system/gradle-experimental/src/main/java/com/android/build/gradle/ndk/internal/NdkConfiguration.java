@@ -40,6 +40,7 @@ import com.google.common.collect.Multimap;
 
 import org.gradle.api.Action;
 import org.gradle.api.Task;
+import org.gradle.api.file.FileCollection;
 import org.gradle.api.file.SourceDirectorySet;
 import org.gradle.api.tasks.Copy;
 import org.gradle.internal.service.ServiceRegistry;
@@ -377,7 +378,6 @@ public class NdkConfiguration {
                     (SharedLibraryBinarySpec) binary,
                     dependencyMap,
                     buildDir,
-                    ndkHandler,
                     compileNdkTaskName);
         }
     }
@@ -390,12 +390,12 @@ public class NdkConfiguration {
             final SharedLibraryBinarySpec binary,
             @NonNull final Multimap<String, NativeDependencyResolveResult> dependencyMap,
             final File buildDir,
-            final NdkHandler handler,
             String buildTaskName) {
 
         final String taskName = NdkNamingScheme.getTaskName(binary, "stripSymbols");
 
-        List<File> libs = Lists.newArrayList();
+        List<File> artifactFiles = Lists.newArrayList();
+        List<FileCollection> prebuiltLibs = Lists.newArrayList();
         final Collection<NativeDependencyResolveResult> dependencies =
                 dependencyMap.get(binary.getName());
         for (NativeDependencyResolveResult dependency : dependencies) {
@@ -403,7 +403,7 @@ public class NdkConfiguration {
                 if (binary.getTargetPlatform().getName().equals(artifact.getAbi())) {
                     for (File lib : artifact.getLibraries()) {
                         if (lib.getName().endsWith(".so")) {
-                            libs.add(lib);
+                            artifactFiles.add(lib);
                         }
                     }
                 }
@@ -414,7 +414,10 @@ public class NdkConfiguration {
                 if (prebuiltLib instanceof SharedLibraryBinary) {
                     if (binary.getTargetPlatform().getName().equals(
                             prebuiltLib.getTargetPlatform().getName())) {
-                        libs.addAll(prebuiltLib.getRuntimeFiles().getFiles());
+                        // Keep the list of FileCollection.  Do not call getFiles() on
+                        // prebuiltLib.getRuntimeFiles() to delay file resolution until task
+                        // execution.
+                        prebuiltLibs.add(prebuiltLib.getRuntimeFiles());
                     }
                 }
             }
@@ -429,7 +432,8 @@ public class NdkConfiguration {
                 new MergeNativeLibrariesConfigAction(
                         binary,
                         new File(buildDir, NdkNamingScheme.getDebugLibraryDirectoryName(binary)),
-                        libs,
+                        artifactFiles,
+                        prebuiltLibs,
                         buildDir));
         tasks.named(buildTaskName, task -> {
             task.dependsOn(taskName);
