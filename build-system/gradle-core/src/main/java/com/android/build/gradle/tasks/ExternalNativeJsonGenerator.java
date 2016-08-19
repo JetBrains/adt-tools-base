@@ -153,8 +153,9 @@ public abstract class ExternalNativeJsonGenerator {
                     json.toPath()).toMillis();
             for (File buildFile : config.buildFiles) {
                 if (!buildFile.exists()) {
-                    throw new GradleException(
-                            String.format("Expected build file %s to exist", buildFile));
+                    // If build file doesn't exist in JSON then the JSON should be regenerated to
+                    // see if user has set a new one.
+                    return true;
                 }
                 long buildFileLastModified = java.nio.file.Files.getLastModifiedTime(
                         buildFile.toPath()).toMillis();

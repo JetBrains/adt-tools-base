@@ -34,6 +34,10 @@ import static com.android.build.gradle.integration.common.truth.TruthHelper.asse
 @CompileStatic
 class NativeBuildOutputTest {
 
+    private static String zeroLibraryCmakeLists = """cmake_minimum_required(VERSION 3.4.1)
+            file(GLOB SRC src/main/cpp/hello-jni.cpp)
+            set(CMAKE_VERBOSE_MAKEFILE ON)""";
+
     private static String cmakeLists = """cmake_minimum_required(VERSION 3.4.1)
             file(GLOB SRC src/main/cpp/hello-jni.cpp)
             set(CMAKE_VERBOSE_MAKEFILE ON)
@@ -100,6 +104,23 @@ class NativeBuildOutputTest {
         project.file("src/main/cpp/hello-jni.cpp").write("xx");
 
         checkFailed(["'xx'"], [], 0);
+    }
+
+    // Related to b.android.com/219899 -- no libraries in CMake caused a NullReferenceException
+    @Test
+    public void checkCMakeNoLibraries() {
+        project.buildFile << """
+            android {
+                externalNativeBuild {
+                    cmake {
+                        path "CMakeLists.txt"
+                    }
+                }
+            }
+            """;
+
+        project.file("CMakeLists.txt") << zeroLibraryCmakeLists;
+        checkSucceeded([], []);
     }
 
     @Test
