@@ -45,7 +45,7 @@ public class AndroidGradleOptions {
 
     private static final boolean DEFAULT_ENABLE_AAPT2 = false;
 
-    private static final boolean DEFAULT_ENABLE_USER_CACHE = false;
+    private static final boolean DEFAULT_ENABLE_BUILD_CACHE = false;
 
     private static final String PROPERTY_TEST_RUNNER_ARGS =
             "android.testInstrumentationRunnerArguments.";
@@ -80,9 +80,9 @@ public class AndroidGradleOptions {
     public static  final String PROPERTY_USE_SDK_DOWNLOAD =
             "android.builder.sdkDownload";
 
-    private static final String PROPERTY_ENABLE_USER_CACHE = "android.enableUserCache";
+    private static final String PROPERTY_ENABLE_BUILD_CACHE = "android.enableBuildCache";
 
-    private static final String PROPERTY_USER_CACHE_DIR = "android.userCacheDir";
+    private static final String PROPERTY_BUILD_CACHE_DIR = "android.buildCacheDir";
 
     public static final String GRADLE_VERSION_CHECK_OVERRIDE_PROPERTY =
             "android.overrideVersionCheck";
@@ -386,17 +386,17 @@ public class AndroidGradleOptions {
         return getString(project, AndroidProject.PROPERTY_RESTRICT_VARIANT_NAME);
     }
 
-    public static boolean isUserCacheEnabled(@NonNull Project project) {
-        return getBoolean(project, PROPERTY_ENABLE_USER_CACHE, DEFAULT_ENABLE_USER_CACHE);
+    public static boolean isBuildCacheEnabled(@NonNull Project project) {
+        return getBoolean(project, PROPERTY_ENABLE_BUILD_CACHE, DEFAULT_ENABLE_BUILD_CACHE);
     }
 
     @NonNull
-    public static File getUserCacheDir(@NonNull Project project) {
-        String userCacheDir = getString(project, PROPERTY_USER_CACHE_DIR);
-        if (userCacheDir != null) {
-            return new File(userCacheDir);
+    public static File getBuildCacheDir(@NonNull Project project) {
+        String buildCacheDir = getString(project, PROPERTY_BUILD_CACHE_DIR);
+        if (buildCacheDir != null) {
+            return new File(buildCacheDir);
         } else {
-            // Use a directory under the user home directory if the user cache directory is not set
+            // Use a directory under the user home directory if the build cache directory is not set
             return new File(
                     FileUtils.join(
                             System.getProperty("user.home"), ".android", "build-cache"));
@@ -404,9 +404,9 @@ public class AndroidGradleOptions {
     }
 
     @NonNull
-    public static FileCache getUserCache(@NonNull Project project) {
-        return isUserCacheEnabled(project)
-                ? FileCache.withInterProcessLocking(getUserCacheDir(project))
+    public static FileCache getBuildCache(@NonNull Project project) {
+        return isBuildCacheEnabled(project)
+                ? FileCache.withInterProcessLocking(getBuildCacheDir(project))
                 : FileCache.NO_CACHE;
     }
 

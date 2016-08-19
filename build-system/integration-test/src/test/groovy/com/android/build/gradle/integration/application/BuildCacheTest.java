@@ -30,8 +30,8 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 
-/** Integration tests for user cache. */
-public class UserCacheTest {
+/** Integration test for build cache. */
+public class BuildCacheTest {
 
     @Rule
     public GradleTestProject project =
@@ -48,18 +48,18 @@ public class UserCacheTest {
     }
 
     @Test
-    public void testUserCacheEnabled() throws IOException {
-        File userCacheDir = new File(project.getTestDir(), "build-cache");
-        FileUtils.deletePath(userCacheDir);
+    public void testBuildCacheEnabled() throws IOException {
+        File buildCacheDir = new File(project.getTestDir(), "build-cache");
+        FileUtils.deletePath(buildCacheDir);
 
         project.executor()
-                .withProperty("android.enableUserCache", "true")
-                .withProperty("android.userCacheDir", userCacheDir.getAbsolutePath())
+                .withProperty("android.enableBuildCache", "true")
+                .withProperty("android.buildCacheDir", buildCacheDir.getAbsolutePath())
                 .run("clean", "assembleDebug");
 
         File preDexDir = FileUtils.join(project.getIntermediatesDir(), "pre-dexed", "debug");
         List<File> dexFiles = Arrays.asList(preDexDir.listFiles());
-        List<File> cachedFileContainers = Arrays.asList(userCacheDir.listFiles());
+        List<File> cachedFileContainers = Arrays.asList(buildCacheDir.listFiles());
 
         assertThat(dexFiles).hasSize(2);
         assertThat(cachedFileContainers).hasSize(1);
@@ -85,12 +85,12 @@ public class UserCacheTest {
         assertThat(guavaDexFile).wasModifiedAt(cachedGuavaTimestamp);
 
         project.executor()
-                .withProperty("android.enableUserCache", "true")
-                .withProperty("android.userCacheDir", userCacheDir.getAbsolutePath())
+                .withProperty("android.enableBuildCache", "true")
+                .withProperty("android.buildCacheDir", buildCacheDir.getAbsolutePath())
                 .run("clean", "assembleDebug");
 
         assertThat(preDexDir.list()).hasLength(2);
-        assertThat(userCacheDir.list()).hasLength(1);
+        assertThat(buildCacheDir.list()).hasLength(1);
 
         // Assert that the cached file is unchanged and the pre-dexed file of the guava library is
         // copied from the cache
@@ -100,14 +100,14 @@ public class UserCacheTest {
     }
 
     @Test
-    public void testUserCacheDisabled() throws IOException {
-        File userCacheDir = new File(project.getTestDir(), "build-cache");
-        FileUtils.deletePath(userCacheDir);
+    public void testBuildCacheDisabled() throws IOException {
+        File buildCacheDir = new File(project.getTestDir(), "build-cache");
+        FileUtils.deletePath(buildCacheDir);
 
         project.executor()
-                .withProperty("android.enableUserCache", "false")
-                .withProperty("android.userCacheDir", userCacheDir.getAbsolutePath())
+                .withProperty("android.enableBuildCache", "false")
+                .withProperty("android.buildCacheDir", buildCacheDir.getAbsolutePath())
                 .run("clean", "assembleDebug");
-        assertThat(userCacheDir).doesNotExist();
+        assertThat(buildCacheDir).doesNotExist();
     }
 }

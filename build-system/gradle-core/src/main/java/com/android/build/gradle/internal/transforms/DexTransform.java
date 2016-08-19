@@ -111,7 +111,7 @@ public class DexTransform extends Transform {
     private final InstantRunBuildContext instantRunBuildContext;
 
     @NonNull
-    private final FileCache userCache;
+    private final FileCache buildCache;
 
     public DexTransform(
             @NonNull DexOptions dexOptions,
@@ -122,7 +122,7 @@ public class DexTransform extends Transform {
             @NonNull AndroidBuilder androidBuilder,
             @NonNull Logger logger,
             @NonNull InstantRunBuildContext instantRunBuildContext,
-            @NonNull FileCache userCache) {
+            @NonNull FileCache buildCache) {
         this.dexOptions = dexOptions;
         this.debugMode = debugMode;
         this.multiDex = multiDex;
@@ -131,7 +131,7 @@ public class DexTransform extends Transform {
         this.androidBuilder = androidBuilder;
         this.logger = new LoggerWrapper(logger);
         this.instantRunBuildContext = instantRunBuildContext;
-        this.userCache = userCache;
+        this.buildCache = buildCache;
     }
 
     @NonNull
@@ -382,7 +382,7 @@ public class DexTransform extends Transform {
                             entry.getValue(),
                             hashs,
                             outputHandler,
-                            externalLibs.contains(entry.getKey()) ? userCache : FileCache.NO_CACHE);
+                            externalLibs.contains(entry.getKey()) ? buildCache : FileCache.NO_CACHE);
                     logger.info("Adding PreDexTask for %s : %s", entry.getKey(), action);
                     executor.execute(action);
                 }
