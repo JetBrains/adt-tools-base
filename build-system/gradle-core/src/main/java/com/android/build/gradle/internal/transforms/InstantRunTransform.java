@@ -39,6 +39,8 @@ import com.android.build.gradle.internal.incremental.IncrementalSupportVisitor;
 import com.android.build.gradle.internal.incremental.IncrementalVisitor;
 import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
 import com.android.build.gradle.internal.incremental.InstantRunBuildMode;
+import com.android.build.gradle.internal.incremental.InstantRunVerifier;
+import com.android.build.gradle.internal.incremental.InstantRunVerifierStatus;
 import com.android.build.gradle.internal.pipeline.ExtendedContentType;
 import com.android.build.gradle.internal.pipeline.TransformManager;
 import com.android.build.gradle.internal.scope.InstantRunVariantScope;
@@ -264,7 +266,13 @@ public class InstantRunTransform extends Transform {
     protected void wrapUpOutputs(File classes2Folder, File classes3Folder)
             throws IOException {
 
-        // generate the patch file and add to the list of files to process next.
+        // the transform can set the verifier status to failure in some corner cases, in that
+        // case, make sure we delete our classes.3
+        if (!transformScope.getInstantRunBuildContext().hasPassedVerification()) {
+            FileUtils.cleanOutputDir(classes3Folder);
+            return;
+        }
+        // otherwise, generate the patch file and add it to the list of files to process next.
         ImmutableList<String> generatedClassNames = generatedClasses3Names.build();
         if (!generatedClassNames.isEmpty()) {
             writePatchFileContents(generatedClassNames, classes3Folder,
@@ -371,10 +379,12 @@ public class InstantRunTransform extends Transform {
         File outputFile = IncrementalVisitor.instrumentClass(
                 inputDir, inputFile, outputDir, IncrementalChangeVisitor.VISITOR_BUILDER);
 
-        // if the visitor returned null, that means the class not be hot swapped or more likely
+        // if the visitor returned null, that means the class cannot be hot swapped or more likely
         // that it was disabled for InstantRun, we don't add it to our collection of generated
         // classes and it will not be part of the Patch class that apply changes.
         if (outputFile == null) {
+            transformScope.getInstantRunBuildContext().setVerifierResult(
+                    InstantRunVerifierStatus.INSTANT_RUN_DISABLED);
             return;
         }
         generatedClasses3Names.add(
