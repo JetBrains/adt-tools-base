@@ -123,6 +123,7 @@ import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
@@ -1427,9 +1428,14 @@ public class AndroidBuilder {
                 processOutputHandler);
     }
 
+    public enum MainDexListOption {
+        DISABLE_ANNOTATION_RESOLUTION_WORKAROUND;
+    }
+
     public Set<String> createMainDexList(
             @NonNull File allClassesJarFile,
-            @NonNull File jarOfRoots) throws ProcessException {
+            @NonNull File jarOfRoots,
+            @NonNull EnumSet<MainDexListOption> options) throws ProcessException {
 
         BuildToolInfo buildToolInfo = mTargetInfo.getBuildTools();
         ProcessInfoBuilder builder = new ProcessInfoBuilder();
@@ -1441,6 +1447,10 @@ public class AndroidBuilder {
 
         builder.setClasspath(dx);
         builder.setMain("com.android.multidex.ClassReferenceListBuilder");
+
+        if (options.contains(MainDexListOption.DISABLE_ANNOTATION_RESOLUTION_WORKAROUND)) {
+            builder.addArgs("--disable-annotation-resolution-workaround");
+        }
 
         builder.addArgs(jarOfRoots.getAbsolutePath());
         builder.addArgs(allClassesJarFile.getAbsolutePath());

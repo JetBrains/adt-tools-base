@@ -50,6 +50,7 @@ public class GradleJavaProcessExecutor implements JavaProcessExecutor {
     public ProcessResult execute(
             @NonNull JavaProcessInfo javaProcessInfo,
             @NonNull ProcessOutputHandler processOutputHandler) {
+        project.getLogger().info("Executing java process: ", javaProcessInfo.toString());
         ProcessOutput output = processOutputHandler.createOutput();
 
         ExecResult result;
