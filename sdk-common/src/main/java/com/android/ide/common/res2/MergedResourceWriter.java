@@ -329,6 +329,17 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
     @Override
     protected void postWriteAction() throws ConsumerException {
 
+        /*
+         * Create a temporary directory where merged XML files are placed before being processed
+         * by the resource compiler.
+         */
+        File tmpDir = new File(mTemporaryDirectory, "merged.dir");
+        try {
+            FileUtils.cleanOutputDir(tmpDir);
+        } catch (IOException e) {
+            throw new ConsumerException(e);
+        }
+
         // now write the values files.
         for (String key : mValuesResMap.keySet()) {
             // the key is the qualifier.
@@ -361,10 +372,6 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
                  * compilation of this file.
                  */
                 try {
-                    File tmpDir = new File(mTemporaryDirectory, "merged.dir");
-                    FileUtils.deletePath(tmpDir);
-                    FileUtils.mkdirs(tmpDir);
-
                     String folderName = key.isEmpty() ?
                             ResourceFolderType.VALUES.getName() :
                             ResourceFolderType.VALUES.getName() + RES_QUALIFIER_SEP + key;
