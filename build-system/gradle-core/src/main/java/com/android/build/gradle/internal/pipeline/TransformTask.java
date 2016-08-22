@@ -339,8 +339,16 @@ public class TransformTask extends StreamBasedTask implements Context {
             boolean found = false;
             while (iterator.hasNext()) {
                 IncrementalTransformInput next = iterator.next();
-                if (next.checkRemovedJarFile(removedFile, removedFileSegments) ||
-                        next.checkRemovedFolderFile(removedFile, removedFileSegments)) {
+                if (next.checkRemovedJarFile(
+                        Sets.union(transform.getScopes(), transform.getReferencedScopes()),
+                        transform.getInputTypes(),
+                        removedFile,
+                        removedFileSegments)
+                        || next.checkRemovedFolderFile(
+                                Sets.union(transform.getScopes(), transform.getReferencedScopes()),
+                                transform.getInputTypes(),
+                                removedFile,
+                                removedFileSegments)) {
                     found = true;
                     break;
                 }

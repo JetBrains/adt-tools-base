@@ -157,14 +157,20 @@ public class OriginalStream extends TransformStream {
     private static class OriginalTransformInput extends IncrementalTransformInput {
 
         @Override
-        protected boolean checkRemovedFolder(@NonNull File file,
+        protected boolean checkRemovedFolder(
+                @NonNull Set<Scope> transformScopes,
+                @NonNull Set<ContentType> transformInputTypes,
+                @NonNull File file,
                 @NonNull List<String> fileSegments) {
             // we can never detect if a random file was removed from this input.
             return false;
         }
 
         @Override
-        boolean checkRemovedJarFile(@NonNull File file,
+        boolean checkRemovedJarFile(
+                @NonNull Set<Scope> transformScopes,
+                @NonNull Set<ContentType> transformInputTypes,
+                @NonNull File file,
                 @NonNull List<String> fileSegments) {
             // we can never detect if a jar was removed from this input.
             return false;

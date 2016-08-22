@@ -40,7 +40,6 @@ import org.gradle.api.logging.Logging;
 import org.gradle.api.tasks.incremental.InputFileDetails;
 
 import java.io.File;
-import java.io.FileFilter;
 import java.util.List;
 import java.util.Set;
 
@@ -180,6 +179,8 @@ public class IntermediateFolderUtils {
 
         @Override
         protected boolean checkRemovedFolder(
+                @NonNull Set<Scope> transformScopes,
+                @NonNull Set<ContentType> transformInputTypes,
                 @NonNull File file,
                 @NonNull List<String> fileSegments) {
             if (!checkRootSegments(fileSegments)) {
@@ -204,10 +205,21 @@ public class IntermediateFolderUtils {
                 return false;
             }
 
+            // if the transform is not interested in this folder type, we don't care about those
+            // changes
+            if (Sets.intersection(transformInputTypes, types).isEmpty()) {
+                return true;
+            }
+
             // get the scopes.
             Set<Scope> scopes = stringToScopes(fileSegments.get(index++));
             if (scopes == null) {
                 return false;
+            }
+
+            // if the scopes do not match the transform scope, we don't care about those changes.
+            if (Sets.intersection(transformScopes, scopes).isEmpty()) {
+                return true;
             }
 
             String name = fileSegments.get(index);
@@ -231,7 +243,11 @@ public class IntermediateFolderUtils {
         }
 
         @Override
-        boolean checkRemovedJarFile(@NonNull File file, @NonNull List<String> fileSegments) {
+        boolean checkRemovedJarFile(
+                @NonNull Set<Scope> transformScopes,
+                @NonNull Set<ContentType> transformInputTypes,
+                @NonNull File file,
+                @NonNull List<String> fileSegments) {
             if (!checkRootSegments(fileSegments)) {
                 return false;
             }
@@ -257,11 +273,21 @@ public class IntermediateFolderUtils {
             if (types == null) {
                 return false;
             }
+            // if the transform is not interested in this jar type, we don't care about those
+            // changes
+            if (Sets.intersection(transformInputTypes, types).isEmpty()) {
+                return true;
+            }
 
             // get the scopes.
             Set<Scope> scopes = stringToScopes(fileSegments.get(index++));
             if (scopes == null) {
                 return false;
+            }
+
+            // if the scopes do not match the transform scope, we don't care about those changes.
+            if (Sets.intersection(transformScopes, scopes).isEmpty()) {
+                return true;
             }
 
             String name = fileSegments.get(index);

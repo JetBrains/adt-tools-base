@@ -27,6 +27,7 @@ import com.google.common.collect.Maps;
 import java.io.File;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Version of Transform Input to incrementally build the {@link JarInput} and {@link DirectoryInput}
@@ -98,11 +99,16 @@ abstract class IncrementalTransformInput {
     /**
      * Process a removed file to see if it belonged to a folder of this input.
      *
+     * @param transformScopes the scopes consumed or referenced by the transform
+     * @param transformInputTypes the input {@see ContentType} types of the transform.
      * @param file the removed file
      * @param fileSegments the removed file path segments for faster checks.
      * @return true if the file was part of this input.
      */
-    boolean checkRemovedFolderFile(@NonNull File file, @NonNull List<String> fileSegments) {
+    boolean checkRemovedFolderFile(
+            @NonNull Set<QualifiedContent.Scope> transformScopes,
+            @NonNull Set<QualifiedContent.ContentType> transformInputTypes,
+            @NonNull File file, @NonNull List<String> fileSegments) {
         // first check for removed files in existing folders.
         for (MutableDirectoryInput folderInput : folderInputs) {
             if (folderInput.processForChangedFile(file, fileSegments, Status.REMOVED)) {
@@ -112,26 +118,37 @@ abstract class IncrementalTransformInput {
 
         // if we don't find anything, see if we figure out scopes/types of the removed file (and
         // its root folder.
-        return checkRemovedFolder(file, fileSegments);
+        return checkRemovedFolder(transformScopes, transformInputTypes, file, fileSegments);
     }
 
     /**
      * Process a removed file to see if it was a jar belonging to this input.
      *
+     * @param transformScopes the scopes consumed or referenced by the transform
+     * @param transformInputTypes the input {@see ContentType} types of the transform.
      * @param file the removed file
-     * @param fileSegments the removed file path segments for faster checks.
-     * @return true if the file was part of this input.
+     * @param fileSegments the removed file path segments for faster checks.   @return true if the file was part of this input.
      */
-    abstract boolean checkRemovedJarFile(@NonNull File file, @NonNull List<String> fileSegments);
+    abstract boolean checkRemovedJarFile(
+            @NonNull Set<QualifiedContent.Scope> transformScopes,
+            @NonNull Set<QualifiedContent.ContentType> transformInputTypes,
+            @NonNull File file,
+            @NonNull List<String> fileSegments);
 
     /**
      * Process a removed file to see if it belonged to a removed folder of this input.
      *
+     *
+     *
+     * @param transformScopes
+     * @param transformInputTypes
      * @param file the removed file
      * @param fileSegments the removed file path segments for faster checks.
      * @return true if the file was part of this input.
      */
     protected abstract boolean checkRemovedFolder(
+            @NonNull Set<QualifiedContent.Scope> transformScopes,
+            @NonNull Set<QualifiedContent.ContentType> transformInputTypes,
             @NonNull File file,
             @NonNull List<String> fileSegments);
 
