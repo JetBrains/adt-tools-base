@@ -22,6 +22,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import com.android.annotations.NonNull;
 import com.android.repository.Revision;
 import com.android.utils.FileUtils;
 import com.google.common.base.Joiner;
@@ -217,6 +218,136 @@ public class FileCacheTest {
     }
 
     @Test
+    public void testMultiThreadsWithInterProcessLockingDisabled() throws IOException {
+        testMultiThreadsWithSameInputDifferentOutputs(
+                FileCache.withSingleProcessLocking(cacheFolder.getRoot()));
+        testMultiThreadsWithDifferentInputsDifferentOutputs(
+                FileCache.withSingleProcessLocking(cacheFolder.getRoot()));
+    }
+
+    @Test
+    public void testMultiThreadsWithInterProcessLockingEnabled() throws IOException {
+        testMultiThreadsWithSameInputDifferentOutputs(
+                FileCache.withInterProcessLocking(cacheFolder.getRoot()));
+        testMultiThreadsWithDifferentInputsDifferentOutputs(
+                FileCache.withInterProcessLocking(cacheFolder.getRoot()));
+    }
+
+    private void testMultiThreadsWithSameInputDifferentOutputs(@NonNull FileCache fileCache)
+            throws IOException {
+        File[] outputFiles = {testFolder.newFile(), testFolder.newFile()};
+        FileCache.Inputs inputs =
+                new FileCache.Inputs.Builder().put("file", new File("foo")).build();
+        String fileContent = "Foo line";
+
+        ConcurrencyTester<File, Void> tester = new ConcurrencyTester<>();
+
+        for (File outputFile : outputFiles) {
+            IOExceptionFunction<File, Void> actionUnderTest =
+                    (File file) -> {
+                        Files.write(fileContent, file, StandardCharsets.UTF_8);
+                        return null;
+                    };
+            tester.addMethodInvocationFromNewThread(
+                    (IOExceptionFunction<File, Void> anActionUnderTest) -> {
+                        boolean result =
+                                fileCache.getOrCreateFile(outputFile, inputs, anActionUnderTest);
+                        assertTrue(result);
+                    },
+                    actionUnderTest);
+        }
+
+        // Since we use the same input, we expect only one of the actions to be executed
+        tester.assertThatOnlyOneActionIsExecuted();
+
+        assertEquals(1, fileCache.getHits());
+        assertEquals(1, fileCache.getMisses());
+        assertEquals(fileContent, Files.toString(outputFiles[0], StandardCharsets.UTF_8));
+    }
+
+    private void testMultiThreadsWithDifferentInputsDifferentOutputs(@NonNull FileCache fileCache)
+            throws IOException {
+        File[] outputFiles = {testFolder.newFile(), testFolder.newFile()};
+        FileCache.Inputs[] inputList = {
+                new FileCache.Inputs.Builder().put("file1", new File("foo")).build(),
+                new FileCache.Inputs.Builder().put("file2", new File("bar")).build(),
+        };
+        String[] fileContents = {"Foo line", "Bar line"};
+
+        ConcurrencyTester<File, Void> tester = new ConcurrencyTester<>();
+
+        for (int i = 0; i < 2; i++) {
+            File outputFile = outputFiles[i];
+            FileCache.Inputs inputs = inputList[i];
+            String fileContent = fileContents[i];
+
+            IOExceptionFunction<File, Void> actionUnderTest = (File file) -> {
+                Files.write(fileContent, file, StandardCharsets.UTF_8);
+                return null;
+            };
+            tester.addMethodInvocationFromNewThread(
+                    (IOExceptionFunction<File, Void> anActionUnderTest) -> {
+                        boolean result =
+                                fileCache.getOrCreateFile(outputFile, inputs, anActionUnderTest);
+                        assertTrue(result);
+                    },
+                    actionUnderTest);
+        }
+
+        // Since we use different inputs, the actions are allowed to run concurrently
+        tester.assertThatActionsCanRunConcurrently();
+
+        assertEquals(0, fileCache.getHits());
+        assertEquals(2, fileCache.getMisses());
+        assertEquals(fileContents[0], Files.toString(outputFiles[0], StandardCharsets.UTF_8));
+        assertEquals(fileContents[1], Files.toString(outputFiles[1], StandardCharsets.UTF_8));
+    }
+
+    @Test
+    public void testDifferentCaches() throws IOException {
+        FileCache[] fileCaches = {
+                FileCache.withSingleProcessLocking(cacheFolder.newFolder()),
+                FileCache.withSingleProcessLocking(cacheFolder.newFolder())
+        };
+
+        // Test same input different outputs, different caches
+        File[] outputFiles = {testFolder.newFile(), testFolder.newFile()};
+        FileCache.Inputs inputs =
+                new FileCache.Inputs.Builder().put("file", new File("foo")).build();
+        String[] fileContents = {"Foo line", "Bar line"};
+
+        ConcurrencyTester<File, Void> tester = new ConcurrencyTester<>();
+
+        for (int i = 0; i < 2; i++) {
+            FileCache fileCache = fileCaches[i];
+            File outputFile = outputFiles[i];
+            String fileContent = fileContents[i];
+
+            IOExceptionFunction<File, Void> actionUnderTest = (File file) -> {
+                Files.write(fileContent, file, StandardCharsets.UTF_8);
+                return null;
+            };
+            tester.addMethodInvocationFromNewThread(
+                    (IOExceptionFunction<File, Void> anActionUnderTest) -> {
+                        boolean result =
+                                fileCache.getOrCreateFile(outputFile, inputs, anActionUnderTest);
+                        assertTrue(result);
+                    },
+                    actionUnderTest);
+        }
+
+        // Since we use different caches, the actions are allowed to run concurrently
+        tester.assertThatActionsCanRunConcurrently();
+
+        assertEquals(0, fileCaches[0].getHits());
+        assertEquals(1, fileCaches[0].getMisses());
+        assertEquals(0, fileCaches[1].getHits());
+        assertEquals(1, fileCaches[1].getMisses());
+        assertEquals(fileContents[0], Files.toString(outputFiles[0], StandardCharsets.UTF_8));
+        assertEquals(fileContents[1], Files.toString(outputFiles[1], StandardCharsets.UTF_8));
+    }
+
+    @Test
     public void testCacheDirectoryNotAlreadyExist() throws IOException {
         FileCache fileCache =
                 FileCache.withSingleProcessLocking(new File(cacheFolder.getRoot(), "foo"));
@@ -380,6 +511,64 @@ public class FileCacheTest {
         assertEquals(0, fileCache.getHits());
         assertEquals(0, fileCache.getMisses());
         assertEquals(fileContent, Files.toString(outputFile, StandardCharsets.UTF_8));
+    }
+
+    @Test
+    public void testInterThreadLockingSameFile() {
+        FileCache fileCache = FileCache.withSingleProcessLocking(cacheFolder.getRoot());
+        String[] fileNames = {"foo", "foo", "foobar".substring(0, 3)};
+
+        IOExceptionFunction<Void, Void> actionUnderTest = (Void arg) -> {
+            // Do some artificial work here
+            assertEquals(1, 1);
+            return null;
+        };
+
+        for (boolean withInterProcessLocking : new boolean[] {true, false}) {
+            ConcurrencyTester<Void, Void> tester = new ConcurrencyTester<Void, Void>();
+            for (String fileName : fileNames) {
+                tester.addMethodInvocationFromNewThread(
+                        (IOExceptionFunction<Void, Void> anActionUnderTest) -> {
+                            fileCache.doLocked(
+                                    new File(testFolder.getRoot(), fileName),
+                                    () -> anActionUnderTest.apply(null),
+                                    withInterProcessLocking);
+                        },
+                        actionUnderTest);
+            }
+
+            // Since we access the same file, the actions are not allowed to run concurrently
+            tester.assertThatActionsCannotRunConcurrently();
+        }
+    }
+
+    @Test
+    public void testInterThreadLockingDifferentFiles() {
+        FileCache fileCache = FileCache.withSingleProcessLocking(cacheFolder.getRoot());
+        String[] fileNames = {"foo1", "foo2", "foo3"};
+
+        IOExceptionFunction<Void, Void> actionUnderTest = (Void arg) -> {
+            // Do some artificial work here
+            assertEquals(1, 1);
+            return null;
+        };
+
+        for (boolean withInterProcessLocking : new boolean[] {true, false}) {
+            ConcurrencyTester<Void, Void> tester = new ConcurrencyTester<Void, Void>();
+            for (String fileName : fileNames) {
+                tester.addMethodInvocationFromNewThread(
+                        (IOExceptionFunction<Void, Void> anActionUnderTest) -> {
+                            fileCache.doLocked(
+                                    new File(testFolder.getRoot(), fileName),
+                                    () -> anActionUnderTest.apply(null),
+                                    withInterProcessLocking);
+                        },
+                        actionUnderTest);
+            }
+
+            // Since we access different files, the actions are allowed to run concurrently
+            tester.assertThatActionsCanRunConcurrently();
+        }
     }
 
     @Test
