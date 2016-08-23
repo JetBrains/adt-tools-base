@@ -25,54 +25,34 @@ import java.util.List;
 /**
  * Factory for creating STL specification for NDK r12.
  */
-public class NdkR12StlSpecificationFactory extends DefaultStlSpecificationFactory{
+public class NdkR12StlSpecificationFactory extends NdkR11StlSpecificationFactory{
     @Override
     @NonNull
-    public StlSpecification create(@NonNull Stl stl, @NonNull String stlVersion, @NonNull Abi abi) {
-        switch (stl) {
-            case SYSTEM:
-            case GNUSTL_SHARED:
-            case GNUSTL_STATIC:
-            case STLPORT_SHARED:
-            case STLPORT_STATIC:
-                return super.create(stl, stlVersion, abi);
-            case CPP_SHARED:
-                List<String> staticLibs = (abi == Abi.ARMEABI || abi == Abi.ARMEABI_V7A)
-                        ? ImmutableList.of("libunwind.a")
-                        : ImmutableList.of();
-                return createSpec(
-                        abi,
-                        ImmutableList.of(
-                                "llvm-libc++/libcxx/include",
-                                "../android/support/include"),
-                        "llvm-libc++",
-                        staticLibs,
-                        ImmutableList.of("libc++_shared.so"));
-            case CPP_STATIC:
-                ImmutableList.Builder<String> builder = ImmutableList.builder();
-                builder.add("libc++_static.a");
-                builder.add("libc++abi.a");
-                if (abi == Abi.ARMEABI || abi == Abi.ARMEABI_V7A) {
-                    builder.add("libunwind.a");
-                }
-                builder.add("libandroid_support.a");
-                if (abi == Abi.ARMEABI) {
-                    builder.add("libatomic.a");
-                }
-                return createSpec(
-                        abi,
-                        ImmutableList.of(
-                                "llvm-libc++/libcxx/include",
-                                "../android/support/include"),
-                        "llvm-libc++",
-                        builder.build(),
-                        ImmutableList.of());
-            case GABIPP_SHARED:
-            case GABIPP_STATIC:
-                throw new RuntimeException("gabi++ is not availabe in NDK r12.");
-            default:
-                throw new RuntimeException("Unreachable.  Unknown STL: " + stl + ".");
+    protected List<String> getLibcxxStaticLibs(@NonNull Abi abi, boolean staticStl) {
+        // NDK r12 moved libunwind and libandroid_support out of libc++ itself (avoids ODR issues
+        // that were causing exception unwinding to fail). We now have to link these libraries
+        // manually.
+        // TODO: Investigate using the linker scripts?
+        // The NDK ships libc++.a and libc++.so that are linker scripts that automatically add
+        // -lc++abi and friends, but that requires that those libraries are already on the link
+        // path. It seems that we're using the full paths to the libraries here, so that won't work.
+        ImmutableList.Builder<String> builder = ImmutableList.builder();
+        if (staticStl) {
+            builder.add("libc++_static.a");
+            builder.add("libc++abi.a");
         }
-    }
 
+        builder.add("libandroid_support.a");
+
+        if (abi == Abi.ARMEABI || abi == Abi.ARMEABI_V7A) {
+            builder.add("libunwind.a");
+        }
+
+        // This is nearly always needed for ARM5, so just link it by default.
+        if (abi == Abi.ARMEABI) {
+            builder.add("libatomic.a");
+        }
+
+        return builder.build();
+    }
 }

@@ -51,7 +51,7 @@ public class NdkHandler {
     @Nullable
     private final NdkInfo ndkInfo;
 
-    private static final int LATEST_SUPPORTED_VERSION = 12;
+    private static final int LATEST_SUPPORTED_VERSION = 13;
 
     public NdkHandler(
             @NonNull File projectDir,
@@ -70,11 +70,17 @@ public class NdkHandler {
             if (revision == null) {
                 ndkInfo = new DefaultNdkInfo(ndkDirectory);
             } else if (revision.getMajor() > LATEST_SUPPORTED_VERSION) {
-                ndkInfo = new NdkR12Info(ndkDirectory);
+                ndkInfo = new NdkR13Info(ndkDirectory);
             } else {
                 switch (revision.getMajor()) {
+                    case 13:
+                        ndkInfo = new NdkR13Info(ndkDirectory);
+                        break;
                     case 12:
                         ndkInfo = new NdkR12Info(ndkDirectory);
+                        break;
+                    case 11:
+                        ndkInfo = new NdkR11Info(ndkDirectory);
                         break;
                     default:
                         ndkInfo = new DefaultNdkInfo(ndkDirectory);
