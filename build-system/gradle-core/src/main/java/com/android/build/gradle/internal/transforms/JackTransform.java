@@ -265,7 +265,7 @@ public class JackTransform extends Transform {
         options.setMinSdkVersion(config.getMinSdkVersion().getApiLevel());
         if (!Boolean.FALSE.equals(globalScope.getExtension().getCompileOptions().getIncremental())
                 && androidBuilder.getTargetInfo().getBuildTools().getRevision().compareTo(
-                        new Revision(24, 0, 2), Revision.PreviewComparison.IGNORE) >= 0) {
+                        new Revision(24, 0, 3), Revision.PreviewComparison.IGNORE) >= 0) {
             String taskName = StringHelper.combineAsCamelCase(
                     ImmutableList.of(
                             "transformJackWith",

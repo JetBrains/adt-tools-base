@@ -54,7 +54,7 @@ public class JackIncrementalTest {
 
     @Test
     public void assembleDebug() throws IOException {
-        AssumeUtil.assumeBuildToolsAtLeast(24, 0, 2, 1);
+        AssumeUtil.assumeBuildToolsAtLeast(24, 0, 3, 1);
         project.execute("clean", "assembleDebug");
         File classesDex =
                 FileUtils.find(project.file("build/intermediates/transforms/jack"), "classes.dex").get();
