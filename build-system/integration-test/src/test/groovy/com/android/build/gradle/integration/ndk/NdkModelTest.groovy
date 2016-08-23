@@ -20,6 +20,7 @@ import com.android.SdkConstants
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldJniApp
 import com.android.build.gradle.integration.common.utils.ModelHelper
+import com.android.build.gradle.integration.common.utils.NdkHelper
 import com.android.builder.model.AndroidArtifact
 import com.android.builder.model.AndroidProject
 import com.android.builder.model.NativeLibrary
@@ -161,7 +162,11 @@ android {
                 .getNativeLibraries().first()
         for (String flag : lib.getCCompilerFlags()) {
             if (flag.contains("sysroot")) {
-                assertThat(flag).contains("android-${GradleTestProject.LATEST_NDK_PLATFORM_VERSION}")
+                int expected = Math.min(
+                        NdkHelper.getMaxPlatformSupported(project.getNdkDir()),
+                        GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
+                )
+                assertThat(flag).contains("android-${expected}")
             }
         }
     }

@@ -17,34 +17,35 @@
 package com.android.build.gradle.integration.application
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.truth.TruthHelper
+import com.android.build.gradle.internal.ndk.NdkHandler
+import com.android.repository.Revision
 import groovy.transform.CompileStatic
-import org.junit.AfterClass
-import org.junit.BeforeClass
-import org.junit.ClassRule
+import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
 
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatZip
+import static com.google.common.truth.TruthJUnit.assume
 
 /**
  * Assemble tests for renderscript with NDK mode enabled.
  */
 @CompileStatic
 class RenderscriptNdkTest {
-    @ClassRule
-    static public GradleTestProject project = GradleTestProject.builder()
+
+    @Rule
+    public GradleTestProject project = GradleTestProject.builder()
             .fromTestProject("renderscriptNdk")
             .addGradleProperties("android.useDeprecatedNdk=true")
             .create()
 
-    @BeforeClass
-    static void setUp() {
-        project.execute("clean", "assembleDebug")
-    }
+    @Before
+    public void setUp() {
+        Revision ndkRevision = NdkHandler.findRevision(project.getNdkDir())
+        // ndk r11, r12 are missing renderscript, ndk r10 does support it and has null revision
+        assume().that(ndkRevision).isNull()
 
-    @AfterClass
-    static void cleanUp() {
-        project = null
+        project.execute("clean", "assembleDebug")
     }
 
     @Test
