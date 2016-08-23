@@ -28,6 +28,7 @@ import static com.google.common.base.Verify.verifyNotNull;
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.build.OutputFile;
 import com.android.build.api.transform.QualifiedContent;
 import com.android.build.api.transform.QualifiedContent.ContentType;
 import com.android.build.api.transform.QualifiedContent.DefaultContentType;
@@ -158,11 +159,14 @@ import com.android.builder.model.SyncIssue;
 import com.android.builder.testing.ConnectedDeviceProvider;
 import com.android.builder.testing.api.DeviceProvider;
 import com.android.builder.testing.api.TestServer;
+import com.android.ide.common.build.SplitOutputMatcher;
 import com.android.manifmerger.ManifestMerger2;
 import com.android.repository.Revision;
+import com.android.resources.Density;
 import com.android.sdklib.AndroidVersion;
 import com.android.utils.StringHelper;
 import com.google.common.base.Objects;
+import com.google.common.base.Strings;
 import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -190,6 +194,7 @@ import android.databinding.tool.DataBindingBuilder;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -2186,9 +2191,50 @@ public abstract class TaskManager {
          */
         IncrementalMode incrementalMode = getIncrementalMode(variantConfiguration);
 
+        List<ApkVariantOutputData> outputDataList = variantData.getOutputs();
+
+        // When ABI and density is specified, determine the best output and build only one split.
+        String abiList = Strings.nullToEmpty(AndroidGradleOptions.getBuildTargetAbi(project));
+        String density =
+                Strings.nullToEmpty(AndroidGradleOptions.getBuildTargetDensity(project));
+        if (outputDataList.size() > 1 && (!abiList.isEmpty() || !density.isEmpty())) {
+            List<String> abis = Arrays.asList(abiList.split(","));
+            Density densityEnum = Density.getEnum(density);
+            List<OutputFile> outputFiles = SplitOutputMatcher.computeBestOutput(
+                    outputDataList,
+                    variantConfiguration.getSupportedAbis(),
+                    densityEnum == null ? -1 : densityEnum.getDpiValue(),
+                    abis);
+            List<ApkVariantOutputData> bestMatch = null;
+            if (!outputFiles.isEmpty()) {
+                // SplitOutputMatcher.computeBestOutput return an OutputFile, find the
+                // ApkVariantOutputData that contains the OutputFile.
+                for (ApkVariantOutputData apkVariantOutputData : outputDataList) {
+                    if (apkVariantOutputData.getMainOutputFile() == outputFiles.get(0)) {
+                        bestMatch = ImmutableList.of(apkVariantOutputData);
+                        break;
+                    }
+                }
+                checkNotNull(bestMatch, "There should always be an VariantOutputData containing "
+                        + "the OutputFile.");
+            }
+            if (bestMatch == null) {
+                throw new RuntimeException(
+                        String.format(
+                                "The currently selected variant \"%s\" uses split APKs, but none "
+                                        + "of the %s split apks are compatible with the current "
+                                        + "device with density \"%s\" and ABIs \"%s\".",
+                                variantConfiguration.getFullName(),
+                                outputDataList.size(),
+                                density,
+                                abiList));
+            }
+            outputDataList = bestMatch;
+        }
+
         // loop on all outputs. The only difference will be the name of the task, and location
         // of the generated data.
-        for (final ApkVariantOutputData variantOutputData : variantData.getOutputs()) {
+        for (final ApkVariantOutputData variantOutputData : outputDataList) {
             final VariantOutputScope variantOutputScope = variantOutputData.getScope();
 
             final String outputName = variantOutputData.getFullName();
