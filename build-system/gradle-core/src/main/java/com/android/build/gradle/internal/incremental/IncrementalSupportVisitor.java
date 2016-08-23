@@ -773,12 +773,11 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
             }
         }
         try {
+            String className = Type.getObjectType(classNode.name).getClassName();
             Class<?> clazz =
-                    Thread.currentThread()
-                            .getContextClassLoader()
-                            .loadClass(Type.getObjectType(classNode.name).getClassName());
-            ObjectStreamClass objectStreamClass = ObjectStreamClass.lookupAny(clazz);
+                    Class.forName(className, false, Thread.currentThread().getContextClassLoader());
 
+            ObjectStreamClass objectStreamClass = ObjectStreamClass.lookupAny(clazz);
             long serialUuid = objectStreamClass.getSerialVersionUID();
 
             // adds the field
@@ -792,7 +791,14 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
                     serialUuid);
 
         } catch (ClassNotFoundException ex) {
-            LOG.info("Unable to add auto-generated serialVersionUID for " + classNode.name);
+            LOG.verbose("Unable to add auto-generated serialVersionUID for " + classNode.name);
+        } catch (ExceptionInInitializerError e) {
+            // http://b.android.com/220635 - static initializer might be invoked
+            LOG.warning(
+                    "Unable to generate serialVersionUID for %s. In case you make this class"
+                            + " serializable and use it to persist data in InstantRun mode, please"
+                            + " add a serialVersionUID field.",
+                    classNode.name);
         }
     }
 
