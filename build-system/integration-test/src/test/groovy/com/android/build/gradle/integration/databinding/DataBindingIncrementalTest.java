@@ -28,6 +28,7 @@ import com.google.common.io.Files;
 
 import org.junit.Assume;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -44,6 +45,7 @@ import javax.xml.parsers.ParserConfigurationException;
 
 
 @RunWith(FilterableParameterized.class)
+@Ignore
 public class DataBindingIncrementalTest {
 
     @Rule
