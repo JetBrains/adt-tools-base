@@ -2291,14 +2291,17 @@ public class ApiDetectorTest extends AbstractCheckTest {
                 + "src/test/pkg/TestRequiresApi.java:10: Error: Call requires API level 21 (current min is 15): requiresLollipop [NewApi]\n"
                 + "        lollipopClass.requiresLollipop(); // ERROR - requires 21\n"
                 + "        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
-                + "2 errors, 0 warnings\n",
+                + "src/test/pkg/TestRequiresApi.java:28: Error: Call requires API level 22 (current min is 15): requiresLollipop [NewApi]\n"
+                + "        requiresLollipop(); // ERROR\n"
+                + "        ~~~~~~~~~~~~~~~~~~\n"
+                + "3 errors, 0 warnings\n",
                 lintProject(
                         manifest().minSdk(15),
                         java("src/test/pkg/TestRequiresApi.java", ""
                                 + "package test.pkg;\n"
                                 + "\n"
                                 + "import android.support.annotation.RequiresApi;\n"
-                                + "\n"
+                                + "import android.os.Build;\n"
                                 + "@SuppressWarnings({\"WeakerAccess\", \"unused\"})\n"
                                 + "public class TestRequiresApi {\n"
                                 + "    public void caller() {\n"
@@ -2319,6 +2322,21 @@ public class ApiDetectorTest extends AbstractCheckTest {
                                 + "        public void requiresLollipop() {\n"
                                 + "            requiresKitKat(); // OK\n"
                                 + "        }\n"
+                                + "    }\n"
+                                + "\n"
+                                + "    public void something() {\n"
+                                + "        requiresLollipop(); // ERROR\n"
+                                + "        if (Build.VERSION.SDK_INT >= 22) {\n"
+                                + "            requiresLollipop(); // OK\n"
+                                + "        }\n"
+                                + "        if (Build.VERSION.SDK_INT < 22) {\n"
+                                + "            return;\n"
+                                + "        }\n"
+                                + "        requiresLollipop(); // OK\n"
+                                + "    }\n"
+                                + "\n"
+                                + "    @RequiresApi(22)\n"
+                                + "    public void requiresLollipop() {\n"
                                 + "    }\n"
                                 + "}\n"),
                         mRequiresApi

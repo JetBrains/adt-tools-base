@@ -1966,6 +1966,13 @@ public class ApiDetector extends ResourceXmlDetector
                     if (api > minSdk) {
                         int target = getTargetApi(expression);
                         if (target == -1 || api > target) {
+                            if (ApiDetector.isWithinVersionCheckConditional(expression, api)) {
+                                return true;
+                            }
+                            if (ApiDetector.isPrecededByVersionCheckExit(expression, api)) {
+                                return true;
+                            }
+
                             Location location;
                             location = mContext.getLocation(expression);
                             String fqcn = method.getName();
