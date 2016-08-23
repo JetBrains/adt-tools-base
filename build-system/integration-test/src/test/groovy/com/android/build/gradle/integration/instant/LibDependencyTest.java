@@ -36,6 +36,7 @@ import com.android.tools.fd.client.InstantRunArtifactType;
 import com.android.tools.fd.client.InstantRunBuildInfo;
 import com.google.common.base.Charsets;
 import com.google.common.base.Joiner;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.common.io.Files;
 import com.google.common.truth.Expect;
@@ -59,8 +60,8 @@ public class LibDependencyTest {
     @Rule
     public GradleTestProject project =
             GradleTestProject.builder()
-                .fromTestProject("libDependency")
-                .create();
+                    .fromTestProject("libDependency")
+                    .create();
 
     @Rule
     public Expect expect = Expect.createAndEnableStackTrace();
@@ -82,7 +83,7 @@ public class LibDependencyTest {
         expect.about(ApkSubject.FACTORY)
                 .that(project.getSubproject("app").getApk("debug"))
                 .hasClass("Lcom/android/tests/libstest/lib/MainActivity;",
-                        AbstractAndroidSubject.ClassFileScope.MAIN)
+                        AbstractAndroidSubject.ClassFileScope.INSTANT_RUN)
                 .that().hasMethod("onCreate");
 
         checkHotSwapCompatibleChange(instantRunModel);
@@ -99,8 +100,8 @@ public class LibDependencyTest {
         mkdirs(project.file("javalib"));
         Files.write(
                 "apply plugin: 'java'\n"
-                + "targetCompatibility = '1.6'\n"
-                + "sourceCompatibility = '1.6'\n",
+                        + "targetCompatibility = '1.6'\n"
+                        + "sourceCompatibility = '1.6'\n",
                 project.file("javalib/build.gradle"), Charsets.UTF_8);
         createJavaLibraryClass("original");
 
@@ -134,7 +135,7 @@ public class LibDependencyTest {
         expect.about(ApkSubject.FACTORY)
                 .that(project.getSubproject("app").getApk("debug"))
                 .hasClass("Lcom/android/tests/libstest/lib/MainActivity;",
-                        AbstractAndroidSubject.ClassFileScope.MAIN)
+                        AbstractAndroidSubject.ClassFileScope.INSTANT_RUN)
                 .that().hasMethod("onCreate");
 
         Files.write("changed java resource", resource, Charsets.UTF_8);
@@ -199,6 +200,7 @@ public class LibDependencyTest {
     private static List<String> getInstantRunArgs(OptionalCompilationStep... flags) {
         String property = "-P" + AndroidProject.PROPERTY_OPTIONAL_COMPILATION_STEPS + "=" +
                 OptionalCompilationStep.INSTANT_DEV + "," + Joiner.on(',').join(flags);
-        return Collections.singletonList(property);
+        return ImmutableList.of(property,
+                "-P" + AndroidProject.PROPERTY_BUILD_API + "=23");
     }
 }
