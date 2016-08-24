@@ -128,6 +128,9 @@ class NdkBuildExternalNativeJsonGenerator extends ExternalNativeJsonGenerator {
         ProcessInfoBuilder builder = new ProcessInfoBuilder();
         builder.setExecutable(getNdkBuild())
                 .addArgs(getBaseArgs(abi, abiPlatformVersion, applicationMk))
+                // Disable response files so we can parse the command line.
+                .addArgs("APP_SHORT_COMMANDS=false")
+                .addArgs("LOCAL_SHORT_COMMANDS=false")
                 .addArgs("-n");
         return builder;
     }
