@@ -39,8 +39,8 @@ dependencies {
     compile 'org.ow2.asm:asm:5.0.4'
     compile 'org.ow2.asm:asm-commons:5.0.4'
     compile "net.sf.proguard:proguard-gradle:${project.ext.proguardVersion}"
-    compile "org.jacoco:org.jacoco.core:0.7.5.201505241946"
-    compile "org.jacoco:org.jacoco.report:0.7.5.201505241946"
+    compile "org.jacoco:org.jacoco.core:0.7.5.201505241946"   // When updating this version, also
+    compile "org.jacoco:org.jacoco.report:0.7.5.201505241946" // update JacocoPlugin.
     compile "net.sf.jopt-simple:jopt-simple:4.9"
     compile "com.google.protobuf:protobuf-java:2.5.0"
     testCompile project(':base:instant-run:instant-run-annotations')

@@ -41,6 +41,8 @@ public class JacocoPlugin implements Plugin<Project> {
     public static final String ANT_CONFIGURATION_NAME = "androidJacocoAnt";
     public static final String AGENT_CONFIGURATION_NAME = "androidJacocoAgent";
 
+    private static final String DEFAULT_JACOCO_VERSION = "0.7.5.201505241946";
+
     private Project project;
 
     @Override
@@ -107,7 +109,7 @@ public class JacocoPlugin implements Plugin<Project> {
 
         project.getLogger().error(
                 "No resolved dependencies found when searching for the jacoco version.");
-        return null;
+        return DEFAULT_JACOCO_VERSION;
 
     }
 
