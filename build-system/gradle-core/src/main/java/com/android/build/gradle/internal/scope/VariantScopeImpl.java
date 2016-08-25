@@ -65,6 +65,7 @@ import com.android.sdklib.IAndroidTarget;
 import com.android.sdklib.SdkVersionInfo;
 import com.android.sdklib.repository.AndroidSdkHandler;
 import com.android.sdklib.repository.LoggerProgressIndicatorWrapper;
+import com.android.sdklib.repository.targets.AndroidTargetManager;
 import com.android.utils.FileUtils;
 import com.android.utils.ILogger;
 import com.android.utils.StringHelper;
@@ -1225,10 +1226,23 @@ public class VariantScopeImpl extends GenericVariantScopeImpl implements Variant
             @NonNull String targetHash) {
         File sdkLocation = sdkHandler.getSdkFolder();
         ProgressIndicator progressIndicator = new LoggerProgressIndicatorWrapper(LOGGER);
+        IAndroidTarget target = AndroidSdkHandler.getInstance(sdkLocation)
+                .getAndroidTargetManager(progressIndicator)
+                .getTargetFromHashString(targetHash, progressIndicator);
+        if (target != null) {
+            return target;
+        }
+        // reset the cached AndroidSdkHandler, next time a target is looked up,
+        // this will force the re-parsing of the SDK.
+        AndroidSdkHandler.resetInstance(sdkLocation);
+
+        // and let's try immediately, it's possible the platform was installed since the SDK
+        // handler was initialized in the this VM, since we reset the instance just above, it's
+        // possible we find it.
         return AndroidSdkHandler.getInstance(sdkLocation)
                 .getAndroidTargetManager(progressIndicator)
                 .getTargetFromHashString(targetHash, progressIndicator);
-    }
+}
 
     @Override
     public void setExternalNativeBuildTask(

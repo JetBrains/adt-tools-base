@@ -181,7 +181,7 @@ public final class AndroidSdkHandler {
     /**
      * Singleton instance of this class.
      */
-    private static Map<File, AndroidSdkHandler> sInstances = Maps.newConcurrentMap();
+    private static final Map<File, AndroidSdkHandler> sInstances = Maps.newConcurrentMap();
 
     /**
      * Location of the local SDK.
@@ -208,14 +208,27 @@ public final class AndroidSdkHandler {
     @NonNull
     public static AndroidSdkHandler getInstance(@Nullable File localPath) {
         File key = localPath == null ? new File("") : localPath;
-        AndroidSdkHandler instance = sInstances.get(key);
-        if (instance == null) {
-            instance = new AndroidSdkHandler(localPath, FileOpUtils.create());
-            sInstances.put(key, instance);
+        synchronized (sInstances) {
+            AndroidSdkHandler instance = sInstances.get(key);
+            if (instance == null) {
+                instance = new AndroidSdkHandler(localPath, FileOpUtils.create());
+                sInstances.put(key, instance);
+            }
+            return instance;
         }
-        return instance;
     }
 
+    /**
+     * Force removal of a cached {@code AndroidSdkHandler} instance.
+     * This will force a reparsing of the SDK next time a component is looked up.
+     *
+     * @param localPath The path to the local SDK.
+     */
+    public static void resetInstance(@NonNull File localPath) {
+        synchronized (sInstances) {
+            sInstances.remove(localPath);
+        }
+    }
     /**
      * Don't use this, use {@link #getInstance(File)}, unless you're in a unit test and need to
      * specify a custom {@link FileOp}.
