@@ -3,6 +3,7 @@ package com.android.tests.conditionalApiUse;
 import android.app.Activity;
 import android.os.Build;
 import android.os.Bundle;
+import android.support.annotation.RequiresApi;
 import android.util.Log;
 
 import java.util.ArrayList;
@@ -25,6 +26,7 @@ public class MainActivity extends Activity {
         }
     }
 
+    @RequiresApi(21)
     private List<String> listCameras() {
         AccessToApi21AndAbove accessTo21AndAbove = new AccessToApi21AndAbove();
         return accessTo21AndAbove.listCameras(getBaseContext());

@@ -4,12 +4,14 @@ import android.content.Context;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraManager;
 import android.os.Build;
+import android.support.annotation.RequiresApi;
 import android.util.Log;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+@RequiresApi(21)
 public class AccessToApi21AndAbove {
 
     public List<String> lowLevelistCameras(Context context) throws MyException {
