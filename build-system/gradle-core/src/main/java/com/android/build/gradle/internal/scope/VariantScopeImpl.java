@@ -1207,7 +1207,9 @@ public class VariantScopeImpl extends GenericVariantScopeImpl implements Variant
 
         if (targetToUse == null) {
             // The device platform is not installed, let's carry on with the compile SDK.
-            throw new RuntimeException(String.format("Please install platform %1$d in your SDK",
+            throw new RuntimeException(String.format(""
+                    + "In order to use Instant Run with this device running API %1$d, "
+                    + "you must install platform %1$d in your SDK",
                     targetDeviceFeatureLevel));
         }
 
