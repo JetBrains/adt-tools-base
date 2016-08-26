@@ -95,6 +95,10 @@ public class MissingClassDetector extends LayoutDetector implements ClassScanner
                     MissingClassDetector.class,
                     EnumSet.of(Scope.MANIFEST, Scope.CLASS_FILE,
                             Scope.JAVA_LIBRARIES, Scope.RESOURCE_FILE)))
+            // There are a number of problems with this lint check when run from Gradle
+            // (due to the fact that not all libraries are analyzed correctly; this is
+            // discussed in issue 194092, which fixed in master but not in 2.2.)
+            .setEnabledByDefault(false)
             .addMoreInfo("http://developer.android.com/guide/topics/manifest/manifest-intro.html"); //$NON-NLS-1$
 
     /** Are activity, service, receiver etc subclasses instantiatable? */
