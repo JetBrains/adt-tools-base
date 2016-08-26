@@ -430,8 +430,7 @@ public class AvdManager {
      */
     @NonNull
     public String getBaseAvdFolder() throws AndroidLocationException {
-        assert AndroidLocation.getFolder().endsWith(File.separator);
-        return AndroidLocation.getFolder() + AndroidLocation.FOLDER_AVD;
+        return AndroidLocation.getAvdFolder();
     }
 
     /**
