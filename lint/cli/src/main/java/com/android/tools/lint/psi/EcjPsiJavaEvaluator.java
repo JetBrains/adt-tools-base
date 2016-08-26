@@ -380,7 +380,6 @@ public class EcjPsiJavaEvaluator extends JavaEvaluator {
                     AnnotationBinding[] annotations = parameterAnnotations[index];
                     int count = annotations.length;
                     if (count > 0) {
-                        all = Lists.newArrayListWithExpectedSize(count);
                         for (AnnotationBinding annotation : annotations) {
                             if (annotation != null) {
                                 all.add(new EcjPsiBinaryAnnotation(mManager, modifierList,

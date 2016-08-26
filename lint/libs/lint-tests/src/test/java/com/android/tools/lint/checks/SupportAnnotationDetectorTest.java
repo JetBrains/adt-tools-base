@@ -436,7 +436,7 @@ public class SupportAnnotationDetectorTest extends AbstractCheckTest {
 
                 lintProject(
                         copy("src/p1/p2/Flow.java.txt", "src/p1/p2/Flow.java"),
-                        copy("src/android/support/annotation/DrawableRes.java.txt", "src/android/support/annotation/DrawableRes.java"),
+                        mDrawableResAnnotation,
                         mStringResAnnotation,
                         mStyleResAnnotation,
                         mAnyResAnnotation
@@ -468,8 +468,7 @@ public class SupportAnnotationDetectorTest extends AbstractCheckTest {
                                 + "        mIconResId = iconResId;\n"
                                 + "    }\n"
                                 + "}"),
-                        copy("src/android/support/annotation/DrawableRes.java.txt",
-                                "src/android/support/annotation/DrawableRes.java")));
+                        mDrawableResAnnotation));
     }
 
     // Temporarily disabled; TypedArray.getResourceId has now been annotated with @StyleRes
@@ -531,8 +530,7 @@ public class SupportAnnotationDetectorTest extends AbstractCheckTest {
                                 + "}\n"),
                         mWorkerThread,
                         mUiThread,
-                        copy("src/android/support/annotation/DrawableRes.java.txt",
-                                "src/android/support/annotation/DrawableRes.java"),
+                        mDrawableResAnnotation,
                         copy("src/android/support/annotation/IntRange.java.txt",
                                 "src/android/support/annotation/IntRange.java")
                 ));
@@ -577,6 +575,52 @@ public class SupportAnnotationDetectorTest extends AbstractCheckTest {
                                 + "  }\n"
                                 + "}")
                         ));
+    }
+
+    public void testIdResource() throws Exception {
+        // Regression test for https://code.google.com/p/android/issues/detail?id=220612
+        assertEquals("No warnings.",
+
+                lintProject(
+                        java("src/com./example/myapplication/Test1.java", ""
+                                + "package com.example.myapplication;\n"
+                                + "\n"
+                                + "import android.support.annotation.IdRes;\n"
+                                + "import android.support.annotation.LayoutRes;\n"
+                                + "\n"
+                                + "public class Test1 {\n"
+                                + "\n"
+                                + "    private final int layout;\n"
+                                + "    private final int id;\n"
+                                + "    private boolean visible;\n"
+                                + "\n"
+                                + "    public Test1(@LayoutRes int layout, @IdRes int id) {\n"
+                                + "        this.layout = layout;\n"
+                                + "        this.id = id;\n"
+                                + "        this.visible = true;\n"
+                                + "    }\n"
+                                + "}"),
+                        java("src/com/example/myapplication/Test2.java", ""
+                                + "package com.example.myapplication;\n"
+                                + "\n"
+                                + "import android.support.annotation.IdRes;\n"
+                                + "import android.support.annotation.StringRes;\n"
+                                + "\n"
+                                + "public class Test2 extends Test1 {\n"
+                                + "\n"
+                                + "    public Test2(@IdRes int id, @StringRes int titleResId) {\n"
+                                + "        super(R.layout.somelayout, id);\n"
+                                + "    }\n"
+                                + "    public static final class R {\n"
+                                + "        public static final class layout {\n"
+                                + "            public static final int somelayout = 0x7f0a0000;\n"
+                                + "        }\n"
+                                + "    }\n"
+                                + "}"),
+                        mDrawableResAnnotation,
+                        mLayoutResAnnotation,
+                        mIdResAnnotation,
+                        mStringResAnnotation));
     }
 
     private final TestFile mPermissionTest = java("src/test/pkg/PermissionTest.java", ""
@@ -747,6 +791,9 @@ public class SupportAnnotationDetectorTest extends AbstractCheckTest {
     private final TestFile mStringResAnnotation = createResAnnotation("String");
     private final TestFile mStyleResAnnotation = createResAnnotation("Style");
     private final TestFile mDimenResAnnotation = createResAnnotation("Dimen");
+    private final TestFile mIdResAnnotation = createResAnnotation("Id");
+    private final TestFile mLayoutResAnnotation = createResAnnotation("Layout");
+    private final TestFile mDrawableResAnnotation = createResAnnotation("Drawable");
     private final TestFile mAnyResAnnotation = createResAnnotation("Any");
 
     private final TestFile mColorIntAnnotation = java("src/android/support/annotation/ColorInt.java", ""
@@ -1719,7 +1766,7 @@ public class SupportAnnotationDetectorTest extends AbstractCheckTest {
                                 + "        }\n"
                                 + "    }"
                                 + "}"),
-                        copy("src/android/support/annotation/DrawableRes.java.txt", "src/android/support/annotation/DrawableRes.java"),
+                        mDrawableResAnnotation,
                         mStringResAnnotation
                 ));
     }
@@ -1764,7 +1811,7 @@ public class SupportAnnotationDetectorTest extends AbstractCheckTest {
                                 + "        }\n"
                                 + "    }"
                                 + "}"),
-                        copy("src/android/support/annotation/AnyRes.java.txt", "src/android/support/annotation/AnyRes.java")
+                        mAnyResAnnotation
                 ));
     }
 

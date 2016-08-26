@@ -834,6 +834,9 @@ public class EcjPsiManager {
     @Nullable
     static MethodBinding findSuperMethodBinding(@NonNull MethodBinding binding,
             boolean allowStatic, boolean allowPrivate) {
+        if (binding.isConstructor()) {
+            return null;
+        }
         if (!allowPrivate && binding.isPrivate()) {
             return null;
         }
