@@ -1249,9 +1249,7 @@ public abstract class TaskManager {
         AndroidTask<ExternalNativeBuildTask> buildTask = androidTasks.create(
                 tasks,
                 new ExternalNativeBuildTask.ConfigAction(
-                        scope.getVariantConfiguration().getBuildType().isDebuggable()
-                            ? AndroidGradleOptions.getBuildTargetAbi(project)
-                            : "",
+                        AndroidGradleOptions.getBuildTargetAbi(project),
                         generator, scope, androidBuilder));
 
         buildTask.dependsOn(tasks, generateTask);
@@ -2195,46 +2193,43 @@ public abstract class TaskManager {
 
         List<ApkVariantOutputData> outputDataList = variantData.getOutputs();
 
-        if (variantConfiguration.getBuildType().isDebuggable()) {
-            // When ABI and density is specified, determine the best output and build only one split.
-            String abiList = Strings.nullToEmpty(AndroidGradleOptions.getBuildTargetAbi(project));
-            String density =
-                    Strings.nullToEmpty(AndroidGradleOptions.getBuildTargetDensity(project));
-            if (outputDataList.size() > 1 && (!abiList.isEmpty() || !density.isEmpty())) {
-                List<String> abis = Arrays.asList(abiList.split(","));
-                Density densityEnum = Density.getEnum(density);
-                List<OutputFile> outputFiles = SplitOutputMatcher.computeBestOutput(
-                        outputDataList,
-                        variantConfiguration.getSupportedAbis(),
-                        densityEnum == null ? -1 : densityEnum.getDpiValue(),
-                        abis);
-                List<ApkVariantOutputData> bestMatch = null;
-                if (!outputFiles.isEmpty()) {
-                    // SplitOutputMatcher.computeBestOutput return an OutputFile, find the
-                    // ApkVariantOutputData that contains the OutputFile.
-                    for (ApkVariantOutputData apkVariantOutputData : outputDataList) {
-                        if (apkVariantOutputData.getMainOutputFile() == outputFiles.get(0)) {
-                            bestMatch = ImmutableList.of(apkVariantOutputData);
-                            break;
-                        }
+        // When ABI and density is specified, determine the best output and build only one split.
+        String abiList = Strings.nullToEmpty(AndroidGradleOptions.getBuildTargetAbi(project));
+        String density =
+                Strings.nullToEmpty(AndroidGradleOptions.getBuildTargetDensity(project));
+        if (outputDataList.size() > 1 && (!abiList.isEmpty() || !density.isEmpty())) {
+            List<String> abis = Arrays.asList(abiList.split(","));
+            Density densityEnum = Density.getEnum(density);
+            List<OutputFile> outputFiles = SplitOutputMatcher.computeBestOutput(
+                    outputDataList,
+                    variantConfiguration.getSupportedAbis(),
+                    densityEnum == null ? -1 : densityEnum.getDpiValue(),
+                    abis);
+            List<ApkVariantOutputData> bestMatch = null;
+            if (!outputFiles.isEmpty()) {
+                // SplitOutputMatcher.computeBestOutput return an OutputFile, find the
+                // ApkVariantOutputData that contains the OutputFile.
+                for (ApkVariantOutputData apkVariantOutputData : outputDataList) {
+                    if (apkVariantOutputData.getMainOutputFile() == outputFiles.get(0)) {
+                        bestMatch = ImmutableList.of(apkVariantOutputData);
+                        break;
                     }
-                    checkNotNull(bestMatch,
-                            "There should always be an VariantOutputData containing "
-                                    + "the OutputFile.");
                 }
-                if (bestMatch == null) {
-                    throw new RuntimeException(
-                            String.format(
-                                    "The currently selected variant \"%s\" uses split APKs, but "
-                                            + "none of the %s split apks are compatible with the "
-                                            + "current device with density \"%s\" and ABIs \"%s\".",
-                                    variantConfiguration.getFullName(),
-                                    outputDataList.size(),
-                                    density,
-                                    abiList));
-                }
-                outputDataList = bestMatch;
+                checkNotNull(bestMatch, "There should always be an VariantOutputData containing "
+                        + "the OutputFile.");
             }
+            if (bestMatch == null) {
+                throw new RuntimeException(
+                        String.format(
+                                "The currently selected variant \"%s\" uses split APKs, but none "
+                                        + "of the %s split apks are compatible with the current "
+                                        + "device with density \"%s\" and ABIs \"%s\".",
+                                variantConfiguration.getFullName(),
+                                outputDataList.size(),
+                                density,
+                                abiList));
+            }
+            outputDataList = bestMatch;
         }
 
         // loop on all outputs. The only difference will be the name of the task, and location
