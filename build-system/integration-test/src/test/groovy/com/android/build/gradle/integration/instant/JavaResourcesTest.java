@@ -83,12 +83,12 @@ public class JavaResourcesTest {
         AndroidProject model = project.model().getSingle();
         InstantRun instantRunModel = InstantRunTestUtils.getInstantRunModel(model);
         project.executor()
-                .withInstantRun(apiLevel, ColdswapMode.DEFAULT, OptionalCompilationStep.RESTART_ONLY)
+                .withInstantRun(apiLevel, ColdswapMode.DEFAULT)
                 .run("assembleDebug");
 
         InstantRunBuildInfo context = InstantRunTestUtils.loadContext(instantRunModel);
         assertThat(context.getVerifierStatus()).isEqualTo(
-                InstantRunVerifierStatus.COLD_SWAP_REQUESTED.toString());
+                InstantRunVerifierStatus.INITIAL_BUILD.toString());
 
         List<InstantRunArtifact> mainArtifacts;
 

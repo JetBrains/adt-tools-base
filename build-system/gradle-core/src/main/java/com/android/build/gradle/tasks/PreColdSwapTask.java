@@ -27,6 +27,8 @@ import com.android.build.gradle.internal.scope.TransformVariantScope;
 import com.android.build.gradle.internal.tasks.DefaultAndroidTask;
 
 import org.gradle.api.Task;
+import org.gradle.api.logging.Logger;
+import org.gradle.api.logging.Logging;
 import org.gradle.api.tasks.TaskAction;
 
 import java.io.IOException;
@@ -44,12 +46,17 @@ import java.io.IOException;
  */
 public class PreColdSwapTask extends DefaultAndroidTask {
 
+    private static final Logger LOG = Logging.getLogger(PreColdSwapTask.class);
+
     private TransformVariantScope transformVariantScope;
     private InstantRunVariantScope instantRunVariantScope;
     private InstantRunBuildContext instantRunContext;
 
     @TaskAction
     public void disableBuildTasksAsNeeded() throws IOException {
+        LOG.info("PreColdSwapTask : build mode is %1$s",
+                instantRunContext.getBuildMode().toString());
+
         switch (instantRunContext.getBuildMode()) {
             case HOT_WARM:
                 // We can hot swap, don't produce the full apk.
@@ -70,6 +77,7 @@ public class PreColdSwapTask extends DefaultAndroidTask {
     }
 
     private <T extends Task> void disableTask(AndroidTask<T> task) {
+        LOG.info("Disabling task %1$s", task.getName());
         transformVariantScope.getGlobalScope().getProject().getTasks().getByName(task.getName())
                 .setEnabled(false);
     }

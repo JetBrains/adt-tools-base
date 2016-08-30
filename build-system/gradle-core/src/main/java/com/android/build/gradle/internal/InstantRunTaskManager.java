@@ -37,6 +37,7 @@ import com.android.build.gradle.internal.transforms.InstantRunSlicer;
 import com.android.build.gradle.internal.transforms.InstantRunTransform;
 import com.android.build.gradle.internal.transforms.InstantRunVerifierTransform;
 import com.android.build.gradle.internal.transforms.NoChangesVerifierTransform;
+import com.android.build.gradle.tasks.CheckManifestInInstantRunMode;
 import com.android.build.gradle.tasks.PreColdSwapTask;
 import com.android.build.gradle.tasks.fd.FastDeployRuntimeExtractorTask;
 import com.android.build.gradle.tasks.fd.GenerateInstantRunAppInfoTask;
@@ -96,6 +97,7 @@ public class InstantRunTaskManager {
             AndroidTask<?> anchorTask,
             Set<QualifiedContent.Scope> resMergingScopes,
             SupplierTask<File> instantRunMergedManifest,
+            SupplierTask<File> processedResourcesOutputFile,
             boolean addResourceVerifier) {
 
         TransformVariantScope transformVariantScope = variantScope.getTransformVariantScope();
@@ -127,6 +129,21 @@ public class InstantRunTaskManager {
         AndroidTask<TransformTask> instantRunTask = transformManager
                 .addTransform(tasks, transformVariantScope, instantRunTransform);
         assert instantRunTask!=null;
+
+        // create the manifest file change checker. This task should always run even if the
+        // processAndroidResources task did not run. It is possible (through an IDE sync mainly)
+        // that the processAndroidResources task ran in a previous non InstantRun enabled
+        // invocation.
+        AndroidTask<CheckManifestInInstantRunMode> checkManifestTask =
+                androidTasks.create(tasks,
+                        new CheckManifestInInstantRunMode.ConfigAction(transformVariantScope,
+                                variantScope,
+                                instantRunMergedManifest,
+                                processedResourcesOutputFile));
+        checkManifestTask.optionalDependsOn(tasks, instantRunMergedManifest.getBuilderTask(),
+                processedResourcesOutputFile.getBuilderTask());
+
+        instantRunTask.dependsOn(tasks, checkManifestTask);
 
         if (addResourceVerifier) {
             NoChangesVerifierTransform dependenciesVerifierTransform =

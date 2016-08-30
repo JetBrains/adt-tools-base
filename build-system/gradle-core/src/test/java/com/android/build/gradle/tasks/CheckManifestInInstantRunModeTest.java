@@ -37,7 +37,7 @@ import java.io.IOException;
 import java.util.jar.JarOutputStream;
 import java.util.zip.ZipEntry;
 
-public class ProcessAndroidResourcesTest {
+public class CheckManifestInInstantRunModeTest {
 
     @Rule
     public TemporaryFolder mTemporaryFolder = new TemporaryFolder();
@@ -62,16 +62,16 @@ public class ProcessAndroidResourcesTest {
         {
             InstantRunBuildContext context = mock(InstantRunBuildContext.class);
             Files.write("Original Manifest", manifestFileToPackage, Charsets.UTF_8);
-            ProcessAndroidResources.runManifestChangeVerifier(
+            CheckManifestInInstantRunMode.runManifestChangeVerifier(
                     context, instantRunSupportDir, manifestFileToPackage);
-            verifyNoMoreInteractions(context);
+            verify(context).setVerifierResult(InstantRunVerifierStatus.INITIAL_BUILD);
         }
 
         // No changes
         {
             InstantRunBuildContext context = mock(InstantRunBuildContext.class);
             Files.write("Original Manifest", manifestFileToPackage, Charsets.UTF_8);
-            ProcessAndroidResources.runManifestChangeVerifier(
+            CheckManifestInInstantRunMode.runManifestChangeVerifier(
                     context, instantRunSupportDir, manifestFileToPackage);
             verifyNoMoreInteractions(context);
         }
@@ -80,7 +80,7 @@ public class ProcessAndroidResourcesTest {
         {
             InstantRunBuildContext context = mock(InstantRunBuildContext.class);
             Files.write("Changed Manifest", manifestFileToPackage, Charsets.UTF_8);
-            ProcessAndroidResources.runManifestChangeVerifier(
+            CheckManifestInInstantRunMode.runManifestChangeVerifier(
                     context, instantRunSupportDir, manifestFileToPackage);
             verify(context).setVerifierResult(InstantRunVerifierStatus.MANIFEST_FILE_CHANGE);
         }
@@ -89,7 +89,7 @@ public class ProcessAndroidResourcesTest {
         {
             InstantRunBuildContext context = mock(InstantRunBuildContext.class);
             Files.write("Changed Manifest", manifestFileToPackage, Charsets.UTF_8);
-            ProcessAndroidResources.runManifestChangeVerifier(
+            CheckManifestInInstantRunMode.runManifestChangeVerifier(
                     context, instantRunSupportDir, manifestFileToPackage);
             verifyNoMoreInteractions(context);
         }
@@ -106,16 +106,16 @@ public class ProcessAndroidResourcesTest {
         // Initial build
         {
             InstantRunBuildContext context = mock(InstantRunBuildContext.class);
-            ProcessAndroidResources.runManifestBinaryChangeVerifier(
+            CheckManifestInInstantRunMode.runManifestBinaryChangeVerifier(
                     context, instantRunSupportDir, resOutBaseNameFile);
-            verifyNoMoreInteractions(context);
+            verify(context).setVerifierResult(InstantRunVerifierStatus.INITIAL_BUILD);
         }
 
         // No changes
         {
             InstantRunBuildContext context = mock(InstantRunBuildContext.class);
             writeManifestFile(resOutBaseNameFile, "Initial binary manifest");
-            ProcessAndroidResources.runManifestBinaryChangeVerifier(
+            CheckManifestInInstantRunMode.runManifestBinaryChangeVerifier(
                     context, instantRunSupportDir, resOutBaseNameFile);
             verifyNoMoreInteractions(context);
         }
@@ -124,7 +124,7 @@ public class ProcessAndroidResourcesTest {
         {
             InstantRunBuildContext context = mock(InstantRunBuildContext.class);
             writeManifestFile(resOutBaseNameFile, "Changed binary manifest");
-            ProcessAndroidResources.runManifestBinaryChangeVerifier(
+            CheckManifestInInstantRunMode.runManifestBinaryChangeVerifier(
                     context, instantRunSupportDir, resOutBaseNameFile);
             verify(context).setVerifierResult(
                     InstantRunVerifierStatus.BINARY_MANIFEST_FILE_CHANGE);
@@ -134,7 +134,7 @@ public class ProcessAndroidResourcesTest {
         {
             InstantRunBuildContext context = mock(InstantRunBuildContext.class);
             writeManifestFile(resOutBaseNameFile, "Changed binary manifest");
-            ProcessAndroidResources.runManifestBinaryChangeVerifier(
+            CheckManifestInInstantRunMode.runManifestBinaryChangeVerifier(
                     context, instantRunSupportDir, resOutBaseNameFile);
             verifyNoMoreInteractions(context);
         }

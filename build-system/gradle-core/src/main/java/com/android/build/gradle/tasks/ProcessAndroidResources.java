@@ -53,6 +53,7 @@ import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
 import com.google.common.io.Files;
 
+import org.gradle.api.logging.Logger;
 import org.gradle.api.logging.Logging;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.InputDirectory;
@@ -76,6 +77,8 @@ import java.util.zip.ZipEntry;
 
 @ParallelizableTask
 public class ProcessAndroidResources extends IncrementalTask {
+
+    private static final Logger LOG = Logging.getLogger(ProcessAndroidResources.class);
 
     private File manifestFile;
 
@@ -116,8 +119,6 @@ public class ProcessAndroidResources extends IncrementalTask {
     private File mergeBlameLogFolder;
 
     private InstantRunBuildContext instantRunBuildContext;
-
-    private File instantRunSupportDir;
 
     private VariantScope variantScope;
 
@@ -176,71 +177,13 @@ public class ProcessAndroidResources extends IncrementalTask {
 
             builder.processResources(aapt, config, getEnforceUniquePackageName());
 
-            if (resOutBaseNameFile != null) {
-                if (instantRunBuildContext.isInInstantRunMode()) {
-                    runManifestChangeVerifier(instantRunBuildContext, instantRunSupportDir,
-                            manifestFileToPackage);
-                    runManifestBinaryChangeVerifier(instantRunBuildContext, instantRunSupportDir,
-                            resOutBaseNameFile);
-                }
+            if (resOutBaseNameFile != null && LOG.isInfoEnabled()) {
+                LOG.info("Aapt output file {}", resOutBaseNameFile.getAbsolutePath());
             }
+
         } catch (IOException | InterruptedException | ProcessException e) {
             throw new RuntimeException(e);
         }
-    }
-
-    @VisibleForTesting
-    static void runManifestChangeVerifier(InstantRunBuildContext instantRunBuildContext,
-            File instantRunSupportDir,
-            @NonNull File manifestFileToPackage) throws IOException {
-        File previousManifestFile = new File(instantRunSupportDir, "manifest.xml");
-
-        if (previousManifestFile.exists()) {
-            String currentManifest =
-                    Files.asCharSource(manifestFileToPackage, Charsets.UTF_8).read();
-            String previousManifest =
-                    Files.asCharSource(previousManifestFile, Charsets.UTF_8).read();
-            if (!currentManifest.equals(previousManifest)) {
-                // TODO: Deeper comparison, call out just a version change.
-                instantRunBuildContext.setVerifierResult(
-                        InstantRunVerifierStatus.MANIFEST_FILE_CHANGE);
-                Files.copy(manifestFileToPackage, previousManifestFile);
-            }
-        } else {
-            Files.createParentDirs(previousManifestFile);
-            Files.copy(manifestFileToPackage, previousManifestFile);
-        }
-    }
-
-    @VisibleForTesting
-    static void runManifestBinaryChangeVerifier(
-            InstantRunBuildContext instantRunBuildContext,
-            File instantRunSupportDir,
-            @NonNull File resOutBaseNameFile)
-            throws IOException {
-        // get the new manifest file CRC
-        String currentIterationCRC = null;
-        try (JarFile jarFile = new JarFile(resOutBaseNameFile)) {
-            ZipEntry entry = jarFile.getEntry(SdkConstants.ANDROID_MANIFEST_XML);
-            if (entry != null) {
-                currentIterationCRC = String.valueOf(entry.getCrc());
-            }
-        }
-
-        File crcFile = new File(instantRunSupportDir, "manifest.crc");
-        // check the manifest file binary format.
-        if (crcFile.exists() && currentIterationCRC != null) {
-            // compare its content with the new binary file crc.
-            String previousIterationCRC = Files.readFirstLine(crcFile, Charsets.UTF_8);
-            if (!currentIterationCRC.equals(previousIterationCRC)) {
-                instantRunBuildContext.setVerifierResult(
-                        InstantRunVerifierStatus.BINARY_MANIFEST_FILE_CHANGE);
-            }
-        }
-
-        // write the new manifest file CRC.
-        Files.createParentDirs(crcFile);
-        Files.write(currentIterationCRC, crcFile, Charsets.UTF_8);
     }
 
     public static class ConfigAction implements TaskConfigAction<ProcessAndroidResources> {
@@ -418,9 +361,6 @@ public class ProcessAndroidResources extends IncrementalTask {
 
             processResources.setMergeBlameLogFolder(
                     scope.getVariantScope().getResourceBlameLogDir());
-
-            processResources.instantRunSupportDir =
-                    scope.getVariantScope().getInstantRunSupportDir();
 
             processResources.instantRunBuildContext =
                     scope.getVariantScope().getInstantRunBuildContext();

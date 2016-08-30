@@ -118,6 +118,10 @@ class ExternalBuildTaskManager {
                                 .getAndroidManifest()
                                 .getExecRootPath());
 
+        File processedAndroidResourcesFile =
+                new File(externalBuildContext.getExecutionRoot(),
+                        externalBuildContext.getBuildManifest().getResourceApk().getExecRootPath());
+
         ExternalBuildVariantScope variantScope = new ExternalBuildVariantScope(globalScope,
                 project.getBuildDir(),
                 externalBuildContext,
@@ -156,6 +160,20 @@ class ExternalBuildTaskManager {
                             @Override
                             public File get() {
                                 return androidManifestFile;
+                            }
+                        },
+                        new SupplierTask<File>() {
+                            @Nullable
+                            @Override
+                            public AndroidTask<?> getBuilderTask() {
+                                // no task built the ap_ file, it's supplied by the external
+                                // build system.
+                                return null;
+                            }
+
+                            @Override
+                            public File get() {
+                                return processedAndroidResourcesFile;
                             }
                         },
                         false /* addResourceVerifier */);

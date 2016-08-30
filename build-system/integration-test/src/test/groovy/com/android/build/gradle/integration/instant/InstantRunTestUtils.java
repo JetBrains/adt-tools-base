@@ -162,7 +162,8 @@ public final class InstantRunTestUtils {
         return instantRunModel;
     }
 
-    private static InstantRunArtifact getOnlyArtifact(@NonNull InstantRun instantRunModel)
+    @NonNull
+    public static InstantRunArtifact getOnlyArtifact(@NonNull InstantRun instantRunModel)
             throws Exception {
         InstantRunBuildInfo context = loadContext(instantRunModel);
 

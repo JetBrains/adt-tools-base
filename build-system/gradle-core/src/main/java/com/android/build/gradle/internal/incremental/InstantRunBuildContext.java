@@ -330,13 +330,30 @@ public class InstantRunBuildContext {
      * @param verifierStatus
      */
     public void setVerifierResult(@NonNull InstantRunVerifierStatus verifierStatus) {
-        if (!currentBuild.verifierStatus.isPresent() ||
-                currentBuild.getVerifierStatus().get() == InstantRunVerifierStatus.COMPATIBLE) {
-            currentBuild.verifierStatus = Optional.of(verifierStatus);
-        }
-        buildMode = buildMode.combine(
+
+        InstantRunVerifierStatus currentVerifierStatus = currentBuild.getVerifierStatus()
+                .orElse(InstantRunVerifierStatus.COMPATIBLE);
+
+        LOG.info("Receiving verifier result: {}. Current Verifier/Build mode is {}/{}.",
+                verifierStatus,
+                currentVerifierStatus,
+                buildMode);
+
+        // get the new build mode for this verifier status as it may change the one we
+        // currently use.
+        InstantRunBuildMode newBuildMode = buildMode.combine(
                 verifierStatus.getInstantRunBuildModeForPatchingPolicy(patchingPolicy));
-        LOG.info("Got verifier result: {}. Build mode is now {}.", verifierStatus, buildMode);
+
+        // if our current status is not set, or the new build mode is higher, reset everything.
+        if (currentVerifierStatus == InstantRunVerifierStatus.COMPATIBLE
+                || newBuildMode != buildMode) {
+            currentBuild.verifierStatus = Optional.of(verifierStatus);
+            buildMode = newBuildMode;
+        }
+
+        LOG.info("Verifier result is now : {}. Build mode is now {}.",
+                currentBuild.getVerifierStatus().orElse(InstantRunVerifierStatus.COMPATIBLE),
+                buildMode);
     }
 
     /**

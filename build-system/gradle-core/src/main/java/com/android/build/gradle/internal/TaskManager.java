@@ -2001,6 +2001,21 @@ public abstract class TaskManager {
                                         .getInstantRunManifestOutputFile();
                             }
                         },
+                        new SupplierTask<File>() {
+                            private final VariantOutputScope variantOutputScope =
+                                    variantScope.getVariantData().getOutputs().get(0).getScope();
+
+                            @Nullable
+                            @Override
+                            public AndroidTask<?> getBuilderTask() {
+                                return variantOutputScope.getProcessResourcesTask();
+                            }
+
+                            @Override
+                            public File get() {
+                                return variantOutputScope.getProcessResourcePackageOutputFile();
+                            }
+                        },
                         true /* addResourceVerifier */);
 
         if (variantScope.getSourceGenTask() != null) {
