@@ -96,7 +96,7 @@ public class InjectedAbiAndDensitySplitTest {
             apk = sProject.getApk("armeabi-v7a", "debug");
             assertThat(sProject.getApk("ldpiArmeabi-v7a", "debug")).doesNotExist();
         } else {
-            apk = sProject.getApk("ldpiarmeabi-v7a", "debug");
+            apk = sProject.getApk("ldpiArmeabi-v7a", "debug");
             assertThat(sProject.getApk("armeabi-v7a", "debug")).doesNotExist();
         }
         assertThat(apk).exists();
