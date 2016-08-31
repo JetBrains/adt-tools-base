@@ -595,7 +595,7 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
                 @Path("androidInjectedBuildAbi") final String buildAbi) {
             binaries.afterEach(binary -> {
                 // Only build the first supported ABI of the device.
-                String deviceAbi = buildAbi.isEmpty() || !binary.getBuildType().getDebuggable()
+                String deviceAbi = buildAbi.isEmpty()
                         ? null
                         : Iterables.getFirst(Arrays.asList(buildAbi.split(",")), null);
                 for (NativeLibraryBinarySpec nativeBinary : binary.getNativeBinaries()) {
