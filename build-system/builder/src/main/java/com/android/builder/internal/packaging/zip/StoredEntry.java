@@ -26,7 +26,6 @@ import com.google.common.io.ByteSource;
 import com.google.common.io.ByteStreams;
 import com.google.common.io.Closeables;
 import com.google.common.primitives.Ints;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
@@ -271,7 +270,12 @@ public class StoredEntry {
             try {
                 readDataDescriptorRecord();
             } catch (IOException e) {
-                throw new IOException("Failed to read data descriptor record.", e);
+                // ProGuard sometimes produces JARs where the data descriptor is incorrect and
+                // doesn't match the (correct) CDH. This happens for class files with non-ASCII
+                // names. In such cases we do find the DATA_DESC_SIGNATURE at the right offset,
+                // which suggests our offset math is right, just the values don't make sense.
+                System.err.println(
+                        "Data descriptor verification failed for entry " + mCdh.getName());
             }
         }
     }
