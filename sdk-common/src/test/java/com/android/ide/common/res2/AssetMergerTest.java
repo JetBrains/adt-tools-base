@@ -16,7 +16,6 @@
 
 package com.android.ide.common.res2;
 
-import static com.android.testutils.truth.MoreTruth.assertThat;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -24,13 +23,10 @@ import static org.junit.Assert.assertTrue;
 
 import com.android.SdkConstants;
 import com.android.testutils.NoErrorsOrWarningsLogger;
-import com.android.testutils.TestResources;
 import com.android.testutils.TestUtils;
-import com.android.testutils.truth.MoreTruth;
 import com.google.common.base.Charsets;
 import com.google.common.collect.ListMultimap;
 import com.google.common.io.Files;
-import com.google.common.truth.Truth;
 
 import org.junit.Rule;
 import org.junit.Test;
@@ -117,9 +113,9 @@ public class AssetMergerTest extends BaseTestCase {
         MergedAssetWriter writer = new MergedAssetWriter(outputFolder.toFile());
         merger.mergeData(writer, false /*doCleanUp*/);
 
-        assertThat(outputFolder.resolve("asset.txt").toFile())
-                .hasContents("test.txt file content");
-
+        assertTrue(Arrays.equals(
+                Files.toByteArray(outputFolder.resolve("asset.txt").toFile()),
+                "test.txt file content".getBytes(Charsets.UTF_8)));
     }
 
     @Test
