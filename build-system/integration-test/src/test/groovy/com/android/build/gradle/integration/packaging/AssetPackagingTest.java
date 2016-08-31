@@ -28,6 +28,7 @@ import com.android.build.gradle.integration.common.runner.FilterableParameterize
 import com.android.build.gradle.integration.common.truth.AbstractAndroidSubject;
 import com.android.build.gradle.integration.common.utils.TestFileUtils;
 import com.android.utils.FileUtils;
+import com.google.common.base.Charsets;
 
 import org.junit.After;
 import org.junit.Before;
@@ -36,11 +37,14 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.zip.GZIPOutputStream;
 
 /**
  * test for packaging of asset files.
@@ -115,7 +119,9 @@ public class AssetPackagingTest {
         createOriginalAsset(libDir, "androidTest", "filelibtest.txt", "libraryTest:abcd");
 
         File lib2Dir = libProject2.getTestDir();
-        createOriginalAsset(lib2Dir, "main", "filelib2.txt", "library2:abcd");
+        // Include a gzipped asset, which should be extracted.
+        createOriginalGzippedAsset(lib2Dir, "main", "filelib2.txt.gz",
+                "library2:abcd".getBytes(Charsets.UTF_8));
         createOriginalAsset(lib2Dir, "androidTest", "filelib2test.txt", "library2Test:abcd");
     }
 
@@ -137,9 +143,30 @@ public class AssetPackagingTest {
             @NonNull String dimension,
             @NonNull String filename,
             @NonNull String content) throws IOException {
-        File assetFolder = FileUtils.join(projectFolder, "src", dimension, "assets");
-        FileUtils.mkdirs(assetFolder);
-        TestFileUtils.appendToFile(new File(assetFolder, filename), content);
+        createOriginalAsset(projectFolder, dimension, filename, content.getBytes(Charsets.UTF_8));
+    }
+
+    private static void createOriginalGzippedAsset(
+            @NonNull File projectFolder,
+            @NonNull String dimension,
+            @NonNull String filename,
+            @NonNull byte[] content) throws IOException {
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+        try (GZIPOutputStream out = new GZIPOutputStream(byteArrayOutputStream)) {
+            out.write(content);
+        }
+        createOriginalAsset(projectFolder, dimension, filename, byteArrayOutputStream.toByteArray());
+    }
+
+    private static void createOriginalAsset(
+            @NonNull File projectFolder,
+            @NonNull String dimension,
+            @NonNull String filename,
+            @NonNull byte[] content) throws IOException {
+        Path assetFolder = FileUtils.join(projectFolder, "src", dimension, "assets").toPath();
+        Files.createDirectories(assetFolder);
+        Path assetFile = assetFolder.resolve(filename);
+        Files.write(assetFile, content);
     }
 
     @Test

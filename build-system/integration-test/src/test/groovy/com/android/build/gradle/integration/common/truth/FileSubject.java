@@ -105,6 +105,10 @@ public class FileSubject extends Subject<FileSubject, File> {
         }
     }
 
+    public void hasContents(String expectedContents) {
+        contains(expectedContents.getBytes(Charsets.UTF_8));
+    }
+
     public void wasModifiedAt(long timestamp) {
         long lastModified = getSubject().lastModified();
         if (getSubject().lastModified() != timestamp) {

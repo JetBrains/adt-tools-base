@@ -16,9 +16,12 @@
 
 package com.android.ide.common.res2;
 
+import com.android.SdkConstants;
 import com.android.annotations.NonNull;
+import com.google.common.io.Files;
 
 import java.io.File;
+import java.util.Locale;
 
 /**
  * An asset.
@@ -43,7 +46,11 @@ class AssetItem extends DataItem<AssetFile> {
         // compute the relative path
         StringBuilder sb = new StringBuilder();
         computePath(sb, file.getParentFile(), sourceFolder);
-        sb.append(file.getName());
+        String fileName = file.getName();
+        // When AAPT processed resources, it would uncompress gzipped files, as they will be
+        // compressed in the APK anyway. This is now done by the MergedAssetWriter.
+        // Map a merged asset item e.g. foo.txt.gz to foo.txt
+        sb.append(shouldBeUnGzipped(fileName) ? Files.getNameWithoutExtension(fileName) : fileName);
 
         return new AssetItem(sb.toString());
     }
@@ -55,5 +62,21 @@ class AssetItem extends DataItem<AssetFile> {
 
         computePath(sb, current.getParentFile(), stop);
         sb.append(current.getName()).append('/');
+    }
+
+    /**
+     * Returns true if the item should be un-gzipped during the asset merge.
+     *
+     * <p>This exists to replicate the behaviour of AAPT when processing assets: Decompress gzipped files, as they will be re-compressed
+     * in the APK anyway.
+     *
+     * <p>They are renamed in {@link AssetItem#create(File, File)}.
+     */
+    boolean shouldBeUnGzipped() {
+        return shouldBeUnGzipped(getFile().getName());
+    }
+
+    private static boolean shouldBeUnGzipped(String fileName) {
+        return Files.getFileExtension(fileName).toLowerCase(Locale.US).equals(SdkConstants.EXT_GZ);
     }
 }

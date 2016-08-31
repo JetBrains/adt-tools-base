@@ -18,6 +18,7 @@ package com.android.ide.common.res2;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.google.common.base.MoreObjects;
 import com.google.common.base.Objects;
 
 import org.w3c.dom.Document;
@@ -257,5 +258,16 @@ abstract class DataItem<F extends DataFile> {
      */
     public File getFile() {
         return getSource().getFile();
+    }
+
+    @Override
+    public String toString() {
+        return MoreObjects.toStringHelper(this.getClass())
+                .add("name", mName)
+                .add("source", mSource)
+                .add("isRemoved", isRemoved())
+                .add("isTouched", isTouched())
+                .add("isWritten", isWritten())
+                .toString();
     }
 }
