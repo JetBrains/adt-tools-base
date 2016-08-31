@@ -406,7 +406,8 @@ public class SdkVersionInfo {
             result.append(version.getCodename());
             result.append(" Preview");
         } else {
-            result.append(getVersionString(version.getFeatureLevel()));
+            String versionString = getVersionString(version.getFeatureLevel());
+            result.append(versionString == null ? "API " + version.getApiString() : versionString);
             String codeName = version.getCodename();
             if (codeName == null) {
                 codeName = getCodeName(version.getFeatureLevel());
