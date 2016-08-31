@@ -16,22 +16,38 @@
 
 package com.android.ide.common.res2;
 
+import static com.android.testutils.truth.MoreTruth.assertThat;
+import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import com.android.SdkConstants;
+import com.android.testutils.NoErrorsOrWarningsLogger;
+import com.android.testutils.TestResources;
 import com.android.testutils.TestUtils;
+import com.android.testutils.truth.MoreTruth;
+import com.google.common.base.Charsets;
 import com.google.common.collect.ListMultimap;
 import com.google.common.io.Files;
+import com.google.common.truth.Truth;
 
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 
+import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.List;
+import java.util.zip.GZIPOutputStream;
 
 public class AssetMergerTest extends BaseTestCase {
+
+    @Rule
+    public final TemporaryFolder mTemporaryFolder = new TemporaryFolder();
 
     private static AssetMerger sAssetMerger = null;
 
@@ -72,6 +88,38 @@ public class AssetMergerTest extends BaseTestCase {
         // compare the two maps, but not using the full map as the set loaded from the output
         // won't contains all versions of each AssetItem item.
         compareResourceMaps(merger, writtenSet, false /*full compare*/);
+    }
+
+    @Test
+    public void testExtractGzippedAssets() throws Exception {
+        Path assetsSourceDirectory = mTemporaryFolder.newFolder().toPath();
+
+        // Create gzipped asset
+        Path gzippedAsset = assetsSourceDirectory.resolve("asset.txt.gz");
+        try (GZIPOutputStream out = new GZIPOutputStream(new BufferedOutputStream(
+                java.nio.file.Files.newOutputStream(gzippedAsset)))) {
+            out.write("test.txt file content".getBytes(Charsets.UTF_8));
+        }
+
+        // Load asset set containing gzipped asset
+        AssetSet assetSet = new AssetSet("config");
+        assetSet.addSource(assetsSourceDirectory.toFile());
+        assetSet.loadFromFiles(new NoErrorsOrWarningsLogger());
+
+        AssetMerger merger = new AssetMerger();
+        merger.addDataSet(assetSet);
+
+        assertThat(merger.getDataMap()).containsKey("asset.txt");
+        assertThat(merger.getDataMap()).doesNotContainKey("asset.txt.gz");
+
+        Path outputFolder = mTemporaryFolder.newFolder().toPath();
+
+        MergedAssetWriter writer = new MergedAssetWriter(outputFolder.toFile());
+        merger.mergeData(writer, false /*doCleanUp*/);
+
+        assertThat(outputFolder.resolve("asset.txt").toFile())
+                .hasContents("test.txt file content");
+
     }
 
     @Test
