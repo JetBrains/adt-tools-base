@@ -791,8 +791,9 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
                     serialUuid);
 
         } catch (ClassNotFoundException ex) {
-            LOG.verbose("Unable to add auto-generated serialVersionUID for " + classNode.name);
-        } catch (ExceptionInInitializerError e) {
+            LOG.verbose("Unable to add auto-generated serialVersionUID for %1$s : %2$s",
+                    classNode.name, ex.getMessage());
+        } catch (LinkageError | AssertionError e) {
             // http://b.android.com/220635 - static initializer might be invoked
             LOG.warning(
                     "Unable to generate serialVersionUID for %s. In case you make this class"
