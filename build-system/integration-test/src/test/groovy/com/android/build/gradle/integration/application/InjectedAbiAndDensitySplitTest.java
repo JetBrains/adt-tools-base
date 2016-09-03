@@ -19,6 +19,7 @@ package com.android.build.gradle.integration.application;
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat;
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk;
 
+import com.android.build.gradle.AndroidGradleOptions;
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp;
 import com.android.builder.model.AndroidProject;
@@ -71,6 +72,7 @@ public class InjectedAbiAndDensitySplitTest {
     @Test
     public void checkAbi() throws IOException {
         sProject.executor()
+                .withProperty(AndroidGradleOptions.PROPERTY_BUILD_ONLY_TARGET_ABI, "true")
                 .withProperty(AndroidProject.PROPERTY_BUILD_ABI, "armeabi-v7a")
                 .run("clean", "assembleDebug");
 
@@ -86,6 +88,7 @@ public class InjectedAbiAndDensitySplitTest {
     @Test
     public void checkAbiAndDensity() throws IOException {
         sProject.executor()
+                .withProperty(AndroidGradleOptions.PROPERTY_BUILD_ONLY_TARGET_ABI, "true")
                 .withProperty(AndroidProject.PROPERTY_BUILD_ABI, "armeabi-v7a")
                 .withProperty(AndroidProject.PROPERTY_BUILD_DENSITY, "ldpi")
                 .run("clean", "assembleDebug");
@@ -110,6 +113,7 @@ public class InjectedAbiAndDensitySplitTest {
     @Test
     public void checkError() throws IOException {
         sProject.executor()
+                .withProperty(AndroidGradleOptions.PROPERTY_BUILD_ONLY_TARGET_ABI, "true")
                 .withProperty(AndroidProject.PROPERTY_BUILD_ABI, "mips")
                 .expectFailure()
                 .run("assembleDebug");

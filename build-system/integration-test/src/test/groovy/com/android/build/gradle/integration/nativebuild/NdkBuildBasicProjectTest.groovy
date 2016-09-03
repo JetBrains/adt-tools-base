@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.integration.nativebuild
 
+import com.android.build.gradle.AndroidGradleOptions
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldJniApp
 import com.android.build.gradle.integration.common.utils.TestFileUtils
@@ -132,6 +133,7 @@ android {
         // it is not valid for the build . The second (x86) should be the one chosen to build.
         // Finally, armeabi is valid but it will be ignored because x86 is "preferred".
         project.executor()
+                .withProperty(AndroidGradleOptions.PROPERTY_BUILD_ONLY_TARGET_ABI, "true")
                 .withProperty(AndroidProject.PROPERTY_BUILD_ABI, "invalid-abi,x86,armeabi")
                 .run("clean", "assembleDebug")
         File apk = project.getApk("debug");
