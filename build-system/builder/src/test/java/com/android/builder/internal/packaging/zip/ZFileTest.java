@@ -1206,4 +1206,146 @@ public class ZFileTest {
             se.delete();
         }
     }
+
+    @Test
+    public void cannotAddMoreThan0x7fffExtraField() throws Exception {
+        File zipFile = new File(mTemporaryFolder.getRoot(), "a.zip");
+
+        ZFileOptions zfo = new ZFileOptions();
+        zfo.setCoverEmptySpaceUsingExtraField(true);
+
+        /*
+         * Create a zip file with:
+         *
+         * [small file][large file with exactly 0x8000 bytes][small file 2]
+         */
+        long smallFile1Offset;
+        long smallFile2Offset;
+        long largeFileOffset;
+        String largeFileName = "Large file";
+        try (ZFile zf = new ZFile(zipFile, zfo)) {
+            zf.add("Small file", new ByteArrayInputStream(new byte[] { 0, 1 }));
+
+            int largeFileTotalSize = 0x8000;
+            int largeFileContentsSize =
+                    largeFileTotalSize
+                            - ZFileTestConstants.LOCAL_HEADER_SIZE
+                            - largeFileName.length();
+
+            zf.add(largeFileName, new ByteArrayInputStream(new byte[largeFileContentsSize]), false);
+            zf.add("Small file 2", new ByteArrayInputStream(new byte[] { 0, 1 }));
+
+            zf.update();
+
+            StoredEntry sfEntry = zf.get("Small file");
+            assertNotNull(sfEntry);
+            smallFile1Offset = sfEntry.getCentralDirectoryHeader().getOffset();
+            assertEquals(0, smallFile1Offset);
+
+            StoredEntry lfEntry = zf.get(largeFileName);
+            assertNotNull(lfEntry);
+            largeFileOffset = lfEntry.getCentralDirectoryHeader().getOffset();
+
+            StoredEntry sf2Entry = zf.get("Small file 2");
+            assertNotNull(sf2Entry);
+            smallFile2Offset = sf2Entry.getCentralDirectoryHeader().getOffset();
+
+            assertEquals(largeFileTotalSize, smallFile2Offset - largeFileOffset);
+        }
+
+        /*
+         * Remove the large file from the zip file and check that small file 2 has been moved, but
+         * no extra field has been added.
+         */
+        try (ZFile zf = new ZFile(zipFile, zfo)) {
+            StoredEntry lfEntry = zf.get(largeFileName);
+            assertNotNull(lfEntry);
+            lfEntry.delete();
+
+            zf.update();
+
+            StoredEntry sfEntry = zf.get("Small file");
+            assertNotNull(sfEntry);
+            smallFile1Offset = sfEntry.getCentralDirectoryHeader().getOffset();
+            assertEquals(0, smallFile1Offset);
+
+            StoredEntry sf2Entry = zf.get("Small file 2");
+            assertNotNull(sf2Entry);
+            long newSmallFile2Offset = sf2Entry.getCentralDirectoryHeader().getOffset();
+            assertEquals(largeFileOffset, newSmallFile2Offset);
+
+            assertEquals(0, sf2Entry.getLocalExtra().size());
+        }
+    }
+
+    @Test
+    public void canAddMoreThan0x7fffExtraField() throws Exception {
+        File zipFile = new File(mTemporaryFolder.getRoot(), "a.zip");
+
+        ZFileOptions zfo = new ZFileOptions();
+        zfo.setCoverEmptySpaceUsingExtraField(true);
+
+        /*
+         * Create a zip file with:
+         *
+         * [small file][large file with exactly 0x7fff bytes][small file 2]
+         */
+        long smallFile1Offset;
+        long smallFile2Offset;
+        long largeFileOffset;
+        String largeFileName = "Large file";
+        int largeFileTotalSize = 0x7fff;
+        try (ZFile zf = new ZFile(zipFile, zfo)) {
+            zf.add("Small file", new ByteArrayInputStream(new byte[] { 0, 1 }));
+
+            int largeFileContentsSize =
+                    largeFileTotalSize
+                            - ZFileTestConstants.LOCAL_HEADER_SIZE
+                            - largeFileName.length();
+
+            zf.add(largeFileName, new ByteArrayInputStream(new byte[largeFileContentsSize]), false);
+            zf.add("Small file 2", new ByteArrayInputStream(new byte[] { 0, 1 }));
+
+            zf.update();
+
+            StoredEntry sfEntry = zf.get("Small file");
+            assertNotNull(sfEntry);
+            smallFile1Offset = sfEntry.getCentralDirectoryHeader().getOffset();
+            assertEquals(0, smallFile1Offset);
+
+            StoredEntry lfEntry = zf.get(largeFileName);
+            assertNotNull(lfEntry);
+            largeFileOffset = lfEntry.getCentralDirectoryHeader().getOffset();
+
+            StoredEntry sf2Entry = zf.get("Small file 2");
+            assertNotNull(sf2Entry);
+            smallFile2Offset = sf2Entry.getCentralDirectoryHeader().getOffset();
+
+            assertEquals(largeFileTotalSize, smallFile2Offset - largeFileOffset);
+        }
+
+        /*
+         * Remove the large file from the zip file and check that small file 2 has been moved back
+         * but with 0x7fff extra space added.
+         */
+        try (ZFile zf = new ZFile(zipFile, zfo)) {
+            StoredEntry lfEntry = zf.get(largeFileName);
+            assertNotNull(lfEntry);
+            lfEntry.delete();
+
+            zf.update();
+
+            StoredEntry sfEntry = zf.get("Small file");
+            assertNotNull(sfEntry);
+            smallFile1Offset = sfEntry.getCentralDirectoryHeader().getOffset();
+            assertEquals(0, smallFile1Offset);
+
+            StoredEntry sf2Entry = zf.get("Small file 2");
+            assertNotNull(sf2Entry);
+            long newSmallFile2Offset = sf2Entry.getCentralDirectoryHeader().getOffset();
+
+            assertEquals(largeFileOffset, newSmallFile2Offset);
+            assertEquals(largeFileTotalSize, sf2Entry.getLocalExtra().size());
+        }
+    }
 }

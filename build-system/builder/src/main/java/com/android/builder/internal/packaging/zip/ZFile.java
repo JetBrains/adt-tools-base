@@ -227,8 +227,11 @@ public class ZFile implements Closeable {
 
     /**
      * Maximum size of the extra field.
+     *
+     * <p>Theoretically, this is (1 << 16) - 1 = 65535 and not (1 < 15) -1 = 32767. However, due to
+     * http://b.android.com/221703, we need to keep this limited.
      */
-    private static final int MAX_LOCAL_EXTRA_FIELD_CONTENTS_SIZE = (1 << 16);
+    private static final int MAX_LOCAL_EXTRA_FIELD_CONTENTS_SIZE = (1 << 15) - 1;
 
     /**
      * File zip file.
