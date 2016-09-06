@@ -157,7 +157,7 @@ public class ExternalNativeBuildTask extends ExternalNativeBaseTask {
 
         executeProcessBatch(libraryNames, buildCommands);
 
-        diagnostic("copying build outputs from JSON-defined locations to expected locations");
+        diagnostic("check expected build outputs");
         for (NativeBuildConfigValue config : configValueList) {
             if (config.libraries == null) {
                 continue;
@@ -170,6 +170,10 @@ public class ExternalNativeBuildTask extends ExternalNativeBaseTask {
                 if (!targets.isEmpty() && !targets.contains(libraryValue.artifactName)) {
                     continue;
                 }
+                if (!libraryNames.contains(libraryName)) {
+                    // Only need to check existence of output files we expect to create
+                    continue;
+                }
                 if (!libraryValue.output.exists()) {
                     throw new GradleException(
                             String.format("Expected output file at %s for target %s"
@@ -179,23 +183,6 @@ public class ExternalNativeBuildTask extends ExternalNativeBaseTask {
                 if (libraryValue.abi == null) {
                     throw new GradleException("Expected NativeLibraryValue to have non-null abi");
                 }
-
-                File destinationFolder = new File(getSoFolder(), libraryValue.abi);
-                File destinationFile = new File(destinationFolder, libraryValue.output.getName());
-
-                // If external tool chose to write to the expected location then no need to copy.
-                if (destinationFile.getCanonicalPath().equals(
-                        libraryValue.output.getCanonicalPath())) {
-                    diagnostic(
-                            "not copying output file because it is already in prescribed location: %s",
-                            libraryValue.output);
-                    continue;
-                }
-                if (destinationFolder.mkdirs()) {
-                    diagnostic("created folder %s", destinationFolder);
-                }
-                diagnostic("copy from %s to %s", libraryValue.output, destinationFile);
-                Files.copy(libraryValue.output, destinationFile);
             }
         }
 
