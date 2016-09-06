@@ -2212,6 +2212,7 @@ public abstract class TaskManager {
         String abiList = Strings.nullToEmpty(AndroidGradleOptions.getBuildTargetAbi(project));
         String density =
                 Strings.nullToEmpty(AndroidGradleOptions.getBuildTargetDensity(project));
+        OutputFile bestOutput = null;
         if (outputDataList.size() > 1 && !abiList.isEmpty()) {
             List<String> abis = Arrays.asList(abiList.split(","));
             Density densityEnum = Density.getEnum(density);
@@ -2220,31 +2221,7 @@ public abstract class TaskManager {
                     variantConfiguration.getSupportedAbis(),
                     densityEnum == null ? -1 : densityEnum.getDpiValue(),
                     abis);
-            List<ApkVariantOutputData> bestMatch = null;
-            if (!outputFiles.isEmpty()) {
-                // SplitOutputMatcher.computeBestOutput return an OutputFile, find the
-                // ApkVariantOutputData that contains the OutputFile.
-                for (ApkVariantOutputData apkVariantOutputData : outputDataList) {
-                    if (apkVariantOutputData.getMainOutputFile() == outputFiles.get(0)) {
-                        bestMatch = ImmutableList.of(apkVariantOutputData);
-                        break;
-                    }
-                }
-                checkNotNull(bestMatch, "There should always be an VariantOutputData containing "
-                        + "the OutputFile.");
-            }
-            if (bestMatch == null) {
-                throw new RuntimeException(
-                        String.format(
-                                "The currently selected variant \"%s\" uses split APKs, but none "
-                                        + "of the %s split apks are compatible with the current "
-                                        + "device with density \"%s\" and ABIs \"%s\".",
-                                variantConfiguration.getFullName(),
-                                outputDataList.size(),
-                                density,
-                                abiList));
-            }
-            outputDataList = bestMatch;
+            bestOutput = outputFiles.get(0);
         }
 
         // loop on all outputs. The only difference will be the name of the task, and location
@@ -2375,8 +2352,10 @@ public abstract class TaskManager {
                 variantOutputScope.setAssembleTask(createAssembleTask(tasks, variantOutputData));
 
                 // variant assemble task depends on each output assemble task.
-                variantScope.getAssembleTask().dependsOn(
-                        tasks, variantOutputScope.getAssembleTask());
+                if (bestOutput == null || variantOutputData.getMainOutputFile() == bestOutput) {
+                    variantScope.getAssembleTask().dependsOn(
+                            tasks, variantOutputScope.getAssembleTask());
+                }
             } else {
                 // single output
                 variantOutputScope.setAssembleTask(variantScope.getAssembleTask());
