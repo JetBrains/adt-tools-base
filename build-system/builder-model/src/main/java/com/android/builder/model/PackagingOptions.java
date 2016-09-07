@@ -32,4 +32,12 @@ public interface PackagingOptions {
 
     @NonNull
     Set<String> getMerges();
+
+    /**
+     * Obtains the patterns of files to exclude.
+     *
+     * @return the patterns of files to exclude
+     */
+    @NonNull
+    Set<String> getExcludePatterns();
 }

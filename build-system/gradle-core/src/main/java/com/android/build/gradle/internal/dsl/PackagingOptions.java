@@ -17,10 +17,20 @@
 package com.android.build.gradle.internal.dsl;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.google.common.collect.Sets;
 
 import org.gradle.api.tasks.Input;
 
+import java.io.File;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
+import java.nio.file.Path;
+import java.nio.file.PathMatcher;
+import java.nio.file.Paths;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -39,6 +49,44 @@ public class PackagingOptions implements com.android.builder.model.PackagingOpti
             "LICENSE");
     private Set<String> pickFirsts = Sets.newHashSet();
     private Set<String> merges = Sets.newHashSet();
+
+    /*
+     * Patterns to exclude.
+     */
+    @NonNull
+    private Set<String> excludePatterns = new HashSet<>();
+
+    /*
+     * Cache with compiled patterns.
+     */
+    @NonNull
+    private final Map<String, PathMatcher> compiledPatterns = new HashMap<>();
+
+    public PackagingOptions() {
+        setExcludePatterns(Sets.newHashSet(
+                // Exclude version control folders.
+                "**/.svn/**",
+                "**/CVS/**",
+                "**/SCCS/**",
+
+                // Exclude hidden and backup files.
+                "**/.*/**",
+                "**/.*",
+                "**/*~",
+
+                // Exclude index files
+                "**/thumbs.db",
+                "**/picasa.ini",
+
+                // Exclude javadoc files
+                "**/about.html",
+                "**/package.html",
+                "**/overview.html",
+
+                // ?
+                "**/_*",
+                "**/_*/**"));
+    }
 
     /**
      * Returns the list of excluded paths.
@@ -125,16 +173,73 @@ public class PackagingOptions implements com.android.builder.model.PackagingOpti
     @NonNull
     public Action getAction(String archivePath) {
         if (pickFirsts.contains(archivePath)) {
-            return PackagingOptions.Action.PICK_FIRST;
+            return Action.PICK_FIRST;
         }
         if (merges.contains(archivePath)) {
-            return PackagingOptions.Action.MERGE;
+            return Action.MERGE;
         }
         if (excludes.contains(archivePath)) {
-            return PackagingOptions.Action.EXCLUDE;
+            return Action.EXCLUDE;
+        }
+
+        String absPath = archivePath;
+        if (!absPath.startsWith("/")) {
+            absPath = "/" + absPath;
+        }
+
+        Path path = Paths.get(absPath.replace('/', File.separatorChar));
+
+        for (String p : excludePatterns) {
+            PathMatcher matcher = compiledPatterns.get(p);
+            assert matcher != null;
+            if (matcher.matches(path)) {
+                return Action.EXCLUDE;
+            }
         }
 
         return Action.NONE;
+    }
+
+    /**
+     * Obtains the patterns to exclude from packaging.
+     *
+     * @return patterns to exclude
+     */
+    @Override
+    @NonNull
+    public Set<String> getExcludePatterns() {
+        return new HashSet<>(excludePatterns);
+    }
+
+    /**
+     * Sets the patterns to exclude from packaging.
+     *
+     * @param excludePatterns patterns to exclude or none if {@code null}
+     */
+    public void setExcludePatterns(@Nullable Set<String> excludePatterns) {
+        if (excludePatterns == null) {
+            this.excludePatterns = new HashSet<>();
+        } else {
+            this.excludePatterns = new HashSet<>(excludePatterns);
+        }
+
+        this.compiledPatterns.clear();
+        FileSystem fs = FileSystems.getDefault();
+
+        for (String p : this.excludePatterns) {
+            compiledPatterns.put(p, fs.getPathMatcher("glob:" + p));
+        }
+    }
+
+    /**
+     * Adds a pattern to exclude.
+     *
+     * @param regex the regular expression
+     */
+    public void excludePattern(@NonNull String regex) {
+        Set<String> patterns = getExcludePatterns();
+        patterns.add(regex);
+        setExcludePatterns(patterns);
     }
 
     /**

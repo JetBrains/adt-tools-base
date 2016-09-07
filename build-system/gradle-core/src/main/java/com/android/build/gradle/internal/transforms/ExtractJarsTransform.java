@@ -279,16 +279,6 @@ public class ExtractJarsTransform extends Transform {
             return Action.IGNORE;
         }
 
-        // Check each folders to make sure they should be included.
-        // Folders like CVS, .svn, etc.. should already have been excluded from the
-        // jar file, but we need to exclude some other folder (like /META-INF) so
-        // we check anyway.
-        for (int i = 0 ; i < segments.length - 1; i++) {
-            if (!PackagingUtils.checkFolderForApkPackaging(segments[i])) {
-                return Action.IGNORE;
-            }
-        }
-
         return PackagingUtils.checkFileForApkPackaging(archivePath, extractCode)
                 ? Action.COPY
                 : Action.IGNORE;

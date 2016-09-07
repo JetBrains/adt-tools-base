@@ -43,20 +43,6 @@ import java.util.List;
 public class PackagingUtils {
 
     /**
-     * Checks whether a folder and its content is valid for packaging into the .apk as
-     * standard Java resource.
-     * @param folderName the name of the folder.
-     *
-     * @return true if the folder is valid for packaging.
-     */
-    public static boolean checkFolderForApkPackaging(@NonNull String folderName) {
-        return !folderName.equalsIgnoreCase("CVS") &&
-                !folderName.equalsIgnoreCase(".svn") &&
-                !folderName.equalsIgnoreCase("SCCS") &&
-                !folderName.startsWith("_");
-    }
-
-    /**
      * Set of file formats which are already compressed, or don't compress well, same as the one
      * used by aapt.
      */
@@ -80,9 +66,7 @@ public class PackagingUtils {
         String fileName = new File(filePath).getName();
 
         // ignore hidden files and backup files
-        return !(fileName.charAt(0) == '.' || fileName.charAt(fileName.length() - 1) == '~')
-                && !isOfNonResourcesExtensions(Files.getFileExtension(fileName), allowClassFiles)
-                && !isNotAResourceFile(fileName)
+        return !isOfNonResourcesExtensions(Files.getFileExtension(fileName), allowClassFiles)
                 && !filePath.equals("META-INF/MANIFEST.MF")
                 && !isUsedForSigning(filePath)
                 && !isMavenMetadata(filePath);
@@ -119,15 +103,6 @@ public class PackagingUtils {
         return !allowClassFiles && SdkConstants.EXT_CLASS.equals(extension);
     }
 
-    private static boolean isNotAResourceFile(@NonNull String fileName) {
-        for (String name : NON_RESOURCES_FILENAMES) {
-            if (name.equalsIgnoreCase(fileName)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
     /**
      * List of file extensions that represents non resources files.
      */
@@ -149,18 +124,6 @@ public class PackagingUtils {
      */
     public static final ImmutableList<String> SIGNING_EXTENSIONS =
             ImmutableList.of("SF", "RSA", "DSA", "EC");
-
-    /**
-     * File names that are not resource files.
-     */
-    private static final ImmutableList<String> NON_RESOURCES_FILENAMES =
-            ImmutableList.<String>builder()
-                    .add("thumbs.db")       // image index file
-                    .add("picasa.ini")      // image index file
-                    .add("about.html")      // Javadoc
-                    .add("package.html")    // Javadoc
-                    .add("overview.html")   // Javadoc
-                    .build();
 
     /**
      * Computes an "application hash", a reasonably unique identifier for an app.
