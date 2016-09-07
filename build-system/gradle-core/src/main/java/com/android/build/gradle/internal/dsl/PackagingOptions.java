@@ -54,13 +54,13 @@ public class PackagingOptions implements com.android.builder.model.PackagingOpti
      * Patterns to exclude.
      */
     @NonNull
-    private Set<String> excludePatterns = new HashSet<>();
+    private Set<String> excludePatterns = new HashSet<String>();
 
     /*
      * Cache with compiled patterns.
      */
     @NonNull
-    private final Map<String, PathMatcher> compiledPatterns = new HashMap<>();
+    private final Map<String, PathMatcher> compiledPatterns = new HashMap<String, PathMatcher>();
 
     public PackagingOptions() {
         setExcludePatterns(Sets.newHashSet(
@@ -208,7 +208,7 @@ public class PackagingOptions implements com.android.builder.model.PackagingOpti
     @Override
     @NonNull
     public Set<String> getExcludePatterns() {
-        return new HashSet<>(excludePatterns);
+        return new HashSet<String>(excludePatterns);
     }
 
     /**
@@ -218,9 +218,9 @@ public class PackagingOptions implements com.android.builder.model.PackagingOpti
      */
     public void setExcludePatterns(@Nullable Set<String> excludePatterns) {
         if (excludePatterns == null) {
-            this.excludePatterns = new HashSet<>();
+            this.excludePatterns = new HashSet<String>();
         } else {
-            this.excludePatterns = new HashSet<>(excludePatterns);
+            this.excludePatterns = new HashSet<String>(excludePatterns);
         }
 
         this.compiledPatterns.clear();
