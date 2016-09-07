@@ -1274,7 +1274,7 @@ public class ZFileTest {
             long newSmallFile2Offset = sf2Entry.getCentralDirectoryHeader().getOffset();
             assertEquals(largeFileOffset, newSmallFile2Offset);
 
-            assertEquals(0, sf2Entry.getLocalExtra().size());
+            assertEquals(0, sf2Entry.getLocalExtra().length);
         }
     }
 
@@ -1345,7 +1345,7 @@ public class ZFileTest {
             long newSmallFile2Offset = sf2Entry.getCentralDirectoryHeader().getOffset();
 
             assertEquals(largeFileOffset, newSmallFile2Offset);
-            assertEquals(largeFileTotalSize, sf2Entry.getLocalExtra().size());
+            assertEquals(largeFileTotalSize, sf2Entry.getLocalExtra().length);
         }
     }
 }
