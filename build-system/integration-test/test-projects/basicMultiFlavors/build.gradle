@@ -7,26 +7,41 @@ android {
     compileSdkVersion rootProject.latestCompileSdk
     buildToolsVersion = rootProject.buildToolsVersion
 
-    flavorDimensions  "pricing", "releaseType"
+    defaultConfig {
+        maxSdkVersion 15
+        versionName "com.example"
+        versionNameSuffix ".default"
+    }
 
+    buildTypes {
+        debug {
+            versionNameSuffix ".debug"
+        }
+    }
+
+    flavorDimensions  "pricing", "releaseType"
     productFlavors {
 
         beta {
             dimension "releaseType"
             maxSdkVersion 19
+            versionNameSuffix ".beta"
         }
 
         normal {
             dimension "releaseType"
+            versionNameSuffix ".normal"
         }
 
         free {
             dimension "pricing"
             maxSdkVersion 18
+            versionNameSuffix ".free"
         }
 
         paid {
             dimension "pricing"
+            versionNameSuffix ".paid"
         }
     }
 }

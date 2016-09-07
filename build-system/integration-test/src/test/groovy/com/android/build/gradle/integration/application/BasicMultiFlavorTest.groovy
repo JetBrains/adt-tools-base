@@ -15,30 +15,25 @@
  */
 
 package com.android.build.gradle.integration.application
+
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.utils.ModelHelper
 import com.android.build.gradle.integration.common.utils.SourceProviderHelper
-import com.android.utils.StringHelper
 import com.android.builder.model.AndroidArtifact
 import com.android.builder.model.AndroidProject
 import com.android.builder.model.ProductFlavorContainer
 import com.android.builder.model.SourceProviderContainer
 import com.android.builder.model.Variant
+import com.android.utils.StringHelper
 import groovy.transform.CompileStatic
-import org.junit.AfterClass
-import org.junit.Before
-import org.junit.BeforeClass
-import org.junit.ClassRule
 import org.junit.Rule
 import org.junit.Test
 
-import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatAar
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk
 import static com.android.builder.core.VariantType.ANDROID_TEST
 import static com.android.builder.model.AndroidProject.ARTIFACT_ANDROID_TEST
 import static com.google.common.truth.Truth.assertThat
-
 /**
  * Assemble tests for basicMultiFlavors
  */
@@ -94,7 +89,12 @@ class BasicMultiFlavorTest {
     void "check precedence for multi-flavor"() {
         project.execute("assembleFreeBetaDebug")
 
-        assertThatApk(project.getApk("free", "beta", "debug")).hasMaxSdkVersion(18)
+        // Make sure "beta" overrides "free" and "defaultConfig".
+        assertThatApk(project.getApk("free", "beta", "debug")).hasMaxSdkVersion(19)
+
+        // Make sure the suffixes are applied in the right order.
+        assertThatApk(project.getApk("free", "beta", "debug"))
+                .hasVersionName("com.example.default.free.beta.debug")
     }
 
     @Test
@@ -104,8 +104,10 @@ class BasicMultiFlavorTest {
 
         Variant variant = ModelHelper.findVariantByName(model.getVariants(), "freeBetaDebug")
 
-        assertThat(variant.mergedFlavor.resValues.get("VALUE_DEBUG").value).isEqualTo("10")
-        assertThat(variant.mergedFlavor.manifestPlaceholders.get("holder")).isEqualTo("free")
+        assertThat(variant.mergedFlavor.resValues.get("VALUE_DEBUG").value)
+                .isEqualTo("13") // Value from "beta".
+
+        assertThat(variant.mergedFlavor.manifestPlaceholders.get("holder")).isEqualTo("beta")
     }
 
     @Test

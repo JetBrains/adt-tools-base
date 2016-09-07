@@ -506,29 +506,6 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
      */
     @NonNull
     static ProductFlavor mergeFlavors(@NonNull ProductFlavor base, @NonNull ProductFlavor overlay) {
-        return implMergeFlavors(base, overlay, false);
-    }
-
-    /**
-     * Merge the specified flavor with the defaultConfig one. All values from
-     * the specified flavor override the values specified in the defaultConfig one.
-     *
-     * @param defaultConfig defaultConfig flavor
-     * @param flavor flavor that overrides the defaultConfig one
-     * @return merged flavor
-     */
-    @NonNull
-    static ProductFlavor mergeWithDefaultConfig(
-            @NonNull ProductFlavor defaultConfig, @NonNull ProductFlavor flavor) {
-        return implMergeFlavors(defaultConfig, flavor, true);
-    }
-
-    /** Merges two flavors, and uses a flag to specify how suffixes are merged */
-    @NonNull
-    private static DefaultProductFlavor implMergeFlavors(
-            @NonNull ProductFlavor base,
-            @NonNull ProductFlavor overlay,
-            boolean baseSuffixesFirst) {
         DefaultProductFlavor flavor = new DefaultProductFlavor("");
 
         flavor.mMinSdkVersion = chooseNotNull(
@@ -557,27 +534,15 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
         flavor.mVersionCode = chooseNotNull(overlay.getVersionCode(), base.getVersionCode());
         flavor.mVersionName = chooseNotNull(overlay.getVersionName(), base.getVersionName());
 
-        String versionNameSuffix;
-        if (baseSuffixesFirst) {
-            versionNameSuffix = mergeVersionNameSuffix(
-                    overlay.getVersionNameSuffix(), base.getVersionNameSuffix());
-        } else {
-            versionNameSuffix = mergeVersionNameSuffix(
-                    base.getVersionNameSuffix(), overlay.getVersionNameSuffix());
-        }
-        flavor.setVersionNameSuffix(versionNameSuffix);
+        flavor.setVersionNameSuffix(
+                mergeVersionNameSuffix(
+                        overlay.getVersionNameSuffix(), base.getVersionNameSuffix()));
 
         flavor.mApplicationId = chooseNotNull(overlay.getApplicationId(), base.getApplicationId());
 
-        String applicationIdSuffix;
-        if (baseSuffixesFirst) {
-            applicationIdSuffix = mergeApplicationIdSuffix(
-                    overlay.getApplicationIdSuffix(), base.getApplicationIdSuffix());
-        } else {
-            applicationIdSuffix = mergeApplicationIdSuffix(
-                    base.getApplicationIdSuffix(), overlay.getApplicationIdSuffix());
-        }
-        flavor.setApplicationIdSuffix(applicationIdSuffix);
+        flavor.setApplicationIdSuffix(
+                mergeApplicationIdSuffix(
+                        overlay.getApplicationIdSuffix(), base.getApplicationIdSuffix()));
 
         flavor.mTestApplicationId = chooseNotNull(
                 overlay.getTestApplicationId(),
