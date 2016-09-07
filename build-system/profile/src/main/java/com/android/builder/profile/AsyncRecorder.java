@@ -47,9 +47,7 @@ public class AsyncRecorder extends ThreadRecorder {
         // right order to maintain the stack integrity. Therefore, I used an API which makes
         // no assumption on where in the stack the allocated ID is so these Apis can be called
         // in various orders as long as allocationRecordId is called before closeRecord.
-        if (!recordStacks.get().removeFirstOccurrence(executionRecord.getId())) {
-            logger.severe("Internal Error : missing async record in profiling stack");
-        }
+        recordStacks.get().removeFirstOccurrence(executionRecord.getId());
         ProcessRecorder.get().writeRecord(project, variant, executionRecord);
     }
 }
