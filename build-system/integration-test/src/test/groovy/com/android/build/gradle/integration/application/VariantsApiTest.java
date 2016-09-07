@@ -16,40 +16,49 @@
 
 package com.android.build.gradle.integration.application;
 
-import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat;
+import static com.google.common.truth.Truth.assertThat;
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp;
+import com.android.build.gradle.integration.common.runner.FilterableParameterized;
 import com.android.build.gradle.integration.common.utils.TestFileUtils;
+import com.google.common.collect.ImmutableList;
 import com.google.common.hash.HashCode;
 import com.google.common.hash.Hashing;
 
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Collection;
 
 /**
  * Tests for all the methods exposed in the so-called variants API.
  */
+@RunWith(FilterableParameterized.class)
 public class VariantsApiTest {
 
     private static final String VARIANTS_API_SNIPPET =
-            //language=groovy
             "android {\n"
-                    + "    applicationVariants.all { variant ->\n"
+                    + "    %s.all { variant ->\n"
                     + "        assert variant.assemble != null\n"
-                    + "        variant.outputs.each { output -> \n"
-                    + "            assert output.assemble != null\n"
+                    + "        variant.outputs.each { mainOutput -> \n"
+                    + "            assert mainOutput.assemble != null\n"
+                    + "            assert mainOutput.processManifest != null\n"
+                    + "            assert mainOutput.processResources != null\n"
                     + "        }\n"
                     + "    }\n"
                     + "    \n"
                     + "    testVariants.all { variant ->\n"
                     + "        assert variant.testedVariant != null\n"
                     + "        assert variant.assemble != null\n"
-                    + "        variant.outputs.each { output ->\n"
-                    + "            assert output.assemble != null\n"
+                    + "        variant.outputs.each { testOutput ->\n"
+                    + "            assert testOutput.assemble != null\n"
+                    + "            assert testOutput.processManifest != null\n"
+                    + "            assert testOutput.processResources != null\n"
                     + "        }\n"
                     + "    }\n"
                     + "    \n"
@@ -58,24 +67,42 @@ public class VariantsApiTest {
                     + "    }\n"
                     + "}";
 
+    @Parameterized.Parameters
+    public static Collection<Object[]> data() {
+        return ImmutableList.of(
+                new Object[]{"com.android.application", "applicationVariants"},
+                new Object[]{"com.android.library", "libraryVariants"});
+    }
+
     @Rule
-    public GradleTestProject mProject =
-            GradleTestProject.builder()
-                    .fromTestApp(HelloWorldApp.forPlugin("com.android.application"))
-                    .create();
+    public GradleTestProject project;
+
+    private String dslProperty;
+
+    public VariantsApiTest(String plugin, String dslProperty) {
+        project =
+                GradleTestProject.builder()
+                        .fromTestApp(HelloWorldApp.forPlugin(plugin))
+                        .create();
+
+        this.dslProperty = dslProperty;
+    }
+
 
     @Before
     public void setUp() throws Exception {
-        TestFileUtils.appendToFile(mProject.getBuildFile(), VARIANTS_API_SNIPPET);
+        TestFileUtils.appendToFile(
+                project.getBuildFile(),
+                String.format(VARIANTS_API_SNIPPET, this.dslProperty));
     }
 
     @Test
     public void buildScriptRuns() throws Exception {
-        mProject.execute("clean");
+        project.execute("clean");
 
         // ATTENTION Author and Reviewers - please make sure required changes to the build file
         // are backwards compatible before updating this test.
         HashCode hashCode = Hashing.sha1().hashString(VARIANTS_API_SNIPPET, StandardCharsets.UTF_8);
-        assertThat(hashCode.toString()).isEqualTo("75b8185482d8eeac313226a285fe50880b8b329c");
+        assertThat(hashCode.toString()).isEqualTo("8b2f82a3cb8b14b86236243e085261e3359108cf");
     }
 }

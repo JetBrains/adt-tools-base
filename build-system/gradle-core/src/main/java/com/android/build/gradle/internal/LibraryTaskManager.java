@@ -491,6 +491,7 @@ public class LibraryTaskManager extends TaskManager {
 
         variantScope.getAssembleTask().dependsOn(tasks, bundle);
         variantOutputData.getScope().setAssembleTask(variantScope.getAssembleTask());
+        variantOutputData.assembleTask = variantData.assembleVariantTask;
 
         if (getExtension().getDefaultPublishConfig().equals(variantConfig.getFullName())) {
             VariantHelper.setupDefaultConfig(project,
