@@ -397,7 +397,7 @@ public class AndroidBuilder {
         if (variantConfiguration.getRenderscriptSupportModeEnabled()) {
             File renderScriptSupportJar = getRenderScriptSupportJar();
 
-            Set<File> fullJars = Sets.newHashSetWithExpectedSize(compileClasspath.size() + 1);
+            Set<File> fullJars = Sets.newLinkedHashSetWithExpectedSize(compileClasspath.size() + 1);
             fullJars.addAll(compileClasspath);
             if (renderScriptSupportJar != null) {
                 fullJars.add(renderScriptSupportJar);
