@@ -21,23 +21,31 @@ import com.android.annotations.NonNull;
 import java.util.Set;
 
 /**
- * Options for APK Packaging.
+ * Options for APK packaging.
  */
 public interface PackagingOptions {
+
+    /**
+     * Glob patterns to exclude from packaging.
+     *
+     * @return a set of glob pattern that use forward slash as a separator
+     */
     @NonNull
     Set<String> getExcludes();
 
+    /**
+     * Glob patterns to pick first.
+     *
+     * @return a set of glob pattern that use forward slash as a separator
+     */
     @NonNull
     Set<String> getPickFirsts();
 
-    @NonNull
-    Set<String> getMerges();
-
     /**
-     * Obtains the patterns of files to exclude.
+     * Glob patterns to merge.
      *
-     * @return the patterns of files to exclude
+     * @return a set of glob pattern that use forward slash as a separator
      */
     @NonNull
-    Set<String> getExcludePatterns();
+    Set<String> getMerges();
 }

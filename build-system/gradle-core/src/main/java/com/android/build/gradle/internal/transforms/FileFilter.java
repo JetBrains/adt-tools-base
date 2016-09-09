@@ -23,6 +23,8 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
 import com.android.build.gradle.internal.dsl.PackagingOptions;
+import com.android.build.gradle.internal.packaging.PackagingFileAction;
+import com.android.build.gradle.internal.packaging.ParsedPackagingOptions;
 import com.android.builder.packaging.ZipEntryFilter;
 import com.android.builder.packaging.ZipAbortException;
 import com.google.common.base.Joiner;
@@ -62,7 +64,7 @@ public class FileFilter implements ZipEntryFilter {
     }
 
     @Nullable
-    private final PackagingOptions packagingOptions;
+    private final ParsedPackagingOptions packagingOptions;
     @NonNull
     private final List<SubStream> expandedFolders;
 
@@ -70,7 +72,7 @@ public class FileFilter implements ZipEntryFilter {
             @NonNull List<SubStream> expandedFolders,
             @Nullable PackagingOptions packagingOptions) {
         this.expandedFolders = ImmutableList.copyOf(expandedFolders);
-        this.packagingOptions = packagingOptions;
+        this.packagingOptions = new ParsedPackagingOptions(packagingOptions);
     }
 
     /**
@@ -83,7 +85,7 @@ public class FileFilter implements ZipEntryFilter {
     @Override
     public boolean checkEntry(@NonNull String archivePath)
             throws ZipAbortException {
-        PackagingOptions.Action action = getPackagingAction(archivePath);
+        PackagingFileAction action = getPackagingAction(archivePath);
         switch(action) {
             case EXCLUDE:
                 return false;
@@ -102,8 +104,8 @@ public class FileFilter implements ZipEntryFilter {
      * Notification of an incremental file changed since last successful run of the task.
      *
      * Usually, we just copy the changed file into the merged folder. However, if the user
-     * specified {@link PackagingOptions.Action#PICK_FIRST}, the file will only be copied if it the
-     * first pick. Also, if the user specified {@link PackagingOptions.Action#MERGE}, all the files
+     * specified {@link PackagingFileAction#PICK_FIRST}, the file will only be copied if it the
+     * first pick. Also, if the user specified {@link PackagingFileAction#MERGE}, all the files
      * with the same entry archive path will be re-merged.
      *
      * @param outputDir merged resources folder.
@@ -113,7 +115,7 @@ public class FileFilter implements ZipEntryFilter {
     void handleChanged(@NonNull File outputDir, @NonNull File changedFile)
             throws IOException {
         String archivePath = getArchivePath(changedFile);
-        PackagingOptions.Action action = getPackagingAction(archivePath);
+        PackagingFileAction action = getPackagingAction(archivePath);
         switch (action) {
             case EXCLUDE:
                 return;
@@ -151,7 +153,7 @@ public class FileFilter implements ZipEntryFilter {
                 throw new IOException("Cannot delete " + outFile.getAbsolutePath());
             }
         }
-        PackagingOptions.Action itemAction = getPackagingAction(removedFilePath);
+        PackagingFileAction itemAction = getPackagingAction(removedFilePath);
 
         switch(itemAction) {
             case NONE:
@@ -327,13 +329,13 @@ public class FileFilter implements ZipEntryFilter {
     /**
      * Determine the user's intention for a particular archive entry.
      * @param archivePath the archive entry
-     * @return a {@link PackagingOptions.Action} as provided by the user in the build.gradle
+     * @return a {@link PackagingFileAction} as provided by the user in the build.gradle
      */
     @NonNull
-    private PackagingOptions.Action getPackagingAction(@NonNull String archivePath) {
+    private PackagingFileAction getPackagingAction(@NonNull String archivePath) {
         if (packagingOptions != null) {
             return packagingOptions.getAction(archivePath);
         }
-        return PackagingOptions.Action.NONE;
+        return PackagingFileAction.NONE;
     }
 }

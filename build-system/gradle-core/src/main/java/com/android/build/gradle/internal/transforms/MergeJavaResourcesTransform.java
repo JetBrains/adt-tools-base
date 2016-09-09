@@ -35,6 +35,8 @@ import com.android.build.api.transform.TransformInput;
 import com.android.build.api.transform.TransformInvocation;
 import com.android.build.api.transform.TransformOutputProvider;
 import com.android.build.gradle.internal.dsl.PackagingOptions;
+import com.android.build.gradle.internal.packaging.PackagingFileAction;
+import com.android.build.gradle.internal.packaging.ParsedPackagingOptions;
 import com.android.build.gradle.internal.pipeline.ExtendedContentType;
 import com.android.builder.packaging.DuplicateFileException;
 import com.android.builder.packaging.ZipAbortException;
@@ -82,7 +84,7 @@ public class MergeJavaResourcesTransform extends Transform {
     }
 
     @NonNull
-    private final PackagingOptions packagingOptions;
+    private final ParsedPackagingOptions packagingOptions;
 
     @NonNull
     private final String name;
@@ -99,7 +101,7 @@ public class MergeJavaResourcesTransform extends Transform {
             @NonNull Set<Scope> mergeScopes,
             @NonNull ContentType mergedType,
             @NonNull String name) {
-        this.packagingOptions = packagingOptions;
+        this.packagingOptions = new ParsedPackagingOptions(packagingOptions);
         this.name = name;
         this.mergeScopes = Sets.immutableEnumSet(mergeScopes);
         this.mergedType = ImmutableSet.of(mergedType);
@@ -218,9 +220,9 @@ public class MergeJavaResourcesTransform extends Transform {
     @Override
     public Map<String, Object> getParameterInputs() {
         return ImmutableMap.of(
-                "exclude", packagingOptions.getExcludes(),
-                "pickFirst", packagingOptions.getPickFirsts(),
-                "merge", packagingOptions.getMerges());
+                "exclude", packagingOptions.getExcludePatterns(),
+                "pickFirst", packagingOptions.getPickFirstPatterns(),
+                "merge", packagingOptions.getMergePatterns());
     }
 
     @Override
@@ -268,10 +270,10 @@ public class MergeJavaResourcesTransform extends Transform {
             ListMultimap<File, String> jarSources = ArrayListMultimap.create();
 
             for (String key : sourceFileList.keySet()) {
-                PackagingOptions.Action packagingAction = packagingOptions.getAction(key);
+                PackagingFileAction packagingAction = packagingOptions.getAction(key);
 
                 // first thing we do is check if it's excluded.
-                if (packagingAction == PackagingOptions.Action.EXCLUDE) {
+                if (packagingAction == PackagingFileAction.EXCLUDE) {
                     // skip, no need to do anything else.
                     continue;
                 }
@@ -280,12 +282,12 @@ public class MergeJavaResourcesTransform extends Transform {
 
                 // if no action is specified, and the key is META-INF/services,
                 // default action is merge
-                if (packagingAction == PackagingOptions.Action.NONE && isMetaServices(key)){
-                    packagingAction = PackagingOptions.Action.MERGE;
+                if (packagingAction == PackagingFileAction.NONE && isMetaServices(key)){
+                    packagingAction = PackagingFileAction.MERGE;
                 }
 
                 QualifiedContent selectedContent;
-                if (packagingAction == PackagingOptions.Action.MERGE){
+                if (packagingAction == PackagingFileAction.MERGE){
                     // if merge is specified, project files have no precedence
                     selectedContent = null;
                 } else{
@@ -296,10 +298,10 @@ public class MergeJavaResourcesTransform extends Transform {
 
                 // otherwise search for a selection
                 if (selectedContent == null) {
-                    if (packagingAction == PackagingOptions.Action.PICK_FIRST) {
+                    if (packagingAction == PackagingFileAction.PICK_FIRST) {
                         // if pickFirst then just pick the first one.
                         selectedContent = contentSourceList.get(0);
-                    } else if (packagingAction == PackagingOptions.Action.MERGE) {
+                    } else if (packagingAction == PackagingFileAction.MERGE) {
                         // if it's selected for merging, we need to record this for later where
                         // we'll merge all the files we've found.
                         for (QualifiedContent content : contentSourceList) {

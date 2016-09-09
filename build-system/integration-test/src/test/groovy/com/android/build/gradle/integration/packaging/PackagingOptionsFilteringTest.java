@@ -220,8 +220,8 @@ public class PackagingOptionsFilteringTest {
     public void redefineExcludePatterns() throws Exception {
         appendBuild("android {");
         appendBuild("    packagingOptions {");
-        appendBuild("        excludePattern '**/*ign'");
-        appendBuild("        excludePattern '**/sensitive/**'");
+        appendBuild("        exclude '**/*ign'");
+        appendBuild("        exclude '**/sensitive/**'");
         appendBuild("    }");
         appendBuild("}");
 
@@ -257,7 +257,7 @@ public class PackagingOptionsFilteringTest {
     public void redefineExcludePatterns2() throws Exception {
         appendBuild("android {");
         appendBuild("    packagingOptions {");
-        appendBuild("        excludePatterns = [");
+        appendBuild("        excludes = [");
         appendBuild("            '**/*ign',");
         appendBuild("            '**/sensitive/**'");
         appendBuild("        ]");
