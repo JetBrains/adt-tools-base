@@ -110,16 +110,28 @@ public class InjectedAbiAndDensitySplitTest {
         assertThat(sProject.getApk("hdpiX86", "debug")).doesNotExist();
     }
 
+    /**
+     * All splits are built if only density is present.
+     */
+    @Test
+    public void checkOnlyDensity() throws IOException {
+        sProject.executor()
+                .withProperty(AndroidProject.PROPERTY_BUILD_DENSITY, "ldpi")
+                .run("clean", "assembleDebug");
+
+        assertThat(sProject.getApk("armeabi-v7a", "debug").exists());
+        assertThat(sProject.getApk("ldpiArmeabi-v7a", "debug")).exists();
+        assertThat(sProject.getApk("hdpiArmeabi-v7a", "debug")).exists();
+        assertThat(sProject.getApk("x86", "debug")).exists();
+        assertThat(sProject.getApk("ldpiX86", "debug")).exists();
+        assertThat(sProject.getApk("hdpiX86", "debug")).exists();
+    }
+
     @Test
     public void checkError() throws IOException {
         sProject.executor()
                 .withProperty(AndroidGradleOptions.PROPERTY_BUILD_ONLY_TARGET_ABI, "true")
                 .withProperty(AndroidProject.PROPERTY_BUILD_ABI, "mips")
-                .expectFailure()
-                .run("assembleDebug");
-
-        sProject.executor()
-                .withProperty(AndroidProject.PROPERTY_BUILD_DENSITY, "xxxhdpi")
                 .expectFailure()
                 .run("assembleDebug");
     }

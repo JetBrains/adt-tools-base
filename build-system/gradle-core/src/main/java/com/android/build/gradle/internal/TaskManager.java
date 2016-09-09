@@ -2208,11 +2208,11 @@ public abstract class TaskManager {
 
         List<ApkVariantOutputData> outputDataList = variantData.getOutputs();
 
-        // When ABI and density is specified, determine the best output and build only one split.
+        // When ABI is specified, determine the best output and build only one split.
         String abiList = Strings.nullToEmpty(AndroidGradleOptions.getBuildTargetAbi(project));
         String density =
                 Strings.nullToEmpty(AndroidGradleOptions.getBuildTargetDensity(project));
-        if (outputDataList.size() > 1 && (!abiList.isEmpty() || !density.isEmpty())) {
+        if (outputDataList.size() > 1 && !abiList.isEmpty()) {
             List<String> abis = Arrays.asList(abiList.split(","));
             Density densityEnum = Density.getEnum(density);
             List<OutputFile> outputFiles = SplitOutputMatcher.computeBestOutput(
