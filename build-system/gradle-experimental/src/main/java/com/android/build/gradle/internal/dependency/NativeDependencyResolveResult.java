@@ -18,12 +18,10 @@ package com.android.build.gradle.internal.dependency;
 
 import com.android.annotations.NonNull;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
 
 import org.gradle.nativeplatform.NativeLibraryBinary;
 
-import java.util.Collection;
-import java.util.Set;
+import java.util.List;
 
 /**
  * Result of resolving dependencies for a native project.
@@ -31,18 +29,18 @@ import java.util.Set;
 public class NativeDependencyResolveResult {
 
     @NonNull
-    private Collection<NativeLibraryArtifact> nativeArtifacts = Lists.newArrayList();
+    private List<NativeLibraryArtifact> nativeArtifacts = Lists.newArrayList();
 
     @NonNull
-    private Set<NativeLibraryBinary> prebuiltLibraries = Sets.newHashSet();
+    private List<NativeLibraryBinary> prebuiltLibraries = Lists.newArrayList();
 
     @NonNull
-    public Collection<NativeLibraryArtifact> getNativeArtifacts() {
+    public List<NativeLibraryArtifact> getNativeArtifacts() {
         return nativeArtifacts;
     }
 
     @NonNull
-    public Set<NativeLibraryBinary> getPrebuiltLibraries() {
+    public List<NativeLibraryBinary> getPrebuiltLibraries() {
         return prebuiltLibraries;
     }
 }
