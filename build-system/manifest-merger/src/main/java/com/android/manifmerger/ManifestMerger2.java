@@ -31,6 +31,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Sets;
 
 import org.w3c.dom.Attr;
 
@@ -567,7 +568,7 @@ public class ManifestMerger2 {
             @NonNull MergingReport.Builder mergingReportBuilder) throws MergeFailureException {
 
         ImmutableList.Builder<LoadedManifestInfo> loadedLibraryDocuments = ImmutableList.builder();
-        for (Pair<String, File> libraryFile : mLibraryFiles) {
+        for (Pair<String, File> libraryFile : Sets.newLinkedHashSet(mLibraryFiles)) {
             mLogger.info("Loading library manifest " + libraryFile.getSecond().getPath());
             ManifestInfo manifestInfo = new ManifestInfo(libraryFile.getFirst(),
                     libraryFile.getSecond(),
