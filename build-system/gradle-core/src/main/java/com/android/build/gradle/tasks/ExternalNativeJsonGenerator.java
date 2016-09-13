@@ -216,8 +216,7 @@ public abstract class ExternalNativeJsonGenerator {
                 // See whether the current build command matches a previously written build command.
                 String currentBuildCommand = processBuilder.toString();
                 boolean rebuildDueToMissingPreviousCommand = false;
-                File commandFile = new File(
-                        ExternalNativeBuildTaskUtils.getOutputFolder(jsonFolder, abi.getName()),
+                File commandFile = new File(expectedJson.getParentFile(),
                         String.format("%s_build_command.txt", getNativeBuildSystem().getName()));
 
                 boolean rebuildDueToChangeInCommandFile = false;
@@ -252,6 +251,15 @@ public abstract class ExternalNativeJsonGenerator {
                         diagnostic("- command changed from previous");
                     }
 
+                    // If the JSON is out-of-date then also remove entire JSON folder to avoid
+                    // stale build contents especially for CMake which doesn't tolerate
+                    // incremental updates to generated build files.
+                    if (jsonFolder.exists()) {
+                        diagnostic("removing stale contents from '%s'",
+                                expectedJson.getParentFile());
+                        FileUtils.deletePath(expectedJson.getParentFile());
+                    }
+
                     if (expectedJson.getParentFile().mkdirs()) {
                         diagnostic("created folder '%s'", expectedJson.getParentFile());
                     }
@@ -265,9 +273,9 @@ public abstract class ExternalNativeJsonGenerator {
 
                     // Write the captured process output to a file for diagnostic purposes.
                     File outputTextFile = new File(
-                            ExternalNativeBuildTaskUtils.getOutputFolder(jsonFolder, abi.getName()),
+                            expectedJson.getParentFile(),
                             String.format("%s_build_output.txt", getNativeBuildSystem().getName()));
-                    diagnostic("write build output output %s", outputTextFile.getAbsolutePath());
+                    diagnostic("write build output %s", outputTextFile.getAbsolutePath());
                     Files.write(buildOutput, outputTextFile, Charsets.UTF_8);
 
                     processBuildOutput(buildOutput, abi.getName(), abiPlatformVersion);
@@ -335,8 +343,8 @@ public abstract class ExternalNativeJsonGenerator {
      * Log low level diagnostic information.
      */
     void diagnostic(String format, Object... args) {
-        androidBuilder.getLogger().info(String.format(
-                "External native build " + variantName + ": " + format, args));
+        androidBuilder.getLogger().info(
+                "External native generate JSON " + variantName + ": " + format, args);
     }
 
     /**
@@ -381,25 +389,6 @@ public abstract class ExternalNativeJsonGenerator {
                 existing,
                 variantName));
         return result;
-    }
-
-    /**
-     * Return all user-indicated ABIs. This may include misspelled ABIs. For that reason,
-     * the result is Collection<String> instead of Collection<Abi>
-     */
-    @NonNull
-    private static Collection<String> findUserRequestedAbis(
-            @NonNull Collection<Abi> availableAbis,
-            @Nullable Set<String> requestedAbis) {
-
-        if (requestedAbis != null) {
-            return requestedAbis;
-        }
-
-        // Find the names of available ABIs
-        return availableAbis.stream()
-                .map(Abi::getName)
-                .collect(Collectors.toList());
     }
 
     /**
@@ -552,7 +541,7 @@ public abstract class ExternalNativeJsonGenerator {
                 ".externalNativeBuild",
                 buildSystem.getName(),
                 variantData.getName());
-        File objFolder = new File(externalNativeBuildFolder, "obj");
+        File objFolder = new File(intermediates, "obj");
 
         // Get the highest platform version below compileSdkVersion
         NdkHandler ndkHandler = scope.getGlobalScope().getNdkHandler();
