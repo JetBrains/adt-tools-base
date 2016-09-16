@@ -25,7 +25,8 @@ import org.gradle.api.Project;
 import java.io.File;
 
 /**
- * DSL object to configure CMake external native builds.
+ * DSL object for per-module CMake configurations, such as the path to your
+ * <code>CMakeLists.txt</code> build script.
  */
 public class CmakeOptions implements CoreCmakeOptions {
     @NonNull
@@ -39,7 +40,13 @@ public class CmakeOptions implements CoreCmakeOptions {
     }
 
     /**
-     * The path to CMakeLists.txt file.
+     * The relative path to your <code>CMakeLists.txt</code> build script.
+     * <p>For example, if your
+     * CMake build script is in the same folder as your module-level <code>build.gradle</code> file,
+     * you simply pass the following:</p>
+     * <p><code>path "CMakeLists.txt"</code></p>
+     * <p>Gradle requires this build script to add your CMake project as a build dependency and pull
+     * your native sources into your Android project.</p>
      */
     @Nullable
     @Override

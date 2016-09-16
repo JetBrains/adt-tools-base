@@ -24,13 +24,13 @@ import org.gradle.api.Action;
 import org.gradle.internal.reflect.Instantiator;
 
 /**
- * DSL object for external native build settings.
+ * DSL object for per-variant CMake and ndk-build configurations.
  */
 public class ExternalNativeBuildOptions implements CoreExternalNativeBuildOptions {
     @NonNull
-    private CoreExternalNativeNdkBuildOptions ndkBuildOptions;
+    private ExternalNativeNdkBuildOptions ndkBuildOptions;
     @NonNull
-    private CoreExternalNativeCmakeOptions cmakeOptions;
+    private ExternalNativeCmakeOptions cmakeOptions;
 
     @VisibleForTesting
     public ExternalNativeBuildOptions() {
@@ -49,6 +49,15 @@ public class ExternalNativeBuildOptions implements CoreExternalNativeBuildOption
         return ndkBuildOptions;
     }
 
+    /**
+     * Encapsulates per-variant ndk-build configurations, such as compiler flags and toolchain
+     * arguments. To enable external native builds and set the path to your Android.mk script, use
+     * {@link com.android.build.gradle.internal.dsl.NdkBuildOptions:path android.externalNativeBuild.ndkBuild.path}.
+     */
+    public ExternalNativeNdkBuildOptions getNdkBuild() {
+        return ndkBuildOptions;
+    }
+
     public void ndkBuild(Action<CoreExternalNativeNdkBuildOptions> action) {
         action.execute(ndkBuildOptions);
     }
@@ -56,6 +65,15 @@ public class ExternalNativeBuildOptions implements CoreExternalNativeBuildOption
     @Nullable
     @Override
     public CoreExternalNativeCmakeOptions getExternalNativeCmakeOptions() {
+        return cmakeOptions;
+    }
+
+    /**
+     * Encapsulates per-variant CMake configurations, such as compiler flags and toolchain arguments.
+     * To enable external native builds and set the path to your CMakeLists.txt script, use
+     * {@link com.android.build.gradle.internal.dsl.CmakeOptions:path android.externalNativeBuild.cmake.path}.
+     */
+    public ExternalNativeCmakeOptions getCmake() {
         return cmakeOptions;
     }
 

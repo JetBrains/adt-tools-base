@@ -87,10 +87,28 @@ public class ProductFlavor extends DefaultProductFlavor implements CoreProductFl
         shaderOptions = instantiator.newInstance(ShaderOptions.class);
     }
 
+    /**
+     * Encapsulates per-variant configurations for the NDK, such as ABI filters.
+     */
+    @Nullable
+    public NdkOptions getNdk() {
+        return ndkConfig;
+    }
+
     @Override
     @Nullable
     public CoreNdkOptions getNdkConfig() {
         return ndkConfig;
+    }
+
+    /**
+     * Encapsulates per-variant CMake and ndk-build configurations for your external native build.
+     * <p>To learn more, see <a href="http://developer.android.com/studio/projects/add-native-code.html#">
+     * Add C and C++ Code to Your Project</a>.
+     */
+    @Nullable
+    public ExternalNativeBuildOptions getExternalNativeBuild() {
+        return externalNativeBuildOptions;
     }
 
     @Nullable
@@ -417,13 +435,18 @@ public class ProductFlavor extends DefaultProductFlavor implements CoreProductFl
         consumerProguardFiles(Iterables.toArray(proguardFileIterable, Object.class));
     }
 
+    /**
+    * Encapsulates per-variant configurations for the NDK, such as ABI filters.
+    */
     public void ndk(Action<NdkOptions> action) {
         action.execute(ndkConfig);
     }
 
     /**
-     * Configure native build options.
-     */
+    * Encapsulates per-variant CMake and ndk-build configurations for your external native build.
+    * <p>To learn more, see <a href="http://developer.android.com/studio/projects/add-native-code.html#">
+    * Add C and C++ Code to Your Project</a>.
+    */
     public void externalNativeBuild(@NonNull Action<ExternalNativeBuildOptions> action) {
         action.execute(externalNativeBuildOptions);
     }

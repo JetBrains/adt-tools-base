@@ -25,7 +25,8 @@ import org.gradle.api.Project;
 import java.io.File;
 
 /**
- * DSL object for configuring NDK builds.
+ * DSL object for per-module ndk-build configurations, such as the path to your
+ * <code>Android.mk</code> build script.
  */
 public class NdkBuildOptions implements CoreNdkBuildOptions {
     @NonNull
@@ -39,7 +40,15 @@ public class NdkBuildOptions implements CoreNdkBuildOptions {
     }
 
     /**
-     * Path to ndk-build Android.mk file.
+     * The relative path to your <code>Android.mk</code> build script.
+     * <p>For example, if your
+     * ndk-build script was in the same folder as your module-level <code>build.gradle</code> file,
+     * you simply pass the following:</p>
+     * <p><code>path "Android.mk"</code></p>
+     * <p>Gradle requires this build script to
+     * add your ndk-build project as a build dependency and pull your native sources into your
+     * Android project. Gradle also includes the <code>Application.mk</code> file if it is located
+     * in the same directory as your <code>Android.mk</code> file.</p>
      */
     @Nullable
     @Override

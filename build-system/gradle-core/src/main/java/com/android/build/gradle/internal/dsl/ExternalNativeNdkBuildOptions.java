@@ -25,7 +25,7 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * DSL object for external native build ndk-build settings.
+ * DSL object for per-variant ndk-build configurations.
  */
 public class ExternalNativeNdkBuildOptions implements CoreExternalNativeNdkBuildOptions {
     @NonNull
@@ -38,6 +38,14 @@ public class ExternalNativeNdkBuildOptions implements CoreExternalNativeNdkBuild
     private final Set<String> abiFilters = Sets.newHashSet();
     @NonNull
     private final Set<String> targets = Sets.newHashSet();
+
+    /**
+     * Per-variant arguments for ndk-build settings also available to your
+     * <a href="https://developer.android.com/ndk/guides/android_mk.html">Android.mk</a> and
+     * <a href="https://developer.android.com/ndk/guides/application_mk.html">Application.mk</a> scripts.
+     * <p>For example:</p>
+     * <p><code>arguments "NDK_APPLICATION_MK:=Application.mk"</code></p>
+     */
     @NonNull
     @Override
     public List<String> getArguments() {
@@ -52,6 +60,11 @@ public class ExternalNativeNdkBuildOptions implements CoreExternalNativeNdkBuild
         Collections.addAll(this.arguments, arguments);
     }
 
+    /**
+     * Per-variant flags for the C compiler.
+     * <p>For example:</p>
+     * <p><code>cFlags "-D_EXAMPLE_C_FLAG1", "-D_EXAMPLE_C_FLAG2"</code></p>
+     */
     @NonNull
     @Override
     public List<String> getcFlags() {
@@ -66,6 +79,11 @@ public class ExternalNativeNdkBuildOptions implements CoreExternalNativeNdkBuild
         Collections.addAll(this.cFlags, flags);
     }
 
+    /**
+     * Per-variant flags for the C++ compiler.
+     * <p>For example:</p>
+     * <p><code>cppFlags "-DTEST_CPP_FLAG1", "-DTEST_CPP_FLAG2"</code></p>
+     */
     @NonNull
     @Override
     public List<String> getCppFlags() {
@@ -80,6 +98,12 @@ public class ExternalNativeNdkBuildOptions implements CoreExternalNativeNdkBuild
         Collections.addAll(this.cppFlags, flags);
     }
 
+    /**
+     * Per-variant ABIs Gradle should build, independently of the ones
+     * it packages into your APK. In most cases, you only need to specify your desired ABIs using
+     * {@link com.android.build.gradle.internal.dsl.NdkOptions:abiFilter android.defaultConfig.ndk.abiFilter},
+     * which controls which ABIs Gradle builds and packages into your APK.
+     */
     @NonNull
     @Override
     public Set<String> getAbiFilters() {
@@ -94,6 +118,18 @@ public class ExternalNativeNdkBuildOptions implements CoreExternalNativeNdkBuild
         Collections.addAll(this.abiFilters, abiFilters);
     }
 
+    /**
+     * Per-variant target libraries from your ndk-build project that Gradle
+     * should build and package into your APK.
+     * <p>For example, if your ndk-build project defines two
+     * libraries, <code>libexample-one.so</code> and <code>libexample-two.so</code>, you can tell
+     * Gradle to only build and package <code>libexample-one.so</code> with the following:</p>
+     *
+     * <p><code>targets "example-one"</code></p>
+     *
+     * <p>When this property is not configured, Gradle builds and packages all available
+     * shared object targets.</p>
+     */
     @NonNull
     @Override
     public Set<String> getTargets() {
