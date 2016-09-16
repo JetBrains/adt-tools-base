@@ -24,13 +24,13 @@
     <orderEntry type="module-library">
       <library name="bouncy-castle">
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../android/lib/bcpkix-jdk15on-1.48.jar!/" />
-          <root url="jar://$MODULE_DIR$/../../android/lib/bcprov-jdk15on-1.48.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../android/lib/bcpkix-jdk15on-155.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
       </library>
     </orderEntry>
+    <orderEntry type="library" name="bouncy-castle-provider" level="project" />
     <orderEntry type="library" scope="TEST" name="Mocks" level="project" />
   </component>
 </module>
