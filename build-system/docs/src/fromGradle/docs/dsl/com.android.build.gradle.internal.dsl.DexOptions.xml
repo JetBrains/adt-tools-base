@@ -12,6 +12,7 @@
             <tr><td>preDexLibraries</td></tr>
             <tr><td>threadCount</td></tr>
             <tr><td>additionalParameters</td></tr>
+            <tr><td>keepRuntimeAnnotatedClasses</td></tr>
         </table>
     </section>
     <section>
