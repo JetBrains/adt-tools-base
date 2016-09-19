@@ -23,7 +23,12 @@ version = '1.0'// TODO: Pass in as an argument
 
 File androidJar = file('../../../../prebuilts/sdk/23/android.jar');
 if (!androidJar.exists()) {
-    throw new RuntimeException("android-23 android.jar not found at " + androidJar.absolutePath)
+    File jar = file(System.env.ANDROID_HOME + '/platforms/android-23/android.jar');
+    if (jar.exists()) {
+        androidJar = jar
+    } else {
+        throw new RuntimeException("android-23 android.jar not found at " + androidJar.absolutePath)
+    }
 }
 
 configurations {
