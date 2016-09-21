@@ -69,11 +69,12 @@ public class ExternalNativeBuildTask extends ExternalNativeBaseTask {
     @TaskAction
     void build() throws BuildCommandException, IOException {
         diagnostic("starting build");
-        diagnostic("bringing JSON up-to-date");
         checkNotNull(getVariantName());
+        diagnostic("reading expected JSONs");
         Collection<NativeBuildConfigValue> configValueList = ExternalNativeBuildTaskUtils
                 .getNativeBuildConfigValues(
                         nativeBuildConfigurationsJsons, getVariantName());
+        diagnostic("done reading expected JSONs");
         List<String> buildCommands = Lists.newArrayList();
         List<String> libraryNames = Lists.newArrayList();
 
