@@ -16,6 +16,9 @@
 
 package com.android.build.gradle.tasks;
 
+import static com.android.SdkConstants.CURRENT_PLATFORM;
+import static com.android.SdkConstants.PLATFORM_WINDOWS;
+
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.external.gnumake.NativeBuildConfigValueBuilder;
@@ -203,9 +206,20 @@ class NdkBuildExternalNativeJsonGenerator extends ExternalNativeJsonGenerator {
         }
 
         result.add("APP_PLATFORM=android-" + abiPlatformVersion);
+
         // getObjFolder is set to the "local" subfolder in the user specified directory, therefore,
         // NDK_OUT should be set to getObjFolder().getParent() instead of getObjFolder().
-        result.add("NDK_OUT=" + getObjFolder().getParent());
+        String ndkOut = getObjFolder().getParent();
+        if (CURRENT_PLATFORM == PLATFORM_WINDOWS) {
+            // Due to b.android.com/219225, NDK_OUT on Windows requires forward slashes.
+            // ndk-build.cmd is supposed to escape the back-slashes but it doesn't happen.
+            // Workaround here by replacing back slash with forward.
+            // ndk-build will have a fix for this bug in r14 but this gradle fix will make it
+            // work back to r13, r12, r11, and r10.
+            ndkOut = ndkOut.replace('\\', '/');
+        }
+        result.add("NDK_OUT=" + ndkOut);
+
         result.add("NDK_LIBS_OUT=" + getSoFolder().getAbsolutePath());
 
         for (String flag : getcFlags()) {
