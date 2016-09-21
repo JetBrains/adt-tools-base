@@ -586,7 +586,9 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
 
         @Model("androidInjectedBuildAbi")
         public static String getBuildAbi(Project project) {
-            return Strings.nullToEmpty(AndroidGradleOptions.getBuildTargetAbi(project));
+            return AndroidGradleOptions.isBuildOnlyTargetAbiEnabled(project)
+                    ? Strings.nullToEmpty(AndroidGradleOptions.getBuildTargetAbi(project))
+                    : "";
         }
 
         @Finalize

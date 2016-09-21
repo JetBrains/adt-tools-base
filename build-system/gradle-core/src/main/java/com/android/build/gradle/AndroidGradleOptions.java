@@ -226,10 +226,13 @@ public class AndroidGradleOptions {
         return getString(project, AndroidProject.PROPERTY_BUILD_DENSITY);
     }
 
+    public static boolean isBuildOnlyTargetAbiEnabled(@NonNull Project project) {
+        return getBoolean(project, PROPERTY_BUILD_ONLY_TARGET_ABI);
+    }
+
     @Nullable
     public static String getBuildTargetAbi(@NonNull Project project) {
-        boolean enabled = getBoolean(project, PROPERTY_BUILD_ONLY_TARGET_ABI);
-        return enabled ? getString(project, AndroidProject.PROPERTY_BUILD_ABI) : null;
+        return getString(project, AndroidProject.PROPERTY_BUILD_ABI);
     }
 
     /**

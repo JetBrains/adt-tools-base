@@ -1245,11 +1245,12 @@ public abstract class TaskManager {
 
         generateTask.dependsOn(tasks, scope.getPreBuildTask());
 
+        boolean buildOnlyTargetAbi = AndroidGradleOptions.isBuildOnlyTargetAbiEnabled(project);
         // Set up build tasks
         AndroidTask<ExternalNativeBuildTask> buildTask = androidTasks.create(
                 tasks,
                 new ExternalNativeBuildTask.ConfigAction(
-                        AndroidGradleOptions.getBuildTargetAbi(project),
+                        buildOnlyTargetAbi ? AndroidGradleOptions.getBuildTargetAbi(project) : null,
                         generator, scope, androidBuilder));
 
         buildTask.dependsOn(tasks, generateTask);
