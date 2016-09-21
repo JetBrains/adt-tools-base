@@ -17,6 +17,7 @@
 package com.android.utils;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
@@ -32,5 +33,13 @@ public class ImmutableCollectors {
                 ImmutableList.Builder::add,
                 (b1, b2) -> b1.addAll(b2.build()),
                 ImmutableList.Builder::build);
+    }
+
+    public static <T> Collector<T, ImmutableSet.Builder<T>, ImmutableSet<T>> toImmutableSet() {
+        return Collector.of(
+                ImmutableSet::builder,
+                ImmutableSet.Builder::add,
+                (b1, b2) -> b1.addAll(b2.build()),
+                ImmutableSet.Builder::build);
     }
 }

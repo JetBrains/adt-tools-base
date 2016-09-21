@@ -93,6 +93,12 @@ $modelBefore
         }
     }
 $modelAfter
+
+$modelBefore
+    android.packagingOptions {
+        doNotStrip "*/armeabi-v7a/libhello-jni.so"
+    }
+$modelAfter
 """;
        if (!isModel) {
            project.buildFile << """
@@ -118,7 +124,7 @@ android {
         assertThatApk(apk).contains("lib/x86/libhello-jni.so");
 
         File lib = ZipHelper.extractFile(apk, "lib/armeabi-v7a/libhello-jni.so");
-        assertThatNativeLib(lib).isStripped();
+        assertThatNativeLib(lib).isNotStripped();
 
         lib = ZipHelper.extractFile(apk, "lib/armeabi/libhello-jni.so");
         assertThatNativeLib(lib).isStripped();

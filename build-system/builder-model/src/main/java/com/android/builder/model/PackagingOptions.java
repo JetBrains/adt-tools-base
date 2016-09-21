@@ -48,4 +48,12 @@ public interface PackagingOptions {
      */
     @NonNull
     Set<String> getMerges();
+
+    /**
+     * Glob patterns to exclude native libraries from being stripped.
+     *
+     * @return a set of glob pattern that use forward slash as a separator
+     */
+    @NonNull
+    Set<String> getDoNotStrip();
 }

@@ -1332,12 +1332,14 @@ public abstract class TaskManager {
             return;
         }
         TransformManager transformManager = scope.getTransformManager();
+        GlobalScope globalScope = scope.getGlobalScope();
         transformManager.addTransform(
                 tasks,
                 scope,
                 new StripDebugSymbolTransform(
-                        scope.getGlobalScope().getProject(),
-                        scope.getGlobalScope().getNdkHandler()));
+                        globalScope.getProject(),
+                        globalScope.getNdkHandler(),
+                        globalScope.getExtension().getPackagingOptions().getDoNotStrip()));
     }
 
 

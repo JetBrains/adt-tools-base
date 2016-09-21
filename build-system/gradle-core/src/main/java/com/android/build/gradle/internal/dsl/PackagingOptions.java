@@ -127,6 +127,7 @@ public class PackagingOptions implements com.android.builder.model.PackagingOpti
     private Set<String> excludes = Sets.newHashSet();
     private Set<String> pickFirsts = Sets.newHashSet();
     private Set<String> merges = Sets.newHashSet();
+    private Set<String> doNotStrip = Sets.newHashSet();
 
     /**
      * Cache with compiled patterns.
@@ -237,5 +238,28 @@ public class PackagingOptions implements com.android.builder.model.PackagingOpti
      */
     public void merge(String pattern) {
         merges.add(pattern);
+    }
+
+
+    /**
+     * Returns the list of patterns for native library that should not be stripped of debug symbols.
+     */
+    @Override
+    @NonNull
+    public Set<String> getDoNotStrip() {
+        return Sets.newHashSet(doNotStrip);
+    }
+
+    public void setDoNotStrip(Set<String> doNotStrip) {
+        this.doNotStrip = Sets.newHashSet(doNotStrip);
+    }
+
+    /**
+     * Adds a doNotStrip pattern.
+     *
+     * @param pattern the pattern, as packaged in the APK
+     */
+    public void doNotStrip(String pattern) {
+        doNotStrip.add(pattern);
     }
 }
