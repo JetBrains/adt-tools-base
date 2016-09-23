@@ -22,6 +22,8 @@ import com.android.annotations.NonNull;
 import com.android.build.gradle.external.gson.NativeBuildConfigValue;
 import com.android.build.gradle.internal.core.Abi;
 import com.android.build.gradle.internal.ndk.NdkHandler;
+import com.android.utils.FileUtils;
+import com.google.common.collect.Lists;
 import com.android.build.gradle.internal.scope.TaskConfigAction;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.variant.BaseVariantData;
@@ -30,7 +32,6 @@ import com.android.builder.core.AndroidBuilder;
 import com.android.ide.common.process.ProcessException;
 import com.android.ide.common.process.ProcessInfoBuilder;
 import com.android.utils.StringHelper;
-import com.google.common.collect.Lists;
 
 import org.gradle.api.tasks.TaskAction;
 
@@ -38,6 +39,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Task that takes set of JSON files of type NativeBuildConfigValue and does clean steps with them.
@@ -45,6 +47,10 @@ import java.util.List;
 public class ExternalNativeCleanTask extends ExternalNativeBaseTask {
 
     private List<File> nativeBuildConfigurationsJsons;
+
+    private File objFolder;
+
+    private Map<Abi, File> stlSharedObjectFiles;
 
     @TaskAction
     void clean() throws ProcessException, IOException {
@@ -72,6 +78,17 @@ public class ExternalNativeCleanTask extends ExternalNativeBaseTask {
         }
         diagnostic("about to execute %s clean commands", cleanCommands.size());
         executeProcessBatch(cleanCommands);
+
+        if (stlSharedObjectFiles.size() > 0) {
+            diagnostic("remove STL shared object files");
+            for (Abi abi : stlSharedObjectFiles.keySet()) {
+                File stlSharedObjectFile = checkNotNull(stlSharedObjectFiles.get(abi));
+                File objAbi = FileUtils.join(objFolder, abi.getName(),
+                        stlSharedObjectFile.getName());
+                diagnostic("remove file %s", objAbi);
+                objAbi.delete();
+            }
+        }
         diagnostic("clean complete");
     }
 
@@ -104,6 +121,15 @@ public class ExternalNativeCleanTask extends ExternalNativeBaseTask {
     private void setNativeBuildConfigurationsJsons(
             @NonNull List<File> nativeBuildConfigurationsJsons) {
         this.nativeBuildConfigurationsJsons = nativeBuildConfigurationsJsons;
+    }
+
+    void setObjFolder(File objFolder) {
+        this.objFolder = objFolder;
+    }
+
+    void setStlSharedObjectFiles(
+            Map<Abi, File> stlSharedObjectFiles) {
+        this.stlSharedObjectFiles = stlSharedObjectFiles;
     }
 
     public static class ConfigAction implements TaskConfigAction<ExternalNativeCleanTask> {
@@ -152,6 +178,8 @@ public class ExternalNativeCleanTask extends ExternalNativeBaseTask {
                     generator.getJsonFolder(),
                     abiNames));
             task.setAndroidBuilder(androidBuilder);
+            task.setStlSharedObjectFiles(generator.getStlSharedObjectFiles());
+            task.setObjFolder(generator.getObjFolder());
         }
     }
 }

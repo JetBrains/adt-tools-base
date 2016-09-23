@@ -17,6 +17,7 @@
 package com.android.build.gradle.tasks;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.checkState;
 
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
@@ -29,8 +30,10 @@ import com.android.repository.api.ConsoleProgressIndicator;
 import com.android.repository.api.LocalPackage;
 import com.android.repository.api.ProgressIndicator;
 import com.android.sdklib.repository.AndroidSdkHandler;
+import com.android.utils.FileUtils;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 
 import org.gradle.api.GradleException;
 import org.gradle.api.InvalidUserDataException;
@@ -38,6 +41,7 @@ import org.gradle.api.InvalidUserDataException;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 
 /**
  * CMake JSON generation logic. This is separated from the corresponding CMake task so that
@@ -67,7 +71,6 @@ class CmakeExternalNativeJsonGenerator extends ExternalNativeJsonGenerator {
                 soFolder, objFolder, jsonFolder, makeFile, debuggable,
                 buildArguments, cFlags, cppFlags, nativeBuildConfigurationsJsons);
         checkNotNull(sdkDirectory);
-
         File cmakeExecutable = getCmakeExecutable();
         if (!cmakeExecutable.exists()) {
             // throw InvalidUserDataException directly for "Failed to find CMake" error. Android
@@ -134,6 +137,39 @@ class CmakeExternalNativeJsonGenerator extends ExternalNativeJsonGenerator {
     @Override
     public NativeBuildSystem getNativeBuildSystem() {
         return NativeBuildSystem.CMAKE;
+    }
+
+    @NonNull
+    @Override
+    Map<Abi, File> getStlSharedObjectFiles() {
+        // Search for ANDROID_STL build argument. Process in order / later flags take precedent.
+        String stl = null;
+        File ndkBasePath = null;
+        for (String argument : getBuildArguments()) {
+            argument = argument.replace(" ", "");
+            if (argument.equals("-DANDROID_STL=stlport_shared")) {
+                stl = "stlport";
+                ndkBasePath = FileUtils.join(getNdkFolder(), "sources", "cxx-stl", "stlport");
+            } else if (argument.equals("-DANDROID_STL=gnustl_shared")) {
+                stl = "gnustl";
+                ndkBasePath = FileUtils.join(getNdkFolder(), "sources", "cxx-stl", "gnu-libstdc++",
+                        "4.9");
+            } else if (argument.equals("-DANDROID_STL=c++_shared")) {
+                stl = "c++";
+                ndkBasePath = FileUtils.join(getNdkFolder(), "sources", "cxx-stl", "llvm-libc++");
+            }
+        }
+        Map<Abi, File> result = Maps.newHashMap();
+        if (stl == null) {
+            return result;
+        }
+        for (Abi abi : getAbis()) {
+            File file = FileUtils.join(ndkBasePath, "libs", abi.getName(),
+                    String.format("lib%s_shared.so", stl));
+            checkState(file.isFile(), "Expected NDK STL shared object file at %s", file.toString());
+            result.put(abi, file);
+        }
+        return result;
     }
 
     @NonNull
