@@ -519,8 +519,6 @@ public abstract class PackageAndroidArtifact extends IncrementalTask implements 
     protected void doIncrementalTaskAction(Map<File, FileStatus> changedInputs) throws IOException {
         checkNotNull(changedInputs, "changedInputs == null");
 
-        super.doIncrementalTaskAction(changedInputs);
-
         Set<File> androidResources = new HashSet<>();
         File androidResourceFile = getResourceFile();
         if (androidResourceFile != null) {
