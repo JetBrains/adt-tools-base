@@ -88,6 +88,7 @@ import com.android.builder.core.AndroidBuilder;
 import com.android.builder.internal.compiler.JackConversionCache;
 import com.android.builder.internal.compiler.PreDexCache;
 import com.android.builder.model.InstantRun;
+import com.android.builder.profile.ProcessRecorder;
 import com.android.builder.sdk.TargetInfo;
 import com.android.builder.signing.DefaultSigningConfig;
 import com.android.ide.common.internal.ExecutorSingleton;
@@ -103,7 +104,6 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 
 import org.gradle.api.Action;
-import org.gradle.api.BuildableComponentSpec;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.Task;
