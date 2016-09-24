@@ -35,6 +35,7 @@ import com.android.builder.core.AndroidBuilder;
 import com.android.builder.model.SyncIssue;
 import com.android.ide.common.process.BuildCommandException;
 import com.android.ide.common.process.ProcessInfoBuilder;
+import com.android.utils.FileUtils;
 import com.android.utils.StringHelper;
 import com.google.common.base.Joiner;
 import com.google.common.base.Strings;
@@ -50,6 +51,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -65,6 +67,8 @@ public class ExternalNativeBuildTask extends ExternalNativeBaseTask {
     private File objFolder;
 
     private Set<String> targets;
+
+    private Map<Abi, File> stlSharedObjectFiles;
 
     @TaskAction
     void build() throws BuildCommandException, IOException {
@@ -187,7 +191,18 @@ public class ExternalNativeBuildTask extends ExternalNativeBaseTask {
             }
         }
 
-         diagnostic("build complete");
+        if (stlSharedObjectFiles.size() > 0) {
+            diagnostic("copy STL shared object files");
+            for (Abi abi : stlSharedObjectFiles.keySet()) {
+                File stlSharedObjectFile = checkNotNull(stlSharedObjectFiles.get(abi));
+                File objAbi = FileUtils.join(objFolder, abi.getName(),
+                        stlSharedObjectFile.getName());
+                diagnostic("copy file %s to %s", stlSharedObjectFile, objAbi);
+                Files.copy(stlSharedObjectFile, objAbi);
+            }
+        }
+
+        diagnostic("build complete");
     }
 
     /**
@@ -254,6 +269,11 @@ public class ExternalNativeBuildTask extends ExternalNativeBaseTask {
         this.nativeBuildConfigurationsJsons = nativeBuildConfigurationsJsons;
     }
 
+    public void setStlSharedObjectFiles(
+            Map<Abi, File> stlSharedObjectFiles) {
+        this.stlSharedObjectFiles = stlSharedObjectFiles;
+    }
+
     public static class ConfigAction implements TaskConfigAction<ExternalNativeBuildTask> {
         @Nullable
         private final String buildTargetAbi;
@@ -311,6 +331,7 @@ public class ExternalNativeBuildTask extends ExternalNativeBaseTask {
                     throw new RuntimeException("Unexpected native build system "
                             + generator.getNativeBuildSystem().getName());
             }
+            task.setStlSharedObjectFiles(generator.getStlSharedObjectFiles());
             task.setTargets(targets);
             task.setVariantName(variantData.getName());
             task.setSoFolder(generator.getSoFolder());

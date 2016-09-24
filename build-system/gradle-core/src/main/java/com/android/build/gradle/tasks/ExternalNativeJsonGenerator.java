@@ -44,19 +44,20 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.common.io.Files;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 import org.gradle.api.GradleException;
 import org.gradle.api.InvalidUserDataException;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.Optional;
 import org.gradle.api.tasks.OutputDirectory;
 import org.gradle.api.tasks.OutputFiles;
-
-import java.io.File;
-import java.io.IOException;
-import java.util.Collection;
-import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * Base class for generation of native JSON.
@@ -338,6 +339,12 @@ public abstract class ExternalNativeJsonGenerator {
      */
     @NonNull
     public abstract NativeBuildSystem getNativeBuildSystem();
+
+    /**
+     * @return a map of Abi to STL shared object (.so files) that should be copied.
+     */
+    @NonNull
+    abstract Map<Abi, File> getStlSharedObjectFiles();
 
     /**
      * Log low level diagnostic information.
