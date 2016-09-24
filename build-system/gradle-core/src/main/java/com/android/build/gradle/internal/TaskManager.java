@@ -2343,8 +2343,10 @@ public abstract class TaskManager {
 
             checkState(variantScope.getAssembleTask() != null);
             if (fullBuildInfoGeneratorTask != null) {
-                fullBuildInfoGeneratorTask.optionalDependsOn(
-                        tasks, appTask, packageInstantRunResources);
+                if (bestOutput == null || variantOutputData.getMainOutputFile() == bestOutput) {
+                    fullBuildInfoGeneratorTask.optionalDependsOn(
+                            tasks, appTask, packageInstantRunResources);
+                }
                 variantScope.getAssembleTask().dependsOn(
                         tasks, fullBuildInfoGeneratorTask.getName());
             }
