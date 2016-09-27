@@ -48,17 +48,17 @@ class CmakeStlMatrixTest {
     public static Collection<Object[]> data() {
         return [
                 [false, "system"].toArray(),
-                [false, "c++_shared"].toArray(),
+//                [false, "c++_shared"].toArray(),
                 [false, "gnustl_shared"].toArray(),
                 [false, "stlport_shared"].toArray(),
-                [false, "c++_static"].toArray(),
+//                [false, "c++_static"].toArray(),
                 [false, "gnustl_static"].toArray(),
                 [false, "stlport_static"].toArray(),
                 [true, "system"].toArray(),
-                [true, "c++_shared"].toArray(),
+//                [true, "c++_shared"].toArray(),
                 [true, "gnustl_shared"].toArray(),
                 [true, "stlport_shared"].toArray(),
-                [true, "c++_static"].toArray(),
+//                [true, "c++_static"].toArray(),
                 [true, "gnustl_static"].toArray(),
                 [true, "stlport_static"].toArray()
         ];
