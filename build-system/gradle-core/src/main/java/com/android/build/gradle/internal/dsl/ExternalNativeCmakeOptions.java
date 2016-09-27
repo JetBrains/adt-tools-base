@@ -104,7 +104,7 @@ public class ExternalNativeCmakeOptions implements CoreExternalNativeCmakeOption
     /**
      * Per-variant ABIs Gradle should build, independently of the ones
      * it packages into your APK. In most cases, you only need to specify your desired ABIs using
-     * {@link com.android.build.gradle.internal.dsl.NdkOptions:abiFilter android.defaultConfig.ndk.abiFilter},
+     * {@link com.android.build.gradle.internal.dsl.NdkOptions#abiFilter android.defaultConfig.ndk.abiFilter},
      * which controls which ABIs Gradle builds and packages into your APK.
      */
     @NonNull
