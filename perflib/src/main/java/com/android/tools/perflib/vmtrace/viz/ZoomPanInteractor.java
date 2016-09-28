@@ -118,7 +118,9 @@ public class ZoomPanInteractor implements MouseListener, MouseMotionListener, Mo
             return;
         }
 
-        double scale = 1 + WHEEL_UNIT_SCALE * e.getWheelRotation();
+        int rotation = e.getWheelRotation();
+        if (rotation == 0) return;
+        double scale = 1 + WHEEL_UNIT_SCALE * rotation;
 
         // convert mouse x, y from screen coordinates to absolute coordinates
         mTmpPoint.setLocation(e.getX(), e.getY());
