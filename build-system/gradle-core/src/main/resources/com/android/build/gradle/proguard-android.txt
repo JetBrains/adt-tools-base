@@ -21,11 +21,7 @@
 # project.properties file.
 
 # Preserve some attributes that may be required for reflection.
--keepattributes *Annotation*,Signature,InnerClasses
-
-# Preserve line number information for debugging stack traces.
--keepattributes SourceFile,LineNumberTable
--renamesourcefileattribute SourceFile
+-keepattributes *Annotation*,Signature,InnerClasses,EnclosingMethod
 
 -keep public class com.google.vending.licensing.ILicensingService
 -keep public class com.android.vending.licensing.ILicensingService
@@ -39,12 +35,8 @@
     native <methods>;
 }
 
-# Keep setters in Views so that animations can still work. Also, keep constructors.
-# see http://proguard.sourceforge.net/manual/examples.html#beans
+# Keep setters in Views so that animations can still work.
 -keepclassmembers public class * extends android.view.View {
-    public <init>(android.content.Context);
-    public <init>(android.content.Context, android.util.AttributeSet);
-    public <init>(android.content.Context, android.util.AttributeSet, int);
     void set*(***);
     *** get*();
 }
