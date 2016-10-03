@@ -54,7 +54,7 @@ public class PreColdSwapTask extends DefaultAndroidTask {
 
     @TaskAction
     public void disableBuildTasksAsNeeded() throws IOException {
-        LOG.info("PreColdSwapTask : build mode is %1$s",
+        LOG.info("PreColdSwapTask : build mode is {}",
                 instantRunContext.getBuildMode().toString());
 
         switch (instantRunContext.getBuildMode()) {
@@ -77,7 +77,7 @@ public class PreColdSwapTask extends DefaultAndroidTask {
     }
 
     private <T extends Task> void disableTask(AndroidTask<T> task) {
-        LOG.info("Disabling task %1$s", task.getName());
+        LOG.info("Disabling task {}", task.getName());
         transformVariantScope.getGlobalScope().getProject().getTasks().getByName(task.getName())
                 .setEnabled(false);
     }

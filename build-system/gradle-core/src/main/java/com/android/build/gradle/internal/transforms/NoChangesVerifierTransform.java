@@ -26,6 +26,7 @@ import com.android.build.api.transform.Transform;
 import com.android.build.api.transform.TransformException;
 import com.android.build.api.transform.TransformInput;
 import com.android.build.api.transform.TransformInvocation;
+import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
 import com.android.build.gradle.internal.incremental.InstantRunVerifierStatus;
 import com.android.build.gradle.internal.scope.InstantRunVariantScope;
 import com.android.build.gradle.internal.scope.TransformVariantScope;
@@ -42,7 +43,9 @@ import java.util.Set;
 public class NoChangesVerifierTransform extends Transform {
 
     @NonNull
-    private final InstantRunVariantScope variantScope;
+    private final String transformName;
+    @NonNull
+    private final InstantRunBuildContext buildContext;
     @NonNull
     private final Set<ContentType> inputTypes;
     @NonNull
@@ -51,11 +54,13 @@ public class NoChangesVerifierTransform extends Transform {
     private final InstantRunVerifierStatus failureStatus;
 
     public NoChangesVerifierTransform(
-            @NonNull InstantRunVariantScope variantScope,
+            @NonNull String transformName,
+            @NonNull InstantRunBuildContext buildContext,
             @NonNull Set<ContentType> inputTypes,
             @NonNull Set<Scope> mergeScopes,
             @NonNull InstantRunVerifierStatus failureStatus) {
-        this.variantScope = variantScope;
+        this.transformName = transformName;
+        this.buildContext = buildContext;
         this.inputTypes = inputTypes;
         this.mergeScopes = mergeScopes;
         this.failureStatus = failureStatus;
@@ -64,7 +69,7 @@ public class NoChangesVerifierTransform extends Transform {
     @NonNull
     @Override
     public String getName() {
-        return "javaResourcesVerifier";
+        return transformName;
     }
 
     @NonNull
@@ -94,10 +99,11 @@ public class NoChangesVerifierTransform extends Transform {
     public void transform(@NonNull TransformInvocation transformInvocation)
             throws TransformException, InterruptedException, IOException {
         // This task will not be invoked on the initial assemble build.  For subsequent instant run
-        // build, we want to fail the verifier if any Java resource changed.  (Native libraries are
+        // build, we want to fail the verifier if anything changed.  (Native libraries are
         // treated as Java resources in the plugin)
-        if (hasChangedInputs(transformInvocation.getReferencedInputs())) {
-            variantScope.getInstantRunBuildContext().setVerifierResult(failureStatus);
+        if (!transformInvocation.isIncremental()
+                || hasChangedInputs(transformInvocation.getReferencedInputs())) {
+            buildContext.setVerifierResult(failureStatus);
         }
     }
 
