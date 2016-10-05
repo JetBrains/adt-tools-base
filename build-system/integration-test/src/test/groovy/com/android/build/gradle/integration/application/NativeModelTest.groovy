@@ -65,6 +65,7 @@ class NativeModelTest {
                 defaultConfig {
                     externalNativeBuild {
                         ndkBuild {
+                            arguments "NDK_TOOLCHAIN_VERSION:=4.9"
                             cFlags "-DTEST_C_FLAG"
                             cppFlags "-DTEST_CPP_FLAG"
                         }
@@ -87,6 +88,7 @@ class NativeModelTest {
                 defaultConfig {
                     externalNativeBuild {
                         ndkBuild {
+                            arguments "NDK_TOOLCHAIN_VERSION:=4.9"
                             cFlags "-DTEST_C_FLAG"
                             cppFlags "-DTEST_CPP_FLAG"
                         }
@@ -110,6 +112,7 @@ class NativeModelTest {
                 defaultConfig {
                     externalNativeBuild {
                         ndkBuild {
+                            arguments "NDK_TOOLCHAIN_VERSION:=4.9"
                             cFlags "-DTEST_C_FLAG"
                             cppFlags "-DTEST_CPP_FLAG"
                         }
@@ -186,6 +189,7 @@ class NativeModelTest {
                 defaultConfig {
                     externalNativeBuild {
                         ndkBuild {
+                            arguments "NDK_TOOLCHAIN_VERSION:=4.9"
                             cFlags "-DTEST_C_FLAG"
                             cppFlags "-DTEST_CPP_FLAG"
                         }
