@@ -162,8 +162,8 @@ public class DependencyManager {
     }
 
     private void processLibraries(@NonNull Multimap<AndroidLibrary, Configuration> reverseMap) {
-        for (AndroidLibrary lib : reverseMap.keySet()) {
-            setupPrepareLibraryTask(lib, reverseMap.get(lib));
+        for (Map.Entry<AndroidLibrary, Collection<Configuration>> entry : reverseMap.asMap().entrySet()) {
+            setupPrepareLibraryTask(entry.getKey(), entry.getValue());
         }
     }
 
