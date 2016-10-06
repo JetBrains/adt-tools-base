@@ -29,7 +29,7 @@ public class SdkVersionInfo {
      * release. This number is used as a baseline and any more recent platforms
      * found can be used to increase the highest known number.
      */
-    public static final int HIGHEST_KNOWN_API = 24;
+    public static final int HIGHEST_KNOWN_API = 25;
 
     /**
      * Like {@link #HIGHEST_KNOWN_API} but does not include preview platforms
@@ -123,6 +123,7 @@ public class SdkVersionInfo {
             case 22: return "5.1";
             case 23: return "6.0";
             case 24: return "7.0";
+            case 25: return "7.1.1";
             // If you add more versions here, also update #getBuildCodes and
             // #HIGHEST_KNOWN_API
 
@@ -170,6 +171,7 @@ public class SdkVersionInfo {
             case 23:
                 return "Marshmallow";
             case 24:
+            case 25:
                 return "Nougat";
 
             // If you add more versions here, also update #getBuildCodes and
@@ -216,6 +218,7 @@ public class SdkVersionInfo {
             case 22: return "LOLLIPOP_MR1"; //$NON-NLS-1$
             case 23: return "M"; //$NON-NLS-1$
             case 24: return "N"; //$NON-NLS-1$
+            case 25: return "N_MR1"; //$NON-NLS-1$
             // If you add more versions here, also update #getAndroidName and
             // #HIGHEST_KNOWN_API
         }
