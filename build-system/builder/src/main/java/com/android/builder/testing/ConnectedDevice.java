@@ -55,6 +55,8 @@ public class ConnectedDevice extends DeviceConnector {
     private final ILogger mLogger;
     private final long mTimeout;
     private final TimeUnit  mTimeUnit;
+    private String mName;
+    private String mNameSuffix; // used when multiple device have the same name
 
 
     public ConnectedDevice(@NonNull IDevice iDevice, @NonNull ILogger logger,
@@ -68,6 +70,9 @@ public class ConnectedDevice extends DeviceConnector {
     @NonNull
     @Override
     public String getName() {
+        if (mName != null) {
+            return mName;
+        }
         String version = getNullableProperty(IDevice.PROP_BUILD_VERSION);
         boolean emulator = iDevice.isEmulator();
 
@@ -81,7 +86,20 @@ public class ConnectedDevice extends DeviceConnector {
             name = model != null ? model : iDevice.getSerialNumber();
         }
 
-        return version != null ? name + " - " + version : name;
+        mName = version != null ? name + " - " + version : name;
+        if (mNameSuffix != null) {
+            mName = mName + "-" + mNameSuffix;
+        }
+        return mName;
+    }
+
+    void setNameSuffix(String suffix) {
+        mNameSuffix = suffix;
+        mName = null;
+    }
+
+    public String getNameSuffix() {
+        return mNameSuffix;
     }
 
     @Override

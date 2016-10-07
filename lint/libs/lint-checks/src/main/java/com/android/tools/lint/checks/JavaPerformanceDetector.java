@@ -18,55 +18,60 @@ package com.android.tools.lint.checks;
 
 import static com.android.SdkConstants.SUPPORT_LIB_ARTIFACT;
 import static com.android.tools.lint.client.api.JavaParser.TYPE_BOOLEAN;
+import static com.android.tools.lint.client.api.JavaParser.TYPE_BOOLEAN_WRAPPER;
+import static com.android.tools.lint.client.api.JavaParser.TYPE_BYTE_WRAPPER;
+import static com.android.tools.lint.client.api.JavaParser.TYPE_CHARACTER_WRAPPER;
+import static com.android.tools.lint.client.api.JavaParser.TYPE_DOUBLE_WRAPPER;
+import static com.android.tools.lint.client.api.JavaParser.TYPE_FLOAT_WRAPPER;
 import static com.android.tools.lint.client.api.JavaParser.TYPE_INT;
+import static com.android.tools.lint.client.api.JavaParser.TYPE_INTEGER_WRAPPER;
+import static com.android.tools.lint.client.api.JavaParser.TYPE_LONG_WRAPPER;
+import static com.android.tools.lint.detector.api.LintUtils.skipParentheses;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.tools.lint.client.api.JavaEvaluator;
 import com.android.tools.lint.detector.api.Category;
-import com.android.tools.lint.detector.api.Context;
 import com.android.tools.lint.detector.api.Detector;
 import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.JavaContext;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
-import com.android.tools.lint.detector.api.Speed;
 import com.android.tools.lint.detector.api.TextFormat;
 import com.google.common.collect.Sets;
 import com.google.common.collect.Sets.SetView;
+import com.intellij.psi.JavaElementVisitor;
+import com.intellij.psi.JavaRecursiveElementVisitor;
+import com.intellij.psi.PsiAssignmentExpression;
+import com.intellij.psi.PsiBinaryExpression;
+import com.intellij.psi.PsiElement;
+import com.intellij.psi.PsiExpression;
+import com.intellij.psi.PsiIdentifier;
+import com.intellij.psi.PsiIfStatement;
+import com.intellij.psi.PsiJavaCodeReferenceElement;
+import com.intellij.psi.PsiMethod;
+import com.intellij.psi.PsiMethodCallExpression;
+import com.intellij.psi.PsiNewExpression;
+import com.intellij.psi.PsiParenthesizedExpression;
+import com.intellij.psi.PsiPrefixExpression;
+import com.intellij.psi.PsiReferenceExpression;
+import com.intellij.psi.PsiSuperExpression;
+import com.intellij.psi.PsiThisExpression;
+import com.intellij.psi.PsiThrowStatement;
+import com.intellij.psi.PsiType;
+import com.intellij.psi.util.PsiTreeUtil;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
-
-import lombok.ast.AstVisitor;
-import lombok.ast.BinaryExpression;
-import lombok.ast.BinaryOperator;
-import lombok.ast.ConstructorInvocation;
-import lombok.ast.Expression;
-import lombok.ast.ForwardingAstVisitor;
-import lombok.ast.If;
-import lombok.ast.MethodDeclaration;
-import lombok.ast.MethodInvocation;
-import lombok.ast.Node;
-import lombok.ast.Select;
-import lombok.ast.StrictListAccessor;
-import lombok.ast.This;
-import lombok.ast.Throw;
-import lombok.ast.TypeReference;
-import lombok.ast.TypeReferencePart;
-import lombok.ast.UnaryExpression;
-import lombok.ast.VariableDefinition;
-import lombok.ast.VariableReference;
 
 /**
  * Looks for performance issues in Java files, such as memory allocations during
  * drawing operations and using HashMap instead of SparseArray.
  */
-public class JavaPerformanceDetector extends Detector implements Detector.JavaScanner {
+public class JavaPerformanceDetector extends Detector implements Detector.JavaPsiScanner {
 
     private static final Implementation IMPLEMENTATION = new Implementation(
             JavaPerformanceDetector.class,
@@ -129,53 +134,35 @@ public class JavaPerformanceDetector extends Detector implements Detector.JavaSc
             Severity.WARNING,
             IMPLEMENTATION);
 
-    static final String ON_MEASURE = "onMeasure";                           //$NON-NLS-1$
-    static final String ON_DRAW = "onDraw";                                 //$NON-NLS-1$
-    static final String ON_LAYOUT = "onLayout";                             //$NON-NLS-1$
-    private static final String INTEGER = "Integer";                        //$NON-NLS-1$
-    private static final String BOOLEAN = "Boolean";                        //$NON-NLS-1$
-    private static final String BYTE = "Byte";                              //$NON-NLS-1$
-    private static final String LONG = "Long";                              //$NON-NLS-1$
-    private static final String CHARACTER = "Character";                    //$NON-NLS-1$
-    private static final String DOUBLE = "Double";                          //$NON-NLS-1$
-    private static final String FLOAT = "Float";                            //$NON-NLS-1$
-    private static final String HASH_MAP = "HashMap";                       //$NON-NLS-1$
-    private static final String SPARSE_ARRAY = "SparseArray";               //$NON-NLS-1$
-    private static final String CANVAS = "Canvas";                          //$NON-NLS-1$
-    private static final String LAYOUT = "layout";                          //$NON-NLS-1$
+    static final String ON_MEASURE = "onMeasure";
+    static final String ON_DRAW = "onDraw";
+    static final String ON_LAYOUT = "onLayout";
+    private static final String LAYOUT = "layout";
+    private static final String HASH_MAP = "java.util.HashMap";
+    private static final String SPARSE_ARRAY = "android.util.SparseArray";
+    public static final String CLASS_CANVAS = "android.graphics.Canvas";
 
     /** Constructs a new {@link JavaPerformanceDetector} check */
     public JavaPerformanceDetector() {
     }
 
-    @Override
-    public boolean appliesTo(@NonNull Context context, @NonNull File file) {
-        return true;
-    }
-
-    @NonNull
-    @Override
-    public Speed getSpeed() {
-        return Speed.FAST;
-    }
-
     // ---- Implements JavaScanner ----
 
     @Override
-    public List<Class<? extends Node>> getApplicableNodeTypes() {
-        List<Class<? extends Node>> types = new ArrayList<Class<? extends Node>>(3);
-        types.add(ConstructorInvocation.class);
-        types.add(MethodDeclaration.class);
-        types.add(MethodInvocation.class);
+    public List<Class<? extends PsiElement>> getApplicablePsiTypes() {
+        List<Class<? extends PsiElement>> types = new ArrayList<Class<? extends PsiElement>>(3);
+        types.add(PsiNewExpression.class);
+        types.add(PsiMethod.class);
+        types.add(PsiMethodCallExpression.class);
         return types;
     }
 
     @Override
-    public AstVisitor createJavaVisitor(@NonNull JavaContext context) {
+    public JavaElementVisitor createPsiVisitor(@NonNull JavaContext context) {
         return new PerformanceVisitor(context);
     }
 
-    private static class PerformanceVisitor extends ForwardingAstVisitor {
+    private static class PerformanceVisitor extends JavaElementVisitor {
         private final JavaContext mContext;
         private final boolean mCheckMaps;
         private final boolean mCheckAllocations;
@@ -192,108 +179,106 @@ public class JavaPerformanceDetector extends Detector implements Detector.JavaSc
         }
 
         @Override
-        public boolean visitMethodDeclaration(MethodDeclaration node) {
+        public void visitMethod(PsiMethod node) {
             mFlagAllocations = isBlockedAllocationMethod(node);
-
-            return super.visitMethodDeclaration(node);
         }
 
         @Override
-        public boolean visitConstructorInvocation(ConstructorInvocation node) {
+        public void visitNewExpression(PsiNewExpression node) {
             String typeName = null;
+            PsiJavaCodeReferenceElement classReference = node.getClassReference();
+            if (mCheckMaps || mCheckValueOf) {
+                if (classReference != null) {
+                    typeName = classReference.getQualifiedName();
+                }
+            }
+
             if (mCheckMaps) {
-                TypeReference reference = node.astTypeReference();
-                typeName = reference.astParts().last().astIdentifier().astValue();
                 // TODO: Should we handle factory method constructions of HashMaps as well,
                 // e.g. via Guava? This is a bit trickier since we need to infer the type
                 // arguments from the calling context.
-                if (typeName.equals(HASH_MAP)) {
-                    checkHashMap(node, reference);
-                } else if (typeName.equals(SPARSE_ARRAY)) {
-                    checkSparseArray(node, reference);
+                if (HASH_MAP.equals(typeName)) {
+                    checkHashMap(node, classReference);
+                } else if (SPARSE_ARRAY.equals(typeName)) {
+                    checkSparseArray(node, classReference);
                 }
             }
 
             if (mCheckValueOf) {
-                if (typeName == null) {
-                    TypeReference reference = node.astTypeReference();
-                    typeName = reference.astParts().last().astIdentifier().astValue();
-                }
-                if ((typeName.equals(INTEGER)
-                        || typeName.equals(BOOLEAN)
-                        || typeName.equals(FLOAT)
-                        || typeName.equals(CHARACTER)
-                        || typeName.equals(LONG)
-                        || typeName.equals(DOUBLE)
-                        || typeName.equals(BYTE))
-                        && node.astTypeReference().astParts().size() == 1
-                        && node.astArguments().size() == 1) {
-                    String argument = node.astArguments().first().toString();
+                if (typeName != null
+                        && (typeName.equals(TYPE_INTEGER_WRAPPER)
+                        || typeName.equals(TYPE_BOOLEAN_WRAPPER)
+                        || typeName.equals(TYPE_FLOAT_WRAPPER)
+                        || typeName.equals(TYPE_CHARACTER_WRAPPER)
+                        || typeName.equals(TYPE_LONG_WRAPPER)
+                        || typeName.equals(TYPE_DOUBLE_WRAPPER)
+                        || typeName.equals(TYPE_BYTE_WRAPPER))
+                        //&& node.astTypeReference().astParts().size() == 1
+                        && node.getArgumentList() != null
+                        && node.getArgumentList().getExpressions().length == 1) {
+                    String argument = node.getArgumentList().getExpressions()[0].getText();
                     mContext.report(USE_VALUE_OF, node, mContext.getLocation(node), getUseValueOfErrorMessage(
                             typeName, argument));
                 }
             }
 
-            if (mFlagAllocations && !(node.getParent() instanceof Throw) && mCheckAllocations) {
+            if (mFlagAllocations
+                    && !(skipParentheses(node.getParent()) instanceof PsiThrowStatement)
+                    && mCheckAllocations) {
                 // Make sure we're still inside the method declaration that marked
                 // mInDraw as true, in case we've left it and we're in a static
                 // block or something:
-                Node method = node;
-                while (method != null) {
-                    if (method instanceof MethodDeclaration) {
-                        break;
-                    }
-                    method = method.getParent();
-                }
-                if (method != null && isBlockedAllocationMethod(((MethodDeclaration) method))
+                PsiMethod method = PsiTreeUtil.getParentOfType(node, PsiMethod.class);
+                if (method != null && isBlockedAllocationMethod(method)
                         && !isLazilyInitialized(node)) {
                     reportAllocation(node);
                 }
             }
-
-            return super.visitConstructorInvocation(node);
         }
 
-        private void reportAllocation(Node node) {
+        private void reportAllocation(PsiElement node) {
             mContext.report(PAINT_ALLOC, node, mContext.getLocation(node),
                 "Avoid object allocations during draw/layout operations (preallocate and " +
                 "reuse instead)");
         }
 
         @Override
-        public boolean visitMethodInvocation(MethodInvocation node) {
-            if (mFlagAllocations && node.astOperand() != null) {
-                // Look for forbidden methods
-                String methodName = node.astName().astValue();
-                if (methodName.equals("createBitmap")                              //$NON-NLS-1$
-                        || methodName.equals("createScaledBitmap")) {              //$NON-NLS-1$
-                    String operand = node.astOperand().toString();
-                    if (operand.equals("Bitmap")                                   //$NON-NLS-1$
-                            || operand.equals("android.graphics.Bitmap")) {        //$NON-NLS-1$
-                        if (!isLazilyInitialized(node)) {
-                            reportAllocation(node);
-                        }
-                    }
-                } else if (methodName.startsWith("decode")) {                      //$NON-NLS-1$
-                    // decodeFile, decodeByteArray, ...
-                    String operand = node.astOperand().toString();
-                    if (operand.equals("BitmapFactory")                            //$NON-NLS-1$
-                            || operand.equals("android.graphics.BitmapFactory")) { //$NON-NLS-1$
-                        if (!isLazilyInitialized(node)) {
-                            reportAllocation(node);
-                        }
-                    }
-                } else if (methodName.equals("getClipBounds")) {                   //$NON-NLS-1$
-                    if (node.astArguments().isEmpty()) {
-                        mContext.report(PAINT_ALLOC, node, mContext.getLocation(node),
-                                "Avoid object allocations during draw operations: Use " +
-                                "`Canvas.getClipBounds(Rect)` instead of `Canvas.getClipBounds()` " +
-                                "which allocates a temporary `Rect`");
-                    }
+        public void visitMethodCallExpression(PsiMethodCallExpression node) {
+            if (!mFlagAllocations) {
+                return;
+            }
+            PsiReferenceExpression expression = node.getMethodExpression();
+            PsiElement qualifier = expression.getQualifier();
+            if (qualifier == null) {
+                return;
+            }
+            String methodName = expression.getReferenceName();
+            if (methodName == null) {
+                return;
+            }
+            // Look for forbidden methods
+            if (methodName.equals("createBitmap")                              //$NON-NLS-1$
+                    || methodName.equals("createScaledBitmap")) {              //$NON-NLS-1$
+                PsiMethod method = node.resolveMethod();
+                if (method != null && mContext.getEvaluator().isMemberInClass(method,
+                        "android.graphics.Bitmap") && !isLazilyInitialized(node)) {
+                    reportAllocation(node);
+                }
+            } else if (methodName.startsWith("decode")) {                      //$NON-NLS-1$
+                // decodeFile, decodeByteArray, ...
+                PsiMethod method = node.resolveMethod();
+                if (method != null && mContext.getEvaluator().isMemberInClass(method,
+                        "android.graphics.BitmapFactory") && !isLazilyInitialized(node)) {
+                    reportAllocation(node);
+                }
+            } else if (methodName.equals("getClipBounds")) {                   //$NON-NLS-1$
+                if (node.getArgumentList().getExpressions().length == 0) {
+                    mContext.report(PAINT_ALLOC, node, mContext.getLocation(node),
+                            "Avoid object allocations during draw operations: Use " +
+                            "`Canvas.getClipBounds(Rect)` instead of `Canvas.getClipBounds()` " +
+                            "which allocates a temporary `Rect`");
                 }
             }
-
-            return super.visitMethodInvocation(node);
         }
 
         /**
@@ -316,13 +301,13 @@ public class JavaPerformanceDetector extends Detector implements Detector.JavaSc
          *    }
          * </pre>
          */
-        private static boolean isLazilyInitialized(Node node) {
-            Node curr = node.getParent();
+        private static boolean isLazilyInitialized(PsiElement node) {
+            PsiElement curr = node.getParent();
             while (curr != null) {
-                if (curr instanceof MethodDeclaration) {
+                if (curr instanceof PsiMethod) {
                     return false;
-                } else if (curr instanceof If) {
-                    If ifNode = (If) curr;
+                } else if (curr instanceof PsiIfStatement) {
+                    PsiIfStatement ifNode = (PsiIfStatement) curr;
                     // See if the if block represents a lazy initialization:
                     // compute all variable names seen in the condition
                     // (e.g. for "if (foo == null || bar != foo)" the result is "foo,bar"),
@@ -332,10 +317,12 @@ public class JavaPerformanceDetector extends Detector implements Detector.JavaSc
                     // about.)
                     List<String> assignments = new ArrayList<String>();
                     AssignmentTracker visitor = new AssignmentTracker(assignments);
-                    ifNode.astStatement().accept(visitor);
+                    if (ifNode.getThenBranch() != null) {
+                        ifNode.getThenBranch().accept(visitor);
+                    }
                     if (!assignments.isEmpty()) {
                         List<String> references = new ArrayList<String>();
-                        addReferencedVariables(references, ifNode.astCondition());
+                        addReferencedVariables(references, ifNode.getCondition());
                         if (!references.isEmpty()) {
                             SetView<String> intersection = Sets.intersection(
                                     new HashSet<String>(assignments),
@@ -353,22 +340,32 @@ public class JavaPerformanceDetector extends Detector implements Detector.JavaSc
         }
 
         /** Adds any variables referenced in the given expression into the given list */
-        private static void addReferencedVariables(Collection<String> variables,
-                Expression expression) {
-            if (expression instanceof BinaryExpression) {
-                BinaryExpression binary = (BinaryExpression) expression;
-                addReferencedVariables(variables, binary.astLeft());
-                addReferencedVariables(variables, binary.astRight());
-            } else if (expression instanceof UnaryExpression) {
-                UnaryExpression unary = (UnaryExpression) expression;
-                addReferencedVariables(variables, unary.astOperand());
-            } else if (expression instanceof VariableReference) {
-                VariableReference reference = (VariableReference) expression;
-                variables.add(reference.astIdentifier().astValue());
-            } else if (expression instanceof Select) {
-                Select select = (Select) expression;
-                if (select.astOperand() instanceof This) {
-                    variables.add(select.astIdentifier().astValue());
+        private static void addReferencedVariables(
+                @NonNull Collection<String> variables,
+                @Nullable PsiExpression expression) {
+            if (expression instanceof PsiBinaryExpression) {
+                PsiBinaryExpression binary = (PsiBinaryExpression) expression;
+                addReferencedVariables(variables, binary.getLOperand());
+                addReferencedVariables(variables, binary.getROperand());
+            } else if (expression instanceof PsiPrefixExpression) {
+                PsiPrefixExpression unary = (PsiPrefixExpression) expression;
+                addReferencedVariables(variables, unary.getOperand());
+            } else if (expression instanceof PsiParenthesizedExpression) {
+                PsiParenthesizedExpression exp = (PsiParenthesizedExpression) expression;
+                addReferencedVariables(variables, exp.getExpression());
+            } else if (expression instanceof PsiIdentifier) {
+                PsiIdentifier reference = (PsiIdentifier) expression;
+                variables.add(reference.getText());
+            } else if (expression instanceof PsiReferenceExpression) {
+                PsiReferenceExpression ref = (PsiReferenceExpression) expression;
+                PsiElement qualifier = ref.getQualifier();
+                if (qualifier != null) {
+                    if (qualifier instanceof PsiThisExpression ||
+                            qualifier instanceof PsiSuperExpression) {
+                        variables.add(ref.getReferenceName());
+                    }
+                } else {
+                    variables.add(ref.getReferenceName());
                 }
             }
         }
@@ -377,30 +374,23 @@ public class JavaPerformanceDetector extends Detector implements Detector.JavaSc
          * Returns whether the given method declaration represents a method
          * where allocating objects is not allowed for performance reasons
          */
-        private static boolean isBlockedAllocationMethod(MethodDeclaration node) {
-            return isOnDrawMethod(node) || isOnMeasureMethod(node) || isOnLayoutMethod(node)
-                    || isLayoutMethod(node);
+        private boolean isBlockedAllocationMethod(
+                @NonNull PsiMethod node) {
+            JavaEvaluator evaluator = mContext.getEvaluator();
+            return isOnDrawMethod(evaluator, node)
+                    || isOnMeasureMethod(evaluator, node)
+                    || isOnLayoutMethod(evaluator, node)
+                    || isLayoutMethod(evaluator, node);
         }
 
         /**
          * Returns true if this method looks like it's overriding android.view.View's
          * {@code protected void onDraw(Canvas canvas)}
          */
-        private static boolean isOnDrawMethod(MethodDeclaration node) {
-            if (ON_DRAW.equals(node.astMethodName().astValue())) {
-                StrictListAccessor<VariableDefinition, MethodDeclaration> parameters =
-                        node.astParameters();
-                if (parameters != null && parameters.size() == 1) {
-                    VariableDefinition arg0 = parameters.first();
-                    TypeReferencePart type = arg0.astTypeReference().astParts().last();
-                    String typeName = type.getTypeName();
-                    if (typeName.equals(CANVAS)) {
-                        return true;
-                    }
-                }
-            }
-
-            return false;
+        private static boolean isOnDrawMethod(
+                @NonNull JavaEvaluator evaluator,
+                @NonNull PsiMethod node) {
+            return ON_DRAW.equals(node.getName()) && evaluator.parametersMatch(node, CLASS_CANVAS);
         }
 
         /**
@@ -409,115 +399,66 @@ public class JavaPerformanceDetector extends Detector implements Detector.JavaSc
          * {@code protected void onLayout(boolean changed, int left, int top,
          *      int right, int bottom)}
          */
-        private static boolean isOnLayoutMethod(MethodDeclaration node) {
-            if (ON_LAYOUT.equals(node.astMethodName().astValue())) {
-                StrictListAccessor<VariableDefinition, MethodDeclaration> parameters =
-                        node.astParameters();
-                if (parameters != null && parameters.size() == 5) {
-                    Iterator<VariableDefinition> iterator = parameters.iterator();
-                    if (!iterator.hasNext()) {
-                        return false;
-                    }
-
-                    // Ensure that the argument list matches boolean, int, int, int, int
-                    TypeReferencePart type = iterator.next().astTypeReference().astParts().last();
-                    if (!type.getTypeName().equals(TYPE_BOOLEAN) || !iterator.hasNext()) {
-                        return false;
-                    }
-                    for (int i = 0; i < 4; i++) {
-                        type = iterator.next().astTypeReference().astParts().last();
-                        if (!type.getTypeName().equals(TYPE_INT)) {
-                            return false;
-                        }
-                        if (!iterator.hasNext()) {
-                            return i == 3;
-                        }
-                    }
-                }
-            }
-
-            return false;
+        private static boolean isOnLayoutMethod(
+                @NonNull JavaEvaluator evaluator,
+                @NonNull PsiMethod node) {
+            return ON_LAYOUT.equals(node.getName()) && evaluator.parametersMatch(node,
+                    TYPE_BOOLEAN, TYPE_INT, TYPE_INT, TYPE_INT, TYPE_INT);
         }
 
         /**
          * Returns true if this method looks like it's overriding android.view.View's
          * {@code protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec)}
          */
-        private static boolean isOnMeasureMethod(MethodDeclaration node) {
-            if (ON_MEASURE.equals(node.astMethodName().astValue())) {
-                StrictListAccessor<VariableDefinition, MethodDeclaration> parameters =
-                        node.astParameters();
-                if (parameters != null && parameters.size() == 2) {
-                    VariableDefinition arg0 = parameters.first();
-                    VariableDefinition arg1 = parameters.last();
-                    TypeReferencePart type1 = arg0.astTypeReference().astParts().last();
-                    TypeReferencePart type2 = arg1.astTypeReference().astParts().last();
-                    return TYPE_INT.equals(type1.getTypeName())
-                            && TYPE_INT.equals(type2.getTypeName());
-                }
-            }
-
-            return false;
+        private static boolean isOnMeasureMethod(
+                @NonNull JavaEvaluator evaluator,
+                @NonNull PsiMethod node) {
+            return ON_MEASURE.equals(node.getName()) && evaluator.parametersMatch(node,
+                    TYPE_INT, TYPE_INT);
         }
 
         /**
          * Returns true if this method looks like it's overriding android.view.View's
          * {@code public void layout(int l, int t, int r, int b)}
          */
-        private static boolean isLayoutMethod(MethodDeclaration node) {
-            if (LAYOUT.equals(node.astMethodName().astValue())) {
-                StrictListAccessor<VariableDefinition, MethodDeclaration> parameters =
-                        node.astParameters();
-                if (parameters != null && parameters.size() == 4) {
-                    Iterator<VariableDefinition> iterator = parameters.iterator();
-                    for (int i = 0; i < 4; i++) {
-                        if (!iterator.hasNext()) {
-                            return false;
-                        }
-                        VariableDefinition next = iterator.next();
-                        TypeReferencePart type = next.astTypeReference().astParts().last();
-                        if (!TYPE_INT.equals(type.getTypeName())) {
-                            return false;
-                        }
-                    }
-                    return true;
-                }
-            }
-
-            return false;
+        private static boolean isLayoutMethod(
+                @NonNull JavaEvaluator evaluator,
+                @NonNull PsiMethod node) {
+            return LAYOUT.equals(node.getName()) && evaluator.parametersMatch(node,
+                    TYPE_INT, TYPE_INT, TYPE_INT, TYPE_INT);
         }
-
 
         /**
          * Checks whether the given constructor call and type reference refers
          * to a HashMap constructor call that is eligible for replacement by a
          * SparseArray call instead
          */
-        private void checkHashMap(ConstructorInvocation node, TypeReference reference) {
-            // reference.hasTypeArguments returns false where it should not
-            StrictListAccessor<TypeReference, TypeReference> types = reference.getTypeArguments();
-            if (types != null && types.size() == 2) {
-                TypeReference first = types.first();
-                String typeName = first.getTypeName();
+        private void checkHashMap(
+                @NonNull PsiNewExpression node,
+                @NonNull PsiJavaCodeReferenceElement reference) {
+            PsiType[] types = reference.getTypeParameters();
+            if (types.length == 2) {
+                PsiType first = types[0];
+                String typeName = first.getCanonicalText();
                 int minSdk = mContext.getMainProject().getMinSdk();
-                if (typeName.equals(INTEGER) || typeName.equals(BYTE)) {
-                    String valueType = types.last().getTypeName();
-                    if (valueType.equals(INTEGER)) {
+                if (TYPE_INTEGER_WRAPPER.equals(typeName) || TYPE_BYTE_WRAPPER.equals(typeName)) {
+                    String valueType = types[1].getCanonicalText();
+                    if (valueType.equals(TYPE_INTEGER_WRAPPER)) {
                         mContext.report(USE_SPARSE_ARRAY, node, mContext.getLocation(node),
                             "Use new `SparseIntArray(...)` instead for better performance");
-                    } else if (valueType.equals(LONG) && minSdk >= 18) {
+                    } else if (valueType.equals(TYPE_LONG_WRAPPER) && minSdk >= 18) {
                         mContext.report(USE_SPARSE_ARRAY, node, mContext.getLocation(node),
                                 "Use `new SparseLongArray(...)` instead for better performance");
-                    } else if (valueType.equals(BOOLEAN)) {
+                    } else if (valueType.equals(TYPE_BOOLEAN_WRAPPER)) {
                         mContext.report(USE_SPARSE_ARRAY, node, mContext.getLocation(node),
                                 "Use `new SparseBooleanArray(...)` instead for better performance");
                     } else {
                         mContext.report(USE_SPARSE_ARRAY, node, mContext.getLocation(node),
                             String.format(
                                 "Use `new SparseArray<%1$s>(...)` instead for better performance",
-                              valueType));
+                              valueType.substring(valueType.lastIndexOf('.') + 1)));
                     }
-                } else if (typeName.equals(LONG) && (minSdk >= 16 ||
+                } else if (TYPE_LONG_WRAPPER.equals(typeName) && (minSdk >= 16 ||
                         Boolean.TRUE == mContext.getMainProject().dependsOn(
                                 SUPPORT_LIB_ARTIFACT))) {
                     boolean useBuiltin = minSdk >= 16;
@@ -530,16 +471,16 @@ public class JavaPerformanceDetector extends Detector implements Detector.JavaSc
             }
         }
 
-        private void checkSparseArray(ConstructorInvocation node, TypeReference reference) {
-            // reference.hasTypeArguments returns false where it should not
-            StrictListAccessor<TypeReference, TypeReference> types = reference.getTypeArguments();
-            if (types != null && types.size() == 1) {
-                TypeReference first = types.first();
-                String valueType = first.getTypeName();
-                if (valueType.equals(INTEGER)) {
+        private void checkSparseArray(
+                @NonNull PsiNewExpression node,
+                @NonNull PsiJavaCodeReferenceElement reference) {
+            PsiType[] types = reference.getTypeParameters();
+            if (types.length == 1) {
+                String valueType = types[0].getCanonicalText();
+                if (valueType.equals(TYPE_INTEGER_WRAPPER)) {
                     mContext.report(USE_SPARSE_ARRAY, node, mContext.getLocation(node),
                         "Use `new SparseIntArray(...)` instead for better performance");
-                } else if (valueType.equals(BOOLEAN)) {
+                } else if (valueType.equals(TYPE_BOOLEAN_WRAPPER)) {
                     mContext.report(USE_SPARSE_ARRAY, node, mContext.getLocation(node),
                             "Use `new SparseBooleanArray(...)` instead for better performance");
                 }
@@ -549,13 +490,15 @@ public class JavaPerformanceDetector extends Detector implements Detector.JavaSc
 
     private static String getUseValueOfErrorMessage(String typeName, String argument) {
         // Keep in sync with {@link #getReplacedType} below
-        return String.format("Use `%1$s.valueOf(%2$s)` instead", typeName, argument);
+        return String.format("Use `%1$s.valueOf(%2$s)` instead",
+                typeName.substring(typeName.lastIndexOf('.') + 1), argument);
     }
 
     /**
      * For an error message for an {@link #USE_VALUE_OF} issue reported by this detector,
      * returns the type being replaced. Intended to use for IDE quickfix implementations.
      */
+    @SuppressWarnings("unused") // Used by the IDE
     @Nullable
     public static String getReplacedType(@NonNull String message, @NonNull TextFormat format) {
         message = format.toText(message);
@@ -567,7 +510,7 @@ public class JavaPerformanceDetector extends Detector implements Detector.JavaSc
     }
 
     /** Visitor which records variable names assigned into */
-    private static class AssignmentTracker extends ForwardingAstVisitor {
+    private static class AssignmentTracker extends JavaRecursiveElementVisitor {
         private final Collection<String> mVariables;
 
         public AssignmentTracker(Collection<String> variables) {
@@ -575,20 +518,21 @@ public class JavaPerformanceDetector extends Detector implements Detector.JavaSc
         }
 
         @Override
-        public boolean visitBinaryExpression(BinaryExpression node) {
-            BinaryOperator operator = node.astOperator();
-            if (operator == BinaryOperator.ASSIGN || operator == BinaryOperator.OR_ASSIGN) {
-                Expression left = node.astLeft();
-                String variable;
-                if (left instanceof Select && ((Select) left).astOperand() instanceof This) {
-                    variable = ((Select) left).astIdentifier().astValue();
-                } else {
-                    variable = left.toString();
-                }
-                mVariables.add(variable);
-            }
+        public void visitAssignmentExpression(PsiAssignmentExpression node) {
+            super.visitAssignmentExpression(node);
 
-            return super.visitBinaryExpression(node);
+            PsiExpression left = node.getLExpression();
+            if (left instanceof PsiReferenceExpression) {
+                PsiReferenceExpression ref = (PsiReferenceExpression) left;
+                if (ref.getQualifier() instanceof PsiThisExpression ||
+                        ref.getQualifier() instanceof PsiSuperExpression) {
+                    mVariables.add(ref.getReferenceName());
+                } else {
+                    mVariables.add(ref.getText());
+                }
+            } else if (left instanceof PsiIdentifier) {
+                mVariables.add(left.getText());
+            }
         }
     }
 }

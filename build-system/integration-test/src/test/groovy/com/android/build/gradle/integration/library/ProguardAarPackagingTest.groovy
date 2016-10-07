@@ -1,29 +1,20 @@
 package com.android.build.gradle.integration.library
 import com.android.SdkConstants
-import com.android.annotations.NonNull
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.AndroidTestApp
 import com.android.build.gradle.integration.common.fixture.app.EmptyAndroidTestApp
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
 import com.android.build.gradle.integration.common.fixture.app.TestSourceFile
 import com.android.build.gradle.integration.common.truth.AbstractAndroidSubject
-import com.android.build.gradle.integration.common.truth.TruthHelper
 import com.google.common.base.Joiner
-import com.google.common.io.Files
 import org.apache.commons.io.FileUtils
 import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Test
 
-import java.util.zip.ZipEntry
-import java.util.zip.ZipFile
-
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatAar
-import static org.junit.Assert.assertFalse
-import static org.junit.Assert.assertNotNull
-import static org.junit.Assert.assertNull
-import static org.junit.Assert.assertTrue
+
 /**
   * Integration test to check that libraries included directly as jar files are correctly handled
   * when using proguard.
@@ -36,7 +27,7 @@ class ProguardAarPackagingTest {
     static {
         TestSourceFile oldHelloWorld = testApp.getFile("HelloWorld.java")
         testApp.removeFile(oldHelloWorld)
-        testApp.addFile(new TestSourceFile(oldHelloWorld.path, oldHelloWorld.name, """\
+        testApp.addFile(new TestSourceFile(oldHelloWorld.parent, oldHelloWorld.name, """\
 package com.example.helloworld;
 
 import com.example.libinjar.LibInJar;

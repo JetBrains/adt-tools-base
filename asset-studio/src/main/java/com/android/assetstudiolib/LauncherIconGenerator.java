@@ -36,61 +36,60 @@ public class LauncherIconGenerator extends GraphicGenerator {
     private static final Rectangle IMAGE_SIZE_WEB = new Rectangle(0, 0, 512, 512);
     private static final Rectangle IMAGE_SIZE_MDPI = new Rectangle(0, 0, 48, 48);
 
-    private static final Map<Pair<Shape, Density>, Rectangle> TARGET_RECTS
-            = new HashMap<Pair<Shape, Density>, Rectangle>();
+    private static final Map<Pair<Shape, Density>, Rectangle> TARGET_RECTS = new HashMap<>();
 
     static {
         // None, Web
-        TARGET_RECTS.put(Pair.of(Shape.NONE, (Density) null), new Rectangle(32, 32, 448, 448));
+        TARGET_RECTS.put(Pair.of(Shape.NONE, null), new Rectangle(32, 32, 448, 448));
         // None, HDPI
         TARGET_RECTS.put(Pair.of(Shape.NONE, Density.HIGH), new Rectangle(4, 4, 64, 64));
         // None, MDPI
         TARGET_RECTS.put(Pair.of(Shape.NONE, Density.MEDIUM), new Rectangle(3, 3, 42, 42));
 
         // Circle, Web
-        TARGET_RECTS.put(Pair.of(Shape.CIRCLE, (Density) null), new Rectangle(21, 21, 470, 470));
+        TARGET_RECTS.put(Pair.of(Shape.CIRCLE, null), new Rectangle(21, 21, 470, 470));
         // Circle, HDPI
         TARGET_RECTS.put(Pair.of(Shape.CIRCLE, Density.HIGH), new Rectangle(3, 3, 66, 66));
         // Circle, MDPI
         TARGET_RECTS.put(Pair.of(Shape.CIRCLE, Density.MEDIUM), new Rectangle(2, 2, 44, 44));
 
         // Square, Web
-        TARGET_RECTS.put(Pair.of(Shape.SQUARE, (Density) null), new Rectangle(53, 53, 406, 406));
+        TARGET_RECTS.put(Pair.of(Shape.SQUARE, null), new Rectangle(53, 53, 406, 406));
         // Square, HDPI
         TARGET_RECTS.put(Pair.of(Shape.SQUARE, Density.HIGH), new Rectangle(7, 7, 57, 57));
         // Square, MDPI
         TARGET_RECTS.put(Pair.of(Shape.SQUARE, Density.MEDIUM), new Rectangle(5, 5, 38, 38));
 
         // Vertical Rectangle, Web
-        TARGET_RECTS.put(Pair.of(Shape.VRECT, (Density) null), new Rectangle(85, 21, 342, 470));
+        TARGET_RECTS.put(Pair.of(Shape.VRECT, null), new Rectangle(85, 21, 342, 470));
         // Vertical Rectangle, HDPI
         TARGET_RECTS.put(Pair.of(Shape.VRECT, Density.HIGH), new Rectangle(12, 3, 48, 66));
         // Vertical Rectangle, MDPI
         TARGET_RECTS.put(Pair.of(Shape.VRECT, Density.MEDIUM), new Rectangle(8, 2, 32, 44));
 
         // Horizontal Rectangle, Web
-        TARGET_RECTS.put(Pair.of(Shape.HRECT, (Density) null), new Rectangle(21, 85, 470, 342));
+        TARGET_RECTS.put(Pair.of(Shape.HRECT, null), new Rectangle(21, 85, 470, 342));
         // Horizontal Rectangle, HDPI
         TARGET_RECTS.put(Pair.of(Shape.HRECT, Density.HIGH), new Rectangle(3, 12, 66, 48));
         // Horizontal Rectangle, MDPI
         TARGET_RECTS.put(Pair.of(Shape.HRECT, Density.MEDIUM), new Rectangle(2, 8, 44, 32));
 
         // Square Dog-ear, Web
-        TARGET_RECTS.put(Pair.of(Shape.SQUARE_DOG, (Density) null), new Rectangle(53, 149, 406, 312));
+        TARGET_RECTS.put(Pair.of(Shape.SQUARE_DOG, null), new Rectangle(53, 149, 406, 312));
         // Square Dog-ear, HDPI
         TARGET_RECTS.put(Pair.of(Shape.SQUARE_DOG, Density.HIGH), new Rectangle(7, 21, 57, 43));
         // Square Dog-ear, MDPI
         TARGET_RECTS.put(Pair.of(Shape.SQUARE_DOG, Density.MEDIUM), new Rectangle(5, 14, 38, 29));
 
         // Vertical Rectangle Dog-ear, Web
-        TARGET_RECTS.put(Pair.of(Shape.VRECT_DOG, (Density) null), new Rectangle(85, 117, 342, 374));
+        TARGET_RECTS.put(Pair.of(Shape.VRECT_DOG, null), new Rectangle(85, 117, 342, 374));
         // Vertical Rectangle Dog-ear, HDPI
         TARGET_RECTS.put(Pair.of(Shape.VRECT_DOG, Density.HIGH), new Rectangle(12, 17, 48, 52));
         // Vertical Rectangle Dog-ear, MDPI
         TARGET_RECTS.put(Pair.of(Shape.VRECT_DOG, Density.MEDIUM), new Rectangle(8, 11, 32, 35));
 
         // Horizontal Rectangle Dog-ear, Web
-        TARGET_RECTS.put(Pair.of(Shape.HRECT_DOG, (Density) null), new Rectangle(21, 85, 374, 342));
+        TARGET_RECTS.put(Pair.of(Shape.HRECT_DOG, null), new Rectangle(21, 85, 374, 342));
         // Horizontal Rectangle Dog-ear, HDPI
         TARGET_RECTS.put(Pair.of(Shape.HRECT_DOG, Density.HIGH), new Rectangle(3, 12, 52, 48));
         // Horizontal Rectangle Dog-ear, MDPI
@@ -103,7 +102,7 @@ public class LauncherIconGenerator extends GraphicGenerator {
      * @param shape     Shape of the icon before applying dog-ear effect
      * @return          Shape with dog-ear effect on
      */
-    private Shape applyDog(Shape shape) {
+    private static Shape applyDog(Shape shape) {
         if (shape == Shape.SQUARE) {
             return Shape.SQUARE_DOG;
         }
@@ -116,6 +115,7 @@ public class LauncherIconGenerator extends GraphicGenerator {
         }
     }
 
+    @SuppressWarnings("UseJBColor")
     @Override
     public BufferedImage generate(GraphicGeneratorContext context, Options options) {
         LauncherOptions launcherOptions = (LauncherOptions) options;
@@ -131,15 +131,15 @@ public class LauncherIconGenerator extends GraphicGenerator {
             launcherOptions.shape = applyDog(launcherOptions.shape);
         }
 
-        BufferedImage backImage = null, foreImage = null, maskImage = null;
+        BufferedImage shapeImageBack = null, shapeImageFore = null, shapeImageMask = null;
         if (launcherOptions.shape != Shape.NONE && launcherOptions.shape != null) {
             String shape = launcherOptions.shape.id;
 
-            backImage = context.loadImageResource("/images/launcher_stencil/"
+            shapeImageBack = context.loadImageResource("/images/launcher_stencil/"
                     + shape + "/" + density + "/back.png");
-            foreImage = context.loadImageResource("/images/launcher_stencil/"
+            shapeImageFore = context.loadImageResource("/images/launcher_stencil/"
                     + shape + "/" + density + "/" + launcherOptions.style.id + ".png");
-            maskImage = context.loadImageResource("/images/launcher_stencil/"
+            shapeImageMask = context.loadImageResource("/images/launcher_stencil/"
                     + shape + "/" + density + "/mask.png");
         }
 
@@ -158,34 +158,53 @@ public class LauncherIconGenerator extends GraphicGenerator {
                               GraphicGenerator.getMdpiScaleFactor(launcherOptions.density));
         }
 
+        // outImage will be our final image. Many intermediate textures will be rendered, in
+        // layers, onto this image
         BufferedImage outImage = AssetUtil.newArgbBufferedImage(imageRect.width, imageRect.height);
-        Graphics2D g = (Graphics2D) outImage.getGraphics();
-        if (backImage != null) {
-            g.drawImage(backImage, 0, 0, null);
+        Graphics2D gOut = (Graphics2D) outImage.getGraphics();
+        if (shapeImageBack != null) {
+            gOut.drawImage(shapeImageBack, 0, 0, null);
         }
 
+        // Render the background shape into an intermediate buffer. This lets us set a fill color.
         BufferedImage tempImage = AssetUtil.newArgbBufferedImage(imageRect.width, imageRect.height);
-        Graphics2D g2 = (Graphics2D) tempImage.getGraphics();
-        if (maskImage != null) {
-            g2.drawImage(maskImage, 0, 0, null);
-            g2.setComposite(AlphaComposite.SrcAtop);
-            g2.setPaint(new Color(launcherOptions.backgroundColor));
-            g2.fillRect(0, 0, imageRect.width, imageRect.height);
+        Graphics2D gTemp = (Graphics2D) tempImage.getGraphics();
+        if (shapeImageMask != null) {
+            gTemp.drawImage(shapeImageMask, 0, 0, null);
+            gTemp.setComposite(AlphaComposite.SrcAtop);
+            gTemp.setPaint(new Color(launcherOptions.backgroundColor));
+            gTemp.fillRect(0, 0, imageRect.width, imageRect.height);
         }
 
+        // Render the foreground icon onto an intermediate buffer and then render over the
+        // background shape. This lets us override the color of the icon.
+        BufferedImage iconImage = AssetUtil.newArgbBufferedImage(imageRect.width, imageRect.height);
+        Graphics2D gIcon = (Graphics2D)iconImage.getGraphics();
         if (launcherOptions.crop) {
-            AssetUtil.drawCenterCrop(g2, launcherOptions.sourceImage, targetRect);
+            AssetUtil.drawCenterCrop(gIcon, launcherOptions.sourceImage, targetRect);
         } else {
-            AssetUtil.drawCenterInside(g2, launcherOptions.sourceImage, targetRect);
+            AssetUtil.drawCenterInside(gIcon, launcherOptions.sourceImage, targetRect);
+        }
+        AssetUtil.Effect[] effects;
+        if (launcherOptions.useForegroundColor) {
+            effects = new AssetUtil.Effect[]{
+              new AssetUtil.FillEffect(new Color(launcherOptions.foregroundColor), 1.0)
+            };
+        } else {
+            effects = new AssetUtil.Effect[0];
+        }
+        AssetUtil.drawEffects(gTemp, iconImage, 0, 0, effects);
+
+        // Finally, render all layers to the output image
+        gOut.drawImage(tempImage, 0, 0, null);
+        if (shapeImageFore != null) {
+            // Useful for some shape effects, like dogear (e.g. folded top right corner)
+            gOut.drawImage(shapeImageFore, 0, 0, null);
         }
 
-        g.drawImage(tempImage, 0, 0, null);
-        if (foreImage != null) {
-            g.drawImage(foreImage, 0, 0, null);
-        }
-
-        g.dispose();
-        g2.dispose();
+        gOut.dispose();
+        gTemp.dispose();
+        gIcon.dispose();
 
         return outImage;
     }
@@ -209,7 +228,7 @@ public class LauncherIconGenerator extends GraphicGenerator {
             launcherOptions.density = null;
             BufferedImage image = generate(context, options);
             if (image != null) {
-                Map<String, BufferedImage> imageMap = new HashMap<String, BufferedImage>();
+                Map<String, BufferedImage> imageMap = new HashMap<>();
                 categoryMap.put("Web", imageMap);
                 imageMap.put(getIconPath(options, name), image);
             }
@@ -230,6 +249,15 @@ public class LauncherIconGenerator extends GraphicGenerator {
         public LauncherOptions() {
             mipmap = true;
         }
+
+        /**
+         * Whether to use the foreground color. If we are using images as the source asset for our icons,
+         * you shouldn't apply the foreground color, which would paint over it and obscure the image.
+         */
+        public boolean useForegroundColor = true;
+
+        /** Foreground color, as an RRGGBB packed integer */
+        public int foregroundColor = 0;
 
         /** Background color, as an RRGGBB packed integer */
         public int backgroundColor = 0;

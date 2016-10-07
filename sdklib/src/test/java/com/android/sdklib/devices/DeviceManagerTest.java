@@ -27,11 +27,11 @@ import com.android.sdklib.devices.Device.Builder;
 import com.android.sdklib.devices.DeviceManager.DeviceFilter;
 import com.android.sdklib.devices.DeviceManager.DeviceStatus;
 import com.android.sdklib.mock.MockLog;
-import com.android.sdklib.repositoryv2.AndroidSdkHandler;
-import com.android.sdklib.repositoryv2.IdDisplay;
-import com.android.sdklib.repositoryv2.meta.AddonFactory;
-import com.android.sdklib.repositoryv2.meta.DetailsTypes;
-import com.android.sdklib.repositoryv2.targets.SystemImage;
+import com.android.sdklib.repository.AndroidSdkHandler;
+import com.android.sdklib.repository.IdDisplay;
+import com.android.sdklib.repository.meta.AddonFactory;
+import com.android.sdklib.repository.meta.DetailsTypes;
+import com.android.sdklib.repository.targets.SystemImage;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -84,6 +84,11 @@ public class DeviceManagerTest extends SdkManagerTestCase {
         return names;
     }
 
+    @Override
+    public void tearDown() throws Exception {
+        super.tearDown();
+    }
+
     public final void testGetDevices_Default() {
         // no user devices defined in the test's custom .android home folder
         assertEquals("[]", dm.getDevices(DeviceFilter.USER).toString());
@@ -112,7 +117,7 @@ public class DeviceManagerTest extends SdkManagerTestCase {
         assertEquals("[Android TV (1080p), Android TV (720p), Android Wear Round, " +
                         "Android Wear Round Chin, Android Wear Square, " +
                         "Galaxy Nexus, Nexus 10, Nexus 4, Nexus 5, Nexus 5X, Nexus 6, Nexus 6P, Nexus 7, " +
-                        "Nexus 7 (2012), Nexus 9, Nexus One, Nexus S]",
+                        "Nexus 7 (2012), Nexus 9, Nexus One, Nexus S, Pixel C]",
                 listDisplayNames(dm.getDevices(DeviceFilter.VENDOR)).toString());
         assertEquals("", log.toString());
 
@@ -127,7 +132,7 @@ public class DeviceManagerTest extends SdkManagerTestCase {
                         +
                         "Android TV (720p), Android Wear Round, Android Wear Round Chin, " +
                         "Android Wear Square, Galaxy Nexus, Nexus 10, Nexus 4, Nexus 5, " +
-                        "Nexus 5X, Nexus 6, Nexus 6P, Nexus 7, Nexus 7 (2012), Nexus 9, Nexus One, Nexus S]",
+                        "Nexus 5X, Nexus 6, Nexus 6P, Nexus 7, Nexus 7 (2012), Nexus 9, Nexus One, Nexus S, Pixel C]",
                 listDisplayNames(dm.getDevices(DeviceManager.ALL_DEVICES)).toString());
         assertEquals("", log.toString());
     }
@@ -193,7 +198,7 @@ public class DeviceManagerTest extends SdkManagerTestCase {
         assertEquals("[Android TV (1080p), Android TV (720p), Android Wear Round, " +
                         "Android Wear Round Chin, Android Wear Square, Galaxy Nexus, " +
                         "Nexus 10, Nexus 4, Nexus 5, Nexus 5X, Nexus 6, Nexus 6P, Nexus 7, Nexus 7 (2012), " +
-                        "Nexus 9, Nexus One, Nexus S]",
+                        "Nexus 9, Nexus One, Nexus S, Pixel C]",
                 listDisplayNames(dm2.getDevices(DeviceFilter.VENDOR)).toString());
         assertEquals("", log.toString());
 
@@ -205,7 +210,7 @@ public class DeviceManagerTest extends SdkManagerTestCase {
                         +
                         "Android TV (720p), Android Wear Round, Android Wear Round Chin, " +
                         "Android Wear Square, Galaxy Nexus, My Custom Tablet, Nexus 10, " +
-                        "Nexus 4, Nexus 5, Nexus 5X, Nexus 6, Nexus 6P, Nexus 7, Nexus 7 (2012), Nexus 9, Nexus One, Nexus S]",
+                        "Nexus 4, Nexus 5, Nexus 5X, Nexus 6, Nexus 6P, Nexus 7, Nexus 7 (2012), Nexus 9, Nexus One, Nexus S, Pixel C]",
                 listDisplayNames(dm2.getDevices(DeviceManager.ALL_DEVICES)).toString());
         assertEquals("", log.toString());
     }
@@ -244,7 +249,7 @@ public class DeviceManagerTest extends SdkManagerTestCase {
                         +
                         "Android Wear Square, Galaxy Nexus, Nexus 10, Nexus 4, Nexus 5, Nexus 5X, Nexus 6, Nexus 6P, Nexus 7, "
                         +
-                        "Nexus 7 (2012), Nexus 9, Nexus One, Nexus S]",
+                        "Nexus 7 (2012), Nexus 9, Nexus One, Nexus S, Pixel C]",
                 listDisplayNames(dm.getDevices(DeviceFilter.VENDOR)).toString());
         assertEquals("", log.toString());
 
@@ -257,7 +262,7 @@ public class DeviceManagerTest extends SdkManagerTestCase {
                         "Android TV (720p), Android Wear Round, Android Wear Round Chin, " +
                         "Android Wear Square, Galaxy Nexus, Mock Tag 1 Device Name, Nexus 10, Nexus 4, "
                         +
-                        "Nexus 5, Nexus 5X, Nexus 6, Nexus 6P, Nexus 7, Nexus 7 (2012), Nexus 9, Nexus One, Nexus S]",
+                        "Nexus 5, Nexus 5X, Nexus 6, Nexus 6P, Nexus 7, Nexus 7 (2012), Nexus 9, Nexus One, Nexus S, Pixel C]",
                 listDisplayNames(dm.getDevices(DeviceManager.ALL_DEVICES)).toString());
         assertEquals("", log.toString());
     }

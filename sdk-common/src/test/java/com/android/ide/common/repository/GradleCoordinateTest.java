@@ -15,19 +15,27 @@
  */
 package com.android.ide.common.repository;
 
+import static com.android.ide.common.repository.GradleCoordinate.COMPARE_PLUS_HIGHER;
+import static com.android.ide.common.repository.GradleCoordinate.COMPARE_PLUS_LOWER;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+
 import com.android.ide.common.res2.BaseTestCase;
 import com.google.common.collect.Lists;
 
-import java.util.List;
+import org.junit.Test;
 
-import static com.android.ide.common.repository.GradleCoordinate.COMPARE_PLUS_HIGHER;
-import static com.android.ide.common.repository.GradleCoordinate.COMPARE_PLUS_LOWER;
+import java.util.List;
 
 /**
  * Test class for {@see GradleCoordinate}
  */
 public class GradleCoordinateTest extends BaseTestCase {
 
+    @Test
     public void testParseCoordinateString() throws Exception {
         GradleCoordinate expected = new GradleCoordinate("a.b.c", "package", 5, 4, 2);
         GradleCoordinate actual = GradleCoordinate.parseCoordinateString("a.b.c:package:5.4.2");
@@ -87,8 +95,13 @@ public class GradleCoordinateTest extends BaseTestCase {
         assertEquals(expected, actual);
         assertNotNull(actual);
         assertTrue(actual.isPreview());
+
+        expected = new GradleCoordinate("a.b.c", "package", 5, 0, GradleCoordinate.PLUS_REV_VALUE);
+        actual = GradleCoordinate.parseCoordinateString("a.b.c:package:5.0+");
+        assertEquals(expected, actual);
     }
 
+    @Test
     public void testToString() throws Exception {
         String expected = "a.b.c:package:5.4.2";
         String actual = new GradleCoordinate("a.b.c", "package", 5, 4, 2).toString();
@@ -143,6 +156,7 @@ public class GradleCoordinateTest extends BaseTestCase {
         assertEquals(expected, actual);
     }
 
+    @Test
     public void testIsSameArtifact() throws Exception {
         GradleCoordinate a = new GradleCoordinate("a.b.c", "package", 5, 4, 2);
         GradleCoordinate b = new GradleCoordinate("a.b.c", "package", 5, 5, 5);
@@ -160,6 +174,7 @@ public class GradleCoordinateTest extends BaseTestCase {
         assertFalse(b.isSameArtifact(a));
     }
 
+    @Test
     public void testCompareVersions() {
         // Requirements order
         GradleCoordinate a = new GradleCoordinate("a.b.c", "package", 5, 4, 2);
@@ -217,6 +232,7 @@ public class GradleCoordinateTest extends BaseTestCase {
         assertTrue(COMPARE_PLUS_HIGHER.compare(b, a) > 0);
     }
 
+    @Test
     public void testCompareSpecificity() {
         // Order of specificity
         GradleCoordinate a = new GradleCoordinate("a.b.c", "package", 5, 4, 2);
@@ -257,6 +273,7 @@ public class GradleCoordinateTest extends BaseTestCase {
         assertTrue(COMPARE_PLUS_LOWER.compare(b, a) < 0);
     }
 
+    @Test
     public void testGetVersions() {
         GradleCoordinate c = new GradleCoordinate("a.b.c", "package", 5, 4, 2);
         assertEquals(5, c.getMajorVersion());
@@ -264,6 +281,7 @@ public class GradleCoordinateTest extends BaseTestCase {
         assertEquals(2, c.getMicroVersion());
     }
 
+    @Test
     public void testSameSharedDifferentLengths() {
         GradleCoordinate a = new GradleCoordinate("a.b.c", "package", 5, 4);
         GradleCoordinate b = new GradleCoordinate("a.b.c", "package", 5, 4, 2);
@@ -273,6 +291,7 @@ public class GradleCoordinateTest extends BaseTestCase {
         assertTrue(COMPARE_PLUS_LOWER.compare(b, a) > 0);
     }
 
+    @Test
     public void testSameSharedDifferentLengthsWithZeros() {
         GradleCoordinate a = new GradleCoordinate("a.b.c", "package", 5, 4);
         GradleCoordinate b = new GradleCoordinate("a.b.c", "package", 5, 4, 0, 0, 0);
@@ -282,6 +301,7 @@ public class GradleCoordinateTest extends BaseTestCase {
         assertTrue(COMPARE_PLUS_LOWER.compare(b, a) == 0);
     }
 
+    @Test
     public void testParseVersionOnly() {
         String revision = "15.32.64";
         GradleCoordinate a = GradleCoordinate.parseVersionOnly(revision);
@@ -292,12 +312,14 @@ public class GradleCoordinateTest extends BaseTestCase {
         assertTrue(b.isPreview());
     }
 
+    @Test
     public void testIsPreview_ignoresFalsePositives() {
       String revisionB = "16.12.0-march";
       GradleCoordinate b = GradleCoordinate.parseVersionOnly(revisionB);
       assertFalse(b.isPreview());
     }
 
+    @Test
     public void testLeadingZeroes() {
         // Regression test for https://code.google.com/p/android/issues/detail?id=74612
         // The Gradle dependency
@@ -332,6 +354,7 @@ public class GradleCoordinateTest extends BaseTestCase {
 
     }
 
+    @Test
     public void testAlphaBeta() throws Exception {
         GradleCoordinate actual = GradleCoordinate.parseCoordinateString("com.android.support:appcompat-v7:24.0.0-alpha1");
         assertNotNull(actual);
@@ -342,5 +365,47 @@ public class GradleCoordinateTest extends BaseTestCase {
         assertNotNull(actual);
         assertEquals(24, actual.getMajorVersion());
         assertTrue(actual.isPreview());
+    }
+
+    @Test
+    public void testMatches() throws Exception {
+        GradleCoordinate actual = new GradleCoordinate("a.b.c", "foo", 1, 2, 3);
+        GradleCoordinate test = new GradleCoordinate("a.b.c", "foo", 1, 2, 3);
+        assertTrue(actual.matches(test));
+
+        test = new GradleCoordinate("a.b.c", "foo", 1, 2, GradleCoordinate.PLUS_REV_VALUE);
+        assertTrue(actual.matches(test));
+
+        test = new GradleCoordinate("a.b.c", "foo", 1, GradleCoordinate.PLUS_REV_VALUE);
+        assertTrue(actual.matches(test));
+
+        test = new GradleCoordinate("a.b.c", "foo", GradleCoordinate.PLUS_REV_VALUE);
+        assertTrue(actual.matches(test));
+
+        test = new GradleCoordinate("a.b.c", "foo", 2);
+        assertFalse(actual.matches(test));
+
+        test = new GradleCoordinate("a.b.c", "foo", 2, GradleCoordinate.PLUS_REV_VALUE);
+        assertFalse(actual.matches(test));
+
+        test = new GradleCoordinate("a.b.c", "foo", 1, 2);
+        assertFalse(actual.matches(test));
+
+        test = new GradleCoordinate("e.f.g", "foo", 1, GradleCoordinate.PLUS_REV_VALUE);
+        assertFalse(actual.matches(test));
+
+        actual = new GradleCoordinate("a.b.c", "foo", 1);
+        test = new GradleCoordinate("a.b.c", "foo", 1, GradleCoordinate.PLUS_REV_VALUE);
+        assertTrue(actual.matches(test));
+
+        test = new GradleCoordinate("a.b.c", "foo", 1, 1, GradleCoordinate.PLUS_REV_VALUE);
+        assertFalse(actual.matches(test));
+
+        test = new GradleCoordinate("a.b.c", "foo", 1, 0, GradleCoordinate.PLUS_REV_VALUE);
+        assertTrue(actual.matches(test));
+
+        actual = new GradleCoordinate("a.b.c", "foo", 1, 0);
+        test = new GradleCoordinate("a.b.c", "foo", 1);
+        assertTrue(actual.matches(test));
     }
 }

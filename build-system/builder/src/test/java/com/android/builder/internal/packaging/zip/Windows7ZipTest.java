@@ -22,6 +22,6 @@ public class Windows7ZipTest extends ZipToolsTestCase {
     @Before
     public void setUp() {
         configure("windows-7zip.zip", new String[] { "c:\\Program Files\\7-Zip\\7z.exe", "l" },
-                "^(?:\\S+\\s+){3}(\\d+)\\S+\\d+\\s+(\\S+)\\s*$", 2, 1, true);
+                "^(?:\\S+\\s+){3}(\\d+)\\s+\\d+\\s+(\\S+)\\s*$", 2, 1, true);
     }
 }

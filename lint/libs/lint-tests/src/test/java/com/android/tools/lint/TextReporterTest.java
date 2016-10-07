@@ -220,8 +220,8 @@ public class TextReporterTest extends AbstractCheckTest {
                     + "   * The application cannot be translated to other languages by just adding\n"
                     + "   new translations for existing string resources.\n"
                     + "\n"
-                    + "   In Android Studio and Eclipse there are quickfixes to automatically extract\n"
-                    + "   this hardcoded string into a resource lookup.\n"
+                    + "   There are quickfixes to automatically extract this hardcoded string into a\n"
+                    + "   resource lookup.\n"
                     + "\n"
                     + "0 errors, 3 warnings\n",
                     report);

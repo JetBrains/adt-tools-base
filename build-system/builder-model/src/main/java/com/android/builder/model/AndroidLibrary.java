@@ -17,64 +17,14 @@
 package com.android.builder.model;
 
 import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
 
 import java.io.File;
 import java.util.Collection;
-import java.util.List;
 
 /**
- * Represents an Android Library dependency, its content and its own dependencies
+ * Represents an Android Library dependency, its content and its own dependencies.
  */
-public interface AndroidLibrary extends Library {
-
-    /**
-     * Returns an optional project identifier if the library is output
-     * by a module.
-     *
-     * @return the project identifier
-     */
-    @Nullable
-    String getProject();
-
-    /**
-     * Returns an optional configuration name if the library is output by a module
-     * that publishes more than one variant.
-     */
-    @Nullable
-    String getProjectVariant();
-
-    /**
-     * Returns the location of the library aar bundle.
-     */
-    @NonNull
-    File getBundle();
-
-    /**
-     * Returns the location of the unzipped bundle folder.
-     */
-    @NonNull
-    File getFolder();
-
-    /**
-     * Returns the direct dependency of this dependency. The order is important.
-     */
-    @NonNull
-    List<? extends AndroidLibrary> getLibraryDependencies();
-
-    /**
-     * Returns the location of the manifest.
-     */
-    @NonNull
-    File getManifest();
-
-    /**
-     * Returns the location of the jar file to use for packaging.
-     *
-     * @return a File for the jar file. The file may not point to an existing file.
-     */
-    @NonNull
-    File getJarFile();
+public interface AndroidLibrary extends AndroidBundle {
 
     /**
      * Returns the list of local Jar files that are included in the dependency.
@@ -158,6 +108,12 @@ public interface AndroidLibrary extends Library {
     File getPublicResources();
 
     /**
+     * Returns the location of the text symbol file
+     */
+    @NonNull
+    File getSymbolFile();
+
+    /**
      * Returns whether the library is considered optional, meaning that it may or may not
      * be present in the final APK.
      *
@@ -166,5 +122,13 @@ public interface AndroidLibrary extends Library {
      *   in the consumer R.txt
      * - if the consumer is a separate test project, all the resources gets skipped from merging.
      */
+    @Override
+    boolean isProvided();
+
+    /**
+     * @deprecated Use {@link #isProvided()} instead
+     */
+    @Deprecated
     boolean isOptional();
+
 }

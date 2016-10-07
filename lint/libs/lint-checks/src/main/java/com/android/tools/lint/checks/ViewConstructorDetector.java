@@ -18,40 +18,40 @@ package com.android.tools.lint.checks;
 
 import static com.android.SdkConstants.CLASS_ATTRIBUTE_SET;
 import static com.android.SdkConstants.CLASS_CONTEXT;
-import static com.android.tools.lint.client.api.JavaParser.ResolvedClass;
-import static com.android.tools.lint.client.api.JavaParser.ResolvedMethod;
 
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.tools.lint.client.api.JavaEvaluator;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Detector;
+import com.android.tools.lint.detector.api.Detector.JavaPsiScanner;
 import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.JavaContext;
 import com.android.tools.lint.detector.api.Location;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
-import com.android.tools.lint.detector.api.Speed;
+import com.intellij.psi.PsiAnonymousClass;
+import com.intellij.psi.PsiClass;
+import com.intellij.psi.PsiMethod;
+import com.intellij.psi.PsiParameter;
+import com.intellij.psi.PsiParameterList;
+import com.intellij.psi.PsiType;
 
-import java.lang.reflect.Modifier;
 import java.util.Collections;
 import java.util.List;
-
-import lombok.ast.ClassDeclaration;
-import lombok.ast.Node;
-import lombok.ast.NormalTypeBody;
 
 /**
  * Looks for custom views that do not define the view constructors needed by UI builders
  */
-public class ViewConstructorDetector extends Detector implements Detector.JavaScanner {
+public class ViewConstructorDetector extends Detector implements JavaPsiScanner {
     /** The main issue discovered by this detector */
     public static final Issue ISSUE = Issue.create(
             "ViewConstructor", //$NON-NLS-1$
             "Missing View constructors for XML inflation",
 
-            "Some layout tools (such as the Android layout editor for Studio & Eclipse) needs to " +
+            "Some layout tools (such as the Android layout editor) need to " +
             "find a constructor with one of the following signatures:\n" +
             "* `View(Context context)`\n" +
             "* `View(Context context, AttributeSet attrs)`\n" +
@@ -73,37 +73,35 @@ public class ViewConstructorDetector extends Detector implements Detector.JavaSc
     public ViewConstructorDetector() {
     }
 
-    @NonNull
-    @Override
-    public Speed getSpeed() {
-        return Speed.FAST;
-    }
-
     // ---- Implements JavaScanner ----
 
-    private static boolean isXmlConstructor(ResolvedMethod method) {
+    private static boolean isXmlConstructor(
+            @NonNull JavaEvaluator evaluator,
+            @NonNull PsiMethod method) {
         // Accept
         //   android.content.Context
         //   android.content.Context,android.util.AttributeSet
         //   android.content.Context,android.util.AttributeSet,int
-        int argumentCount = method.getArgumentCount();
+        PsiParameterList parameterList = method.getParameterList();
+        int argumentCount = parameterList.getParametersCount();
         if (argumentCount == 0 || argumentCount > 3) {
             return false;
         }
-        if (!method.getArgumentType(0).matchesName(CLASS_CONTEXT)) {
+        PsiParameter[] parameters = parameterList.getParameters();
+        if (!evaluator.typeMatches(parameters[0].getType(), CLASS_CONTEXT)) {
             return false;
         }
         if (argumentCount == 1) {
             return true;
         }
-        if (!method.getArgumentType(1).matchesName(CLASS_ATTRIBUTE_SET)) {
+        if (!evaluator.typeMatches(parameters[1].getType(), CLASS_ATTRIBUTE_SET)) {
             return false;
         }
         //noinspection SimplifiableIfStatement
         if (argumentCount == 2) {
             return true;
         }
-        return method.getArgumentType(2).matchesName("int");
+        return PsiType.INT.equals(parameters[2].getType());
     }
 
     @Nullable
@@ -113,29 +111,26 @@ public class ViewConstructorDetector extends Detector implements Detector.JavaSc
     }
 
     @Override
-    public void checkClass(@NonNull JavaContext context, @Nullable ClassDeclaration node,
-            @NonNull Node declarationOrAnonymous, @NonNull ResolvedClass resolvedClass) {
-        if (node == null) {
-            return;
-        }
-
+    public void checkClass(@NonNull JavaContext context, @NonNull PsiClass declaration) {
         // Only applies to concrete classes
-        int flags = node.astModifiers().getEffectiveModifierFlags();
-        // Ignore abstract classes
-        if ((flags & Modifier.ABSTRACT) != 0) {
+        JavaEvaluator evaluator = context.getEvaluator();
+        if (evaluator.isAbstract(declaration)
+                || evaluator.isPrivate(declaration)
+                || declaration instanceof PsiAnonymousClass) {
+            // Ignore abstract, private and anonymous classes
             return;
         }
 
-        if (node.getParent() instanceof NormalTypeBody
-                && ((flags & Modifier.STATIC) == 0)) {
+        if (declaration.getContainingClass() != null &&
+                !evaluator.isStatic(declaration)) {
             // Ignore inner classes that aren't static: we can't create these
             // anyway since we'd need the outer instance
             return;
         }
 
         boolean found = false;
-        for (ResolvedMethod constructor : resolvedClass.getConstructors()) {
-            if (isXmlConstructor(constructor)) {
+        for (PsiMethod constructor : declaration.getConstructors()) {
+            if (isXmlConstructor(evaluator, constructor)) {
                 found = true;
                 break;
             }
@@ -146,9 +141,9 @@ public class ViewConstructorDetector extends Detector implements Detector.JavaSc
                     "Custom view `%1$s` is missing constructor used by tools: "
                             + "`(Context)` or `(Context,AttributeSet)` "
                             + "or `(Context,AttributeSet,int)`",
-                    node.astName().astValue());
-            Location location = context.getLocation(node.astName());
-            context.report(ISSUE, node, location, message  /*data*/);
+                    declaration.getName());
+            Location location = context.getNameLocation(declaration);
+            context.report(ISSUE, declaration, location, message  /*data*/);
         }
     }
 }

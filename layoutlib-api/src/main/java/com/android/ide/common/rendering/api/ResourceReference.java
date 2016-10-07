@@ -53,7 +53,7 @@ public class ResourceReference {
 
     /**
      * Returns whether the resource is a framework resource (<code>true</code>) or a project
-     * resource (<code>false</false>).
+     * resource (<code>false</code>).
      */
     public final boolean isFramework() {
         return mIsFramework;

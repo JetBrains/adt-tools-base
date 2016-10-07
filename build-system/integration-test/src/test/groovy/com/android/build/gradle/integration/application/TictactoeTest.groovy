@@ -66,9 +66,8 @@ class  TictactoeTest {
 
         Collection<Variant> variants = appModel.getVariants()
         Variant debugVariant = ModelHelper.getVariant(variants, DEBUG)
-        assertNotNull("debug variant null-check", debugVariant)
 
-        Dependencies dependencies = debugVariant.getMainArtifact().getDependencies()
+        Dependencies dependencies = debugVariant.getMainArtifact().getCompileDependencies()
         assertNotNull(dependencies)
 
         Collection<AndroidLibrary> libs = dependencies.getLibraries()

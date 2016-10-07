@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="10dp">
+
+    <RelativeLayout
+        android:layout_margin="5dp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+        <com.android.profilerapp.memory.MemoryGraphView
+            android:layout_marginTop="5dp"
+            android:id="@+id/graphArtHeap"
+            android:layout_width="match_parent"
+            android:layout_height="60dp" />
+        <TextView
+            android:id="@+id/textArtHeap"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="ART:" />
+    </RelativeLayout>
+
+    <RelativeLayout
+        android:layout_margin="5dp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+        <com.android.profilerapp.memory.MemoryGraphView
+            android:layout_marginTop="5dp"
+            android:id="@+id/graphNativeHeap"
+            android:layout_width="match_parent"
+            android:layout_height="60dp" />
+        <TextView
+            android:id="@+id/textNativeHeap"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Native:" />
+    </RelativeLayout>
+
+    <RelativeLayout
+        android:layout_margin="5dp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+        <com.android.profilerapp.memory.MemoryGraphView
+            android:layout_marginTop="5dp"
+            android:id="@+id/graphPss"
+            android:layout_width="match_parent"
+            android:layout_height="60dp" />
+        <TextView
+            android:id="@+id/textPss"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="PSS:" />
+    </RelativeLayout>
+
+    <RelativeLayout
+        android:layout_margin="5dp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+        <com.android.profilerapp.memory.MemorySmapsView
+            android:layout_marginTop="5dp"
+            android:id="@+id/mappingPss"
+            android:layout_width="match_parent"
+            android:layout_height="100dp" />
+        <Button
+            android:id="@+id/buttonGatherSmapsInfo"
+            style="@style/smallButtonStyle"
+            android:text="Update"
+            android:layout_alignParentRight="true"
+            android:layout_alignParentTop="true"/>
+        <TextView
+            android:id="@+id/textUsage"
+            android:text="smaps Layout:"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
+    </RelativeLayout>
+
+
+    <LinearLayout android:orientation="horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+        <Button
+            android:id="@+id/buttonToggleProfile"
+            style="@style/smallButtonStyle"
+            android:text="Start"/>
+        <Button
+            android:id="@+id/buttonClearGraphs"
+            style="@style/smallButtonStyle"
+            android:text="Clear"/>
+        <Button
+            android:id="@+id/buttonForceGc"
+            style="@style/smallButtonStyle"
+            android:text="GC"/>
+    </LinearLayout>
+
+    <LinearLayout android:orientation="horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+        <Button
+            android:id="@+id/buttonAllocateBigInt"
+            style="@style/smallButtonStyle"
+            android:text="1Mb Int"/>
+        <Button
+            android:id="@+id/buttonAllocateBigIntUninit"
+            style="@style/smallButtonStyle"
+            android:text="(uninit)"/>
+        <Button
+            android:id="@+id/buttonReleaseBigInts"
+            style="@style/smallButtonStyle"
+            android:text="Release"/>
+        <Button
+            android:id="@+id/buttonIntChurn"
+            style="@style/smallButtonStyle"
+            android:text="Start Churn"/>
+    </LinearLayout>
+
+    <LinearLayout android:orientation="horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+        <Button
+            android:id="@+id/buttonBigBitmap"
+            style="@style/smallButtonStyle"
+            android:text="1Mb Bitmap"/>
+        <Button
+            android:id="@+id/buttonBigBitmapUninit"
+            style="@style/smallButtonStyle"
+            android:text="(uninit)"/>
+        <Button
+            android:id="@+id/buttonReleaseBigBitmaps"
+            style="@style/smallButtonStyle"
+            android:text="Release"/>
+        <Button
+            android:id="@+id/buttonBitmapChurn"
+            style="@style/smallButtonStyle"
+            android:text="Start Churn"
+            android:onClick="toggleChurnBitmapAllocation"/>
+    </LinearLayout>
+
+    <LinearLayout android:orientation="horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+        <Button
+            android:id="@+id/buttonJniBigArray"
+            style="@style/smallButtonStyle"
+            android:text="1Mb JNI"/>
+        <Button
+            android:id="@+id/buttonAllocateJniBigArrayUninit"
+            style="@style/smallButtonStyle"
+            android:text="(uninit)"/>
+        <Button
+            android:id="@+id/buttonReleaseJniBigArrays"
+            style="@style/smallButtonStyle"
+            android:text="Release"/>
+        <Button
+            android:id="@+id/buttonLeakAllocatedJniBigArrays"
+            style="@style/smallButtonStyle"
+            android:text="Leak"/>
+        <Button
+            android:id="@+id/buttonNativeChurn"
+            style="@style/smallButtonStyle"
+            android:text="Start Churn"/>
+    </LinearLayout>
+
+</LinearLayout>

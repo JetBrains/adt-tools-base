@@ -20,13 +20,13 @@ import com.android.ddmlib.Log.LogLevel;
 
 /**
  * Preferences for the ddm library.
- * <p/>This class does not handle storing the preferences. It is merely a central point for
+ * <p>This class does not handle storing the preferences. It is merely a central point for
  * applications using the ddmlib to override the default values.
- * <p/>Various components of the ddmlib query this class to get their values.
- * <p/>Calls to some <code>set##()</code> methods will update the components using the values
+ * <p>Various components of the ddmlib query this class to get their values.
+ * <p>Calls to some <code>set##()</code> methods will update the components using the values
  * right away, while other methods will have no effect once {@link AndroidDebugBridge#init(boolean)}
  * has been called.
- * <p/>Check the documentation of each method.
+ * <p>Check the documentation of each method.
  */
 public final class DdmPreferences {
 
@@ -70,7 +70,7 @@ public final class DdmPreferences {
 
     /**
      * Sets the initial {@link Client} flag for thread updates.
-     * <p/>This change takes effect right away, for newly created {@link Client} objects.
+     * <p>This change takes effect right away, for newly created {@link Client} objects.
      */
     public static void setInitialThreadUpdate(boolean state) {
         sThreadUpdate = state;
@@ -86,9 +86,9 @@ public final class DdmPreferences {
 
     /**
      * Sets the initial {@link Client} flag for heap updates.
-     * <p/>If <code>true</code>, the {@link ClientData} will automatically be updated with
+     * <p>If <code>true</code>, the {@link ClientData} will automatically be updated with
      * the VM heap information whenever a GC happens.
-     * <p/>This change takes effect right away, for newly created {@link Client} objects.
+     * <p>This change takes effect right away, for newly created {@link Client} objects.
      */
     public static void setInitialHeapUpdate(boolean state) {
         sInitialHeapUpdate = state;
@@ -103,7 +103,7 @@ public final class DdmPreferences {
 
     /**
      * Sets the debug port used by the selected {@link Client}.
-     * <p/>This change takes effect right away.
+     * <p>This change takes effect right away.
      * @param port the new port to use.
      */
     public static void setSelectedDebugPort(int port) {
@@ -125,9 +125,9 @@ public final class DdmPreferences {
 
     /**
      * Sets the debug port used by the first {@link Client}.
-     * <p/>Once a port is used, the next Client will use port + 1. Quitting applications will
+     * <p>Once a port is used, the next Client will use port + 1. Quitting applications will
      * release their debug port, and new clients will be able to reuse them.
-     * <p/>This must be called before {@link AndroidDebugBridge#init(boolean)}.
+     * <p>This must be called before {@link AndroidDebugBridge#init(boolean)}.
      */
     public static void setDebugPortBase(int port) {
         sDebugPortBase = port;
@@ -142,7 +142,7 @@ public final class DdmPreferences {
 
     /**
      * Sets the minimum {@link LogLevel} to display.
-     * <p/>This change takes effect right away.
+     * <p>This change takes effect right away.
      */
     public static void setLogLevel(String value) {
         sLogLevel = LogLevel.getByString(value);
@@ -159,7 +159,7 @@ public final class DdmPreferences {
 
     /**
      * Sets the timeout value for adb connection.
-     * <p/>This change takes effect for newly created connections only.
+     * <p>This change takes effect for newly created connections only.
      * @param timeOut the timeout value (milliseconds).
      */
     public static void setTimeOut(int timeOut) {

@@ -17,14 +17,19 @@
 package com.android.build.gradle.integration.common.fixture.app;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
+import com.android.build.gradle.integration.common.fixture.TestProject;
+import com.google.common.io.Files;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.charset.Charset;
 import java.util.List;
 
 /**
  * a Java Module with no files.
  */
-public class JavaGradleModule extends GradleModule {
+public class JavaGradleModule extends GradleModule implements TestProject{
 
     public JavaGradleModule(
             @NonNull File moduleDir,
@@ -42,6 +47,28 @@ public class JavaGradleModule extends GradleModule {
     @Override
     public void createFiles() {
         // do nothing
+    }
+
+    @Override
+    public void write(@NonNull File projectDir, @Nullable String buildScriptContent)
+            throws IOException {
+        File sources = new File(projectDir, "src/main");
+        sources.mkdirs();
+
+        File resources = new File(projectDir, "src/resources");
+        resources.mkdirs();
+
+        if (buildScriptContent == null || buildScriptContent.isEmpty())
+            buildScriptContent = getBuildGradleContent();
+
+        Files.append(buildScriptContent,
+                new File(projectDir, "build.gradle"),
+                Charset.defaultCharset());
+    }
+
+    @Override
+    public boolean containsFullBuildScript() {
+        return false;
     }
 }
 

@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.integration.application
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
+import com.android.build.gradle.integration.common.utils.AssumeUtil
 import com.android.build.gradle.integration.common.utils.ModelHelper
 import com.android.builder.model.AndroidArtifact
 import com.android.builder.model.AndroidArtifactOutput
@@ -46,7 +47,7 @@ class OutputRenamingTest {
 
     @BeforeClass
     static void setup() {
-        GradleTestProject.assumeBuildToolsAtLeast(21)
+        AssumeUtil.assumeBuildToolsAtLeast(21)
         project.getBuildFile() << """android {
 applicationVariants.all { variant ->
     // Custom APK names (do not do this for 'dev' build type)
@@ -83,9 +84,8 @@ applicationVariants.all { variant ->
         assertFileRenaming(RELEASE)
     }
 
-    private assertFileRenaming(String buildType) {
+    private static void assertFileRenaming(String buildType) {
         Variant variant = ModelHelper.getVariant(model.getVariants(), buildType)
-        assertNotNull("Variant null-check", variant)
         AndroidArtifact mainArtifact = variant.getMainArtifact()
         assertNotNull("main info null-check", mainArtifact)
 

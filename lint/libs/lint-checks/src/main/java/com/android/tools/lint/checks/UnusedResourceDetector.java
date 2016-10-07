@@ -16,10 +16,14 @@
 
 package com.android.tools.lint.checks;
 
+import static com.android.SdkConstants.ATTR_DISCARD;
+import static com.android.SdkConstants.ATTR_KEEP;
 import static com.android.SdkConstants.ATTR_NAME;
+import static com.android.SdkConstants.ATTR_SHRINK_MODE;
 import static com.android.SdkConstants.DOT_JAVA;
 import static com.android.SdkConstants.DOT_XML;
-import static com.android.SdkConstants.R_CLASS;
+import static com.android.SdkConstants.TOOLS_PREFIX;
+import static com.android.SdkConstants.XMLNS_PREFIX;
 import static com.android.tools.lint.detector.api.LintUtils.findSubstring;
 import static com.android.utils.SdkUtils.endsWithIgnoreCase;
 import static com.google.common.base.Charsets.UTF_8;
@@ -33,16 +37,14 @@ import com.android.builder.model.ProductFlavor;
 import com.android.builder.model.ProductFlavorContainer;
 import com.android.builder.model.SourceProvider;
 import com.android.builder.model.Variant;
+import com.android.ide.common.resources.ResourceUrl;
 import com.android.resources.ResourceFolderType;
 import com.android.resources.ResourceType;
 import com.android.tools.lint.checks.ResourceUsageModel.Resource;
-import com.android.tools.lint.client.api.JavaParser.ResolvedClass;
-import com.android.tools.lint.client.api.JavaParser.ResolvedField;
-import com.android.tools.lint.client.api.JavaParser.ResolvedNode;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Context;
 import com.android.tools.lint.detector.api.Detector.BinaryResourceScanner;
-import com.android.tools.lint.detector.api.Detector.JavaScanner;
+import com.android.tools.lint.detector.api.Detector.JavaPsiScanner;
 import com.android.tools.lint.detector.api.Detector.XmlScanner;
 import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
@@ -51,6 +53,7 @@ import com.android.tools.lint.detector.api.LintUtils;
 import com.android.tools.lint.detector.api.Location;
 import com.android.tools.lint.detector.api.Project;
 import com.android.tools.lint.detector.api.ResourceContext;
+import com.android.tools.lint.detector.api.ResourceEvaluator;
 import com.android.tools.lint.detector.api.ResourceXmlDetector;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
@@ -60,9 +63,16 @@ import com.android.utils.XmlUtils;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.common.io.Files;
+import com.intellij.psi.JavaElementVisitor;
+import com.intellij.psi.JavaRecursiveElementVisitor;
+import com.intellij.psi.PsiElement;
+import com.intellij.psi.PsiField;
+import com.intellij.psi.PsiImportStaticStatement;
+import com.intellij.psi.PsiReferenceExpression;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 
 import java.io.File;
@@ -72,23 +82,14 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.EnumSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import lombok.ast.AstVisitor;
-import lombok.ast.ClassDeclaration;
-import lombok.ast.CompilationUnit;
-import lombok.ast.ForwardingAstVisitor;
-import lombok.ast.Identifier;
-import lombok.ast.ImportDeclaration;
-import lombok.ast.VariableReference;
-
 /**
  * Finds unused resources.
  */
-public class UnusedResourceDetector extends ResourceXmlDetector implements JavaScanner,
+public class UnusedResourceDetector extends ResourceXmlDetector implements JavaPsiScanner,
         BinaryResourceScanner, XmlScanner {
 
     private static final Implementation IMPLEMENTATION = new Implementation(
@@ -123,8 +124,10 @@ public class UnusedResourceDetector extends ResourceXmlDetector implements JavaS
     private final UnusedResourceDetectorUsageModel mModel =
             new UnusedResourceDetectorUsageModel();
 
-    /** Whether the resource detector will look for inactive resources (e.g. resource and code references
-     * in source sets that are not the primary/active variant) */
+    /**
+     * Whether the resource detector will look for inactive resources (e.g. resource and code
+     * references in source sets that are not the primary/active variant)
+     */
     public static boolean sIncludeInactiveReferences = true;
 
     /**
@@ -326,6 +329,9 @@ public class UnusedResourceDetector extends ResourceXmlDetector implements JavaS
                     // Keep in sync with getUnusedResource() below
                     String message = String.format("The resource `%1$s` appears to be unused",
                             resource.getField());
+                    if (location == null) {
+                        location = Location.create(context.getProject().getDir());
+                    }
                     context.report(getIssue(resource), location, message);
                 }
             }
@@ -510,11 +516,19 @@ public class UnusedResourceDetector extends ResourceXmlDetector implements JavaS
     // ---- Implements JavaScanner ----
 
     @Override
-    public List<Class<? extends lombok.ast.Node>> getApplicableNodeTypes() {
-        //noinspection unchecked
-        return Arrays.<Class<? extends lombok.ast.Node>>asList(
-                ClassDeclaration.class,
-                ImportDeclaration.class);
+    public List<Class<? extends PsiElement>> getApplicablePsiTypes() {
+        return Collections.<Class<? extends PsiElement>>singletonList(PsiImportStaticStatement.class);
+    }
+
+    @Nullable
+    @Override
+    public JavaElementVisitor createPsiVisitor(@NonNull JavaContext context) {
+        if (context.getDriver().getPhase() == 1) {
+            return new UnusedResourceVisitor();
+        } else {
+            // Second pass, computing resource declaration locations: No need to look at Java
+            return null;
+        }
     }
 
     @Override
@@ -523,138 +537,54 @@ public class UnusedResourceDetector extends ResourceXmlDetector implements JavaS
     }
 
     @Override
-    public void visitResourceReference(@NonNull JavaContext context, @Nullable AstVisitor visitor,
-            @NonNull lombok.ast.Node node, @NonNull String type, @NonNull String name,
-            boolean isFramework) {
+    public void visitResourceReference(@NonNull JavaContext context,
+            @Nullable JavaElementVisitor visitor, @NonNull PsiElement node,
+            @NonNull ResourceType type, @NonNull String name, boolean isFramework) {
         if (!isFramework) {
-            ResourceType t = ResourceType.getEnum(type);
-            assert t != null : type;
-            ResourceUsageModel.markReachable(mModel.addResource(t, name, null));
-        }
-    }
-
-    @Override
-    public AstVisitor createJavaVisitor(@NonNull JavaContext context) {
-        if (context.getDriver().getPhase() == 1) {
-            return new UnusedResourceVisitor(context);
-        } else {
-            // Second pass, computing resource declaration locations: No need to look at Java
-            return null;
+            ResourceUsageModel.markReachable(mModel.addResource(type, name, null));
         }
     }
 
     // Look for references and declarations
-    private class UnusedResourceVisitor extends ForwardingAstVisitor {
-        private final JavaContext mContext;
-
-        public UnusedResourceVisitor(JavaContext context) {
-            mContext = context;
+    private class UnusedResourceVisitor extends JavaElementVisitor {
+        public UnusedResourceVisitor() {
         }
 
         @Override
-        public boolean visitClassDeclaration(ClassDeclaration node) {
-            // Look for declarations of R class fields and record them as declarations
-            String description = node.astName().astValue();
-            if (description.equals(R_CLASS)) {
-                // Don't visit R class declarations; we don't need to look at R declarations
-                // since we now look for all the same resource declarations that the R
-                // class itself was derived from.
-                return true;
-            }
-
-            return false;
-        }
-
-        @Override
-        public boolean visitImportDeclaration(ImportDeclaration node) {
-            if (node.astStaticImport()) {
-                // import static pkg.R.type.name;
-                //   or
-                // import static pkg.R.type.*;
-                Iterator<Identifier> iterator = node.astParts().iterator();
-                while (iterator.hasNext()) {
-                    String identifier = iterator.next().astValue();
-                    if (identifier.equals(R_CLASS)) {
-                        if (iterator.hasNext()) {
-                            String typeString = iterator.next().astValue();
-                            ResourceType type = ResourceType.getEnum(typeString);
-                            if (type != null) {
-                                if (iterator.hasNext()) {
-                                    // import static pkg.R.type.name;
-                                    String name = iterator.next().astValue();
-                                    Resource resource = mModel.addResource(type, name, null);
-                                    ResourceUsageModel.markReachable(resource);
-                                } else if (!mScannedForStaticImports) {
-                                    // wildcard import of whole type:
-                                    // import static pkg.R.type.*;
-                                    // We have to do a more expensive analysis here to
-                                    // for example recognize "x" as a reference to R.string.x
-                                    mScannedForStaticImports = true;
-                                    CompilationUnit unit = node.upToCompilationUnit();
-                                    scanForStaticImportReferences(unit);
-                                }
-                            }
-                        }
-                        break;
-                    }
-                }
-            } else if (!mScannedForStaticImports) {
-                String last = node.astParts().last().astValue();
-                if (Character.isLowerCase(last.charAt(0))) {
-                    Iterator<Identifier> iterator = node.astParts().iterator();
-                    while (iterator.hasNext()) {
-                        String identifier = iterator.next().astValue();
-                        if (identifier.equals(R_CLASS)) {
-                            if (iterator.hasNext()) {
-                                String typeString = iterator.next().astValue();
-                                ResourceType type = ResourceType.getEnum(typeString);
-                                if (type != null && !iterator.hasNext()) {
-                                    // Import a type as a class:
-                                    // import pkg.R.type;
-                                    // We have to do a more expensive analysis here to
-                                    // for example recognize "string.x" as a reference to R.string.x
-                                    mScannedForStaticImports = true;
-                                    CompilationUnit unit = node.upToCompilationUnit();
-                                    scanForStaticImportReferences(unit);
-                                }
-                            }
-                            break;
-                        }
-                    }
-                }
-            }
-
-            return false;
-        }
-
-        private void scanForStaticImportReferences(@Nullable CompilationUnit unit) {
-            if (unit == null) {
+        public void visitImportStaticStatement(PsiImportStaticStatement statement) {
+            if (mScannedForStaticImports) {
                 return;
             }
-            unit.accept(new ForwardingAstVisitor() {
-                @Override
-                public boolean visitVariableReference(
-                        VariableReference node) {
-                    ResolvedNode resolved = mContext.resolve(node);
-                    if (resolved instanceof ResolvedField) {
-                        ResolvedField field = (ResolvedField) resolved;
-                        ResolvedClass typeClass = field.getContainingClass();
-                        if (typeClass != null) {
-                            ResolvedClass rClass = typeClass.getContainingClass();
-                            if (rClass != null && R_CLASS.equals(rClass.getSimpleName())) {
-                                ResourceType type = ResourceType.getEnum(typeClass.getSimpleName());
-                                if (type != null) {
-                                    Resource resource = mModel.addResource(type, field.getName(),
-                                            null);
-                                    ResourceUsageModel.markReachable(resource);
-                                }
+            if (statement.isOnDemand()) {
+                // Wildcard import of whole type:
+                // import static pkg.R.type.*;
+                // We have to do a more expensive analysis here to
+                // for example recognize "x" as a reference to R.string.x
+                mScannedForStaticImports = true;
+                statement.getContainingFile().accept(new JavaRecursiveElementVisitor() {
+                    @Override
+                    public void visitReferenceExpression(PsiReferenceExpression expression) {
+                        PsiElement resolved = expression.resolve();
+                        if (resolved instanceof PsiField) {
+                            ResourceUrl url = ResourceEvaluator.getResourceConstant(resolved);
+                            if (url != null && !url.framework) {
+                                Resource resource = mModel.addResource(url.type, url.name, null);
+                                ResourceUsageModel.markReachable(resource);
                             }
                         }
-
+                        super.visitReferenceExpression(expression);
                     }
-                    return super.visitVariableReference(node);
+                });
+            } else {
+                PsiElement resolved = statement.resolve();
+                if (resolved instanceof PsiField) {
+                    ResourceUrl url = ResourceEvaluator.getResourceConstant(resolved);
+                    if (url != null && !url.framework) {
+                        Resource resource = mModel.addResource(url.type, url.name, null);
+                        ResourceUsageModel.markReachable(resource);
+                    }
                 }
-            });
+            }
         }
 
         private boolean mScannedForStaticImports;
@@ -703,9 +633,49 @@ public class UnusedResourceDetector extends ResourceXmlDetector implements JavaS
                         }
                     }
                 }
+
+                if (type == ResourceType.RAW &&isKeepFile(name, xmlContext)) {
+                    // Don't flag raw.keep: these are used for resource shrinking
+                    // keep lists
+                    //    http://tools.android.com/tech-docs/new-build-system/resource-shrinking
+                    resource.setReachable(true);
+                }
             }
 
             return resource;
+        }
+
+        private static boolean isKeepFile(
+          @NonNull String name,
+          @Nullable XmlContext xmlContext) {
+            if ("keep".equals(name)) {
+                return true;
+            }
+
+            if (xmlContext != null && xmlContext.document != null) {
+                Element element = xmlContext.document.getDocumentElement();
+                if (element != null && element.getFirstChild() == null) {
+                    NamedNodeMap attributes = element.getAttributes();
+                    boolean found = false;
+                    for (int i = 0, n = attributes.getLength(); i < n; i++) {
+                        Node attr = attributes.item(i);
+                        String nodeName = attr.getNodeName();
+                        if (!nodeName.startsWith(XMLNS_PREFIX)
+                                && !nodeName.startsWith(TOOLS_PREFIX)) {
+                            return false;
+                        } else if (nodeName.endsWith(ATTR_SHRINK_MODE) ||
+                                nodeName.endsWith(ATTR_DISCARD) ||
+                                nodeName.endsWith(ATTR_KEEP)) {
+                            found = true;
+                        }
+                    }
+
+                    return found;
+                }
+            }
+
+
+            return false;
         }
     }
 }

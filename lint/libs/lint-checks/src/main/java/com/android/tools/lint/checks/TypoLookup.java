@@ -243,10 +243,10 @@ public class TypoLookup {
             // First skip the header
             byte[] expectedHeader = FILE_HEADER.getBytes(Charsets.US_ASCII);
             buffer.rewind();
-            for (int offset = 0; offset < expectedHeader.length; offset++) {
-                if (expectedHeader[offset] != buffer.get()) {
+            for (byte anExpectedHeader : expectedHeader) {
+                if (anExpectedHeader != buffer.get()) {
                     client.log(null, "Incorrect file header: not an typo database cache " +
-                            "file, or a corrupt cache file");
+                                     "file, or a corrupt cache file");
                     return;
                 }
             }
@@ -378,15 +378,14 @@ public class TypoLookup {
         // 7. Word entry table. Each word entry consists of the word, followed by the byte 0
         //      as a terminator, followed by a comma separated list of suggestions (which
         //      may be empty), or a final 0.
-        for (int i = 0; i < entryCount; i++) {
-            byte[] word = wordArrays[i];
+        for (byte[] word : wordArrays) {
             buffer.position(nextOffset);
             buffer.putInt(nextEntry);
             nextOffset = buffer.position();
             buffer.position(nextEntry);
 
             buffer.put(word); // already embeds 0 to separate typo from words
-            buffer.put((byte) 0);
+            buffer.put((byte)0);
 
             nextEntry = buffer.position();
         }
@@ -436,7 +435,7 @@ public class TypoLookup {
             byte b = data[i];
             if (b == ' ') {
                 // We've matched up to the space in a split-word typo, such as
-                // in German all zu=>allzu; here we've matched just past "all".
+                // in German all zu⇒allzu; here we've matched just past "all".
                 // Rather than terminating, attempt to continue in the buffer.
                 if (j == end) {
                     int max = s.length();
@@ -492,10 +491,10 @@ public class TypoLookup {
             byte b = data[i];
             if (b == ' ') {
                 // We've matched up to the space in a split-word typo, such as
-                // in German all zu=>allzu; here we've matched just past "all".
+                // in German all zu⇒allzu; here we've matched just past "all".
                 // Rather than terminating, attempt to continue in the buffer.
                 // We've matched up to the space in a split-word typo, such as
-                // in German all zu=>allzu; here we've matched just past "all".
+                // in German all zu⇒allzu; here we've matched just past "all".
                 // Rather than terminating, attempt to continue in the buffer.
                 if (j == end) {
                     int max = s.length;

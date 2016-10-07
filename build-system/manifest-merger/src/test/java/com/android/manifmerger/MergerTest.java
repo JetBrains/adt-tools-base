@@ -163,7 +163,7 @@ public class MergerTest extends TestCase {
         final String[] args = { "--main", "src/main/AndroidManifest.xml",
                 "--property", "min_sdk_version=19" };
         new MergerWithMock().process(args);
-        verify(mInvoker).setOverride(ManifestMerger2.SystemProperty.MIN_SDK_VERSION, "19");
+        verify(mInvoker).setOverride(ManifestSystemProperty.MIN_SDK_VERSION, "19");
         verify(mInvoker).merge();
         verifyNoMoreInteractions(mInvoker);
     }
@@ -269,7 +269,7 @@ public class MergerTest extends TestCase {
         verify(mInvoker).addFlavorAndBuildTypeManifest(new File("src/flavor1/AndroidManifest.xml"));
         verify(mInvoker).addFlavorAndBuildTypeManifest(new File("src/flavor2/AndroidManifest.xml"));
         verify(mInvoker).addFlavorAndBuildTypeManifest(new File("src/flavor3/AndroidManifest.xml"));
-        verify(mInvoker).setOverride(ManifestMerger2.SystemProperty.MAX_SDK_VERSION, "21");
+        verify(mInvoker).setOverride(ManifestSystemProperty.MAX_SDK_VERSION, "21");
         verify(mInvoker).setPlaceHolderValue("Foo", "bar");
         verify(mInvoker).merge();
         verifyNoMoreInteractions(mInvoker);

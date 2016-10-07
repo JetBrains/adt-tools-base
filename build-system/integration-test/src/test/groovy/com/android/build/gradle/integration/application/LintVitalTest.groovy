@@ -20,6 +20,7 @@ import com.android.build.gradle.integration.common.fixture.app.AndroidTestApp
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
 import com.google.common.base.Throwables
 import org.gradle.tooling.BuildException
+import org.junit.Assume
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -40,6 +41,7 @@ class LintVitalTest {
 
     @Before
     public void setUp() {
+        Assume.assumeFalse("Disabled until lintVital supports Jack", GradleTestProject.USE_JACK)
 
         project.getBuildFile() << """
 apply plugin: 'com.android.application'

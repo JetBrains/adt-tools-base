@@ -16,11 +16,17 @@
 
 package com.android.tools.lint.detector.api;
 
+import com.intellij.psi.JavaRecursiveElementVisitor;
+import com.intellij.psi.PsiExpression;
+import com.intellij.psi.PsiJavaFile;
+import com.intellij.psi.PsiLocalVariable;
+
 import junit.framework.TestCase;
 
 import org.intellij.lang.annotations.Language;
 
 import java.io.File;
+import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicReference;
 
 import lombok.ast.CompilationUnit;
@@ -30,8 +36,66 @@ import lombok.ast.VariableDefinitionEntry;
 
 @SuppressWarnings("ClassNameDiffersFromFileName")
 public class ConstantEvaluatorTest extends TestCase {
-    private static void check(Object expected, @Language("JAVA") String source,
+    private static void checkPsi(Object expected, @Language("JAVA") String source,
             final String targetVariable) {
+        JavaContext context = LintUtilsTest.parsePsi(source, new File("src/test/pkg/Test.java"));
+        assertNotNull(context);
+        PsiJavaFile javaFile = context.getJavaFile();
+        assertNotNull(javaFile);
+
+        // Find the expression
+        final AtomicReference<PsiExpression> reference = new AtomicReference<PsiExpression>();
+        javaFile.accept(new JavaRecursiveElementVisitor() {
+            @Override
+            public void visitLocalVariable(PsiLocalVariable variable) {
+                super.visitLocalVariable(variable);
+                String name = variable.getName();
+                if (name != null && name.equals(targetVariable)) {
+                    reference.set(variable.getInitializer());
+                }
+            }
+        });
+        PsiExpression expression = reference.get();
+        Object actual = ConstantEvaluator.evaluate(context, expression);
+        if (expected == null) {
+            assertNull(actual);
+        } else {
+            assertNotNull("Couldn't compute value for " + source + ", expected " + expected,
+                    actual);
+            assertEquals(expected.getClass(), actual.getClass());
+            if (expected instanceof Object[] && actual instanceof Object[]) {
+                assertEquals(Arrays.toString((Object[]) expected),
+                        Arrays.toString((Object[]) actual));
+                assertTrue(Arrays.equals((Object[]) expected, (Object[]) actual));
+            } else if (expected instanceof int[] && actual instanceof int[]) {
+                assertEquals(Arrays.toString((int[]) expected),
+                        Arrays.toString((int[]) actual));
+            } else if (expected instanceof boolean[] && actual instanceof boolean[]) {
+                assertEquals(Arrays.toString((boolean[]) expected),
+                        Arrays.toString((boolean[]) actual));
+            } else if (expected instanceof byte[] && actual instanceof byte[]) {
+                assertEquals(Arrays.toString((byte[]) expected),
+                        Arrays.toString((byte[]) actual));
+            } else {
+                assertEquals(expected.toString(), actual.toString());
+                assertEquals(expected, actual);
+            }
+        }
+        if (expected instanceof String) {
+            assertEquals(expected, ConstantEvaluator.evaluateString(context, expression,
+                    false));
+        }
+    }
+
+    private void check(Object expected, @Language("JAVA") String source,
+            final String targetVariable) {
+        checkPsi(expected, source, targetVariable);
+
+        if (getName().equals("testArrays")) {
+            // Not correctly implemented in old Lombok based lookup
+            return;
+        }
+
         JavaContext context = LintUtilsTest.parse(source, new File("src/test/pkg/Test.java"));
         assertNotNull(context);
         CompilationUnit unit = (CompilationUnit) context.getCompilationUnit();
@@ -65,7 +129,7 @@ public class ConstantEvaluatorTest extends TestCase {
         }
     }
 
-    private static void checkStatements(Object expected, String statementsSource,
+    private void checkStatements(Object expected, String statementsSource,
             final String targetVariable) {
         @Language("JAVA")
         String source = ""
@@ -82,7 +146,7 @@ public class ConstantEvaluatorTest extends TestCase {
         check(expected, source, targetVariable);
     }
 
-    private static void checkExpression(Object expected, String expressionSource) {
+    private void checkExpression(Object expected, String expressionSource) {
         @Language("JAVA")
         String source = ""
                 + "package test.pkg;\n"
@@ -102,6 +166,12 @@ public class ConstantEvaluatorTest extends TestCase {
         checkExpression(null, "null");
         checkExpression("hello", "\"hello\"");
         checkExpression("abcd", "\"ab\" + \"cd\"");
+    }
+
+    public void testArrays() throws Exception {
+        checkExpression(new int[] {1, 2, 3}, "new int[] { 1,2,3] }");
+        checkExpression(new int[0], "new int[0]");
+        checkExpression(new byte[0], "new byte[0]");
     }
 
     public void testBooleans() throws Exception {

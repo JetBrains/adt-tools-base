@@ -23,9 +23,6 @@ import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Test
 
-/**
- * Created by jedo on 9/1/15.
- */
 class SeparateTestModuleWithAppDependenciesTest {
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()

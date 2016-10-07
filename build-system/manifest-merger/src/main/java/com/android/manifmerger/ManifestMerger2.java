@@ -24,21 +24,16 @@ import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.annotations.concurrency.Immutable;
-import com.android.ide.common.blame.SourceFilePosition;
-import com.android.ide.common.blame.SourcePosition;
 import com.android.utils.ILogger;
 import com.android.utils.Pair;
-import com.android.utils.SdkUtils;
-import com.android.utils.XmlUtils;
 import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Sets;
 
 import org.w3c.dom.Attr;
-import org.w3c.dom.Element;
-import org.w3c.dom.NodeList;
 
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -67,7 +62,7 @@ public class ManifestMerger2 {
     private final Map<String, Object> mPlaceHolderValues;
 
     @NonNull
-    private final KeyBasedValueResolver<SystemProperty> mSystemPropertyResolver;
+    private final KeyBasedValueResolver<ManifestSystemProperty> mSystemPropertyResolver;
 
     @NonNull
     private final ILogger mLogger;
@@ -91,7 +86,7 @@ public class ManifestMerger2 {
             @NonNull ImmutableList<File> flavorsAndBuildTypeFiles,
             @NonNull ImmutableList<Invoker.Feature> optionalFeatures,
             @NonNull Map<String, Object> placeHolderValues,
-            @NonNull KeyBasedValueResolver<SystemProperty> systemPropertiesResolver,
+            @NonNull KeyBasedValueResolver<ManifestSystemProperty> systemPropertiesResolver,
             @NonNull MergeType mergeType,
             @NonNull Optional<File> reportFile,
             @NonNull FileStreamProvider fileStreamProvider) {
@@ -261,12 +256,7 @@ public class ManifestMerger2 {
             // when a library failed a placeholder substitution, but the element might have
             // been overridden so the problem was transient. However, with the final document
             // ready, all placeholders values must have been provided.
-            KeyBasedValueResolver<String> placeHolderValueResolver =
-                    new MapBasedKeyBasedValueResolver<String>(mPlaceHolderValues);
-            PlaceholderHandler.visit(
-                    mMergeType,
-                    xmlDocumentOptional.get(),
-                    placeHolderValueResolver,
+            performPlaceHolderSubstitution(loadedMainManifestInfo, xmlDocumentOptional.get(),
                     mergingReportBuilder);
             if (mergingReportBuilder.hasErrors()) {
                 return mergingReportBuilder.build();
@@ -301,23 +291,31 @@ public class ManifestMerger2 {
         if (document == null) {
             return;
         }
-        // only remove tools annotations if we are packaging an application.
-        if (mOptionalFeatures.contains(Invoker.Feature.REMOVE_TOOLS_DECLARATIONS)) {
-            document = ToolsInstructionsCleaner.cleanToolsReferences(document, mLogger);
-        }
 
+        // perform tools: annotations removal if requested.
+        if (mOptionalFeatures.contains(Invoker.Feature.REMOVE_TOOLS_DECLARATIONS)) {
+            document = ToolsInstructionsCleaner.cleanToolsReferences(mMergeType, document, mLogger);
+        }
         if (document != null) {
             if (mOptionalFeatures.contains(Invoker.Feature.EXTRACT_FQCNS)) {
                 extractFcqns(document);
             }
-            mergingReport.setMergedDocument(
-                    MergingReport.MergedManifestKind.MERGED, document.prettyPrint());
 
-            try {
-                mergingReport.setMergedDocument(MergingReport.MergedManifestKind.BLAME,
-                        mergingReport.blame(document));
-            } catch (Exception e) {
-                mLogger.error(e, "Error while saving blame file, build will continue");
+            mergingReport.setMergedXmlDocument(
+              MergingReport.MergedManifestKind.MERGED, document);
+            if (!mOptionalFeatures.contains(Invoker.Feature.SKIP_XML_STRING)) {
+                mergingReport.setMergedDocument(
+                  MergingReport.MergedManifestKind.MERGED, document.prettyPrint());
+            }
+
+            if (!mOptionalFeatures.contains(Invoker.Feature.SKIP_BLAME)) {
+                try {
+                    mergingReport.setMergedDocument(MergingReport.MergedManifestKind.BLAME,
+                                                    mergingReport.blame(document));
+                }
+                catch (Exception e) {
+                    mLogger.error(e, "Error while saving blame file, build will continue");
+                }
             }
 
             if (mOptionalFeatures.contains(Invoker.Feature.MAKE_AAPT_SAFE)) {
@@ -499,9 +497,13 @@ public class ManifestMerger2 {
         }
 
         // check for placeholders presence, switch first the packageName and application id if
-        // it is not explicitly set.
+        // it is not explicitly set, unless dealing with a library. In case of library, the
+        // implicit ${applicationId} (when not provided though the build.gradle) cannot be
+        // set during the initial library manifest file parsing but during the final
+        // placeholder substitution once the application's applicationId is known.
         Map<String, Object> finalPlaceHolderValues = mPlaceHolderValues;
-        if (!mPlaceHolderValues.containsKey(PlaceholderHandler.APPLICATION_ID)) {
+        if ((!mPlaceHolderValues.containsKey(PlaceholderHandler.APPLICATION_ID))
+                && manifestInfo.getType() != XmlDocument.Type.LIBRARY) {
             String packageName = manifestInfo.getMainManifestPackageName().isPresent()
                     ? manifestInfo.getMainManifestPackageName().get()
                     : xmlDocument.getPackageName();
@@ -566,7 +568,7 @@ public class ManifestMerger2 {
             @NonNull MergingReport.Builder mergingReportBuilder) throws MergeFailureException {
 
         ImmutableList.Builder<LoadedManifestInfo> loadedLibraryDocuments = ImmutableList.builder();
-        for (Pair<String, File> libraryFile : mLibraryFiles) {
+        for (Pair<String, File> libraryFile : Sets.newLinkedHashSet(mLibraryFiles)) {
             mLogger.info("Loading library manifest " + libraryFile.getSecond().getPath());
             ManifestInfo manifestInfo = new ManifestInfo(libraryFile.getFirst(),
                     libraryFile.getSecond(),
@@ -628,179 +630,6 @@ public class ManifestMerger2 {
     }
 
     /**
-     * List of manifest files properties that can be directly overridden without using a
-     * placeholder.
-     */
-    public enum SystemProperty implements AutoAddingProperty {
-
-        /**
-         * Allow setting the merged manifest file package name.
-         */
-        PACKAGE {
-            @Override
-            public void addTo(@NonNull ActionRecorder actionRecorder,
-                    @NonNull XmlDocument document,
-                    @NonNull String value) {
-                addToElement(this, actionRecorder, value, document.getRootNode());
-            }
-        },
-        /**
-         * http://developer.android.com/guide/topics/manifest/manifest-element.html#vcode
-         */
-        VERSION_CODE {
-            @Override
-            public void addTo(@NonNull ActionRecorder actionRecorder,
-                    @NonNull XmlDocument document,
-                    @NonNull String value) {
-                addToElementInAndroidNS(this, actionRecorder, value, document.getRootNode());
-            }
-        },
-        /**
-         * http://developer.android.com/guide/topics/manifest/manifest-element.html#vname
-         */
-        VERSION_NAME {
-            @Override
-            public void addTo(@NonNull ActionRecorder actionRecorder,
-                    @NonNull XmlDocument document,
-                    @NonNull String value) {
-                addToElementInAndroidNS(this, actionRecorder, value, document.getRootNode());
-            }
-        },
-        /**
-         * http://developer.android.com/guide/topics/manifest/uses-sdk-element.html#min
-         */
-        MIN_SDK_VERSION {
-            @Override
-            public void addTo(@NonNull ActionRecorder actionRecorder,
-                    @NonNull XmlDocument document,
-                    @NonNull String value) {
-                addToElementInAndroidNS(this, actionRecorder, value,
-                        createOrGetUseSdk(actionRecorder, document));
-            }
-        },
-        /**
-         * http://developer.android.com/guide/topics/manifest/uses-sdk-element.html#target
-         */
-        TARGET_SDK_VERSION {
-            @Override
-            public void addTo(@NonNull ActionRecorder actionRecorder,
-                    @NonNull XmlDocument document,
-                    @NonNull String value) {
-                addToElementInAndroidNS(this, actionRecorder, value,
-                        createOrGetUseSdk(actionRecorder, document));
-            }
-        },
-
-        MAX_SDK_VERSION {
-            @Override
-            public void addTo(@NonNull ActionRecorder actionRecorder,
-                    @NonNull XmlDocument document,
-                    @NonNull String value) {
-                addToElementInAndroidNS(this, actionRecorder, value,
-                        createOrGetUseSdk(actionRecorder, document));
-            }
-        };
-
-        public String toCamelCase() {
-            return SdkUtils.constantNameToCamelCase(name());
-        }
-
-        // utility method to add an attribute which name is derived from the enum name().
-        private static void addToElement(
-                @NonNull SystemProperty systemProperty,
-                @NonNull ActionRecorder actionRecorder,
-                String value,
-                @NonNull XmlElement to) {
-
-            to.getXml().setAttribute(systemProperty.toCamelCase(), value);
-            XmlAttribute xmlAttribute = new XmlAttribute(to,
-                    to.getXml().getAttributeNode(systemProperty.toCamelCase()), null);
-            actionRecorder.recordAttributeAction(xmlAttribute, new Actions.AttributeRecord(
-                    Actions.ActionType.INJECTED,
-                    new SourceFilePosition(to.getSourceFile(), SourcePosition.UNKNOWN),
-                    xmlAttribute.getId(),
-                    null, /* reason */
-                    null /* attributeOperationType */));
-        }
-
-        // utility method to add an attribute in android namespace which local name is derived from
-        // the enum name().
-        private static void addToElementInAndroidNS(
-                @NonNull SystemProperty systemProperty,
-                @NonNull ActionRecorder actionRecorder,
-                String value,
-                @NonNull XmlElement to) {
-
-            String toolsPrefix = getAndroidPrefix(to.getXml());
-            to.getXml().setAttributeNS(SdkConstants.ANDROID_URI,
-                    toolsPrefix + XmlUtils.NS_SEPARATOR + systemProperty.toCamelCase(),
-                    value);
-            Attr attr = to.getXml().getAttributeNodeNS(SdkConstants.ANDROID_URI,
-                    systemProperty.toCamelCase());
-
-            XmlAttribute xmlAttribute = new XmlAttribute(to, attr, null);
-            actionRecorder.recordAttributeAction(xmlAttribute,
-                    new Actions.AttributeRecord(
-                            Actions.ActionType.INJECTED,
-                            new SourceFilePosition(to.getSourceFile(), SourcePosition.UNKNOWN),
-                            xmlAttribute.getId(),
-                            null, /* reason */
-                            null /* attributeOperationType */
-                    )
-            );
-
-        }
-
-        // utility method to create or get an existing use-sdk xml element under manifest.
-        // this could be made more generic by adding more metadata to the enum but since there is
-        // only one case so far, keep it simple.
-        @NonNull
-        private static XmlElement createOrGetUseSdk(
-                @NonNull ActionRecorder actionRecorder, @NonNull XmlDocument document) {
-
-            Element manifest = document.getXml().getDocumentElement();
-            NodeList usesSdks = manifest
-                    .getElementsByTagName(ManifestModel.NodeTypes.USES_SDK.toXmlName());
-            if (usesSdks.getLength() == 0) {
-                usesSdks = manifest
-                        .getElementsByTagNameNS(
-                                SdkConstants.ANDROID_URI,
-                                ManifestModel.NodeTypes.USES_SDK.toXmlName());
-            }
-            if (usesSdks.getLength() == 0) {
-                // create it first.
-                Element useSdk = manifest.getOwnerDocument().createElement(
-                        ManifestModel.NodeTypes.USES_SDK.toXmlName());
-                manifest.appendChild(useSdk);
-                XmlElement xmlElement = new XmlElement(useSdk, document);
-                Actions.NodeRecord nodeRecord = new Actions.NodeRecord(
-                        Actions.ActionType.INJECTED,
-                        new SourceFilePosition(xmlElement.getSourceFile(),
-                                SourcePosition.UNKNOWN),
-                        xmlElement.getId(),
-                        "use-sdk injection requested",
-                        NodeOperationType.STRICT);
-                actionRecorder.recordNodeAction(xmlElement, nodeRecord);
-                return xmlElement;
-            } else {
-                return new XmlElement((Element) usesSdks.item(0), document);
-            }
-        }
-    }
-
-    private static String getAndroidPrefix(@NonNull Element xml) {
-        String toolsPrefix = XmlUtils.lookupNamespacePrefix(
-                xml, SdkConstants.ANDROID_URI, SdkConstants.ANDROID_NS_NAME, false);
-        if (!toolsPrefix.equals(SdkConstants.ANDROID_NS_NAME) && xml.getOwnerDocument()
-                .getDocumentElement().getAttribute("xmlns:" + toolsPrefix) == null) {
-            // this is weird, the document is using "android" prefix but it's not bound
-            // to our namespace. Add the proper xmlns declaration.
-            xml.setAttribute("xmlns:" + toolsPrefix, SdkConstants.ANDROID_URI);
-        }
-        return toolsPrefix;
-    }
-
-    /**
      * Defines the merging type expected from the tool.
      */
     public enum MergeType {
@@ -837,17 +666,17 @@ public class ManifestMerger2 {
     }
 
     /**
-     * Perform {@link com.android.manifmerger.ManifestMerger2.SystemProperty} injection.
+     * Perform {@link ManifestSystemProperty} injection.
      * @param mergingReport to log actions and errors.
      * @param xmlDocument the xml document to inject into.
      */
     protected void performSystemPropertiesInjection(
             @NonNull MergingReport.Builder mergingReport,
             @NonNull XmlDocument xmlDocument) {
-        for (SystemProperty systemProperty : SystemProperty.values()) {
-            String propertyOverride = mSystemPropertyResolver.getValue(systemProperty);
+        for (ManifestSystemProperty manifestSystemProperty : ManifestSystemProperty.values()) {
+            String propertyOverride = mSystemPropertyResolver.getValue(manifestSystemProperty);
             if (propertyOverride != null) {
-                systemProperty.addTo(
+                manifestSystemProperty.addTo(
                         mergingReport.getActionRecorder(), xmlDocument, propertyOverride);
             }
         }
@@ -883,7 +712,7 @@ public class ManifestMerger2 {
      * <ul>
      *     <li>Build types and flavors overriding manifests</li>
      *     <li>Application main manifest</li>
-     *     <li>Library manifest files</li></lib>
+     *     <li>Library manifest files</li>
      * </ul>
      *
      * Only the main manifest file is a mandatory parameter.
@@ -903,8 +732,8 @@ public class ManifestMerger2 {
 
         protected final File mMainManifestFile;
 
-        protected final ImmutableMap.Builder<SystemProperty, Object> mSystemProperties =
-                new ImmutableMap.Builder<SystemProperty, Object>();
+        protected final ImmutableMap.Builder<ManifestSystemProperty, Object> mSystemProperties =
+                new ImmutableMap.Builder<ManifestSystemProperty, Object>();
 
         @NonNull
         protected final ILogger mLogger;
@@ -928,13 +757,13 @@ public class ManifestMerger2 {
         private FileStreamProvider mFileStreamProvider;
 
         /**
-         * Sets a value for a {@link com.android.manifmerger.ManifestMerger2.SystemProperty}
+         * Sets a value for a {@link ManifestSystemProperty}
          * @param override the property to set
          * @param value the value for the property
          * @return itself.
          */
         @NonNull
-        public Invoker setOverride(@NonNull SystemProperty override, @NonNull String value) {
+        public Invoker setOverride(@NonNull ManifestSystemProperty override, @NonNull String value) {
             mSystemProperties.put(override, value);
             return thisAsT();
         }
@@ -1000,7 +829,17 @@ public class ManifestMerger2 {
             /**
              * Perform InstantRun related swapping in the merged manifest file.
              */
-            INSTANT_RUN_REPLACEMENT
+            INSTANT_RUN_REPLACEMENT,
+
+            /**
+             * Clients will not request the blame history
+             */
+            SKIP_BLAME,
+
+            /**
+             * Clients will only request the merged XML documents, not XML pretty printed documents
+             */
+            SKIP_XML_STRING,
         }
 
         /**
@@ -1134,15 +973,15 @@ public class ManifestMerger2 {
         public MergingReport merge() throws MergeFailureException {
 
             // provide some free placeholders values.
-            ImmutableMap<SystemProperty, Object> systemProperties = mSystemProperties.build();
-            if (systemProperties.containsKey(SystemProperty.PACKAGE)) {
+            ImmutableMap<ManifestSystemProperty, Object> systemProperties = mSystemProperties.build();
+            if (systemProperties.containsKey(ManifestSystemProperty.PACKAGE)) {
                 // if the package is provided, make it available for placeholder replacement.
-                mPlaceholders.put(PACKAGE_NAME, systemProperties.get(SystemProperty.PACKAGE));
+                mPlaceholders.put(PACKAGE_NAME, systemProperties.get(ManifestSystemProperty.PACKAGE));
                 // as well as applicationId since package system property overrides everything
                 // but not when output is a library since only the final (application)
                 // application Id should be used to replace libraries "applicationId" placeholders.
                 if (mMergeType != MergeType.LIBRARY) {
-                    mPlaceholders.put(APPLICATION_ID, systemProperties.get(SystemProperty.PACKAGE));
+                    mPlaceholders.put(APPLICATION_ID, systemProperties.get(ManifestSystemProperty.PACKAGE));
                 }
             }
 
@@ -1156,7 +995,7 @@ public class ManifestMerger2 {
                             mFlavorsAndBuildTypeFiles.build(),
                             mFeaturesBuilder.build(),
                             mPlaceholders.build(),
-                            new MapBasedKeyBasedValueResolver<SystemProperty>(systemProperties),
+                            new MapBasedKeyBasedValueResolver<ManifestSystemProperty>(systemProperties),
                             mMergeType,
                             Optional.fromNullable(mReportFile),
                             fileStreamProvider);

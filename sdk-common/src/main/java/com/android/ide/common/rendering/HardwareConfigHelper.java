@@ -20,7 +20,6 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.ide.common.rendering.api.HardwareConfig;
 import com.android.resources.ScreenOrientation;
-import com.android.resources.ScreenRound;
 import com.android.sdklib.devices.ButtonType;
 import com.android.sdklib.devices.Device;
 import com.android.sdklib.devices.Screen;
@@ -173,12 +172,10 @@ public class HardwareConfigHelper {
 
     /** Manufacturer used by the generic devices in the device list */
     public static final String MANUFACTURER_GENERIC = "Generic";          //$NON-NLS-1$
-    private static final String NEXUS = "Nexus";                          //$NON-NLS-1$
+    /** Manufacturer used by the Nexus devices in the device list */
+    public static final String MANUFACTURER_GOOGLE = "Google";          //$NON-NLS-1$
     private static final Pattern GENERIC_PATTERN =
             Pattern.compile("(\\d+\\.?\\d*)\" (.+?)( \\(.*Nexus.*\\))?"); //$NON-NLS-1$
-    private static final String ID_PREFIX_WEAR = "wear_";                 //$NON-NLS-1$
-    private static final String ID_PREFIX_WEAR_ROUND = "wear_round";      //$NON-NLS-1$
-    private static final String ID_PREFIX_TV = "tv_";                     //$NON-NLS-1$
 
     /**
      * Returns a user-displayable description of the given Nexus device
@@ -259,21 +256,28 @@ public class HardwareConfigHelper {
      * @return true if the device is a Nexus
      */
     public static boolean isNexus(@NonNull Device device) {
-        return device.getId().contains(NEXUS);
+        return MANUFACTURER_GOOGLE.equals(device.getManufacturer());
     }
 
     /**
      * Whether the given device is a wear device
      */
     public static boolean isWear(@Nullable Device device) {
-        return device != null && device.getId().startsWith(ID_PREFIX_WEAR);
+        return device != null && "android-wear".equals(device.getTagId());
     }
 
     /**
      * Whether the given device is a TV device
      */
     public static boolean isTv(@Nullable Device device) {
-        return device != null && device.getId().startsWith(ID_PREFIX_TV);
+        return device != null && "android-tv".equals(device.getTagId());
+    }
+
+    /**
+     * Whether the given device appears to be a mobile device (e.g. not wear, tv, auto, etc)
+     */
+    public static boolean isMobile(@Nullable Device device) {
+        return !isTv(device) && !isWear(device);
     }
 
     /**
@@ -315,11 +319,14 @@ public class HardwareConfigHelper {
         if (id.equals("Nexus 6")) {        //$NON-NLS-1$
             return 10;
         }
-        if (id.equals("Nexus 6P")) {        //$NON-NLS-1$
+        if (id.equals("pixel_c")) {        //$NON-NLS-1$
             return 11;
         }
-        if (id.equals("Nexus 5X")) {        //$NON-NLS-1$
+        if (id.equals("Nexus 6P")) {       //$NON-NLS-1$
             return 12;
+        }
+        if (id.equals("Nexus 5X")) {       //$NON-NLS-1$
+            return 13;
         }
 
         return 100; // devices released in the future?

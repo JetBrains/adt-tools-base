@@ -18,6 +18,8 @@ package com.android.build.gradle.integration.component
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldJniApp
+import com.android.build.gradle.internal.ndk.NdkHandler
+import com.android.repository.Revision
 import com.android.utils.FileUtils
 import groovy.transform.CompileStatic
 import org.gradle.tooling.BuildException
@@ -64,8 +66,8 @@ public class NdkStlTest {
 
     @Rule
     public GradleTestProject project = GradleTestProject.builder()
-            .fromTestApp(new HelloWorldJniApp(useCppSource: true))
-            .forExperimentalPlugin(true)
+            .fromTestApp(HelloWorldJniApp.builder().useCppSource().build())
+            .useExperimentalGradleVersion(true)
             .create()
 
     @Before
@@ -88,7 +90,19 @@ model {
 
     @Test
     public void buildAppWithStl() {
-        if (!stl.equals("invalid")) {
+        // ndk r11 does noes support gabi++
+        Revision ndkRevision = NdkHandler.findRevision(project.getNdkDir())
+        boolean notGabiSupported =
+                stl.startsWith("gabi++") && ndkRevision != null && ndkRevision.major >= 11
+
+        if (stl.equals("invalid") || notGabiSupported) {
+            // Fail if it's invalid.
+            try {
+                project.execute("assembleDebug");
+                fail();
+            } catch (BuildException ignored) {
+            }
+        } else {
             project.execute("assembleDebug");
 
             File apk = project.getApk("debug");
@@ -102,13 +116,6 @@ model {
                 assertThatZip(apk).contains("lib/mips/lib" + stl + ".so");
                 assertThatZip(apk).contains("lib/armeabi/lib" + stl + ".so");
                 assertThatZip(apk).contains("lib/armeabi-v7a/lib" + stl + ".so");
-            }
-        } else {
-            // Fail if it's invalid.
-            try {
-                project.execute("assembleDebug");
-                fail();
-            } catch (BuildException ignored) {
             }
         }
     }

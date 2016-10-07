@@ -38,7 +38,7 @@ public enum GpuMode {
     public String toString() {
         switch (this) {
             case AUTO:
-                return "Auto";
+                return "Automatic";
             case HOST:
                 return "Hardware - GLES 2.0";
             case MESA:

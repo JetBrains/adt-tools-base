@@ -31,9 +31,9 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * Helper class to handle requests and connections to adb.
- * <p/>{@link AndroidDebugBridge} is the public API to connection to adb, while {@link AdbHelper}
+ * <p>{@link AndroidDebugBridge} is the public API to connection to adb, while {@link AdbHelper}
  * does the low level stuff.
- * <p/>This currently uses spin-wait non-blocking I/O. A Selector would be more efficient,
+ * <p>This currently uses spin-wait non-blocking I/O. A Selector would be more efficient,
  * but seems like overkill for what we're doing here.
  */
 final class AdbHelper {
@@ -532,7 +532,7 @@ final class AdbHelper {
     /**
      * Runs the Event log service on the {@link Device}, and provides its output to the
      * {@link LogReceiver}.
-     * <p/>This call is blocking until {@link LogReceiver#isCancelled()} returns true.
+     * <p>This call is blocking until {@link LogReceiver#isCancelled()} returns true.
      * @param adbSockAddr the socket address to connect to adb
      * @param device the Device on which to run the service
      * @param rcvr the {@link LogReceiver} to receive the log output
@@ -547,7 +547,7 @@ final class AdbHelper {
 
     /**
      * Runs a log service on the {@link Device}, and provides its output to the {@link LogReceiver}.
-     * <p/>This call is blocking until {@link LogReceiver#isCancelled()} returns true.
+     * <p>This call is blocking until {@link LogReceiver#isCancelled()} returns true.
      * @param adbSockAddr the socket address to connect to adb
      * @param device the Device on which to run the service
      * @param logName the name of the log file to output
@@ -724,7 +724,7 @@ final class AdbHelper {
     /**
      * Reads from the socket until the array is filled, or no more data is coming (because
      * the socket closed or the timeout expired).
-     * <p/>This uses the default time out value.
+     * <p>This uses the default time out value.
      *
      * @param chan the opened socket to read from. It must be in non-blocking
      *      mode for timeouts to work
@@ -784,7 +784,7 @@ final class AdbHelper {
 
     /**
      * Write until all data in "data" is written or the connection fails or times out.
-     * <p/>This uses the default time out value.
+     * <p>This uses the default time out value.
      * @param chan the opened socket to write to.
      * @param data the buffer to send.
      * @throws TimeoutException in case of timeout on the connection.

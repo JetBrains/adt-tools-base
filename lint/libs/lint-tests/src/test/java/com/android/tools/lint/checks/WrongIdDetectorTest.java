@@ -217,4 +217,41 @@ public class WrongIdDetectorTest extends AbstractCheckTest {
                         + "\n"
                         + "</android.support.percent.PercentRelativeLayout>\n")));
     }
+
+    public void testConstraintLayoutCycle() throws Exception {
+        assertEquals(""
+                + "res/layout/constraint.xml:21: Error: The id \"typo\" is not defined anywhere. [UnknownId]\n"
+                + "        app:layout_constraintRight_toLeftOf=\"@+id/typo\"\n"
+                + "        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "res/layout/constraint.xml:12: Error: Cannot be relative to self: id=button4, layout_constraintRight_toRightOf=button4 [NotSibling]\n"
+                + "        app:layout_constraintRight_toRightOf=\"@+id/button4\"\n"
+                + "        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "2 errors, 0 warnings\n",
+                lintProject(xml("res/layout/constraint.xml", ""
+                        + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                        + "<android.support.constraint.ConstraintLayout xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                        + "    xmlns:app=\"http://schemas.android.com/apk/res-auto\"\n"
+                        + "    android:layout_width=\"800dp\" android:layout_height=\"1143dp\"\n"
+                        + "    android:id=\"@+id/com.google.tnt.sherpa.ConstraintLayout\">\n"
+                        + "\n"
+                        + "\n"
+                        + "    <Button\n"
+                        + "        android:text=\"Button\"\n"
+                        + "        android:layout_width=\"wrap_content\"\n"
+                        + "        android:layout_height=\"wrap_content\"\n"
+                        + "        app:layout_constraintRight_toRightOf=\"@+id/button4\"\n"
+                        + "        app:layout_editor_absoluteX=\"24dp\"\n"
+                        + "        app:layout_editor_absoluteY=\"26dp\"\n"
+                        + "        android:id=\"@+id/button4\" />\n"
+                        + "\n"
+                        + "    <Button\n"
+                        + "        android:text=\"Button\"\n"
+                        + "        android:layout_width=\"wrap_content\"\n"
+                        + "        android:layout_height=\"wrap_content\"\n"
+                        + "        app:layout_constraintRight_toLeftOf=\"@+id/typo\"\n"
+                        + "        app:layout_editor_absoluteX=\"150dp\"\n"
+                        + "        app:layout_editor_absoluteY=\"94dp\"\n"
+                        + "        android:id=\"@+id/button5\" />\n"
+                        + "</android.support.constraint.ConstraintLayout>")));
+    }
 }

@@ -119,7 +119,7 @@ public class XmlReporterTest extends AbstractCheckTest {
                 "\n" +
                 "* The application cannot be translated to other languages by just adding new translations for existing string resources.\n" +
                 "\n" +
-                "In Android Studio and Eclipse there are quickfixes to automatically extract this hardcoded string into a resource lookup.\"\n" +
+                "There are quickfixes to automatically extract this hardcoded string into a resource lookup.\"\n" +
                 "        errorLine1=\"        android:text=&quot;Fooo&quot; />\"\n" +
                 "        errorLine2=\"        ~~~~~~~~~~~~~~~~~~~\">\n" +
                 "        <location\n" +
@@ -223,7 +223,7 @@ public class XmlReporterTest extends AbstractCheckTest {
                 "\n" +
                 "* The application cannot be translated to other languages by just adding new translations for existing string resources.\n" +
                 "\n" +
-                "In Android Studio and Eclipse there are quickfixes to automatically extract this hardcoded string into a resource lookup.\"\n" +
+                "There are quickfixes to automatically extract this hardcoded string into a resource lookup.\"\n" +
                 "        errorLine1=\"        android:text=&quot;Fooo&quot; />\"\n" +
                 "        errorLine2=\"        ~~~~~~~~~~~~~~~~~~~\">\n" +
                 "        <location\n" +

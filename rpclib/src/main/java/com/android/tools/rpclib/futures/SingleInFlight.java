@@ -28,7 +28,7 @@ import java.util.concurrent.atomic.AtomicReference;
  * be driven, even when task lifetimes overlap.
  */
 public class SingleInFlight implements FutureController {
-    private final AtomicReference<Future> mActive = new AtomicReference<Future>();
+    private final AtomicReference<Future<?>> mActive = new AtomicReference<Future<?>>();
     private final Listener mListener;
     private final Listener NULL_LISTENER = new Listener() {
         @Override
@@ -61,8 +61,8 @@ public class SingleInFlight implements FutureController {
     }
 
     @Override
-    public void onStart(Future future) {
-        Future prev = mActive.getAndSet(future);
+    public void onStart(Future<?> future) {
+        Future<?> prev = mActive.getAndSet(future);
         if (prev != null) {
             prev.cancel(true);
         } else {
@@ -71,7 +71,7 @@ public class SingleInFlight implements FutureController {
     }
 
     @Override
-    public boolean onStop(Future future) {
+    public boolean onStop(Future<?> future) {
         if (mActive.compareAndSet(future, null)) {
             mListener.onWorkingToIdle();
             return true;

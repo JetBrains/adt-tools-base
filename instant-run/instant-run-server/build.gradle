@@ -19,9 +19,14 @@ apply plugin: 'java'
 sourceCompatibility = JavaVersion.VERSION_1_6
 targetCompatibility = JavaVersion.VERSION_1_6
 
-File androidJar = new File(System.env.ANDROID_HOME + '/platforms/android-23/android.jar');
+File androidJar = file('../../../../prebuilts/sdk/23/android.jar');
 if (!androidJar.exists()) {
-    throw new RuntimeException("android-23 android.jar not found at " + androidJar.absolutePath)
+    File jar = file(System.env.ANDROID_HOME + '/platforms/android-23/android.jar');
+    if (jar.exists()) {
+        androidJar = jar
+    } else {
+        throw new RuntimeException("android-23 android.jar not found at " + androidJar.absolutePath)
+    }
 }
 
 repositories {
@@ -46,4 +51,9 @@ jar {
         configurations.compile.collect { it.isFile() ? zipTree(it) : it }
     }
     exclude('com/android/annotations/**', 'NOTICE')
+}
+
+// set proper classpath and turn off strict mode.
+tasks.withType(Javadoc) {
+    classpath += files(androidJar)
 }

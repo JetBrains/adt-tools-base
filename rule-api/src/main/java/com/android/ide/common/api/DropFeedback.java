@@ -31,7 +31,7 @@ public class DropFeedback {
     /**
      * User data that the rule can use in any way it wants to carry state from one
      * operation to another.
-     * <p/>
+     * <p>
      * Filled and owned by the view rule.
      */
     @Nullable
@@ -39,7 +39,7 @@ public class DropFeedback {
 
     /**
      * If true the next screen update will invoke the paint callback.
-     * <p/>
+     * <p>
      * Filled by the view rule to request a paint, and reset by the canvas after
      * the paint occurred.
      */
@@ -49,11 +49,11 @@ public class DropFeedback {
      * Set to false by the engine when entering a new view target.
      * The view rule should set this to true if the current view target is not
      * a valid drop zone.
-     * <p/>
+     * <p>
      * When set to true, the onDropped() method will not be called if the user releases
      * the mouse button. Depending on the platform or implementation, the mouse cursor
      * <em>may</em> reflect that the drop operation is invalid.
-     * <p/>
+     * <p>
      * Rationale: an operation like onDropEnter() is called each time the mouse enters
      * a new view target and is supposed to return null when the drop cannot happen
      * <em>at all</em> in that target. However a layout like RelativeLayout decorates
@@ -67,7 +67,7 @@ public class DropFeedback {
     /**
      * Painter invoked by the canvas to paint the feedback.
      * Filled by the view rule, called by the engine.
-     * <p/>
+     * <p>
      */
     @Nullable
     public IFeedbackPainter painter;
@@ -75,10 +75,10 @@ public class DropFeedback {
     /**
      * When set to a non-null valid rectangle, this informs the engine that a drag &amp; drop
      * feedback wants to capture the mouse as long as it stays in the given area.
-     * <p/>
+     * <p>
      * When the mouse is captured, drop events will keep going to the rule that started the
      * capture and the current INode proxy will not change.
-     * <p/>
+     * <p>
      * Filled by the view rule, read by the engine.
      */
     @Nullable
@@ -88,7 +88,7 @@ public class DropFeedback {
      * Set to true by the drag &amp; drop engine when the current drag operation is a copy.
      * When false the operation is a move and <em>after</em> a successful drop the source
      * elements will be deleted.
-     * <p/>
+     * <p>
      * Filled by the engine, read by view rule.
      */
     public boolean isCopy;
@@ -113,7 +113,7 @@ public class DropFeedback {
     /**
      * Set to true when the drag &amp; drop starts and ends in the same canvas of the
      * same Eclipse instance.
-     * <p/>
+     * <p>
      * Filled by the engine, read by view rule.
      */
     public boolean sameCanvas;

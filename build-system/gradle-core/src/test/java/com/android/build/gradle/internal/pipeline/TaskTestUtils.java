@@ -26,11 +26,10 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.internal.TaskContainerAdaptor;
 import com.android.build.gradle.internal.TaskFactory;
-import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.model.SyncIssueImpl;
 import com.android.build.gradle.internal.scope.AndroidTaskRegistry;
-import com.android.build.gradle.internal.scope.BaseScope;
 import com.android.build.gradle.internal.scope.GlobalScope;
+import com.android.build.gradle.internal.scope.TransformVariantScope;
 import com.android.build.api.transform.QualifiedContent;
 import com.android.builder.core.ErrorReporter;
 import com.android.builder.model.SyncIssue;
@@ -67,7 +66,7 @@ public class TaskTestUtils {
     protected static final String TASK_NAME = "task name";
 
     protected TaskFactory taskFactory;
-    protected BaseScope scope;
+    protected TransformVariantScope scope;
     protected TransformManager transformManager;
     protected FakeErrorReporter errorReporter;
 
@@ -85,7 +84,7 @@ public class TaskTestUtils {
 
         @NonNull
         @Override
-        public SyncIssue handleSyncIssue(
+        public SyncIssue handleIssue(
                 @Nullable String data, int type, int severity, @NonNull String msg) {
             // always create a sync issue, no matter what the mode is. This can be used to validate
             // what error is thrown anyway.
@@ -205,7 +204,7 @@ public class TaskTestUtils {
             }
 
             ImmutableList<TransformStream> streams = streamCollection
-                    .getStreams(new TransformManager.StreamFilter() {
+                    .getStreams(new StreamFilter() {
                         @Override
                         public boolean accept(@NonNull Set<QualifiedContent.ContentType> types,
                                 @NonNull Set<QualifiedContent.Scope> scopes) {
@@ -258,16 +257,12 @@ public class TaskTestUtils {
     }
 
     @NonNull
-    private static BaseScope getScope() {
-        GradleVariantConfiguration mockConfig = mock(GradleVariantConfiguration.class);
-        when(mockConfig.getDirName()).thenReturn("config dir name");
-
+    private static TransformVariantScope getScope() {
         GlobalScope globalScope = mock(GlobalScope.class);
         when(globalScope.getBuildDir()).thenReturn(new File("build dir"));
 
-        BaseScope scope = mock(BaseScope.class);
+        TransformVariantScope scope = mock(TransformVariantScope.class);
         when(scope.getDirName()).thenReturn("config dir name");
-        when(scope.getVariantConfiguration()).thenReturn(mockConfig);
         when(scope.getGlobalScope()).thenReturn(globalScope);
         when(scope.getTaskName(Mockito.anyString())).thenReturn(TASK_NAME);
         return scope;

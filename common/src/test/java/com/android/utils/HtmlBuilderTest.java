@@ -17,6 +17,7 @@ package com.android.utils;
 
 import junit.framework.TestCase;
 
+import java.awt.Color;
 import java.io.File;
 import java.io.IOException;
 
@@ -37,6 +38,12 @@ public class HtmlBuilderTest extends TestCase {
         assertEquals("<B>This is bold</B>", builder.getHtml());
     }
 
+    public void testAddUnderlined() {
+        HtmlBuilder builder = new HtmlBuilder();
+        builder.addUnderlined("This is underlined.");
+        assertEquals("<U>This is underlined.</U>", builder.getHtml());
+    }
+
     public void testAddItalic() {
         HtmlBuilder builder = new HtmlBuilder();
         builder.addItalic("This is italic");
@@ -51,6 +58,17 @@ public class HtmlBuilderTest extends TestCase {
         builder.addLink("mylink", "foo://bar:123");
         builder.endBold();
         assertEquals("Plain. <B>Bold. <A HREF=\"foo://bar:123\">mylink</A></B>",
+                     builder.getHtml());
+    }
+
+    public void testNestInUnderline() {
+        HtmlBuilder builder = new HtmlBuilder();
+        builder.add("Plain. ");
+        builder.beginUnderline();
+        builder.add("Underlined. ");
+        builder.addBold("Bold and underlined.");
+        builder.endUnderline();
+        assertEquals("Plain. <U>Underlined. <B>Bold and underlined.</B></U>",
                      builder.getHtml());
     }
 
@@ -114,6 +132,11 @@ public class HtmlBuilderTest extends TestCase {
                        .getHtml());
     }
 
+    public void testColoredText() {
+        HtmlBuilder builder = new HtmlBuilder();
+        assertEquals("<FONT color=\"#804020\">This is a test</FONT>",
+                builder.coloredText(new Color(128, 64, 32), "This is a test").getHtml());
+    }
 
     public void testAddImage() throws IOException {
         File f = File.createTempFile("img", "png");

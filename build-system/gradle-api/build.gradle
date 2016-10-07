@@ -7,12 +7,13 @@ configurations {
 }
 
 dependencies {
-    compile project(':base:annotations')
+    compile project(':base:builder-model')
     compile 'com.google.guava:guava:17.0'
 
     provided gradleApi()
 
     testCompile 'junit:junit:4.12'
+    testRuntime gradleApi()
 }
 
 sourceSets {
@@ -23,11 +24,7 @@ sourceSets {
 
 javadoc {
   classpath += configurations.provided
-  options.links("http://docs.oracle.com/javase/7/docs/api/", "https://docs.gradle.org/current/javadoc/")
-
-  if (JavaVersion.current().isJava8Compatible()) {
-      options.addStringOption 'Xdoclint:none', '-quiet'
-  }
+  options.links("http://docs.oracle.com/javase/8/docs/api/", "https://docs.gradle.org/current/javadoc/")
 }
 
 task javadocZip(type: Zip) {

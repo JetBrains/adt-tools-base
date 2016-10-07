@@ -16,7 +16,6 @@
 
 package com.android.build.gradle.integration.common.utils;
 
-import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.ide.common.process.CachedProcessOutputHandler;
@@ -25,15 +24,19 @@ import com.android.ide.common.process.ProcessException;
 import com.android.ide.common.process.ProcessExecutor;
 import com.android.ide.common.process.ProcessInfo;
 import com.android.ide.common.process.ProcessInfoBuilder;
+import com.android.utils.LineCollector;
 import com.android.utils.StdLogger;
 import com.google.common.base.Splitter;
 import com.google.common.collect.Lists;
+import com.google.common.io.LineProcessor;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.Reader;
 import java.util.List;
-import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * Helper to help read/test the content of generated apk file.
@@ -48,7 +51,7 @@ public class ApkHelper {
      *
      * @param processInfo the process info to run
      *
-     * @return the output as a list of files.
+     * @return the output as a list of output lines.
      * @throws ProcessException
      */
     @NonNull
@@ -57,7 +60,9 @@ public class ApkHelper {
 
         ProcessExecutor executor = new DefaultProcessExecutor(
                 new StdLogger(StdLogger.Level.ERROR));
-        return runAndGetOutput(processInfo, executor);
+        LineCollector lineCollector = new LineCollector();
+        runAndProcessOutput(processInfo, executor, lineCollector);
+        return lineCollector.getResult();
     }
 
     /**
@@ -66,35 +71,43 @@ public class ApkHelper {
      * @param processInfo the process info to run
      * @param processExecutor the process executor
      *
-     * @return the output as a list of files.
+     * @return the output as a {@link Reader}, that should be closed once used.
      * @throws ProcessException
      */
     @NonNull
-    public static List<String> runAndGetOutput(
-            @NonNull ProcessInfo processInfo,
-            @NonNull ProcessExecutor processExecutor)
-            throws ProcessException {
-        return Splitter.on(System.getProperty("line.separator")).splitToList(
-                runAndGetRawOutput(processInfo, processExecutor));
-    }
-
-    /**
-     * Runs a process, and returns the output.
-     *
-     * @param processInfo the process info to run
-     * @param processExecutor the process executor
-     *
-     * @return the output as a String
-     * @throws ProcessException
-     */
-    @NonNull
-    public static String runAndGetRawOutput(
+    public static Reader runAndGetRawOutput(
             @NonNull ProcessInfo processInfo,
             @NonNull ProcessExecutor processExecutor)
             throws ProcessException {
         CachedProcessOutputHandler handler = new CachedProcessOutputHandler();
         processExecutor.execute(processInfo, handler).rethrowFailure().assertNormalExitValue();
-        return handler.getProcessOutput().getStandardOutputAsString();
+        try {
+            return handler.getProcessOutput().getStandardOutputAsReader();
+        } catch (IOException e) {
+            throw new ProcessException(e);
+        }
+    }
+
+
+    /**
+     * Runs a process, and tunnel the output to a {@link LineProcessor}.
+     *
+     * @param processInfo the process info to run
+     * @param processExecutor the process executor
+     * @param lineProcessor the processor to handle the process output line by line
+     * @param <T> the expected result from the line processor
+     * @return the result from the line processor
+     * @throws ProcessException
+     */
+    public static <T> T runAndProcessOutput(
+            @NonNull ProcessInfo processInfo,
+            @NonNull ProcessExecutor processExecutor,
+            @NonNull LineProcessor<T> lineProcessor)
+            throws ProcessException {
+
+        CachedProcessOutputHandler handler = new CachedProcessOutputHandler();
+        processExecutor.execute(processInfo, handler).rethrowFailure().assertNormalExitValue();
+        return handler.getProcessOutput().processStandardOutputLines(lineProcessor);
     }
 
     @NonNull
@@ -124,13 +137,9 @@ public class ApkHelper {
             Matcher m = PATTERN_LOCALES.matcher(line.trim());
             if (m.matches()) {
                 List<String> list = Splitter.on(' ').splitToList(m.group(1).trim());
-                List<String> result = Lists.newArrayListWithCapacity(list.size());
-                for (String local: list) {
-                    // remove the '' on each side.
-                    result.add(local.substring(1, local.length() - 1));
-                }
-
-                return result;
+                return list.stream() // remove the '' on each side.
+                        .map(local -> local.substring(1, local.length() - 1))
+                        .collect(Collectors.toList());
             }
         }
 

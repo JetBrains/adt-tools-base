@@ -107,6 +107,7 @@ public class ScreenSizeQualifierTest extends TestCase {
         ScreenSizeQualifier normalQ = new ScreenSizeQualifier(ScreenSize.NORMAL);
         ScreenSizeQualifier largeQ = new ScreenSizeQualifier(ScreenSize.LARGE);
         ScreenSizeQualifier xlargeQ = new ScreenSizeQualifier(ScreenSize.XLARGE);
+        ScreenSizeQualifier nullQ = smallQ.getNullQualifier();
 
         // test that each Q is a better match than all other valid Qs when the ref is the same Q.
         assertTrue(normalQ.isBetterMatchThan(smallQ, normalQ));
@@ -131,13 +132,13 @@ public class ScreenSizeQualifierTest extends TestCase {
         assertFalse(normalQ.isBetterMatchThan(largeQ, xlargeQ));
 
         // test that null (i.e. no qualifier) is a better match than small for screens normal or above
-        assertTrue(smallQ.isBetterMatchThan(null, smallQ));
-        assertFalse(smallQ.isBetterMatchThan(null, normalQ));
-        assertFalse(smallQ.isBetterMatchThan(null, xlargeQ));
+        assertTrue(smallQ.isBetterMatchThan(nullQ, smallQ));
+        assertFalse(smallQ.isBetterMatchThan(nullQ, normalQ));
+        assertFalse(smallQ.isBetterMatchThan(nullQ, xlargeQ));
 
-        assertTrue(normalQ.isBetterMatchThan(null, normalQ));
-        assertTrue(normalQ.isBetterMatchThan(null, xlargeQ));
-        assertTrue(largeQ.isBetterMatchThan(null, xlargeQ));
+        assertTrue(normalQ.isBetterMatchThan(nullQ, normalQ));
+        assertTrue(normalQ.isBetterMatchThan(nullQ, xlargeQ));
+        assertTrue(largeQ.isBetterMatchThan(nullQ, xlargeQ));
     }
 
 }

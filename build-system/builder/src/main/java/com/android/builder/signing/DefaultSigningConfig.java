@@ -42,6 +42,8 @@ public class DefaultSigningConfig implements SigningConfig {
     private String mKeyAlias = null;
     private String mKeyPassword = null;
     private String mStoreType = KeyStore.getDefaultType();
+    private boolean mV1SigningEnabled = true;
+    private boolean mV2SigningEnabled = true;
 
     /**
      * Creates a SigningConfig.
@@ -129,6 +131,24 @@ public class DefaultSigningConfig implements SigningConfig {
     }
 
     @Override
+    public boolean isV1SigningEnabled() {
+        return mV1SigningEnabled;
+    }
+
+    public void setV1SigningEnabled(boolean enabled) {
+        mV1SigningEnabled = enabled;
+    }
+
+    @Override
+    public boolean isV2SigningEnabled() {
+        return mV2SigningEnabled;
+    }
+
+    public void setV2SigningEnabled(boolean enabled) {
+        mV2SigningEnabled = enabled;
+    }
+
+    @Override
     public boolean isSigningReady() {
         return mStoreFile != null &&
                 mStorePassword != null &&
@@ -178,6 +198,8 @@ public class DefaultSigningConfig implements SigningConfig {
         result = 31 * result + (mKeyAlias != null ? mKeyAlias.hashCode() : 0);
         result = 31 * result + (mKeyPassword != null ? mKeyPassword.hashCode() : 0);
         result = 31 * result + (mStoreType != null ? mStoreType.hashCode() : 0);
+        result = 31 * result + (mV1SigningEnabled ? 17 : 0);
+        result = 31 * result + (mV2SigningEnabled ? 17 : 0);
         return result;
     }
 
@@ -189,6 +211,8 @@ public class DefaultSigningConfig implements SigningConfig {
                 .add("keyAlias", mKeyAlias)
                 .add("keyPassword", mKeyPassword)
                 .add("storeType", mStoreType)
+                .add("v1SigningEnabled", mV1SigningEnabled)
+                .add("v2SigningEnabled", mV2SigningEnabled)
                 .toString();
     }
 }

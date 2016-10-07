@@ -27,26 +27,34 @@ import java.io.IOException;
  * Describes a source file for integration test.
  */
 public class TestSourceFile {
-    private final String path;
+    private final String parent;
     private final String name;
     private final byte[] content;
 
-    public TestSourceFile(@NonNull String path, @NonNull String name, @NonNull byte[] content) {
-        this.path = path;
+    public TestSourceFile(@NonNull String parent, @NonNull String name, @NonNull byte[] content) {
+        this.parent = parent;
         this.name = name;
         this.content = content;
     }
 
-    public TestSourceFile(@NonNull String path, @NonNull String name, @NonNull String content) {
-        this(path, name, content.getBytes());
+    public TestSourceFile(@NonNull String parent, @NonNull String name, @NonNull String content) {
+        this(parent, name, content.getBytes());
     }
 
-    public String getPath() {
-        return path;
+    public String getParent() {
+        return parent;
     }
 
     public String getName() {
         return name;
+    }
+
+    public File getFile() {
+        return new File(parent, name);
+    }
+
+    public String getPath() {
+        return getFile().getPath();
     }
 
     public byte[] getContent() {
@@ -54,7 +62,7 @@ public class TestSourceFile {
     }
 
     public File writeToDir(File base) throws IOException {
-        File file = new File(base, Joiner.on(File.separatorChar).join(path, name));
+        File file = new File(base, Joiner.on(File.separatorChar).join(parent, name));
         writeToFile(file);
         return file;
     }

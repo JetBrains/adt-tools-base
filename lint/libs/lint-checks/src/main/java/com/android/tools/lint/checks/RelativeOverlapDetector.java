@@ -90,9 +90,9 @@ public class RelativeOverlapDetector extends LayoutDetector {
             TOP, BOTTOM, SKIP
         }
 
-        private int mIndex;
+        private final int mIndex;
         private boolean mProcessed;
-        private Element mNode;
+        private final Element mNode;
         private Bucket mBucket;
         private LayoutNode mToLeft;
         private LayoutNode mToRight;

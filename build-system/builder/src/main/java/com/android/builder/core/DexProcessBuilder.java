@@ -29,7 +29,6 @@ import com.android.sdklib.BuildToolInfo;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
-
 import java.io.File;
 import java.util.Collection;
 import java.util.Collections;
@@ -48,12 +47,10 @@ public class DexProcessBuilder extends ProcessEnvBuilder<DexProcessBuilder> {
     @NonNull
     private final File mOutputFile;
     private boolean mVerbose = false;
-    private boolean mIncremental = false;
     private boolean mNoOptimize = false;
     private boolean mMultiDex = false;
     private File mMainDexList = null;
     private Set<File> mInputs = Sets.newHashSet();
-    private List<String> mAdditionalParams = null;
 
     public DexProcessBuilder(@NonNull File outputFile) {
         mOutputFile = outputFile;
@@ -66,14 +63,12 @@ public class DexProcessBuilder extends ProcessEnvBuilder<DexProcessBuilder> {
     }
 
     @NonNull
-    public DexProcessBuilder setIncremental(boolean incremental) {
-        mIncremental = incremental;
-        return this;
-    }
-
-    @NonNull
-    public DexProcessBuilder setNoOptimize(boolean noOptimize) {
-        mNoOptimize = noOptimize;
+    public DexProcessBuilder setNoOptimize(
+            @SuppressWarnings("UnusedParameters") boolean noOptimize) {
+        // --no-optimize creates incorrect local debug information.  mNoOptimize should always be
+        // false.
+        // b.android.com/82031
+        //mNoOptimize = noOptimize;
         return this;
     }
 
@@ -102,27 +97,12 @@ public class DexProcessBuilder extends ProcessEnvBuilder<DexProcessBuilder> {
     }
 
     @NonNull
-    public DexProcessBuilder additionalParameters(@NonNull List<String> params) {
-        if (mAdditionalParams == null) {
-            mAdditionalParams = Lists.newArrayListWithExpectedSize(params.size());
-        }
-
-        mAdditionalParams.addAll(params);
-
-        return this;
-    }
-
-    @NonNull
     public File getOutputFile() {
         return mOutputFile;
     }
 
     public boolean isVerbose() {
         return mVerbose;
-    }
-
-    public boolean isIncremental() {
-        return mIncremental;
     }
 
     public boolean isNoOptimize() {
@@ -183,12 +163,10 @@ public class DexProcessBuilder extends ProcessEnvBuilder<DexProcessBuilder> {
             builder.addArgs("--force-jumbo");
         }
 
-        if (mIncremental) {
-            builder.addArgs("--incremental", "--no-strict");
-        }
-
         if (mNoOptimize) {
             builder.addArgs("--no-optimize");
+            throw new UnsupportedOperationException("Should be unreachable.  --no-optimize creates "
+                    + "incorrect local debug information.");
         }
 
         // only change thread count is build tools is 22.0.2+
@@ -209,12 +187,9 @@ public class DexProcessBuilder extends ProcessEnvBuilder<DexProcessBuilder> {
             }
         }
 
-        if (mAdditionalParams != null) {
-            for (String arg : mAdditionalParams) {
-                builder.addArgs(arg);
-            }
+        for (String arg : dexOptions.getAdditionalParameters()) {
+            builder.addArgs(arg);
         }
-
 
         builder.addArgs("--output", mOutputFile.getAbsolutePath());
 

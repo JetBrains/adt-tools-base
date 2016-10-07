@@ -26,6 +26,7 @@ import static com.android.SdkConstants.VIEW_INCLUDE;
 import static com.android.ide.common.resources.configuration.FolderConfiguration.QUALIFIER_SPLITTER;
 
 import com.android.annotations.NonNull;
+import com.android.resources.FolderTypeRelationship;
 import com.android.resources.ResourceFolderType;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Context;
@@ -109,7 +110,7 @@ public class DuplicateIdDetector extends LayoutDetector {
 
     @Override
     public boolean appliesTo(@NonNull ResourceFolderType folderType) {
-        return folderType == ResourceFolderType.LAYOUT || folderType == ResourceFolderType.MENU;
+        return FolderTypeRelationship.isIdGeneratingFolderType(folderType);
     }
 
     @NonNull

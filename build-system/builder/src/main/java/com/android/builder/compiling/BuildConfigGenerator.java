@@ -19,7 +19,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.builder.core.AndroidBuilder;
+import com.android.builder.internal.ClassFieldImpl;
 import com.android.builder.model.ClassField;
 import com.google.common.base.Charsets;
 import com.google.common.collect.Lists;
@@ -67,7 +67,7 @@ public class BuildConfigGenerator {
 
     public BuildConfigGenerator addField(
             @NonNull String type, @NonNull String name, @NonNull String value) {
-        mFields.add(AndroidBuilder.createClassField(type, name, value));
+        mFields.add(new ClassFieldImpl(type, name, value));
         return this;
     }
 

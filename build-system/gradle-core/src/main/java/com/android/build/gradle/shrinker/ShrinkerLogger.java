@@ -16,8 +16,8 @@
 
 package com.android.build.gradle.shrinker;
 
+import com.android.build.gradle.internal.incremental.ByteCodeUtils;
 import com.android.build.gradle.shrinker.parser.FilterSpecification;
-import com.android.utils.AsmUtils;
 import com.android.utils.Pair;
 import com.google.common.collect.Sets;
 
@@ -42,7 +42,7 @@ public class ShrinkerLogger {
 
     synchronized void invalidClassReference(String from, String to) {
         if (from.contains(".")) {
-            from = AsmUtils.getClassName(from);
+            from = ByteCodeUtils.getClassName(from);
         }
 
         if (mWarningsEmitted.contains(Pair.of(from, to))) {
@@ -66,11 +66,11 @@ public class ShrinkerLogger {
 
         String fromClassName;
         if (from.contains(".")) {
-            fromClassName = AsmUtils.getClassName(from);
+            fromClassName = ByteCodeUtils.getClassName(from);
         } else {
             fromClassName = from;
         }
-        String toClassName = AsmUtils.getClassName(to);
+        String toClassName = ByteCodeUtils.getClassName(to);
         for (FilterSpecification dontWarnSpec : mDontWarnSpecs) {
             if (dontWarnSpec.matches(fromClassName) || dontWarnSpec.matches(toClassName)) {
                 return;

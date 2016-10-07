@@ -38,19 +38,21 @@ public class GrabProcessOutput {
          * This waits for the process to finish.
          * In this mode, {@link GrabProcessOutput#grabProcessOutput} returns the
          * error code from the process.
+         * <p>
          * In some rare cases and depending on the OS, the process might not have
          * finished dumping data into stdout/stderr.
-         * <p/>
+         * </p>
          * Use this when you don't particularly care for the output but instead
          * care for the return code of the executed process.
          */
         WAIT_FOR_PROCESS,
         /**
+         * <p>
          * This waits for the process to finish <em>and</em> for the stdout/stderr
          * threads to complete.
          * In this mode, {@link GrabProcessOutput#grabProcessOutput} returns the
          * error code from the process.
-         * <p/>
+         * </p>
          * Use this one when capturing all the output from the process is important.
          */
         WAIT_FOR_READERS,

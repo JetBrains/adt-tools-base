@@ -26,8 +26,16 @@ import java.util.Collection;
 public interface Dependencies {
 
     /**
-     * The list of Android library dependencies. This includes both modules and external
+     * The list of Android library dependencies.
+     *
+     * The list contains direct dependencies only, which themselves contain their transitive
      * dependencies.
+     *
+     * On version &lt; 2.2, only the Android transitive dependencies are included.
+     * On version 2.2+, both Java and Android transitive dependencies are included.
+     *
+     * This includes both modules and external dependencies. They can be differentiated with
+     * {@link Library#getProject()}.
      *
      * @return the list of libraries.
      */
@@ -35,7 +43,16 @@ public interface Dependencies {
     Collection<AndroidLibrary> getLibraries();
 
     /**
-     * The list of Java library dependencies. This only includes external dependencies.
+     * The list of Java library dependencies.
+     *
+     * On version &lt; 2.2, this includes only the external dependencies (both remote and local), and
+     * all dependencies are represented directly in the list, flattened from the normal dependency
+     * graph.
+     *
+     * On version 2.2+, this includes both modules and external dependencies, which can be
+     * differentiated with {@link Library#getProject()}. Also, the collection
+     * contains only the direct dependencies, which themselves contain their transitive
+     * dependencies.
      *
      * @return the list of Java library dependencies.
      */
@@ -46,8 +63,13 @@ public interface Dependencies {
      * The list of project dependencies. This is only for non Android module dependencies (which
      * right now is Java-only modules).
      *
+     * This is only valid for version &lt; 2.2. On version 2.2+ this list is empty.
+     *
      * @return the list of projects.
+     *
+     * @see #getJavaLibraries()
      */
     @NonNull
+    @Deprecated
     Collection<String> getProjects();
 }

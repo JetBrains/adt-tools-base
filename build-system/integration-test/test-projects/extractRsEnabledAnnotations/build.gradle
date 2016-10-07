@@ -1,5 +1,5 @@
 apply from: "../commonHeader.gradle"
-buildscript { apply from: "../commonBuildScript.gradle", to: buildscript }
+buildscript { apply from: "../commonBuildScript.gradle" }
 
 
 apply plugin: 'com.android.library'
@@ -18,5 +18,6 @@ android {
         targetSdkVersion 19
         renderscriptTargetApi 18
         renderscriptSupportModeEnabled true
+        renderscriptSupportModeBlasEnabled false
    }
 }

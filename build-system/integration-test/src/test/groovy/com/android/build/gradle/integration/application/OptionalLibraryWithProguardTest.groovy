@@ -15,15 +15,16 @@
  */
 
 package com.android.build.gradle.integration.application
+
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.runner.FilterableParameterized
+import com.android.build.gradle.integration.shrinker.ShrinkerTestUtils
 import groovy.transform.CompileStatic
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
-
 /**
  * Test for the new optional library mechanism when a library dependency uses sone now optional
  * classes and runs proguard, in which case proguard needs to see the optional classes.
@@ -50,7 +51,9 @@ class OptionalLibraryWithProguardTest {
 
     @Before
     public void chooseShrinker() throws Exception {
-        project.getSubproject("app").buildFile << "android.buildTypes.debug.useProguard = $useProguard"
+        if (!useProguard) {
+            ShrinkerTestUtils.enableShrinker(project.getSubproject("app"), "debug")
+        }
     }
 
     @Test

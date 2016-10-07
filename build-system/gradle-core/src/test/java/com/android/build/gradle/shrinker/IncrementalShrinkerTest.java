@@ -35,7 +35,6 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import com.google.common.io.Files;
 
-import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -50,19 +49,8 @@ import java.util.Map;
  */
 public class IncrementalShrinkerTest extends AbstractShrinkerTest {
 
-    private FullRunShrinker<String> mFullRunShrinker;
-
     @Rule
     public ExpectedException mException = ExpectedException.none();
-
-    @Before
-    public void createShrinker() throws Exception {
-        mFullRunShrinker = new FullRunShrinker<String>(
-                new WaitableExecutor<Void>(),
-                JavaSerializationShrinkerGraph.empty(mIncrementalDir),
-                getPlatformJars(),
-                mShrinkerLogger);
-    }
 
     @Test
     public void simple_testIncrementalUpdate() throws Exception {
@@ -459,8 +447,8 @@ public class IncrementalShrinkerTest extends AbstractShrinkerTest {
     }
 
     private void incrementalRun(Map<String, Status> changes) throws Exception {
-        IncrementalShrinker<String> incrementalShrinker = new IncrementalShrinker<String>(
-                new WaitableExecutor<Void>(),
+        IncrementalShrinker<String> incrementalShrinker = new IncrementalShrinker<>(
+                WaitableExecutor.<Void>useGlobalSharedThreadPool(),
                 JavaSerializationShrinkerGraph.readFromDir(
                         mIncrementalDir,
                         this.getClass().getClassLoader()),

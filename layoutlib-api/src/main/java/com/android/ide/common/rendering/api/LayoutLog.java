@@ -23,7 +23,7 @@ public class LayoutLog {
     /**
      * Prefix for resource warnings/errors. This is not meant to be used as-is by the Layout
      * Library, but is there to help test against a wider type of warning/error.
-     * <p/>
+     * <p>
      * {@code tag.startsWith(LayoutLog.TAG_RESOURCE_PREFIX} will test if the tag is any type
      * of resource warning/error
      */
@@ -32,7 +32,7 @@ public class LayoutLog {
     /**
      * Prefix for matrix warnings/errors. This is not meant to be used as-is by the Layout
      * Library, but is there to help test against a wider type of warning/error.
-     * <p/>
+     * <p>
      * {@code tag.startsWith(LayoutLog.TAG_MATRIX_PREFIX} will test if the tag is any type
      * of matrix warning/error
      */
@@ -132,6 +132,16 @@ public class LayoutLog {
      * Fidelity Tag used when something went wrong in rendering text.
      */
     public static final String TAG_TEXT_RENDERING = "textRendering";
+
+    /**
+     * Tag for reporting RTL being used with API lower than 17.
+     */
+    public static final String TAG_RTL_NOT_SUPPORTED = "rtl-not-supported";
+
+    /**
+     * Tag for reporting RTL being used with android:supportsRtl="false".
+     */
+    public static final String TAG_RTL_NOT_ENABLED = "rtl-not-enabled";
 
     /**
      * Tag for reporting messages that should not be logged in the render error panel,

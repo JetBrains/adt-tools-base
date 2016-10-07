@@ -1,0 +1,115 @@
+rm -f {ndkPath}/samples/bitmap-plasma/libs/arm64-v8a/lib*.so {ndkPath}/samples/bitmap-plasma/libs/armeabi/lib*.so {ndkPath}/samples/bitmap-plasma/libs/armeabi-v7a/lib*.so {ndkPath}/samples/bitmap-plasma/libs/armeabi-v7a-hard/lib*.so {ndkPath}/samples/bitmap-plasma/libs/mips/lib*.so {ndkPath}/samples/bitmap-plasma/libs/mips64/lib*.so {ndkPath}/samples/bitmap-plasma/libs/x86/lib*.so {ndkPath}/samples/bitmap-plasma/libs/x86_64/lib*.so
+rm -f {ndkPath}/samples/bitmap-plasma/libs/arm64-v8a/gdbserver {ndkPath}/samples/bitmap-plasma/libs/armeabi/gdbserver {ndkPath}/samples/bitmap-plasma/libs/armeabi-v7a/gdbserver {ndkPath}/samples/bitmap-plasma/libs/armeabi-v7a-hard/gdbserver {ndkPath}/samples/bitmap-plasma/libs/mips/gdbserver {ndkPath}/samples/bitmap-plasma/libs/mips64/gdbserver {ndkPath}/samples/bitmap-plasma/libs/x86/gdbserver {ndkPath}/samples/bitmap-plasma/libs/x86_64/gdbserver
+rm -f {ndkPath}/samples/bitmap-plasma/libs/arm64-v8a/gdb.setup {ndkPath}/samples/bitmap-plasma/libs/armeabi/gdb.setup {ndkPath}/samples/bitmap-plasma/libs/armeabi-v7a/gdb.setup {ndkPath}/samples/bitmap-plasma/libs/armeabi-v7a-hard/gdb.setup {ndkPath}/samples/bitmap-plasma/libs/mips/gdb.setup {ndkPath}/samples/bitmap-plasma/libs/mips64/gdb.setup {ndkPath}/samples/bitmap-plasma/libs/x86/gdb.setup {ndkPath}/samples/bitmap-plasma/libs/x86_64/gdb.setup
+mkdir -p {ndkPath}/samples/bitmap-plasma/libs/arm64-v8a
+echo [arm64-v8a] "Gdbserver      ": "[aarch64-{platform}-android-4.9] libs/arm64-v8a/gdbserver"
+install -p {ndkPath}/prebuilt/android-arm64/gdbserver/gdbserver {ndkPath}/samples/bitmap-plasma/libs/arm64-v8a/gdbserver
+echo [arm64-v8a] "Gdbsetup       ": "libs/arm64-v8a/gdb.setup"
+echo "set solib-search-path {ndkPath}/samples/bitmap-plasma/obj/local/arm64-v8a" > {ndkPath}/samples/bitmap-plasma/libs/arm64-v8a/gdb.setup
+echo "source {ndkPath}/prebuilt/common/gdb/common.setup" >> {ndkPath}/samples/bitmap-plasma/libs/arm64-v8a/gdb.setup
+echo "directory {ndkPath}/platforms/android-21/arch-arm64/usr/include {ndkPath}/samples/bitmap-plasma/jni {ndkPath}/sources/cxx-stl/system" >> {ndkPath}/samples/bitmap-plasma/libs/arm64-v8a/gdb.setup
+mkdir -p {ndkPath}/samples/bitmap-plasma/libs/x86_64
+echo [x86_64] "Gdbserver      ": "[x86_64-4.9] libs/x86_64/gdbserver"
+install -p {ndkPath}/prebuilt/android-x86_64/gdbserver/gdbserver {ndkPath}/samples/bitmap-plasma/libs/x86_64/gdbserver
+echo [x86_64] "Gdbsetup       ": "libs/x86_64/gdb.setup"
+echo "set solib-search-path {ndkPath}/samples/bitmap-plasma/obj/local/x86_64" > {ndkPath}/samples/bitmap-plasma/libs/x86_64/gdb.setup
+echo "source {ndkPath}/prebuilt/common/gdb/common.setup" >> {ndkPath}/samples/bitmap-plasma/libs/x86_64/gdb.setup
+echo "directory {ndkPath}/platforms/android-21/arch-x86_64/usr/include {ndkPath}/samples/bitmap-plasma/jni {ndkPath}/sources/cxx-stl/system" >> {ndkPath}/samples/bitmap-plasma/libs/x86_64/gdb.setup
+mkdir -p {ndkPath}/samples/bitmap-plasma/libs/mips64
+echo [mips64] "Gdbserver      ": "[mips64el-{platform}-android-4.9] libs/mips64/gdbserver"
+install -p {ndkPath}/prebuilt/android-mips64/gdbserver/gdbserver {ndkPath}/samples/bitmap-plasma/libs/mips64/gdbserver
+echo [mips64] "Gdbsetup       ": "libs/mips64/gdb.setup"
+echo "set solib-search-path {ndkPath}/samples/bitmap-plasma/obj/local/mips64" > {ndkPath}/samples/bitmap-plasma/libs/mips64/gdb.setup
+echo "source {ndkPath}/prebuilt/common/gdb/common.setup" >> {ndkPath}/samples/bitmap-plasma/libs/mips64/gdb.setup
+echo "directory {ndkPath}/platforms/android-21/arch-mips64/usr/include {ndkPath}/samples/bitmap-plasma/jni {ndkPath}/sources/cxx-stl/system" >> {ndkPath}/samples/bitmap-plasma/libs/mips64/gdb.setup
+mkdir -p {ndkPath}/samples/bitmap-plasma/libs/armeabi-v7a
+echo [armeabi-v7a] "Gdbserver      ": "[arm-{platform}-androideabi-4.8] libs/armeabi-v7a/gdbserver"
+install -p {ndkPath}/prebuilt/android-arm/gdbserver/gdbserver {ndkPath}/samples/bitmap-plasma/libs/armeabi-v7a/gdbserver
+echo [armeabi-v7a] "Gdbsetup       ": "libs/armeabi-v7a/gdb.setup"
+echo "set solib-search-path {ndkPath}/samples/bitmap-plasma/obj/local/armeabi-v7a" > {ndkPath}/samples/bitmap-plasma/libs/armeabi-v7a/gdb.setup
+echo "source {ndkPath}/prebuilt/common/gdb/common.setup" >> {ndkPath}/samples/bitmap-plasma/libs/armeabi-v7a/gdb.setup
+echo "directory {ndkPath}/platforms/android-8/arch-arm/usr/include {ndkPath}/samples/bitmap-plasma/jni {ndkPath}/sources/cxx-stl/system" >> {ndkPath}/samples/bitmap-plasma/libs/armeabi-v7a/gdb.setup
+mkdir -p {ndkPath}/samples/bitmap-plasma/libs/armeabi
+echo [armeabi] "Gdbserver      ": "[arm-{platform}-androideabi-4.8] libs/armeabi/gdbserver"
+install -p {ndkPath}/prebuilt/android-arm/gdbserver/gdbserver {ndkPath}/samples/bitmap-plasma/libs/armeabi/gdbserver
+echo [armeabi] "Gdbsetup       ": "libs/armeabi/gdb.setup"
+echo "set solib-search-path {ndkPath}/samples/bitmap-plasma/obj/local/armeabi" > {ndkPath}/samples/bitmap-plasma/libs/armeabi/gdb.setup
+echo "source {ndkPath}/prebuilt/common/gdb/common.setup" >> {ndkPath}/samples/bitmap-plasma/libs/armeabi/gdb.setup
+echo "directory {ndkPath}/platforms/android-8/arch-arm/usr/include {ndkPath}/samples/bitmap-plasma/jni {ndkPath}/sources/cxx-stl/system" >> {ndkPath}/samples/bitmap-plasma/libs/armeabi/gdb.setup
+mkdir -p {ndkPath}/samples/bitmap-plasma/libs/x86
+echo [x86] "Gdbserver      ": "[x86-4.8] libs/x86/gdbserver"
+install -p {ndkPath}/prebuilt/android-x86/gdbserver/gdbserver {ndkPath}/samples/bitmap-plasma/libs/x86/gdbserver
+echo [x86] "Gdbsetup       ": "libs/x86/gdb.setup"
+echo "set solib-search-path {ndkPath}/samples/bitmap-plasma/obj/local/x86" > {ndkPath}/samples/bitmap-plasma/libs/x86/gdb.setup
+echo "source {ndkPath}/prebuilt/common/gdb/common.setup" >> {ndkPath}/samples/bitmap-plasma/libs/x86/gdb.setup
+echo "directory {ndkPath}/platforms/android-9/arch-x86/usr/include {ndkPath}/samples/bitmap-plasma/jni {ndkPath}/sources/cxx-stl/system" >> {ndkPath}/samples/bitmap-plasma/libs/x86/gdb.setup
+mkdir -p {ndkPath}/samples/bitmap-plasma/libs/mips
+echo [mips] "Gdbserver      ": "[mipsel-{platform}-android-4.8] libs/mips/gdbserver"
+install -p {ndkPath}/prebuilt/android-mips/gdbserver/gdbserver {ndkPath}/samples/bitmap-plasma/libs/mips/gdbserver
+echo [mips] "Gdbsetup       ": "libs/mips/gdb.setup"
+echo "set solib-search-path {ndkPath}/samples/bitmap-plasma/obj/local/mips" > {ndkPath}/samples/bitmap-plasma/libs/mips/gdb.setup
+echo "source {ndkPath}/prebuilt/common/gdb/common.setup" >> {ndkPath}/samples/bitmap-plasma/libs/mips/gdb.setup
+echo "directory {ndkPath}/platforms/android-9/arch-mips/usr/include {ndkPath}/samples/bitmap-plasma/jni {ndkPath}/sources/cxx-stl/system" >> {ndkPath}/samples/bitmap-plasma/libs/mips/gdb.setup
+mkdir -p {ndkPath}/samples/bitmap-plasma/obj/local/arm64-v8a/objs-debug/plasma
+echo [arm64-v8a] "Compile        ": "plasma <= plasma.c"
+{ndkPath}/toolchains/aarch64-{platform}-android-4.9/prebuilt/{platform}-x86_64/bin/aarch64-{platform}-android-gcc -MMD -MP -MF {ndkPath}/samples/bitmap-plasma/obj/local/arm64-v8a/objs-debug/plasma/plasma.o.d -fpic -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -O2 -g -DNDEBUG -fomit-frame-pointer -fstrict-aliasing -funswitch-loops -finline-limit=300 -O0 -UNDEBUG -fno-omit-frame-pointer -fno-strict-aliasing -I{ndkPath}/samples/bitmap-plasma/jni -DANDROID  -Wa,--noexecstack -Wformat -Werror=format-security    -I{ndkPath}/platforms/android-21/arch-arm64/usr/include -c  {ndkPath}/samples/bitmap-plasma/jni/plasma.c -o {ndkPath}/samples/bitmap-plasma/obj/local/arm64-v8a/objs-debug/plasma/plasma.o 
+mkdir -p {ndkPath}/samples/bitmap-plasma/obj/local/arm64-v8a
+echo [arm64-v8a] "SharedLibrary  ": "libplasma.so"
+{ndkPath}/toolchains/aarch64-{platform}-android-4.9/prebuilt/{platform}-x86_64/bin/aarch64-{platform}-android-g++ -Wl,-soname,libplasma.so -shared --sysroot={ndkPath}/platforms/android-21/arch-arm64 {ndkPath}/samples/bitmap-plasma/obj/local/arm64-v8a/objs-debug/plasma/plasma.o -lgcc -no-canonical-prefixes  -Wl,--no-undefined -Wl,-z,noexecstack -Wl,-z,relro -Wl,-z,now  -L{ndkPath}/platforms/android-21/arch-arm64/usr/lib -lm -llog -ljnigraphics -lc -lm -o {ndkPath}/samples/bitmap-plasma/obj/local/arm64-v8a/libplasma.so
+echo [arm64-v8a] "Install        ": "libplasma.so => libs/arm64-v8a/libplasma.so"
+install -p {ndkPath}/samples/bitmap-plasma/obj/local/arm64-v8a/libplasma.so {ndkPath}/samples/bitmap-plasma/libs/arm64-v8a/libplasma.so
+{ndkPath}/toolchains/aarch64-{platform}-android-4.9/prebuilt/{platform}-x86_64/bin/aarch64-{platform}-android-strip --strip-unneeded  {ndkPath}/samples/bitmap-plasma/libs/arm64-v8a/libplasma.so
+mkdir -p {ndkPath}/samples/bitmap-plasma/obj/local/x86_64/objs-debug/plasma
+echo [x86_64] "Compile        ": "plasma <= plasma.c"
+{ndkPath}/toolchains/x86_64-4.9/prebuilt/{platform}-x86_64/bin/x86_64-{platform}-android-gcc -MMD -MP -MF {ndkPath}/samples/bitmap-plasma/obj/local/x86_64/objs-debug/plasma/plasma.o.d -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -O2 -g -DNDEBUG -fomit-frame-pointer -fstrict-aliasing -funswitch-loops -finline-limit=300 -O0 -UNDEBUG -fno-omit-frame-pointer -fno-strict-aliasing -I{ndkPath}/samples/bitmap-plasma/jni -DANDROID  -Wa,--noexecstack -Wformat -Werror=format-security    -I{ndkPath}/platforms/android-21/arch-x86_64/usr/include -c  {ndkPath}/samples/bitmap-plasma/jni/plasma.c -o {ndkPath}/samples/bitmap-plasma/obj/local/x86_64/objs-debug/plasma/plasma.o 
+mkdir -p {ndkPath}/samples/bitmap-plasma/obj/local/x86_64
+echo [x86_64] "SharedLibrary  ": "libplasma.so"
+{ndkPath}/toolchains/x86_64-4.9/prebuilt/{platform}-x86_64/bin/x86_64-{platform}-android-g++ -Wl,-soname,libplasma.so -shared --sysroot={ndkPath}/platforms/android-21/arch-x86_64 {ndkPath}/samples/bitmap-plasma/obj/local/x86_64/objs-debug/plasma/plasma.o -lgcc -no-canonical-prefixes  -Wl,--no-undefined -Wl,-z,noexecstack -Wl,-z,relro -Wl,-z,now  -L{ndkPath}/platforms/android-21/arch-x86_64/usr/lib64 -L{ndkPath}/platforms/android-21/arch-x86_64/usr/lib -lm -llog -ljnigraphics -lc -lm -o {ndkPath}/samples/bitmap-plasma/obj/local/x86_64/libplasma.so
+echo [x86_64] "Install        ": "libplasma.so => libs/x86_64/libplasma.so"
+install -p {ndkPath}/samples/bitmap-plasma/obj/local/x86_64/libplasma.so {ndkPath}/samples/bitmap-plasma/libs/x86_64/libplasma.so
+{ndkPath}/toolchains/x86_64-4.9/prebuilt/{platform}-x86_64/bin/x86_64-{platform}-android-strip --strip-unneeded  {ndkPath}/samples/bitmap-plasma/libs/x86_64/libplasma.so
+mkdir -p {ndkPath}/samples/bitmap-plasma/obj/local/mips64/objs-debug/plasma
+echo [mips64] "Compile        ": "plasma <= plasma.c"
+{ndkPath}/toolchains/mips64el-{platform}-android-4.9/prebuilt/{platform}-x86_64/bin/mips64el-{platform}-android-gcc -MMD -MP -MF {ndkPath}/samples/bitmap-plasma/obj/local/mips64/objs-debug/plasma/plasma.o.d -fpic -fno-strict-aliasing -finline-functions -ffunction-sections -funwind-tables -fmessage-length=0 -fno-inline-functions-called-once -fgcse-after-reload -frerun-cse-after-loop -frename-registers -no-canonical-prefixes -O0 -g -fno-omit-frame-pointer -I{ndkPath}/samples/bitmap-plasma/jni -DANDROID  -Wa,--noexecstack -Wformat -Werror=format-security    -I{ndkPath}/platforms/android-21/arch-mips64/usr/include -c  {ndkPath}/samples/bitmap-plasma/jni/plasma.c -o {ndkPath}/samples/bitmap-plasma/obj/local/mips64/objs-debug/plasma/plasma.o 
+mkdir -p {ndkPath}/samples/bitmap-plasma/obj/local/mips64
+echo [mips64] "SharedLibrary  ": "libplasma.so"
+{ndkPath}/toolchains/mips64el-{platform}-android-4.9/prebuilt/{platform}-x86_64/bin/mips64el-{platform}-android-g++ -Wl,-soname,libplasma.so -shared --sysroot={ndkPath}/platforms/android-21/arch-mips64 {ndkPath}/samples/bitmap-plasma/obj/local/mips64/objs-debug/plasma/plasma.o -lgcc -no-canonical-prefixes  -Wl,--no-undefined -Wl,-z,noexecstack -Wl,-z,relro -Wl,-z,now  -L{ndkPath}/platforms/android-21/arch-mips64/usr/lib64 -L{ndkPath}/platforms/android-21/arch-mips64/usr/lib -lm -llog -ljnigraphics -lc -lm -o {ndkPath}/samples/bitmap-plasma/obj/local/mips64/libplasma.so
+echo [mips64] "Install        ": "libplasma.so => libs/mips64/libplasma.so"
+install -p {ndkPath}/samples/bitmap-plasma/obj/local/mips64/libplasma.so {ndkPath}/samples/bitmap-plasma/libs/mips64/libplasma.so
+{ndkPath}/toolchains/mips64el-{platform}-android-4.9/prebuilt/{platform}-x86_64/bin/mips64el-{platform}-android-strip --strip-unneeded  {ndkPath}/samples/bitmap-plasma/libs/mips64/libplasma.so
+mkdir -p {ndkPath}/samples/bitmap-plasma/obj/local/armeabi-v7a/objs-debug/plasma
+echo [armeabi-v7a] "Compile thumb  ": "plasma <= plasma.c"
+{ndkPath}/toolchains/arm-{platform}-androideabi-4.8/prebuilt/{platform}-x86_64/bin/arm-{platform}-androideabi-gcc -MMD -MP -MF {ndkPath}/samples/bitmap-plasma/obj/local/armeabi-v7a/objs-debug/plasma/plasma.o.d -fpic -ffunction-sections -funwind-tables -fstack-protector -no-canonical-prefixes -march=armv7-a -mfpu=vfpv3-d16 -mfloat-abi=softfp -mthumb -Os -g -DNDEBUG -fomit-frame-pointer -fno-strict-aliasing -finline-limit=64 -O0 -UNDEBUG -marm -fno-omit-frame-pointer -I{ndkPath}/samples/bitmap-plasma/jni -DANDROID  -Wa,--noexecstack -Wformat -Werror=format-security    -I{ndkPath}/platforms/android-8/arch-arm/usr/include -c  {ndkPath}/samples/bitmap-plasma/jni/plasma.c -o {ndkPath}/samples/bitmap-plasma/obj/local/armeabi-v7a/objs-debug/plasma/plasma.o 
+mkdir -p {ndkPath}/samples/bitmap-plasma/obj/local/armeabi-v7a
+echo [armeabi-v7a] "SharedLibrary  ": "libplasma.so"
+{ndkPath}/toolchains/arm-{platform}-androideabi-4.8/prebuilt/{platform}-x86_64/bin/arm-{platform}-androideabi-g++ -Wl,-soname,libplasma.so -shared --sysroot={ndkPath}/platforms/android-8/arch-arm {ndkPath}/samples/bitmap-plasma/obj/local/armeabi-v7a/objs-debug/plasma/plasma.o -lgcc -no-canonical-prefixes -march=armv7-a -Wl,--fix-cortex-a8  -Wl,--no-undefined -Wl,-z,noexecstack -Wl,-z,relro -Wl,-z,now  -L{ndkPath}/platforms/android-8/arch-arm/usr/lib -lm -llog -ljnigraphics -lc -lm -o {ndkPath}/samples/bitmap-plasma/obj/local/armeabi-v7a/libplasma.so
+echo [armeabi-v7a] "Install        ": "libplasma.so => libs/armeabi-v7a/libplasma.so"
+install -p {ndkPath}/samples/bitmap-plasma/obj/local/armeabi-v7a/libplasma.so {ndkPath}/samples/bitmap-plasma/libs/armeabi-v7a/libplasma.so
+{ndkPath}/toolchains/arm-{platform}-androideabi-4.8/prebuilt/{platform}-x86_64/bin/arm-{platform}-androideabi-strip --strip-unneeded  {ndkPath}/samples/bitmap-plasma/libs/armeabi-v7a/libplasma.so
+mkdir -p {ndkPath}/samples/bitmap-plasma/obj/local/armeabi/objs-debug/plasma
+echo [armeabi] "Compile thumb  ": "plasma <= plasma.c"
+{ndkPath}/toolchains/arm-{platform}-androideabi-4.8/prebuilt/{platform}-x86_64/bin/arm-{platform}-androideabi-gcc -MMD -MP -MF {ndkPath}/samples/bitmap-plasma/obj/local/armeabi/objs-debug/plasma/plasma.o.d -fpic -ffunction-sections -funwind-tables -fstack-protector -no-canonical-prefixes -march=armv5te -mtune=xscale -msoft-float -mthumb -Os -g -DNDEBUG -fomit-frame-pointer -fno-strict-aliasing -finline-limit=64 -O0 -UNDEBUG -marm -fno-omit-frame-pointer -I{ndkPath}/samples/bitmap-plasma/jni -DANDROID  -Wa,--noexecstack -Wformat -Werror=format-security    -I{ndkPath}/platforms/android-8/arch-arm/usr/include -c  {ndkPath}/samples/bitmap-plasma/jni/plasma.c -o {ndkPath}/samples/bitmap-plasma/obj/local/armeabi/objs-debug/plasma/plasma.o 
+mkdir -p {ndkPath}/samples/bitmap-plasma/obj/local/armeabi
+echo [armeabi] "SharedLibrary  ": "libplasma.so"
+{ndkPath}/toolchains/arm-{platform}-androideabi-4.8/prebuilt/{platform}-x86_64/bin/arm-{platform}-androideabi-g++ -Wl,-soname,libplasma.so -shared --sysroot={ndkPath}/platforms/android-8/arch-arm {ndkPath}/samples/bitmap-plasma/obj/local/armeabi/objs-debug/plasma/plasma.o -lgcc -no-canonical-prefixes  -Wl,--no-undefined -Wl,-z,noexecstack -Wl,-z,relro -Wl,-z,now  -L{ndkPath}/platforms/android-8/arch-arm/usr/lib -lm -llog -ljnigraphics -lc -lm -o {ndkPath}/samples/bitmap-plasma/obj/local/armeabi/libplasma.so
+echo [armeabi] "Install        ": "libplasma.so => libs/armeabi/libplasma.so"
+install -p {ndkPath}/samples/bitmap-plasma/obj/local/armeabi/libplasma.so {ndkPath}/samples/bitmap-plasma/libs/armeabi/libplasma.so
+{ndkPath}/toolchains/arm-{platform}-androideabi-4.8/prebuilt/{platform}-x86_64/bin/arm-{platform}-androideabi-strip --strip-unneeded  {ndkPath}/samples/bitmap-plasma/libs/armeabi/libplasma.so
+mkdir -p {ndkPath}/samples/bitmap-plasma/obj/local/x86/objs-debug/plasma
+echo [x86] "Compile        ": "plasma <= plasma.c"
+{ndkPath}/toolchains/x86-4.8/prebuilt/{platform}-x86_64/bin/i686-{platform}-android-gcc -MMD -MP -MF {ndkPath}/samples/bitmap-plasma/obj/local/x86/objs-debug/plasma/plasma.o.d -ffunction-sections -funwind-tables -no-canonical-prefixes -fstack-protector -O2 -g -DNDEBUG -fomit-frame-pointer -fstrict-aliasing -funswitch-loops -finline-limit=300 -O0 -UNDEBUG -fno-omit-frame-pointer -fno-strict-aliasing -I{ndkPath}/samples/bitmap-plasma/jni -DANDROID  -Wa,--noexecstack -Wformat -Werror=format-security    -I{ndkPath}/platforms/android-9/arch-x86/usr/include -c  {ndkPath}/samples/bitmap-plasma/jni/plasma.c -o {ndkPath}/samples/bitmap-plasma/obj/local/x86/objs-debug/plasma/plasma.o 
+mkdir -p {ndkPath}/samples/bitmap-plasma/obj/local/x86
+echo [x86] "SharedLibrary  ": "libplasma.so"
+{ndkPath}/toolchains/x86-4.8/prebuilt/{platform}-x86_64/bin/i686-{platform}-android-g++ -Wl,-soname,libplasma.so -shared --sysroot={ndkPath}/platforms/android-9/arch-x86 {ndkPath}/samples/bitmap-plasma/obj/local/x86/objs-debug/plasma/plasma.o -lgcc -no-canonical-prefixes  -Wl,--no-undefined -Wl,-z,noexecstack -Wl,-z,relro -Wl,-z,now  -L{ndkPath}/platforms/android-9/arch-x86/usr/lib -lm -llog -ljnigraphics -lc -lm -o {ndkPath}/samples/bitmap-plasma/obj/local/x86/libplasma.so
+echo [x86] "Install        ": "libplasma.so => libs/x86/libplasma.so"
+install -p {ndkPath}/samples/bitmap-plasma/obj/local/x86/libplasma.so {ndkPath}/samples/bitmap-plasma/libs/x86/libplasma.so
+{ndkPath}/toolchains/x86-4.8/prebuilt/{platform}-x86_64/bin/i686-{platform}-android-strip --strip-unneeded  {ndkPath}/samples/bitmap-plasma/libs/x86/libplasma.so
+mkdir -p {ndkPath}/samples/bitmap-plasma/obj/local/mips/objs-debug/plasma
+echo [mips] "Compile        ": "plasma <= plasma.c"
+{ndkPath}/toolchains/mipsel-{platform}-android-4.8/prebuilt/{platform}-x86_64/bin/mipsel-{platform}-android-gcc -MMD -MP -MF {ndkPath}/samples/bitmap-plasma/obj/local/mips/objs-debug/plasma/plasma.o.d -fpic -fno-strict-aliasing -finline-functions -ffunction-sections -funwind-tables -fmessage-length=0 -fno-inline-functions-called-once -fgcse-after-reload -frerun-cse-after-loop -frename-registers -no-canonical-prefixes -O0 -g -fno-omit-frame-pointer -I{ndkPath}/samples/bitmap-plasma/jni -DANDROID  -Wa,--noexecstack -Wformat -Werror=format-security    -I{ndkPath}/platforms/android-9/arch-mips/usr/include -c  {ndkPath}/samples/bitmap-plasma/jni/plasma.c -o {ndkPath}/samples/bitmap-plasma/obj/local/mips/objs-debug/plasma/plasma.o 
+mkdir -p {ndkPath}/samples/bitmap-plasma/obj/local/mips
+echo [mips] "SharedLibrary  ": "libplasma.so"
+{ndkPath}/toolchains/mipsel-{platform}-android-4.8/prebuilt/{platform}-x86_64/bin/mipsel-{platform}-android-g++ -Wl,-soname,libplasma.so -shared --sysroot={ndkPath}/platforms/android-9/arch-mips {ndkPath}/samples/bitmap-plasma/obj/local/mips/objs-debug/plasma/plasma.o -lgcc -no-canonical-prefixes  -Wl,--no-undefined -Wl,-z,noexecstack -Wl,-z,relro -Wl,-z,now  -L{ndkPath}/platforms/android-9/arch-mips/usr/lib -lm -llog -ljnigraphics -lc -lm -o {ndkPath}/samples/bitmap-plasma/obj/local/mips/libplasma.so
+echo [mips] "Install        ": "libplasma.so => libs/mips/libplasma.so"
+install -p {ndkPath}/samples/bitmap-plasma/obj/local/mips/libplasma.so {ndkPath}/samples/bitmap-plasma/libs/mips/libplasma.so
+{ndkPath}/toolchains/mipsel-{platform}-android-4.8/prebuilt/{platform}-x86_64/bin/mipsel-{platform}-android-strip --strip-unneeded  {ndkPath}/samples/bitmap-plasma/libs/mips/libplasma.so

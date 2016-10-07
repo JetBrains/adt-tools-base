@@ -26,7 +26,12 @@ public class DensityBasedResourceValue extends ResourceValue implements IDensity
 
     public DensityBasedResourceValue(ResourceType type, String name, String value,
             com.android.resources.Density density, boolean isFramework) {
-        super(type, name, value, isFramework);
+        this(type, name, value, density, isFramework, null);
+    }
+
+    public DensityBasedResourceValue(ResourceType type, String name, String value,
+            com.android.resources.Density density, boolean isFramework, String libraryName) {
+        super(type, name, value, isFramework, libraryName);
         mDensity = density;
     }
 

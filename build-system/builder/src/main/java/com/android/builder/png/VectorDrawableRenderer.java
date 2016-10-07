@@ -16,6 +16,7 @@
 
 package com.android.builder.png;
 
+import static com.android.SdkConstants.TAG_VECTOR;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 
@@ -23,18 +24,16 @@ import com.android.annotations.NonNull;
 import com.android.ide.common.res2.ResourcePreprocessor;
 import com.android.ide.common.resources.configuration.DensityQualifier;
 import com.android.ide.common.resources.configuration.FolderConfiguration;
+import com.android.ide.common.resources.configuration.ResourceQualifier;
 import com.android.ide.common.resources.configuration.VersionQualifier;
 import com.android.ide.common.vectordrawable.VdPreview;
 import com.android.resources.Density;
 import com.android.resources.ResourceFolderType;
 import com.android.utils.ILogger;
+import com.android.utils.XmlUtils;
 import com.google.common.base.Charsets;
-import com.google.common.base.Throwables;
 import com.google.common.collect.Lists;
 import com.google.common.io.Files;
-
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
 
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -42,8 +41,6 @@ import java.io.IOException;
 import java.util.Collection;
 
 import javax.imageio.ImageIO;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
 
 /**
  * Generates PNG images (and XML copies) from VectorDrawable files.
@@ -82,14 +79,14 @@ public class VectorDrawableRenderer implements ResourcePreprocessor {
         Collection<File> filesToBeGenerated = Lists.newArrayList();
         FolderConfiguration originalConfiguration = getFolderConfiguration(inputXmlFile);
 
-        if (originalConfiguration.getDensityQualifier() != null
-                && originalConfiguration.getDensityQualifier().getValue() == Density.NODPI) {
+        DensityQualifier densityQualifier = originalConfiguration.getDensityQualifier();
+        boolean validDensityQualifier = ResourceQualifier.isValid(densityQualifier);
+        if (validDensityQualifier && densityQualifier.getValue() == Density.NODPI) {
             // If the files uses nodpi, just leave it alone.
             filesToBeGenerated.add(new File(
                     getDirectory(originalConfiguration),
                     inputXmlFile.getName()));
-        } else if (originalConfiguration.getDensityQualifier() != null
-                && originalConfiguration.getDensityQualifier().getValue() != Density.ANYDPI) {
+        } else if (validDensityQualifier && densityQualifier.getValue() != Density.ANYDPI) {
             // If the density is specified, generate one png and one xml.
             filesToBeGenerated.add(new File(
                     getDirectory(originalConfiguration),
@@ -179,23 +176,9 @@ public class VectorDrawableRenderer implements ResourcePreprocessor {
 
     /**
      * Parse the root element of the file, return true if it is a vector.
-     * TODO: Use SAX parser to only look at the root tag.
      */
     private static boolean isRootVector(File resourceFile) {
-        DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
-        boolean result = false;
-        try {
-            DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
-            Document doc = dBuilder.parse(resourceFile);
-            Element root = doc.getDocumentElement();
-            if (root != null && root.getNodeName().equalsIgnoreCase("vector")) {
-                result = true;
-            }
-        } catch (Exception e) {
-            Throwables.propagate(e);
-        }
-
-        return result;
+        return TAG_VECTOR.equals(XmlUtils.getRootTagName(resourceFile));
     }
 
     private static boolean isXml(File resourceFile) {

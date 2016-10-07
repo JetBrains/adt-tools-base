@@ -19,30 +19,34 @@ package com.android.sdklib;
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.google.common.base.Objects;
 
 import java.util.regex.Pattern;
 
 /**
+ * <p>
  * Represents the version of a target or device.
- * <p/>
+ * </p>
  * A version is defined by an API level and an optional code name.
  * <ul><li>Release versions of the Android platform are identified by their API level (integer),
  * (technically the code name for release version is "REL" but this class will return
- * <code>null<code> instead.)</li>
+ * <code>null</code> instead.)</li>
  * <li>Preview versions of the platform are identified by a code name. Their API level
  * is usually set to the value of the previous platform.</li></ul>
- * <p/>
+ * <p>
  * While this class contains both values, its goal is to abstract them, so that code comparing 2+
  * versions doesn't have to deal with the logic of handle both values.
- * <p/>
+ * </p>
+ * <p>
  * There are some cases where ones may want to access the values directly. This can be done
  * with {@link #getApiLevel()} and {@link #getCodename()}.
- * <p/>
+ * </p>
  * For generic UI display of the API version, {@link #getApiString()} is to be used.
  */
 public final class AndroidVersion implements Comparable<AndroidVersion> {
 
     private final int mApiLevel;
+    @Nullable
     private final String mCodename;
 
     /** The default AndroidVersion for minSdkVersion and targetSdkVersion if not specified. */
@@ -50,6 +54,15 @@ public final class AndroidVersion implements Comparable<AndroidVersion> {
 
     /** First version to use ART by default. */
     public static final AndroidVersion ART_RUNTIME = new AndroidVersion(21, null);
+
+    /** First version to feature binder's common interface "cmd" for sending shell commands to services. */
+    public static final AndroidVersion BINDER_CMD_AVAILABLE = new AndroidVersion(24, null);
+
+    /** First version to allow split apks */
+    public static final AndroidVersion ALLOW_SPLIT_APK_INSTALLATION = new AndroidVersion(21, null);
+
+    /** First version to have multi-user support (JB-MR2, API 17) */
+    public static final AndroidVersion SUPPORTS_MULTI_USER = new AndroidVersion(17, null);
 
     /**
      * Thrown when an {@link AndroidVersion} object could not be created.
@@ -72,9 +85,10 @@ public final class AndroidVersion implements Comparable<AndroidVersion> {
     }
 
     /**
+     * <p>
      * Creates an {@link AndroidVersion} from a string that may be an integer API
      * level or a string codename.
-     * <p/>
+     * </p>
      * <Em>Important</em>: An important limitation of this method is that cannot possible
      * recreate the API level integer from a pure string codename. This is only OK to use
      * if the caller can guarantee that only {@link #getApiString()} will be used later.
@@ -114,10 +128,10 @@ public final class AndroidVersion implements Comparable<AndroidVersion> {
 
     /**
      * Returns the api level as an integer.
-     * <p/>For target that are in preview mode, this can be superseded by
-     * {@link #getCodename()}.
-     * <p/>To display the API level in the UI, use {@link #getApiString()}, which will use the
-     * codename if applicable.
+     * <p>For target that are in preview mode, this can be superseded by
+     * {@link #getCodename()}.</p>
+     * <p>To display the API level in the UI, use {@link #getApiString()}, which will use the
+     * codename if applicable.</p>
      * @see #getCodename()
      * @see #getApiString()
      */
@@ -142,8 +156,8 @@ public final class AndroidVersion implements Comparable<AndroidVersion> {
 
     /**
      * Returns the version code name if applicable, null otherwise.
-     * <p/>If the codename is non null, then the API level should be ignored, and this should be
-     * used as a unique identifier of the target instead.
+     * <p>If the codename is non null, then the API level should be ignored, and this should be
+     * used as a unique identifier of the target instead.</p>
      */
     @Nullable
     public String getCodename() {
@@ -172,13 +186,15 @@ public final class AndroidVersion implements Comparable<AndroidVersion> {
     /**
      * Checks whether a device running a version similar to the receiver can run a project compiled
      * for the given <var>version</var>.
-     * <p/>
+     * <p>
      * Be aware that this is not a perfect test, as other properties could break compatibility
      * despite this method returning true.
-     * <p/>
+     * </p>
+     * <p>
      * Nevertheless, when testing if an application can run on a device (where there is no
      * access to the list of optional libraries), this method can give a good indication of whether
      * there is a chance the application could run, or if there's a direct incompatibility.
+     * </p>
      */
     public boolean canRun(@NonNull AndroidVersion appVersion) {
         // if the application is compiled for a preview version, the device must be running exactly
@@ -200,47 +216,15 @@ public final class AndroidVersion implements Comparable<AndroidVersion> {
         return mCodename == null && apiLevel == mApiLevel;
     }
 
-    /**
-     * Compares the receiver with either an {@link AndroidVersion} object or a {@link String}
-     * object.
-     * <p/>If <var>obj</var> is a {@link String}, then the method will first check if it's a string
-     * representation of a number, in which case it'll compare it to the api level. Otherwise, it'll
-     * compare it against the code name.
-     * <p/>For all other type of object give as parameter, this method will return
-     * <code>false</code>.
-     */
     @Override
     public boolean equals(Object obj) {
-        if (obj instanceof AndroidVersion) {
-            AndroidVersion version = (AndroidVersion)obj;
-
-            if (mCodename == null) {
-                return version.mCodename == null &&
-                        mApiLevel == version.mApiLevel;
-            } else {
-                return mCodename.equals(version.mCodename) &&
-                        mApiLevel == version.mApiLevel;
-            }
-
-        } else if (obj instanceof String) {
-            // if we have a code name, this must match.
-            if (mCodename != null) {
-                return mCodename.equals(obj);
-            }
-
-            // else we try to convert to a int and compare to the api level
-            try {
-                int value = Integer.parseInt((String)obj);
-                return value == mApiLevel;
-            } catch (NumberFormatException e) {
-                // not a number? we'll return false below.
-            }
+        if (!(obj instanceof AndroidVersion)) {
+            return false;
         }
-
-        return false;
+        AndroidVersion other = (AndroidVersion) obj;
+        return mApiLevel == other.mApiLevel && Objects.equal(mCodename, other.mCodename);
     }
 
-    @Override
     public int hashCode() {
         if (mCodename != null) {
             return mCodename.hashCode();

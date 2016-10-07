@@ -16,18 +16,32 @@
 
 package com.android.builder.core;
 
+import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 
-public interface DexOptions {
+import java.util.List;
 
-    boolean getIncremental();
+public interface DexOptions {
     boolean getPreDexLibraries();
+
     boolean getJumboMode();
+
+    boolean getDexInProcess();
+
+    boolean getKeepRuntimeAnnotatedClasses();
 
     @Nullable
     String getJavaMaxHeapSize();
+
     @Nullable
     Integer getThreadCount();
+
     @Nullable
     Integer getMaxProcessCount();
+
+    @NonNull
+    List<String> getAdditionalParameters();
+
+    @Nullable
+    Boolean getOptimize();
 }

@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.integration.dependencies;
 
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat;
 import static com.android.build.gradle.integration.common.utils.TestFileUtils.appendToFile;
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk;
 
@@ -24,13 +25,18 @@ import com.android.build.gradle.integration.common.truth.TruthHelper;
 import com.android.build.gradle.integration.common.utils.ModelHelper;
 import com.android.builder.model.AndroidProject;
 import com.android.builder.model.Dependencies;
+import com.android.builder.model.JavaLibrary;
 import com.android.builder.model.Variant;
 import com.android.ide.common.process.ProcessException;
+import com.google.common.base.Charsets;
+import com.google.common.collect.Iterables;
+import com.google.common.io.Files;
 import com.google.common.truth.Truth;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -49,6 +55,8 @@ public class AppWithProvidedAarAsJarTest {
 
     @BeforeClass
     public static void setUp() throws IOException {
+        Files.write("include 'app', 'library'", project.getSettingsFile(), Charsets.UTF_8);
+
         appendToFile(project.getSubproject("app").getBuildFile(),
                 "\n" +
                 "\n" +
@@ -86,21 +94,17 @@ public class AppWithProvidedAarAsJarTest {
     }
 
     @Test
+    @Ignore
     public void checkProvidedJarIsInTheMainArtifactDependency() {
         Variant variant = ModelHelper.getVariant(models.get(":app").getVariants(), "debug");
-        Truth.assertThat(variant).isNotNull();
 
-        Dependencies deps = variant.getMainArtifact().getDependencies();
-        TruthHelper.assertThat(deps.getProjects()).containsExactly(":library");
-    }
+        Dependencies deps = variant.getMainArtifact().getCompileDependencies();
 
-    @Test
-    public void checkProvidedJarIsInTheAndroidTestDependency() {
-        // TODO
-    }
+        assertThat(deps.getProjects()).named("project deps count").isEmpty();
 
-    @Test
-    public void checkProvidedJarIsInTheUnitTestDependency() {
-        // TODO
+        assertThat(deps.getJavaLibraries()).named("java libs deps count").hasSize(1);
+        JavaLibrary javaLibrary = Iterables.getOnlyElement(deps.getJavaLibraries());
+        assertThat(javaLibrary.getProject()).named("dep path").isEqualTo(":library");
+        assertThat(javaLibrary.isProvided()).named("dep provided").isTrue();
     }
 }

@@ -22,8 +22,9 @@ import com.android.annotations.Nullable;
 import java.util.Formatter;
 
 /**
+ * <p>
  * Interface used to display warnings/errors while parsing the SDK content.
- * <p/>
+ * </p>
  * There are a few default implementations available:
  * <ul>
  * <li> {@link NullLogger} is an implementation that does <em>nothing</em> with the log.

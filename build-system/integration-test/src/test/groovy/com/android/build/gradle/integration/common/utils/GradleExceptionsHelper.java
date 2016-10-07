@@ -19,7 +19,7 @@ package com.android.build.gradle.integration.common.utils;
 import com.google.common.base.Throwables;
 
 import org.gradle.api.tasks.TaskExecutionException;
-import org.gradle.messaging.remote.internal.PlaceholderException;
+import org.gradle.internal.serialize.PlaceholderException;
 import org.gradle.tooling.GradleConnectionException;
 
 /**
@@ -45,6 +45,22 @@ public class GradleExceptionsHelper {
         throw new AssertionError(
                 String.format(
                         "Exception was not caused by a task failure: \n%s",
+                        Throwables.getStackTraceAsString(e)));
+    }
+
+    public static String getFailureMessage(GradleConnectionException e, Class<?> exceptionType) {
+        for (Throwable throwable : Throwables.getCausalChain(e)) {
+            // Because of different class loaders involved, we are forced to do stringly-typed
+            // programming.
+            if (throwable.getClass().getName().equals(exceptionType.getName())) {
+                return throwable.getMessage();
+            }
+        }
+
+        throw new AssertionError(
+                String.format(
+                        "Exception was not caused by a '%s' failure: \n%s",
+                        exceptionType.getName(),
                         Throwables.getStackTraceAsString(e)));
     }
 }

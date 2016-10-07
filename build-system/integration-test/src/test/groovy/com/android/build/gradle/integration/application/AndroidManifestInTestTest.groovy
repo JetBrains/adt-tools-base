@@ -48,7 +48,7 @@ class AndroidManifestInTestTest {
 
     @Test
     public void testUserProvidedTestAndroidManifest() throws Exception {
-        File testApk = project.getApk("debug", "androidTest", "unaligned")
+        File testApk = project.getTestApk("debug")
 
         ProcessInfoBuilder builder = new ProcessInfoBuilder()
         builder.setExecutable(SdkHelper.getAapt())

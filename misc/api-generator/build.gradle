@@ -6,10 +6,10 @@ applicationDefaultJvmArgs = ["-ea", "-Xms1048m", "-Xmx2048m"]
 
 sourceCompatibility = 1.6
 dependencies {
-    compile project(':base:common')
+    compile 'com.google.guava:guava:17.0'
     compile 'net.sf.kxml:kxml2:2.3.0'
-    compile 'org.ow2.asm:asm:4.0'
-    compile 'org.ow2.asm:asm-tree:4.0'
+    compile 'org.ow2.asm:asm:5.0.4'
+    compile 'org.ow2.asm:asm-tree:5.0.4'
 }
 
 defaultTasks 'installApp'

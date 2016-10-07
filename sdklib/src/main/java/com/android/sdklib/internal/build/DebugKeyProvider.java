@@ -33,8 +33,8 @@ import java.security.cert.CertificateException;
 
 /**
  * A provider of a dummy key to sign Android application for debugging purpose.
- * <p/>This provider uses a custom keystore to create and store a key with a known password.
- * 
+ * <p>This provider uses a custom keystore to create and store a key with a known password.
+ *
  * @deprecated Use Android-Builder instead
  */
 @Deprecated
@@ -84,8 +84,8 @@ public class DebugKeyProvider {
 
     /**
      * Creates a provider using a keystore at the given location.
-     * <p/>The keystore, and a new random android debug key are created if they do not yet exist.
-     * <p/>Password for the store/key is <code>android</code>, and the key alias is
+     * <p>The keystore, and a new random android debug key are created if they do not yet exist.
+     * <p>Password for the store/key is <code>android</code>, and the key alias is
      * <code>AndroidDebugKey</code>.
      * @param osKeyStorePath the OS path to the keystore, or <code>null</code> if the default one
      * is to be used.

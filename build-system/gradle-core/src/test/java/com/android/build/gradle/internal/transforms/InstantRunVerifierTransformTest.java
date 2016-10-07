@@ -21,7 +21,6 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.when;
 
 import com.android.annotations.NonNull;
-import com.android.build.api.transform.SecondaryInput;
 import com.android.build.api.transform.Context;
 import com.android.build.api.transform.DirectoryInput;
 import com.android.build.api.transform.JarInput;
@@ -29,7 +28,7 @@ import com.android.build.api.transform.Status;
 import com.android.build.api.transform.TransformException;
 import com.android.build.api.transform.TransformInput;
 import com.android.build.api.transform.TransformOutputProvider;
-import com.android.build.gradle.OptionalCompilationStep;
+import com.android.builder.model.OptionalCompilationStep;
 import com.android.build.gradle.internal.incremental.InstantRunVerifierStatus;
 import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
 import com.android.build.gradle.internal.incremental.InstantRunVerifier;
@@ -43,7 +42,9 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.io.Files;
 
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
@@ -61,9 +62,9 @@ import java.util.Set;
 @RunWith(MockitoJUnitRunner.class)
 public class InstantRunVerifierTransformTest {
 
-    final Map<File, File> recordedVerification = new HashMap<File, File>();
-    final Map<File, File> recordedCopies = new HashMap<File, File>();
-    final File backupDir = Files.createTempDir();
+    final Map<File, File> recordedVerification = new HashMap<>();
+    final Map<File, File> recordedCopies = new HashMap<>();
+    private File backupDir;
 
     @Mock
     VariantScope variantScope;
@@ -80,8 +81,12 @@ public class InstantRunVerifierTransformTest {
     @Mock
     InstantRunBuildContext instantRunBuildContext;
 
+    @Rule
+    public TemporaryFolder temporaryFolder = new TemporaryFolder();
+
     @Before
-    public void setUpMock() {
+    public void setUpMock() throws IOException {
+        backupDir = temporaryFolder.newFolder();
         when(variantScope.getIncrementalVerifierDir()).thenReturn(backupDir);
         when(variantScope.getInstantRunBuildContext()).thenReturn(instantRunBuildContext);
         when(variantScope.getGlobalScope()).thenReturn(globalScope);
@@ -93,7 +98,7 @@ public class InstantRunVerifierTransformTest {
             throws TransformException, InterruptedException, IOException {
 
         InstantRunVerifierTransform transform = getTransform();
-        final File tmpDir = Files.createTempDir();
+        final File tmpDir = temporaryFolder.newFolder();
 
         final File inputClass = new File(tmpDir, "com/foo/bar/InputFile.class");
         Files.createParentDirs(inputClass);
@@ -133,7 +138,7 @@ public class InstantRunVerifierTransformTest {
             .build());
 
         // clean up.
-        FileUtils.deleteFolder(tmpDir);
+        FileUtils.deletePath(tmpDir);
 
         // input class should have been copied.
         assertThat(recordedVerification).isEmpty();
@@ -146,7 +151,7 @@ public class InstantRunVerifierTransformTest {
     public void testIncrementalMode_changedAndAdded() throws TransformException, IOException, InterruptedException {
 
         InstantRunVerifierTransform transform = getTransform();
-        final File tmpDir = Files.createTempDir();
+        final File tmpDir = temporaryFolder.newFolder();
 
         final File addedFile = new File(tmpDir, "com/foo/bar/NewInputFile.class");
         Files.createParentDirs(addedFile);
@@ -196,7 +201,7 @@ public class InstantRunVerifierTransformTest {
                 .build());
 
         // clean up.
-        FileUtils.deleteFolder(tmpDir);
+        FileUtils.deletePath(tmpDir);
 
         // changed class should have been verified
         assertThat(recordedVerification).isEmpty();
@@ -213,7 +218,7 @@ public class InstantRunVerifierTransformTest {
     public void testIncrementalMode_changedAndDeleted() throws TransformException, IOException, InterruptedException {
 
         InstantRunVerifierTransform transform = getTransform();
-        final File tmpDir = Files.createTempDir();
+        final File tmpDir = temporaryFolder.newFolder();
 
         final File changedFile = new File(tmpDir, "com/foo/bar/ChangedFile.class");
         Files.createParentDirs(changedFile);
@@ -262,7 +267,7 @@ public class InstantRunVerifierTransformTest {
                 .build());
 
         // clean up.
-        FileUtils.deleteFolder(tmpDir);
+        FileUtils.deletePath(tmpDir);
 
         // changed class should have been verified
         assertThat(recordedVerification).hasSize(1);
@@ -279,7 +284,7 @@ public class InstantRunVerifierTransformTest {
     public void testSeveralAddedFilesInIncrementalMode()
             throws IOException, TransformException, InterruptedException {
         InstantRunVerifierTransform transform = getTransform();
-        final File tmpDir = Files.createTempDir();
+        final File tmpDir = temporaryFolder.newFolder();
 
         final File[] files = new File[5];
         for (int i = 0; i < 5; i++) {
@@ -326,7 +331,7 @@ public class InstantRunVerifierTransformTest {
                 .build());
 
         // clean up.
-        FileUtils.deleteFolder(tmpDir);
+        FileUtils.deletePath(tmpDir);
 
         // input class should have been copied.
         assertThat(recordedCopies).hasSize(5);
@@ -341,7 +346,7 @@ public class InstantRunVerifierTransformTest {
     public void testSeveralChangedFilesInIncrementalMode()
             throws IOException, TransformException, InterruptedException {
         InstantRunVerifierTransform transform = getTransform();
-        final File tmpDir = Files.createTempDir();
+        final File tmpDir = temporaryFolder.newFolder();
 
         final File[] files = new File[5];
         final File[] lastIterationFiles = new File[5];
@@ -392,7 +397,7 @@ public class InstantRunVerifierTransformTest {
                 .build());
 
         // clean up.
-        FileUtils.deleteFolder(tmpDir);
+        FileUtils.deletePath(tmpDir);
 
         // input class should have been verified.
         assertThat(recordedVerification).hasSize(5);

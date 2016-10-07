@@ -18,6 +18,8 @@ package com.android.ide.common.res2;
 
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
+import com.android.ide.common.resources.configuration.FolderConfiguration;
 import com.android.resources.ResourceType;
 
 import org.w3c.dom.Document;
@@ -27,10 +29,10 @@ import org.w3c.dom.Node;
 import java.io.File;
 
 /**
- * A {@link ResourceItem} that is generated, it knows its generate file path, which is not the same
+ * A {@link ResourceItem} that is generated, it knows its generated file path, which is not the same
  * as as the owner ResourceFile.
  */
-public class GeneratedResourceItem extends ResourceItem {
+public class GeneratedResourceItem extends SourcelessResourceItem {
 
     private final File mGeneratedFile;
 
@@ -40,8 +42,9 @@ public class GeneratedResourceItem extends ResourceItem {
             @NonNull String name,
             @NonNull File generatedFile,
             @NonNull ResourceType type,
-            @NonNull String qualifiers) {
-        super(name, type, null);
+            @NonNull String qualifiers,
+            @Nullable String libraryName) {
+        super(name, type, null, libraryName);
         mGeneratedFile = generatedFile;
         mQualifiers = qualifiers;
     }

@@ -31,13 +31,20 @@ public class PluralsResourceValue extends ResourceValue {
     private final List<String> mValues = new ArrayList<String>();
 
     /**
+     * @see #PluralsResourceValue(String, boolean, String)
+     */
+    public PluralsResourceValue(String name, boolean isFramework) {
+        this(name, isFramework, null);
+    }
+
+    /**
      * Constructs a new {@linkplain PluralsResourceValue}
      *
      * @param name        the name of the array
      * @param isFramework whether this is a framework resource
      */
-    public PluralsResourceValue(String name, boolean isFramework) {
-        super(ResourceType.PLURALS, name, isFramework);
+    public PluralsResourceValue(String name, boolean isFramework, String libraryName) {
+        super(ResourceType.PLURALS, name, isFramework, libraryName);
     }
 
     /**

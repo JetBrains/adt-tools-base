@@ -24,18 +24,34 @@ import javax.annotation.Nonnull;
 public class ConfigNotSupportedException extends Exception {
   private static final long serialVersionUID = 1L;
 
+  /**
+   * Construct the exception with no details.
+   */
   public ConfigNotSupportedException() {
     super();
   }
 
+  /**
+   * Construct the exception with a {@link String} message.
+   * @param message the message
+   */
   public ConfigNotSupportedException(@Nonnull String message) {
     super(message);
   }
 
+  /**
+   * Construct the exception with a {@link String} message and a {@link Throwable} cause.
+   * @param message the message
+   * @param cause the cause
+   */
   public ConfigNotSupportedException(@Nonnull String message, @Nonnull Throwable cause) {
     super(message, cause);
   }
 
+  /**
+   * Construct the exception with a {@link Throwable} cause.
+   * @param cause the cause
+   */
   public ConfigNotSupportedException(@Nonnull Throwable cause) {
     super(cause);
   }

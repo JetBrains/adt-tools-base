@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.integration.dependencies;
 
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat;
 import static com.android.build.gradle.integration.common.utils.TestFileUtils.appendToFile;
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatAar;
 
@@ -24,13 +25,18 @@ import com.android.build.gradle.integration.common.truth.TruthHelper;
 import com.android.build.gradle.integration.common.utils.ModelHelper;
 import com.android.builder.model.AndroidProject;
 import com.android.builder.model.Dependencies;
+import com.android.builder.model.JavaLibrary;
 import com.android.builder.model.Variant;
 import com.android.ide.common.process.ProcessException;
+import com.google.common.base.Charsets;
+import com.google.common.collect.Iterables;
+import com.google.common.io.Files;
 import com.google.common.truth.Truth;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -50,6 +56,8 @@ public class LibWithProvidedAarAsJarTest {
 
     @BeforeClass
     public static void setUp() throws IOException {
+        Files.write("include 'library', 'library2'", project.getSettingsFile(), Charsets.UTF_8);
+
         appendToFile(project.getSubproject("library").getBuildFile(),
                 "\n" +
                 "dependencies {\n" +
@@ -86,22 +94,15 @@ public class LibWithProvidedAarAsJarTest {
     }
 
     @Test
+    @Ignore
     public void checkProvidedJarIsInTheMainArtifactDependency() {
         Variant variant = ModelHelper.getVariant(models.get(":library").getVariants(), "debug");
-        Truth.assertThat(variant).isNotNull();
 
-        Dependencies deps = variant.getMainArtifact().getDependencies();
-        Collection<String> projectDeps = deps.getProjects();
-        TruthHelper.assertThat(projectDeps).containsExactly(":library2");
-    }
+        Dependencies deps = variant.getMainArtifact().getCompileDependencies();
+        Collection<JavaLibrary> javaLibraries = deps.getJavaLibraries();
+        assertThat(javaLibraries).hasSize(1);
 
-    @Test
-    public void checkProvidedJarIsInTheAndroidTestDeps() {
-        // TODO
-    }
-
-    @Test
-    public void checkProvidedJarIsInTheUnitTestDeps() {
-        // TODO
+        JavaLibrary javaLibrary = Iterables.getOnlyElement(javaLibraries);
+        assertThat(javaLibrary.isProvided()).isTrue();
     }
 }

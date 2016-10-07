@@ -96,63 +96,45 @@ public class StringHelper {
     }
 
     /**
-     * Tokenize a command line string.
+     * Split a single command line into individual commands with platform specific rules.
+     *
+     * @param commandLine the command line to be split
+     * @return the list of individual commands
      */
     @NonNull
-    public static List<String> tokenizeCommand(@NonNull String commandLine) {
-        Iterable<String> split =
-                Splitter.on(' ').trimResults().split(commandLine);
-        List<String> command = Lists.newArrayList();
-        char quote = '\0';
-        StringBuilder quotedText = new StringBuilder();
-        for (String arg : split) {
-            if (quote == '\0') {
-                quote = findFirstQuoteChar(arg, "'\"");
-            }
+    public static List<String> splitCommandLine(@NonNull String commandLine) {
 
-            if (quote != '\0') {
-                if (quotedText.length() > 0) {
-                    quotedText.append(" ");
-                }
-                quotedText.append(arg);
-                if (!arg.isEmpty() && arg.charAt(arg.length() - 1) == quote) {
-                    if (arg.length() == 1 || arg.charAt(arg.length() - 2) != '\\') {
-                        quote = '\0';
-                        command.add(quotedText.toString());
-                        quotedText = new StringBuilder();
-                    }
-                }
-            } else {
-                if (!arg.isEmpty()) {
-                    command.add(arg);
-                }
-            }
-        }
-        if (quote != '\0') {
-            throw new RuntimeException(
-                    "Unable to parse command string: " + commandLine + "\n"
-                    + "Missing " + quote + ".");
-        }
-        return command;
+        if (System.getProperty("os.name").startsWith("Windows"))
+            return StringHelperWindows.splitCommandLine(commandLine);
+        else
+            return StringHelperPOSIX.splitCommandLine(commandLine);
     }
 
     /**
-     * Find the first quote character that appear in 'str'.
+     * Quote and join a list of tokens with platform specific rules.
      *
-     * Return '\0' if 'str' does not contain any character in 'quote'.
+     * @param tokens the token to be quoted and joined
+     * @return the string
      */
-    private static char findFirstQuoteChar(@NonNull String str, @NonNull CharSequence quote) {
-        int firstIndex = -1;
-        char firstQuote = '\0';
-        for (int i = 0; i < quote.length(); i++) {
-            int index = str.indexOf(quote.charAt(i));
-            if (index != -1) {
-                if (firstIndex == -1 || index < firstIndex) {
-                    firstIndex = index;
-                    firstQuote = quote.charAt(i);
-                }
-            }
-        }
-        return firstQuote;
+    @NonNull
+    public static String quoteAndJoinTokens(@NonNull List<String> tokens) {
+        if (System.getProperty("os.name").startsWith("Windows"))
+            return StringHelperWindows.quoteAndJoinTokens(tokens);
+        else
+            return StringHelperPOSIX.quoteAndJoinTokens(tokens);
+    }
+
+    /**
+     * Tokenize a string with platform specific rules.
+     *
+     * @param string the string to be tokenized
+     * @return the list of tokens
+     */
+    @NonNull
+    public static List<String> tokenizeString(@NonNull String string) {
+        if (System.getProperty("os.name").startsWith("Windows"))
+            return StringHelperWindows.tokenizeString(string);
+        else
+            return StringHelperPOSIX.tokenizeString(string);
     }
 }

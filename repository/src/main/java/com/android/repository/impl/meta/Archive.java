@@ -41,6 +41,11 @@ import javax.xml.bind.annotation.XmlTransient;
 public abstract class Archive {
 
     /**
+     * Environment variable used to override the detected OS.
+     */
+    public static final String OS_OVERRIDE_ENV_VAR = "REPO_OS_OVERRIDE";
+
+    /**
      * The detected bit size of the JVM.
      */
     private static int sJvmBits = 0;
@@ -67,7 +72,10 @@ public abstract class Archive {
     public boolean isCompatible() {
         if (getHostOs() != null) {
             if (sOs == null) {
-                String os = System.getProperty("os.name");
+                String os = System.getenv(OS_OVERRIDE_ENV_VAR);
+                if (os == null) {
+                    os = System.getProperty("os.name");
+                }
                 if (os.startsWith("Mac")) {
                     os = "macosx";
                 } else if (os.startsWith("Windows")) {
@@ -199,13 +207,27 @@ public abstract class Archive {
      */
     @NonNull
     public List<PatchType> getAllPatches() {
-        return getPatches().getPatch();
+        PatchesType patches = getPatches();
+        if (patches == null) {
+            return ImmutableList.of();
+        }
+        return patches.getPatch();
+    }
+
+    @Nullable
+    public PatchType getPatch(Revision fromRevision) {
+        for (PatchType p : getAllPatches()) {
+            if (p.getBasedOn().toRevision().equals(fromRevision)) {
+                return p;
+            }
+        }
+        return null;
     }
 
     /**
      * Gets the {@link PatchesType} for this Archive. Probably only needed internally.
      */
-    @NonNull
+    @Nullable
     protected PatchesType getPatches() {
         // Stub
         return null;
@@ -214,7 +236,7 @@ public abstract class Archive {
     /**
      * Sets the {@link PatchesType} for this Archive. Probably only needed internally.
      */
-    protected void setPatches(@NonNull PatchesType patches) {
+    protected void setPatches(@Nullable PatchesType patches) {
         // Stub
     }
 

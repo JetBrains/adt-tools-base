@@ -70,7 +70,36 @@ public interface SyncIssue {
     // data is the min version of Gradle
     int TYPE_GRADLE_TOO_OLD           = 12;
 
-    int TYPE_MAX                      = 12; // increment when adding new types.
+    // data is the required min build tools version, parsable by Revision
+    int TYPE_BUILD_TOOLS_TOO_LOW      = 13;
+
+    // found dependency that's the maven published android.jar
+    // data is the maven artifact coordinates.
+    int TYPE_DEPENDENCY_MAVEN_ANDROID = 14;
+
+    // found dependency that is known to be inside android.jar
+    // data is maven artifact coordinates.
+    int TYPE_DEPENDENCY_INTERNAL_CONFLICT = 15;
+
+    // Errors configuring NativeConfigValues for individual individual variants
+    int TYPE_EXTERNAL_NATIVE_BUILD_CONFIGURATION = 16;
+
+    // Errors configuring NativeConfigValues. There was a process exception.
+    // Data contains STDERR which should be interpreted by Android Studio
+    int TYPE_EXTERNAL_NATIVE_BUILD_PROCESS_EXCEPTION = 17;
+
+    // Cannot use Java 8 Language features without Jack.
+    int TYPE_JACK_REQUIRED_FOR_JAVA_8_LANGUAGE_FEATURES = 18;
+
+    // a wearApp configuration was resolved and found more than one apk.
+    // data is the configuration name
+    int TYPE_DEPENDENCY_WEAR_APK_TOO_MANY = 19;
+
+    // a wearApp configuration was resolved and found an apk even though unbundled mode is on.
+    int TYPE_DEPENDENCY_WEAR_APK_WITH_UNBUNDLED = 20;
+
+
+    int TYPE_MAX                      = 20; // increment when adding new types.
 
     /**
      * Returns the severity of the issue.

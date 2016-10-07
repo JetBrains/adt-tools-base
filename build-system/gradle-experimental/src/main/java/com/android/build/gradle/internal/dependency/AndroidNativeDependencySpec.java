@@ -21,7 +21,6 @@ import com.android.build.gradle.internal.NativeDependencyLinkage;
 
 import org.gradle.api.InvalidUserDataException;
 
-import java.io.File;
 import java.util.Locale;
 
 /**

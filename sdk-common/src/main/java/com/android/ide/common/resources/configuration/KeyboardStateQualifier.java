@@ -16,6 +16,8 @@
 
 package com.android.ide.common.resources.configuration;
 
+import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.resources.KeyboardState;
 import com.android.resources.ResourceEnum;
 
@@ -91,16 +93,18 @@ public final class KeyboardStateQualifier extends EnumBasedResourceQualifier {
     }
 
     @Override
-    public boolean isBetterMatchThan(ResourceQualifier compareTo, ResourceQualifier reference) {
+    public boolean isBetterMatchThan(@Nullable ResourceQualifier compareTo,
+            @NonNull ResourceQualifier reference) {
         if (compareTo == null) {
             return true;
         }
 
-        KeyboardStateQualifier compareQualifier = (KeyboardStateQualifier)compareTo;
-        KeyboardStateQualifier referenceQualifier = (KeyboardStateQualifier)reference;
+        KeyboardStateQualifier compareQualifier = (KeyboardStateQualifier) compareTo;
+        KeyboardStateQualifier referenceQualifier = (KeyboardStateQualifier) reference;
 
-        if (referenceQualifier.mValue == KeyboardState.SOFT) { // only case where there could be a
-                                                               // better qualifier
+        if (referenceQualifier.mValue
+                == KeyboardState.SOFT) { // only case where there could be a better qualifier
+
             // only return true if it's a better value.
             if (compareQualifier.mValue == KeyboardState.EXPOSED && mValue == KeyboardState.SOFT) {
                 return true;

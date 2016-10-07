@@ -17,6 +17,7 @@
 package com.android.build.gradle.integration.databinding;
 
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat;
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk;
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.common.runner.FilterableParameterized;
@@ -25,7 +26,9 @@ import com.android.build.gradle.integration.common.utils.TestFileUtils;
 import com.android.ide.common.process.ProcessException;
 import com.google.common.io.Files;
 
+import org.junit.Assume;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -40,11 +43,9 @@ import java.util.List;
 
 import javax.xml.parsers.ParserConfigurationException;
 
-import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat;
-import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk;
-
 
 @RunWith(FilterableParameterized.class)
+@Ignore
 public class DataBindingIncrementalTest {
 
     @Rule
@@ -62,24 +63,25 @@ public class DataBindingIncrementalTest {
     private static final String ACTIVITY_MAIN_JAVA
             = "src/main/java/android/databinding/testapp/MainActivity.java";
 
+    private final boolean experimental;
+
     @Parameterized.Parameters(name = "experimental_{0}")
     public static List<Boolean> parameters() {
         return Arrays.asList(true, false);
     }
 
     public DataBindingIncrementalTest(boolean experimental) {
+        this.experimental = experimental;
         project = GradleTestProject.builder()
-                .fromTestProject("databindingIncremental",
-                        experimental ? "forexperimental" : null)
-                .captureStdOut(true)
-                .forExperimentalPlugin(experimental)
+                .fromTestProject("databindingIncremental")
+                .useExperimentalGradleVersion(experimental)
                 .create();
     }
 
-
     @Before
-    public void setUp() {
-        project.getStdout().reset();
+    public void skipOnJack() throws Exception {
+        Assume.assumeFalse(GradleTestProject.USE_JACK);
+        project.setBuildFile(experimental ? "build.forexperimental.gradle" : null);
     }
 
     @Test
@@ -87,7 +89,6 @@ public class DataBindingIncrementalTest {
         project.execute("assembleDebug");
         assertUpToDate(EXPORT_INFO_TASK, false);
         assertUpToDate(PROCESS_LAYOUTS_TASK, false);
-        project.getStdout().reset();
         project.execute("assembleDebug");
         assertUpToDate(EXPORT_INFO_TASK, true);
         assertUpToDate(PROCESS_LAYOUTS_TASK, true);
@@ -98,7 +99,6 @@ public class DataBindingIncrementalTest {
     public void changeJavaCode() throws IOException {
         project.execute("assembleDebug");
         TestFileUtils.replaceLine(project.file(ACTIVITY_MAIN_JAVA), 44, "return false;");
-        project.getStdout().reset();
         project.execute("assembleDebug");
         assertUpToDate(EXPORT_INFO_TASK, false);
         assertUpToDate(PROCESS_LAYOUTS_TASK, true);
@@ -113,7 +113,6 @@ public class DataBindingIncrementalTest {
                 "<variable name=\"foo2\" type=\"String\"/>");
         TestFileUtils.replaceLine(project.file(ACTIVITY_MAIN_XML), 29,
                 "<TextView android:text='@{foo2 + \" \" + foo2}'");
-        project.getStdout().reset();
         project.execute("assembleDebug");
         assertUpToDate(EXPORT_INFO_TASK, false);
         assertUpToDate(PROCESS_LAYOUTS_TASK, false);
@@ -131,7 +130,6 @@ public class DataBindingIncrementalTest {
         project.execute("assembleDebug");
         TestFileUtils.replaceLine(project.file(ACTIVITY_MAIN_XML), 20,
                 "<variable name=\"foo\" type=\"String\"/><variable name=\"foo2\" type=\"String\"/>");
-        project.getStdout().reset();
         project.execute("assembleDebug");
         assertUpToDate(EXPORT_INFO_TASK, false);
         assertUpToDate(PROCESS_LAYOUTS_TASK, false);
@@ -147,7 +145,6 @@ public class DataBindingIncrementalTest {
         project.execute("assembleDebug");
         TestFileUtils.replaceLine(project.file(ACTIVITY_MAIN_XML), 30,
                 "android:id=\"@+id/myTextView\"");
-        project.getStdout().reset();
         project.execute("assembleDebug");
 
         assertUpToDate(EXPORT_INFO_TASK, false);
@@ -158,7 +155,6 @@ public class DataBindingIncrementalTest {
                 .that().hasField("myTextView");
 
         TestFileUtils.replaceLine(project.file(ACTIVITY_MAIN_XML), 30, "");
-        project.getStdout().reset();
         project.execute("assembleDebug");
         assertUpToDate(EXPORT_INFO_TASK, false);
         assertUpToDate(PROCESS_LAYOUTS_TASK, false);
@@ -172,11 +168,9 @@ public class DataBindingIncrementalTest {
     public void addNewLayout()
             throws IOException, ProcessException, SAXException, ParserConfigurationException {
         project.execute("assembleDebug");
-        project.getStdout().reset();
         File mainActivity = new File(project.getTestDir(), ACTIVITY_MAIN_XML);
         File activity2 = new File(mainActivity.getParentFile(), "activity2.xml");
         Files.copy(mainActivity, activity2);
-        project.getStdout().reset();
         project.execute("assembleDebug");
 
         assertUpToDate(EXPORT_INFO_TASK, false);
@@ -193,12 +187,10 @@ public class DataBindingIncrementalTest {
         File mainActivity = new File(project.getTestDir(), ACTIVITY_MAIN_XML);
         File activity2 = new File(mainActivity.getParentFile(), "activity2.xml");
         Files.copy(mainActivity, activity2);
-        project.getStdout().reset();
         project.execute("assembleDebug");
         assertThatApk(project.getApk("debug")).containsClass(
                 "Landroid/databinding/testapp/databinding/Activity2Binding;");
         assertThat(activity2.delete()).isTrue();
-        project.getStdout().reset();
         project.execute("assembleDebug");
         assertThatApk(project.getApk("debug")).doesNotContainClass(
                 "Landroid/databinding/testapp/databinding/Activity2Binding;");
@@ -211,7 +203,6 @@ public class DataBindingIncrementalTest {
         File mainActivity = new File(project.getTestDir(), ACTIVITY_MAIN_XML);
         File activity2 = new File(mainActivity.getParentFile(), "activity2.xml");
         Files.copy(mainActivity, activity2);
-        project.getStdout().reset();
         project.execute("assembleDebug");
 
         assertUpToDate(EXPORT_INFO_TASK, false);
@@ -221,7 +212,6 @@ public class DataBindingIncrementalTest {
                 activity2ClassName);
         TestFileUtils.replaceLine(project.file("src/main/res/layout/activity2.xml"), 19,
                 "<data class=\"MyCustomName\">");
-        project.getStdout().reset();
         project.execute("assembleDebug");
 
         assertUpToDate(EXPORT_INFO_TASK, false);
@@ -235,7 +225,6 @@ public class DataBindingIncrementalTest {
     }
 
     private void assertRecompile() {
-        project.getStdout().reset();
         project.execute("assembleDebug");
 
         assertUpToDate(EXPORT_INFO_TASK, true);
@@ -245,9 +234,9 @@ public class DataBindingIncrementalTest {
     private void assertUpToDate(String task, boolean isUpToDate) {
         String line = task + " UP-TO-DATE";
         if (isUpToDate) {
-            assertThat(project.getStdout().toString()).contains(line);
+            assertThat(project.getStdout()).contains(line);
         } else {
-            assertThat(project.getStdout().toString()).doesNotContain(line);
+            assertThat(project.getStdout()).doesNotContain(line);
         }
     }
 }

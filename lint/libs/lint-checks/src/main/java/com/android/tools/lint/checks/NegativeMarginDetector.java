@@ -210,7 +210,8 @@ public class NegativeMarginDetector extends LayoutDetector {
                 // but we can use the IDE to resolve resource URLs
                 LintClient client = context.getClient();
                 Project project = context.getProject();
-                AbstractResourceRepository resources = client.getProjectResources(project, true);
+                AbstractResourceRepository resources = client.getResourceRepository(project, true,
+                    true);
                 if (resources != null) {
                     List<ResourceItem> items = resources.getResourceItem(url.type, url.name);
                     if (items != null) {

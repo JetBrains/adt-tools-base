@@ -21,11 +21,7 @@ import static com.android.ide.common.resources.ResourceResolver.MAX_RESOURCE_IND
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.ide.common.rendering.api.ArrayResourceValue;
-import com.android.ide.common.rendering.api.LayoutLog;
-import com.android.ide.common.rendering.api.RenderResources;
-import com.android.ide.common.rendering.api.ResourceValue;
-import com.android.ide.common.rendering.api.StyleResourceValue;
+import com.android.ide.common.rendering.api.*;
 import com.android.ide.common.res2.AbstractResourceRepository;
 import com.android.ide.common.resources.configuration.FolderConfiguration;
 import com.android.resources.ResourceType;
@@ -134,7 +130,7 @@ public class ResourceItemResolver extends RenderResources {
             ResourceValue prev = mLookupChain.get(mLookupChain.size() - 1);
             if (!reference.equals(prev.getValue())) {
                 ResourceValue next = new ResourceValue(prev.getResourceType(), prev.getName(),
-                        prev.isFramework());
+                        prev.isFramework(), prev.getLibraryName());
                 next.setValue(reference);
                 mLookupChain.add(next);
             }
@@ -268,13 +264,13 @@ public class ResourceItemResolver extends RenderResources {
 
     @SuppressWarnings("deprecation")
     @Override
-    public ResourceValue findItemInStyle(StyleResourceValue style, String attrName) {
+    public ItemResourceValue findItemInStyle(StyleResourceValue style, String attrName) {
         ResourceResolver resolver = getFullResolver();
         return resolver != null ? resolver.findItemInStyle(style, attrName) : null;
     }
 
     @Override
-    public ResourceValue findItemInStyle(StyleResourceValue style, String attrName,
+    public ItemResourceValue findItemInStyle(StyleResourceValue style, String attrName,
             boolean isFrameworkAttr) {
         ResourceResolver resolver = getFullResolver();
         return resolver != null ? resolver.findItemInStyle(style, attrName, isFrameworkAttr) : null;
@@ -305,7 +301,7 @@ public class ResourceItemResolver extends RenderResources {
     /**
      * Optional method to set a list the resolver should record all value resolutions
      * into. Useful if you want to find out the resolution chain for a resource,
-     * e.g. {@code @color/buttonForeground => @color/foreground => @android:color/black }.
+     * e.g. {@code @color/buttonForeground ⇒ @color/foreground ⇒ @android:color/black }.
      * <p>
      * There is no getter. Clients setting this list should look it up themselves.
      * Note also that if this resolver has to delegate to a full resource resolver,

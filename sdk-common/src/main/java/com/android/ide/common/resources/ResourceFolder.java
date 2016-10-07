@@ -16,6 +16,7 @@
 
 package com.android.ide.common.resources;
 
+import com.android.SdkConstants;
 import com.android.annotations.VisibleForTesting;
 import com.android.annotations.VisibleForTesting.Visibility;
 import com.android.ide.common.resources.configuration.Configurable;
@@ -25,6 +26,7 @@ import com.android.io.IAbstractFolder;
 import com.android.resources.FolderTypeRelationship;
 import com.android.resources.ResourceFolderType;
 import com.android.resources.ResourceType;
+import com.android.utils.SdkUtils;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -95,23 +97,21 @@ public final class ResourceFolder implements Configurable {
     }
 
     private ResourceFile createResourceFile(IAbstractFile file) {
-        // check if that's a single or multi resource type folder. For now we define this by
-        // the number of possible resource type output by files in the folder.
-        // We have a special case for layout/menu folders which can also generate IDs.
-        // This does
-        // not make the difference between several resource types from a single file or
-        // the ability to have 2 files in the same folder generating 2 different types of
-        // resource. The former is handled by MultiResourceFile properly while we don't
-        // handle the latter. If we were to add this behavior we'd have to change this call.
-        List<ResourceType> types = FolderTypeRelationship.getRelatedResourceTypes(mType);
+        // check if that's a single or multi resource type folder. We have a special case
+        // for ID generating resource types (layout/menu, and XML drawables, etc.).
+        // MultiResourceFile handles the case when several resource types come from a single file
+        // (values files).
 
-        ResourceFile resFile = null;
-        if (types.size() == 1) {
-            resFile = new SingleResourceFile(file, this);
-        } else if (types.contains(ResourceType.LAYOUT)) {
-            resFile = new IdGeneratingResourceFile(file, this, ResourceType.LAYOUT);
-        } else if (types.contains(ResourceType.MENU)) {
-            resFile = new IdGeneratingResourceFile(file, this, ResourceType.MENU);
+        ResourceFile resFile;
+        if (mType != ResourceFolderType.VALUES) {
+            if (FolderTypeRelationship.isIdGeneratingFolderType(mType) &&
+                SdkUtils.endsWithIgnoreCase(file.getName(), SdkConstants.DOT_XML)) {
+                List<ResourceType> types = FolderTypeRelationship.getRelatedResourceTypes(mType);
+                ResourceType primaryType = types.get(0);
+                resFile = new IdGeneratingResourceFile(file, this, primaryType);
+            } else {
+                resFile = new SingleResourceFile(file, this);
+            }
         } else {
             resFile = new MultiResourceFile(file, this);
         }

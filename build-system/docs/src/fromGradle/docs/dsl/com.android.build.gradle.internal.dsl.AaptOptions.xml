@@ -11,6 +11,7 @@
             <tr><td>ignoreAssets</td></tr>
             <tr><td>ignoreAssetsPattern</td></tr>
             <tr><td>noCompress</td></tr>
+            <tr><td>cruncherProcesses</td></tr>
         </table>
     </section>
     <section>

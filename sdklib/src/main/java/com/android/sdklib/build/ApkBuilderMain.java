@@ -33,7 +33,7 @@ public final class ApkBuilderMain {
 
     /**
      * Main method. This is meant to be called from the command line through an exec.
-     * <p/>WARNING: this will call {@link System#exit(int)} if anything goes wrong.
+     * <p>WARNING: this will call {@link System#exit(int)} if anything goes wrong.
      * @param args command line arguments.
      */
     public static void main(String[] args) {

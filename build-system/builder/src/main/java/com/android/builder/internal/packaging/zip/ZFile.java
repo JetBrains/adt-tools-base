@@ -18,13 +18,14 @@ package com.android.builder.internal.packaging.zip;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.builder.internal.packaging.zip.utils.CachedFileContents;
+import com.android.builder.internal.packaging.zip.utils.ByteTracker;
+import com.android.builder.internal.packaging.zip.utils.CloseableByteSource;
 import com.android.builder.internal.packaging.zip.utils.LittleEndianUtils;
 import com.android.builder.internal.packaging.zip.utils.RandomAccessFileUtils;
+import com.android.builder.internal.utils.CachedFileContents;
 import com.android.builder.internal.utils.IOExceptionFunction;
 import com.android.builder.internal.utils.IOExceptionRunnable;
 import com.android.utils.FileUtils;
-import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Verify;
 import com.google.common.collect.Lists;
@@ -32,95 +33,148 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.common.hash.Hashing;
 import com.google.common.io.ByteSource;
-import com.google.common.io.ByteStreams;
-import com.google.common.io.Closeables;
 import com.google.common.io.Closer;
-import com.google.common.primitives.Ints;
 import com.google.common.io.Files;
-
-import java.io.ByteArrayOutputStream;
+import com.google.common.primitives.Ints;
+import com.google.common.util.concurrent.FutureCallback;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.SettableFuture;
+import java.io.ByteArrayInputStream;
 import java.io.Closeable;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.RandomAccessFile;
+import java.nio.ByteBuffer;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.regex.Pattern;
-import java.util.zip.Deflater;
-import java.util.zip.DeflaterOutputStream;
+import java.util.SortedSet;
+import java.util.TreeMap;
+import java.util.TreeSet;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.function.Function;
+import java.util.function.Predicate;
 
 /**
  * The {@code ZFile} provides the main interface for interacting with zip files. A {@code ZFile}
  * can be created on a new file or in an existing file. Once created, files can be added or removed
  * from the zip file.
- * <p>
- * Changes in the zip file are always deferred. Any change requested is made in memory and written
- * to disk only when {@link #update()} or {@link #close()} is invoked.
- * <p>
- * Zip files are open initially in read-only mode and will switch to read-write when needed. This
+ *
+ * <p>Changes in the zip file are always deferred. Any change requested is made in memory and
+ * written to disk only when {@link #update()} or {@link #close()} is invoked.
+ *
+ * <p>Zip files are open initially in read-only mode and will switch to read-write when needed. This
  * is done automatically. Because modifications to the file are done in-memory, the zip file can
  * be manipulated when closed. When invoking {@link #update()} or {@link #close()} the zip file
  * will be reopen and changes will be written. However, the zip file cannot be modified outside
  * the control of {@code ZFile}. So, if a {@code ZFile} is closed, modified outside and then a file
  * is added or removed from the zip file, when reopening the zip file, {@link ZFile} will detect
  * the outside modification and will fail.
- * <p>
- * In memory manipulation means that files added to the zip file are kept in memory until written
+ *
+ * <p>In memory manipulation means that files added to the zip file are kept in memory until written
  * to disk. This provides much faster operation and allows better zip file allocation (see below).
  * It may, however, increase the memory footprint of the application. When adding large files, if
  * memory consumption is a concern, a call to {@link #update()} will actually write the file to
- * disk and discard the memory buffer.
- * <p>
- * {@code ZFile} keeps track of allocation inside of the zip file. If a file is deleted, its space
- * is marked as freed and will be reused for an added file if it fits in the space. Allocation of
- * files to empty areas is done using a <em>best fit</em> algorithm. When adding a file, if it
- * doesn't fit in any free area, the zip file will be extended.
- * <p>
- * {@code ZFile} provides a fast way to merge data from another zip file
- * (see {@link #mergeFrom(ZFile, Set)}) avoiding recompression and copying of equal files. When
- * merging, patterns of files may be provided that are ignored. This allows handling special files
- * in the merging process, such as files in {@code META-INF}.
- * <p>
- * When adding files to the zip file, unless files are explicitly required to be stored, files will
- * be deflated. However, deflating will not occur if the deflated file is larger then the stored
- * file, <em>e.g.</em> if compression would yield a bigger file.
- * <p>
- * Because {@code ZFile} was designed to be used in a build system and not as general-purpose
+ * disk and discard the memory buffer. Information about allocation can be obtained from a
+ * {@link ByteTracker} that can be given to the file on creation.
+ *
+ * <p>{@code ZFile} keeps track of allocation inside of the zip file. If a file is deleted, its
+ * space is marked as freed and will be reused for an added file if it fits in the space.
+ * Allocation of files to empty areas is done using a <em>best fit</em> algorithm. When adding a
+ * file, if it doesn't fit in any free area, the zip file will be extended.
+ *
+ * <p>{@code ZFile} provides a fast way to merge data from another zip file
+ * (see {@link #mergeFrom(ZFile, Predicate)}) avoiding recompression and copying of equal files.
+ * When merging, patterns of files may be provided that are ignored. This allows handling special
+ * files in the merging process, such as files in {@code META-INF}.
+ *
+ * <p>When adding files to the zip file, unless files are explicitly required to be stored, files
+ * will be deflated. However, deflating will not occur if the deflated file is larger then the
+ * stored file, <em>e.g.</em> if compression would yield a bigger file. See {@link Compressor} for
+ * details on how compression works.
+ *
+ * <p>Because {@code ZFile} was designed to be used in a build system and not as general-purpose
  * zip utility, it is very strict (and unforgiving) about the zip format and unsupported features.
- * <p>
- * {@code ZFile} supports <em>alignment</em>. Alignment means that file data (not entries -- the
+ *
+ * <p>{@code ZFile} supports <em>alignment</em>. Alignment means that file data (not entries -- the
  * local header must be discounted) must start at offsets that are multiple of a number -- the
- * alginment. Alignment is defined by setting rules in an {@link AlignmentRules} object that can
- * be obtained using {@link #getAlignmentRules()}.
- * <p>
- * When a file is added to the zip, the alignment rules will be checked and alignment will be
+ * alignment. Alignment is defined by an alignment rules ({@link AlignmentRule} in the
+ * {@link ZFileOptions} object used to create the {@link ZFile}.
+ *
+ * <p>When a file is added to the zip, the alignment rules will be checked and alignment will be
  * honored when positioning the file in the zip. This means that unused spaces in the zip may
  * be generated as a result. However, alignment of existing entries will not be changed.
- * <p>
- * Entries can be realigned individually (see {@link StoredEntry#realign()} or the full zip file
+ *
+ * <p>Entries can be realigned individually (see {@link StoredEntry#realign()} or the full zip file
  * may be realigned (see {@link #realign()}). When realigning the full zip entries that are already
- * realigned will not be affected.
- * <p>
- * Because realignment may cause files to move in the zip, realignment is done in-memory meaning
+ * aligned will not be affected.
+ *
+ * <p>Because realignment may cause files to move in the zip, realignment is done in-memory meaning
  * that files that need to change location will moved to memory and will only be flushed when
  * either {@link #update()} or {@link #close()} are called.
- * <p>
- * To allow whole-apk signing, the {@code ZFile} allows the central directory location to be
+ *
+ * <p>Alignment only applies to filed that are forced to be uncompressed. This is because alignment
+ * is used to allow mapping files in the archive directly into memory and compressing defeats the
+ * purpose of alignment.
+ *
+ * <p>Manipulating zip files with {@link ZFile} may yield zip files with empty spaces between files.
+ * This happens in two situations: (1) if alignment is required, files may be shifted to conform to
+ * the request alignment leaving an empty space before the previous file, and (2) if a file is
+ * removed or replaced with a file that does not fit the space it was in. By default, {@link ZFile}
+ * does not do any special processing in these situations. Files are indexed by their offsets from
+ * the central directory and empty spaces can exist in the zip file.
+ *
+ * <p>However, it is possible to tell {@link ZFile} to use the extra field in the local header
+ * to do cover the empty spaces. This is done by setting
+ * {@link ZFileOptions#setCoverEmptySpaceUsingExtraField(boolean)} to {@code true}. This has the
+ * advantage of leaving no gaps between entries in the zip, as required by some tools like Oracle's
+ * {code jar} tool. However, setting this option will destroy the contents of the file's extra
+ * field.
+ *
+ * <p>Activating {@link ZFileOptions#setCoverEmptySpaceUsingExtraField(boolean)} may lead to
+ * <i>virtual files</i> being added to the zip file. Since extra field is limited to 64k, it is not
+ * possible to cover any space bigger than that using the extra field. In those cases, <i>virtual
+ * files</i> are added to the file. A virtual file is a file that exists in the actual zip data,
+ * but is not referenced from the central directory. A zip-compliant utility should ignore these
+ * files. However, zip utilities that expect the zip to be a stream, such as Oracle's jar, will
+ * find these files instead of considering the zip to be corrupt.
+ *
+ * <p>{@code ZFile} support sorting zip files. Sorting (done through the {@link #sortZipContents()}
+ * method) is a process by which all files are re-read into memory, if not already in memory,
+ * removed from the zip and re-added in alphabetical order, respecting alignment rules. So, in
+ * general, file {@code b} will come after file {@code a} unless file {@code a} is subject to
+ * alignment that forces an empty space before that can be occupied by {@code b}. Sorting can be
+ * used to minimize the changes between two zips.
+ *
+ * <p>Sorting in {@code ZFile} can be done manually or automatically. Manual sorting is done by
+ * invoking {@link #sortZipContents()}. Automatic sorting is done by setting the
+ * {@link ZFileOptions#getAutoSortFiles()} option when creating the {@code ZFile}. Automatic
+ * sorting invokes {@link #sortZipContents()} immediately when doing an {@link #update()} after
+ * all extensions have processed the {@link ZFileExtension#beforeUpdate()}. This has the guarantee
+ * that files added by extensions will be sorted, something that does not happen if the invocation
+ * is sequential, <i>i.e.</i>, {@link #sortZipContents()} called before {@link #update()}. The
+ * drawback of automatic sorting is that sorting will happen every time {@link #update()} is
+ * called and the file is dirty having a possible penalty in performance.
+ *
+ * <p>To allow whole-apk signing, the {@code ZFile} allows the central directory location to be
  * offset by a fixed amount. This amount can be set using the {@link #setExtraDirectoryOffset(long)}
  * method. Setting a non-zero value will add extra (unused) space in the zip file before the
  * central directory. This value can be changed at any time and it will force the central directory
  * rewritten when the file is updated or closed.
- * <p>
- * {@code ZFile} provides an extension mechanism to allow objects to register with the file
+ *
+ * <p>{@code ZFile} provides an extension mechanism to allow objects to register with the file
  * and be notified when changes to the file happen. This should be used
  * to add extra features to the zip file while providing strong decoupling. See
  * {@link ZFileExtension}, {@link ZFile#addZFileExtension(ZFileExtension)} and
  * {@link ZFile#removeZFileExtension(ZFileExtension)}.
- * <p>
- * This class is <strong>not</strong> thread-safe. Neither are any of the classes associated with
- * it in this package.
+ *
+ * <p>This class is <strong>not</strong> thread-safe. Neither are any of the classes associated with
+ * it in this package, except when otherwise noticed.
  */
 public class ZFile implements Closeable {
 
@@ -154,6 +208,30 @@ public class ZFile implements Closeable {
      * Size of buffer for I/O operations.
      */
     private static final int IO_BUFFER_SIZE = 1024 * 1024;
+
+    /**
+     * When extensions request re-runs, we do maximum number of cycles until we decide to stop and
+     * flag a infinite recursion problem.
+     */
+    private static final int MAXIMUM_EXTENSION_CYCLE_COUNT = 10;
+
+    /**
+     * Minimum size for the extra field.
+     */
+    private static final int MINIMUM_EXTRA_FIELD_SIZE = 6;
+
+    /**
+     * Header ID for field with zip alignment.
+     */
+    private static final int ALIGNMENT_ZIP_EXTRA_DATA_FIELD_HEADER_ID = 0xd935;
+
+    /**
+     * Maximum size of the extra field.
+     *
+     * <p>Theoretically, this is (1 << 16) - 1 = 65535 and not (1 < 15) -1 = 32767. However, due to
+     * http://b.android.com/221703, we need to keep this limited.
+     */
+    private static final int MAX_LOCAL_EXTRA_FIELD_CONTENTS_SIZE = (1 << 15) - 1;
 
     /**
      * File zip file.
@@ -192,10 +270,27 @@ public class ZFile implements Closeable {
 
     /**
      * All entries in the zip file. It includes in-memory changes and may not reflect what is
-     * written on disk.
+     * written on disk. Only entries that have been compressed are in this list.
      */
     @NonNull
     private final Map<String, FileUseMapEntry<StoredEntry>> mEntries;
+
+    /**
+     * Entries added to the zip file, but that are not yet compressed. When compression is done,
+     * these entries are eventually moved to {@link #mEntries}. mUncompressedEntries is a list
+     * because entries need to be kept in the order by which they were added. It allows adding
+     * multiple files with the same name and getting the right notifications on which files replaced
+     * which.
+     *
+     * <p>Files are placed in this list in {@link #add(StoredEntry)} method. This method will
+     * keep files here temporarily and move then to {@link #mEntries} when the data is
+     * available.
+     *
+     * <p>Moving files out of this list to {@link #mEntries} is done by
+     * {@link #processAllReadyEntries()}.
+     */
+    @NonNull
+    private final List<StoredEntry> mUncompressedEntries;
 
     /**
      * Current state of the zip file.
@@ -217,10 +312,10 @@ public class ZFile implements Closeable {
     private CachedFileContents<Object> mClosedControl;
 
     /**
-     * The set of alignment rules.
+     * The alignment rule.
      */
     @NonNull
-    private final AlignmentRules mAlignmentRules;
+    private final AlignmentRule mAlignmentRule;
 
     /**
      * Extensions registered with the file.
@@ -248,6 +343,33 @@ public class ZFile implements Closeable {
      */
     private long mExtraDirectoryOffset;
 
+    /**
+     * Should all timestamps be zeroed when reading / writing the zip?
+     */
+    private boolean mNoTimestamps;
+
+    /**
+     * Compressor to use.
+     */
+    @NonNull
+    private Compressor mCompressor;
+
+    /**
+     * Byte tracker to use.
+     */
+    @NonNull
+    private final ByteTracker mTracker;
+
+    /**
+     * Use the zip entry's "extra field" field to cover empty space in the zip file?
+     */
+    private boolean mCoverEmptySpaceUsingExtraField;
+
+    /**
+     * Should files be automatically sorted when updating?
+     */
+    private boolean mAutoSortFiles;
+
 
     /**
      * Creates a new zip file. If the zip file does not exist, then no file is created at this
@@ -259,24 +381,51 @@ public class ZFile implements Closeable {
      * @throws IOException some file exists but could not be read
      */
     public ZFile(@NonNull File file) throws IOException {
+        this(file, new ZFileOptions());
+    }
+
+    /**
+     * Creates a new zip file. If the zip file does not exist, then no file is created at this
+     * point and {@code ZFile} will contain an empty structure. However, an (empty) zip file will
+     * be created if either {@link #update()} or {@link #close()} are used. If a zip file exists,
+     * it will be parsed and read.
+     *
+     * @param file the zip file
+     * @param options configuration options
+     * @throws IOException some file exists but could not be read
+     */
+    public ZFile(@NonNull File file, @NonNull ZFileOptions options) throws IOException {
         mFile = file;
-        mMap = new FileUseMap(0);
+        mMap = new FileUseMap(
+                0,
+                options.getCoverEmptySpaceUsingExtraField()
+                        ? MINIMUM_EXTRA_FIELD_SIZE
+                        : 0);
         mDirty = false;
         mClosedControl = null;
-        mAlignmentRules = new AlignmentRules();
+        mAlignmentRule = options.getAlignmentRule();
         mExtensions = Lists.newArrayList();
         mToRun = Lists.newArrayList();
+        mNoTimestamps = options.getNoTimestamps();
+        mTracker = options.getTracker();
+        mCompressor = options.getCompressor();
+        mCoverEmptySpaceUsingExtraField = options.getCoverEmptySpaceUsingExtraField();
+        mAutoSortFiles = options.getAutoSortFiles();
+
+        /*
+         * These two values will be overwritten by openReadOnly() below if the file exists.
+         */
+        mState = ZipFileState.CLOSED;
+        mRaf = null;
 
         if (file.exists()) {
-            mState = ZipFileState.OPEN_RO;
-            mRaf = new RandomAccessFile(file, "r");
+            openReadOnly();
         } else {
-            mState = ZipFileState.CLOSED;
-            mRaf = null;
             mDirty = true;
         }
 
         mEntries = Maps.newHashMap();
+        mUncompressedEntries = Lists.newArrayList();
         mExtraDirectoryOffset = 0;
 
         try {
@@ -289,13 +438,7 @@ public class ZFile implements Closeable {
                 mMap.extend(Ints.checkedCast(rafSize));
                 readData();
 
-                notify(new IOExceptionFunction<ZFileExtension, IOExceptionRunnable>() {
-                    @Nullable
-                    @Override
-                    public IOExceptionRunnable apply(ZFileExtension input) throws IOException {
-                        return input.open();
-                    }
-                });
+                notify(ZFileExtension::open);
             }
         } catch (IOException e) {
             throw new IOException("Failed to read zip file '" + file.getAbsolutePath() + "'.", e);
@@ -310,12 +453,23 @@ public class ZFile implements Closeable {
      */
     @NonNull
     public Set<StoredEntry> entries() {
-        Set<StoredEntry> entries = Sets.newHashSet();
+        Map<String, StoredEntry> entries = Maps.newHashMap();
+
         for (FileUseMapEntry<StoredEntry> mapEntry : mEntries.values()) {
-            entries.add(mapEntry.getStore());
+            StoredEntry entry = mapEntry.getStore();
+            assert entry != null;
+            entries.put(entry.getCentralDirectoryHeader().getName(), entry);
         }
 
-        return entries;
+        /*
+         * mUncompressed may override mEntriesReady as we may not have yet processed all
+         * entries.
+         */
+        for (StoredEntry uncompressed : mUncompressedEntries) {
+            entries.put(uncompressed.getCentralDirectoryHeader().getName(), uncompressed);
+        }
+
+        return Sets.newHashSet(entries.values());
     }
 
     /**
@@ -326,6 +480,16 @@ public class ZFile implements Closeable {
      */
     @Nullable
     public StoredEntry get(@NonNull String path) {
+        /*
+         * The latest entries are the last ones in uncompressed and they may eventually override
+         * files in mEntries.
+         */
+        for (StoredEntry stillUncompressed : Lists.reverse(mUncompressedEntries)) {
+            if (stillUncompressed.getCentralDirectoryHeader().getName().equals(path)) {
+                return stillUncompressed;
+            }
+        }
+
         FileUseMapEntry<StoredEntry> found = mEntries.get(path);
         if (found == null) {
             return null;
@@ -362,6 +526,19 @@ public class ZFile implements Closeable {
             for (StoredEntry entry : directory.getEntries().values()) {
                 long start = entry.getCentralDirectoryHeader().getOffset();
                 long end = start + entry.getInFileSize();
+
+                /*
+                 * If isExtraAlignmentBlock(entry.getLocalExtra()) is true, we know the entry
+                 * has an extra field that is solely used for alignment. This means the
+                 * actual entry could start at start + extra.length and leave space before.
+                 *
+                 * But, if we did this here, we would be modifying the zip file and that is
+                 * weird because we're just opening it for reading.
+                 *
+                 * The downside is that we will never reuse that space. Maybe one day ZFile
+                 * can be clever enough to remove the local extra when we start modifying the zip
+                 * file.
+                 */
 
                 FileUseMapEntry<StoredEntry> mapEntry = mMap.add(start, end, entry);
                 mEntries.put(entry.getCentralDirectoryHeader().getName(), mapEntry);
@@ -425,7 +602,8 @@ public class ZFile implements Closeable {
         IOException errorFindingSignature = null;
         int eocdStart = -1;
 
-        for (int endIdx = last.length - MIN_EOCD_SIZE; endIdx >= 0; endIdx--) {
+        for (int endIdx = last.length - MIN_EOCD_SIZE; endIdx >= 0 && foundEocdSignature == -1;
+                endIdx--) {
             /*
              * Remember: little endian...
              */
@@ -439,7 +617,8 @@ public class ZFile implements Closeable {
                  */
 
                 foundEocdSignature = endIdx;
-                ByteSource eocdBytes = ByteSource.wrap(last).slice(foundEocdSignature, last.length);
+                ByteBuffer eocdBytes =
+                        ByteBuffer.wrap(last, foundEocdSignature, last.length - foundEocdSignature);
 
                 try {
                     eocd = new Eocd(eocdBytes);
@@ -450,9 +629,14 @@ public class ZFile implements Closeable {
                      */
                     if (eocdStart + eocd.getEocdSize() != mRaf.length()) {
                         throw new IOException("EOCD starts at " + eocdStart + " and has "
-                                + eocd.getEocdSize() + " but file ends at " + mRaf.length() + ".");
+                                + eocd.getEocdSize() + " bytes, but file ends at " + mRaf.length()
+                                + ".");
                     }
                 } catch (IOException e) {
+                    if (errorFindingSignature != null) {
+                        e.addSuppressed(errorFindingSignature);
+                    }
+
                     errorFindingSignature = e;
                     foundEocdSignature = -1;
                     eocd = null;
@@ -475,7 +659,7 @@ public class ZFile implements Closeable {
         if (zip64LocatorStart >= 0) {
             byte possibleZip64Locator[] = new byte[4];
             directFullyRead(zip64LocatorStart, possibleZip64Locator);
-            if (LittleEndianUtils.readUnsigned4Le(ByteSource.wrap(possibleZip64Locator)) ==
+            if (LittleEndianUtils.readUnsigned4Le(ByteBuffer.wrap(possibleZip64Locator)) ==
                     ZIP64_EOCD_LOCATOR_SIGNATURE) {
                 throw new IOException("Zip64 EOCD locator found but Zip64 format is not "
                         + "supported.");
@@ -516,7 +700,7 @@ public class ZFile implements Closeable {
         byte[] directoryData = new byte[Ints.checkedCast(dirSize)];
         directFullyRead(eocd.getDirectoryOffset(), directoryData);
 
-        CentralDirectory directory = CentralDirectory.makeFromData(ByteSource.wrap(directoryData),
+        CentralDirectory directory = CentralDirectory.makeFromData(ByteBuffer.wrap(directoryData),
                 eocd.getTotalRecords(), this);
         if (eocd.getDirectorySize() > 0) {
             mDirectoryEntry = mMap.add(eocd.getDirectoryOffset(), eocd.getDirectoryOffset()
@@ -545,7 +729,7 @@ public class ZFile implements Closeable {
         Preconditions.checkArgument(end <= mRaf.length(), "end > mRaf.length()");
 
         return new InputStream() {
-            long mCurr = start;
+            private long mCurr = start;
 
             @Override
             public int read() throws IOException {
@@ -613,29 +797,30 @@ public class ZFile implements Closeable {
         mEntries.remove(path);
 
         if (notify) {
-            notify(new IOExceptionFunction<ZFileExtension, IOExceptionRunnable>() {
-                @Override
-                public IOExceptionRunnable apply(ZFileExtension input) throws IOException {
-                    return input.removed(entry);
-                }
-            });
+            notify(ext -> ext.removed(entry));
         }
     }
 
     /**
      * Updates the file writing new entries and removing deleted entries. This will force
      * reopening the file as read/write if the file wasn't open in read/write mode.
+     * 
+     * @throws IOException failed to update the file; this exception may have been thrown by
+     * the compressor but only reported here
      */
     public void update() throws IOException {
-        notify(new IOExceptionFunction<ZFileExtension, IOExceptionRunnable>() {
-            @Nullable
-            @Override
-            public IOExceptionRunnable apply(@Nullable ZFileExtension input) throws IOException {
-                Verify.verifyNotNull(input);
-                assert input != null;
-                return input.beforeUpdate();
-            }
-        });
+        /*
+         * Process all background stuff before calling in the extensions.
+         */
+        processAllReadyEntriesWithWait();
+
+        notify(ZFileExtension::beforeUpdate);
+
+        /*
+         * Process all background stuff that may be leftover by the extensions.
+         */
+        processAllReadyEntriesWithWait();
+
 
         if (!mDirty) {
             return;
@@ -644,34 +829,131 @@ public class ZFile implements Closeable {
         reopenRw();
 
         /*
+         * At this point, no more files can be added. We may need to repack to remove extra
+         * empty spaces or sort. If we sort, we don't need to repack as sorting forces the
+         * zip file to be as compact as possible.
+         */
+        if (mAutoSortFiles) {
+            sortZipContents();
+        } else {
+            packIfNecessary();
+        }
+
+        /*
+         * We're going to change the file so delete the central directory and the EOCD as they
+         * will have to be rewritten.
+         */
+        deleteDirectoryAndEocd();
+        mMap.truncate();
+
+        /*
+         * If we need to use the extra field to cover empty spaces, we do the processing here.
+         */
+        if (mCoverEmptySpaceUsingExtraField) {
+
+            /* We will go over all files in the zip and check whether there is empty space before
+             * them. If there is, then we will move the entry to the beginning of the empty space
+             * (covering it) and extend the extra field with the size of the empty space.
+             */
+            for (FileUseMapEntry<StoredEntry> entry : new HashSet<>(mEntries.values())) {
+                StoredEntry storedEntry = entry.getStore();
+                assert storedEntry != null;
+
+                FileUseMapEntry<?> before = mMap.before(entry);
+                if (before == null || !before.isFree()) {
+                    continue;
+                }
+
+                int localExtraSize =
+                        storedEntry.getLocalExtra().length + Ints.checkedCast(before.getSize());
+
+                /*
+                 * Sorting or packing should have ensured this never happens.
+                 */
+                Verify.verify(localExtraSize <= MAX_LOCAL_EXTRA_FIELD_CONTENTS_SIZE);
+
+                /*
+                 * Move file back in the zip.
+                 */
+                storedEntry.loadSourceIntoMemory();
+
+                long newStart = before.getStart();
+                long newSize = entry.getSize() + before.getSize();
+
+                String name = storedEntry.getCentralDirectoryHeader().getName();
+                mMap.remove(entry);
+                Verify.verify(entry == mEntries.remove(name));
+
+                storedEntry.setLocalExtra(
+                        makeExtraAlignmentBlock(localExtraSize, chooseAlignment(storedEntry)));
+                mEntries.put(name, mMap.add(newStart, newStart + newSize, storedEntry));
+
+                /*
+                 * Reset the offset to force the file to be rewritten.
+                 */
+                storedEntry.getCentralDirectoryHeader().setOffset(-1);
+            }
+        }
+
+        /*
          * Write new files in the zip. We identify new files because they don't have an offset
          * in the zip where they are written although we already know, by their location in the
          * file map, where they will be written to.
+         *
+         * Before writing the files, we sort them in the order they are written in the file so that
+         * writes are made in order on disk.
+         * This is, however, unlikely to optimize anything relevant given the way the Operating
+         * System does caching, but it certainly won't hurt :)
          */
+        TreeMap<FileUseMapEntry<?>, StoredEntry> toWriteToStore =
+                new TreeMap<>(FileUseMapEntry.COMPARE_BY_START);
+
         for (FileUseMapEntry<StoredEntry> entry : mEntries.values()) {
             StoredEntry entryStore = entry.getStore();
             assert entryStore != null;
             if (entryStore.getCentralDirectoryHeader().getOffset() == -1) {
-                writeEntry(entry.getStore(), entry.getStart());
+                toWriteToStore.put(entry, entryStore);
             }
         }
 
-        deleteDirectoryAndEocd();
-        mMap.truncate();
+        /*
+         * Add all free entries to the set.
+         */
+        for(FileUseMapEntry<?> freeArea : mMap.getFreeAreas()) {
+            toWriteToStore.put(freeArea, null);
+        }
 
-        computeCentralDirectory();
-        computeEocd();
-
-        notify(new IOExceptionFunction<ZFileExtension, IOExceptionRunnable>() {
-            @Nullable
-            @Override
-            public IOExceptionRunnable apply(@Nullable ZFileExtension input) throws IOException {
-                Verify.verifyNotNull(input);
-                assert input != null;
-                input.entriesWritten();
-                return null;
+        /*
+         * Write everything to file.
+         */
+        for (FileUseMapEntry<?> fileUseMapEntry : toWriteToStore.keySet()) {
+            StoredEntry entry = toWriteToStore.get(fileUseMapEntry);
+            if (entry == null) {
+                int size = Ints.checkedCast(fileUseMapEntry.getSize());
+                directWrite(fileUseMapEntry.getStart(), new byte[size]);
+            } else {
+                writeEntry(entry, fileUseMapEntry.getStart());
             }
-        });
+        }
+
+        boolean hasCentralDirectory;
+        int extensionBugDetector = MAXIMUM_EXTENSION_CYCLE_COUNT;
+        do {
+            computeCentralDirectory();
+            computeEocd();
+
+            hasCentralDirectory = (mDirectoryEntry != null);
+
+            notify(ext -> {
+                ext.entriesWritten();
+                return null;
+            });
+
+            if ((--extensionBugDetector) == 0) {
+                throw new IOException("Extensions keep resetting the central directory. This is "
+                        + "probably a bug.");
+            }
+        } while (hasCentralDirectory && mDirectoryEntry == null);
 
         appendCentralDirectory();
         appendEocd();
@@ -681,16 +963,96 @@ public class ZFile implements Closeable {
 
         mDirty = false;
 
-        notify(new IOExceptionFunction<ZFileExtension, IOExceptionRunnable>() {
-            @Nullable
-            @Override
-            public IOExceptionRunnable apply(@Nullable ZFileExtension input) throws IOException {
-                Verify.verifyNotNull(input);
-                assert input != null;
-                input.updated();
-                return null;
-            }
+        notify(ext -> {
+           ext.updated();
+            return null;
         });
+    }
+
+    /**
+     * Reorganizes the zip so that there are no gaps between files bigger than
+     * {@link #MAX_LOCAL_EXTRA_FIELD_CONTENTS_SIZE} if {@link #mCoverEmptySpaceUsingExtraField}
+     * is set to {@code true}.
+     *
+     * @throws IOException failed to repack
+     */
+    private void packIfNecessary() throws IOException {
+        if (!mCoverEmptySpaceUsingExtraField) {
+            return;
+        }
+
+        SortedSet<FileUseMapEntry<StoredEntry>> entriesByLocation =
+                new TreeSet<>(FileUseMapEntry.COMPARE_BY_START);
+        entriesByLocation.addAll(mEntries.values());
+
+        for (FileUseMapEntry<StoredEntry> entry : entriesByLocation) {
+            StoredEntry storedEntry = entry.getStore();
+            assert storedEntry != null;
+
+            FileUseMapEntry<?> before = mMap.before(entry);
+            if (before == null || !before.isFree()) {
+                continue;
+            }
+
+            int localExtraSize =
+                    storedEntry.getLocalExtra().length + Ints.checkedCast(before.getSize());
+            if (localExtraSize > MAX_LOCAL_EXTRA_FIELD_CONTENTS_SIZE) {
+                /*
+                 * This entry is too far from the previous one. Remove it and re-add it to the
+                 * zip file.
+                 */
+                reAdd(storedEntry, PositionHint.LOWEST_OFFSET);
+            }
+        }
+    }
+
+    /**
+     * Removes a stored entry from the zip and adds it back again. This will force the entry to be
+     * loaded into memory and repositioned in the zip file. It will also mark the archive as
+     * being dirty.
+     *
+     * @param entry the entry
+     * @param positionHint hint to where the file should be positioned when re-adding
+     * @throws IOException failed to load the entry into memory
+     */
+    private void reAdd(@NonNull StoredEntry entry, @NonNull PositionHint positionHint)
+            throws IOException {
+        String name = entry.getCentralDirectoryHeader().getName();
+        FileUseMapEntry<StoredEntry> mapEntry = mEntries.get(name);
+        Preconditions.checkNotNull(mapEntry);
+        Preconditions.checkState(mapEntry.getStore() == entry);
+
+        entry.loadSourceIntoMemory();
+
+        mMap.remove(mapEntry);
+        mEntries.remove(name);
+        FileUseMapEntry<StoredEntry> positioned = positionInFile(entry, positionHint);
+        mEntries.put(name, positioned);
+        mDirty = true;
+    }
+
+    /**
+     * Invoked from {@link StoredEntry} when entry has changed in a way that forces the local
+     * header to be rewritten
+     *
+     * @param entry the entry that changed
+     * @param resized was the local header resized?
+     * @throws IOException failed to load the entry into memory
+     */
+    void localHeaderChanged(@NonNull StoredEntry entry, boolean resized) throws IOException {
+        mDirty = true;
+
+        if (resized) {
+            reAdd(entry, PositionHint.ANYWHERE);
+        }
+    }
+
+    /**
+     * Invoked when the central directory has changed and needs to be rewritten.
+     */
+    void centralDirectoryChanged() {
+        mDirty = true;
+        deleteDirectoryAndEocd();
     }
 
     /**
@@ -698,15 +1060,15 @@ public class ZFile implements Closeable {
      */
     @Override
     public void close() throws IOException {
-        update();
-        innerClose();
+        // We need to make sure to release mRaf, otherwise we end up locking the file on
+        // Windows. Use try-with-resources to handle exception suppressing.
+        try (Closeable ignored = this::innerClose) {
+            update();
+        }
 
-        notify(new IOExceptionFunction<ZFileExtension, IOExceptionRunnable>() {
-            @Override
-            public IOExceptionRunnable apply(ZFileExtension input) throws IOException {
-                input.closed();
-                return null;
-            }
+        notify(ext -> {
+           ext.closed();
+            return null;
         });
     }
 
@@ -749,15 +1111,10 @@ public class ZFile implements Closeable {
         directWrite(offset, headerData);
 
         /*
-         * Get the source data. If a compressed source exists, that's the one we want.
+         * Get the raw source data to write.
          */
-        EntrySource source = entry.getSource();
-        if (source.innerCompressed() != null) {
-            source = source.innerCompressed();
-            assert source != null;
-        }
-
-        Verify.verify(source.innerCompressed() == null);
+        ProcessedAndRawByteSources source = entry.getSource();
+        ByteSource rawContents = source.getRawByteSource();
 
         /*
          * Write the source data.
@@ -765,7 +1122,7 @@ public class ZFile implements Closeable {
         byte[] chunk = new byte[IO_BUFFER_SIZE];
         int r;
         long writeOffset = offset + headerData.length;
-        InputStream is = source.open();
+        InputStream is = rawContents.openStream();
         while ((r = is.read(chunk)) >= 0) {
             directWrite(writeOffset, chunk, 0, r);
             writeOffset += r;
@@ -776,8 +1133,7 @@ public class ZFile implements Closeable {
         /*
          * Set the entry's offset and create the entry source.
          */
-        entry.getCentralDirectoryHeader().setOffset(offset);
-        entry.createSourceFromZip();
+        entry.replaceSourceFromZip(offset);
     }
 
     /**
@@ -798,11 +1154,17 @@ public class ZFile implements Closeable {
             newStored.add(mapEntry.getStore());
         }
 
+        /*
+         * Make sure we truncate the map before computing the central directory's location since
+         * the central directory is the last part of the file.
+         */
+        mMap.truncate();
+
         CentralDirectory newDirectory = CentralDirectory.makeFromEntries(newStored, this);
         byte[] newDirectoryBytes = newDirectory.toBytes();
         long directoryOffset = mMap.size() + mExtraDirectoryOffset;
 
-        mMap.extend(directoryOffset+ newDirectoryBytes.length);
+        mMap.extend(directoryOffset + newDirectoryBytes.length);
 
         if (newDirectoryBytes.length > 0) {
             mDirectoryEntry = mMap.add(directoryOffset, directoryOffset + newDirectoryBytes.length,
@@ -828,7 +1190,7 @@ public class ZFile implements Closeable {
         Preconditions.checkNotNull(mDirectoryEntry, "mDirectoryEntry != null");
 
         CentralDirectory newDirectory = mDirectoryEntry.getStore();
-        Verify.verifyNotNull(newDirectory, "newDirectory != null");
+        Preconditions.checkNotNull(newDirectory, "newDirectory != null");
 
         byte[] newDirectoryBytes = newDirectory.toBytes();
         long directoryOffset = mDirectoryEntry.getStart();
@@ -860,7 +1222,7 @@ public class ZFile implements Closeable {
         Preconditions.checkNotNull(mDirectoryEntry, "mDirectoryEntry == null");
 
         CentralDirectory cd = mDirectoryEntry.getStore();
-        Verify.verifyNotNull(cd, "cd == null");
+        Preconditions.checkNotNull(cd, "cd == null");
         return cd.toBytes();
     }
 
@@ -919,7 +1281,7 @@ public class ZFile implements Closeable {
         Preconditions.checkNotNull(mEocdEntry, "mEocdEntry == null");
 
         Eocd eocd = mEocdEntry.getStore();
-        Verify.verifyNotNull(eocd, "eocd == null");
+        Preconditions.checkNotNull(eocd, "eocd == null");
 
         byte[] eocdBytes = eocd.toBytes();
         long eocdOffset = mEocdEntry.getStart();
@@ -939,7 +1301,7 @@ public class ZFile implements Closeable {
         Preconditions.checkNotNull(mEocdEntry, "mEocdEntry == null");
 
         Eocd eocd = mEocdEntry.getStore();
-        Verify.verifyNotNull(eocd, "eocd == null");
+        Preconditions.checkNotNull(eocd, "eocd == null");
         return eocd.toBytes();
     }
 
@@ -959,10 +1321,26 @@ public class ZFile implements Closeable {
         mRaf = null;
         mState = ZipFileState.CLOSED;
         if (mClosedControl == null) {
-            mClosedControl = new CachedFileContents<Object>(mFile);
+            mClosedControl = new CachedFileContents<>(mFile);
         }
 
         mClosedControl.closed(null);
+    }
+
+    /**
+     * If the zip file is closed, opens it in read-only mode. If it is already open, does nothing.
+     * In general, it is not necessary to directly invoke this method. However, if directly
+     * reading the zip file using, for example {@link #directRead(long, byte[])}, then this
+     * method needs to be called.
+     * @throws IOException failed to open the file
+     */
+    public void openReadOnly() throws IOException {
+        if (mState != ZipFileState.CLOSED) {
+            return;
+        }
+
+        mState = ZipFileState.OPEN_RO;
+        mRaf = new RandomAccessFile(mFile, "r");
     }
 
     /**
@@ -1001,100 +1379,238 @@ public class ZFile implements Closeable {
         mState = ZipFileState.OPEN_RW;
 
         if (wasClosed) {
-            notify(new IOExceptionFunction<ZFileExtension, IOExceptionRunnable>() {
-                @Nullable
+            notify(ZFileExtension::open);
+        }
+    }
+
+    /**
+     * Equivalent to call {@link #add(String, InputStream, boolean)} using
+     * {@code true} as {@code mayCompress}.
+     *
+     * @param name the file name (<em>i.e.</em>, path); paths should be defined using slashes
+     * and the name should not end in slash
+     * @param stream the source for the file's data
+     * @throws IOException failed to read the source data
+     */
+    public void add(@NonNull String name, @NonNull InputStream stream) throws IOException {
+        add(name, stream, true);
+    }
+
+    /**
+     * Creates a stored entry. This does not add the entry to the zip file, it just creates the
+     * {@link StoredEntry} object.
+     *
+     * @param name the name of the entry
+     * @param stream the input stream with the entry's data
+     * @param mayCompress can the entry be compressed?
+     * @return the created entry
+     * @throws IOException failed to create the entry
+     */
+    @NonNull
+    private StoredEntry makeStoredEntry(
+            @NonNull String name,
+            @NonNull InputStream stream,
+            boolean mayCompress)
+            throws IOException {
+        CloseableByteSource source = mTracker.fromStream(stream);
+        long crc32 = source.hash(Hashing.crc32()).padToLong();
+
+        boolean encodeWithUtf8 = !EncodeUtils.canAsciiEncode(name);
+
+        SettableFuture<CentralDirectoryHeaderCompressInfo> compressInfo =
+                SettableFuture.create();
+        CentralDirectoryHeader newFileData = new CentralDirectoryHeader(name,
+                source.size(), compressInfo, GPFlags.make(encodeWithUtf8));
+        newFileData.setCrc32(crc32);
+
+        /*
+         * Create the new entry and sets its data source. Offset should be set to -1 automatically
+         * because this is a new file. With offset set to -1, StoredEntry does not try to verify the
+         * local header. Since this is a new file, there is no local header and not checking it is
+         * what we want to happen.
+         */
+        Verify.verify(newFileData.getOffset() == -1);
+        return new StoredEntry(
+                newFileData,
+                this,
+                createSources(mayCompress, source, compressInfo, newFileData));
+    }
+
+    /**
+     * Creates the processed and raw sources for an entry.
+     *
+     * @param mayCompress can the entry be compressed?
+     * @param source the entry's data (uncompressed)
+     * @param compressInfo the compression info future that will be set when the raw entry is
+     * created and the {@link CentralDirectoryHeaderCompressInfo} object can be created
+     * @param newFileData the central directory header for the new file
+     * @return the sources whose data may or may not be already defined
+     * @throws IOException failed to create the raw sources
+     */
+    @NonNull
+    private ProcessedAndRawByteSources createSources(
+            boolean mayCompress,
+            @NonNull CloseableByteSource source,
+            @NonNull SettableFuture<CentralDirectoryHeaderCompressInfo> compressInfo,
+            @NonNull CentralDirectoryHeader newFileData)
+            throws IOException {
+        if (mayCompress) {
+            ListenableFuture<CompressionResult> result = mCompressor.compress(source);
+            Futures.addCallback(result, new FutureCallback<CompressionResult>() {
                 @Override
-                public IOExceptionRunnable apply(ZFileExtension input) throws IOException {
-                    return input.open();
+                public void onSuccess(CompressionResult result) {
+                    compressInfo.set(new CentralDirectoryHeaderCompressInfo(newFileData,
+                            result.getCompressionMethod(), result.getSize()));
+                }
+
+                @Override
+                public void onFailure(@NonNull Throwable t) {
+                    compressInfo.setException(t);
                 }
             });
+
+            ListenableFuture<CloseableByteSource> compressedByteSourceFuture =
+                    Futures.transform(result, CompressionResult::getSource);
+            LazyDelegateByteSource compressedByteSource = new LazyDelegateByteSource(
+                    compressedByteSourceFuture);
+            return new ProcessedAndRawByteSources(source, compressedByteSource);
+        } else {
+            compressInfo.set(new CentralDirectoryHeaderCompressInfo(newFileData,
+                    CompressionMethod.STORE, source.size()));
+            return new ProcessedAndRawByteSources(source, source);
         }
     }
 
     /**
      * Adds a file to the archive.
-     * <p>
-     * Adding the file will not update the archive immediately. Updating will only happen
+     *
+     * <p>Adding the file will not update the archive immediately. Updating will only happen
      * when the {@link #update()} method is invoked.
-     * <p>
-     * Adding a file with the same name as an existing file will replace that file in the
+     *
+     * <p>Adding a file with the same name as an existing file will replace that file in the
      * archive.
      *
      * @param name the file name (<em>i.e.</em>, path); paths should be defined using slashes
      * and the name should not end in slash
-     * @param source the source for the file's data
-     * @param method the compression method to use for the file; even if
-     * {@link CompressionMethod#DEFLATE} is provided, {@link CompressionMethod#STORE} will be used
-     * if the result is smaller
+     * @param stream the source for the file's data
+     * @param mayCompress can the file be compressed? This flag will be ignored if the alignment
+     * rules force the file to be aligned, in which case the file will not be compressed.
      * @throws IOException failed to read the source data
      */
-    public void add(@NonNull String name, @NonNull EntrySource source,
-            @NonNull CompressionMethod method) throws IOException {
-        /*
-         * Create the data structure with information about the file. Assume we will store (and
-         * not compress) the file. We may need to change this later on.
-         */
-        CentralDirectoryHeader newFileData = new CentralDirectoryHeader(name, source.size(),
-                source.size(), CompressionMethod.STORE);
+    public void add(@NonNull String name, @NonNull InputStream stream, boolean mayCompress)
+            throws IOException {
 
         /*
-         * If we could be deflating, compress upfront so we can know whether the compressed data
-         * is smaller or larger than the uncompressed data. storeData will either be {@code null}
-         * if we didn't even try to read from the source, or will contain the raw data or
-         * compressed data if we read from the source. newMethod will have the actual method that
-         * will be used.
+         * Clean pending background work, if needed.
          */
-        byte[] storeData = null;
-        if (method == CompressionMethod.DEFLATE) {
-            ByteArrayOutputStream sourceDataBytes = new ByteArrayOutputStream();
+        processAllReadyEntries();
 
-            InputStream sourceIn = source.open();
-            ByteStreams.copy(sourceIn, sourceDataBytes);
-
-            storeData = sourceDataBytes.toByteArray();
-
-            byte[] deflatedData = deflate(storeData);
-            if (deflatedData.length < storeData.length) {
-                storeData = deflatedData;
-                newFileData.setMethod(CompressionMethod.DEFLATE);
-                newFileData.setCompressedSize(deflatedData.length);
-            }
-
-            newFileData.setCrc32(Hashing.crc32().hashBytes(storeData).padToLong());
-        }
-
-        /*
-         * If we are changing the data we're storing (by compressing), replace the source with
-         * a new one.
-         */
-        if (storeData != null) {
-            source = new ByteArrayEntrySource(storeData);
-            if (newFileData.getMethod() == CompressionMethod.DEFLATE) {
-                source = new InflaterEntrySource(source, newFileData.getUncompressedSize());
-            }
-        }
-
-        add(newFileData, source);
+        add(makeStoredEntry(name, stream, mayCompress));
     }
 
     /**
-     * Adds a new file to the archive. This will not write anything to the zip file, the change is
-     * in-memory only.
+     * Adds a {@link StoredEntry} to the zip. The entry is not immediately added to
+     * {@link #mEntries} because data may not yet be available. Instead, it is placed under
+     * {@link #mUncompressedEntries} and later moved to {@link #processAllReadyEntries()} when
+     * done.
      *
-     * @param newFileData the data for the new file, including correct sizes and CRC32 data. The
-     * offset should be set to {@code -1} because the data should not exist anywhere.
-     * @param source the data source
+     * <p>This method invokes {@link #processAllReadyEntries()} to move the entry if it has already
+     * been computed so, if there is no delay in compression, and no more files are in waiting
+     * queue, then the entry is added to {@link #mEntries} immediately.
+     *
+     * @param newEntry the entry to add
+     * @throws IOException failed to process this entry (or a previous one whose future only
+     * completed now)
+     */
+    private void add(@NonNull final StoredEntry newEntry) throws IOException {
+        mUncompressedEntries.add(newEntry);
+        processAllReadyEntries();
+    }
+
+    /**
+     * Moves all ready entries from {@link #mUncompressedEntries} to {@link #mEntries}. It will
+     * stop as soon as entry whose future has not been completed is found.
+     *
+     * @throws IOException the exception reported in the future computation, if any, or failed
+     * to add a file to the archive
+     */
+    private void processAllReadyEntries() throws IOException {
+        /*
+         * Many things can happen during addToEntries(). Because addToEntries() fires
+         * notifications to extensions, other files can be added, removed, etc. Ee are *not*
+         * guaranteed that new stuff does not get into mUncompressedEntries: add() will still work
+         * and will add new entries in there.
+         *
+         * However -- important -- processReadyEntries() may be invoked during addToEntries()
+         * because of the extension mechanism. This means that stuff *can* be removed from
+         * mUncompressedEntries and moved to mEntries during addToEntries().
+         */
+        while (!mUncompressedEntries.isEmpty()) {
+            StoredEntry next = mUncompressedEntries.get(0);
+            CentralDirectoryHeader cdh = next.getCentralDirectoryHeader();
+            Future<CentralDirectoryHeaderCompressInfo> compressionInfo = cdh.getCompressionInfo();
+            if (!compressionInfo.isDone()) {
+                /*
+                 * First entry in queue is not yet complete. We can't do anything else.
+                 */
+                return;
+            }
+
+            mUncompressedEntries.remove(0);
+
+            try {
+                compressionInfo.get();
+            } catch (InterruptedException e) {
+                throw new IOException("Impossible I/O exception: get for already computed "
+                        + "future throws InterruptedException", e);
+            } catch (ExecutionException e) {
+                throw new IOException("Failed to obtain compression information for entry", e);
+            }
+
+            addToEntries(next);
+        }
+    }
+
+    /**
+     * Waits until {@link #mUncompressedEntries} is empty.
+     *
+     * @throws IOException the exception reported in the future computation, if any, or failed
+     * to add a file to the archive
+     */
+    private void processAllReadyEntriesWithWait() throws IOException {
+        processAllReadyEntries();
+        while (!mUncompressedEntries.isEmpty()) {
+            /*
+             * Wait for the first future to complete and then try again. Keep looping until we're
+             * done.
+             */
+            StoredEntry first = mUncompressedEntries.get(0);
+            CentralDirectoryHeader cdh = first.getCentralDirectoryHeader();
+            cdh.getCompressionInfoWithWait();
+
+            processAllReadyEntries();
+        }
+    }
+
+    /**
+     * Adds a new file to {@link #mEntries}. This is actually added to the zip and its space
+     * allocated in the {@link #mMap}.
+     *
+     * @param newEntry the new entry to add
      * @throws IOException failed to add the file
      */
-    private void add(@NonNull CentralDirectoryHeader newFileData, @NonNull EntrySource source)
-            throws IOException {
+    private void addToEntries(@NonNull final StoredEntry newEntry) throws IOException {
+        Preconditions.checkArgument(newEntry.getDataDescriptorType() ==
+                DataDescriptorType.NO_DATA_DESCRIPTOR, "newEntry has data descriptor");
+
         /*
          * If there is a file with the same name in the archive, remove it. We remove it by
          * calling delete() on the entry (this is the public API to remove a file from the archive).
-         * StoredEntry.delete() will call ZFile.delete(StoredEntry) to perform data structure
-         * cleanup.
+         * StoredEntry.delete() will call {@link ZFile#delete(StoredEntry, boolean)}  to perform
+         * data structure cleanup.
          */
-        FileUseMapEntry<StoredEntry> toReplace = mEntries.get(newFileData.getName());
+        FileUseMapEntry<StoredEntry> toReplace = mEntries.get(
+                newEntry.getCentralDirectoryHeader().getName());
         final StoredEntry replaceStore;
         if (toReplace != null) {
             replaceStore = toReplace.getStore();
@@ -1104,94 +1620,100 @@ public class ZFile implements Closeable {
             replaceStore = null;
         }
 
-        /*
-         * Create the new entry and sets its data source. Offset should be set to -1 automatically
-         * because this is a new file. With offset set to -1, StoredEntry does not try to verify the
-         * local header. Since this is a new file, there is no local header and not checking it is
-         * what we want to happen.
-         */
-        Verify.verify(newFileData.getOffset() == -1);
-        final StoredEntry newEntry = new StoredEntry(newFileData, this);
-        newEntry.setSource(source);
+        FileUseMapEntry<StoredEntry> fileUseMapEntry =
+                positionInFile(newEntry, PositionHint.ANYWHERE);
+        mEntries.put(newEntry.getCentralDirectoryHeader().getName(), fileUseMapEntry);
 
-        /*
-         * Find a location in the zip where this entry will be added to and create the map entry.
-         * But before looking for the new location, delete the Central Directory and EOCD to make
-         * space for the new entry. We don't want to add the entry *after* the Central Directory
-         * because we would have to update the Central Directory when updating the file and this
-         * would create a hole in the zip. Me no like holes. Holes are evil.
-         */
+        mDirty = true;
+
+        notify(ext -> ext.added(newEntry, replaceStore));
+    }
+
+    /**
+     * Finds a location in the zip where this entry will be added to and create the map entry.
+     * This method cannot be called if there is already a map entry for the given entry (if you
+     * do that, then you're doing something wrong somewhere).
+     *
+     * <p>This may delete the central directory and EOCD (if it deletes one, it deletes the other)
+     * if there is no space before the central directory. Otherwise, the file would be added
+     * after the central directory. This would force a new central directory to be written
+     * when updating the file and would create a hole in the zip. Me no like holes. Holes are evil.
+     *
+     * @param entry the entry to place in the zip
+     * @param positionHint hint to where the file should be positioned
+     * @return the position in the file where the entry should be placed
+     */
+    @NonNull
+    private FileUseMapEntry<StoredEntry> positionInFile(
+            @NonNull StoredEntry entry,
+            @NonNull PositionHint positionHint)
+            throws IOException {
         deleteDirectoryAndEocd();
-        long size = newEntry.getInFileSize();
-        int localHeaderSize = newEntry.getLocalHeaderSize();
-        int alignment = mAlignmentRules.alignment(newEntry.getCentralDirectoryHeader().getName());
-        long newOffset = mMap.locateFree(size, localHeaderSize, alignment);
-        long newEnd = newOffset + newEntry.getInFileSize();
+        long size = entry.getInFileSize();
+        int localHeaderSize = entry.getLocalHeaderSize();
+        int alignment = chooseAlignment(entry);
+
+        FileUseMap.PositionAlgorithm algorithm;
+
+        switch (positionHint) {
+            case LOWEST_OFFSET:
+                algorithm = FileUseMap.PositionAlgorithm.FIRST_FIT;
+                break;
+            case ANYWHERE:
+                algorithm = FileUseMap.PositionAlgorithm.BEST_FIT;
+                break;
+            default:
+                throw new AssertionError();
+        }
+
+        long newOffset = mMap.locateFree(size, localHeaderSize, alignment, algorithm);
+        long newEnd = newOffset + entry.getInFileSize();
         if (newEnd > mMap.size()) {
             mMap.extend(newEnd);
         }
 
-        FileUseMapEntry<StoredEntry> fileUseMapEntry = mMap.add(newOffset, newEnd, newEntry);
-        mEntries.put(newFileData.getName(), fileUseMapEntry);
-
-        mDirty = true;
-
-        notify(new IOExceptionFunction<ZFileExtension, IOExceptionRunnable>() {
-            @Nullable
-            @Override
-            public IOExceptionRunnable apply(ZFileExtension input) {
-                return input.added(newEntry, replaceStore);
-            }
-        });
+        return mMap.add(newOffset, newEnd, entry);
     }
 
     /**
-     * Performs in-memory deflation of a byte array.
+     * Determines what is the alignment value of an entry.
      *
-     * @param in the input data
-     * @return the deflated data
-     * @throws IOException failed to deflate
+     * @param entry the entry
+     * @return the alignment value, {@link AlignmentRule#NO_ALIGNMENT} if there is no alignment
+     * required for the entry
+     * @throws IOException failed to determine the alignment
      */
-    @NonNull
-    private static byte[] deflate(@NonNull byte[] in) throws IOException {
-        ByteArrayOutputStream output = new ByteArrayOutputStream();
-        Deflater deflater = new Deflater(Deflater.DEFAULT_COMPRESSION, true);
+    private int chooseAlignment(@NonNull StoredEntry entry) throws IOException {
+        CentralDirectoryHeader cdh = entry.getCentralDirectoryHeader();
+        CentralDirectoryHeaderCompressInfo compressionInfo = cdh.getCompressionInfoWithWait();
 
-        Closer closer = Closer.create();
-        try {
-            DeflaterOutputStream dos = closer.register(new DeflaterOutputStream(output, deflater));
-            dos.write(in);
-        } catch (IOException e) {
-            throw closer.rethrow(e);
-        } finally {
-            closer.close();
+        boolean isCompressed = compressionInfo.getMethod() != CompressionMethod.STORE;
+        if (isCompressed) {
+            return AlignmentRule.NO_ALIGNMENT;
+        } else {
+            return mAlignmentRule.alignment(cdh.getName());
         }
-
-        return output.toByteArray();
     }
 
     /**
      * Adds all files from another zip file, maintaining their compression. Files specified in
      * <em>src</em> that are already on this file will replace the ones in this file. However, if
      * their sizes and checksums are equal, they will be ignored.
-     * <p>
-     * This method will not perform any changes in itself, it will only update in-memory data
+     *
+     * <p> This method will not perform any changes in itself, it will only update in-memory data
      * structures. To actually write the zip file, invoke either {@link #update()} or
      * {@link #close()}.
      *
      * @param src the source archive
-     * @param ignorePatterns file name patterns in <em>src</em> that should be ignored by merging;
-     * merging will behave as if these files were not there; file name matching is done by using
-     * {@code matches()}
+     * @param ignoreFilter predicate that, if {@code true}, identifies files in <em>src</em> that
+     * should be ignored by merging; merging will behave as if these files were not there
      * @throws IOException failed to read from <em>src</em> or write on the output
      */
-    public void mergeFrom(@NonNull ZFile src, @NonNull Set<Pattern> ignorePatterns)
+    public void mergeFrom(@NonNull ZFile src, @NonNull Predicate<String> ignoreFilter)
             throws IOException {
-        nextEntry: for (StoredEntry fromEntry : src.entries()) {
-            for (Pattern p : ignorePatterns) {
-                if (p.matcher(fromEntry.getCentralDirectoryHeader().getName()).matches()) {
-                    continue nextEntry;
-                }
+        for (StoredEntry fromEntry : src.entries()) {
+            if (ignoreFilter.test(fromEntry.getCentralDirectoryHeader().getName())) {
+                continue;
             }
 
             boolean replaceCurrent = true;
@@ -1215,27 +1737,29 @@ public class ZFile implements Closeable {
 
             if (replaceCurrent) {
                 CentralDirectoryHeader fromCdr = fromEntry.getCentralDirectoryHeader();
-                CentralDirectoryHeader newFileData = new CentralDirectoryHeader(
-                        fromCdr.getName(), fromCdr.getCompressedSize(),
-                        fromCdr.getUncompressedSize(),
-                        fromEntry.getCentralDirectoryHeader().getMethod());
+                CentralDirectoryHeaderCompressInfo fromCompressInfo =
+                        fromCdr.getCompressionInfoWithWait();
+                CentralDirectoryHeader newFileData;
+                try {
+                    /*
+                     * We make two changes in the central directory from the file to merge:
+                     * we reset the offset to force the entry to be written and we reset the
+                     * deferred CRC bit as we don't need the extra stuff after the file. It takes
+                     * space and is totally useless.
+                     */
+                    newFileData = fromCdr.clone();
+                    newFileData.setOffset(-1);
+                    newFileData.resetDeferredCrc();
+                } catch (CloneNotSupportedException e) {
+                    throw new IOException("Failed to clone CDR.", e);
+                }
 
                 /*
                  * Read the data (read directly the compressed source if there is one).
                  */
-                EntrySource fromSource = fromEntry.getSource();
-                boolean usingCompressed;
-                EntrySource compressedSource = fromSource.innerCompressed();
-                if (compressedSource == null) {
-                    Verify.verify(newFileData.getMethod() == CompressionMethod.STORE);
-                    usingCompressed = false;
-                } else {
-                    fromSource = compressedSource;
-                    usingCompressed = true;
-                }
-
-                InputStream fromInput = fromSource.open();
-                long sourceSize = fromSource.size();
+                ProcessedAndRawByteSources fromSource = fromEntry.getSource();
+                InputStream fromInput = fromSource.getRawByteSource().openStream();
+                long sourceSize = fromSource.getRawByteSource().size();
                 if (sourceSize > Integer.MAX_VALUE) {
                     throw new IOException("Cannot read source with " + sourceSize + " bytes.");
                 }
@@ -1252,15 +1776,23 @@ public class ZFile implements Closeable {
                  * Build the new source and wrap it around an inflater source if data came from
                  * a compressed source.
                  */
-                EntrySource newSource = new ByteArrayEntrySource(data);
-                if (usingCompressed) {
-                    newSource = new InflaterEntrySource(newSource, fromCdr.getUncompressedSize());
+                CloseableByteSource rawContents = mTracker.fromSource(fromSource.getRawByteSource());
+                CloseableByteSource processedContents;
+                if (fromCompressInfo.getMethod() == CompressionMethod.DEFLATE) {
+                    //noinspection IOResourceOpenedButNotSafelyClosed
+                    processedContents = new InflaterByteSource(rawContents);
+                } else {
+                    processedContents = rawContents;
                 }
+
+                ProcessedAndRawByteSources newSource = new ProcessedAndRawByteSources(
+                        processedContents, rawContents);
 
                 /*
                  * Add will replace any current entry with the same name.
                  */
-                add(newFileData, newSource);
+                StoredEntry newEntry = new StoredEntry(newFileData, this, newSource);
+                add(newEntry);
             }
         }
     }
@@ -1274,14 +1806,16 @@ public class ZFile implements Closeable {
     }
 
     /**
-     * Obtains the set of alignment rules in use by this file. Note that changes to the rules
-     * will only apply in general to new files (see class description for details).
-     *
-     * @return the rules that can be changed
+     * Wait for any background tasks to finish and report any errors. In general this method does
+     * not need to be invoked directly as errors from background tasks are reported during
+     * {@link #add(String, InputStream, boolean)}, {@link #update()} and {@link #close()}.
+     * However, if required for some purposes, <em>e.g.</em>, ensuring all notifications have been
+     * done to extensions, then this method may be called. It will wait for all background tasks
+     * to complete.
+     * @throws IOException some background work failed
      */
-    @NonNull
-    public AlignmentRules getAlignmentRules() {
-        return mAlignmentRules;
+    public void finishAllBackgroundTasks() throws IOException {
+        processAllReadyEntriesWithWait();
     }
 
     /**
@@ -1315,16 +1849,14 @@ public class ZFile implements Closeable {
      * file
      */
     boolean realign(@NonNull StoredEntry entry) throws IOException {
-        int expectedAlignment = mAlignmentRules.alignment(
-                entry.getCentralDirectoryHeader().getName());
-
-        FileUseMapEntry<StoredEntry> mapEntry = mEntries.get(
-                entry.getCentralDirectoryHeader().getName());
+        FileUseMapEntry<StoredEntry> mapEntry =
+                mEntries.get(entry.getCentralDirectoryHeader().getName());
         Verify.verify(entry == mapEntry.getStore());
         long currentDataOffset = mapEntry.getStart() + entry.getLocalHeaderSize();
 
-        long disalignment = currentDataOffset % expectedAlignment;
-        if (disalignment == 0) {
+        int expectedAlignment = chooseAlignment(entry);
+        long misalignment = currentDataOffset % expectedAlignment;
+        if (misalignment == 0) {
             /*
              * Good. File is aligned properly.
              */
@@ -1337,8 +1869,12 @@ public class ZFile implements Closeable {
              * than find another place in the map.
              */
             mMap.remove(mapEntry);
-            long newStart = mMap.locateFree(mapEntry.getSize(), entry.getLocalHeaderSize(),
-                    expectedAlignment);
+            long newStart =
+                    mMap.locateFree(
+                            mapEntry.getSize(),
+                            entry.getLocalHeaderSize(),
+                            expectedAlignment,
+                            FileUseMap.PositionAlgorithm.BEST_FIT);
             mapEntry = mMap.add(newStart, newStart + entry.getInFileSize(), entry);
             mEntries.put(entry.getCentralDirectoryHeader().getName(), mapEntry);
 
@@ -1354,49 +1890,48 @@ public class ZFile implements Closeable {
 
         /*
          * Get the entry data source, but check if we have a compressed one (we don't want to
-         * inflate & deflate).
+         * inflate and deflate).
          */
-        EntrySource source = entry.getSource();
-        boolean sourceDeflated = false;
-        if (source.innerCompressed() != null) {
-            source = source.innerCompressed();
-            assert source != null;
-            sourceDeflated = true;
-            Verify.verify(entry.getCentralDirectoryHeader().getMethod()
-                    == CompressionMethod.DEFLATE);
-        } else {
-            Verify.verify(entry.getCentralDirectoryHeader().getMethod() == CompressionMethod.STORE);
-        }
+        CentralDirectoryHeaderCompressInfo compressInfo =
+                entry.getCentralDirectoryHeader().getCompressionInfoWithWait();
 
-        InputStream is = source.open();
-        boolean threw = true;
-        byte entryData[] = null;
-        try {
-            entryData = ByteStreams.toByteArray(is);
-            threw = false;
-        } finally {
-            Closeables.close(is, threw);
-        }
+        ProcessedAndRawByteSources source = entry.getSource();
 
-        CentralDirectoryHeader cdh;
+        CentralDirectoryHeader clonedCdh;
         try {
-            cdh = entry.getCentralDirectoryHeader().clone();
+            clonedCdh = entry.getCentralDirectoryHeader().clone();
         } catch (CloneNotSupportedException e) {
             Verify.verify(false);
             return false;
         }
 
-        cdh.setOffset(-1);
+        /*
+         * We make two changes in the central directory when realigning:
+         * we reset the offset to force the entry to be written and we reset the
+         * deferred CRC bit as we don't need the extra stuff after the file. It takes
+         * space and is totally useless and we may need the extra space to realign the entry...
+         */
+        clonedCdh.setOffset(-1);
+        clonedCdh.resetDeferredCrc();
 
-        EntrySource newSource = new ByteArrayEntrySource(entryData);
-        if (sourceDeflated) {
-            newSource = new InflaterEntrySource(newSource, cdh.getUncompressedSize());
+        CloseableByteSource rawContents = mTracker.fromSource(source.getRawByteSource());
+        CloseableByteSource processedContents;
+
+        if (compressInfo.getMethod() == CompressionMethod.DEFLATE) {
+            //noinspection IOResourceOpenedButNotSafelyClosed
+            processedContents = new InflaterByteSource(rawContents);
+        } else {
+            processedContents = rawContents;
         }
+
+        ProcessedAndRawByteSources newSource = new ProcessedAndRawByteSources(processedContents,
+                rawContents);
 
         /*
          * Add the new file. This will replace the existing one.
          */
-        add(cdh, newSource);
+        StoredEntry newEntry = new StoredEntry(clonedCdh, this, newSource);
+        add(newEntry);
         return true;
     }
 
@@ -1556,23 +2091,41 @@ public class ZFile implements Closeable {
 
     /**
      * Adds all files and directories recursively.
+     * <p>
+     * Equivalent to calling {@link #addAllRecursively(File, Function)} using a function that
+     * always returns {@code true}
      *
      * @param file a file or directory; if it is a directory, all files and directories will be
      * added recursively
-     * @param method a function that decides what compression method to apply to each file
+     * @throws IOException failed to some (or all ) of the files
+     */
+    public void addAllRecursively(@NonNull File file) throws IOException {
+        addAllRecursively(file, f -> true);
+    }
+
+    /**
+     * Adds all files and directories recursively.
+     *
+     * @param file a file or directory; if it is a directory, all files and directories will be
+     * added recursively
+     * @param mayCompress a function that decides whether files may be compressed
      * @throws IOException failed to some (or all ) of the files
      */
     public void addAllRecursively(@NonNull File file,
-            @NonNull Function<File, CompressionMethod> method) throws IOException {
+            @NonNull Function<? super File, Boolean> mayCompress) throws IOException {
         /*
          * The case of file.isFile() is different because if file.isFile() we will add it to the
-         * zip in the root. However, if file.isDirectory() we won't add it and add its chilren.
+         * zip in the root. However, if file.isDirectory() we won't add it and add its children.
          */
         if (file.isFile()) {
-            CompressionMethod cm = Verify.verifyNotNull(method.apply(file),
-                    "method.apply() returned null");
+            boolean mayCompressFile = Verify.verifyNotNull(mayCompress.apply(file),
+                    "mayCompress.apply() returned null");
 
-            add(file.getName(), new FileEntrySource(file), cm);
+            try (Closer closer = Closer.create()) {
+                FileInputStream fileInput = closer.register(new FileInputStream(file));
+                add(file.getName(), fileInput, mayCompressFile);
+            }
+
             return;
         }
 
@@ -1580,18 +2133,20 @@ public class ZFile implements Closeable {
             String path = FileUtils.relativePath(f, file);
             path = FileUtils.toSystemIndependentPath(path);
 
-            EntrySource source;
-            CompressionMethod cm;
-            if (f.isDirectory()) {
-                source = new ByteArrayEntrySource(new byte[0]);
-                cm = CompressionMethod.STORE;
-            } else {
-                source = new FileEntrySource(f);
-                cm = method.apply(f);
-                Verify.verifyNotNull(cm, "method.apply() returned null");
-            }
+            InputStream stream;
+            try (Closer closer = Closer.create()) {
+                boolean mayCompressFile;
+                if (f.isDirectory()) {
+                    stream = closer.register(new ByteArrayInputStream(new byte[0]));
+                    mayCompressFile = false;
+                } else {
+                    stream = closer.register(new FileInputStream(f));
+                    mayCompressFile = Verify.verifyNotNull(mayCompress.apply(f),
+                            "mayCompress.apply() returned null");
+                }
 
-            add(path, source, cm);
+                add(path, stream, mayCompressFile);
+            }
         }
     }
 
@@ -1678,6 +2233,7 @@ public class ZFile implements Closeable {
 
         if (mExtraDirectoryOffset != offset) {
             mExtraDirectoryOffset = offset;
+            deleteDirectoryAndEocd();
             mDirty = true;
         }
     }
@@ -1689,5 +2245,105 @@ public class ZFile implements Closeable {
      */
     public long getExtraDirectoryOffset() {
         return mExtraDirectoryOffset;
+    }
+
+    /**
+     * Obtains whether this {@code ZFile} is ignoring timestamps.
+     *
+     * @return are the timestamps being ignored?
+     */
+    public boolean areTimestampsIgnored() {
+        return mNoTimestamps;
+    }
+
+    /**
+     * Sorts all files in the zip. This will force all files to be loaded and will wait for all
+     * background tasks to complete. Sorting files is never done implicitly and will operate in
+     * memory only (maybe reading files from the zip disk into memory, if needed). It will leave
+     * the zip in dirty state, requiring a call to {@link #update()} to force the entries to be
+     * written to disk.
+     *
+     * @throws IOException failed to load or move a file in the zip
+     */
+    public void sortZipContents() throws IOException {
+        reopenRw();
+
+        processAllReadyEntriesWithWait();
+
+        Verify.verify(mUncompressedEntries.isEmpty());
+
+        SortedSet<StoredEntry> sortedEntries = Sets.newTreeSet(StoredEntry.COMPARE_BY_NAME);
+        for (FileUseMapEntry<StoredEntry> fmEntry : mEntries.values()) {
+            StoredEntry entry = fmEntry.getStore();
+            Preconditions.checkNotNull(entry);
+            sortedEntries.add(entry);
+            entry.loadSourceIntoMemory();
+
+            mMap.remove(fmEntry);
+        }
+
+        mEntries.clear();
+        for (StoredEntry entry : sortedEntries) {
+            String name = entry.getCentralDirectoryHeader().getName();
+            FileUseMapEntry<StoredEntry> positioned =
+                    positionInFile(entry, PositionHint.LOWEST_OFFSET);
+            mEntries.put(name, positioned);
+        }
+
+        mDirty = true;
+    }
+
+    /**
+     * Obtains the filesystem path to the zip file.
+     *
+     * @return the file that may or may not exist (depending on whether something existed there
+     * before the zip was created and on whether the zip has been updated or not)
+     */
+    @NonNull
+    public File getFile() {
+        return mFile;
+    }
+
+    /**
+     * Creates the extra field block to fill in {@code blockSize} bytes.
+     *
+     * @param blockSize the block size to fill as an extra field
+     * @param alignment the alignment that is being used for the file
+     * @return the extra field block
+     * @throws IOException failed to write the extra block
+     */
+    @NonNull
+    private static byte[] makeExtraAlignmentBlock(int blockSize, int alignment) throws IOException {
+        Preconditions.checkArgument(
+                blockSize >= MINIMUM_EXTRA_FIELD_SIZE,
+                "blockSize (" + blockSize + ") < MINIMUM_EXTRA_FIELD_SIZE");
+
+        byte[] data = new byte[blockSize];
+        ByteBuffer buffer = ByteBuffer.wrap(data);
+
+        LittleEndianUtils.writeUnsigned2Le(buffer, ALIGNMENT_ZIP_EXTRA_DATA_FIELD_HEADER_ID);
+        LittleEndianUtils.writeUnsigned2Le(buffer, blockSize - 4);
+        LittleEndianUtils.writeUnsigned2Le(buffer, alignment);
+
+        /*
+         * The rest is left filled with zeroes.
+         */
+
+        return data;
+    }
+
+    /**
+     * Hint to where files should be positioned.
+     */
+    enum PositionHint {
+        /**
+         * File may be positioned anywhere, caller doesn't care.
+         */
+        ANYWHERE,
+
+        /**
+         * File should be positioned at the lowest offset possible.
+         */
+        LOWEST_OFFSET
     }
 }

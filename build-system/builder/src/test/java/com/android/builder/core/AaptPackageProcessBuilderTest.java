@@ -17,8 +17,8 @@
 package com.android.builder.core;
 
 import com.android.annotations.NonNull;
-import com.android.builder.dependency.SymbolFileProvider;
 import com.android.builder.model.AaptOptions;
+import com.android.builder.model.AndroidLibrary;
 import com.android.ide.common.process.ProcessInfo;
 import com.android.repository.Revision;
 import com.android.repository.api.LocalPackage;
@@ -26,9 +26,9 @@ import com.android.repository.impl.meta.RepositoryPackages;
 import com.android.repository.testframework.FakeProgressIndicator;
 import com.android.sdklib.BuildToolInfo;
 import com.android.sdklib.IAndroidTarget;
-import com.android.sdklib.repositoryv2.AndroidSdkHandler;
-import com.android.sdklib.repositoryv2.meta.DetailsTypes;
-import com.android.sdklib.repositoryv2.targets.AndroidTargetManager;
+import com.android.sdklib.repository.AndroidSdkHandler;
+import com.android.sdklib.repository.meta.DetailsTypes;
+import com.android.sdklib.repository.targets.AndroidTargetManager;
 import com.android.utils.ILogger;
 import com.android.utils.StdLogger;
 import com.google.common.collect.ImmutableList;
@@ -63,7 +63,7 @@ public class AaptPackageProcessBuilderTest extends TestCase {
         MockitoAnnotations.initMocks(this);
         FakeProgressIndicator progress = new FakeProgressIndicator();
         AndroidSdkHandler handler = AndroidSdkHandler.getInstance(getSdkDir());
-        mBuildToolInfo = handler.getLatestBuildTool(progress);
+        mBuildToolInfo = handler.getLatestBuildTool(progress, false);
         if (mBuildToolInfo == null) {
             throw new RuntimeException("Test requires build-tools 21");
         }
@@ -112,7 +112,7 @@ public class AaptPackageProcessBuilderTest extends TestCase {
                 .setResFolder(resFolder)
                 .setPackageForR("com.example.package.forR")
                 .setSourceOutputDir("path/to/source/output/dir")
-                .setLibraries(ImmutableList.of(Mockito.mock(SymbolFileProvider.class)))
+                .setLibraries(ImmutableList.of(Mockito.mock(AndroidLibrary.class)))
                 .setType(VariantType.DEFAULT);
 
         ProcessInfo processInfo = aaptPackageProcessBuilder
@@ -151,7 +151,7 @@ public class AaptPackageProcessBuilderTest extends TestCase {
                 .setResFolder(resFolder)
                 .setPackageForR("com.example.package.forR")
                 .setSourceOutputDir("path/to/source/output/dir")
-                .setLibraries(ImmutableList.of(Mockito.mock(SymbolFileProvider.class)))
+                .setLibraries(ImmutableList.of(Mockito.mock(AndroidLibrary.class)))
                 .setType(VariantType.ANDROID_TEST);
 
         ProcessInfo processInfo = aaptPackageProcessBuilder
@@ -190,7 +190,7 @@ public class AaptPackageProcessBuilderTest extends TestCase {
                 .setResFolder(resFolder)
                 .setPackageForR("com.example.package.forR")
                 .setSourceOutputDir("path/to/source/output/dir")
-                .setLibraries(ImmutableList.of(Mockito.mock(SymbolFileProvider.class)))
+                .setLibraries(ImmutableList.of(Mockito.mock(AndroidLibrary.class)))
                 .setType(VariantType.LIBRARY);
 
         ProcessInfo processInfo = aaptPackageProcessBuilder
@@ -231,7 +231,7 @@ public class AaptPackageProcessBuilderTest extends TestCase {
                 .setResFolder(resFolder)
                 .setPackageForR("com.example.package.forR")
                 .setSourceOutputDir("path/to/source/output/dir")
-                .setLibraries(ImmutableList.of(Mockito.mock(SymbolFileProvider.class)))
+                .setLibraries(ImmutableList.of(Mockito.mock(AndroidLibrary.class)))
                 .setType(VariantType.DEFAULT)
                 .setSplits(ImmutableList.of("mdpi", "hdpi"));
 
@@ -275,7 +275,7 @@ public class AaptPackageProcessBuilderTest extends TestCase {
                 .setResFolder(resFolder)
                 .setPackageForR("com.example.package.forR")
                 .setSourceOutputDir("path/to/source/output/dir")
-                .setLibraries(ImmutableList.of(Mockito.mock(SymbolFileProvider.class)))
+                .setLibraries(ImmutableList.of(Mockito.mock(AndroidLibrary.class)))
                 .setType(VariantType.DEFAULT)
                 .setResourceConfigs(ImmutableList.of("res1", "res2"))
                 .setPreferredDensity("xhdpi");
@@ -299,7 +299,7 @@ public class AaptPackageProcessBuilderTest extends TestCase {
 
         List<String> command = processInfo.getArgs();
 
-        assertTrue("res1,res2,xhdpi,nodpi,anydpi".equals(command.get(command.indexOf("-c") + 1)));
+        assertTrue("res1,res2,xhdpi,nodpi".equals(command.get(command.indexOf("-c") + 1)));
         assertTrue(command.indexOf("--preferred-density") == -1);
     }
 
@@ -319,7 +319,7 @@ public class AaptPackageProcessBuilderTest extends TestCase {
                 .setResFolder(resFolder)
                 .setPackageForR("com.example.package.forR")
                 .setSourceOutputDir("path/to/source/output/dir")
-                .setLibraries(ImmutableList.of(Mockito.mock(SymbolFileProvider.class)))
+                .setLibraries(ImmutableList.of(Mockito.mock(AndroidLibrary.class)))
                 .setType(VariantType.DEFAULT)
                 .setResourceConfigs(ImmutableList.of("res1", "res2"))
                 .setPreferredDensity("xhdpi");
@@ -362,7 +362,7 @@ public class AaptPackageProcessBuilderTest extends TestCase {
                 .setResFolder(resFolder)
                 .setPackageForR("com.example.package.forR")
                 .setSourceOutputDir("path/to/source/output/dir")
-                .setLibraries(ImmutableList.of(Mockito.mock(SymbolFileProvider.class)))
+                .setLibraries(ImmutableList.of(Mockito.mock(AndroidLibrary.class)))
                 .setType(VariantType.DEFAULT)
                 .setResourceConfigs(
                         ImmutableList.of("nodpi", "en", "fr", "mdpi", "hdpi", "xxhdpi", "xxxhdpi"))
@@ -413,7 +413,7 @@ public class AaptPackageProcessBuilderTest extends TestCase {
                 .setResFolder(resFolder)
                 .setPackageForR("com.example.package.forR")
                 .setSourceOutputDir("path/to/source/output/dir")
-                .setLibraries(ImmutableList.of(Mockito.mock(SymbolFileProvider.class)))
+                .setLibraries(ImmutableList.of(Mockito.mock(AndroidLibrary.class)))
                 .setType(VariantType.DEFAULT)
                 .setResourceConfigs(ImmutableList.of("xxxhdpi"))
                 .setSplits(ImmutableList.of("hdpi", "mdpi", "xxhdpi"))
@@ -465,7 +465,7 @@ public class AaptPackageProcessBuilderTest extends TestCase {
                 .setResFolder(resFolder)
                 .setPackageForR("com.example.package.forR")
                 .setSourceOutputDir("path/to/source/output/dir")
-                .setLibraries(ImmutableList.of(Mockito.mock(SymbolFileProvider.class)))
+                .setLibraries(ImmutableList.of(Mockito.mock(AndroidLibrary.class)))
                 .setType(VariantType.DEFAULT)
                 .setResourceConfigs(ImmutableList
                         .of("en", "fr", "es", "de", "it", "mdpi", "hdpi", "xhdpi", "xxhdpi"))
@@ -513,7 +513,7 @@ public class AaptPackageProcessBuilderTest extends TestCase {
                 .setResFolder(resFolder)
                 .setPackageForR("com.example.package.forR")
                 .setSourceOutputDir("path/to/source/output/dir")
-                .setLibraries(ImmutableList.of(Mockito.mock(SymbolFileProvider.class)))
+                .setLibraries(ImmutableList.of(Mockito.mock(AndroidLibrary.class)))
                 .setType(VariantType.DEFAULT)
                 .setResourceConfigs(ImmutableList
                         .of("en", "fr", "es", "de", "it", "hdpi"));
@@ -561,7 +561,7 @@ public class AaptPackageProcessBuilderTest extends TestCase {
                 .setResFolder(resFolder)
                 .setPackageForR("com.example.package.forR")
                 .setSourceOutputDir("path/to/source/output/dir")
-                .setLibraries(ImmutableList.of(Mockito.mock(SymbolFileProvider.class)))
+                .setLibraries(ImmutableList.of(Mockito.mock(AndroidLibrary.class)))
                 .setType(VariantType.DEFAULT)
                 .setResourceConfigs(ImmutableList.of( "en", "fr", "es", "de", "it", "hdpi"))
                 .setSplits(ImmutableList.of("hdpi"))
@@ -604,7 +604,7 @@ public class AaptPackageProcessBuilderTest extends TestCase {
                 .setResFolder(resFolder)
                 .setPackageForR("com.example.package.forR")
                 .setSourceOutputDir("path/to/source/output/dir")
-                .setLibraries(ImmutableList.of(Mockito.mock(SymbolFileProvider.class)))
+                .setLibraries(ImmutableList.of(Mockito.mock(AndroidLibrary.class)))
                 .setType(VariantType.DEFAULT)
                 // only languages, no density...
                 .setResourceConfigs(ImmutableList.of("en", "fr", "es", "de", "it"))

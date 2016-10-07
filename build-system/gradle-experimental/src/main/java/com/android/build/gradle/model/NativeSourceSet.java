@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.model;
 
+import org.gradle.api.tasks.util.PatternFilterable;
 import org.gradle.language.base.LanguageSourceSet;
 import org.gradle.language.nativeplatform.HeaderExportingSourceSet;
 
@@ -24,4 +25,6 @@ import org.gradle.language.nativeplatform.HeaderExportingSourceSet;
  */
 public interface NativeSourceSet extends NativeDependentSourceSet, LanguageSourceSet,
         HeaderExportingSourceSet {
+    PatternFilterable getcFilter();
+    PatternFilterable getCppFilter();
 }

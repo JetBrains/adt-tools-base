@@ -95,6 +95,44 @@ public class BadHostnameVerifierDetectorTest extends AbstractCheckTest {
                 ));
     }
 
+    public void testBrokenWithSuppressLint() throws Exception {
+        assertEquals(
+                "No warnings.",
+                lintProject(
+                        java("src/android/annotation/SuppressLint.java", ""
+                                + "package android.annotation;\n"
+                                + "import static java.lang.annotation.ElementType.CONSTRUCTOR;\n"
+                                + "import static java.lang.annotation.ElementType.FIELD;\n"
+                                + "import static java.lang.annotation.ElementType.LOCAL_VARIABLE;\n"
+                                + "import static java.lang.annotation.ElementType.METHOD;\n"
+                                + "import static java.lang.annotation.ElementType.PARAMETER;\n"
+                                + "import static java.lang.annotation.ElementType.TYPE;\n"
+                                + "import java.lang.annotation.Retention;\n"
+                                + "import java.lang.annotation.RetentionPolicy;\n"
+                                + "import java.lang.annotation.Target;\n"
+                                + "\n"
+                                + "@Target({TYPE, FIELD, METHOD, PARAMETER, CONSTRUCTOR, LOCAL_VARIABLE})\n"
+                                + "@Retention(RetentionPolicy.CLASS)\n"
+                                + "public @interface SuppressLint {\n"
+                                + "    String[] value();\n"
+                                + "}"),
+                        java("src/test/pkg/DebugHostnameVerifier.java", ""
+                                + "package test.pkg;"
+                                + "\n"
+                                + "import javax.net.ssl.HostnameVerifier;\n"
+                                + "import javax.net.ssl.SSLSession;\n"
+                                + "\n"
+                                + "@android.annotation.SuppressLint(\"BadHostnameVerifier\")\n"
+                                + "public abstract class DebugHostnameVerifier  {\n"
+                                + "    HostnameVerifier allowAll = new HostnameVerifier() {\n"
+                                + "        @Override\n"
+                                + "        public boolean verify(String hostname, SSLSession session) {\n"
+                                + "            return true;\n"
+                                + "        }\n"
+                                + "    };\n"
+                                + "}\n")));
+    }
+
     public void testCorrect() throws Exception {
         assertEquals(
                 "No warnings.",

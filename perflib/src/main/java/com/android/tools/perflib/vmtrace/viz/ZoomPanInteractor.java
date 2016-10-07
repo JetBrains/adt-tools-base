@@ -34,7 +34,7 @@ import java.util.List;
  * {@link ZoomPanInteractor} listens to mouse events, interprets dragging the mouse as an attempt
  * to pan the canvas, and mouse wheel rotation as an attempt to zoom in/out the canvas.
  * After such events, it updates its listeners with the updated transformation matrix corresponding
- * to the zoom & pan values.
+ * to the zoom &amp; pan values.
  */
 public class ZoomPanInteractor implements MouseListener, MouseMotionListener, MouseWheelListener {
     /**

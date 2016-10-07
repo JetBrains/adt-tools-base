@@ -16,9 +16,15 @@
 
 package com.android.tools.lint.checks;
 
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.builder.model.AndroidProject;
+import com.android.builder.model.ProductFlavor;
+import com.android.builder.model.Variant;
+import com.android.builder.model.VectorDrawablesOptions;
 import com.android.tools.lint.detector.api.Detector;
 import com.android.tools.lint.detector.api.Project;
 
@@ -131,6 +137,15 @@ public class VectorDetectorTest extends AbstractCheckTest {
                 ));
     }
 
+    public void testNoWarningsWithSupportLibVectors() throws Exception {
+        // Regression test for https://code.google.com/p/android/issues/detail?id=206005
+        assertEquals("No warnings.",
+                lintProject(
+                        xml("res/drawable/foo.xml", VECTOR),
+                        copy("apicheck/minsdk14.xml", "AndroidManifest.xml")
+                ));
+    }
+
     @Override
     protected TestLintClient createClient() {
         return new TestLintClient() {
@@ -149,8 +164,28 @@ public class VectorDetectorTest extends AbstractCheckTest {
                         String modelVersion = "1.4.0-alpha2";
                         if (getName().equals("VectorDetectorTest_testNoGroupWarningWithPlugin15")) {
                             modelVersion = "1.5.0-alpha1";
+                        } else if (getName().equals("VectorDetectorTest_testNoWarningsWithSupportLibVectors")) {
+                            modelVersion = "2.0.0";
                         }
                         return PrivateResourceDetectorTest.createMockProject(modelVersion, 3);
+                    }
+
+                    @Nullable
+                    @Override
+                    public Variant getCurrentVariant() {
+                        Variant onlyVariant = mock(Variant.class);
+                        ProductFlavor productFlavor = mock(ProductFlavor.class);
+                        VectorDrawablesOptions vectorDrawables = mock(VectorDrawablesOptions.class);
+
+                        when(onlyVariant.getMergedFlavor()).thenReturn(productFlavor);
+                        when(productFlavor.getVectorDrawables()).thenReturn(vectorDrawables);
+                        if ("VectorDetectorTest_testNoWarningsWithSupportLibVectors".equals(getName())) {
+                            when(vectorDrawables.getUseSupportLibrary()).thenReturn(true);
+                        } else {
+                            when(vectorDrawables.getUseSupportLibrary()).thenReturn(false);
+                        }
+
+                        return onlyVariant;
                     }
                 };
             }

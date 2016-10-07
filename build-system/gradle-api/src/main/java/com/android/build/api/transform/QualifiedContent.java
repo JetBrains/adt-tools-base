@@ -24,11 +24,7 @@ import java.util.Set;
 
 /**
  * Represent content qualified with one or more {@link ContentType} and one or more {@link Scope}.
- * <p/>
- * <strong>This API is non final and is subject to change. We are looking for feedback, and will
- * attempt to stabilize it in the 1.6 time frame.</strong>
  */
-@Beta
 public interface QualifiedContent {
 
     /**
@@ -78,7 +74,7 @@ public interface QualifiedContent {
     /**
      * The scope of the content.
      *
-     * <p/>
+     * <p>
      * This indicates what the content represents, so that Transforms can apply to only part(s)
      * of the classes or resources that the build manipulates.
      */
@@ -131,12 +127,12 @@ public interface QualifiedContent {
 
     /**
      * Returns the type of content that the stream represents.
-     * <p/>
+     * <p>
      * Even though this may return only {@link DefaultContentType#RESOURCES} or
      * {@link DefaultContentType#CLASSES}, the actual content (the folder or the jar) may
      * contain files representing other content types. This is because the transform mechanism
      * avoids duplicating files around to remove unwanted types for performance.
-     * <p/>
+     * <p>
      * For each input, transforms should always take care to read and process only the files
      * associated with the types returned by this method.
      *

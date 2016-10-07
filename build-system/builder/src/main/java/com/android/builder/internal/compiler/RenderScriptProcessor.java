@@ -31,6 +31,7 @@ import com.android.ide.common.process.ProcessInfoBuilder;
 import com.android.ide.common.process.ProcessOutputHandler;
 import com.android.ide.common.process.ProcessResult;
 import com.android.sdklib.BuildToolInfo;
+import com.android.utils.ILogger;
 import com.google.common.collect.Maps;
 
 import java.io.File;
@@ -45,6 +46,8 @@ import java.util.concurrent.Callable;
  * Compiles Renderscript files.
  */
 public class RenderScriptProcessor {
+
+    private static final String LIBCLCORE_BC = "libclcore.bc";
 
     // ABI list, as pairs of (android-ABI, toolchain-ABI)
     private static final class Abi {
@@ -70,11 +73,15 @@ public class RenderScriptProcessor {
         }
     }
 
-    private static final Abi[] ABIS = {
+    private static final Abi[] ABIS_32 = {
             new Abi("armeabi-v7a", "armv7-none-linux-gnueabi", BuildToolInfo.PathId.LD_ARM,
                     "-dynamic-linker", "/system/bin/linker", "-X", "-m", "armelf_linux_eabi"),
             new Abi("mips", "mipsel-unknown-linux", BuildToolInfo.PathId.LD_MIPS, "-EL"),
             new Abi("x86", "i686-unknown-linux", BuildToolInfo.PathId.LD_X86, "-m", "elf_i386") };
+    private static final Abi[] ABIS_64 = {
+            new Abi("arm64-v8a", "aarch64-linux-android", BuildToolInfo.PathId.LD_ARM64, "-X"),
+            new Abi("x86_64", "x86_64-unknown-linux", BuildToolInfo.PathId.LD_X86_64, "-m", "elf_x86_64") };
+
 
     public static final String RS_DEPS = "rsDeps";
 
@@ -99,6 +106,9 @@ public class RenderScriptProcessor {
     @NonNull
     private final BuildToolInfo mBuildToolInfo;
 
+    @NonNull
+    private final ILogger mLogger;
+
     private final int mTargetApi;
 
     private final int mOptimizationLevel;
@@ -106,7 +116,9 @@ public class RenderScriptProcessor {
     private final boolean mNdkMode;
 
     private final boolean mSupportMode;
+
     private final Set<String> mAbiFilters;
+
 
     private final File mRsLib;
     private final Map<String, File> mLibClCore = Maps.newHashMap();
@@ -124,7 +136,8 @@ public class RenderScriptProcessor {
             int optimizationLevel,
             boolean ndkMode,
             boolean supportMode,
-            @Nullable Set<String> abiFilters) {
+            @Nullable Set<String> abiFilters,
+            @NonNull ILogger logger) {
         mSourceFolders = sourceFolders;
         mImportFolders = importFolders;
         mSourceOutputDir = sourceOutputDir;
@@ -137,14 +150,23 @@ public class RenderScriptProcessor {
         mNdkMode = ndkMode;
         mSupportMode = supportMode;
         mAbiFilters = abiFilters;
+        mLogger = logger;
 
         if (supportMode) {
             File rs = new File(mBuildToolInfo.getLocation(), "renderscript");
             mRsLib = new File(rs, "lib");
             File bcFolder = new File(mRsLib, "bc");
-            for (Abi abi : ABIS) {
-                mLibClCore.put(abi.mDevice,
-                        new File(bcFolder, abi.mDevice + File.separatorChar + "libclcore.bc"));
+            for (Abi abi : ABIS_32) {
+                File rsClCoreFile = new File(bcFolder, abi.mDevice + File.separatorChar + LIBCLCORE_BC);
+                if (rsClCoreFile.exists()) {
+                    mLibClCore.put(abi.mDevice, rsClCoreFile);
+                }
+            }
+            for (Abi abi : ABIS_64) {
+                File rsClCoreFile = new File(bcFolder, abi.mDevice + File.separatorChar + LIBCLCORE_BC);
+                if (rsClCoreFile.exists()) {
+                    mLibClCore.put(abi.mDevice, rsClCoreFile);
+                }
             }
         } else {
             mRsLib = null;
@@ -159,6 +181,12 @@ public class RenderScriptProcessor {
         File rs = new File(buildToolsFolder, "renderscript");
         File lib = new File(rs, "lib");
         return new File(lib, "packaged");
+    }
+
+    public static File getSupportBlasLibFolder(String buildToolsFolder) {
+        File rs = new File(buildToolsFolder, "renderscript");
+        File lib = new File(rs, "lib");
+        return new File(lib, "blas");
     }
 
     public void build(
@@ -275,22 +303,54 @@ public class RenderScriptProcessor {
             @NonNull final Map<String, String> env)
             throws IOException, InterruptedException, LoggedErrorException, ProcessException {
         // get the generated BC files.
-        File rawFolder = new File(mResOutputDir, SdkConstants.FD_RES_RAW);
+        int targetApi = mTargetApi < 11 ? 11 : mTargetApi;
+        targetApi = (mSupportMode && targetApi < 18) ? 18 : targetApi;
+        if (targetApi < 21) {
+            File rawFolder = new File(mResOutputDir, SdkConstants.FD_RES_RAW);
+            createSupportFilesHelper(rawFolder, ABIS_32, processExecutor, processOutputHandler, env);
+        } else {
+            File rawFolder32 = new File(mResOutputDir, SdkConstants.FD_RES_RAW + "/bc32");
+            createSupportFilesHelper(rawFolder32, ABIS_32, processExecutor,
+                    processOutputHandler, env);
+            File rawFolder64 = new File(mResOutputDir, SdkConstants.FD_RES_RAW + "/bc64");
+            createSupportFilesHelper(rawFolder64, ABIS_64, processExecutor,
+                    processOutputHandler, env);
 
+        }
+    }
+
+    private void createSupportFilesHelper(
+            @NonNull final File rawFolder,
+            @NonNull final Abi[] abis,
+            @NonNull final ProcessExecutor processExecutor,
+            @NonNull final ProcessOutputHandler processOutputHandler,
+            @NonNull final Map<String, String> env)
+            throws IOException, InterruptedException, LoggedErrorException, ProcessException {
         SourceSearcher searcher = new SourceSearcher(
                 Collections.singletonList(rawFolder), EXT_BC);
         FileGatherer fileGatherer = new FileGatherer();
         searcher.search(fileGatherer);
 
-        WaitableExecutor<Void> mExecutor  = new WaitableExecutor<Void>();
+        WaitableExecutor<Void> mExecutor  = WaitableExecutor.useGlobalSharedThreadPool();
 
         for (final File bcFile : fileGatherer.getFiles()) {
             String name = bcFile.getName();
             final String objName = name.replaceAll("\\.bc", ".o");
             final String soName = "librs." + name.replaceAll("\\.bc", ".so");
 
-            for (final Abi abi : ABIS) {
+            for (final Abi abi : abis) {
                 if (mAbiFilters != null && !mAbiFilters.contains(abi.mDevice)) {
+                    continue;
+                }
+                // only build for the ABIs bundled in Build-Tools.
+                if (mLibClCore.get(abi.mDevice) == null) {
+                    // warn the user to update Build-Tools if the desired ABI is not found.
+                    mLogger.warning("Skipped RenderScript support mode compilation for "
+                                    + abi.mDevice
+                                    + " : required components not found in Build-Tools "
+                                    + mBuildToolInfo.getRevision().toString()
+                                    + '\n'
+                                    + "Please check and update your BuildTools.");
                     continue;
                 }
 

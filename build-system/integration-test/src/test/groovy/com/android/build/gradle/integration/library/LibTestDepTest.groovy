@@ -66,14 +66,13 @@ class LibTestDepTest {
     public void "check test variant inherits deps from main variant"() {
         Collection<Variant> variants = model.getVariants()
         Variant debugVariant = ModelHelper.getVariant(variants, DEBUG)
-        assertNotNull(debugVariant)
 
         Collection<AndroidArtifact> extraAndroidArtifact = debugVariant.getExtraAndroidArtifacts()
         AndroidArtifact testArtifact = ModelHelper.getAndroidArtifact(extraAndroidArtifact,
                 ARTIFACT_ANDROID_TEST)
         assertNotNull(testArtifact)
 
-        Dependencies testDependencies = testArtifact.getDependencies()
+        Dependencies testDependencies = testArtifact.getCompileDependencies()
         Collection<JavaLibrary> javaLibraries = testDependencies.getJavaLibraries()
         assertEquals(2, javaLibraries.size())
         for (JavaLibrary lib : javaLibraries) {

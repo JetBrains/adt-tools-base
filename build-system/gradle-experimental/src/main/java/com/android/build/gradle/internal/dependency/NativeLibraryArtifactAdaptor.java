@@ -17,7 +17,6 @@
 package com.android.build.gradle.internal.dependency;
 
 import com.android.annotations.NonNull;
-import com.android.build.gradle.internal.ProductFlavorCombo;
 import com.android.utils.StringHelper;
 
 import org.gradle.api.file.FileCollection;

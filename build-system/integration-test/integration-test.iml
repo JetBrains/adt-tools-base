@@ -16,5 +16,7 @@
     <orderEntry type="module" module-name="instant-run-client" scope="TEST" />
     <orderEntry type="library" scope="TEST" name="mockito" level="project" />
     <orderEntry type="module" module-name="instant-run-common" scope="TEST" />
+    <orderEntry type="module" module-name="device-provider" scope="TEST" />
+    <orderEntry type="library" name="protobuf" level="project" />
   </component>
 </module>

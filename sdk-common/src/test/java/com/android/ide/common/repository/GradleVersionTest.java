@@ -88,6 +88,30 @@ public class GradleVersionTest {
     }
 
     @Test
+    public void testParseOneSegmentWithSnapshot_lowerCase() {
+        GradleVersion version = GradleVersion.parse("2-snapshot");
+        assertEquals(2, version.getMajor());
+        assertEquals(0, version.getMinor());
+        assertEquals(0, version.getMicro());
+        assertEquals(0, version.getPreview());
+        assertNull(version.getPreviewType());
+        assertTrue(version.isSnapshot());
+        assertEquals("2-snapshot", version.toString());
+    }
+
+    @Test
+    public void testParseOneSegmentWithDev() {
+        GradleVersion version = GradleVersion.parse("2-dev");
+        assertEquals(2, version.getMajor());
+        assertEquals(0, version.getMinor());
+        assertEquals(0, version.getMicro());
+        assertEquals(0, version.getPreview());
+        assertNull(version.getPreviewType());
+        assertTrue(version.isSnapshot());
+        assertEquals("2-dev", version.toString());
+    }
+
+    @Test
     public void testParseTwoSegments() {
         GradleVersion version = GradleVersion.parse("1.2");
         assertEquals(1, version.getMajor());
@@ -291,36 +315,6 @@ public class GradleVersionTest {
         assertEquals(6, sixth.getValue());
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void testInvalidVersion1() {
-        GradleVersion.parse("a");
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void testInvalidVersion2() {
-        GradleVersion.parse("a.b");
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void testInvalidVersion3() {
-        GradleVersion.parse("a.b.c");
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void testInvalidVersion4() {
-        GradleVersion.parse("1.2.3-foo-bar");
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void testInvalidVersion5() {
-        GradleVersion.parse("1.2.3-1-2");
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void testInvalidVersion6() {
-        GradleVersion.parse("1.2.3-1");
-    }
-
     @Test
     public void testCompare() {
         assertEquals(0, GradleVersion.parse("1.0.0").compareTo("1.0.0"));
@@ -346,6 +340,13 @@ public class GradleVersionTest {
         assertTrue(GradleVersion.parse("1.0.0-beta1").compareTo("1.0.0-alpha2") > 0);
         assertTrue(GradleVersion.parse("1.0.0-rc1").compareTo("1.0.0-alpha2") > 0);
         assertTrue(GradleVersion.parse("2.0.0-alpha1").compareTo("1.0.0-alpha1") > 0);
+    }
+
+    @Test
+    public void testCompareWithExcludeAllComparison() {
+        assertEquals(0, GradleVersion.parse("1.0.0").compareIgnoringQualifiers("1.0.0"));
+        assertEquals(0, GradleVersion.parse("1.0.0").compareIgnoringQualifiers("1.0.0-alpha1"));
+        assertEquals(0, GradleVersion.parse("1.0.0").compareIgnoringQualifiers("1.0.0-SNAPSHOT"));
     }
 
     @Test
@@ -410,6 +411,31 @@ public class GradleVersionTest {
         assertNull(version.getPreviewType());
         assertFalse(version.isSnapshot());
         assertEquals("2.0+", version.toString());
+    }
+
+    @Test
+    public void testParseArbitraryQualifiers1() {
+        GradleVersion version = GradleVersion.parse("1.2-XTEXT-PATCHED");
+        assertEquals(1, version.getMajor());
+        assertEquals(2, version.getMinor());
+        assertEquals(0, version.getMicro());
+    }
+
+    @Test
+    public void testParseArbitraryQualifiers2() {
+        GradleVersion version = GradleVersion.parse("1.2.3-incubating");
+        assertEquals(1, version.getMajor());
+        assertEquals(2, version.getMinor());
+        assertEquals(3, version.getMicro());
+    }
+
+    @Test
+    public void testParseArbitraryQualifiers3() {
+        GradleVersion version = GradleVersion.parse("r09");
+        assertEquals(0, version.getMajor());
+        assertEquals(0, version.getMinor());
+        assertEquals(0, version.getMicro());
+        assertEquals("r09", version.toString());
     }
 
     @Test(expected = IllegalArgumentException.class)

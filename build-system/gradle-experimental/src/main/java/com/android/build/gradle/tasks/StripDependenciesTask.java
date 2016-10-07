@@ -18,7 +18,7 @@ package com.android.build.gradle.tasks;
 
 import com.android.annotations.NonNull;
 import com.android.build.gradle.internal.LoggerWrapper;
-import com.android.build.gradle.internal.NdkHandler;
+import com.android.build.gradle.internal.ndk.NdkHandler;
 import com.android.build.gradle.internal.core.Abi;
 import com.android.build.gradle.internal.process.GradleProcessExecutor;
 import com.android.build.gradle.ndk.internal.NdkNamingScheme;
@@ -104,40 +104,34 @@ public class StripDependenciesTask extends DefaultTask {
 
     @TaskAction
     void taskAction(IncrementalTaskInputs inputs) throws IOException {
-        inputs.outOfDate(new Action<InputFileDetails>() {
-            @Override
-            public void execute(InputFileDetails inputFileDetails) {
-                File input = inputFileDetails.getFile();
-                if (inputFiles.containsKey(input)) {
-                    Abi abi = inputFiles.get(input);
-                    File output = FileUtils.join(getOutputFolder(), abi.getName(), input.getName());
-                    stripFile(input, output, abi);
-                } else {
-                    for (Abi abi : stripedFiles.get(input)) {
-                        File output = FileUtils.join(
-                                getOutputFolder(),
-                                abi.getName(),
-                                input.getName());
-                        try {
-                            FileUtils.mkdirs(output.getParentFile());
-                            Files.copy(input, output);
-                        } catch (IOException e) {
-                            throw new RuntimeException(e);
-                        }
+        inputs.outOfDate(inputFileDetails -> {
+            File input = inputFileDetails.getFile();
+            if (inputFiles.containsKey(input)) {
+                Abi abi = inputFiles.get(input);
+                File output = FileUtils.join(getOutputFolder(), abi.getName(), input.getName());
+                stripFile(input, output, abi);
+            } else {
+                for (Abi abi : stripedFiles.get(input)) {
+                    File output = FileUtils.join(
+                            getOutputFolder(),
+                            abi.getName(),
+                            input.getName());
+                    try {
+                        FileUtils.mkdirs(output.getParentFile());
+                        Files.copy(input, output);
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
                     }
                 }
             }
         });
-        inputs.removed(new Action<InputFileDetails>() {
-            @Override
-            public void execute(InputFileDetails inputFileDetails) {
-                File input = inputFileDetails.getFile();
-                if (inputFiles.containsKey(input)) {
-                    removeFile(input, inputFiles.get(input));
-                } else {
-                    for (Abi abi : stripedFiles.get(input)) {
-                        removeFile(input, abi);
-                    }
+        inputs.removed(inputFileDetails -> {
+            File input = inputFileDetails.getFile();
+            if (inputFiles.containsKey(input)) {
+                removeFile(input, inputFiles.get(input));
+            } else {
+                for (Abi abi : stripedFiles.get(input)) {
+                    removeFile(input, abi);
                 }
             }
         });
@@ -213,9 +207,9 @@ public class StripDependenciesTask extends DefaultTask {
                     buildDir,
                     NdkNamingScheme.getOutputDirectoryName(buildType, flavor, "")));
             Map<Abi, File> stripCommands = Maps.newHashMap();
-            if (handler.isNdkDirConfigured()) {
+            if (handler.isConfigured()) {
                 for(Abi abi : handler.getSupportedAbis()) {
-                    stripCommands.put(abi, handler.getStripCommand(abi));
+                    stripCommands.put(abi, handler.getStripExecutable(abi));
                     task.addStripExecutables(stripCommands);
                 }
             }

@@ -32,12 +32,26 @@ public interface AndroidProject {
     String PROPERTY_BUILD_MODEL_ONLY =  "android.injected.build.model.only";
     // Sent by Studio 1.1+
     String PROPERTY_BUILD_MODEL_ONLY_ADVANCED =  "android.injected.build.model.only.advanced";
+    // Sent by Studio 2.2+. The value of the prop is a monotonically increasing integer.
+    // see MODEL_LEVEL_* constants
+    String PROPERTY_BUILD_MODEL_ONLY_VERSIONED =  "android.injected.build.model.only.versioned";
+
+    // Sent in when external native projects models requires a refresh.
+    String PROPERTY_REFRESH_EXTERNAL_NATIVE_MODEL = "android.injected.refresh.external.native.model";
+
     // Sent by Studio 1.5+
+
+    // The "feature level" of the device that is targeted, as returned by
+    // AndroidVersion.getFeatureLevel().
     String PROPERTY_BUILD_API = "android.injected.build.api";
     String PROPERTY_BUILD_ABI = "android.injected.build.abi";
     String PROPERTY_BUILD_DENSITY = "android.injected.build.density";
 
     String PROPERTY_INVOKED_FROM_IDE = "android.injected.invoked.from.ide";
+    String PROPERTY_GENERATE_SOURCES_ONLY = "android.injected.generateSourcesOnly";
+
+    String PROPERTY_RESTRICT_VARIANT_PROJECT = "android.injected.restrict.variant.project";
+    String PROPERTY_RESTRICT_VARIANT_NAME = "android.injected.restrict.variant.name";
 
     String PROPERTY_SIGNING_STORE_FILE = "android.injected.signing.store.file";
     String PROPERTY_SIGNING_STORE_PASSWORD = "android.injected.signing.store.password";
@@ -47,9 +61,27 @@ public interface AndroidProject {
 
     String PROPERTY_SIGNING_COLDSWAP_MODE = "android.injected.coldswap.mode";
 
-    // InstantDev related properties, must be ',' separated list of OptionalCompilationStep values.
-    String OPTIONAL_COMPILATION_STEPS = "android.optional.compilation";
+    /** Version code to be used in the built APK. */
+    String PROPERTY_VERSION_CODE = "android.injected.version.code";
 
+    /** Version code injected by Android Studio when using Instant Run. */
+    int INSTANT_RUN_VERSION_CODE = Integer.MAX_VALUE;
+
+    /** Version name to be used in the built APK. */
+    String PROPERTY_VERSION_NAME = "android.injected.version.name";
+
+    /** Version name injected by Android Studio when using Instant Run. */
+    String INSTANT_RUN_VERSION_NAME = "INSTANT_RUN";
+
+    /**
+     * Comma-separated list of {@link OptionalCompilationStep} value names, used with Instant Run.
+     */
+    String PROPERTY_OPTIONAL_COMPILATION_STEPS = "android.optional.compilation";
+
+    /**
+     * Location for APKs. If defined as a relative path, then it is resolved against the
+     * project's path.
+     */
     String PROPERTY_APK_LOCATION = "android.injected.apk.location";
 
     String ARTIFACT_MAIN = "_main_";
@@ -64,6 +96,11 @@ public interface AndroidProject {
     int GENERATION_ORIGINAL = 1;
     int GENERATION_COMPONENT = 2;
 
+    int MODEL_LEVEL_0_ORIGNAL = 0 ; // studio 1.0, no support for SyncIssue
+    int MODEL_LEVEL_1_SYNC_ISSUE = 1; // studio 1.1+, with SyncIssue
+    int MODEL_LEVEL_2_DEP_GRAPH = 2; // studio 2.2+, with full dep graph
+    int MODEL_LEVEL_LATEST = MODEL_LEVEL_2_DEP_GRAPH;
+
     /**
      * Returns the model version. This is a string in the format X.Y.Z
      *
@@ -74,12 +111,12 @@ public interface AndroidProject {
 
     /**
      * Returns the model api version.
-     * <p/>
+     * <p>
      * This is different from {@link #getModelVersion()} in a way that new model
      * version might increment model version but keep existing api. That means that
      * code which was built against particular 'api version' might be safely re-used for all
      * new model versions as long as they don't change the api.
-     * <p/>
+     * <p>
      * Every new model version is assumed to return an 'api version' value which
      * is equal or greater than the value used by the previous model version.
      *

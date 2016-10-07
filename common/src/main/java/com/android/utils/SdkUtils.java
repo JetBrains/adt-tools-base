@@ -19,27 +19,18 @@ package com.android.utils;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.google.common.base.CaseFormat;
-import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableList;
-import com.google.common.io.ByteStreams;
-import com.google.common.io.Closeables;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.StringWriter;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.text.NumberFormat;
-import java.text.ParseException;
 import java.util.List;
 import java.util.Properties;
 
 import static com.android.SdkConstants.DOT_WEBP;
-import static com.android.SdkConstants.DOT_XML;
 import static com.android.SdkConstants.DOT_PNG;
 import static com.android.SdkConstants.DOT_GIF;
 import static com.android.SdkConstants.DOT_9PNG;
@@ -108,54 +99,6 @@ public class SdkUtils {
      */
     public static boolean startsWithIgnoreCase(@NonNull String string, @NonNull String prefix) {
         return string.regionMatches(true /* ignoreCase */, 0, prefix, 0, prefix.length());
-    }
-
-    /**
-     * Returns true if the given string starts at the given offset with the
-     * given prefix, case insensitively.
-     *
-     * @param string the full string to be checked
-     * @param offset the offset in the string to start looking
-     * @param prefix the prefix to be checked for
-     * @return true if the string case-insensitively starts at the given offset
-     *         with the given prefix
-     */
-    public static boolean startsWith(@NonNull String string, int offset, @NonNull String prefix) {
-        return string.regionMatches(true /* ignoreCase */, offset, prefix, 0, prefix.length());
-    }
-
-    /**
-     * Strips the whitespace from the given string
-     *
-     * @param string the string to be cleaned up
-     * @return the string, without whitespace
-     */
-    public static String stripWhitespace(@NonNull String string) {
-        StringBuilder sb = new StringBuilder(string.length());
-        for (int i = 0, n = string.length(); i < n; i++) {
-            char c = string.charAt(i);
-            if (!Character.isWhitespace(c)) {
-                sb.append(c);
-            }
-        }
-
-        return sb.toString();
-    }
-
-    /**
-     * Returns true if the given string has an upper case character.
-     *
-     * @param s the string to check
-     * @return true if it contains uppercase characters
-     */
-    public static boolean hasUpperCaseCharacter(@NonNull String s) {
-        for (int i = 0; i < s.length(); i++) {
-            if (Character.isUpperCase(s.charAt(i))) {
-                return true;
-            }
-        }
-
-        return false;
     }
 
     /** For use by {@link #getLineSeparator()} */
@@ -240,80 +183,6 @@ public class SdkUtils {
         }
 
         return sb.toString();
-    }
-
-    /**
-     * Returns the given localized string as an int. For example, in the
-     * US locale, "1,000", will return 1000. In the French locale, "1.000" will return
-     * 1000. It will return 0 for empty strings.
-     * <p>
-     * To parse a string without catching parser exceptions, call
-     * {@link #parseLocalizedInt(String, int)} instead, passing the
-     * default value to be returned if the format is invalid.
-     *
-     * @param string the string to be parsed
-     * @return the integer value
-     * @throws ParseException if the format is not correct
-     */
-    public static int parseLocalizedInt(@NonNull String string) throws ParseException {
-        if (string.isEmpty()) {
-            return 0;
-        }
-        return NumberFormat.getIntegerInstance().parse(string).intValue();
-    }
-
-    /**
-     * Returns the given localized string as an int. For example, in the
-     * US locale, "1,000", will return 1000. In the French locale, "1.000" will return
-     * 1000.  If the format is invalid, returns the supplied default value instead.
-     *
-     * @param string the string to be parsed
-     * @param defaultValue the value to be returned if there is a parsing error
-     * @return the integer value
-     */
-    public static int parseLocalizedInt(@NonNull String string, int defaultValue) {
-        try {
-            return parseLocalizedInt(string);
-        } catch (ParseException e) {
-            return defaultValue;
-        }
-    }
-
-    /**
-     * Returns the given localized string as a double. For example, in the
-     * US locale, "3.14", will return 3.14. In the French locale, "3,14" will return
-     * 3.14. It will return 0 for empty strings.
-     * <p>
-     * To parse a string without catching parser exceptions, call
-     * {@link #parseLocalizedDouble(String, double)} instead, passing the
-     * default value to be returned if the format is invalid.
-     *
-     * @param string the string to be parsed
-     * @return the double value
-     * @throws ParseException if the format is not correct
-     */
-    public static double parseLocalizedDouble(@NonNull String string) throws ParseException {
-        if (string.isEmpty()) {
-            return 0.0;
-        }
-        return NumberFormat.getNumberInstance().parse(string).doubleValue();
-    }
-
-    /**
-     * Returns the given localized string as a double. For example, in the
-     * US locale, "3.14", will return 3.14. In the French locale, "3,14" will return
-     * 3.14. If the format is invalid, returns the supplied default value instead.
-     *
-     * @param string the string to be parsed
-     * @param defaultValue the value to be returned if there is a parsing error
-     * @return the double value
-     */
-    public static double parseLocalizedDouble(@NonNull String string, double defaultValue) {
-        try {
-            return parseLocalizedDouble(string);
-        } catch (ParseException e) {
-            return defaultValue;
-        }
     }
 
     /**

@@ -18,6 +18,7 @@ package com.android.build.gradle.integration.common.truth;
 
 import static com.android.SdkConstants.FN_APK_CLASSES_N_DEX;
 
+import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
@@ -30,6 +31,9 @@ import com.android.ide.common.process.ProcessExecutor;
 import com.android.ide.common.process.ProcessInfoBuilder;
 import com.android.utils.StdLogger;
 import com.google.common.collect.ImmutableList;
+import com.google.common.io.ByteStreams;
+import com.google.common.io.Files;
+import com.google.common.io.LineProcessor;
 import com.google.common.truth.FailureStrategy;
 import com.google.common.truth.IterableSubject;
 import com.google.common.truth.SubjectFactory;
@@ -38,6 +42,7 @@ import org.junit.Assert;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -77,14 +82,11 @@ public class ApkSubject extends AbstractAndroidSubject<ApkSubject> {
     @NonNull
     public List<String> entries() throws IOException {
         ImmutableList.Builder<String> entryList = ImmutableList.builder();
-        ZipFile zipFile = new ZipFile(getSubject());
-        try {
+        try (ZipFile zipFile = new ZipFile(getSubject())) {
             Enumeration<? extends ZipEntry> entries = zipFile.entries();
             while (entries.hasMoreElements()) {
                 entryList.add(entries.nextElement().getName());
             }
-        } finally {
-            zipFile.close();
         }
         return entryList.build();
     }
@@ -96,13 +98,19 @@ public class ApkSubject extends AbstractAndroidSubject<ApkSubject> {
             @Override
             @NonNull
             public DexFileSubject that() {
+                // For Windows, we need to extract the classes.dex first due to b/28385192.
+                if (SdkConstants.currentPlatform() == SdkConstants.PLATFORM_WINDOWS) {
+                    File dexFile = extractClassesDex(getSubject());
+                    return DexFileSubject.FACTORY.getSubject(failureStrategy, dexFile);
+                }
                 return DexFileSubject.FACTORY.getSubject(failureStrategy, getSubject());
             }
         };
     }
 
     @NonNull
-    public IterableSubject<? extends IterableSubject<?, String, List<String>>, String, List<String>> locales() throws ProcessException {
+    public IterableSubject<? extends IterableSubject<?, String, List<String>>,
+            String, List<String>> locales() throws ProcessException {
         File apk = getSubject();
         List<String> locales = ApkHelper.getLocales(apk);
 
@@ -110,7 +118,7 @@ public class ApkSubject extends AbstractAndroidSubject<ApkSubject> {
             Assert.fail(String.format("locales not found in badging output for %s", apk));
         }
 
-        return check().that(locales);
+        return check().<String, List<String>>that(locales);
     }
 
     public void hasPackageName(@NonNull String packageName) throws ProcessException {
@@ -162,14 +170,8 @@ public class ApkSubject extends AbstractAndroidSubject<ApkSubject> {
         checkMaxSdkVersion(output, maxSdkVersion);
     }
 
-    @Override
-    protected String getDisplaySubject() {
-        String name = (internalCustomName() == null) ? "" : "\"" + internalCustomName() + "\" ";
-        return name + "<" + getSubject().getName() + ">";
-    }
-
     @NonNull
-    public IndirectSubject<DexClassSubject> getClass(
+    public IndirectSubject<DexClassSubject> hasClass(
             @NonNull final String expectedClassName,
             @NonNull final ClassFileScope scope) throws ProcessException, IOException {
         if (!expectedClassName.startsWith("L") || !expectedClassName.endsWith(";")) {
@@ -204,8 +206,7 @@ public class ApkSubject extends AbstractAndroidSubject<ApkSubject> {
                 // multi-dex.
                 // We're going to extract all the classes<N>.dex we find until one of them
                 // contains the class we're searching for.
-                ZipFile zipFile = new ZipFile(getSubject());
-                try {
+                try (ZipFile zipFile = new ZipFile(getSubject())) {
                     int index = 2;
                     String dexFileName = String.format(FN_APK_CLASSES_N_DEX, index);
                     while (zipFile.getEntry(dexFileName) != null) {
@@ -219,13 +220,10 @@ public class ApkSubject extends AbstractAndroidSubject<ApkSubject> {
                         index++;
                         dexFileName = String.format(FN_APK_CLASSES_N_DEX, index);
                     }
-                } finally {
-                    zipFile.close();
                 }
                 break;
         }
-        fail(String.format("Class %1$s not found in APK %2$s",
-                expectedClassName, getSubject().getAbsolutePath()));
+        fail("contains class", expectedClassName);
         return new IndirectSubject<DexClassSubject>() {
             @NonNull
             @Override
@@ -233,6 +231,60 @@ public class ApkSubject extends AbstractAndroidSubject<ApkSubject> {
                 return DexClassSubject.FACTORY.getSubject(failureStrategy, null);
             }
         };
+    }
+
+    /**
+     * Asserts that the APK file contains an APK Signing Block (the block which may contain APK
+     * Signature Scheme v2 signatures).
+     */
+    public void containsApkSigningBlock() throws ProcessException {
+        if (!hasApkSigningBlock()) {
+            failWithRawMessage("APK does not contain APK Signing Block");
+        }
+    }
+
+    /**
+     * Asserts that the APK file does not contain an APK Signing Block (the block which may contain
+     * APK Signature Scheme v2 signatures).
+     */
+    public void doesNotContainApkSigningBlock() throws ProcessException {
+        if (hasApkSigningBlock()) {
+            failWithRawMessage("APK contains APK Signing Block");
+        }
+    }
+
+    private static final byte[] APK_SIG_BLOCK_MAGIC =
+            {0x41, 0x50, 0x4b, 0x20, 0x53, 0x69, 0x67, 0x20, 0x42, 0x6c, 0x6f, 0x63, 0x6b, 0x20,
+                    0x34, 0x32};
+
+    /**
+     * Returns {@code true} if this APK contains an APK Signing Block.
+     */
+    private boolean hasApkSigningBlock() throws ProcessException {
+        // IMPLEMENTATION NOTE: To avoid having to implement too much parsing, this method does not
+        // parse the APK to locate the APK Signing Block. Instead, it simply scans the file for the
+        // APK Signing Block magic bitstring. If the string is there in the file, it's assumed to
+        // contain an APK Signing Block.
+        try {
+            byte[] contents = Files.toByteArray(getSubject());
+            outer:
+            for (int contentsOffset = contents.length - APK_SIG_BLOCK_MAGIC.length;
+                    contentsOffset >= 0; contentsOffset--) {
+                for (int magicOffset = 0; magicOffset < APK_SIG_BLOCK_MAGIC.length; magicOffset++) {
+                    if (contents[contentsOffset + magicOffset]
+                            != APK_SIG_BLOCK_MAGIC[magicOffset]) {
+                        continue outer;
+                    }
+                }
+                // Found at offset contentsOffset
+                return true;
+            }
+            // Not found
+            return false;
+        } catch (IOException e) {
+            throw new ProcessException(
+                    "Failed to check for APK Signing Block presence in " + getSubject(), e);
+        }
     }
 
     /**
@@ -250,8 +302,7 @@ public class ApkSubject extends AbstractAndroidSubject<ApkSubject> {
                         new ZipFileSubject(failureStrategy, extractedEntry);
 
                 try {
-                    ZipFile zipFile = new ZipFile(extractedEntry);
-                    try {
+                    try (ZipFile zipFile = new ZipFile(extractedEntry)) {
                         Enumeration<? extends ZipEntry> zipFileEntries = zipFile.entries();
                         while (zipFileEntries.hasMoreElements()) {
                             ZipEntry zipEntry = zipFileEntries.nextElement();
@@ -261,8 +312,6 @@ public class ApkSubject extends AbstractAndroidSubject<ApkSubject> {
                                 return result;
                             }
                         }
-                    } finally {
-                        zipFile.close();
                     }
                 } catch (IOException e) {
                     throw new ProcessException(e);
@@ -295,7 +344,7 @@ public class ApkSubject extends AbstractAndroidSubject<ApkSubject> {
         };
     }
 
-    private static ZipEntryAction<Boolean> hasClassAction(final String expectedClassName) {
+    private ZipEntryAction<Boolean> hasClassAction(final String expectedClassName) {
         return new ZipEntryAction<Boolean>() {
             @Nullable
             @Override
@@ -348,8 +397,7 @@ public class ApkSubject extends AbstractAndroidSubject<ApkSubject> {
                 // multi-dex.
                 // We're going to extract all the classes<N>.dex we find until one of them
                 // contains the class we're searching for.
-                ZipFile zipFile = new ZipFile(getSubject());
-                try {
+                try (ZipFile zipFile = new ZipFile(getSubject())) {
                     int index = 2;
                     String dexFileName = String.format(FN_APK_CLASSES_N_DEX, index);
                     while (zipFile.getEntry(dexFileName) != null) {
@@ -362,8 +410,6 @@ public class ApkSubject extends AbstractAndroidSubject<ApkSubject> {
                         index++;
                         dexFileName = String.format(FN_APK_CLASSES_N_DEX, index);
                     }
-                } finally {
-                    zipFile.close();
                 }
                 break;
         }
@@ -374,11 +420,8 @@ public class ApkSubject extends AbstractAndroidSubject<ApkSubject> {
     @Override
     protected boolean checkForJavaResource(@NonNull String resourcePath)
             throws ProcessException, IOException {
-        ZipFile zipFile = new ZipFile(getSubject());
-        try {
+        try (ZipFile zipFile = new ZipFile(getSubject())) {
             return zipFile.getEntry(resourcePath) != null;
-        } finally {
-            zipFile.close();
         }
     }
 
@@ -411,10 +454,17 @@ public class ApkSubject extends AbstractAndroidSubject<ApkSubject> {
      * @return true if the class was found
      * @throws ProcessException
      */
-    private static boolean checkFileForClassWithDexDump(
-            @NonNull String expectedClassName,
+    private boolean checkFileForClassWithDexDump(
+            @NonNull final String expectedClassName,
             @NonNull File file,
             @NonNull File dexDumpExe) throws ProcessException {
+        // For Windows, we need to extract the classes.dex first due to b/28385192.
+        if (SdkConstants.currentPlatform() == SdkConstants.PLATFORM_WINDOWS) {
+            if (file.getName().endsWith(SdkConstants.DOT_ANDROID_PACKAGE)) {
+                file = extractClassesDex(file);
+            }
+        }
+
         ProcessExecutor executor = new DefaultProcessExecutor(
                 new StdLogger(StdLogger.Level.ERROR));
 
@@ -422,18 +472,29 @@ public class ApkSubject extends AbstractAndroidSubject<ApkSubject> {
         builder.setExecutable(dexDumpExe);
         builder.addArgs(file.getAbsolutePath());
 
-        List<String> output = ApkHelper.runAndGetOutput(builder.createProcess(), executor);
+        LineProcessor<Boolean> classDescriptor = new LineProcessor<Boolean>() {
+            Boolean result = false;
 
-        for (String line : output) {
-            Matcher m = PATTERN_CLASS_DESC.matcher(line.trim());
-            if (m.matches()) {
-                String className = m.group(1);
-                if (expectedClassName.equals(className)) {
-                    return true;
+            @Override
+            public boolean processLine(String line) throws IOException {
+                Matcher m = PATTERN_CLASS_DESC.matcher(line.trim());
+                if (m.matches()) {
+                    String className = m.group(1);
+                    if (expectedClassName.equals(className)) {
+                        result = true;
+                        return false; // stop processing
+                    }
                 }
+                return true; // continue processing
             }
-        }
-        return false;
+
+            @Override
+            public Boolean getResult() {
+                return result;
+            }
+        };
+
+        return ApkHelper.runAndProcessOutput(builder.createProcess(), executor, classDescriptor);
     }
 
     @NonNull
@@ -467,5 +528,33 @@ public class ApkSubject extends AbstractAndroidSubject<ApkSubject> {
         }
 
         failWithRawMessage("maxSdkVersion not found in badging output for %s", getDisplaySubject());
+    }
+
+    private File extractClassesDex(File file) {
+        check().that(file).exists();
+        try (ZipFile zipFile = new ZipFile(file)) {
+            String path = "classes.dex";
+            InputStream classDexStream = zipFile.getInputStream(zipFile.getEntry(path));
+            if (classDexStream == null) {
+                failWithRawMessage(path + " entry not found !");
+                return null;
+            }
+            byte[] content = ByteStreams.toByteArray(classDexStream);
+            // write into tmp file
+            File dexFile = File.createTempFile("classes", ".dex");
+            Files.write(content, dexFile);
+            dexFile.deleteOnExit();
+            return dexFile;
+        } catch (IOException e) {
+            failWithRawMessage("Unable to extract classes.dex from apk '%s'\n%s",
+                    file.getAbsolutePath(),
+                    e.toString());
+            return null;
+        }
+    }
+
+    @Override
+    public CustomTestVerb check() {
+        return new CustomTestVerb(failureStrategy);
     }
 }

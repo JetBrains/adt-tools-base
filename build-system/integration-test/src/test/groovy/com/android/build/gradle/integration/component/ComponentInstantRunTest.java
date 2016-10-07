@@ -3,7 +3,7 @@ package com.android.build.gradle.integration.component;
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat;
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk;
 
-import com.android.build.gradle.OptionalCompilationStep;
+import com.android.builder.model.OptionalCompilationStep;
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldJniApp;
 import com.android.build.gradle.integration.common.utils.TestFileUtils;
@@ -32,7 +32,7 @@ public class ComponentInstantRunTest {
     @Rule
     public GradleTestProject project = GradleTestProject.builder()
             .fromTestApp(HelloWorldJniApp.builder().build())
-            .forExperimentalPlugin(true)
+            .useExperimentalGradleVersion(true)
             .create();
 
     @Before
@@ -49,7 +49,7 @@ public class ComponentInstantRunTest {
 
     @Test
     public void basicAssemble() {
-        project.execute(InstantRunTestUtils.getInstantRunArgs(21, ColdswapMode.DEFAULT), "assembleDebug");
+        project.executor().withInstantRun(21, ColdswapMode.DEFAULT).run("assembleDebug");
         assertThat(project.getApk("debug")).exists();
     }
 
@@ -65,13 +65,10 @@ public class ComponentInstantRunTest {
                 project.getBuildFile(),
                 Charsets.UTF_8);
 
-        project.execute(
-                InstantRunTestUtils.getInstantRunArgs(
-                        21,
-                        ColdswapMode.DEFAULT,
-                        OptionalCompilationStep.RESTART_ONLY),
-                "assembleDebug");
-        AndroidProject model = project.getSingleModel();
+        project.executor()
+                .withInstantRun(21, ColdswapMode.DEFAULT, OptionalCompilationStep.RESTART_ONLY)
+                .run("assembleDebug");
+        AndroidProject model = project.model().getSingle();
         File apk = project.getApk("debug");
         assertThat(apk).exists();
         assertThatApk(apk).contains("lib/x86/libhello-jni.so");
@@ -80,9 +77,9 @@ public class ComponentInstantRunTest {
         Files.append("\nvoid foo() {}\n", src, Charsets.UTF_8);
 
         InstantRun instantRunModel = InstantRunTestUtils.getInstantRunModel(model);
-        project.execute(
-                InstantRunTestUtils.getInstantRunArgs(21, ColdswapMode.DEFAULT),
-                instantRunModel.getIncrementalAssembleTaskName());
+        project.executor()
+                .withInstantRun(21, ColdswapMode.DEFAULT)
+                .run("assembleDebug");
         InstantRunBuildInfo context = InstantRunTestUtils.loadContext(instantRunModel);
         assertThat(context.getVerifierStatus()).isEqualTo(
                 InstantRunVerifierStatus.JAVA_RESOURCES_CHANGED.toString());

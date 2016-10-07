@@ -16,7 +16,6 @@
 
 package com.android.manifmerger;
 
-import static com.android.manifmerger.ManifestMerger2.SystemProperty;
 import static com.android.manifmerger.ManifestMergerTestUtil.loadTestData;
 import static com.android.manifmerger.ManifestMergerTestUtil.transformParameters;
 import static com.android.manifmerger.MergingReport.Record;
@@ -61,6 +60,7 @@ public class ManifestMerger2Test {
             "05_inject_package_placeholder.xml",
             "05_inject_package_with_overlays.xml",
             "06_inject_attributes_with_specific_prefix.xml",
+            "05_inject_applicationid_not_provided.xml",
             "07_no_package_provided.xml",
             "08_no_library_package_provided.xml",
             "09_overlay_package_provided.xml",
@@ -111,6 +111,7 @@ public class ManifestMerger2Test {
             "76_app_metadata_ignore",
             "77_app_metadata_conflict",
             "78_removeAll",
+            "78b_removeAllActivities",
             "79_custom_node.xml",
     };
 
@@ -140,13 +141,13 @@ public class ManifestMerger2Test {
                         ManifestMerger2.Invoker.Feature.REMOVE_TOOLS_DECLARATIONS);
 
         if (!Strings.isNullOrEmpty(testFiles.getPackageOverride())) {
-            invoker.setOverride(SystemProperty.PACKAGE, testFiles.getPackageOverride());
+            invoker.setOverride(ManifestSystemProperty.PACKAGE, testFiles.getPackageOverride());
         }
 
         for (Map.Entry<String, String> injectable : testFiles.getInjectAttributes().entrySet()) {
-            SystemProperty systemProperty = getSystemProperty(injectable.getKey());
-            if (systemProperty != null) {
-                invoker.setOverride(systemProperty, injectable.getValue());
+            ManifestSystemProperty manifestSystemProperty = getSystemProperty(injectable.getKey());
+            if (manifestSystemProperty != null) {
+                invoker.setOverride(manifestSystemProperty, injectable.getValue());
             } else {
                 invoker.setPlaceHolderValue(injectable.getKey(), injectable.getValue());
             }
@@ -281,10 +282,10 @@ public class ManifestMerger2Test {
     }
 
     @Nullable
-    private static SystemProperty getSystemProperty(String name) {
-        for (SystemProperty systemProperty : SystemProperty.values()) {
-            if (systemProperty.toCamelCase().equals(name)) {
-                return systemProperty;
+    private static ManifestSystemProperty getSystemProperty(String name) {
+        for (ManifestSystemProperty manifestSystemProperty : ManifestSystemProperty.values()) {
+            if (manifestSystemProperty.toCamelCase().equals(name)) {
+                return manifestSystemProperty;
             }
         }
         return null;

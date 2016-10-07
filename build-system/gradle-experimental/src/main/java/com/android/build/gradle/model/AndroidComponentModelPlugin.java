@@ -24,26 +24,23 @@ import com.android.build.gradle.managed.AndroidConfig;
 import com.android.build.gradle.managed.BuildType;
 import com.android.build.gradle.managed.ProductFlavor;
 import com.android.build.gradle.model.internal.AndroidBinaryInternal;
-import com.android.build.gradle.model.internal.DefaultAndroidBinary;
 import com.android.build.gradle.model.internal.AndroidComponentSpecInternal;
+import com.android.build.gradle.model.internal.DefaultAndroidBinary;
 import com.android.build.gradle.model.internal.DefaultAndroidComponentSpec;
 import com.android.build.gradle.model.internal.DefaultAndroidLanguageSourceSet;
 import com.android.build.gradle.model.internal.DefaultJniLibsSourceSet;
+import com.android.builder.Version;
 import com.android.builder.core.BuilderConstants;
 import com.android.repository.Revision;
 import com.android.utils.StringHelper;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
 import com.google.common.primitives.Ints;
 
-import org.gradle.api.Action;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.file.SourceDirectorySet;
 import org.gradle.language.base.FunctionalSourceSet;
-import org.gradle.language.base.LanguageSourceSet;
 import org.gradle.language.base.ProjectSourceSet;
-import org.gradle.language.base.internal.registry.LanguageRegistry;
 import org.gradle.language.base.plugins.ComponentModelBasePlugin;
 import org.gradle.model.Defaults;
 import org.gradle.model.Finalize;
@@ -53,18 +50,16 @@ import org.gradle.model.Mutate;
 import org.gradle.model.Path;
 import org.gradle.model.RuleSource;
 import org.gradle.platform.base.BinarySpec;
-import org.gradle.platform.base.BinaryType;
-import org.gradle.platform.base.BinaryTypeBuilder;
 import org.gradle.platform.base.ComponentBinaries;
 import org.gradle.platform.base.ComponentType;
-import org.gradle.platform.base.ComponentTypeBuilder;
-import org.gradle.platform.base.LanguageType;
-import org.gradle.platform.base.LanguageTypeBuilder;
+import org.gradle.platform.base.TypeBuilder;
 import org.gradle.tooling.BuildException;
+import org.gradle.tooling.UnsupportedVersionException;
 
 import java.io.File;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Plugin to set up infrastructure for other android plugins.
@@ -76,15 +71,36 @@ public class AndroidComponentModelPlugin implements Plugin<Project> {
      */
     public static final String COMPONENT_NAME = "android";
 
-    public static final String GRADLE_ACCEPTABLE_VERSION = "2.10";
+    public static final String GRADLE_ACCEPTABLE_VERSION = "2.14.1";
 
     private static final String GRADLE_VERSION_CHECK_OVERRIDE_PROPERTY =
             "com.android.build.gradle.overrideVersionCheck";
 
     @Override
     public void apply(Project project) {
+        checkPluginVersion();
         checkGradleVersion(project);
         project.getPlugins().apply(ComponentModelBasePlugin.class);
+    }
+
+    /**
+     * Verify the plugin version.  If a newer version of gradle plugin is applied, then builder.jar
+     * module will be resolved to a different version than the one this gradle-experimental plugin
+     * is compiled with.  Throw an error and suggest to update this plugin.
+     */
+    public static void checkPluginVersion() {
+        String actualGradlePluginVersion = Version.getAndroidGradleComponentPluginVersion();
+        if(!actualGradlePluginVersion.equals(
+                com.android.build.gradle.model.Version.ANDROID_GRADLE_COMPONENT_PLUGIN_VERSION)) {
+            throw new UnsupportedVersionException(String.format("Plugin version mismatch.  "
+                            + "'com.android.tools.build:gradle:%s' was applied, and it "
+                            + "requires 'com.android.tools.build:gradle-experimental:%s'.  Current "
+                            + "version is '%s'.  Please update to version '%s'.",
+                    Version .getAndroidGradlePluginVersion(),
+                    Version .getAndroidGradleComponentPluginVersion(),
+                    com.android.build.gradle.model.Version.ANDROID_GRADLE_COMPONENT_PLUGIN_VERSION,
+                    Version .getAndroidGradleComponentPluginVersion()));
+        }
     }
 
     private static void checkGradleVersion(Project project) {
@@ -110,19 +126,6 @@ public class AndroidComponentModelPlugin implements Plugin<Project> {
     }
 
     public static class Rules extends RuleSource {
-
-        @LanguageType
-        public static void registerAndroidLanguageSourceSet(
-                LanguageTypeBuilder<AndroidLanguageSourceSet> builder) {
-            builder.setLanguageName("android");
-            builder.defaultImplementation(DefaultAndroidLanguageSourceSet.class);
-        }
-
-        @LanguageType
-        public static void registerJniLibsSourceSet(LanguageTypeBuilder<JniLibsSourceSet> builder) {
-            builder.setLanguageName("jniLibs");
-            builder.defaultImplementation(DefaultJniLibsSourceSet.class);
-        }
 
         /**
          * Create "android" model block.
@@ -155,12 +158,9 @@ public class AndroidComponentModelPlugin implements Plugin<Project> {
         @Defaults
         public static void createDefaultBuildTypes(
                 @Path("android.buildTypes") ModelMap<BuildType> buildTypes) {
-            buildTypes.create(BuilderConstants.DEBUG, new Action<BuildType>() {
-                @Override
-                public void execute(BuildType buildType) {
-                    buildType.setDebuggable(true);
-                    buildType.setEmbedMicroApp(false);
-                }
+            buildTypes.create(BuilderConstants.DEBUG, buildType -> {
+                buildType.setDebuggable(true);
+                buildType.setEmbedMicroApp(false);
             });
             buildTypes.create(BuilderConstants.RELEASE);
         }
@@ -169,12 +169,9 @@ public class AndroidComponentModelPlugin implements Plugin<Project> {
         public static List<ProductFlavorCombo<ProductFlavor>> createProductFlavorCombo(
                 @Path("android.productFlavors") ModelMap<ProductFlavor> productFlavors) {
             // TODO: Create custom product flavor container to manually configure flavor dimensions.
-            Set<String> flavorDimensionList = Sets.newHashSet();
-            for (ProductFlavor flavor : productFlavors.values()) {
-                if (flavor.getDimension() != null) {
-                    flavorDimensionList.add(flavor.getDimension());
-                }
-            }
+            Set<String> flavorDimensionList = productFlavors.values().stream()
+                    .filter(flavor -> flavor.getDimension() != null)
+                    .map(ProductFlavor::getDimension).collect(Collectors.toSet());
 
             return ProductFlavorCombo.createCombinations(
                     Lists.newArrayList(flavorDimensionList),
@@ -182,7 +179,7 @@ public class AndroidComponentModelPlugin implements Plugin<Project> {
         }
 
         @ComponentType
-        public static void defineComponentType(ComponentTypeBuilder<AndroidComponentSpec> builder) {
+        public static void defineComponentType(TypeBuilder<AndroidComponentSpec> builder) {
             builder.defaultImplementation(DefaultAndroidComponentSpec.class);
             builder.internalView(AndroidComponentSpecInternal.class);
         }
@@ -202,8 +199,7 @@ public class AndroidComponentModelPlugin implements Plugin<Project> {
                 @Path("android.buildTypes") final ModelMap<BuildType> buildTypes,
                 @Path("android.productFlavors") ModelMap<ProductFlavor> flavors,
                 List<ProductFlavorCombo<ProductFlavor>> flavorGroups,
-                ProjectSourceSet projectSourceSet,
-                LanguageRegistry languageRegistry) {
+                ProjectSourceSet projectSourceSet) {
 
             // Create main source set.
             sources.create("main");
@@ -232,27 +228,19 @@ public class AndroidComponentModelPlugin implements Plugin<Project> {
                     sources.create(flavor.getName());
                 }
             }
-            sources.afterEach(new Action<FunctionalSourceSet>() {
-                @Override
-                public void execute(final FunctionalSourceSet functionalSourceSet) {
-                    functionalSourceSet.afterEach(
-                            new Action<LanguageSourceSet>() {
-                                @Override
-                                public void execute(LanguageSourceSet languageSourceSet) {
-                                    SourceDirectorySet source = languageSourceSet.getSource();
-                                    if (source.getSrcDirs().isEmpty()) {
-                                        source.srcDir("src/" + languageSourceSet.getParentName()
-                                                + "/" + languageSourceSet.getName());
-                                    }
-                                }
-                            });
-                }
-            });
+            sources.afterEach(functionalSourceSet -> functionalSourceSet.afterEach(
+                    languageSourceSet -> {
+                        SourceDirectorySet source = languageSourceSet.getSource();
+                        if (source.getSrcDirs().isEmpty()) {
+                            source.srcDir("src/" + languageSourceSet.getParentName()
+                                    + "/" + languageSourceSet.getName());
+                        }
+                    }));
 
         }
 
-        @BinaryType
-        public static void defineBinaryType(BinaryTypeBuilder<AndroidBinary> builder) {
+        @ComponentType
+        public static void defineBinaryType(TypeBuilder<AndroidBinary> builder) {
             builder.defaultImplementation(DefaultAndroidBinary.class);
             builder.internalView(AndroidBinaryInternal.class);
         }
@@ -266,27 +254,24 @@ public class AndroidComponentModelPlugin implements Plugin<Project> {
                 @Path("android.sources") final ModelMap<FunctionalSourceSet> sources,
                 final AndroidComponentSpec spec) {
             if (flavorCombos.isEmpty()) {
-                flavorCombos.add(new ProductFlavorCombo<ProductFlavor>());
+                flavorCombos.add(new ProductFlavorCombo<>());
             }
 
             for (final BuildType buildType : buildTypes.values()) {
                 for (final ProductFlavorCombo<ProductFlavor> flavorCombo : flavorCombos) {
                     binaries.create(getBinaryName(buildType, flavorCombo),
-                            new Action<AndroidBinary>() {
-                                @Override
-                                public void execute(AndroidBinary androidBinary) {
-                                    AndroidBinaryInternal binary = (AndroidBinaryInternal) androidBinary;
-                                    binary.setBuildType(buildType);
-                                    binary.setProductFlavors(flavorCombo.getFlavorList());
+                            androidBinary -> {
+                                AndroidBinaryInternal binary = (AndroidBinaryInternal) androidBinary;
+                                binary.setBuildType(buildType);
+                                binary.setProductFlavors(flavorCombo.getFlavorList());
 
-                                    sourceBinary(binary, sources, "main");
-                                    sourceBinary(binary, sources, buildType.getName());
-                                    for (ProductFlavor flavor : flavorCombo.getFlavorList()) {
-                                        sourceBinary(binary, sources, flavor.getName());
-                                    }
-                                    if (flavorCombo.getFlavorList().size() > 1) {
-                                        sourceBinary(binary, sources, flavorCombo.getName());
-                                    }
+                                sourceBinary(binary, sources, "main");
+                                sourceBinary(binary, sources, buildType.getName());
+                                for (ProductFlavor flavor : flavorCombo.getFlavorList()) {
+                                    sourceBinary(binary, sources, flavor.getName());
+                                }
+                                if (flavorCombo.getFlavorList().size() > 1) {
+                                    sourceBinary(binary, sources, flavorCombo.getName());
                                 }
                             });
                 }

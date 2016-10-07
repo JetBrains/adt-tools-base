@@ -29,12 +29,15 @@ import com.android.builder.model.AndroidProject;
 import com.android.builder.model.Dependencies;
 import com.android.builder.model.Variant;
 import com.android.ide.common.process.ProcessException;
+import com.google.common.base.Charsets;
 import com.google.common.collect.Iterables;
+import com.google.common.io.Files;
 import com.google.common.truth.Truth;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.File;
@@ -55,6 +58,8 @@ public class OptionalAarTest {
 
     @BeforeClass
     public static void setUp() throws IOException {
+        Files.write("include 'app', 'library', 'library2'", project.getSettingsFile(), Charsets.UTF_8);
+
         appendToFile(project.getSubproject("app").getBuildFile(),
                 "\n" +
                 "\n" +
@@ -105,35 +110,39 @@ public class OptionalAarTest {
 
         // get the main artifact of the debug artifact and its dependencies
         Variant variant = ModelHelper.getVariant(variants, "debug");
-        Truth.assertThat(variant).isNotNull();
 
         AndroidArtifact artifact = variant.getMainArtifact();
-        Dependencies dependencies = artifact.getDependencies();
+        Dependencies dependencies = artifact.getCompileDependencies();
         Collection<AndroidLibrary> libs = dependencies.getLibraries();
 
         assertThat(libs).hasSize(1);
 
         AndroidLibrary library = Iterables.getOnlyElement(libs);
         assertThat(library.getProject()).isEqualTo(":library");
-        assertThat(library.isOptional()).isFalse();
+        assertThat(library.isProvided()).isFalse();
+
+        assertThat(library.getLibraryDependencies()).isEmpty();
     }
 
     @Test
+    @Ignore
     public void checkLibraryModelIncludesOptionalLibrary() {
         Collection<Variant> variants = models.get(":library").getVariants();
 
         // get the main artifact of the debug artifact and its dependencies
         Variant variant = ModelHelper.getVariant(variants, "debug");
-        Truth.assertThat(variant).isNotNull();
 
         AndroidArtifact artifact = variant.getMainArtifact();
-        Dependencies dependencies = artifact.getDependencies();
-        Collection<AndroidLibrary> libs = dependencies.getLibraries();
+        Dependencies compileDependencies = artifact.getCompileDependencies();
+        Collection<AndroidLibrary> libs = compileDependencies.getLibraries();
 
         assertThat(libs).hasSize(1);
 
         AndroidLibrary library = Iterables.getOnlyElement(libs);
         assertThat(library.getProject()).isEqualTo(":library2");
-        assertThat(library.isOptional()).isTrue();
+        assertThat(library.isProvided()).isTrue();
+
+        Dependencies packageDependencies = artifact.getPackageDependencies();
+        assertThat(packageDependencies.getLibraries()).isEmpty();
     }
 }

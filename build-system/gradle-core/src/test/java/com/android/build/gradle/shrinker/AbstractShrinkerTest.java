@@ -32,11 +32,12 @@ import com.android.build.api.transform.QualifiedContent.Scope;
 import com.android.build.api.transform.TransformInput;
 import com.android.build.api.transform.TransformOutputProvider;
 import com.android.build.gradle.shrinker.parser.FilterSpecification;
+import com.android.ide.common.internal.WaitableExecutor;
 import com.android.sdklib.SdkVersionInfo;
 import com.android.utils.FileUtils;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Sets;
 import com.google.common.io.Files;
 
 import org.junit.After;
@@ -59,6 +60,8 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Common code for testing shrinker runs.
@@ -87,6 +90,8 @@ public abstract class AbstractShrinkerTest {
 
     protected int mExpectedWarnings;
 
+    protected FullRunShrinker<String> mFullRunShrinker;
+
     @Before
     public void setUp() throws Exception {
         mTestPackageDir = tmpDir.newFolder("app-classes", "test");
@@ -108,6 +113,12 @@ public abstract class AbstractShrinkerTest {
                 Mockito.any(Format.class))).thenReturn(mOutDir);
 
         mInputs = ImmutableList.of(transformInput);
+
+        mFullRunShrinker = new FullRunShrinker<>(
+                WaitableExecutor.useGlobalSharedThreadPool(),
+                JavaSerializationShrinkerGraph.empty(mIncrementalDir),
+                getPlatformJars(),
+                mShrinkerLogger);
     }
 
     @Before
@@ -192,7 +203,10 @@ public abstract class AbstractShrinkerTest {
                 SdkConstants.FD_PLATFORMS,
                 "android-" + SdkVersionInfo.HIGHEST_KNOWN_STABLE_API,
                 "android.jar");
-        assertTrue(androidJar.getAbsolutePath(), androidJar.exists());
+
+        assertTrue(
+                androidJar.getAbsolutePath() + " does not exist.",
+                androidJar.exists());
 
         return ImmutableSet.of(androidJar);
     }
@@ -200,18 +214,13 @@ public abstract class AbstractShrinkerTest {
     private static Set<String> getMembers(File classFile) throws IOException {
         ClassNode classNode = getClassNode(classFile);
 
-        Set<String> members = Sets.newHashSet();
         //noinspection unchecked - ASM API
-        for (MethodNode methodNode : (List<MethodNode>) classNode.methods) {
-            members.add(methodNode.name + ":" + methodNode.desc);
-        }
-
-        //noinspection unchecked - ASM API
-        for (FieldNode fieldNode : (List<FieldNode>) classNode.fields) {
-            members.add(fieldNode.name + ":" + fieldNode.desc);
-        }
-
-        return members;
+        return Stream.concat(
+                ((List<MethodNode>) classNode.methods).stream()
+                        .map(methodNode -> methodNode.name + ":" + methodNode.desc),
+                ((List<FieldNode>) classNode.fields).stream()
+                        .map(fieldNode -> fieldNode.name + ":" + fieldNode.desc))
+                .collect(Collectors.toSet());
     }
 
     @NonNull
@@ -234,5 +243,15 @@ public abstract class AbstractShrinkerTest {
         ProguardConfig config = new ProguardConfig();
         config.parse(rules);
         return new ProguardFlagsKeepRules(config.getFlags(), mShrinkerLogger);
+    }
+
+    protected void run(KeepRules keepRules) throws IOException {
+        mFullRunShrinker.run(
+                mInputs,
+                Collections.<TransformInput>emptyList(),
+                mOutput,
+                ImmutableMap.of(
+                        AbstractShrinker.CounterSet.SHRINK, keepRules),
+                false);
     }
 }

@@ -60,12 +60,25 @@ class ValueResourceParser2 {
     @NonNull
     private final File mFile;
 
+    @Nullable
+    private final String mLibraryName;
+
+    private boolean mTrackSourcePositions = true;
+
     /**
      * Creates the parser for a given file.
      * @param file the file to parse.
      */
-    ValueResourceParser2(@NonNull File file) {
+    ValueResourceParser2(@NonNull File file, @Nullable String libraryName) {
         mFile = file;
+        mLibraryName = libraryName;
+    }
+
+    /**
+     * Set whether or not to use a source position-tracking XML parser.
+     */
+    void setTrackSourcePositions(boolean value) {
+        mTrackSourcePositions = value;
     }
 
     /**
@@ -76,7 +89,7 @@ class ValueResourceParser2 {
      */
     @NonNull
     List<ResourceItem> parseFile() throws MergingException {
-        Document document = parseDocument(mFile);
+        Document document = parseDocument(mFile, mTrackSourcePositions);
 
         // get the root node
         Node rootNode = document.getDocumentElement();
@@ -98,7 +111,7 @@ class ValueResourceParser2 {
                 continue;
             }
 
-            ResourceItem resource = getResource(node, mFile);
+            ResourceItem resource = getResource(node, mFile, mLibraryName);
             if (resource != null) {
                 // check this is not a dup
                 checkDuplicate(resource, map, mFile);
@@ -107,7 +120,7 @@ class ValueResourceParser2 {
 
                 if (resource.getType() == ResourceType.DECLARE_STYLEABLE) {
                     // Need to also create ATTR items for its children
-                    addStyleableItems(node, resources, map, mFile);
+                    addStyleableItems(node, resources, map, mFile, mLibraryName);
                 }
             }
         }
@@ -120,7 +133,7 @@ class ValueResourceParser2 {
      * @param node the node representing the resource.
      * @return a ResourceItem object or null.
      */
-    static ResourceItem getResource(@NonNull Node node, @Nullable File from)
+    static ResourceItem getResource(@NonNull Node node, @Nullable File from, @Nullable String libraryName)
             throws MergingException {
         ResourceType type = getType(node, from);
         String name = getName(node);
@@ -128,11 +141,11 @@ class ValueResourceParser2 {
         if (name != null) {
             if (type != null) {
                 ValueResourceNameValidator.validate(name, type, from);
-                return new ResourceItem(name, type, node);
+                return new ResourceItem(name, type, node, libraryName);
             }
         } else if (type == ResourceType.PUBLIC) {
             // Allow a <public /> node with no name: this means all resources are private
-            return new ResourceItem("", type, node);
+            return new ResourceItem("", type, node, libraryName);
         }
 
         return null;
@@ -189,13 +202,19 @@ class ValueResourceParser2 {
     /**
      * Loads the DOM for a given file and returns a {@link Document} object.
      * @param file the file to parse
+     * @param trackPositions should track XML node positions
      * @return a Document object.
      * @throws MergingException if a merging exception happens
      */
     @NonNull
-    static Document parseDocument(@NonNull File file) throws MergingException {
+    static Document parseDocument(@NonNull File file, boolean trackPositions) throws MergingException {
         try {
-            return PositionXmlParser.parse(new BufferedInputStream(new FileInputStream(file)));
+            if (trackPositions) {
+                return PositionXmlParser.parse(new BufferedInputStream(new FileInputStream(file)));
+            }
+            else {
+                return XmlUtils.parseUtfXmlFile(file, true);
+            }
         } catch (SAXException e) {
             throw MergingException.wrapException(e).withFile(file).build();
         } catch (ParserConfigurationException e) {
@@ -216,7 +235,8 @@ class ValueResourceParser2 {
     static void addStyleableItems(@NonNull Node styleableNode,
                                   @NonNull List<ResourceItem> list,
                                   @Nullable Map<ResourceType, Set<String>> map,
-                                  @Nullable File from)
+                                  @Nullable File from,
+                                  @Nullable String libraryName)
             throws MergingException {
         assert styleableNode.getNodeName().equals(ResourceType.DECLARE_STYLEABLE.getName());
         NodeList nodes = styleableNode.getChildNodes();
@@ -228,7 +248,7 @@ class ValueResourceParser2 {
                 continue;
             }
 
-            ResourceItem resource = getResource(node, from);
+            ResourceItem resource = getResource(node, from, libraryName);
             if (resource != null) {
                 assert resource.getType() == ResourceType.ATTR;
 

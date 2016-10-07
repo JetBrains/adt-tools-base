@@ -40,7 +40,7 @@ public interface ResourceEnum {
 
     /**
      * Returns a short string for display value. The string does not need to show the context.
-     * <p/>For instance "exposed", which can be the value for the keyboard state or the navigation
+     * <p>For instance "exposed", which can be the value for the keyboard state or the navigation
      * state, would be valid since something else in the UI is expected to show if this is about the
      * keyboard or the navigation state.
      *
@@ -51,7 +51,7 @@ public interface ResourceEnum {
     /**
      * Returns a long string for display value. This must not only include the enum value but
      * context (qualifier) about what the value represents.
-     * <p/>For instance "Exposed keyboard", and "Export navigation", as "exposed" would not be
+     * <p>For instance "Exposed keyboard", and "Export navigation", as "exposed" would not be
      * enough to know what qualifier the value is about.
      *
      * @see #getShortDisplayValue()

@@ -47,6 +47,7 @@ import org.gradle.internal.reflect.Instantiator;
 public class AndroidConfigHelper {
     public static void configure(
             @NonNull AndroidConfig model,
+            @NonNull ExtraModelInfo extraModelInfo,
             @NonNull Instantiator instantiator) {
         model.setDefaultPublishConfig(BuilderConstants.RELEASE);
         model.setPublishNonDefault(false);
@@ -54,7 +55,7 @@ public class AndroidConfigHelper {
         model.setDeviceProviders(Lists.<DeviceProvider>newArrayList());
         model.setTestServers(Lists.<TestServer>newArrayList());
         model.setAaptOptions(instantiator.newInstance(AaptOptions.class));
-        model.setDexOptions(instantiator.newInstance(DexOptions.class));
+        model.setDexOptions(instantiator.newInstance(DexOptions.class, extraModelInfo));
         model.setLintOptions(instantiator.newInstance(LintOptions.class));
         model.setTestOptions(instantiator.newInstance(TestOptions.class));
         model.setCompileOptions(instantiator.newInstance(CompileOptions.class));
@@ -74,42 +75,48 @@ public class AndroidConfigHelper {
                 AndroidSourceSet.class,
                 new AndroidSourceSetFactory(instantiator, project, isLibrary));
 
-        sourceSetsContainer.whenObjectAdded(new Action<AndroidSourceSet>() {
-            @Override
-            public void execute(AndroidSourceSet sourceSet) {
-                ConfigurationContainer configurations = project.getConfigurations();
+        sourceSetsContainer.whenObjectAdded(sourceSet -> {
+            ConfigurationContainer configurations = project.getConfigurations();
 
-                createConfiguration(
-                        configurations,
-                        sourceSet.getCompileConfigurationName(),
-                        "Classpath for compiling the ${sourceSet.name} sources.");
+            createConfiguration(
+                    configurations,
+                    sourceSet.getCompileConfigurationName(),
+                    "Classpath for compiling the " + sourceSet.getName() + " sources.");
 
-                String packageConfigDescription;
-                if (isLibrary) {
-                    packageConfigDescription
-                            = "Classpath only used when publishing '${sourceSet.name}'.";
-                } else {
-                    packageConfigDescription
-                            = "Classpath packaged with the compiled '${sourceSet.name}' classes.";
-                }
-                createConfiguration(
-                        configurations,
-                        sourceSet.getPackageConfigurationName(),
-                        packageConfigDescription);
-
-                createConfiguration(
-                        configurations,
-                        sourceSet.getProvidedConfigurationName(),
-                        "Classpath for only compiling the ${sourceSet.name} sources.");
-
-                createConfiguration(
-                        configurations,
-                        sourceSet.getWearAppConfigurationName(),
-                        "Link to a wear app to embed for object '${sourceSet.name}'.");
-
-                sourceSet.setRoot(String.format("src/%s", sourceSet.getName()));
-
+            String packageConfigDescription;
+            if (isLibrary) {
+                packageConfigDescription
+                        = "Classpath only used when publishing '" + sourceSet.getName() + "'.";
+            } else {
+                packageConfigDescription = "Classpath packaged with the compiled '"
+                        + sourceSet.getName() + "' classes.";
             }
+            createConfiguration(
+                    configurations,
+                    sourceSet.getPackageConfigurationName(),
+                    packageConfigDescription);
+
+            createConfiguration(
+                    configurations,
+                    sourceSet.getProvidedConfigurationName(),
+                    "Classpath for only compiling the " + sourceSet.getName() + " sources.");
+
+            createConfiguration(
+                    configurations,
+                    sourceSet.getWearAppConfigurationName(),
+                    "Link to a wear app to embed for object '" + sourceSet.getName() + "}'.");
+
+            createConfiguration(
+                    configurations,
+                    sourceSet.getAnnotationProcessorConfigurationName(),
+                    "Classpath for the annotation processor for '" + sourceSet.getName() + "'.");
+
+            createConfiguration(
+                    configurations,
+                    sourceSet.getWearAppConfigurationName(),
+                    "Link to a wear app to embed for object '${sourceSet.name}'.");
+
+            sourceSet.setRoot(String.format("src/%s", sourceSet.getName()));
         });
         return sourceSetsContainer;
     }

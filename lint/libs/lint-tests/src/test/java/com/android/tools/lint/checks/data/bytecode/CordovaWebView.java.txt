@@ -1,0 +1,5 @@
+package org.apache.cordova;
+// Dummy version of CordovaWebView used in versions > 3.x.x
+public class CordovaWebView {
+    public static final String CORDOVA_VERSION = "4.0.0";
+}

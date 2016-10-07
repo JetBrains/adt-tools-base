@@ -66,8 +66,8 @@ public interface ProductFlavor extends DimensionAware, BaseConfig {
 
     /**
      * Returns the version name. This is only the value set on this product flavor.
-     * To get the final value, use {@link Variant#getMergedFlavor()} as well as
-     * {@link BuildType#getVersionNameSuffix()}
+     * To get the final value, use {@link Variant#getMergedFlavor()} with
+     * {@link #getVersionNameSuffix()} and {@link BuildType#getVersionNameSuffix()}.
      *
      * @return the version name.
      */
@@ -119,6 +119,16 @@ public interface ProductFlavor extends DimensionAware, BaseConfig {
     @Nullable
     Boolean getRenderscriptSupportModeEnabled();
     void setRenderscriptSupportModeEnabled(Boolean renderscriptSupportModeEnabled);
+
+    /**
+     * Returns whether the renderscript BLAS support lib should be used to
+     * make it compatible with older versions of Android.
+     *
+     * @return true if BLAS support lib is enabled, false if not, and null if not specified.
+     */
+    @Nullable
+    Boolean getRenderscriptSupportModeBlasEnabled();
+    void setRenderscriptSupportModeBlasEnabled(Boolean renderscriptSupportModeBlasEnabled);
 
     /**
      * Returns whether the renderscript code should be compiled to generate C/C++ bindings.
@@ -184,11 +194,37 @@ public interface ProductFlavor extends DimensionAware, BaseConfig {
     SigningConfig getSigningConfig();
     void setSigningConfig(SigningConfig signingConfig);
 
-    Boolean getUseJack();
-    void setUseJack(Boolean useJack);
+    /**
+     * Returns the Jack options for this product flavor.
+     */
+    JackOptions getJackOptions();
+
+    /**
+     * Returns the apt options for this product flavor.
+     */
+    JavaCompileOptions getJavaCompileOptions();
+
+    /**
+     * Returns the shader compiler options for this product flavor.
+     */
+    ShaderOptions getShaders();
 
     NdkOptions getNdk();
 
+    /**
+     * Returns the native build options for this product flavor.
+     */
+    ExternalNativeBuildOptions getExternalNativeBuild();
+
     @NonNull
     VectorDrawablesOptions getVectorDrawables();
+
+    /**
+     * Returns whether to enable unbundling mode for embedded wear app.
+     *
+     * If true, this enables the app to transition from an embedded wear app to one
+     * distributed by the play store directly.
+     */
+    Boolean getWearAppUnbundled();
+    void setWearAppUnbundled(Boolean wearAppUnbundled);
 }

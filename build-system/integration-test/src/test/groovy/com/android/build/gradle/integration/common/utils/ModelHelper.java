@@ -22,6 +22,7 @@ import static com.android.builder.model.AndroidProject.ARTIFACT_ANDROID_TEST;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.fail;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
@@ -162,7 +163,6 @@ public class ModelHelper {
 
         // debug variant
         Variant debugVariant = getVariant(variants, DEBUG);
-        assertNotNull("debug Variant null-check", debugVariant);
 
         // debug artifact
         AndroidArtifact debugMainInfo = debugVariant.getMainArtifact();
@@ -173,7 +173,6 @@ public class ModelHelper {
 
         // release variant
         Variant releaseVariant = getVariant(variants, "release");
-        assertNotNull("release Variant null-check", releaseVariant);
 
         AndroidArtifact relMainInfo = releaseVariant.getMainArtifact();
         assertNotNull("Release main info null-check", relMainInfo);
@@ -189,17 +188,24 @@ public class ModelHelper {
     }
 
 
-    @Nullable
+    @NonNull
     public static Variant getVariant(
             @NonNull Collection<Variant> items,
             @NonNull String name) {
-        for (Variant item : items) {
-            if (name.equals(item.getName())) {
-                return item;
-            }
-        }
+        return items.stream()
+                .filter(item -> name.equals(item.getName()))
+                .findAny()
+                .orElseThrow(() ->  new AssertionError("Unable to find variant '" + name + "'."));
+    }
 
-        return null;
+    @NonNull
+    public static Variant getDebugVariant(@NonNull AndroidProject project) {
+        return getVariant(project.getVariants(), "debug");
+    }
+
+    @NonNull
+    public static AndroidArtifact getDebugArtifact(@NonNull AndroidProject project) {
+        return getDebugVariant(project).getMainArtifact();
     }
 
     @Nullable

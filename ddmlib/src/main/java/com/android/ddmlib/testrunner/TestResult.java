@@ -59,7 +59,7 @@ public class TestResult {
 
     /**
      * Get the associated {@link String} stack trace. Should be <code>null</code> if
-     * {@link #getStatus()} is {@link TestStatus.PASSED}.
+     * {@link #getStatus()} is {@link TestStatus#PASSED}.
      */
     public String getStackTrace() {
         return mStackTrace;
@@ -81,7 +81,7 @@ public class TestResult {
 
     /**
      * Return the {@link System#currentTimeMillis()} time that the
-     * {@link ITestInvocationListener#testStarted(TestIdentifier)} event was received.
+     * {@link ITestRunListener#testStarted(TestIdentifier)} event was received.
      */
     public long getStartTime() {
         return mStartTime;
@@ -89,7 +89,7 @@ public class TestResult {
 
     /**
      * Return the {@link System#currentTimeMillis()} time that the
-     * {@link ITestInvocationListener#testEnded(TestIdentifier)} event was received.
+     * {@link ITestRunListener#testEnded(TestIdentifier, Map)} event was received.
      */
     public long getEndTime() {
         return mEndTime;

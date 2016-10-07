@@ -493,13 +493,14 @@ public class ResourceCycleDetector extends ResourceXmlDetector {
             @NonNull Context context,
             @NonNull ResourceType type,
             @NonNull Multimap<String, String> map) {
-        Set<String> visiting = Sets.newHashSetWithExpectedSize(map.size());
+        Set<String> visiting = Sets.newHashSet();
+        Set<String> visited = Sets.newHashSetWithExpectedSize(map.size());
         Set<String> seen = Sets.newHashSetWithExpectedSize(map.size());
         for (String from : map.keySet()) {
             if (seen.contains(from)) {
                 continue;
             }
-            List<String> chain = dfs(map, from, visiting);
+            List<String> chain = dfs(map, from, visiting, visited);
             if (chain != null && chain.size() > 2) { // size 1 chains are handled directly
                 seen.addAll(chain);
                 Collections.reverse(chain);
@@ -520,12 +521,14 @@ public class ResourceCycleDetector extends ResourceXmlDetector {
 
     // ----- Cycle detection -----
 
+
     @Nullable
     private static List<String> dfs(
             @NonNull Multimap<String, String> map,
             @NonNull String from,
-            @NonNull Set<String> visiting) {
+            @NonNull Set<String> visiting, @NonNull Set<String> visited) {
         visiting.add(from);
+        visited.add(from);
 
         Collection<String> targets = map.get(from);
         if (targets != null && !targets.isEmpty()) {
@@ -535,8 +538,10 @@ public class ResourceCycleDetector extends ResourceXmlDetector {
                     chain.add(target);
                     chain.add(from);
                     return chain;
+                } else if (visited.contains(target)) {
+                    continue;
                 }
-                List<String> chain = dfs(map, target, visiting);
+                List<String> chain = dfs(map, target, visiting, visited);
                 if (chain != null) {
                     chain.add(from);
                     return chain;

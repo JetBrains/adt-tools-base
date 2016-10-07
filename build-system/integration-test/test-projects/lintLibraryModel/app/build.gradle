@@ -1,0 +1,30 @@
+apply plugin: 'com.android.application'
+
+android {
+    compileSdkVersion rootProject.latestCompileSdk
+    buildToolsVersion = rootProject.buildToolsVersion
+    defaultConfig {
+        applicationId "com.android.test.lint.libmodel.app"
+        minSdkVersion 15
+        targetSdkVersion 24
+    }
+    lintOptions {
+        textReport true
+        textOutput file("lint-results.txt")
+        // Only look for these two issues (which have been
+        // planted in the project); otherwise newly added
+        // lint issues may suddenly cause this test to fail
+        // when it finds more than expected.
+        check 'Assert', 'SdCardPath'
+        absolutePaths false
+        explainIssues false
+    }
+}
+
+dependencies {
+    compile fileTree(include: ['*.jar'], dir: 'libs')
+    compile 'com.android.support:appcompat-v7:24.0.0'
+    testCompile 'junit:junit:4.12'
+    compile project(':javalib')
+    compile project(':mylibrary')
+}

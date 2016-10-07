@@ -56,7 +56,7 @@ class ArtifactApiTest {
 
     @BeforeClass
     static void setUp() {
-        model = project.getSingleModel()
+        model = project.model().getSingle()
     }
 
     @AfterClass
@@ -172,7 +172,7 @@ class ArtifactApiTest {
             assertNotNull(variantSourceProvider)
             assertEquals("provider:" + name, variantSourceProvider.getManifestFile().getPath())
 
-            Dependencies deps = javaArtifact.getDependencies()
+            Dependencies deps = javaArtifact.getCompileDependencies()
             assertNotNull("java artifact deps null-check", deps)
             assertFalse(deps.getJavaLibraries().isEmpty())
         }
@@ -183,6 +183,6 @@ class ArtifactApiTest {
         // ATTENTION Author and Reviewers - please make sure required changes to the build file
         // are backwards compatible before updating this test.
         assertThat(FileUtils.sha1(project.file("build.gradle")))
-                .isEqualTo("082c085e52219d8e0f8f29911cf89f05ccd05e6f")
+                .isEqualTo("075b7b983ad2d77a378536f181f3cf17a758380c")
     }
 }

@@ -25,6 +25,7 @@ import com.google.common.truth.SubjectFactory;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
 
 /**
  * Truth support for validating File.
@@ -87,6 +88,27 @@ public class FileSubject extends Subject<FileSubject, File> {
         }
     }
 
+    public void contains(byte[] expectedContents) {
+        isFile();
+
+        try {
+            byte[] contents = Files.toByteArray(getSubject());
+            if (!Arrays.equals(contents, expectedContents)) {
+                failWithBadResults(
+                        "contains",
+                        "byte[" + expectedContents.length + "]",
+                        "is",
+                        "byte[" + contents.length + "]");
+            }
+        } catch (IOException e) {
+            failWithRawMessage("Unable to read %s", getSubject());
+        }
+    }
+
+    public void hasContents(String expectedContents) {
+        contains(expectedContents.getBytes(Charsets.UTF_8));
+    }
+
     public void wasModifiedAt(long timestamp) {
         long lastModified = getSubject().lastModified();
         if (getSubject().lastModified() != timestamp) {
@@ -109,13 +131,9 @@ public class FileSubject extends Subject<FileSubject, File> {
         wasModifiedAt(other.lastModified());
     }
 
-    public void contentWithUnixLineSeparatorsIsExactly(String expected) {
-        try {
-            if (!FileUtils.loadFileWithUnixLineSeparators(getSubject()).equals(expected)) {
-                fail("content is not equal");
-            }
-        } catch (IOException e) {
-            fail(e.getMessage(), e);
+    public void contentWithUnixLineSeparatorsIsExactly(String expected) throws IOException {
+        if (!FileUtils.loadFileWithUnixLineSeparators(getSubject()).equals(expected)) {
+            fail("content is exactly", expected);
         }
     }
 }

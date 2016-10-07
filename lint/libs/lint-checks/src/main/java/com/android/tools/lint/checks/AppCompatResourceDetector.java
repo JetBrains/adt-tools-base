@@ -22,7 +22,6 @@ import static com.android.SdkConstants.ATTR_SHOW_AS_ACTION;
 import com.android.annotations.NonNull;
 import com.android.resources.ResourceFolderType;
 import com.android.tools.lint.detector.api.Category;
-import com.android.tools.lint.detector.api.Detector.JavaScanner;
 import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.Project;
@@ -43,7 +42,7 @@ import java.util.Collections;
  * Using app:showAsAction instead of android:showAsAction leads to problems, but
  * isn't caught by the API Detector since it's not in the Android namespace.
  */
-public class AppCompatResourceDetector extends ResourceXmlDetector implements JavaScanner {
+public class AppCompatResourceDetector extends ResourceXmlDetector {
     /** The main issue discovered by this detector */
     public static final Issue ISSUE = Issue.create(
             "AppCompatResource", //$NON-NLS-1$
@@ -62,7 +61,7 @@ public class AppCompatResourceDetector extends ResourceXmlDetector implements Ja
                     AppCompatResourceDetector.class,
                     Scope.RESOURCE_FILE_SCOPE));
 
-    /** Constructs a new {@link com.android.tools.lint.checks.AppCompatResourceDetector} */
+    /** Constructs a new {@link AppCompatResourceDetector} */
     public AppCompatResourceDetector() {
     }
 

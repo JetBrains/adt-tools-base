@@ -5,7 +5,6 @@ android {
   buildToolsVersion = rootProject.buildToolsVersion
 
   defaultConfig {
-    useJack rootProject.useJack
     minSdkVersion 4
   }
 

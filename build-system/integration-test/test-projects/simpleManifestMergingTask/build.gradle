@@ -1,5 +1,5 @@
 apply from: "../commonHeader.gradle"
-buildscript { apply from: "../commonBuildScript.gradle", to: buildscript }
+buildscript { apply from: "../commonBuildScript.gradle" }
 
 task manifestMerger(type: com.android.build.gradle.tasks.InvokeManifestMerger) {
     mainManifestFile = file('src/main/AndroidManifest.xml')

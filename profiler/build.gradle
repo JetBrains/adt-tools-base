@@ -1,0 +1,120 @@
+subprojects {
+  buildscript {
+    repositories {
+      maven {
+        url = '../../../../prebuilts/tools/common/m2/repository/'
+      }
+    }
+  }
+
+  buildDir = "$rootDir/../../../out/studio/$project.name"
+  repositories {
+    maven { url = "$rootDir/../../../prebuilts/tools/common/m2/repository" }
+  }
+}
+
+class CMakeClosureDelegate {
+    String[] abis = [];
+    String name;
+    String projectDir;
+    String[] flags = []
+
+    def abis(String[] value) { abis = value; }
+    def name(String value) { name = value; }
+    def projectDir(String value) { projectDir = value; }
+    def flags(String[] value) { flags = value}
+}
+
+
+def cmake(cl) {
+    CMakeClosureDelegate data = new CMakeClosureDelegate();
+    cl.delegate = data;
+    cl.call();
+    def os = System.getProperty("os.name").toLowerCase();
+    def host = os.startsWith("linux") ? "linux" : (os.startsWith("win") ? "windows" : "darwin")
+
+    if (data.abis.size() == 0) {
+        // Building for the host
+        createTasks(data, "Host", "host", cl.owner, host);
+    } else {
+        // Building multiple abis for android
+        def configure = cl.owner.tasks.create(name: "configure" + data.name.capitalize(), group: "Native build", type: DefaultTask) {}
+        def precompile = cl.owner.tasks.create(name: "precompile" + data.name.capitalize(), group: "Native build", type: DefaultTask) {}
+        def compile = cl.owner.tasks.create(name: "compile" + data.name.capitalize(), group: "Native build", type: DefaultTask) {}
+        def check = cl.owner.tasks.create(name: "check" + data.name.capitalize(), group: "Native build", type: DefaultTask) {}
+
+        data.abis.each { abi ->
+            // ABI names contain "-" which do not work well as task names.
+            // Remove them and capitalize instead.
+            def normAbi = abi.split("-").collect { it.capitalize() }.join()
+            def name = data.name.capitalize() + normAbi;
+            createTasks(data, name, abi, cl.owner, host);
+            configure.dependsOn cl.owner.tasks.("configure" + name)
+            compile.dependsOn cl.owner.tasks.("compile" + name)
+            check.dependsOn cl.owner.tasks.("check" + name)
+
+            cl.owner.tasks.("compile" + name).dependsOn precompile
+        }
+    }
+}
+
+def createTasks(data, name, abi, project, host) {
+  def cmakeBuildDir = "$rootDir/../../../out/studio/${project.name}"
+  def gen = "$cmakeBuildDir/gen/$abi";
+  def out = "$cmakeBuildDir/out/$abi";
+
+  // TODO: Define different tasks for debug and release and specify
+  // -DCMAKE_BUILD_TYPE=[Debug|Release|MinSizeRel]
+  def configureAbi = createTask(project, host, "configure" + name) {
+      doFirst {
+          file(gen).deleteDir();
+          file(gen).mkdirs();
+      }
+      workingDir gen
+      executable "$rootDir/../../../prebuilts/cmake/$host-x86/bin/cmake"
+      args = ["-G", "Ninja", data.projectDir,
+          "-DCMAKE_TOOLCHAIN_FILE=$rootDir/native/cmake/${host}-${abi}.cmake",
+          "-DCMAKE_MAKE_PROGRAM=$rootDir/../../../prebuilts/ninja/$host-x86/ninja",
+          "-DCMAKE_RUNTIME_OUTPUT_DIRECTORY=$out",
+          "-DGO_EXECUTABLE=$rootDir/../../../prebuilts/go/$host-x86/bin/go",
+          "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON"] + Arrays.asList(data.flags)
+      environment GOROOT: "$rootDir/../../../prebuilts/go/$host-x86"
+      inputs.dir "$rootDir/native/cmake"
+      outputs.file "$gen/CMakeCache.txt"
+  }
+
+  def compileAbi = createTask(project, host, "compile" + name) {
+      workingDir gen
+      args = ["--build", "$gen"]
+      executable "$rootDir/../../../prebuilts/cmake/$host-x86/bin/cmake"
+      environment GOROOT: "$rootDir/../../../prebuilts/go/$host-x86"
+      // Always run this task as ninja's super fast dependency check takes care of it
+      outputs.upToDateWhen { return false; }
+  }
+  compileAbi.dependsOn configureAbi
+
+  def checkAbi = createTask(project, host, "check" + name) {
+      workingDir gen
+      args = ["--build", "$gen", "--target", "check"]
+      executable "$rootDir/../../../prebuilts/cmake/$host-x86/bin/cmake"
+      environment GOROOT: "$rootDir/../../../prebuilts/go/$host-x86"
+      // Always run this task as ninja's super fast dependency check takes care of it
+      outputs.upToDateWhen { return false; }
+  }
+  checkAbi.dependsOn configureAbi
+}
+
+def createTask(project, host, name, cl) {
+  if (host == "windows") {
+    // Do not build anything on windows yet, but create the tasks to keep the correct dependencies.
+    return project.tasks.create(name: name, group: "Native build", type: DefaultTask) {};
+  } else {
+    return project.tasks.create(name: name, group: "Native build", type: Exec, cl);
+  }
+}
+
+def requiredVersion = JavaVersion.VERSION_1_8
+def jvmVersion = JavaVersion.current()
+if (requiredVersion != jvmVersion) {
+    throw new RuntimeException("Profiler tools need to be compiled with Java $requiredVersion you are using Java $jvmVersion.")
+}

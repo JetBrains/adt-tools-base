@@ -22,8 +22,6 @@ import static com.android.utils.SdkUtils.fileToUrlString;
 import static com.android.utils.SdkUtils.urlToFile;
 
 import com.android.SdkConstants;
-import com.google.common.base.Charsets;
-import com.google.common.io.Files;
 
 import junit.framework.TestCase;
 
@@ -31,10 +29,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
 import java.io.File;
-import java.io.IOException;
 import java.net.URL;
-import java.text.ParseException;
-import java.util.Locale;
 
 @SuppressWarnings("javadoc")
 public class SdkUtilsTest extends TestCase {
@@ -71,16 +66,6 @@ public class SdkUtilsTest extends TestCase {
         assertFalse(SdkUtils.startsWithIgnoreCase("fo", "foo"));
     }
 
-    public void testStartsWith() {
-        assertTrue(SdkUtils.startsWith("foo", 0, "foo"));
-        assertTrue(SdkUtils.startsWith("foo", 0, "Foo"));
-        assertTrue(SdkUtils.startsWith("Foo", 0, "foo"));
-        assertTrue(SdkUtils.startsWith("aFoo", 1, "foo"));
-
-        assertFalse(SdkUtils.startsWith("aFoo", 0, "foo"));
-        assertFalse(SdkUtils.startsWith("aFoo", 2, "foo"));
-    }
-
     public void testEndsWith() {
         assertTrue(SdkUtils.endsWith("foo", "foo"));
         assertTrue(SdkUtils.endsWith("foobar", "obar"));
@@ -102,12 +87,6 @@ public class SdkUtilsTest extends TestCase {
         assertTrue(SdkUtils.endsWith("foo", "foo".length(), "foo"));
         assertTrue(SdkUtils.endsWith("foo", "fo".length(), "fo"));
         assertTrue(SdkUtils.endsWith("foo", "f".length(), "f"));
-    }
-
-    public void testStripWhitespace() {
-        assertEquals("foo", SdkUtils.stripWhitespace("foo"));
-        assertEquals("foobar", SdkUtils.stripWhitespace("foo bar"));
-        assertEquals("foobar", SdkUtils.stripWhitespace("  foo bar  \n\t"));
     }
 
     public void testWrap() {
@@ -154,91 +133,6 @@ public class SdkUtilsTest extends TestCase {
             "    * The application cannot be translated to other languages by just\n" +
             "    adding new translations for existing string resources.\n",
             wrapped);
-    }
-
-    public void testParseInt() throws Exception {
-        Locale.setDefault(Locale.US);
-        assertEquals(1000, SdkUtils.parseLocalizedInt("1000"));
-        assertEquals(0, SdkUtils.parseLocalizedInt("0"));
-        assertEquals(0, SdkUtils.parseLocalizedInt(""));
-        assertEquals(1, SdkUtils.parseLocalizedInt("1"));
-        assertEquals(-1, SdkUtils.parseLocalizedInt("-1"));
-        assertEquals(1000, SdkUtils.parseLocalizedInt("1,000"));
-        assertEquals(1000000, SdkUtils.parseLocalizedInt("1,000,000"));
-
-        Locale.setDefault(Locale.ITALIAN);
-        assertSame(Locale.ITALIAN, Locale.getDefault());
-        assertEquals(1000, SdkUtils.parseLocalizedInt("1000"));
-        assertEquals(0, SdkUtils.parseLocalizedInt("0"));
-        assertEquals(1, SdkUtils.parseLocalizedInt("1"));
-        assertEquals(-1, SdkUtils.parseLocalizedInt("-1"));
-        assertEquals(1000, SdkUtils.parseLocalizedInt("1.000"));
-        assertEquals(1000000, SdkUtils.parseLocalizedInt("1.000.000"));
-
-        // Make sure it throws exceptions
-        try {
-            SdkUtils.parseLocalizedInt("X");
-            fail("Should have thrown exception");
-        } catch (ParseException e) {
-            // Expected
-        }
-    }
-
-    public void testParseIntWithDefault() throws Exception {
-        Locale.setDefault(Locale.US);
-        assertEquals(1000, SdkUtils.parseLocalizedInt("1000", 0)); // Valid
-        assertEquals(2, SdkUtils.parseLocalizedInt("2.X", 2)); // Parses prefix
-        assertEquals(5, SdkUtils.parseLocalizedInt("X", 5)); // Parses prefix
-
-        Locale.setDefault(Locale.ITALIAN);
-        assertEquals(1000, SdkUtils.parseLocalizedInt("1000", -1)); // Valid
-        assertEquals(7, SdkUtils.parseLocalizedInt("X", 7));
-    }
-
-    public void testParseDouble() throws Exception {
-        Locale.setDefault(Locale.US);
-        assertEquals(1000.0, SdkUtils.parseLocalizedDouble("1000"));
-        assertEquals(1000.0, SdkUtils.parseLocalizedDouble("1000.0"));
-        assertEquals(1000.5, SdkUtils.parseLocalizedDouble("1000.5"));
-        assertEquals(0.0, SdkUtils.parseLocalizedDouble("0"));
-        assertEquals(0.0, SdkUtils.parseLocalizedDouble(""));
-        assertEquals(1.0, SdkUtils.parseLocalizedDouble("1"));
-        assertEquals(-1.0, SdkUtils.parseLocalizedDouble("-1"));
-        assertEquals(1000.0, SdkUtils.parseLocalizedDouble("1,000"));
-        assertEquals(1000.5, SdkUtils.parseLocalizedDouble("1,000.5"));
-        assertEquals(1000000.0, SdkUtils.parseLocalizedDouble("1,000,000"));
-        assertEquals(1000000.5, SdkUtils.parseLocalizedDouble("1,000,000.5"));
-
-        Locale.setDefault(Locale.ITALIAN);
-        assertEquals(1000.0, SdkUtils.parseLocalizedDouble("1000"));
-        assertEquals(1000.5, SdkUtils.parseLocalizedDouble("1000,5"));
-        assertEquals(0.0, SdkUtils.parseLocalizedDouble("0"));
-        assertEquals(1.0, SdkUtils.parseLocalizedDouble("1"));
-        assertEquals(-1.0, SdkUtils.parseLocalizedDouble("-1"));
-        assertEquals(1000.0, SdkUtils.parseLocalizedDouble("1.000"));
-        assertEquals(1000.5, SdkUtils.parseLocalizedDouble("1.000,5"));
-        assertEquals(1000000.0, SdkUtils.parseLocalizedDouble("1.000.000"));
-        assertEquals(1000000.5, SdkUtils.parseLocalizedDouble("1.000.000,5"));
-
-        // Make sure it throws exceptions
-        try {
-            SdkUtils.parseLocalizedDouble("X");
-            fail("Should have thrown exception");
-        } catch (ParseException e) {
-            // Expected
-        }
-    }
-
-    public void testParseDoubleWithDefault() throws Exception {
-        Locale.setDefault(Locale.US);
-        assertEquals(1000.0, SdkUtils.parseLocalizedDouble("1000", 0)); // Valid
-        assertEquals(2.0, SdkUtils.parseLocalizedDouble("2x", 3)); // Uses prefix
-        assertEquals(0.0, SdkUtils.parseLocalizedDouble("", 4));
-        assertEquals(5.0, SdkUtils.parseLocalizedDouble("test", 5)); // Invalid
-
-        Locale.setDefault(Locale.FRANCE);
-        assertEquals(1000.0, SdkUtils.parseLocalizedDouble("1000", -1)); // Valid
-        assertEquals(0.0, SdkUtils.parseLocalizedDouble("", 8));
     }
 
     public void testFileToUrl() throws Exception {

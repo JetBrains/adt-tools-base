@@ -20,6 +20,7 @@ import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
@@ -35,7 +36,9 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.InputStream;
 import java.util.Arrays;
 import java.util.List;
@@ -74,7 +77,7 @@ public abstract class ZipToolsTestCase {
         mToolStoresDirectories = toolStoresDirectories;
     }
 
-    private File rsrcFile(@NonNull String name) {
+    private static File rsrcFile(@NonNull String name) {
         File packagingRoot = TestUtils.getRoot("packaging");
         String rsrcPath = packagingRoot.getAbsolutePath() + "/" + name;
         File rsrcFile = new File(rsrcPath);
@@ -101,18 +104,18 @@ public abstract class ZipToolsTestCase {
 
     @Test
     public void zfileReadsZipFile() throws Exception {
-        ZFile zf = new ZFile(cloneZipFile());
+        try (ZFile zf = new ZFile(cloneZipFile())) {
+            if (mToolStoresDirectories) {
+                assertEquals(6, zf.entries().size());
+            } else {
+                assertEquals(4, zf.entries().size());
+            }
 
-        if (mToolStoresDirectories) {
-            assertEquals(6, zf.entries().size());
-        } else {
-            assertEquals(4, zf.entries().size());
+            assertFileInZip(zf, "root");
+            assertFileInZip(zf, "images/lena.png");
+            assertFileInZip(zf, "text-files/rfc2460.txt");
+            assertFileInZip(zf, "text-files/wikipedia.html");
         }
-
-        assertFileInZip(zf, "root");
-        assertFileInZip(zf, "images/lena.png");
-        assertFileInZip(zf, "text-files/rfc2460.txt");
-        assertFileInZip(zf, "text-files/wikipedia.html");
     }
 
     @Test
@@ -129,24 +132,22 @@ public abstract class ZipToolsTestCase {
         String unzipcmd = mUnzipCommand.get(0);
         Assume.assumeTrue(new File(unzipcmd).canExecute());
 
-        File zfile = new File (mTemporaryFolder.getRoot(), "zfile.zip");
-        ZFile zf = new ZFile(zfile);
-
+        ZFileOptions options = new ZFileOptions();
         if (align) {
-            zf.getAlignmentRules().add(new AlignmentRule(Pattern.compile(".*"), 500));
+            options.setAlignmentRule(AlignmentRules.constant(500));
         }
 
-        zf.add("root", new FileEntrySource(rsrcFile("root")), CompressionMethod.DEFLATE);
-        zf.add("images/", new ByteArrayEntrySource(new byte[0]), CompressionMethod.DEFLATE);
-        zf.add("images/lena.png", new FileEntrySource(rsrcFile("images/lena.png")),
-                CompressionMethod.DEFLATE);
-        zf.add("text-files/", new ByteArrayEntrySource(new byte[0]), CompressionMethod.DEFLATE);
-        zf.add("text-files/rfc2460.txt", new FileEntrySource(rsrcFile("text-files/rfc2460.txt")),
-                CompressionMethod.DEFLATE);
-        zf.add("text-files/wikipedia.html",
-                new FileEntrySource(rsrcFile("text-files/wikipedia.html")),
-                CompressionMethod.DEFLATE);
-        zf.close();
+        File zfile = new File (mTemporaryFolder.getRoot(), "zfile.zip");
+        try (ZFile zf = new ZFile(zfile, options)) {
+            zf.add("root", new FileInputStream(rsrcFile("root")));
+            zf.add("images/", new ByteArrayInputStream(new byte[0]));
+            zf.add("images/lena.png", new FileInputStream(rsrcFile("images/lena.png")));
+            zf.add("text-files/", new ByteArrayInputStream(new byte[0]));
+            zf.add("text-files/rfc2460.txt", new FileInputStream(rsrcFile(
+                    "text-files/rfc2460.txt")));
+            zf.add("text-files/wikipedia.html",
+                    new FileInputStream(rsrcFile("text-files/wikipedia.html")));
+        }
 
         List<String> command = Lists.newArrayList(mUnzipCommand);
         command.add(zfile.getAbsolutePath());
@@ -168,16 +169,37 @@ public abstract class ZipToolsTestCase {
         }
 
         assertEquals(6, sizes.size());
-        assertTrue(sizes.containsKey("images/"));
-        assertEquals(0, sizes.get("images/").intValue());
-        assertTrue(sizes.containsKey("text-files/"));
-        assertEquals(0, sizes.get("text-files/").intValue());
-        assertTrue(sizes.containsKey("root"));
-        assertEquals(rsrcFile("root").length(), (long) sizes.get("root"));
-        assertEquals(rsrcFile("images/lena.png").length(), (long) sizes.get("images/lena.png"));
-        assertEquals(rsrcFile("text-files/rfc2460.txt").length(), (long) sizes.get(
-                "text-files/rfc2460.txt"));
-        assertEquals(rsrcFile("text-files/wikipedia.html").length(), (long) sizes.get(
-                "text-files/wikipedia.html"));
+
+        /*
+         * The "images" directory may show up as "images" or "images/".
+         */
+        String imagesKey = "images/";
+        if (!sizes.containsKey(imagesKey)) {
+            imagesKey = "images";
+        }
+
+        assertTrue(sizes.containsKey(imagesKey));
+        assertEquals(0, sizes.get(imagesKey).intValue());
+
+        assertSize(new String[] { "images/", "images" }, 0, sizes);
+        assertSize(new String[] { "text-files/", "text-files"}, 0, sizes);
+        assertSize(new String[] { "root" }, rsrcFile("root").length(), sizes);
+        assertSize(new String[] { "images/lena.png", "images\\lena.png" },
+                rsrcFile("images/lena.png").length(), sizes);
+        assertSize(new String[] { "text-files/rfc2460.txt", "text-files\\rfc2460.txt" },
+                rsrcFile("text-files/rfc2460.txt").length(), sizes);
+        assertSize(new String[] { "text-files/wikipedia.html", "text-files\\wikipedia.html" },
+                rsrcFile("text-files/wikipedia.html").length(), sizes);
+    }
+
+    private static void assertSize(String[] names, long size, Map<String, Integer> sizes) {
+        for (String n : names) {
+            if (sizes.containsKey(n)) {
+                assertEquals((long) sizes.get(n), size);
+                return;
+            }
+        }
+
+        fail();
     }
 }

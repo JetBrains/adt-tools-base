@@ -16,6 +16,12 @@
 
 package com.android.ide.common.res2;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import com.android.ide.common.rendering.api.AttrResourceValue;
 import com.android.ide.common.rendering.api.ItemResourceValue;
 import com.android.ide.common.rendering.api.ResourceValue;
@@ -25,6 +31,8 @@ import com.android.resources.ResourceType;
 import com.android.testutils.TestUtils;
 import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Multimap;
+
+import org.junit.Test;
 
 import java.io.File;
 import java.io.IOException;
@@ -37,6 +45,7 @@ import java.util.Map;
 
 public class ResourceRepositoryTest extends BaseTestCase {
 
+    @Test
     public void testMergeByCount() throws Exception {
         ResourceRepository repo = getResourceRepository();
 
@@ -46,16 +55,18 @@ public class ResourceRepositoryTest extends BaseTestCase {
         assertEquals(1, items.get(ResourceType.RAW).size());
         assertEquals(4, items.get(ResourceType.LAYOUT).size());
         assertEquals(1, items.get(ResourceType.COLOR).size());
-        assertEquals(4, items.get(ResourceType.STRING).size());
+        assertEquals(6, items.get(ResourceType.STRING).size());
         assertEquals(1, items.get(ResourceType.STYLE).size());
-        assertEquals(1, items.get(ResourceType.ARRAY).size());
+        assertEquals(3, items.get(ResourceType.ARRAY).size());
         assertEquals(7, items.get(ResourceType.ATTR).size());
         assertEquals(1, items.get(ResourceType.DECLARE_STYLEABLE).size());
         assertEquals(2, items.get(ResourceType.DIMEN).size());
         assertEquals(1, items.get(ResourceType.ID).size());
         assertEquals(1, items.get(ResourceType.INTEGER).size());
+        assertEquals(2, items.get(ResourceType.PLURALS).size());
     }
 
+    @Test
     public void testMergedResourcesByName() throws Exception {
         ResourceRepository repo = getResourceRepository();
 
@@ -76,8 +87,12 @@ public class ResourceRepositoryTest extends BaseTestCase {
                 "string/basic_string",
                 "string/xliff_string",
                 "string/styled_string",
+                "string/two",
+                "string/many",
                 "style/style",
                 "array/string_array",
+                "array/integer_array",
+                "array/my_colors",
                 "attr/dimen_attr",
                 "attr/string_attr",
                 "attr/enum_attr",
@@ -89,10 +104,13 @@ public class ResourceRepositoryTest extends BaseTestCase {
                 "dimen/dimen",
                 "dimen?sw600dp-v13/offset",
                 "id/item_id",
-                "integer/integer"
+                "integer/integer",
+                "plurals/plurals",
+                "plurals/plurals_with_bad_quantity"
         );
     }
 
+    @Test
     public void testBaseStringValue() throws Exception {
         ResourceRepository repo = getResourceRepository();
 
@@ -106,6 +124,7 @@ public class ResourceRepositoryTest extends BaseTestCase {
         assertEquals("overlay_string", value.getValue());
     }
 
+    @Test
     public void testBaseStyledStringValue() throws Exception {
         ResourceRepository repo = getResourceRepository();
 
@@ -120,6 +139,7 @@ public class ResourceRepositoryTest extends BaseTestCase {
                 value.getValue());
     }
 
+    @Test
     public void testBaseColorValue() throws Exception {
         ResourceRepository repo = getResourceRepository();
 
@@ -133,6 +153,7 @@ public class ResourceRepositoryTest extends BaseTestCase {
         assertEquals("#FFFFFFFF", value.getValue());
     }
 
+    @Test
     public void testBaseLayoutAliasValue() throws Exception {
         ResourceRepository repo = getResourceRepository();
 
@@ -146,6 +167,7 @@ public class ResourceRepositoryTest extends BaseTestCase {
         assertEquals("@layout/ref", value.getValue());
     }
 
+    @Test
     public void testBaseAttrValue() throws Exception {
         ResourceRepository repo = getResourceRepository();
 
@@ -175,6 +197,7 @@ public class ResourceRepositoryTest extends BaseTestCase {
         assertEquals(Integer.valueOf(2), i);
     }
 
+    @Test
     public void testBaseStyleValue() throws Exception {
         ResourceRepository repo = getResourceRepository();
 
@@ -210,6 +233,7 @@ public class ResourceRepositoryTest extends BaseTestCase {
         assertEquals("foo", styleValue.getValue());
     }
 
+    @Test
     public void testUpdateWithBasicFiles() throws Exception {
         File root = getIncMergeRoot("basicFiles");
         File fakeRoot = getMergedBlobFolder(root);
@@ -299,6 +323,7 @@ public class ResourceRepositoryTest extends BaseTestCase {
         checkRemovedItems(resourceMerger);
     }
 
+    @Test
     public void testUpdateWithBasicValues() throws Exception {
         File root = getIncMergeRoot("basicValues");
         File fakeRoot = getMergedBlobFolder(root);
@@ -378,6 +403,7 @@ public class ResourceRepositoryTest extends BaseTestCase {
         checkRemovedItems(resourceMerger);
     }
 
+    @Test
     public void testUpdateWithBasicValues2() throws Exception {
         File root = getIncMergeRoot("basicValues2");
         File fakeRoot = getMergedBlobFolder(root);
@@ -433,6 +459,7 @@ public class ResourceRepositoryTest extends BaseTestCase {
         checkRemovedItems(resourceMerger);
     }
 
+    @Test
     public void testUpdateWithFilesVsValues() throws Exception {
         File root = getIncMergeRoot("filesVsValues");
         File fakeRoot = getMergedBlobFolder(root);
@@ -498,6 +525,7 @@ public class ResourceRepositoryTest extends BaseTestCase {
         checkRemovedItems(resourceMerger);
     }
 
+    @Test
     public void testUpdateFromOldFile() throws Exception {
         File root = getIncMergeRoot("oldMerge");
         File fakeRoot = getMergedBlobFolder(root);
@@ -524,7 +552,7 @@ public class ResourceRepositoryTest extends BaseTestCase {
     private static ResourceMerger createMerger(String[][] data) {
         ResourceMerger merger = new ResourceMerger(0);
         for (String[] setData : data) {
-            ResourceSet set = new ResourceSet(setData[0]);
+            ResourceSet set = new ResourceSet(setData[0], null);
             merger.addDataSet(set);
             for (int i = 1, n = setData.length; i < n; i++) {
                 set.addSource(new File(setData[i]));
@@ -545,7 +573,7 @@ public class ResourceRepositoryTest extends BaseTestCase {
 
         RecordingLogger logger = new RecordingLogger();
 
-        ResourceSet overlay = new ResourceSet("overlay");
+        ResourceSet overlay = new ResourceSet("overlay", null);
         overlay.addSource(new File(root, "overlay"));
         overlay.loadFromFiles(logger);
 
@@ -571,7 +599,7 @@ public class ResourceRepositoryTest extends BaseTestCase {
         ResourceMerger resourceMerger = new ResourceMerger(0);
 
         for (String setName : sets) {
-            ResourceSet resourceSet = new ResourceSet(setName);
+            ResourceSet resourceSet = new ResourceSet(setName, null);
             resourceSet.addSource(new File(root, setName));
             resourceSet.loadFromFiles(logger);
             checkLogger(logger);

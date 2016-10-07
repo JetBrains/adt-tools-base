@@ -16,69 +16,52 @@
 
 package com.android.build.gradle.integration.common.fixture;
 
-import static org.junit.Assert.assertEquals;
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.build.gradle.AndroidGradleOptions;
 import com.android.build.gradle.integration.common.fixture.app.AbstractAndroidTestApp;
 import com.android.build.gradle.integration.common.fixture.app.AndroidTestApp;
 import com.android.build.gradle.integration.common.fixture.app.TestSourceFile;
-import com.android.build.gradle.integration.common.utils.JacocoAgent;
 import com.android.build.gradle.integration.common.utils.SdkHelper;
 import com.android.build.gradle.integration.common.utils.TestFileUtils;
+import com.android.build.gradle.integration.performance.BenchmarkMode;
 import com.android.builder.core.BuilderConstants;
 import com.android.builder.model.AndroidProject;
-import com.android.builder.model.NativeAndroidProject;
-import com.android.builder.model.SyncIssue;
 import com.android.builder.model.Version;
-import com.android.ide.common.util.ReferenceHolder;
 import com.android.io.StreamException;
-import com.android.repository.Revision;
 import com.android.sdklib.internal.project.ProjectProperties;
 import com.android.sdklib.internal.project.ProjectPropertiesWorkingCopy;
 import com.android.utils.FileUtils;
 import com.google.common.base.Charsets;
 import com.google.common.base.Joiner;
+import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
-import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.io.Files;
 
-import org.gradle.tooling.BuildAction;
-import org.gradle.tooling.BuildActionExecuter;
-import org.gradle.tooling.BuildLauncher;
 import org.gradle.tooling.GradleConnectionException;
 import org.gradle.tooling.GradleConnector;
-import org.gradle.tooling.LongRunningOperation;
 import org.gradle.tooling.ProjectConnection;
-import org.gradle.tooling.ResultHandler;
 import org.gradle.tooling.internal.consumer.DefaultGradleConnector;
-import org.gradle.tooling.model.GradleProject;
-import org.gradle.tooling.model.GradleTask;
-import org.junit.Assume;
 import org.junit.rules.TestRule;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
 
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
-import java.util.regex.Pattern;
 
 /**
  * JUnit4 test rule for integration test.
@@ -97,7 +80,7 @@ public class GradleTestProject implements TestRule {
     public static final File TEST_PROJECT_DIR = new File("test-projects");
 
     public static final int DEFAULT_COMPILE_SDK_VERSION = 23;
-    public static final int LATEST_NDK_VERSION = 21;
+    public static final int LATEST_NDK_PLATFORM_VERSION = 21;
 
     /**
      * Last SDK that contained java 6 bytecode in the platform jar. Since we run integration tests
@@ -106,78 +89,55 @@ public class GradleTestProject implements TestRule {
     public static final int LAST_JAVA6_SDK_VERSION = 19;
 
     public static final String DEFAULT_BUILD_TOOL_VERSION;
+    public static final String UPCOMING_BUILD_TOOL_VERSION = "24.0.0";
     public static final String REMOTE_TEST_PROVIDER = System.getenv().get("REMOTE_TEST_PROVIDER");
 
     public static final String DEVICE_PROVIDER_NAME = REMOTE_TEST_PROVIDER != null ?
             REMOTE_TEST_PROVIDER : BuilderConstants.CONNECTED;
 
-    public static final String GRADLE_TEST_VERSION = "2.10";
-    public static final String GRADLE_EXP_TEST_VERSION = "2.10";
+    public static final String GRADLE_TEST_VERSION = "2.14.1";
+    public static final String GRADLE_EXP_TEST_VERSION = "2.14.1";
 
     public static final String ANDROID_GRADLE_PLUGIN_VERSION;
 
-    public static final String CUSTOM_JACK;
     public static final boolean USE_JACK;
 
 
     private static final String RECORD_BENCHMARK_NAME = "com.android.benchmark.name";
     private static final String RECORD_BENCHMARK_MODE = "com.android.benchmark.mode";
-
-    public enum BenchmarkMode {
-        EVALUATION, SYNC, BUILD_FULL, BUILD_INC_JAVA, BUILD_INC_RES_EDIT, BUILD_INC_RES_ADD
-    }
+    public static final String DEVICE_TEST_TASK = "deviceCheck";
 
     static {
         String envBuildToolVersion = System.getenv("CUSTOM_BUILDTOOLS");
         DEFAULT_BUILD_TOOL_VERSION = !Strings.isNullOrEmpty(envBuildToolVersion) ?
                 envBuildToolVersion : "23.0.2";
-        String envVersion = System.getenv().get("CUSTOM_GRADLE");
+        String envVersion = System.getenv().get("CUSTOM_PLUGIN_VERSION");
         ANDROID_GRADLE_PLUGIN_VERSION = !Strings.isNullOrEmpty(envVersion) ? envVersion
                 : Version.ANDROID_GRADLE_PLUGIN_VERSION;
         String envJack = System.getenv().get("CUSTOM_JACK");
-        CUSTOM_JACK = !Strings.isNullOrEmpty(envJack) ? envJack : "false";
-        USE_JACK = Boolean.parseBoolean(CUSTOM_JACK);
+        USE_JACK = !Strings.isNullOrEmpty(envJack);
     }
 
     private static final String COMMON_HEADER = "commonHeader.gradle";
     private static final String COMMON_LOCAL_REPO = "commonLocalRepo.gradle";
     private static final String COMMON_BUILD_SCRIPT = "commonBuildScript.gradle";
-    private static final String COMMON_BUILD_SCRIPT_EXP = "commonBuildScriptExperimental.gradle";
     private static final String COMMON_GRADLE_PLUGIN_VERSION = "commonGradlePluginVersion.gradle";
     private static final String DEFAULT_TEST_PROJECT_NAME = "project";
-
-    private static final ResultHandler<Void> EXPECT_SUCCESS = new ResultHandler<Void>() {
-        @Override
-        public void onComplete(Void aVoid) {
-            // OK, that's what we want.
-        }
-
-        @Override
-        public void onFailure(GradleConnectionException e) {
-            throw e;
-        }
-    };
 
     public static class Builder {
 
         @Nullable
         private String name;
-
         @Nullable
         private TestProject testProject = null;
-
         @Nullable
-        File sdkDir = SdkHelper.findSdkDir();
+        private File sdkDir = SdkHelper.findSdkDir();
         @Nullable
-        File ndkDir = findNdkDir();
-        boolean captureStdOut = false;
-        boolean captureStdErr = false;
-        boolean experimentalMode = false;
+        private File ndkDir = findNdkDir();
         @Nullable
         private String targetGradleVersion;
-
-        boolean useJack = false;
-        boolean useMinify = false;
+        private boolean useJack = USE_JACK;
+        private boolean useMinify = false;
         @NonNull
         private List<String> gradleProperties = Lists.newArrayList();
         @Nullable
@@ -188,18 +148,14 @@ public class GradleTestProject implements TestRule {
          */
         public GradleTestProject create() {
             if (targetGradleVersion == null) {
-                targetGradleVersion =
-                        experimentalMode ? GRADLE_EXP_TEST_VERSION : GRADLE_TEST_VERSION;
+                targetGradleVersion = GRADLE_TEST_VERSION;
             }
             return new GradleTestProject(
                     name,
                     testProject,
-                    experimentalMode,
                     useMinify,
                     useJack,
                     targetGradleVersion,
-                    captureStdOut,
-                    captureStdErr,
                     sdkDir,
                     ndkDir,
                     gradleProperties,
@@ -216,27 +172,8 @@ public class GradleTestProject implements TestRule {
             return this;
         }
 
-        public Builder captureStdOut(boolean captureStdOut) {
-            this.captureStdOut = captureStdOut;
-            return this;
-        }
-
-        public Builder captureStdErr(boolean captureStdErr) {
-            this.captureStdErr = captureStdErr;
-            return this;
-        }
-
         /**
-         * Use experimental plugin for the test project.
-         */
-        public Builder forExperimentalPlugin(boolean mode) {
-            this.experimentalMode = mode;
-            return this;
-        }
-
-        /**
-         * Use the gradle version for experimental plugin, but the test project do not necessarily
-         * have to use experimental plugin.
+         * Use the gradle version for experimental plugin.
          */
         public Builder useExperimentalGradleVersion(boolean mode) {
             if (mode) {
@@ -265,34 +202,51 @@ public class GradleTestProject implements TestRule {
          * Create GradleTestProject from an existing test project.
          */
         public Builder fromTestProject(@NonNull String project) {
-            return fromTestProject(project, null);
-        }
-
-        /**
-         * Create GradleTestProject from an existing test project.
-         * @param buildFileSuffix if non-null, imports files named build.suffix.gradle.
-         */
-        public Builder fromTestProject(@NonNull String project, @Nullable String buildFileSuffix) {
             AndroidTestApp app = new EmptyTestApp();
             name = project;
             File projectDir = new File(TEST_PROJECT_DIR, project);
-            addAllFiles(app, projectDir, buildFileSuffix);
+            addAllFiles(app, projectDir);
             return fromTestApp(app);
         }
 
         /**
          * Create GradleTestProject from an existing test project.
          */
-        public Builder fromExternalProject(@NonNull String project) throws IOException {
-            AndroidTestApp app = new EmptyTestApp();
-            name = project;
-            // compute the root folder of the checkout, based on test-projects.
-            File parentDir = TEST_PROJECT_DIR.getCanonicalFile().getParentFile().getParentFile()
-                    .getParentFile().getParentFile().getParentFile();
-            parentDir = new File(parentDir, "external");
-            File projectDir = new File(parentDir, project);
-            addAllFiles(app, projectDir, null /*buildFileSuffix*/);
-            return fromTestApp(app);
+        public Builder fromExternalProject(@NonNull String project) {
+            try {
+                AndroidTestApp app = new EmptyTestApp();
+                name = project;
+                // compute the root folder of the checkout, based on test-projects.
+                File parentDir = TEST_PROJECT_DIR.getCanonicalFile().getParentFile().getParentFile()
+                        .getParentFile().getParentFile().getParentFile();
+                parentDir = new File(parentDir, "external");
+                File projectDir = new File(parentDir, project);
+                addAllFiles(app, projectDir);
+                return fromTestApp(app);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        /**
+         * Add a new file to the project.
+         */
+        public Builder addFile(@NonNull TestSourceFile file) {
+            return addFiles(Lists.newArrayList(file));
+        }
+
+        /**
+         * Add a new file to the project.
+         */
+        public Builder addFiles(@NonNull List<TestSourceFile> files) {
+            if (!(this.testProject instanceof AndroidTestApp)) {
+                throw new IllegalStateException("addFile is only for AndroidTestApp");
+            }
+            AndroidTestApp app = (AndroidTestApp) this.testProject;
+            for (TestSourceFile file : files) {
+                app.addFile(file);
+            }
+            return this;
         }
 
         /**
@@ -334,21 +288,20 @@ public class GradleTestProject implements TestRule {
 
     private final String name;
     private final File outDir;
+    @Nullable
     private File testDir;
     private File sourceDir;
     private File buildFile;
+    private File localProp;
     private final File ndkDir;
     private final File sdkDir;
 
-    private final ByteArrayOutputStream stdout;
-    private final ByteArrayOutputStream stderr;
 
     private final Collection<String> gradleProperties;
 
     @Nullable
     private final TestProject testProject;
 
-    private final boolean experimentalMode;
     private final String targetGradleVersion;
 
     private final boolean useJack;
@@ -357,15 +310,17 @@ public class GradleTestProject implements TestRule {
     @Nullable
     private String heapSize;
 
+    private GradleBuildResult lastBuild;
+    private ProjectConnection projectConnection;
+    private final GradleTestProject rootProject;
+    private final List<ProjectConnection> openConnections;
+
     private GradleTestProject(
             @Nullable String name,
             @Nullable TestProject testProject,
-            boolean experimentalMode,
             boolean minifyEnabled,
             boolean useJack,
             String targetGradleVersion,
-            boolean captureStdOut,
-            boolean captureStdErr,
             @Nullable File sdkDir,
             @Nullable File ndkDir,
             @NonNull Collection<String> gradleProperties,
@@ -375,17 +330,16 @@ public class GradleTestProject implements TestRule {
         testDir = null;
         buildFile = sourceDir = null;
         this.name = (name == null) ? DEFAULT_TEST_PROJECT_NAME : name;
-        this.experimentalMode = experimentalMode;
         this.minifyEnabled = minifyEnabled;
         this.useJack = useJack;
         this.targetGradleVersion = targetGradleVersion;
         this.testProject = testProject;
-        stdout = captureStdOut ? new ByteArrayOutputStream() : null;
-        stderr = captureStdErr ? new ByteArrayOutputStream() : null;
         this.sdkDir = sdkDir;
         this.ndkDir = ndkDir;
         this.heapSize = heapSize;
         this.gradleProperties = gradleProperties;
+        openConnections = Lists.newArrayList();
+        rootProject = this;
     }
 
     /**
@@ -406,22 +360,17 @@ public class GradleTestProject implements TestRule {
         sourceDir = new File(testDir, "src");
         ndkDir = rootProject.ndkDir;
         sdkDir = rootProject.sdkDir;
-        stdout = rootProject.stdout;
-        stderr = rootProject.stdout;
         gradleProperties = ImmutableList.of();
         testProject = null;
-        experimentalMode = rootProject.isExperimentalMode();
         targetGradleVersion = rootProject.getTargetGradleVersion();
         minifyEnabled = false;
         useJack = false;
+        openConnections = null;
+        this.rootProject = rootProject;
     }
 
-    String getTargetGradleVersion() {
+    private String getTargetGradleVersion() {
         return targetGradleVersion;
-    }
-
-    boolean isExperimentalMode() {
-        return experimentalMode;
     }
 
     public static Builder builder() {
@@ -443,32 +392,21 @@ public class GradleTestProject implements TestRule {
                     }
                 }
             }
-            assertTrue(root.delete());
+            assertTrue("Failed to delete " + root.getAbsolutePath(), root.delete());
         }
     }
-
-    private static final Pattern BUILD_FILE_PATTERN = Pattern.compile("build\\.(.+\\.)?gradle");
 
     /**
      * Add all files in a directory to an AndroidTestApp.
      */
-    private static void addAllFiles(AndroidTestApp app, File projectDir, String buildFileSuffix) {
-        String buildFileNameToKeep = (buildFileSuffix != null) ?
-                "build." + buildFileSuffix + ".gradle" : "build.gradle";
+    private static void addAllFiles(AndroidTestApp app, File projectDir) {
         for (String filePath : TestFileUtils.listFiles(projectDir)) {
             File file = new File(filePath);
             try {
-                String fileName = file.getName();
-                if (BUILD_FILE_PATTERN.matcher(fileName).matches()) {
-                    if (!fileName.equals(buildFileNameToKeep)) {
-                        continue;
-                    }
-                    fileName = "build.gradle";
-                }
                 app.addFile(
                         new TestSourceFile(
                                 file.getParent(),
-                                fileName,
+                                file.getName(),
                                 Files.toByteArray(new File(projectDir, filePath))));
             } catch (IOException e) {
                 fail(e.toString());
@@ -482,12 +420,16 @@ public class GradleTestProject implements TestRule {
             @Override
             public void evaluate() throws Throwable {
                 createTestDirectory(description.getTestClass(), description.getMethodName());
-                base.evaluate();
+                try {
+                    base.evaluate();
+                } finally {
+                    openConnections.forEach(ProjectConnection::close);
+                }
             }
         };
     }
 
-    public void createTestDirectory(Class<?> testClass, String methodName)
+    private void createTestDirectory(Class<?> testClass, String methodName)
             throws IOException, StreamException {
         // On windows, move the temporary copy as close to root to avoid running into path too
         // long exceptions.
@@ -524,9 +466,6 @@ public class GradleTestProject implements TestRule {
                 new File(TEST_PROJECT_DIR, COMMON_BUILD_SCRIPT),
                 new File(testDir.getParent(), COMMON_BUILD_SCRIPT));
         Files.copy(
-                new File(TEST_PROJECT_DIR, COMMON_BUILD_SCRIPT_EXP),
-                new File(testDir.getParent(), COMMON_BUILD_SCRIPT_EXP));
-        Files.copy(
                 new File(TEST_PROJECT_DIR, COMMON_GRADLE_PLUGIN_VERSION),
                 new File(testDir.getParent(), COMMON_GRADLE_PLUGIN_VERSION));
 
@@ -541,7 +480,7 @@ public class GradleTestProject implements TestRule {
                     Charsets.UTF_8);
         }
 
-        createLocalProp(testDir, sdkDir, ndkDir);
+        localProp = createLocalProp(testDir, sdkDir, ndkDir);
         createGradleProp();
     }
 
@@ -552,7 +491,7 @@ public class GradleTestProject implements TestRule {
         if (name.startsWith(":")) {
             name = name.substring(1);
         }
-        return new GradleTestProject(name, this);
+        return new GradleTestProject(name, rootProject);
     }
 
     /**
@@ -570,6 +509,14 @@ public class GradleTestProject implements TestRule {
     }
 
     /**
+     * Return the path to the default Java main source dir.
+     */
+    public File getMainSrcDir() {
+        assertThat(testDir).isNotNull();
+        return FileUtils.join(testDir, "src", "main", "java");
+    }
+
+    /**
      * Return the build.gradle of the test project.
      */
     public File getSettingsFile() {
@@ -584,11 +531,34 @@ public class GradleTestProject implements TestRule {
     }
 
     /**
+     * Change the build file used for execute.  Should be run after @Before/@BeforeClass.
+     */
+    public void setBuildFile(@Nullable String buildFileName) {
+        Preconditions.checkNotNull(
+                buildFile,
+                "Cannot call selectBuildFile before test directory is created.");
+        if (buildFileName == null) {
+            buildFileName = "build.gradle";
+        }
+        buildFile = new File(testDir, buildFileName);
+        assertThat(buildFile).exists();
+    }
+
+
+    /**
      * Return the output directory from Android plugins.
      */
     public File getOutputDir() {
         return new File(testDir,
                 Joiner.on(File.separator).join("build", AndroidProject.FD_OUTPUTS));
+    }
+
+    /**
+     * Return the output directory from Android plugins.
+     */
+    public File getIntermediatesDir() {
+        return new File(testDir,
+                Joiner.on(File.separator).join("build", AndroidProject.FD_INTERMEDIATES));
     }
 
     /**
@@ -606,8 +576,7 @@ public class GradleTestProject implements TestRule {
      *   - build type
      *   - other modifiers (e.g. "unsigned", "aligned")
      */
-    public File getApk(String ... dimensions) {
-        // TODO: Add overload for tests and splits.
+    public File getApk(String... dimensions) {
         List<String> dimensionList = Lists.newArrayListWithExpectedSize(1 + dimensions.length);
         dimensionList.add(getName());
         dimensionList.addAll(Arrays.asList(dimensions));
@@ -615,12 +584,24 @@ public class GradleTestProject implements TestRule {
                 "apk/" + Joiner.on("-").join(dimensionList) + SdkConstants.DOT_ANDROID_PACKAGE);
     }
 
-    public File getTestApk(String ... dimensions) {
-        String[] allDimensions = new String[dimensions.length + 2];
-        System.arraycopy(dimensions, 0, allDimensions, 0, dimensions.length);
-        allDimensions[allDimensions.length - 2] = "androidTest";
-        allDimensions[allDimensions.length - 1] = "unaligned";
-        return getApk(allDimensions);
+    public File getTestApk(Packaging packaging, String... dimensions) {
+        List<String> dimensionList = Lists.newArrayList(dimensions);
+        dimensionList.add("androidTest");
+        if (packaging == Packaging.OLD_PACKAGING) {
+            dimensionList.add("unaligned");
+        }
+
+        return getApk(Iterables.toArray(dimensionList, String.class));
+    }
+
+    public File getTestApk(String... dimensions) {
+        @SuppressWarnings("ConstantConditions")
+        Packaging packaging =
+                AndroidGradleOptions.DEFAULT_USE_OLD_PACKAGING
+                        ? Packaging.OLD_PACKAGING
+                        : Packaging.NEW_PACKAGING;
+
+        return getTestApk(packaging, dimensions);
     }
 
     /**
@@ -631,8 +612,7 @@ public class GradleTestProject implements TestRule {
      *   - build type
      *   - other modifiers (e.g. "unsigned", "aligned")
      */
-    public File getAar(String ... dimensions) {
-        // TODO: Add overload for tests and splits.
+    public File getAar(String... dimensions) {
         List<String> dimensionList = Lists.newArrayListWithExpectedSize(1 + dimensions.length);
         dimensionList.add(getName());
         dimensionList.addAll(Arrays.asList(dimensions));
@@ -656,30 +636,22 @@ public class GradleTestProject implements TestRule {
     /**
      * Returns a string that contains the gradle buildscript content
      */
-    public String getGradleBuildscript() {
+    public static String getGradleBuildscript() {
         return "apply from: \"../commonHeader.gradle\"\n" +
-               "buildscript { apply from: \"../commonBuildScript" +
-               (experimentalMode ? "Experimental" : "") + ".gradle\", to: buildscript }\n" +
+               "buildscript { apply from: \"../commonBuildScript.gradle\" }\n" +
                "\n" +
                "apply from: \"../commonLocalRepo.gradle\"\n";
     }
 
-    /**
-     * Return a list of all task names of the project.
-     */
-    public List<String> getTaskList() {
-        ProjectConnection connection = getProjectConnection();
-        try {
-            GradleProject project = connection.getModel(GradleProject.class);
-            List<String> tasks = Lists.newArrayList();
-            for (GradleTask gradleTask : project.getTasks()) {
-                tasks.add(gradleTask.getName());
-            }
-            return tasks;
-        } finally {
-            connection.close();
-        }
+    /** Fluent method to run a build. */
+    public RunGradleTasks executor() {
+        return new RunGradleTasks(this, getProjectConnection());
+    }
 
+    /** Fluent method to get the model. */
+    @NonNull
+    public BuildModel model() {
+        return new BuildModel(this, getProjectConnection());
     }
 
     /**
@@ -687,83 +659,40 @@ public class GradleTestProject implements TestRule {
      *
      * @param tasks Variadic list of tasks to execute.
      */
-    public void execute(String ... tasks) {
-        execute(AndroidProject.class,
-                Collections.<String>emptyList(),
-                false,
-                false,
-                EXPECT_SUCCESS,
-                tasks);
+    public void execute(@NonNull String... tasks) {
+        lastBuild = executor().run(tasks);
     }
 
-    public void execute(@NonNull List<String> arguments, String ... tasks) {
-        execute(AndroidProject.class,
-                arguments,
-                false,
-                false,
-                EXPECT_SUCCESS,
-                tasks);
+
+    public void execute(@NonNull List<String> arguments, @NonNull String... tasks) {
+        lastBuild = executor().withArguments(arguments).run(tasks);
     }
 
     public void executeWithBenchmark(
             @NonNull String benchmarkName,
             @NonNull BenchmarkMode benchmarkMode,
-            String ... tasks) {
-        List<String> arguments = ImmutableList.of(
-                "-P" + RECORD_BENCHMARK_NAME + "=" + benchmarkName,
-                "-P" + RECORD_BENCHMARK_MODE + "=" + benchmarkMode.name().toLowerCase(Locale.US)
-        );
-        execute(AndroidProject.class,
-                arguments,
-                false,
-                false,
-                EXPECT_SUCCESS,
-                tasks);
+            @NonNull String... tasks) {
+        lastBuild = executor().recordBenchmark(benchmarkName, benchmarkMode).run(tasks);
     }
 
     public GradleConnectionException executeExpectingFailure(@NonNull String... tasks) {
-        return executeExpectingFailure(Collections.<String>emptyList(), tasks);
+        lastBuild =  executor().expectFailure().run(tasks);
+        return lastBuild.getException();
     }
 
     public GradleConnectionException executeExpectingFailure(
             @NonNull final List<String> arguments,
-            final String... tasks) {
-        final ReferenceHolder<GradleConnectionException> result = ReferenceHolder.empty();
-
-        execute(AndroidProject.class,
-                arguments,
-                false /*returnModel*/,
-                false /*emulateStudio_1_0*/,
-                new ResultHandler<Void>() {
-                    @Override
-                    public void onComplete(Void aVoid) {
-                        throw new AssertionError(
-                                String.format(
-                                        "Expecting build to fail:\n" +
-                                                "    Tasks:     %s\n" +
-                                                "    Arguments: %s",
-                                        Joiner.on(' ').join(tasks),
-                                        Joiner.on(' ').join(arguments)));
-                    }
-
-                    @Override
-                    public void onFailure(GradleConnectionException e) {
-                        //noinspection ThrowableResultOfMethodCallIgnored
-                        result.setValue(e);
-                    }
-                },
-                tasks);
-
-        return result.getValue();
+            @NonNull String... tasks) {
+        lastBuild = executor().expectFailure().withArguments(arguments).run(tasks);
+        return lastBuild.getException();
     }
 
     public void executeConnectedCheck() {
-        executeConnectedCheck(Collections.<String>emptyList());
+        lastBuild = executor().executeConnectedCheck();
     }
 
-    public void executeConnectedCheck(List<String> arguments) {
-        //noinspection VariableNotUsedInsideIf
-        execute(arguments, REMOTE_TEST_PROVIDER == null ? "connectedCheck" : "deviceCheck");
+    public void executeConnectedCheck(@NonNull List<String> arguments) {
+        lastBuild = executor().withArguments(arguments).executeConnectedCheck();
     }
 
     /**
@@ -774,8 +703,9 @@ public class GradleTestProject implements TestRule {
      * @return the AndroidProject model for the project.
      */
     @NonNull
-    public AndroidProject executeAndReturnModel(String ... tasks) {
-        return executeAndReturnModel(false, tasks);
+    public AndroidProject executeAndReturnModel(@NonNull String... tasks) {
+        lastBuild = executor().run(tasks);
+        return model().getSingle();
     }
 
     /**
@@ -788,30 +718,30 @@ public class GradleTestProject implements TestRule {
      * @return the model for the project with the specified type.
      */
     @NonNull
-    public <T> T executeAndReturnModel(Class<T> modelClass, String ... tasks) {
-        return this.executeAndReturnModel(modelClass, false, tasks);
+    public <T> T executeAndReturnModel(Class<T> modelClass, String... tasks) {
+        lastBuild = executor().run(tasks);
+        return model().getSingle(modelClass);
     }
 
     /**
      * Runs gradle on the project, and returns the project model.  Throws exception on failure.
      *
-     * @param emulateStudio_1_0 whether to emulate an older IDE (studio 1.0) querying the model.
+     * @param modelLevel whether to emulate an older IDE (studio 1.0) querying the model.
      * @param tasks Variadic list of tasks to execute.
      *
      * @return the AndroidProject model for the project.
      */
     @NonNull
-    public AndroidProject executeAndReturnModel(boolean emulateStudio_1_0, String ... tasks) {
-        //noinspection ConstantConditions
-        return execute(AndroidProject.class, Collections.<String>emptyList(), true, emulateStudio_1_0,
-                EXPECT_SUCCESS, tasks);
+    public AndroidProject executeAndReturnModel(int modelLevel, String... tasks) {
+        lastBuild = executor().run(tasks);
+        return model().level(modelLevel).getSingle();
     }
 
     /**
      * Runs gradle on the project, and returns the project model.  Throws exception on failure.
      *
      * @param modelClass Class of the model to return
-     * @param emulateStudio_1_0 whether to emulate an older IDE (studio 1.0) querying the model.
+     * @param modelLevel whether to emulate an older IDE (studio 1.0) querying the model.
      * @param tasks Variadic list of tasks to execute.
      *
      * @return the AndroidProject model for the project.
@@ -819,11 +749,10 @@ public class GradleTestProject implements TestRule {
     @NonNull
     public <T> T executeAndReturnModel(
             Class<T> modelClass,
-            boolean emulateStudio_1_0,
-            String ... tasks) {
-        //noinspection ConstantConditions
-        return execute(modelClass, Collections.<String>emptyList(), true, emulateStudio_1_0,
-                EXPECT_SUCCESS, tasks);
+            int modelLevel,
+            String... tasks) {
+        lastBuild = executor().run(tasks);
+        return model().level(modelLevel).getSingle(modelClass);
     }
 
     /**
@@ -835,398 +764,30 @@ public class GradleTestProject implements TestRule {
      * @return the AndroidProject model for the project.
      */
     @NonNull
-    public Map<String, AndroidProject> executeAndReturnMultiModel(String ... tasks) {
-        return executeAndReturnMultiModel(false, tasks);
+    public Map<String, AndroidProject> executeAndReturnMultiModel(String... tasks) {
+        lastBuild = executor().run(tasks);
+        return model().getMulti();
     }
 
     /**
-     * Runs gradle on the project, and returns a project model for each sub-project.
-     * Throws exception on failure.
+     * Return the stdout from the last execute command.
      *
-     * @param tasks Variadic list of tasks to execute.
-     *
-     * @return the AndroidProject model for the project.
+     * @deprecated  use {@link GradleBuildResult#getStdout()} ()} instead.
      */
+    @Deprecated
+    public String getStdout() {
+        return lastBuild.getStdout();
+    }
+
+    /**
+     * Return the stderr from the last execute command.
+     *
+     * @deprecated  use {@link GradleBuildResult#getStderr()} instead.
+     */
+    @Deprecated
     @NonNull
-    public <T> Map<String, T> executeAndReturnMultiModel(Class<T> modelClass, String ... tasks) {
-        return executeAndReturnMultiModel(modelClass, false, tasks);
-    }
-
-    /**
-     * Runs gradle on the project, and returns a AndroidProject model for each sub-project.
-     * Throws exception on failure.
-     *
-     * @param emulateStudio_1_0 whether to emulate an older IDE (studio 1.0) querying the model.
-     * @param tasks Variadic list of tasks to execute.
-     *
-     * @return the AndroidProject model for the project.
-     */
-    @NonNull
-    public Map<String, AndroidProject> executeAndReturnMultiModel(
-            boolean emulateStudio_1_0,
-            String ... tasks) {
-        return executeAndReturnMultiModel(AndroidProject.class, emulateStudio_1_0, tasks);
-    }
-
-    /**
-     * Runs gradle on the project, and returns a project model for each sub-project.
-     * Throws exception on failure.
-     *
-     * @param modelClass Class of the model to return
-     * @param emulateStudio_1_0 whether to emulate an older IDE (studio 1.0) querying the model.
-     * @param tasks Variadic list of tasks to execute.
-     *
-     * @return the AndroidProject model for the project.
-     */
-    @NonNull
-    public <T> Map<String, T> executeAndReturnMultiModel(
-            Class<T> modelClass,
-            boolean emulateStudio_1_0,
-            String ... tasks) {
-        ProjectConnection connection = getProjectConnection();
-        try {
-            executeBuild(Collections.<String>emptyList(), connection, tasks,
-                    EXPECT_SUCCESS);
-
-            // TODO: Make buildModel multithreaded all the time.
-            // Getting multiple NativeAndroidProject results in duplicated class implemented error
-            // in a multithreaded environment.  This is due to issues in Gradle relating to the
-            // automatic generation of the implementation class of NativeSourceSet.  Make this
-            // multithreaded when the issue is resolved.
-            boolean isMultithreaded = !NativeAndroidProject.class.equals(modelClass);
-
-            return buildModel(
-                    connection,
-                    new GetAndroidModelAction<T>(modelClass, isMultithreaded),
-                    emulateStudio_1_0,
-                    null,
-                    null);
-
-        } finally {
-            connection.close();
-        }
-    }
-
-    /**
-     * Returns the project model without building.
-     *
-     * This will fail if the project is a multi-project setup or if there are any sync issues
-     * while loading the project.
-     */
-    @NonNull
-    public AndroidProject getSingleModel() {
-        return getSingleModel(false /* emulateStudio_1_0 */, true /*assertNodSyncIssues */);
-    }
-
-    /**
-     * Returns the project model without building, querying it the way Studio 1.0 does.
-     *
-     * This will fail if the project is a multi-project setup or if there are any sync issues
-     * while loading the project.
-     */
-    @NonNull
-    public AndroidProject getSingleModelAsStudio1() {
-        return getSingleModel(true /* emulateStudio_1_0 */, true /*assertNodSyncIssues */);
-    }
-
-    /**
-     * Returns the project model without building.
-     *
-     * This will fail if the project is a multi-project setup.
-     */
-    @NonNull
-    public AndroidProject getSingleModelIgnoringSyncIssues() {
-        return getSingleModel(false /* emulateStudio_1_0 */, false /*assertNodSyncIssues */);
-    }
-
-    /**
-     * Returns the project model without building.
-     *
-     * This will fail if the project is a multi-project setup.
-     *
-     * @param emulateStudio_1_0 whether to emulate an older IDE (studio 1.0) querying the model.
-     * @param assertNoSyncIssues true if the presence of sync issues during the model evaluation
-     *                           should raise a {@link AssertionError}s
-     */
-    @NonNull
-    private AndroidProject getSingleModel(boolean emulateStudio_1_0, boolean assertNoSyncIssues) {
-        ProjectConnection connection = getProjectConnection();
-        try {
-            Map<String, AndroidProject> modelMap = buildModel(
-                    connection,
-                    new GetAndroidModelAction<AndroidProject>(AndroidProject.class),
-                    emulateStudio_1_0,
-                    null,
-                    null);
-
-            // ensure there was only one project
-            assertEquals("Quering GradleTestProject.getModel() with multi-project settings",
-                    1, modelMap.size());
-
-            AndroidProject androidProject = modelMap.get(":");
-            if (assertNoSyncIssues) {
-                assertNoSyncIssues(androidProject);
-            }
-            return androidProject;
-        } finally {
-            connection.close();
-        }
-    }
-
-    /**
-     * Returns a project model for each sub-project without building generating a
-     * {@link AssertionError} if any sync issue is raised during the model loading.
-     */
-    @NonNull
-    public Map<String, AndroidProject> getAllModels() {
-        return getAllModelsWithBenchmark(null, null);
-    }
-
-    /**
-     * Returns a project model for each sub-project without building generating a
-     * @param benchmarkName optional benchmark name to pass to Gradle
-     * @param benchmarkMode optional benchmark mode to pass to gradle.
-
-     * {@link AssertionError} if any sync issue is raised during the model loading.
-     */
-    @NonNull
-    public Map<String, AndroidProject> getAllModelsWithBenchmark(
-            @Nullable String benchmarkName,
-            @Nullable BenchmarkMode benchmarkMode) {
-        Map<String, AndroidProject> allModels = getAllModels(
-                new GetAndroidModelAction<AndroidProject>(AndroidProject.class),
-                false,
-                benchmarkName,
-                benchmarkMode);
-        for (AndroidProject project : allModels.values()) {
-            assertNoSyncIssues(project);
-        }
-        return allModels;
-    }
-
-
-    private static void assertNoSyncIssues(AndroidProject project) {
-        if (!project.getSyncIssues().isEmpty()) {
-            StringBuilder msg = new StringBuilder();
-            msg.append("Project ")
-                    .append(project.getName())
-                    .append(" had sync issues :\n");
-            for (SyncIssue syncIssue : project.getSyncIssues()) {
-                msg.append(syncIssue);
-                msg.append("\n");
-            }
-            fail(msg.toString());
-        }
-    }
-
-    /**
-     * Returns a project model for each sub-project without building and ignoring potential sync
-     * issues. Sync issues will still be returned for each {@link AndroidProject} that failed to
-     * sync properly.
-     */
-    @NonNull
-    public Map<String, AndroidProject> getAllModelsIgnoringSyncIssues() {
-        return getAllModels(new GetAndroidModelAction<AndroidProject>(AndroidProject.class), false, null, null);
-    }
-
-    /**
-     * Returns a project model for each sub-project without building.
-     *
-     * @param action the build action to gather the model
-     * @param emulateStudio_1_0 whether to emulate an older IDE (studio 1.0) querying the model.
-     * @param benchmarkName optional benchmark name to pass to Gradle
-     * @param benchmarkMode optional benchmark mode to pass to gradle.
-     */
-    @NonNull
-    public <K, V> Map<K, V> getAllModels(
-            @NonNull BuildAction<Map<K, V>> action,
-            boolean emulateStudio_1_0,
-            @Nullable String benchmarkName,
-            @Nullable BenchmarkMode benchmarkMode) {
-        ProjectConnection connection = getProjectConnection();
-        try {
-            return buildModel(connection, action, emulateStudio_1_0, benchmarkName, benchmarkMode);
-
-        } finally {
-            connection.close();
-        }
-    }
-
-    /**
-     * Runs gradle on the project.  Throws exception on failure.
-     *
-     * @param arguments List of arguments for the gradle command.
-     * @param returnModel whether the model should be queried and returned.
-     * @param emulateStudio_1_0 whether to emulate an older IDE (studio 1.0) querying the model.
-     * @param resultHandler Result handler that should verify the result (either success or failure
-     *                      is what the caller expects.
-     * @param tasks Variadic list of tasks to execute.
-     *
-     * @return the model, if <var>returnModel</var> was true, null otherwise
-     */
-    @Nullable
-    private <T> T execute(
-            Class<T> type,
-            @NonNull List<String> arguments,
-            boolean returnModel,
-            boolean emulateStudio_1_0,
-            ResultHandler<Void> resultHandler,
-            @NonNull String ... tasks) {
-        ProjectConnection connection = getProjectConnection();
-        try {
-            executeBuild(arguments, connection, tasks, resultHandler);
-
-            if (returnModel) {
-                Map<String, T> modelMap = this.buildModel(
-                        connection,
-                        new GetAndroidModelAction<T>(type),
-                        emulateStudio_1_0,
-                        null,
-                        null);
-
-                // ensure there was only one project
-                assertEquals("Quering GradleTestProject.getModel() with multi-project settings",
-                        1, modelMap.size());
-
-                return modelMap.get(":");
-            }
-        } finally {
-            connection.close();
-        }
-
-        return null;
-    }
-
-    private static void syncFileSystem() {
-        try {
-            if (System.getProperty("os.name").contains("Linux")) {
-                if (Runtime.getRuntime().exec("/bin/sync").waitFor() != 0) {
-                    throw new IOException("Failed to sync file system.");
-                }
-            }
-        } catch (IOException e) {
-            System.err.println(Throwables.getStackTraceAsString(e));
-        } catch (InterruptedException e) {
-            System.err.println(Throwables.getStackTraceAsString(e));
-        }
-    }
-
-    private void executeBuild(
-            final List<String> arguments,
-            ProjectConnection connection,
-            final String[] tasks,
-            ResultHandler<Void> resultHandler) {
-        syncFileSystem();
-        List<String> args = Lists.newArrayListWithCapacity(5 + arguments.size());
-        args.add("-i");
-        args.add("-u");
-        args.add("-Pcom.android.build.gradle.integratonTest.useJack=" + Boolean.toString(useJack));
-        args.add("-Pcom.android.build.gradle.integratonTest.minifyEnabled=" +
-                Boolean.toString(minifyEnabled));
-        args.add("-Pcom.android.build.gradle.integratonTest.useComponentModel=" +
-                Boolean.toString(experimentalMode));
-        args.addAll(arguments);
-
-        BuildLauncher launcher = connection.newBuild()
-                .forTasks(tasks)
-                .withArguments(Iterables.toArray(args, String.class));
-
-        setJvmArguments(launcher);
-
-        if (stdout != null) {
-            launcher.setStandardOutput(stdout);
-        }
-        if (stderr != null) {
-            launcher.setStandardError(stderr);
-        }
-
-        launcher.run(resultHandler);
-    }
-
-    private void setJvmArguments(LongRunningOperation launcher) {
-        List<String> jvmArguments = new ArrayList<String>();
-
-        if (!Strings.isNullOrEmpty(heapSize)) {
-            jvmArguments.add("-Xmx" + heapSize);
-        }
-
-        jvmArguments.add("-XX:MaxPermSize=1024m");
-
-        String debugIntegrationTest = System.getenv("DEBUG_INNER_TEST");
-        if (!Strings.isNullOrEmpty(debugIntegrationTest)) {
-            jvmArguments.add("-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5006");
-        }
-
-        if (JacocoAgent.isJacocoEnabled()) {
-            jvmArguments.add(JacocoAgent.getJvmArg());
-        }
-
-        launcher.setJvmArguments(Iterables.toArray(jvmArguments, String.class));
-    }
-
-    /**
-     * Returns a project model for each sub-project without building.
-     * @param connection the opened ProjectConnection
-     * @param action the build action to gather the model
-     * @param emulateStudio_1_0 whether to emulate an older IDE (studio 1.0) querying the model.
-     * @param benchmarkName optional benchmark name to pass to Gradle
-     * @param benchmarkMode optional benchmark mode to pass to gradle.
-     */
-    @NonNull
-    private <K,V> Map<K, V> buildModel(
-            @NonNull ProjectConnection connection,
-            @NonNull BuildAction<Map<K, V>> action,
-            boolean emulateStudio_1_0,
-            @Nullable String benchmarkName,
-            @Nullable BenchmarkMode benchmarkMode) {
-
-        BuildActionExecuter<Map<K, V>> executor = connection.action(action);
-
-        List<String> arguments = Lists.newArrayListWithCapacity(5);
-        arguments.add("-P" + AndroidProject.PROPERTY_BUILD_MODEL_ONLY + "=true");
-        arguments.add("-P" + AndroidProject.PROPERTY_INVOKED_FROM_IDE + "=true");
-        if (!emulateStudio_1_0) {
-            arguments.add("-P" + AndroidProject.PROPERTY_BUILD_MODEL_ONLY_ADVANCED + "=true");
-        }
-        if (benchmarkName != null) {
-            arguments.add("-P" + RECORD_BENCHMARK_NAME + "=" + benchmarkName);
-            if (benchmarkMode != null) {
-                arguments.add("-P" + RECORD_BENCHMARK_MODE + "=" + benchmarkMode.name().toLowerCase(Locale.US));
-            }
-        }
-
-        setJvmArguments(executor);
-
-        executor.withArguments(Iterables.toArray(arguments, String.class));
-
-        executor.setStandardOutput(System.out);
-        executor.setStandardError(System.err);
-
-        return executor.run();
-    }
-
-    /**
-     * Return the stdout from all execute command.
-     */
-    public ByteArrayOutputStream getStdout() {
-        return stdout;
-    }
-
-    /** @see #getStdout() */
-    public String getStdoutString() throws UnsupportedEncodingException {
-        return stdout.toString(Charsets.UTF_8.name());
-    }
-
-    /**
-     * Return the stderr from all execute command.
-     */
-    public ByteArrayOutputStream getStderr() {
-        return stderr;
-    }
-
-    /** @see #getStderr() */
-    public String getStderrString() throws UnsupportedEncodingException {
-        return stderr.toString(Charsets.UTF_8.name());
+    public String getStderr() {
+        return lastBuild.getStderr();
     }
 
     /**
@@ -1264,16 +825,23 @@ public class GradleTestProject implements TestRule {
      */
     @NonNull
     private ProjectConnection getProjectConnection() {
+        if (projectConnection != null) {
+            return projectConnection;
+        }
         GradleConnector connector = GradleConnector.newConnector();
 
         // Limit daemon idle time for tests. 10 seconds is enough for another test
         // to start and reuse the daemon.
         ((DefaultGradleConnector) connector).daemonMaxIdleTime(10, TimeUnit.SECONDS);
 
-        return connector
+        projectConnection = connector
                 .useGradleVersion(targetGradleVersion)
                 .forProjectDirectory(testDir)
                 .connect();
+
+        rootProject.openConnections.add(projectConnection);
+
+        return projectConnection;
     }
 
     private static File createLocalProp(
@@ -1299,21 +867,21 @@ public class GradleTestProject implements TestRule {
         Files.write(Joiner.on('\n').join(gradleProperties), propertyFile, Charset.defaultCharset());
     }
 
-
-    public static void assumeLocalDevice() {
-        Assume.assumeTrue(
-                "Install task not run against device provider",
-                GradleTestProject.REMOTE_TEST_PROVIDER == null);
+    @Nullable
+    String getHeapSize() {
+        return heapSize;
     }
 
-    public static void assumeBuildToolsAtLeast(int major) {
-        assumeBuildToolsAtLeast(
-                major, Revision.IMPLICIT_MINOR_REV, Revision.IMPLICIT_MICRO_REV);
+    boolean isUseJack() {
+        return useJack;
     }
 
-    public static void assumeBuildToolsAtLeast(int major, int minor, int micro) {
-        Revision currentVersion = Revision.parseRevision(DEFAULT_BUILD_TOOL_VERSION);
-        Assume.assumeTrue("Test is only applicable to build tools > " + major,
-                new Revision(major, minor, micro).compareTo(currentVersion) < 0);
+    boolean isMinifyEnabled() {
+        return minifyEnabled;
     }
+
+    public File getLocalProp() {
+        return localProp;
+    }
+
 }

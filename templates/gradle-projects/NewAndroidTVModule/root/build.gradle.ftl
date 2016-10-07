@@ -59,10 +59,5 @@ android {
 }
 
 dependencies {
-    <#if dependencyList?? >
-    <#list dependencyList as dependency>
-    compile '${dependency}'
-    </#list>
-    </#if>
     compile fileTree(dir: 'libs', include: ['*.jar'])
 }

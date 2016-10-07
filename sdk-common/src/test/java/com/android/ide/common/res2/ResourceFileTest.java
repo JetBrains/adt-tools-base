@@ -16,6 +16,7 @@
 
 package com.android.ide.common.res2;
 
+import com.android.ide.common.resources.configuration.FolderConfiguration;
 import com.android.resources.ResourceType;
 
 import junit.framework.TestCase;
@@ -26,8 +27,8 @@ import java.util.Map;
 public class ResourceFileTest extends TestCase {
 
     public void testKeyWithQualifier() {
-        ResourceItem item = new ResourceItem("foo", ResourceType.LAYOUT, null);
-        ResourceFile file = new ResourceFile(new File("res/layout-land/foo.xml"), item, "land");
+        ResourceItem item = new ResourceItem("foo", ResourceType.LAYOUT, null, null);
+        ResourceFile file = ResourceFile.createSingle(new File("res/layout-land/foo.xml"), item, "land");
 
         Map<String, ResourceItem> itemMap = file.getItemMap();
         assertNotNull(itemMap.get("layout-land/foo"));

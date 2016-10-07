@@ -62,7 +62,7 @@ public class ApplicationPatchTest {
     }
 
     @Rule
-    public Expect mExpect = Expect.create();
+    public Expect mExpect = Expect.createAndEnableStackTrace();
 
     @Test
     public void checkApplicationPatchReadWrite() throws IOException {

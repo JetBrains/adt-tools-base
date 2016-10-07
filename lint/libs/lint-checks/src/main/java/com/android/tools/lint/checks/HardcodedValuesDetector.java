@@ -45,6 +45,9 @@ import java.util.Collection;
 /**
  * Check which looks at the children of ScrollViews and ensures that they fill/match
  * the parent width instead of setting wrap_content.
+ * <p>
+ * TODO: Consider looking at the localization="suggested" attribute in the platform attrs.xml
+ * to catch future recommended attributes.
  */
 public class HardcodedValuesDetector extends LayoutDetector {
     /** The main issue discovered by this detector */
@@ -60,8 +63,8 @@ public class HardcodedValuesDetector extends LayoutDetector {
             "* The application cannot be translated to other languages by just adding new " +
             "translations for existing string resources.\n" +
             "\n" +
-            "In Android Studio and Eclipse there are quickfixes to automatically extract this " +
-            "hardcoded string into a resource lookup.",
+            "There are quickfixes to automatically extract this hardcoded string into a " +
+            "resource lookup.",
 
             Category.I18N,
             5,
@@ -76,12 +79,6 @@ public class HardcodedValuesDetector extends LayoutDetector {
     public HardcodedValuesDetector() {
     }
 
-    @NonNull
-    @Override
-    public Speed getSpeed() {
-        return Speed.FAST;
-    }
-
     @Override
     public Collection<String> getApplicableAttributes() {
         return Arrays.asList(
@@ -91,6 +88,8 @@ public class HardcodedValuesDetector extends LayoutDetector {
                 ATTR_HINT,
                 ATTR_LABEL,
                 ATTR_PROMPT,
+                "textOn",
+                "textOff",
 
                 // Menus
                 ATTR_TITLE,

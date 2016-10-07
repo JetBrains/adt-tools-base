@@ -21,6 +21,7 @@ import com.android.annotations.Nullable;
 import com.android.ide.common.internal.LoggedErrorException;
 import com.android.ide.common.internal.WaitableExecutor;
 import com.android.ide.common.process.ProcessException;
+import com.google.common.collect.ImmutableList;
 
 import java.io.File;
 import java.io.IOException;
@@ -37,10 +38,12 @@ public class SourceSearcher {
     private final String[] mExtensions;
     @Nullable
     private WaitableExecutor<Void> mExecutor;
+    private boolean initialized = false;
 
     public interface SourceFileProcessor {
         void processFile(@NonNull File sourceFolder, @NonNull File sourceFile)
                 throws ProcessException, IOException;
+        void initOnFirstFile();
     }
 
     public SourceSearcher(@NonNull List<File> sourceFolders, String... extensions) {
@@ -48,9 +51,14 @@ public class SourceSearcher {
         mExtensions = extensions;
     }
 
+    public SourceSearcher(@NonNull File sourceFolder, String... extensions) {
+        mSourceFolders = ImmutableList.of(sourceFolder);
+        mExtensions = extensions;
+    }
+
     public void setUseExecutor(boolean useExecutor) {
         if (useExecutor) {
-            mExecutor = new WaitableExecutor<Void>();
+            mExecutor = WaitableExecutor.useGlobalSharedThreadPool();
         } else {
             mExecutor = null;
         }
@@ -77,6 +85,10 @@ public class SourceSearcher {
         if (file.isFile()) {
             // get the extension of the file.
             if (checkExtension(file)) {
+                if (!initialized) {
+                    processor.initOnFirstFile();
+                    initialized = true;
+                }
                 if (mExecutor != null) {
                     mExecutor.execute(new Callable<Void>() {
                         @Override
@@ -105,7 +117,7 @@ public class SourceSearcher {
         }
 
         String filename = file.getName();
-        int pos = filename.indexOf('.');
+        int pos = filename.lastIndexOf('.');
         if (pos != -1) {
             String extension = filename.substring(pos + 1);
             for (String ext : mExtensions) {

@@ -20,11 +20,8 @@ import com.android.annotations.NonNull;
 
 import org.gradle.model.Managed;
 import org.gradle.model.ModelMap;
-import org.gradle.model.ModelSet;
-import org.gradle.model.Unmanaged;
 
 import java.io.File;
-import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
@@ -42,6 +39,11 @@ public interface NativeBuildConfig {
     Set<File> getBuildFiles();
 
     /**
+     * List of commands to clean the build.
+     */
+    List<String> getCleanCommands();
+
+    /**
      * Configurations for each native artifact.
      */
     @NonNull
@@ -53,8 +55,11 @@ public interface NativeBuildConfig {
     @NonNull
     ModelMap<NativeToolchain> getToolchains();
 
+    /**
+     * Lowercase 'c' because otherwise it would produce CFileExtensions instead of cFileExtensions.
+     */
     @NonNull
-    List<String> getCFileExtensions();
+    List<String> getcFileExtensions();
 
     @NonNull
     List<String> getCppFileExtensions();

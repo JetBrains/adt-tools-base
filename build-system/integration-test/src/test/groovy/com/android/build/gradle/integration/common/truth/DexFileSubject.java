@@ -37,6 +37,7 @@ import org.xml.sax.SAXException;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.Reader;
 
 import javax.xml.parsers.ParserConfigurationException;
 
@@ -59,6 +60,7 @@ public class DexFileSubject extends Subject<DexFileSubject, File> {
 
     /**
      * @deprecated TODO: Separate out utils for dealing with dex files from truth subjects.
+     * @see #hasClass(String)
      */
     @Deprecated
     public boolean containsClass(String className) throws IOException, ProcessException {
@@ -69,7 +71,7 @@ public class DexFileSubject extends Subject<DexFileSubject, File> {
             throws ProcessException, IOException {
         final Node classNode = getClassDexDump(className);
         if (assertSubjectIsNonNull() && classNode == null) {
-            fail("contains class", getSubject(), className);
+            fail("contains class", className);
         }
         return new IndirectSubject<DexClassSubject>() {
             @NonNull
@@ -134,9 +136,8 @@ public class DexFileSubject extends Subject<DexFileSubject, File> {
         builder.setExecutable(dexDumpExe);
         builder.addArgs("-l", "xml", "-d", file.getAbsolutePath());
 
-        String output = ApkHelper.runAndGetRawOutput(builder.createProcess(), executor);
-        try {
-            return XmlUtils.parseDocument(output, false).getChildNodes().item(0);
+        try (Reader reader = ApkHelper.runAndGetRawOutput(builder.createProcess(), executor)) {
+            return XmlUtils.parseDocument(reader, false).getChildNodes().item(0);
         } catch (ParserConfigurationException e) {
             throw new IOException(e);
         } catch (SAXException e) {

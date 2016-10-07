@@ -1,0 +1,10 @@
+/bin
+/build
+output.xml
+.gradle
+build
+.idea
+psi-extractor.iml
+psi-extractor.ipr
+psi-extractor.iws
+run.sh

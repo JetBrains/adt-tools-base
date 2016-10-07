@@ -22,14 +22,15 @@ import com.android.repository.Revision;
 import com.android.repository.api.Dependency;
 import com.android.repository.api.License;
 import com.android.repository.api.LocalPackage;
+import com.android.repository.api.PackageOperation;
 import com.android.repository.api.ProgressIndicator;
 import com.android.repository.api.RemotePackage;
 import com.android.repository.api.RepoManager;
+import com.android.repository.api.RepoPackage;
 import com.android.repository.api.Repository;
 import com.android.repository.api.RepositorySource;
 import com.android.repository.api.UpdatablePackage;
-import com.android.repository.impl.installer.PackageInstaller;
-import com.android.repository.impl.manager.LocalRepoLoader;
+import com.android.repository.impl.manager.LocalRepoLoaderImpl;
 import com.android.repository.impl.meta.Archive;
 import com.android.repository.impl.meta.CommonFactory;
 import com.android.repository.impl.meta.LocalPackageImpl;
@@ -41,31 +42,38 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
-
-import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
-import org.apache.commons.compress.archivers.zip.ZipFile;
-
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Collection;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
-
 import javax.xml.bind.JAXBElement;
+import javax.xml.bind.JAXBException;
+import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
+import org.apache.commons.compress.archivers.zip.ZipFile;
 
 /**
- * Utility methods for {@link PackageInstaller} implementations.
+ * Utility methods for {@link PackageOperation} implementations.
  */
 public class InstallerUtil {
+
+    /**
+     * The name of the package metadata file for a package in the process of being installed.
+     */
+    public static final String PENDING_PACKAGE_XML_FN = "package.xml.pending";
+    public static final String INSTALLER_DIR_FN = ".installer";
 
     /**
      * Unzips the given zipped input stream into the given directory.
@@ -87,58 +95,119 @@ public class InstallerUtil {
         in = fop.ensureRealFile(in);
 
         progress.setText("Unzipping...");
-        double fraction = 0;
         ZipFile zipFile = new ZipFile(in);
-        Enumeration entries = zipFile.getEntries();
-        while (entries.hasMoreElements()) {
-            ZipArchiveEntry entry = (ZipArchiveEntry) entries.nextElement();
-            String name = entry.getName();
-            File entryFile = new File(out, name);
-            progress.setSecondaryText(name);
-            if (entry.isDirectory()) {
-                if (!fop.exists(entryFile)) {
-                    if (!fop.mkdirs(entryFile)) {
-                        progress.logWarning("failed to mkdirs " + entryFile);
+        try {
+            Enumeration entries = zipFile.getEntries();
+            progress.setFraction(0);
+            while (entries.hasMoreElements()) {
+                ZipArchiveEntry entry = (ZipArchiveEntry) entries.nextElement();
+                String name = entry.getName();
+                File entryFile = new File(out, name);
+                progress.setSecondaryText(name);
+                if (entry.isUnixSymlink()) {
+                    ByteArrayOutputStream targetByteStream = new ByteArrayOutputStream();
+                    readZipEntry(zipFile, entry, targetByteStream, expectedSize, progress);
+                    Path linkPath = fop.toPath(entryFile);
+                    Path linkTarget = fop.toPath(new File(targetByteStream.toString()));
+                    Files.createSymbolicLink(linkPath, linkTarget);
+                } else if (entry.isDirectory()) {
+                    if (!fop.exists(entryFile)) {
+                        if (!fop.mkdirs(entryFile)) {
+                            progress.logWarning("failed to mkdirs " + entryFile);
+                        }
                     }
-                }
-            } else {
-                if (!fop.exists(entryFile)) {
-                    File parent = entryFile.getParentFile();
-                    if (parent != null && !fop.exists(parent)) {
-                        fop.mkdirs(parent);
+                } else {
+                    if (!fop.exists(entryFile)) {
+                        File parent = entryFile.getParentFile();
+                        if (parent != null && !fop.exists(parent)) {
+                            fop.mkdirs(parent);
+                        }
+                        if (!fop.createNewFile(entryFile)) {
+                            throw new IOException("Failed to create file " + entryFile);
+                        }
                     }
-                    if (!fop.createNewFile(entryFile)) {
-                        throw new IOException("Failed to create file " + entryFile);
-                    }
-                }
 
-                int size;
-                byte[] buf = new byte[8192];
-                BufferedOutputStream bos = new BufferedOutputStream(
-                        fop.newFileOutputStream(entryFile));
-                InputStream s = new BufferedInputStream(zipFile.getInputStream(entry));
-                try {
-                    while ((size = s.read(buf)) > -1) {
-                        bos.write(buf, 0, size);
-                        fraction += ((double) entry.getCompressedSize() / expectedSize) *
-                                ((double) size / entry.getSize());
-                        progress.setFraction(fraction);
+                    OutputStream unzippedOutput = fop.newFileOutputStream(entryFile);
+                    if (readZipEntry(zipFile, entry, unzippedOutput, expectedSize, progress)) {
+                        return;
                     }
-                } finally {
-                    bos.close();
-                    s.close();
-                }
-                if (!fop.isWindows()) {
-                    // get the mode and test if it contains the executable bit
-                    int mode = entry.getUnixMode();
-                    if ((mode & 0111) != 0) {
-                        try {
-                            fop.setExecutablePermission(entryFile);
-                        } catch (IOException ignore) {}
+                    if (!fop.isWindows()) {
+                        // get the mode and test if it contains the executable bit
+                        int mode = entry.getUnixMode();
+                        //noinspection OctalInteger
+                        if ((mode & 0111) != 0) {
+                            try {
+                                fop.setExecutablePermission(entryFile);
+                            } catch (IOException ignore) {
+                            }
+                        }
                     }
                 }
             }
         }
+        finally {
+            ZipFile.closeQuietly(zipFile);
+        }
+    }
+
+    private static boolean readZipEntry(ZipFile zipFile, ZipArchiveEntry entry, OutputStream dest,
+            long expectedSize, @NonNull ProgressIndicator progress) throws IOException {
+        int size;
+        byte[] buf = new byte[8192];
+        double fraction = progress.getFraction();
+        try (BufferedOutputStream bufferedDest = new BufferedOutputStream(dest);
+             InputStream s = new BufferedInputStream(zipFile.getInputStream(entry))) {
+            while ((size = s.read(buf)) > -1) {
+                bufferedDest.write(buf, 0, size);
+                fraction += ((double) entry.getCompressedSize() / expectedSize) *
+                        ((double) size / entry.getSize());
+                progress.setFraction(fraction);
+                if (progress.isCanceled()) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    public static void writePendingPackageXml(@NonNull RepoPackage p, @NonNull File packageRoot,
+            @NonNull RepoManager manager, @NonNull FileOp fop, @NonNull ProgressIndicator progress)
+            throws IOException {
+        if (!fop.exists(packageRoot) || !fop.isDirectory(packageRoot)) {
+            throw new IllegalArgumentException("packageRoot must exist and be a directory.");
+        }
+        CommonFactory factory = p.createFactory();
+        // Create the package.xml
+        Repository repo = factory.createRepositoryType();
+        License license = p.getLicense();
+        if (license != null) {
+            repo.addLicense(license);
+        }
+
+        p.asMarshallable().addTo(repo);
+
+        File packageXml = new File(packageRoot, PENDING_PACKAGE_XML_FN);
+        writeRepoXml(manager, repo, packageXml, fop, progress);
+    }
+
+    @Nullable
+    public static Repository readPendingPackageXml(@NonNull File containingDir,
+            @NonNull RepoManager manager, @NonNull FileOp fop,
+            @NonNull ProgressIndicator progress) throws IOException {
+        Repository repo;
+        try {
+            File xmlFile = new File(containingDir, PENDING_PACKAGE_XML_FN);
+            if (!fop.exists(xmlFile)) {
+                return null;
+            }
+            repo = (Repository) SchemaModuleUtil.unmarshal(
+                    fop.newFileInputStream(xmlFile),
+                    manager.getSchemaModules(), manager.getResourceResolver(progress), false,
+                    progress);
+        } catch (JAXBException e) {
+            throw new IOException("Failed to parse pending package xml", e);
+        }
+        return repo;
     }
 
     /**
@@ -158,23 +227,28 @@ public class InstallerUtil {
         if (!fop.exists(packageRoot) || !fop.isDirectory(packageRoot)) {
             throw new IllegalArgumentException("packageRoot must exist and be a directory.");
         }
-        CommonFactory factory = (CommonFactory) manager.getCommonModule().createLatestFactory();
+        CommonFactory factory = (CommonFactory) RepoManager.getCommonModule().createLatestFactory();
         // Create the package.xml
         Repository repo = factory.createRepositoryType();
-        LocalPackageImpl impl = LocalPackageImpl.create(p, manager);
-        repo.setLocalPackage(impl);
         License l = p.getLicense();
         if (l != null) {
             repo.addLicense(l);
         }
-        File packageXml = new File(packageRoot, LocalRepoLoader.PACKAGE_XML_FN);
+        LocalPackageImpl impl = LocalPackageImpl.create(p);
+        repo.setLocalPackage(impl);
+        File packageXml = new File(packageRoot, LocalRepoLoaderImpl.PACKAGE_XML_FN);
+        writeRepoXml(manager, repo, packageXml, fop, progress);
+    }
+
+    public static void writeRepoXml(@NonNull RepoManager manager,
+            @NonNull Repository repo, @NonNull File packageXml, @NonNull FileOp fop,
+            @NonNull ProgressIndicator progress) throws IOException {
         OutputStream fos = fop.newFileOutputStream(packageXml);
-        JAXBElement<Repository> element = ((CommonFactory) manager.getCommonModule()
+        JAXBElement<Repository> element = ((CommonFactory) RepoManager.getCommonModule()
                 .createLatestFactory()).generateRepository(repo);
         try {
-            SchemaModuleUtil
-                    .marshal(element, p.getSource().getPermittedModules(), fos,
-                            manager.getResourceResolver(progress), progress);
+            SchemaModuleUtil.marshal(element, manager.getSchemaModules(), fos,
+                    manager.getResourceResolver(progress), progress);
         } finally {
             fos.close();
         }
@@ -192,7 +266,16 @@ public class InstallerUtil {
     public static URL resolveCompleteArchiveUrl(@NonNull RemotePackage p,
             @NonNull ProgressIndicator progress) {
         Archive arch = p.getArchive();
+        if (arch == null) {
+            return null;
+        }
         String urlStr = arch.getComplete().getUrl();
+        return resolveUrl(urlStr, p, progress);
+    }
+
+    @Nullable
+    public static URL resolveUrl(@NonNull String urlStr, @NonNull RemotePackage p,
+            @NonNull ProgressIndicator progress) {
         URL url;
         try {
             url = new URL(urlStr);
@@ -212,14 +295,13 @@ public class InstallerUtil {
             }
         }
         return url;
-
     }
 
     /**
      * Compute the complete list of packages that need to be installed to meet the dependencies of
-     * the given list (including the requested packages themselves, if they are not already installed).
-     * Returns {@code null} if we were unable to compute a complete list of dependencies due to not
-     * being able to find required packages of the specified version.
+     * the given list (including the requested packages themselves, if they are not already
+     * installed). Returns {@code null} if we were unable to compute a complete list of dependencies
+     * due to not being able to find required packages of the specified version.
      *
      * Packages are returned in install order (that is, if we request A which depends on B, the
      * result will be [B, A]). If a dependency cycle is encountered the order of the returned
@@ -241,6 +323,10 @@ public class InstallerUtil {
         Queue<RemotePackage> current = Lists.newLinkedList();
         for (RemotePackage request : requests) {
             UpdatablePackage updatable = consolidatedPackages.get(request.getPath());
+            if (updatable == null) {
+                logger.logWarning(String.format("No package with key %s found!", request.getPath()));
+                return null;
+            }
             if (!updatable.hasLocal() || updatable.isUpdate()) {
                 current.add(request);
                 roots.add(request);
@@ -255,11 +341,6 @@ public class InstallerUtil {
             Collection<Dependency> currentDependencies = currentPackage.getAllDependencies();
             for (Dependency d : currentDependencies) {
                 String dependencyPath = d.getPath();
-                if (seen.contains(dependencyPath)) {
-                    allDependencies.put(dependencyPath, d);
-                    continue;
-                }
-                seen.add(dependencyPath);
                 UpdatablePackage updatableDependency = consolidatedPackages.get(dependencyPath);
                 if (updatableDependency == null) {
                     logger.logWarning(
@@ -273,11 +354,15 @@ public class InstallerUtil {
                 if (r != null) {
                     requiredMinRevision = r.toRevision();
                 }
-                if ((requiredMinRevision == null && localDependency != null) ||
-                        (requiredMinRevision != null && localDependency != null &&
-                                requiredMinRevision.compareTo(localDependency.getVersion()) <= 0)) {
+                if (localDependency != null && (requiredMinRevision == null ||
+                        requiredMinRevision.compareTo(localDependency.getVersion()) <= 0)) {
                     continue;
                 }
+                if (seen.contains(dependencyPath)) {
+                    allDependencies.put(dependencyPath, d);
+                    continue;
+                }
+                seen.add(dependencyPath);
                 RemotePackage remoteDependency = updatableDependency.getRemote();
                 if (remoteDependency == null || (requiredMinRevision != null
                         && requiredMinRevision.compareTo(remoteDependency.getVersion()) > 0)) {
@@ -305,7 +390,14 @@ public class InstallerUtil {
             for (Dependency d : root.getAllDependencies()) {
                 Collection<Dependency> nodeDeps = allDependencies.get(d.getPath());
                 if (nodeDeps.size() == 1) {
-                    roots.add(consolidatedPackages.get(d.getPath()).getRemote());
+                    UpdatablePackage newRoot = consolidatedPackages.get(d.getPath());
+                    if (newRoot == null) {
+                        logger.logWarning(
+                                String.format("Package with key %s not found!", d.getPath()));
+                        return null;
+                    }
+
+                    roots.add(newRoot.getRemote());
                 }
                 nodeDeps.remove(d);
             }
@@ -324,9 +416,8 @@ public class InstallerUtil {
 
     /**
      * Checks to see whether {@code path} is a valid install path. Specifically, checks whether
-     * there are any existing packages installed in parents or children of {@code path}.
-     * Returns {@code true} if the path is valid. Otherwise returns {@code false} and logs a
-     * warning.
+     * there are any existing packages installed in parents or children of {@code path}. Returns
+     * {@code true} if the path is valid. Otherwise returns {@code false} and logs a warning.
      */
     public static boolean checkValidPath(@NonNull File path, @NonNull RepoManager manager,
             @NonNull ProgressIndicator progress) {
@@ -354,8 +445,7 @@ public class InstallerUtil {
                     }
                 }
             }
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             progress.logWarning("Error while trying to check install path validity", e);
             return false;
         }

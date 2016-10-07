@@ -25,6 +25,7 @@ import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Test
 
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
 import static org.junit.Assert.assertEquals
 
 /**
@@ -40,7 +41,7 @@ class FilteredOutBuildTypeTest {
 
     @BeforeClass
     static void setUp() {
-        model = project.executeAndReturnModel("clean", "assembleDebug")
+        model = project.executeAndReturnModel("clean", "assemble")
     }
 
     @AfterClass
@@ -51,6 +52,7 @@ class FilteredOutBuildTypeTest {
 
     @Test
     void "check filtered out variant isn't in model"() {
+        assertThat(project.model().getTaskList()).doesNotContain("assembleDebug")
         // Load the custom model for the project
         assertEquals("Variant Count", 1, model.getVariants().size())
         Variant variant = model.getVariants().iterator().next()

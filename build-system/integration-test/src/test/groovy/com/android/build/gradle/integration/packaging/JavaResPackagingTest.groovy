@@ -15,11 +15,12 @@
  */
 
 package com.android.build.gradle.integration.packaging
-
 import com.android.annotations.NonNull
 import com.android.annotations.Nullable
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
+import com.android.build.gradle.integration.common.fixture.Packaging
 import com.android.build.gradle.integration.common.fixture.TemporaryProjectModification
+import com.android.build.gradle.integration.common.runner.FilterableParameterized
 import com.android.build.gradle.integration.common.truth.AbstractAndroidSubject
 import com.android.utils.FileUtils
 import groovy.transform.CompileStatic
@@ -27,15 +28,25 @@ import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.junit.runners.Parameterized
 
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatAar
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk
-
 /**
  * test for packaging of java resources.
  */
 @CompileStatic
+@RunWith(FilterableParameterized)
 class JavaResPackagingTest {
+    @Parameterized.Parameters(name = "{0}")
+    public static Collection<Object[]> data() {
+        return Packaging.getParameters();
+    }
+
+    @Parameterized.Parameter
+    public Packaging mPackaging;
 
     @Rule
     public GradleTestProject project = GradleTestProject.builder()
@@ -133,9 +144,13 @@ android {
         new File(assetFolder, filename) << content;
     }
 
+    private void execute(String... tasks) {
+        project.executor().withPackaging(mPackaging).run(tasks)
+    }
+
     @Test
     void "test non incremental packaging"() {
-        project.execute("clean", "assembleDebug", "assembleAndroidTest")
+        execute("clean", "assembleDebug", "assembleAndroidTest")
 
         // chek the files are there. Start from the bottom of the dependency graph
         checkAar(    libProject2, "library2.txt",     "library2:abcd")
@@ -167,11 +182,11 @@ android {
 
     @Test
     void "test app project with new res file"() {
-        project.execute("app:clean", "app:assembleDebug")
+        execute("app:clean", "app:assembleDebug")
 
         TemporaryProjectModification.doTest(appProject) {
             it.addFile("src/main/resources/com/foo/newapp.txt", "newfile content");
-            project.execute("app:assembleDebug")
+            execute("app:assembleDebug")
 
             checkApk(appProject, "newapp.txt", "newfile content")
         }
@@ -179,11 +194,11 @@ android {
 
     @Test
     void "test app project with removed res file"() {
-        project.execute("app:clean", "app:assembleDebug")
+        execute("app:clean", "app:assembleDebug")
 
         TemporaryProjectModification.doTest(appProject) {
             it.removeFile("src/main/resources/com/foo/app.txt")
-            project.execute("app:assembleDebug")
+            execute("app:assembleDebug")
 
             checkApk(appProject, "app.txt", null)
         }
@@ -191,11 +206,11 @@ android {
 
     @Test
     void "test app project with modified res file"() {
-        project.execute("app:clean", "app:assembleDebug")
+        execute("app:clean", "app:assembleDebug")
 
         TemporaryProjectModification.doTest(appProject) {
             it.replaceFile("src/main/resources/com/foo/app.txt", "new content")
-            project.execute("app:assembleDebug")
+            execute("app:assembleDebug")
 
             checkApk(appProject, "app.txt", "new content")
         }
@@ -203,60 +218,67 @@ android {
 
     @Test
     void "test app project with new debug res file overriding main"() {
-        project.execute("app:clean", "app:assembleDebug")
+        execute("app:clean", "app:assembleDebug")
 
         TemporaryProjectModification.doTest(appProject) {
             it.addFile("src/debug/resources/com/foo/app.txt", "new content")
-            project.execute("app:assembleDebug")
+            execute("app:assembleDebug")
 
             checkApk(appProject, "app.txt", "new content")
         }
 
         // file's been removed, checking in the other direction.
-        project.execute("app:assembleDebug")
+        execute("app:assembleDebug")
         checkApk(appProject, "app.txt", "app:abcd")
     }
 
     @Test
     void "test app project with new res file overriding dependency"() {
-        project.execute("app:clean", "app:assembleDebug")
+        String resourcePath = "src/main/resources/com/foo/library.txt"
+
+        execute("app:clean", "app:assembleDebug")
+        checkApk(appProject, "library.txt", "library:abcd")
+
 
         TemporaryProjectModification.doTest(appProject) {
-            it.addFile("src/main/resources/com/foo/library.txt", "new content")
-            project.execute("app:assembleDebug")
+            it.addFile(resourcePath, "new content")
+            assertThat(appProject.file(resourcePath)).exists()
+            execute("app:assembleDebug")
 
             checkApk(appProject, "library.txt", "new content")
         }
 
-        // file's been removed, checking in the other direction.
-        project.execute("app:assembleDebug")
-        checkApk(appProject, "library.txt", "library:abcd")
+        // Trying to figure out why the test is flaky?
+        assertThat(appProject.file(resourcePath)).doesNotExist()
 
+        // file's been removed, checking in the other direction.
+        execute("app:assembleDebug")
+        checkApk(appProject, "library.txt", "library:abcd")
     }
 
     @Test
     void "test app project with new res file in debug source set"() {
-        project.execute("app:clean", "app:assembleDebug")
+        execute("app:clean", "app:assembleDebug")
 
         TemporaryProjectModification.doTest(appProject) {
             it.addFile("src/debug/resources/com/foo/app.txt", "new content")
-            project.execute("app:assembleDebug")
+            execute("app:assembleDebug")
 
             checkApk(appProject, "app.txt", "new content")
         }
 
         // file's been removed, checking in the other direction.
-        project.execute("app:assembleDebug")
+        execute("app:assembleDebug")
         checkApk(appProject, "app.txt", "app:abcd")
     }
 
     @Test
     void "test app project with modified res in dependency"() {
-        project.execute("app:clean", "library:clean", "app:assembleDebug")
+        execute("app:clean", "library:clean", "app:assembleDebug")
 
         TemporaryProjectModification.doTest(libProject) {
             it.replaceFile("src/main/resources/com/foo/library.txt", "new content")
-            project.execute("app:assembleDebug")
+            execute("app:assembleDebug")
 
             checkApk(appProject, "library.txt", "new content")
         }
@@ -264,11 +286,11 @@ android {
 
     @Test
     void "test app project with added res in dependency"() {
-        project.execute("app:clean", "library:clean", "app:assembleDebug")
+        execute("app:clean", "library:clean", "app:assembleDebug")
 
         TemporaryProjectModification.doTest(libProject) {
             it.addFile("src/main/resources/com/foo/newlibrary.txt", "new content")
-            project.execute("app:assembleDebug")
+            execute("app:assembleDebug")
 
             checkApk(appProject, "newlibrary.txt", "new content")
         }
@@ -276,11 +298,11 @@ android {
 
     @Test
     void "test app project with removed res in dependency"() {
-        project.execute("app:clean", "library:clean", "app:assembleDebug")
+        execute("app:clean", "library:clean", "app:assembleDebug")
 
         TemporaryProjectModification.doTest(libProject) {
             it.removeFile("src/main/resources/com/foo/library.txt")
-            project.execute("app:assembleDebug")
+            execute("app:assembleDebug")
 
             checkApk(appProject, "library.txt", null)
         }
@@ -290,11 +312,11 @@ android {
 
     @Test
     void "test app project test with new res file"() {
-        project.execute("app:clean", "app:assembleAT")
+        execute("app:clean", "app:assembleAT")
 
         TemporaryProjectModification.doTest(appProject) {
             it.addFile("src/androidTest/resources/com/foo/newapp.txt", "new file content");
-            project.execute("app:assembleAT")
+            execute("app:assembleAT")
 
             checkTestApk(appProject, "newapp.txt", "new file content")
         }
@@ -302,11 +324,11 @@ android {
 
     @Test
     void "test app project test with removed res file"() {
-        project.execute("app:clean", "app:assembleAT")
+        execute("app:clean", "app:assembleAT")
 
         TemporaryProjectModification.doTest(appProject) {
             it.removeFile("src/androidTest/resources/com/foo/apptest.txt")
-            project.execute("app:assembleAT")
+            execute("app:assembleAT")
 
             checkTestApk(appProject, "apptest.txt", null)
         }
@@ -314,11 +336,11 @@ android {
 
     @Test
     void "test app project test with modified res file"() {
-        project.execute("app:clean", "app:assembleAT")
+        execute("app:clean", "app:assembleAT")
 
         TemporaryProjectModification.doTest(appProject) {
             it.replaceFile("src/androidTest/resources/com/foo/apptest.txt", "new content")
-            project.execute("app:assembleAT")
+            execute("app:assembleAT")
 
             checkTestApk(appProject, "apptest.txt", "new content")
         }
@@ -328,11 +350,11 @@ android {
 
     @Test
     void "test lib project with new res file"() {
-        project.execute("library:clean", "library:assembleDebug")
+        execute("library:clean", "library:assembleDebug")
 
         TemporaryProjectModification.doTest(libProject) {
             it.addFile("src/main/resources/com/foo/newlibrary.txt", "newfile content");
-            project.execute("library:assembleDebug")
+            execute("library:assembleDebug")
 
             checkAar(libProject, "newlibrary.txt", "newfile content")
         }
@@ -340,11 +362,11 @@ android {
 
     @Test
     void "test lib project with removed res file"() {
-        project.execute("library:clean", "library:assembleDebug")
+        execute("library:clean", "library:assembleDebug")
 
         TemporaryProjectModification.doTest(libProject) {
             it.removeFile("src/main/resources/com/foo/library.txt")
-            project.execute("library:assembleDebug")
+            execute("library:assembleDebug")
 
             checkAar(libProject, "library.txt", null)
         }
@@ -352,11 +374,11 @@ android {
 
     @Test
     void "test lib project with modified res file"() {
-        project.execute("library:clean", "library:assembleDebug")
+        execute("library:clean", "library:assembleDebug")
 
         TemporaryProjectModification.doTest(libProject) {
             it.replaceFile("src/main/resources/com/foo/library.txt", "new content")
-            project.execute("library:assembleDebug")
+            execute("library:assembleDebug")
 
             checkAar(libProject, "library.txt", "new content")
         }
@@ -364,17 +386,17 @@ android {
 
     @Test
     void "test lib project with new res file in debug source set"() {
-        project.execute("library:clean", "library:assembleDebug")
+        execute("library:clean", "library:assembleDebug")
 
         TemporaryProjectModification.doTest(libProject) {
             it.addFile("src/debug/resources/com/foo/library.txt", "new content")
-            project.execute("library:assembleDebug")
+            execute("library:assembleDebug")
 
             checkAar(libProject, "library.txt", "new content")
         }
 
         // file's been removed, checking in the other direction.
-        project.execute("library:assembleDebug")
+        execute("library:assembleDebug")
         checkAar(libProject, "library.txt", "library:abcd")
 
     }
@@ -383,11 +405,11 @@ android {
 
     @Test
     void "test lib project test with new res file"() {
-        project.execute("library:clean", "library:assembleAT")
+        execute("library:clean", "library:assembleAT")
 
         TemporaryProjectModification.doTest(libProject) {
             it.addFile("src/androidTest/resources/com/foo/newlibrary.txt", "new file content");
-            project.execute("library:assembleAT")
+            execute("library:assembleAT")
 
             checkTestApk(libProject, "newlibrary.txt", "new file content")
         }
@@ -395,11 +417,11 @@ android {
 
     @Test
     void "test lib project test with removed res file"() {
-        project.execute("library:clean", "library:assembleAT")
+        execute("library:clean", "library:assembleAT")
 
         TemporaryProjectModification.doTest(libProject) {
             it.removeFile("src/androidTest/resources/com/foo/librarytest.txt")
-            project.execute("library:assembleAT")
+            execute("library:assembleAT")
 
             checkTestApk(libProject, "librarytest.txt", null)
         }
@@ -407,11 +429,11 @@ android {
 
     @Test
     void "test lib project test with modified res file"() {
-        project.execute("library:clean", "library:assembleAT")
+        execute("library:clean", "library:assembleAT")
 
         TemporaryProjectModification.doTest(libProject) {
             it.replaceFile("src/androidTest/resources/com/foo/librarytest.txt", "new content")
-            project.execute("library:assembleAT")
+            execute("library:assembleAT")
 
             checkTestApk(libProject, "librarytest.txt", "new content")
         }
@@ -419,34 +441,34 @@ android {
 
     @Test
     void "test lib project test with new res file overriding tested lib"() {
-        project.execute("library:clean", "library:assembleAT")
+        execute("library:clean", "library:assembleAT")
 
         TemporaryProjectModification.doTest(libProject) {
             it.addFile("src/androidTest/resources/com/foo/library.txt", "new content")
-            project.execute("library:assembleAT")
+            execute("library:assembleAT")
 
             checkTestApk(libProject, "library.txt", "new content")
         }
 
         // file's been removed, checking in the other direction.
-        project.execute("library:assembleAT")
+        execute("library:assembleAT")
         checkTestApk(libProject, "library.txt", "library:abcd")
     }
 
     @Test
     void "test lib project test with new res file overriding dependency"() {
-        project.execute("library:clean", "library:assembleAT")
+        execute("library:clean", "library:assembleAT")
 
         TemporaryProjectModification.doTest(libProject) {
             it.addFile("src/androidTest/resources/com/foo/library2.txt", "new content")
-            project.execute("library:assembleAT")
+            execute("library:assembleAT")
 
             checkTestApk(libProject, "library2.txt", "new content")
 
         }
 
         // file's been removed, checking in the other direction.
-        project.execute("library:assembleAT")
+        execute("library:assembleAT")
         checkTestApk(libProject, "library2.txt", "library2:abcd")
     }
 
@@ -454,11 +476,11 @@ android {
 
     @Test
     void "test test-project with new res file"() {
-        project.execute("test:clean", "test:assembleDebug")
+        execute("test:clean", "test:assembleDebug")
 
         TemporaryProjectModification.doTest(testProject) {
             it.addFile("src/main/resources/com/foo/newtest.txt", "newfile content");
-            project.execute("test:assembleDebug")
+            execute("test:assembleDebug")
 
             checkApk(testProject, "newtest.txt", "newfile content")
         }
@@ -466,11 +488,11 @@ android {
 
     @Test
     void "test test-project with removed res file"() {
-        project.execute("test:clean", "test:assembleDebug")
+        execute("test:clean", "test:assembleDebug")
 
         TemporaryProjectModification.doTest(testProject) {
             it.removeFile("src/main/resources/com/foo/test.txt")
-            project.execute("test:assembleDebug")
+            execute("test:assembleDebug")
 
             checkApk(testProject, "test.txt", null)
         }
@@ -478,11 +500,11 @@ android {
 
     @Test
     void "test test-project with modified res file"() {
-        project.execute("test:clean", "test:assembleDebug")
+        execute("test:clean", "test:assembleDebug")
 
         TemporaryProjectModification.doTest(testProject) {
             it.replaceFile("src/main/resources/com/foo/test.txt", "new content")
-            project.execute("test:assembleDebug")
+            execute("test:assembleDebug")
 
             checkApk(testProject, "test.txt", "new content")
         }
@@ -517,11 +539,11 @@ android {
      * @param filename the filename
      * @param content the content
      */
-    private static void checkTestApk(
+    private void checkTestApk(
             @NonNull GradleTestProject project,
             @NonNull String filename,
             @Nullable String content) {
-        check(assertThatApk(project.getTestApk("debug")), filename, content)
+        check(assertThatApk(project.getTestApk(mPackaging, "debug")), filename, content)
     }
 
     /**

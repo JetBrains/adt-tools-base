@@ -27,7 +27,6 @@ import static com.android.SdkConstants.ATTR_PARENT;
 import static com.android.SdkConstants.ATTR_STYLE;
 import static com.android.SdkConstants.AUTO_URI;
 import static com.android.SdkConstants.FD_RES_LAYOUT;
-import static com.android.SdkConstants.FN_RESOURCE_BASE;
 import static com.android.SdkConstants.FQCN_GRID_LAYOUT_V7;
 import static com.android.SdkConstants.GRID_LAYOUT;
 import static com.android.SdkConstants.LAYOUT_RESOURCE_PREFIX;
@@ -35,31 +34,42 @@ import static com.android.SdkConstants.REQUEST_FOCUS;
 import static com.android.SdkConstants.STYLE_RESOURCE_PREFIX;
 import static com.android.SdkConstants.TABLE_LAYOUT;
 import static com.android.SdkConstants.TABLE_ROW;
+import static com.android.SdkConstants.TAG_DATA;
+import static com.android.SdkConstants.TAG_IMPORT;
 import static com.android.SdkConstants.TAG_ITEM;
+import static com.android.SdkConstants.TAG_LAYOUT;
 import static com.android.SdkConstants.TAG_STYLE;
+import static com.android.SdkConstants.TAG_VARIABLE;
 import static com.android.SdkConstants.VIEW_INCLUDE;
 import static com.android.SdkConstants.VIEW_MERGE;
 import static com.android.resources.ResourceFolderType.LAYOUT;
 import static com.android.resources.ResourceFolderType.VALUES;
 import static com.android.tools.lint.detector.api.LintUtils.getLayoutName;
+import static com.android.tools.lint.detector.api.LintUtils.isNullLiteral;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
+import com.android.ide.common.resources.ResourceUrl;
 import com.android.resources.ResourceFolderType;
+import com.android.resources.ResourceType;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Context;
-import com.android.tools.lint.detector.api.Detector;
+import com.android.tools.lint.detector.api.Detector.JavaPsiScanner;
 import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.JavaContext;
 import com.android.tools.lint.detector.api.LayoutDetector;
+import com.android.tools.lint.detector.api.ResourceEvaluator;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
-import com.android.tools.lint.detector.api.Speed;
 import com.android.tools.lint.detector.api.XmlContext;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import com.intellij.psi.JavaElementVisitor;
+import com.intellij.psi.PsiExpression;
+import com.intellij.psi.PsiMethod;
+import com.intellij.psi.PsiMethodCallExpression;
 
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -68,23 +78,14 @@ import java.io.File;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import lombok.ast.AstVisitor;
-import lombok.ast.Expression;
-import lombok.ast.MethodInvocation;
-import lombok.ast.NullLiteral;
-import lombok.ast.Select;
-import lombok.ast.StrictListAccessor;
-import lombok.ast.VariableReference;
-
 /**
  * Ensures that layout width and height attributes are specified
  */
-public class RequiredAttributeDetector extends LayoutDetector implements Detector.JavaScanner {
+public class RequiredAttributeDetector extends LayoutDetector implements JavaPsiScanner {
     /** The main issue discovered by this detector */
     public static final Issue ISSUE = Issue.create(
             "RequiredSize", //$NON-NLS-1$
@@ -141,12 +142,6 @@ public class RequiredAttributeDetector extends LayoutDetector implements Detecto
 
     /** Constructs a new {@link RequiredAttributeDetector} */
     public RequiredAttributeDetector() {
-    }
-
-    @NonNull
-    @Override
-    public Speed getSpeed() {
-        return Speed.FAST;
     }
 
     @Override
@@ -429,6 +424,14 @@ public class RequiredAttributeDetector extends LayoutDetector implements Detecto
                     return;
                 }
 
+                // Data binding: these tags shouldn't specify width/height
+                if (tag.equals(TAG_LAYOUT)
+                        || tag.equals(TAG_VARIABLE)
+                        || tag.equals(TAG_DATA)
+                        || tag.equals(TAG_IMPORT)) {
+                    return;
+                }
+
                 String parentTag = element.getParentNode() != null
                         ?  element.getParentNode().getNodeName() : "";
                 if (TABLE_LAYOUT.equals(parentTag)
@@ -570,77 +573,42 @@ public class RequiredAttributeDetector extends LayoutDetector implements Detecto
     }
 
     @Override
-    public void visitMethod(
-            @NonNull JavaContext context,
-            @Nullable AstVisitor visitor,
-            @NonNull MethodInvocation call) {
+    public void visitMethod(@NonNull JavaContext context, @Nullable JavaElementVisitor visitor,
+            @NonNull PsiMethodCallExpression call, @NonNull PsiMethod method) {
         // Handle
         //    View#inflate(Context context, int resource, ViewGroup root)
         //    LayoutInflater#inflate(int resource, ViewGroup root)
         //    LayoutInflater#inflate(int resource, ViewGroup root, boolean attachToRoot)
-        StrictListAccessor<Expression, MethodInvocation> args = call.astArguments();
+        PsiExpression[] args = call.getArgumentList().getExpressions();
 
         String layout = null;
         int index = 0;
-        for (Iterator<Expression> iterator = args.iterator(); iterator.hasNext(); index++) {
-            Expression expression = iterator.next();
-            if (expression instanceof Select) {
-                Select outer = (Select) expression;
-                Expression operand = outer.astOperand();
-                if (operand instanceof Select) {
-                    Select inner = (Select) operand;
-                    if (inner.astOperand() instanceof VariableReference) {
-                        VariableReference reference = (VariableReference) inner.astOperand();
-                        if (FN_RESOURCE_BASE.equals(reference.astIdentifier().astValue())
-                                // TODO: constant
-                                && "layout".equals(inner.astIdentifier().astValue())) {
-                            layout = LAYOUT_RESOURCE_PREFIX + outer.astIdentifier().astValue();
-                            break;
-                        }
-                    }
-                }
+        ResourceEvaluator evaluator = new ResourceEvaluator(context.getEvaluator());
+        for (PsiExpression expression : args) {
+            ResourceUrl url = evaluator.getResource(expression);
+            if (url != null && url.type == ResourceType.LAYOUT) {
+                layout = url.toString();
+                break;
             }
+            index++;
         }
 
         if (layout == null) {
-            lombok.ast.Node method = StringFormatDetector.getParentMethod(call);
-            if (method != null) {
-                // Must track local types
-                index = 0;
-                String name = StringFormatDetector.getResourceArg(method, call, index);
-                if (name == null) {
-                    index = 1;
-                    name = StringFormatDetector.getResourceArg(method, call, index);
-                }
-                if (name != null) {
-                    layout = LAYOUT_RESOURCE_PREFIX + name;
-                }
-            }
-            if (layout == null) {
-                // Flow analysis didn't succeed
-                return;
-            }
+            // Flow analysis didn't succeed
+            return;
         }
 
         // In all the applicable signatures, the view root argument is immediately after
         // the layout resource id.
         int viewRootPos = index + 1;
-        if (viewRootPos < args.size()) {
-            int i = 0;
-            Iterator<Expression> iterator = args.iterator();
-            while (iterator.hasNext() && i < viewRootPos) {
-                iterator.next();
-                i++;
-            }
-            if (iterator.hasNext()) {
-                Expression viewRoot = iterator.next();
-                if (viewRoot instanceof NullLiteral) {
-                    // Yep, this one inflates the given view with a null parent:
-                    // Tag it as such. For now just use the include data structure since
-                    // it has the same net effect
-                    recordIncludeWidth(layout, true);
-                    recordIncludeHeight(layout, true);
-                }
+        if (viewRootPos < args.length) {
+            PsiExpression viewRoot = args[viewRootPos];
+            if (isNullLiteral(viewRoot)) {
+                // Yep, this one inflates the given view with a null parent:
+                // Tag it as such. For now just use the include data structure since
+                // it has the same net effect
+                recordIncludeWidth(layout, true);
+                recordIncludeHeight(layout, true);
             }
         }
     }

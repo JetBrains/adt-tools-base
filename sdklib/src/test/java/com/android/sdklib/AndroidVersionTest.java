@@ -16,15 +16,22 @@
 
 package com.android.sdklib;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import com.android.sdklib.AndroidVersion.AndroidVersionException;
 
-import junit.framework.TestCase;
+import org.junit.Test;
 
 /**
  * Unit tests for {@link AndroidVersion}.
  */
-public class AndroidVersionTest extends TestCase {
+public class AndroidVersionTest {
 
+    @Test
     public final void testAndroidVersion() {
         AndroidVersion v = new AndroidVersion(1, "  CODENAME   ");
         assertEquals(1, v.getApiLevel());
@@ -68,8 +75,9 @@ public class AndroidVersionTest extends TestCase {
         assertTrue(v.isGreaterOrEqualThan(15));
         assertFalse(v.isGreaterOrEqualThan(16));
         assertFalse(v.isGreaterOrEqualThan(Integer.MAX_VALUE));
-   }
+    }
 
+    @Test
     public final void testAndroidVersion_apiOrCodename() throws AndroidVersionException {
         // A valid integer is considered an API level
         AndroidVersion v = new AndroidVersion("15");
@@ -86,14 +94,17 @@ public class AndroidVersionTest extends TestCase {
         assertEquals("CODE_NAME", v.getApiString());
         assertTrue(v.isPreview());
         assertEquals("CODE_NAME", v.getCodename());
-        assertTrue(v.equals("CODE_NAME"));
+        //noinspection EqualsBetweenInconvertibleTypes: Removed legacy string comparison in equals.
+        assertFalse(v.equals("CODE_NAME"));
+        assertTrue(v.equals(new AndroidVersion("CODE_NAME")));
         assertEquals(0, v.getApiLevel());
         assertEquals("API 0, CODE_NAME preview", v.toString());
 
         // invalid code name should fail
         for (String s : new String[] { "REL", "code.name", "10val", "" }) {
             try {
-                v = new AndroidVersion(s);
+                //noinspection ResultOfObjectAllocationIgnored
+                new AndroidVersion(s);
                 fail("Invalid code name '" + s + "': Expected to fail. Actual: did not fail.");
             } catch (AndroidVersionException e) {
                 assertEquals("Invalid android API or codename " + s, e.getMessage());
@@ -101,6 +112,7 @@ public class AndroidVersionTest extends TestCase {
         }
     }
 
+    @Test
     public void testGetFeatureLevel() {
         assertEquals(1, AndroidVersion.DEFAULT.getFeatureLevel());
 

@@ -46,7 +46,7 @@ public class DexClassSubject extends Subject<DexClassSubject, Node> {
 
     public void hasMethod(@NonNull String name) {
         if (assertSubjectIsNonNull() && !checkHasMethod(name)) {
-            fail("does not contain method", name);
+            fail("contains method", name);
         }
     }
 
@@ -60,19 +60,19 @@ public class DexClassSubject extends Subject<DexClassSubject, Node> {
 
     public void hasField(@NonNull String name) {
         if (assertSubjectIsNonNull() && !checkHasField(name)) {
-            fail("does not contain field", name);
+            fail("contains field", name);
         }
     }
 
     public void doesNotHaveField(@NonNull String name) {
         if (assertSubjectIsNonNull() && checkHasField(name)) {
-            fail("should not contain field", name);
+            fail("does not contain field", name);
         }
     }
 
     public void doesNotHaveMethod(@NonNull String name) {
         if (assertSubjectIsNonNull() && checkHasMethod(name)) {
-            fail("should not contain method", name);
+            fail("does not contain method", name);
         }
     }
 

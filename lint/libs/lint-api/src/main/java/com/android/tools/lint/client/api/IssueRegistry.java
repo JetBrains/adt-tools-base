@@ -18,7 +18,6 @@ package com.android.tools.lint.client.api;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.annotations.VisibleForTesting;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Detector;
 import com.android.tools.lint.detector.api.Implementation;

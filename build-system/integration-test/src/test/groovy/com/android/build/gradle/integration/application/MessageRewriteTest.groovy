@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.integration.application
 
+import com.android.build.gradle.integration.common.fixture.GradleBuildResult
 import com.android.build.gradle.integration.common.fixture.TemporaryProjectModification
 import com.android.builder.model.AndroidProject
 import com.android.utils.FileUtils
@@ -42,8 +43,6 @@ class MessageRewriteTest {
     static public GradleTestProject project = GradleTestProject.builder()
             .fromTestProject("flavored")
             .withoutNdk()
-            .captureStdOut(true)
-            .captureStdErr(true)
             .create()
 
     @BeforeClass
@@ -55,10 +54,9 @@ class MessageRewriteTest {
     public void "invalid layout file"() {
         TemporaryProjectModification.doTest(project) {
             it.replaceInFile("src/main/res/layout/main.xml", "</LinearLayout>", "");
-            project.getStderr().reset()
-            project.executeExpectingFailure(INVOKED_FROM_IDE_ARGS, 'assembleF1Debug')
-            String err = project.getStderr().toString()
-            assertThat(err).contains(SdkUtils.escapePropertyValue(FileUtils.join(
+            GradleBuildResult result = project.executor().withArguments(INVOKED_FROM_IDE_ARGS)
+                    .expectFailure().run('assembleF1Debug')
+            assertThat(result.getStderr()).contains(SdkUtils.escapePropertyValue(FileUtils.join(
                     "src", "main", "res", "layout", "main.xml")))
         }
 

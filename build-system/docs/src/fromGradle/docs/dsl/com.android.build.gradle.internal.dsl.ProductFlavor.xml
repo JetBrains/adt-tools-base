@@ -6,9 +6,12 @@
                 <tr><td>Name</td></tr>
             </thead>
             <tr><td>applicationId</td></tr>
+            <tr><td>applicationIdSuffix</td></tr>
             <tr><td>dimension</td></tr>
             <tr><td>flavorDimension</td></tr>
             <tr><td>generatedDensities</td></tr>
+            <tr><td>jackOptions</td></tr>
+            <tr><td>javaCompileOptions</td></tr>
             <tr><td>multiDexEnabled</td></tr>
             <tr><td>signingConfig</td></tr>
             <tr><td>testApplicationId</td></tr>
@@ -17,8 +20,11 @@
             <tr><td>testInstrumentationRunner</td></tr>
             <tr><td>testInstrumentationRunnerArguments</td></tr>
             <tr><td>useJack</td></tr>
+            <tr><td>vectorDrawables</td></tr>
             <tr><td>versionCode</td></tr>
             <tr><td>versionName</td></tr>
+            <tr><td>versionNameSuffix</td></tr>
+            <tr><td>wearAppUnbundled</td></tr>
         </table>
     </section>
     <section>
@@ -30,6 +36,8 @@
             <tr><td>buildConfigField</td></tr>
             <tr><td>consumerProguardFile</td></tr>
             <tr><td>consumerProguardFiles</td></tr>
+            <tr><td>externalNativeBuild</td></tr>
+            <tr><td>jackOptions</td></tr>
             <tr><td>maxSdkVersion</td></tr>
             <tr><td>maxSdkVersion</td></tr>
             <tr><td>minSdkVersion</td></tr>
@@ -46,7 +54,7 @@
             <tr><td>testInstrumentationRunnerArguments</td></tr>
             <tr><td>testProguardFile</td></tr>
             <tr><td>testProguardFiles</td></tr>
-            <tr><td>useJack</td></tr>
+            <tr><td>vectorDrawables</td></tr>
         </table>
     </section>
 </section>

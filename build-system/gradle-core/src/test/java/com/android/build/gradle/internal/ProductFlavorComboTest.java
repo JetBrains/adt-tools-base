@@ -78,12 +78,12 @@ public class ProductFlavorComboTest {
 
     @Test
     public void getNameSingleFlavor() {
-        assertEquals("flavor1", new ProductFlavorCombo<CoreProductFlavor>(f1).getName());
+        assertEquals("flavor1", new ProductFlavorCombo<>(f1).getName());
     }
 
     @Test
     public void getNameMultiFlavor() {
-        assertEquals("flavor1Flavor2", new ProductFlavorCombo<CoreProductFlavor>(f1, f2).getName());
+        assertEquals("flavor1Flavor2", new ProductFlavorCombo<>(f1, f2).getName());
     }
 
     @Test
@@ -99,7 +99,7 @@ public class ProductFlavorComboTest {
     public void createGroupListNullDimension() throws Exception {
         assertEqualGroupList(
                 ImmutableList.of(
-                        new ProductFlavorCombo<CoreProductFlavor>(f1)
+                        new ProductFlavorCombo<>(f1)
                 ),
                 ProductFlavorCombo.createCombinations(
                         null,
@@ -110,8 +110,8 @@ public class ProductFlavorComboTest {
     public void createGroupListEmptyDimension() throws Exception {
         assertEqualGroupList(
                 ImmutableList.of(
-                        new ProductFlavorCombo<CoreProductFlavor>(f1),
-                        new ProductFlavorCombo<CoreProductFlavor>(f2)
+                        new ProductFlavorCombo<>(f1),
+                        new ProductFlavorCombo<>(f2)
                 ),
                 ProductFlavorCombo.createCombinations(
                         ImmutableList.<String>of(),
@@ -121,7 +121,7 @@ public class ProductFlavorComboTest {
     @Test
     public void createGroupListSingleDimension() throws Exception {
         assertEqualGroupList(
-                ImmutableList.of(new ProductFlavorCombo<CoreProductFlavor>(f1d1)),
+                ImmutableList.of(new ProductFlavorCombo<>(f1d1)),
                 ProductFlavorCombo.createCombinations(
                         ImmutableList.of(DIMENSION1),
                         ImmutableList.of(f1d1)));
@@ -131,10 +131,10 @@ public class ProductFlavorComboTest {
     public void createGroupListMultiDimensions() throws Exception {
         assertEqualGroupList(
                 ImmutableList.of(
-                        new ProductFlavorCombo<CoreProductFlavor>(f1d1, f1d2),
-                        new ProductFlavorCombo<CoreProductFlavor>(f1d1, f2d2),
-                        new ProductFlavorCombo<CoreProductFlavor>(f2d1, f1d2),
-                        new ProductFlavorCombo<CoreProductFlavor>(f2d1, f2d2)),
+                        new ProductFlavorCombo<>(f1d1, f1d2),
+                        new ProductFlavorCombo<>(f1d1, f2d2),
+                        new ProductFlavorCombo<>(f2d1, f1d2),
+                        new ProductFlavorCombo<>(f2d1, f2d2)),
                 ProductFlavorCombo.createCombinations(
                         ImmutableList.of(DIMENSION1, DIMENSION2),
                         ImmutableList.of(f1d1, f1d2, f2d1, f2d2)));

@@ -16,15 +16,9 @@
 
 package com.android.build.api.transform;
 
-import com.google.common.annotations.Beta;
-
 /**
  * The format in which content is stored.
- * <p/>
- * <strong>This API is non final and is subject to change. We are looking for feedback, and will
- * attempt to stabilize it in the 1.6 time frame.</strong>
  */
-@Beta
 public enum Format {
 
     /**
@@ -33,7 +27,7 @@ public enum Format {
     JAR,
     /**
      * The content is a directory.
-     * <p/>
+     * <p>
      * This means that in the case of java class files, the files should be in directories
      * matching their package names, directly under the root directory.
      */

@@ -29,16 +29,18 @@ import com.android.annotations.Nullable;
 import com.android.ide.common.res2.AbstractResourceRepository;
 import com.android.ide.common.res2.ResourceFile;
 import com.android.ide.common.res2.ResourceItem;
+import com.android.ide.common.resources.ResourceUrl;
 import com.android.resources.ResourceFolderType;
 import com.android.resources.ResourceType;
 import com.android.tools.lint.client.api.LintClient;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Context;
-import com.android.tools.lint.detector.api.Detector.JavaScanner;
+import com.android.tools.lint.detector.api.Detector.JavaPsiScanner;
 import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.JavaContext;
 import com.android.tools.lint.detector.api.LintUtils;
+import com.android.tools.lint.detector.api.ResourceEvaluator;
 import com.android.tools.lint.detector.api.ResourceXmlDetector;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
@@ -51,6 +53,16 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
+import com.intellij.psi.JavaElementVisitor;
+import com.intellij.psi.PsiClassType;
+import com.intellij.psi.PsiElement;
+import com.intellij.psi.PsiExpression;
+import com.intellij.psi.PsiMethod;
+import com.intellij.psi.PsiMethodCallExpression;
+import com.intellij.psi.PsiParenthesizedExpression;
+import com.intellij.psi.PsiType;
+import com.intellij.psi.PsiTypeCastExpression;
+import com.intellij.psi.PsiTypeElement;
 
 import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
@@ -68,13 +80,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import lombok.ast.AstVisitor;
-import lombok.ast.Cast;
-import lombok.ast.Expression;
-import lombok.ast.MethodInvocation;
-import lombok.ast.Select;
-import lombok.ast.StrictListAccessor;
-
 /** Detector for finding inconsistent usage of views and casts
  * <p>
  * TODO: Check findFragmentById
@@ -87,7 +92,7 @@ import lombok.ast.StrictListAccessor;
  * check its name or class attributes to make sure the cast is compatible with
  * the named fragment class!
  */
-public class ViewTypeDetector extends ResourceXmlDetector implements JavaScanner {
+public class ViewTypeDetector extends ResourceXmlDetector implements JavaPsiScanner {
     /** Mismatched view types */
     @SuppressWarnings("unchecked")
     public static final Issue ISSUE = Issue.create(
@@ -171,8 +176,8 @@ public class ViewTypeDetector extends ResourceXmlDetector implements JavaScanner
     }
 
     @Override
-    public void visitMethod(@NonNull JavaContext context, @Nullable AstVisitor visitor,
-            @NonNull MethodInvocation node) {
+    public void visitMethod(@NonNull JavaContext context, @Nullable JavaElementVisitor visitor,
+            @NonNull PsiMethodCallExpression call, @NonNull PsiMethod method) {
         LintClient client = context.getClient();
         if (mIgnore == Boolean.TRUE) {
             return;
@@ -183,52 +188,66 @@ public class ViewTypeDetector extends ResourceXmlDetector implements JavaScanner
                 return;
             }
         }
-        assert node.astName().astValue().equals("findViewById");
-        if (node.getParent() instanceof Cast) {
-            Cast cast = (Cast) node.getParent();
-            String castType = cast.astTypeReference().getTypeName();
-            StrictListAccessor<Expression, MethodInvocation> args = node.astArguments();
-            if (args.size() == 1) {
-                Expression first = args.first();
-                // TODO: Do flow analysis as in the StringFormatDetector in order
-                // to handle variable references too
-                if (first instanceof Select) {
-                    String resource = first.toString();
-                    if (resource.startsWith("R.id.")) { //$NON-NLS-1$
-                        String id = ((Select) first).astIdentifier().astValue();
+        assert method.getName().equals("findViewById");
+        PsiElement node = call;
+        while (node != null && node.getParent() instanceof PsiParenthesizedExpression) {
+            node = node.getParent();
+        }
+        if (node.getParent() instanceof PsiTypeCastExpression) {
+            PsiTypeCastExpression cast = (PsiTypeCastExpression) node.getParent();
+            PsiTypeElement castTypeElement = cast.getCastType();
+            if (castTypeElement == null) {
+                return;
+            }
+            PsiType type = castTypeElement.getType();
+            String castType = null;
+            if (type instanceof PsiClassType) {
+                castType = type.getCanonicalText();
+            }
+            if (castType == null) {
+                return;
+            }
 
-                        if (client.supportsProjectResources()) {
-                            AbstractResourceRepository resources = client
-                                    .getProjectResources(context.getMainProject(), true);
-                            if (resources == null) {
-                                return;
-                            }
+            PsiExpression[] args = call.getArgumentList().getExpressions();
+            if (args.length == 1) {
+                PsiExpression first = args[0];
+                ResourceUrl resourceUrl = ResourceEvaluator.getResource(context.getEvaluator(),
+                        first);
+                if (resourceUrl != null && resourceUrl.type == ResourceType.ID &&
+                        !resourceUrl.framework) {
+                    String id = resourceUrl.name;
 
-                            List<ResourceItem> items = resources.getResourceItem(ResourceType.ID,
-                                    id);
-                            if (items != null && !items.isEmpty()) {
-                                Set<String> compatible = Sets.newHashSet();
-                                for (ResourceItem item : items) {
-                                    Collection<String> tags = getViewTags(context, item);
-                                    if (tags != null) {
-                                       compatible.addAll(tags);
-                                    }
-                                }
-                                if (!compatible.isEmpty()) {
-                                    ArrayList<String> layoutTypes = Lists.newArrayList(compatible);
-                                    checkCompatible(context, castType, null, layoutTypes, cast);
+                    if (client.supportsProjectResources()) {
+                        AbstractResourceRepository resources = client
+                                .getResourceRepository(context.getMainProject(), true, false);
+                        if (resources == null) {
+                            return;
+                        }
+
+                        List<ResourceItem> items = resources.getResourceItem(ResourceType.ID,
+                                id);
+                        if (items != null && !items.isEmpty()) {
+                            Set<String> compatible = Sets.newHashSet();
+                            for (ResourceItem item : items) {
+                                Collection<String> tags = getViewTags(context, item);
+                                if (tags != null) {
+                                   compatible.addAll(tags);
                                 }
                             }
-                        } else {
-                            Object types = mIdToViewTag.get(id);
-                            if (types instanceof String) {
-                                String layoutType = (String) types;
-                                checkCompatible(context, castType, layoutType, null, cast);
-                            } else if (types instanceof List<?>) {
-                                @SuppressWarnings("unchecked")
-                                List<String> layoutTypes = (List<String>) types;
+                            if (!compatible.isEmpty()) {
+                                ArrayList<String> layoutTypes = Lists.newArrayList(compatible);
                                 checkCompatible(context, castType, null, layoutTypes, cast);
                             }
+                        }
+                    } else {
+                        Object types = mIdToViewTag.get(id);
+                        if (types instanceof String) {
+                            String layoutType = (String) types;
+                            checkCompatible(context, castType, layoutType, null, cast);
+                        } else if (types instanceof List<?>) {
+                            @SuppressWarnings("unchecked")
+                            List<String> layoutTypes = (List<String>) types;
+                            checkCompatible(context, castType, null, layoutTypes, cast);
                         }
                     }
                 }
@@ -301,7 +320,7 @@ public class ViewTypeDetector extends ResourceXmlDetector implements JavaScanner
 
     /** Check if the view and cast type are compatible */
     private static void checkCompatible(JavaContext context, String castType, String layoutType,
-            List<String> layoutTypes, Cast node) {
+            List<String> layoutTypes, PsiTypeCastExpression node) {
         assert layoutType == null || layoutTypes == null; // Should only specify one or the other
         boolean compatible = true;
         if (layoutType != null) {
@@ -327,7 +346,7 @@ public class ViewTypeDetector extends ResourceXmlDetector implements JavaScanner
             }
             String message = String.format(
                     "Unexpected cast to `%1$s`: layout tag was `%2$s`",
-                    castType, layoutType);
+                    castType.substring(castType.lastIndexOf('.') + 1), layoutType);
             context.report(ISSUE, node, context.getLocation(node), message);
         }
     }

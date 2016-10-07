@@ -17,8 +17,10 @@
 package com.android.build.gradle.integration.common.utils;
 
 import com.android.sdklib.AndroidVersion;
+import com.google.common.collect.Range;
 
 import org.hamcrest.BaseMatcher;
+import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 
 public class AndroidVersionMatcher {
@@ -31,36 +33,43 @@ public class AndroidVersionMatcher {
         return atLeast(21);
     }
 
-    public static Matcher<AndroidVersion> atLeast(final int version) {
+    public static Matcher<AndroidVersion> atLeast(int version) {
+        return forRange(Range.atLeast(version));
+    }
+
+    public static Matcher<AndroidVersion> atMost(int version) {
+        return forRange(Range.atMost(version));
+    }
+
+    public static Matcher<AndroidVersion> anyAndroidVersion() {
         return new BaseMatcher<AndroidVersion>() {
             @Override
             public boolean matches(Object item) {
-                return item instanceof AndroidVersion &&
-                        ((AndroidVersion) item).isGreaterOrEqualThan(version);
+                return true;
             }
 
             @Override
-            public void describeTo(org.hamcrest.Description description) {
-                description.appendText("Android versions ").appendValue(version)
-                        .appendText(" and above.");
+            public void describeTo(Description description) {
+                description.appendText("All android versions");
             }
         };
     }
 
-    public static Matcher<AndroidVersion> atMost(final int version) {
+    public static Matcher<AndroidVersion> forRange(Range<Integer> range) {
         return new BaseMatcher<AndroidVersion>() {
             @Override
             public boolean matches(Object item) {
                 return item instanceof AndroidVersion &&
-                        ((AndroidVersion) item).compareTo(version, null) <= 0;
+                        range.contains(((AndroidVersion) item).getApiLevel());
             }
 
             @Override
-            public void describeTo(org.hamcrest.Description description) {
-                description.appendText("Android versions ").appendValue(version)
-                        .appendText(" and below.");
+            public void describeTo(Description description) {
+                description
+                        .appendText("Android versions in the ")
+                        .appendText(range.toString())
+                        .appendText(" range.");
             }
         };
     }
-
 }

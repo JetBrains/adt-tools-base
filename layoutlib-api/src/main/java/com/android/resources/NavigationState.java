@@ -18,7 +18,7 @@ package com.android.resources;
 
 /**
  * Navigation state enum.
- * <p/>This is used in the resource folder names.
+ * <p>This is used in the resource folder names.
  */
 public enum NavigationState implements ResourceEnum {
     EXPOSED("navexposed", "Exposed", "Exposed navigation"), //$NON-NLS-1$
@@ -65,16 +65,7 @@ public enum NavigationState implements ResourceEnum {
     }
 
     public static int getIndex(NavigationState value) {
-        int i = 0;
-        for (NavigationState input : values()) {
-            if (value == input) {
-                return i;
-            }
-
-            i++;
-        }
-
-        return -1;
+        return value == null ? -1 : value.ordinal();
     }
 
     public static NavigationState getByIndex(int index) {

@@ -74,6 +74,7 @@ public final class KeystoreHelper {
 
     /**
      * Returns the location of the default debug keystore.
+     *
      * @return The location of the default debug keystore
      * @throws AndroidLocationException if the location cannot be computed
      */
@@ -88,6 +89,7 @@ public final class KeystoreHelper {
     /**
      * Creates a new debug store with the location, keyalias, and passwords specified in the
      * config.
+     *
      * @param storeType an optional type of keystore; if {@code null} the default
      * @param storeFile the file where the store should be created
      * @param storePassword a password for the key store
@@ -107,6 +109,7 @@ public final class KeystoreHelper {
     /**
      * Creates a new store with a self-signed certificate. The certificate will be valid starting
      * from the current date up to the number of years provided.
+     *
      * @param storeType an optional type of keystore; if {@code null} the default
      * @param storeFile the file where the store should be created
      * @param storePassword a password for the key store
@@ -160,18 +163,28 @@ public final class KeystoreHelper {
 
     /**
      * Returns the CertificateInfo for the given signing configuration.
+     *
+     * @param storeType an optional type of keystore; if {@code null} the default
+     * @param storeFile the file where the store should be created
+     * @param storePassword a password for the key store
+     * @param keyPassword a password for the key
+     * @param keyAlias the alias under which the key is stored in the store
      * @return the certificate info if it could be loaded
      * @throws KeytoolException If the password is wrong
      * @throws FileNotFoundException If the store file cannot be found
      */
     @NonNull
-    public static CertificateInfo getCertificateInfo(@Nullable String storeType,
-            @NonNull File storeFile, @NonNull String storePassword, @NonNull String keyPassword,
-            @NonNull String keyAlias) throws KeytoolException, FileNotFoundException {
+    public static CertificateInfo getCertificateInfo(
+            @Nullable String storeType,
+            @NonNull File storeFile,
+            @NonNull String storePassword,
+            @NonNull String keyPassword,
+            @NonNull String keyAlias)
+            throws KeytoolException, FileNotFoundException {
 
         try {
-            KeyStore keyStore = KeyStore.getInstance(storeType != null ?
-                            storeType : KeyStore.getDefaultType());
+            KeyStore keyStore = KeyStore.getInstance(
+                    storeType != null ? storeType : KeyStore.getDefaultType());
 
             FileInputStream fis = new FileInputStream(storeFile);
             keyStore.load(fis, storePassword.toCharArray());

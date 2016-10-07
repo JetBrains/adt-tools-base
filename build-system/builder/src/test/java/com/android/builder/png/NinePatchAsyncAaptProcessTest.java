@@ -23,9 +23,11 @@ import com.android.repository.Revision;
 import com.android.utils.ILogger;
 import com.android.utils.StdLogger;
 import com.google.common.collect.Maps;
+import com.google.common.truth.Expect;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -44,6 +46,9 @@ import java.util.zip.DataFormatException;
  */
 @RunWith(Parameterized.class)
 public class NinePatchAsyncAaptProcessTest {
+
+    @ClassRule
+    public static Expect expect = Expect.createAndEnableStackTrace();
 
     private static Map<File, File> mSourceAndCrunchedFiles;
 
@@ -64,6 +69,7 @@ public class NinePatchAsyncAaptProcessTest {
 
     @Test
     public void run() throws PngException, IOException {
+        NinePatchAaptProcessorTestUtils.skipOnJenkins();
         File outFile = NinePatchAaptProcessorTestUtils.crunchFile(
                 sCruncherKey.get(), mFile, sCruncher);
         mSourceAndCrunchedFiles.put(mFile, outFile);
@@ -74,7 +80,7 @@ public class NinePatchAsyncAaptProcessTest {
             throws IOException, DataFormatException, InterruptedException {
 
         NinePatchAaptProcessorTestUtils.tearDownAndCheck(
-                sCruncherKey.get(), mSourceAndCrunchedFiles, sCruncher, sClassStartTime);
+                sCruncherKey.get(), mSourceAndCrunchedFiles, sCruncher, sClassStartTime, expect);
         mSourceAndCrunchedFiles = null;
     }
 
@@ -82,7 +88,7 @@ public class NinePatchAsyncAaptProcessTest {
     private static PngCruncher getCruncher() {
         ILogger logger = new StdLogger(StdLogger.Level.VERBOSE);
         File aapt = NinePatchAaptProcessorTestUtils.getAapt(Revision.parseRevision("22.0.1"));
-        return QueuedCruncher.Builder.INSTANCE.newCruncher(aapt.getAbsolutePath(), logger);
+        return QueuedCruncher.Builder.INSTANCE.newCruncher(aapt.getAbsolutePath(), logger, 0);
     }
 
     @Parameters(name = "{1}")

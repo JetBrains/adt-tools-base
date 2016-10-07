@@ -18,7 +18,7 @@ package com.android.resources;
 
 /**
  * Keyboard enum.
- * <p/>This is used in the manifest in the uses-configuration node and in the resource folder names.
+ * <p>This is used in the manifest in the uses-configuration node and in the resource folder names.
  */
 public enum Keyboard implements ResourceEnum {
     NOKEY("nokeys", null, "No Keys", "No keyboard"), //$NON-NLS-1$
@@ -69,16 +69,7 @@ public enum Keyboard implements ResourceEnum {
     }
 
     public static int getIndex(Keyboard value) {
-        int i = 0;
-        for (Keyboard input : values()) {
-            if (value == input) {
-                return i;
-            }
-
-            i++;
-        }
-
-        return -1;
+        return value == null ? -1 : value.ordinal();
     }
 
     public static Keyboard getByIndex(int index) {

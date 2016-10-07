@@ -2,8 +2,11 @@
     <#assign theme=getApplicationTheme()!{ "name": "AppTheme", "isAppCompat": true }>
     <#assign themeName=theme.name!'AppTheme'>
     <#assign themeNameNoActionBar=theme.nameNoActionBar!'AppTheme.NoActionBar'>
-    <#assign appCompat=theme.isAppCompat!false>
+    <#assign appCompat=backwardsCompatibility!(theme.isAppCompat)!false>
     <#assign appCompatActivity=appCompat && (buildApi gte 22)>
+    <#assign espresso=hasDependency('com.android.support.test.espresso:espresso-core', 'androidTestCompile')>
+    <#assign supportRunner=hasDependency('com.android.support.test:runner', 'androidTestCompile')>
+    <#assign testSupportLib=espresso && supportRunner>
 
     <global id="themeName" type="string" value="${themeName}" />
     <global id="implicitParentTheme" type="boolean" value="${(themeNameNoActionBar?starts_with(themeName+'.'))?string}" />
@@ -14,10 +17,12 @@
     <global id="themeNamePopupOverlay" type="string" value="${theme.namePopupOverlay!'AppTheme.PopupOverlay'}" />
     <global id="themeExistsPopupOverlay" type="boolean" value="${(theme.existsPopupOverlay!false)?string}" />
 
-    <global id="appCompat" type="boolean" value="${((isNewProject!false) || (theme.isAppCompat!false))?string}" />
+    <global id="appCompat" type="boolean" value="${appCompat?string}" />
     <global id="appCompatActivity" type="boolean" value="${appCompatActivity?string}" />
     <global id="hasAppBar" type="boolean" value="${appCompatActivity?string}" />
     <global id="hasNoActionBar" type="boolean" value="${appCompatActivity?string}" />
+    <global id="testSupportLib" type="boolean" value="${testSupportLib?string}" />
+
     <global id="manifestOut" value="${manifestDir}" />
     <global id="buildVersion" value="${buildApi}" />
 

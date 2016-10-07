@@ -20,8 +20,8 @@ import static com.android.SdkConstants.ANDROID_URI;
 import static com.android.SdkConstants.ATTR_NAME;
 import static com.android.SdkConstants.ATTR_VALUE;
 import static com.android.SdkConstants.CLASS_INTENT;
+import static com.android.SdkConstants.CLASS_VIEW;
 import static com.android.SdkConstants.INT_DEF_ANNOTATION;
-import static com.android.SdkConstants.R_CLASS;
 import static com.android.SdkConstants.STRING_DEF_ANNOTATION;
 import static com.android.SdkConstants.SUPPORT_ANNOTATIONS_PREFIX;
 import static com.android.SdkConstants.TAG_PERMISSION;
@@ -30,6 +30,7 @@ import static com.android.SdkConstants.TAG_USES_PERMISSION_SDK_23;
 import static com.android.SdkConstants.TAG_USES_PERMISSION_SDK_M;
 import static com.android.SdkConstants.TYPE_DEF_FLAG_ATTRIBUTE;
 import static com.android.resources.ResourceType.COLOR;
+import static com.android.resources.ResourceType.DIMEN;
 import static com.android.resources.ResourceType.DRAWABLE;
 import static com.android.resources.ResourceType.MIPMAP;
 import static com.android.tools.lint.checks.PermissionFinder.Operation.ACTION;
@@ -37,10 +38,14 @@ import static com.android.tools.lint.checks.PermissionFinder.Operation.READ;
 import static com.android.tools.lint.checks.PermissionFinder.Operation.WRITE;
 import static com.android.tools.lint.checks.PermissionRequirement.ATTR_PROTECTION_LEVEL;
 import static com.android.tools.lint.checks.PermissionRequirement.VALUE_DANGEROUS;
-import static com.android.tools.lint.client.api.JavaParser.TYPE_INT;
-import static com.android.tools.lint.client.api.JavaParser.TYPE_LONG;
-import static com.android.tools.lint.detector.api.JavaContext.findSurroundingMethod;
-import static com.android.tools.lint.detector.api.JavaContext.getParentOfType;
+import static com.android.tools.lint.checks.PermissionRequirement.getAnnotationBooleanValue;
+import static com.android.tools.lint.checks.PermissionRequirement.getAnnotationDoubleValue;
+import static com.android.tools.lint.checks.PermissionRequirement.getAnnotationLongValue;
+import static com.android.tools.lint.checks.PermissionRequirement.getAnnotationStringValue;
+import static com.android.tools.lint.detector.api.LintUtils.skipParentheses;
+import static com.android.tools.lint.detector.api.ResourceEvaluator.COLOR_INT_ANNOTATION;
+import static com.android.tools.lint.detector.api.ResourceEvaluator.PX_ANNOTATION;
+import static com.android.tools.lint.detector.api.ResourceEvaluator.RES_SUFFIX;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
@@ -49,73 +54,81 @@ import com.android.sdklib.AndroidVersion;
 import com.android.tools.lint.checks.PermissionFinder.Operation;
 import com.android.tools.lint.checks.PermissionFinder.Result;
 import com.android.tools.lint.checks.PermissionHolder.SetPermissionLookup;
-import com.android.tools.lint.client.api.JavaParser;
-import com.android.tools.lint.client.api.JavaParser.ResolvedAnnotation;
-import com.android.tools.lint.client.api.JavaParser.ResolvedClass;
-import com.android.tools.lint.client.api.JavaParser.ResolvedField;
-import com.android.tools.lint.client.api.JavaParser.ResolvedMethod;
-import com.android.tools.lint.client.api.JavaParser.ResolvedNode;
-import com.android.tools.lint.client.api.JavaParser.TypeDescriptor;
+import com.android.tools.lint.client.api.JavaEvaluator;
 import com.android.tools.lint.client.api.LintClient;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.ConstantEvaluator;
 import com.android.tools.lint.detector.api.Detector;
+import com.android.tools.lint.detector.api.Detector.JavaPsiScanner;
 import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.JavaContext;
 import com.android.tools.lint.detector.api.Project;
+import com.android.tools.lint.detector.api.ResourceEvaluator;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
 import com.android.tools.lint.detector.api.TextFormat;
 import com.android.utils.XmlUtils;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Sets;
+import com.intellij.psi.JavaElementVisitor;
+import com.intellij.psi.JavaRecursiveElementVisitor;
+import com.intellij.psi.JavaTokenType;
+import com.intellij.psi.PsiAnnotation;
+import com.intellij.psi.PsiAnnotationMemberValue;
+import com.intellij.psi.PsiAnonymousClass;
+import com.intellij.psi.PsiArrayInitializerExpression;
+import com.intellij.psi.PsiArrayInitializerMemberValue;
+import com.intellij.psi.PsiArrayType;
+import com.intellij.psi.PsiAssignmentExpression;
+import com.intellij.psi.PsiBinaryExpression;
+import com.intellij.psi.PsiCall;
+import com.intellij.psi.PsiCallExpression;
+import com.intellij.psi.PsiCatchSection;
+import com.intellij.psi.PsiClass;
+import com.intellij.psi.PsiClassType;
+import com.intellij.psi.PsiConditionalExpression;
+import com.intellij.psi.PsiDeclarationStatement;
+import com.intellij.psi.PsiDisjunctionType;
+import com.intellij.psi.PsiElement;
+import com.intellij.psi.PsiEnumConstant;
+import com.intellij.psi.PsiExpression;
+import com.intellij.psi.PsiExpressionList;
+import com.intellij.psi.PsiExpressionStatement;
+import com.intellij.psi.PsiField;
+import com.intellij.psi.PsiJavaCodeReferenceElement;
+import com.intellij.psi.PsiLiteral;
+import com.intellij.psi.PsiLocalVariable;
+import com.intellij.psi.PsiMethod;
+import com.intellij.psi.PsiMethodCallExpression;
+import com.intellij.psi.PsiModifierList;
+import com.intellij.psi.PsiNameValuePair;
+import com.intellij.psi.PsiNewExpression;
+import com.intellij.psi.PsiParameter;
+import com.intellij.psi.PsiParameterList;
+import com.intellij.psi.PsiParenthesizedExpression;
+import com.intellij.psi.PsiPrefixExpression;
+import com.intellij.psi.PsiReference;
+import com.intellij.psi.PsiReferenceExpression;
+import com.intellij.psi.PsiStatement;
+import com.intellij.psi.PsiTryStatement;
+import com.intellij.psi.PsiType;
+import com.intellij.psi.PsiTypeCastExpression;
+import com.intellij.psi.tree.IElementType;
+import com.intellij.psi.util.PsiTreeUtil;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 import java.io.File;
-import java.lang.reflect.Modifier;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
-import java.util.Iterator;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.Locale;
 import java.util.Set;
-
-import lombok.ast.ArrayCreation;
-import lombok.ast.ArrayInitializer;
-import lombok.ast.AstVisitor;
-import lombok.ast.BinaryExpression;
-import lombok.ast.BinaryOperator;
-import lombok.ast.Catch;
-import lombok.ast.ConstructorInvocation;
-import lombok.ast.EnumConstant;
-import lombok.ast.Expression;
-import lombok.ast.ExpressionStatement;
-import lombok.ast.FloatingPointLiteral;
-import lombok.ast.ForwardingAstVisitor;
-import lombok.ast.InlineIfExpression;
-import lombok.ast.IntegralLiteral;
-import lombok.ast.MethodDeclaration;
-import lombok.ast.MethodInvocation;
-import lombok.ast.Node;
-import lombok.ast.NullLiteral;
-import lombok.ast.Select;
-import lombok.ast.Statement;
-import lombok.ast.StringLiteral;
-import lombok.ast.Try;
-import lombok.ast.TypeReference;
-import lombok.ast.UnaryExpression;
-import lombok.ast.UnaryOperator;
-import lombok.ast.VariableDeclaration;
-import lombok.ast.VariableDefinition;
-import lombok.ast.VariableDefinitionEntry;
-import lombok.ast.VariableReference;
 
 /**
  * Looks up annotations on method calls and enforces the various things they
@@ -126,7 +139,8 @@ import lombok.ast.VariableReference;
  * specifying toInclusive without setting to, combining @ColorInt with any @ResourceTypeRes,
  * using @CheckResult on a void method, etc.
  */
-public class SupportAnnotationDetector extends Detector implements Detector.JavaScanner {
+@SuppressWarnings("WeakerAccess")
+public class SupportAnnotationDetector extends Detector implements JavaPsiScanner {
 
     public static final Implementation IMPLEMENTATION
             = new Implementation(SupportAnnotationDetector.class, Scope.JAVA_FILE_SCOPE);
@@ -251,7 +265,6 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
                     "http://developer.android.com/guide/components/processes-and-threads.html#Threads");
 
     public static final String CHECK_RESULT_ANNOTATION = SUPPORT_ANNOTATIONS_PREFIX + "CheckResult"; //$NON-NLS-1$
-    public static final String COLOR_INT_ANNOTATION = SUPPORT_ANNOTATIONS_PREFIX + "ColorInt"; //$NON-NLS-1$
     public static final String INT_RANGE_ANNOTATION = SUPPORT_ANNOTATIONS_PREFIX + "IntRange"; //$NON-NLS-1$
     public static final String FLOAT_RANGE_ANNOTATION = SUPPORT_ANNOTATIONS_PREFIX + "FloatRange"; //$NON-NLS-1$
     public static final String SIZE_ANNOTATION = SUPPORT_ANNOTATIONS_PREFIX + "Size"; //$NON-NLS-1$
@@ -260,10 +273,10 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
     public static final String MAIN_THREAD_ANNOTATION = SUPPORT_ANNOTATIONS_PREFIX + "MainThread"; //$NON-NLS-1$
     public static final String WORKER_THREAD_ANNOTATION = SUPPORT_ANNOTATIONS_PREFIX + "WorkerThread"; //$NON-NLS-1$
     public static final String BINDER_THREAD_ANNOTATION = SUPPORT_ANNOTATIONS_PREFIX + "BinderThread"; //$NON-NLS-1$
+    public static final String ANY_THREAD_ANNOTATION = SUPPORT_ANNOTATIONS_PREFIX + "AnyThread"; //$NON-NLS-1$
     public static final String PERMISSION_ANNOTATION_READ = PERMISSION_ANNOTATION + ".Read"; //$NON-NLS-1$
     public static final String PERMISSION_ANNOTATION_WRITE = PERMISSION_ANNOTATION + ".Write"; //$NON-NLS-1$
 
-    public static final String RES_SUFFIX = "Res";
     public static final String THREAD_SUFFIX = "Thread";
     public static final String ATTR_SUGGEST = "suggest";
     public static final String ATTR_TO = "to";
@@ -278,14 +291,6 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
     public static final String ATTR_CONDITIONAL = "conditional";
 
     /**
-     * Marker ResourceType used to signify that an expression is of type {@code @ColorInt},
-     * which isn't actually a ResourceType but one we want to specifically compare with.
-     * We're using {@link ResourceType#PUBLIC} because that one won't appear in the R
-     * class (and ResourceType is an enum we can't just create new constants for.)
-     */
-    public static final ResourceType COLOR_INT_MARKER_TYPE = ResourceType.PUBLIC;
-
-    /**
      * Constructs a new {@link SupportAnnotationDetector} check
      */
     public SupportAnnotationDetector() {
@@ -293,34 +298,46 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
 
     private void checkMethodAnnotation(
             @NonNull JavaContext context,
-            @NonNull ResolvedMethod method,
-            @NonNull Node node,
-            @NonNull ResolvedAnnotation annotation) {
-        String signature = annotation.getSignature();
+            @NonNull PsiMethod method,
+            @NonNull PsiElement call,
+            @NonNull PsiAnnotation annotation,
+            @NonNull PsiAnnotation[] allMethodAnnotations,
+            @NonNull PsiAnnotation[] allClassAnnotations) {
+        String signature = annotation.getQualifiedName();
+        if (signature == null) {
+            return;
+        }
         if (CHECK_RESULT_ANNOTATION.equals(signature)
-                || signature.endsWith(".CheckReturnValue")) { // support findbugs annotation too
-            checkResult(context, node, annotation);
+                // support findbugs annotation too
+                || signature.endsWith(".CheckReturnValue")) {
+            checkResult(context, call, method, annotation);
         } else if (signature.equals(PERMISSION_ANNOTATION)) {
             PermissionRequirement requirement = PermissionRequirement.create(context, annotation);
-            checkPermission(context, node, method, null, requirement);
+            checkPermission(context, call, method, null, requirement);
         } else if (signature.endsWith(THREAD_SUFFIX)
                 && signature.startsWith(SUPPORT_ANNOTATIONS_PREFIX)) {
-            checkThreading(context, node, method, signature);
+            checkThreading(context, call, method, signature, annotation, allMethodAnnotations,
+                    allClassAnnotations);
         }
     }
 
     private void checkParameterAnnotations(
             @NonNull JavaContext context,
-            @NonNull Node argument,
-            @NonNull Node call,
-            @NonNull ResolvedMethod method,
-            @NonNull Iterable<ResolvedAnnotation> annotations) {
+            @NonNull PsiExpression argument,
+            @NonNull PsiCall call,
+            @NonNull PsiMethod method,
+            @NonNull PsiAnnotation[] annotations) {
         boolean handledResourceTypes = false;
-        for (ResolvedAnnotation annotation : annotations) {
-            String signature = annotation.getSignature();
+        for (PsiAnnotation annotation : annotations) {
+            String signature = annotation.getQualifiedName();
+            if (signature == null) {
+                continue;
+            }
 
             if (COLOR_INT_ANNOTATION.equals(signature)) {
                 checkColor(context, argument);
+            } else if (signature.equals(PX_ANNOTATION)) {
+                checkPx(context, argument);
             } else if (signature.equals(INT_RANGE_ANNOTATION)) {
                 checkIntRange(context, annotation, argument, annotations);
             } else if (signature.equals(FLOAT_RANGE_ANNOTATION)) {
@@ -340,7 +357,7 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
                 // don't want to (a) create redundant warnings or (b) work harder than we
                 // have to
                 if (signature.equals(INT_DEF_ANNOTATION)) {
-                    boolean flag = annotation.getValue(TYPE_DEF_FLAG_ATTRIBUTE) == Boolean.TRUE;
+                    boolean flag = getAnnotationBooleanValue(annotation, TYPE_DEF_FLAG_ATTRIBUTE) == Boolean.TRUE;
                     checkTypeDefConstant(context, annotation, argument, null, flag,
                             annotations);
                 } else if (signature.equals(STRING_DEF_ANNOTATION)) {
@@ -355,9 +372,9 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
                     // Handle all resource type annotations in one go: there could be multiple
                     // resource type annotations specified on the same element; we need to
                     // know about them all up front.
-                    for (ResolvedAnnotation a : annotations) {
-                        String s = a.getSignature();
-                        if (s.endsWith(RES_SUFFIX)) {
+                    for (PsiAnnotation a : annotations) {
+                        String s = a.getQualifiedName();
+                        if (s != null && s.endsWith(RES_SUFFIX)) {
                             String typeString = s.substring(SUPPORT_ANNOTATIONS_PREFIX.length(),
                                     s.length() - RES_SUFFIX.length()).toLowerCase(Locale.US);
                             ResourceType type = ResourceType.getEnum(typeString);
@@ -375,7 +392,7 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
                     }
 
                     if (types != null) {
-                        checkResourceType(context, argument, types);
+                        checkResourceType(context, argument, types, call, method);
                     }
                 }
             }
@@ -384,27 +401,25 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
 
     private static EnumSet<ResourceType> getAnyRes() {
         EnumSet<ResourceType> types = EnumSet.allOf(ResourceType.class);
-        types.remove(COLOR_INT_MARKER_TYPE);
+        types.remove(ResourceEvaluator.COLOR_INT_MARKER_TYPE);
+        types.remove(ResourceEvaluator.PX_MARKER_TYPE);
         return types;
     }
 
     private void checkParameterPermission(
             @NonNull JavaContext context,
             @NonNull String signature,
-            @NonNull Node call,
-            @NonNull ResolvedMethod method,
-            @NonNull Node argument) {
+            @NonNull PsiElement call,
+            @NonNull PsiMethod method,
+            @NonNull PsiExpression argument) {
         Operation operation = null;
         if (signature.equals(PERMISSION_ANNOTATION_READ)) {
             operation = READ;
         } else if (signature.equals(PERMISSION_ANNOTATION_WRITE)) {
             operation = WRITE;
         } else {
-            TypeDescriptor type = context.getType(argument);
-            if (type == null) {
-                return;
-            }
-            if (type.matchesSignature(CLASS_INTENT)) {
+            PsiType type = argument.getType();
+            if (type != null && CLASS_INTENT.equals(type.getCanonicalText())) {
                 operation = ACTION;
             }
         }
@@ -417,27 +432,55 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
         }
     }
 
-    private static void checkColor(@NonNull JavaContext context, @NonNull Node argument) {
-        if (argument instanceof InlineIfExpression) {
-            InlineIfExpression expression = (InlineIfExpression) argument;
-            checkColor(context, expression.astIfTrue());
-            checkColor(context, expression.astIfFalse());
+    private static void checkColor(@NonNull JavaContext context, @NonNull PsiElement argument) {
+        if (argument instanceof PsiConditionalExpression) {
+            PsiConditionalExpression expression = (PsiConditionalExpression) argument;
+            if (expression.getThenExpression() != null) {
+                checkColor(context, expression.getThenExpression());
+            }
+            if (expression.getElseExpression() != null) {
+                checkColor(context, expression.getElseExpression());
+            }
             return;
         }
 
-        EnumSet<ResourceType> types = getResourceTypes(context, argument);
+        EnumSet<ResourceType> types = ResourceEvaluator.getResourceTypes(context.getEvaluator(),
+                argument);
 
-        if (types != null && types.contains(ResourceType.COLOR)
+        if (types != null && types.contains(COLOR)
                 && !isIgnoredInIde(COLOR_USAGE, context, argument)) {
             String message = String.format(
                     "Should pass resolved color instead of resource id here: " +
-                            "`getResources().getColor(%1$s)`", argument.toString());
+                            "`getResources().getColor(%1$s)`", argument.getText());
+            context.report(COLOR_USAGE, argument, context.getLocation(argument), message);
+        }
+    }
+
+    private static void checkPx(@NonNull JavaContext context, @NonNull PsiElement argument) {
+        if (argument instanceof PsiConditionalExpression) {
+            PsiConditionalExpression expression = (PsiConditionalExpression) argument;
+            if (expression.getThenExpression() != null) {
+                checkPx(context, expression.getThenExpression());
+            }
+            if (expression.getElseExpression() != null) {
+                checkPx(context, expression.getElseExpression());
+            }
+            return;
+        }
+
+        EnumSet<ResourceType> types = ResourceEvaluator.getResourceTypes(context.getEvaluator(),
+          argument);
+
+        if (types != null && types.contains(DIMEN)) {
+            String message = String.format(
+              "Should pass resolved pixel dimension instead of resource id here: " +
+                "`getResources().getDimension*(%1$s)`", argument.getText());
             context.report(COLOR_USAGE, argument, context.getLocation(argument), message);
         }
     }
 
     private static boolean isIgnoredInIde(@NonNull Issue issue, @NonNull JavaContext context,
-            @NonNull Node node) {
+            @NonNull PsiElement node) {
         // Historically, the IDE would treat *all* support annotation warnings as
         // handled by the id "ResourceType", so look for that id too for issues
         // deliberately suppressed prior to Android Studio 2.0.
@@ -449,8 +492,8 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
 
     private void checkPermission(
             @NonNull JavaContext context,
-            @NonNull Node node,
-            @Nullable ResolvedMethod method,
+            @NonNull PsiElement node,
+            @Nullable PsiMethod method,
             @Nullable Result result,
             @NonNull PermissionRequirement requirement) {
         if (requirement.isConditional()) {
@@ -472,7 +515,12 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
                     operation = result.operation;
                 } else {
                     assert method != null;
-                    name = method.getContainingClass().getSimpleName() + "." + method.getName();
+                    PsiClass containingClass = method.getContainingClass();
+                    if (containingClass != null) {
+                        name = containingClass.getName() + "." + method.getName();
+                    } else {
+                        name = method.getName();
+                    }
                     operation = Operation.CALL;
                 }
                 String message = getMissingPermissionMessage(requirement, name, permissions,
@@ -481,48 +529,13 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
             }
         } else if (requirement.isRevocable(permissions) &&
                 context.getMainProject().getTargetSdkVersion().getFeatureLevel() >= 23) {
-            // Ensure that the caller is handling a security exception
-            // First check to see if we're inside a try/catch which catches a SecurityException
-            // (or some wider exception than that). Check for nested try/catches too.
-            boolean handlesMissingPermission = false;
-            Node parent = node;
-            while (true) {
-                Try tryCatch = getParentOfType(parent, Try.class);
-                if (tryCatch == null) {
-                    break;
-                } else {
-                    JavaParser parser = context.getParser();
-                    for (Catch aCatch : tryCatch.astCatches()) {
-                        for (TypeDescriptor catchType : parser.getCatchTypes(context, aCatch)) {
-                            if (isSecurityException(context,
-                                    catchType)) {
-                                handlesMissingPermission = true;
-                                break;
-                            }
-                        }
-                    }
-                    parent = tryCatch;
-                }
-            }
 
-            // If not, check to see if the method itself declares that it throws a
-            // SecurityException or something wider.
-            if (!handlesMissingPermission) {
-                MethodDeclaration declaration = getParentOfType(parent, MethodDeclaration.class);
-                if (declaration != null) {
-                    for (TypeReference typeReference : declaration.astThrownTypeReferences()) {
-                        if (isSecurityException(context, context.getType(typeReference))) {
-                            handlesMissingPermission = true;
-                            break;
-                        }
-                    }
-                }
-            }
+            boolean handlesMissingPermission = handlesSecurityException(node);
 
             // If not, check to see if the code is deliberately checking to see if the
             // given permission is available.
             if (!handlesMissingPermission) {
-                Node methodNode = JavaContext.findSurroundingMethod(node);
+                PsiMethod methodNode = PsiTreeUtil.getParentOfType(node, PsiMethod.class, true);
                 if (methodNode != null) {
                     CheckPermissionVisitor visitor = new CheckPermissionVisitor(node);
                     methodNode.accept(visitor);
@@ -537,25 +550,63 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
         }
     }
 
+    private static boolean handlesSecurityException(@NonNull PsiElement node) {
+        // Ensure that the caller is handling a security exception
+        // First check to see if we're inside a try/catch which catches a SecurityException
+        // (or some wider exception than that). Check for nested try/catches too.
+        PsiElement parent = node;
+        while (true) {
+            PsiTryStatement tryCatch = PsiTreeUtil
+                    .getParentOfType(parent, PsiTryStatement.class, true);
+            if (tryCatch == null) {
+                break;
+            } else {
+                for (PsiCatchSection psiCatchSection : tryCatch.getCatchSections()) {
+                    PsiType type = psiCatchSection.getCatchType();
+                    if (isSecurityException(type)) {
+                        return true;
+                    }
+                }
+
+                parent = tryCatch;
+            }
+        }
+
+        // If not, check to see if the method itself declares that it throws a
+        // SecurityException or something wider.
+        PsiMethod declaration = PsiTreeUtil.getParentOfType(parent, PsiMethod.class, false);
+        if (declaration != null) {
+            for (PsiClassType type : declaration.getThrowsList().getReferencedTypes()) {
+                if (isSecurityException(type)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
     @NonNull
     private static PermissionHolder addLocalPermissions(
             @NonNull JavaContext context,
             @NonNull PermissionHolder permissions,
-            @NonNull Node node) {
+            @NonNull PsiElement node) {
         // Accumulate @RequirePermissions available in the local context
-        Node methodNode = JavaContext.findSurroundingMethod(node);
-        if (methodNode == null) {
+        PsiMethod method = PsiTreeUtil.getParentOfType(node, PsiMethod.class, true);
+        if (method == null) {
             return permissions;
         }
-        ResolvedNode resolved = context.resolve(methodNode);
-        if (!(resolved instanceof ResolvedMethod)) {
-            return permissions;
+        PsiAnnotation annotation = method.getModifierList().findAnnotation(PERMISSION_ANNOTATION);
+        permissions = mergeAnnotationPermissions(context, permissions, annotation);
+
+        PsiClass containingClass = method.getContainingClass();
+        if (containingClass != null) {
+            PsiModifierList modifierList = containingClass.getModifierList();
+            if (modifierList != null) {
+                annotation = modifierList.findAnnotation(PERMISSION_ANNOTATION);
+                permissions = mergeAnnotationPermissions(context, permissions, annotation);
+            }
         }
-        ResolvedMethod method = (ResolvedMethod) resolved;
-        ResolvedAnnotation annotation = method.getAnnotation(PERMISSION_ANNOTATION);
-        permissions = mergeAnnotationPermissions(context, permissions, annotation);
-        annotation = method.getContainingClass().getAnnotation(PERMISSION_ANNOTATION);
-        permissions = mergeAnnotationPermissions(context, permissions, annotation);
         return permissions;
     }
 
@@ -563,7 +614,7 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
     private static PermissionHolder mergeAnnotationPermissions(
             @NonNull JavaContext context,
             @NonNull PermissionHolder permissions,
-            @Nullable ResolvedAnnotation annotation) {
+            @Nullable PsiAnnotation annotation) {
         if (annotation != null) {
             PermissionRequirement requirement = PermissionRequirement.create(context, annotation);
             permissions = SetPermissionLookup.join(permissions, requirement);
@@ -599,33 +650,35 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
      * or whether the check return value (== PERMISSION_GRANTED vs != PERMISSION_GRANTED)
      * is handled correctly, etc.
      */
-    private static class CheckPermissionVisitor extends ForwardingAstVisitor {
+    private static class CheckPermissionVisitor extends JavaRecursiveElementVisitor {
         private boolean mChecksPermission;
         private boolean mDone;
-        private final Node mTarget;
+        private final PsiElement mTarget;
 
-        public CheckPermissionVisitor(@NonNull Node target) {
+        public CheckPermissionVisitor(@NonNull PsiElement target) {
             mTarget = target;
         }
 
         @Override
-        public boolean visitNode(Node node) {
-            return mDone;
+        public void visitElement(PsiElement element) {
+            if (!mDone) {
+                super.visitElement(element);
+            }
         }
 
         @Override
-        public boolean visitMethodInvocation(MethodInvocation node) {
+        public void visitMethodCallExpression(PsiMethodCallExpression node) {
             if (node == mTarget) {
                 mDone = true;
             }
 
-            String name = node.astName().astValue();
-            if ((name.startsWith("check") || name.startsWith("enforce"))
+            String name = node.getMethodExpression().getReferenceName();
+            if (name != null
+                    && (name.startsWith("check") || name.startsWith("enforce"))
                     && name.endsWith("Permission")) {
                 mChecksPermission = true;
                 mDone = true;
             }
-            return super.visitMethodInvocation(node);
         }
 
         public boolean checksPermission() {
@@ -634,12 +687,23 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
     }
 
     private static boolean isSecurityException(
-            @NonNull JavaContext context,
-            @Nullable TypeDescriptor type) {
-        // In earlier versions we checked not just for java.lang.SecurityException but
-        // any super type as well, however that probably hides warnings in cases where
-        // users don't want that; see http://b.android.com/182165
-        return type != null && type.matchesSignature("java.lang.SecurityException");
+            @Nullable PsiType type) {
+        if (type instanceof PsiClassType) {
+            PsiClass cls = ((PsiClassType) type).resolve();
+            // In earlier versions we checked not just for java.lang.SecurityException but
+            // any super type as well, however that probably hides warnings in cases where
+            // users don't want that; see http://b.android.com/182165
+            //return context.getEvaluator().extendsClass(cls, "java.lang.SecurityException", false);
+            return cls != null && "java.lang.SecurityException".equals(cls.getQualifiedName());
+        } else if (type instanceof PsiDisjunctionType) {
+            for (PsiType disjunction : ((PsiDisjunctionType)type).getDisjunctions()) {
+                if (isSecurityException(disjunction)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     private PermissionHolder mPermissions;
@@ -685,8 +749,8 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
         }
         NodeList children = root.getChildNodes();
         for (int i = 0, n = children.getLength(); i < n; i++) {
-            org.w3c.dom.Node item = children.item(i);
-            if (item.getNodeType() != org.w3c.dom.Node.ELEMENT_NODE) {
+            Node item = children.item(i);
+            if (item.getNodeType() != Node.ELEMENT_NODE) {
                 continue;
             }
             String nodeName = item.getNodeName();
@@ -712,11 +776,11 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
         }
     }
 
-    private static void checkResult(@NonNull JavaContext context, @NonNull Node node,
-            @NonNull ResolvedAnnotation annotation) {
-        if (node.getParent() instanceof ExpressionStatement) {
+    private static void checkResult(@NonNull JavaContext context, @NonNull PsiElement node,
+            @NonNull PsiMethod method, @NonNull PsiAnnotation annotation) {
+        if (skipParentheses(node.getParent()) instanceof PsiExpressionStatement) {
             String methodName = JavaContext.getMethodName(node);
-            Object suggested = annotation.getValue(ATTR_SUGGEST);
+            String suggested = getAnnotationStringValue(annotation, ATTR_SUGGEST);
 
             // Failing to check permissions is a potential security issue (and had an existing
             // dedicated issue id before which people may already have configured with a
@@ -739,7 +803,12 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
                 // with "#" etc?
                 message = String.format(
                         "The result of `%1$s` is not used; did you mean to call `%2$s`?",
-                        methodName, suggested.toString());
+                        methodName, suggested);
+            } else if ("intersect".equals(methodName)
+                    && context.getEvaluator().isMemberInClass(method, "android.graphics.Rect")) {
+                message += ". If the rectangles do not intersect, no change is made and the "
+                        + "original rectangle is not modified. These methods return false to "
+                        + "indicate that this has happened.";
             }
             context.report(issue, node, context.getLocation(node), message);
         }
@@ -747,49 +816,170 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
 
     private static void checkThreading(
             @NonNull JavaContext context,
-            @NonNull Node node,
-            @NonNull ResolvedMethod method,
-            @NonNull String annotation) {
-        String threadContext = getThreadContext(context, node);
-        if (threadContext != null && !isCompatibleThread(threadContext, annotation)
+            @NonNull PsiElement node,
+            @NonNull PsiMethod method,
+            @NonNull String signature,
+            @NonNull PsiAnnotation annotation,
+            @NonNull PsiAnnotation[] allMethodAnnotations,
+            @NonNull PsiAnnotation[] allClassAnnotations) {
+        List<String> threadContext = getThreadContext(context, node);
+        if (threadContext != null && !isCompatibleThread(threadContext, signature)
                 && !isIgnoredInIde(THREAD, context, node)) {
-            String message = String.format("Method %1$s must be called from the `%2$s` thread, currently inferred thread is `%3$s` thread",
-                    method.getName(), describeThread(annotation), describeThread(threadContext));
+            // If the annotation is specified on the class, ignore this requirement
+            // if there is another annotation specified on the method.
+            if (containsAnnotation(allClassAnnotations, annotation)) {
+                if (containsThreadingAnnotation(allMethodAnnotations)) {
+                    return;
+                }
+                // Make sure ALL the other context annotations are acceptable!
+            } else {
+                assert containsAnnotation(allMethodAnnotations, annotation);
+                // See if any of the *other* annotations are compatible.
+                Boolean isFirst = null;
+                for (PsiAnnotation other : allMethodAnnotations) {
+                    if (other == annotation) {
+                        if (isFirst == null) {
+                            isFirst = true;
+                        }
+                        continue;
+                    } else if (!isThreadingAnnotation(other)) {
+                        continue;
+                    }
+                    if (isFirst == null) {
+                        // We'll be called for each annotation on the method.
+                        // For each one we're checking *all* annotations on the target.
+                        // Therefore, when we're seeing the second, third, etc annotation
+                        // on the method we've already checked them, so return here.
+                        return;
+                    }
+                    String s = other.getQualifiedName();
+                    if (s != null && isCompatibleThread(threadContext, s)) {
+                        return;
+                    }
+                }
+            }
+
+            String name = method.getName();
+            if ((name.startsWith("post") )
+                && context.getEvaluator().isMemberInClass(method, CLASS_VIEW)) {
+                // The post()/postDelayed() methods are (currently) missing
+                // metadata (@AnyThread); they're on a class marked @UiThread
+                // but these specific methods are not @UiThread.
+                return;
+            }
+
+            List<String> targetThreads = getThreads(context, method);
+            if (targetThreads == null) {
+                targetThreads = Collections.singletonList(signature);
+            }
+
+            String message = String.format(
+                 "%1$s %2$s must be called from the `%3$s` thread, currently inferred thread is `%4$s` thread",
+                 method.isConstructor() ? "Constructor" : "Method",
+                 method.getName(), describeThreads(targetThreads, true),
+                 describeThreads(threadContext, false));
             context.report(THREAD, node, context.getLocation(node), message);
         }
     }
 
+    public static boolean containsAnnotation(
+            @NonNull PsiAnnotation[] array,
+            @NonNull PsiAnnotation annotation) {
+        for (PsiAnnotation a : array) {
+            if (a == annotation) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public static boolean containsThreadingAnnotation(@NonNull PsiAnnotation[] array) {
+        for (PsiAnnotation annotation : array) {
+            if (isThreadingAnnotation(annotation)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public static boolean isThreadingAnnotation(@NonNull PsiAnnotation annotation) {
+        String signature = annotation.getQualifiedName();
+        return signature != null
+                && signature.endsWith(THREAD_SUFFIX)
+                && signature.startsWith(SUPPORT_ANNOTATIONS_PREFIX);
+    }
+
+    @NonNull
+    public static String describeThreads(@NonNull List<String> annotations, boolean any) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < annotations.size(); i++) {
+            if (i > 0) {
+                if (i == annotations.size() - 1) {
+                    if (any) {
+                        sb.append(" or ");
+                    } else {
+                        sb.append(" and ");
+                    }
+                } else {
+                    sb.append(", ");
+                }
+            }
+            sb.append(describeThread(annotations.get(i)));
+        }
+        return sb.toString();
+    }
+
     @NonNull
     public static String describeThread(@NonNull String annotation) {
-        if (UI_THREAD_ANNOTATION.equals(annotation)) {
-            return "UI";
-        }
-        else if (MAIN_THREAD_ANNOTATION.equals(annotation)) {
-            return "main";
-        }
-        else if (BINDER_THREAD_ANNOTATION.equals(annotation)) {
-            return "binder";
-        }
-        else if (WORKER_THREAD_ANNOTATION.equals(annotation)) {
-            return "worker";
-        } else {
-            return "other";
+        switch (annotation) {
+            case UI_THREAD_ANNOTATION:
+                return "UI";
+            case MAIN_THREAD_ANNOTATION:
+                return "main";
+            case BINDER_THREAD_ANNOTATION:
+                return "binder";
+            case WORKER_THREAD_ANNOTATION:
+                return "worker";
+            case ANY_THREAD_ANNOTATION:
+                return "any";
+            default:
+                return "other";
         }
     }
 
     /** returns true if the two threads are compatible */
-    public static boolean isCompatibleThread(@NonNull String thread1, @NonNull String thread2) {
-        if (thread1.equals(thread2)) {
+    public static boolean isCompatibleThread(@NonNull List<String> callers,
+            @NonNull String callee) {
+        // ALL calling contexts must be valid
+        assert !callers.isEmpty();
+        for (String caller : callers) {
+            if (!isCompatibleThread(caller, callee)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /** returns true if the two threads are compatible */
+    public static boolean isCompatibleThread(@NonNull String caller, @NonNull String callee) {
+        if (callee.equals(caller)) {
+            return true;
+        }
+
+        if (callee.equals(ANY_THREAD_ANNOTATION)) {
             return true;
         }
 
         // Allow @UiThread and @MainThread to be combined
-        if (thread1.equals(UI_THREAD_ANNOTATION)) {
-            if (thread2.equals(MAIN_THREAD_ANNOTATION)) {
+        if (callee.equals(UI_THREAD_ANNOTATION)) {
+            if (caller.equals(MAIN_THREAD_ANNOTATION)) {
                 return true;
             }
-        } else if (thread1.equals(MAIN_THREAD_ANNOTATION)) {
-            if (thread2.equals(UI_THREAD_ANNOTATION)) {
+        } else if (callee.equals(MAIN_THREAD_ANNOTATION)) {
+            if (caller.equals(UI_THREAD_ANNOTATION)) {
                 return true;
             }
         }
@@ -799,37 +989,62 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
 
     /** Attempts to infer the current thread context at the site of the given method call */
     @Nullable
-    private static String getThreadContext(@NonNull JavaContext context,
-            @NonNull Node methodCall) {
-        Node node = findSurroundingMethod(methodCall);
-        if (node != null) {
-            ResolvedNode resolved = context.resolve(node);
-            if (resolved instanceof ResolvedMethod) {
-                ResolvedMethod method = (ResolvedMethod) resolved;
-                ResolvedClass cls = method.getContainingClass();
+    private static List<String> getThreadContext(@NonNull JavaContext context,
+            @NonNull PsiElement methodCall) {
+        //noinspection unchecked
+        PsiMethod method = PsiTreeUtil.getParentOfType(methodCall, PsiMethod.class, true,
+                PsiAnonymousClass.class);
+        return getThreads(context, method);
+    }
 
-                while (method != null) {
-                    for (ResolvedAnnotation annotation : method.getAnnotations()) {
-                        String name = annotation.getSignature();
-                        if (name.startsWith(SUPPORT_ANNOTATIONS_PREFIX)
+    /** Attempts to infer the current thread context at the site of the given method call */
+    @Nullable
+    private static List<String> getThreads(@NonNull JavaContext context,
+            @Nullable PsiMethod method) {
+        if (method != null) {
+            List<String> result = null;
+            PsiClass cls = method.getContainingClass();
+
+            while (method != null) {
+                for (PsiAnnotation annotation : method.getModifierList().getAnnotations()) {
+                    String name = annotation.getQualifiedName();
+                    if (name != null && name.startsWith(SUPPORT_ANNOTATIONS_PREFIX)
+                            && name.endsWith(THREAD_SUFFIX)) {
+                        if (result == null) {
+                            result = new ArrayList<>(4);
+                        }
+                        result.add(name);
+                    }
+                }
+                if (result != null) {
+                    // We don't accumulate up the chain: one method replaces the requirements
+                    // of its super methods.
+                    return result;
+                }
+                method = context.getEvaluator().getSuperMethod(method);
+            }
+
+            // See if we're extending a class with a known threading context
+            while (cls != null) {
+                PsiModifierList modifierList = cls.getModifierList();
+                if (modifierList != null) {
+                    for (PsiAnnotation annotation : modifierList.getAnnotations()) {
+                        String name = annotation.getQualifiedName();
+                        if (name != null && name.startsWith(SUPPORT_ANNOTATIONS_PREFIX)
                                 && name.endsWith(THREAD_SUFFIX)) {
-                            return name;
+                            if (result == null) {
+                                result = new ArrayList<>(4);
+                            }
+                            result.add(name);
                         }
                     }
-                    method = method.getSuperMethod();
-                }
-
-                // See if we're extending a class with a known threading context
-                while (cls != null) {
-                    for (ResolvedAnnotation annotation : cls.getAnnotations()) {
-                        String name = annotation.getSignature();
-                        if (name.startsWith(SUPPORT_ANNOTATIONS_PREFIX)
-                                && name.endsWith(THREAD_SUFFIX)) {
-                            return name;
-                        }
+                    if (result != null) {
+                        // We don't accumulate up the chain: one class replaces the requirements
+                        // of its super classes.
+                        return result;
                     }
-                    cls = cls.getSuperClass();
                 }
+                cls = cls.getSuperClass();
             }
         }
 
@@ -842,30 +1057,52 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
         return null;
     }
 
-    private static boolean isNumber(@NonNull Node argument) {
-        return argument instanceof IntegralLiteral || argument instanceof UnaryExpression
-                && ((UnaryExpression) argument).astOperator() == UnaryOperator.UNARY_MINUS
-                && ((UnaryExpression) argument).astOperand() instanceof IntegralLiteral;
+    private static boolean isNumber(@NonNull PsiElement argument) {
+        if (argument instanceof PsiLiteral) {
+            Object value = ((PsiLiteral) argument).getValue();
+            return value instanceof Number;
+        } else if (argument instanceof PsiPrefixExpression) {
+            PsiPrefixExpression expression = (PsiPrefixExpression) argument;
+            PsiExpression operand = expression.getOperand();
+            return operand != null && isNumber(operand);
+        } else {
+            return false;
+        }
     }
 
-    private static boolean isZero(@NonNull Node argument) {
-        return argument instanceof IntegralLiteral
-                && ((IntegralLiteral) argument).astIntValue() == 0;
+    private static boolean isZero(@NonNull PsiElement argument) {
+        if (argument instanceof PsiLiteral) {
+            Object value = ((PsiLiteral) argument).getValue();
+            return value instanceof Number && ((Number)value).intValue() == 0;
+        }
+        return false;
     }
 
-    private static boolean isMinusOne(@NonNull Node argument) {
-        return argument instanceof UnaryExpression
-                && ((UnaryExpression) argument).astOperator() == UnaryOperator.UNARY_MINUS
-                && ((UnaryExpression) argument).astOperand() instanceof IntegralLiteral
-                && ((IntegralLiteral) ((UnaryExpression) argument).astOperand()).astIntValue()
-                == 1;
+    private static boolean isMinusOne(@NonNull PsiElement argument) {
+        if (argument instanceof PsiPrefixExpression) {
+            PsiPrefixExpression expression = (PsiPrefixExpression) argument;
+            PsiExpression operand = expression.getOperand();
+            if (operand instanceof PsiLiteral &&
+                    expression.getOperationTokenType() == JavaTokenType.MINUS) {
+                Object value = ((PsiLiteral) operand).getValue();
+                return value instanceof Number && ((Number) value).intValue() == 1;
+            } else {
+                return false;
+            }
+        } else {
+            return false;
+        }
     }
 
     private static void checkResourceType(
             @NonNull JavaContext context,
-            @NonNull Node argument,
-            @NonNull EnumSet<ResourceType> expectedType) {
-        EnumSet<ResourceType> actual = getResourceTypes(context, argument);
+            @NonNull PsiElement argument,
+            @NonNull EnumSet<ResourceType> expectedType,
+            @NonNull PsiCall call,
+            @NonNull PsiMethod calledMethod) {
+        EnumSet<ResourceType> actual = ResourceEvaluator.getResourceTypes(context.getEvaluator(),
+                argument);
+
         if (actual == null && (!isNumber(argument) || isZero(argument) || isMinusOne(argument)) ) {
             return;
         } else if (actual != null && (!Sets.intersection(actual, expectedType).isEmpty()
@@ -878,13 +1115,31 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
             return;
         }
 
+        if (expectedType.contains(ResourceType.STYLEABLE) && (expectedType.size() == 1)
+                && context.getEvaluator().isMemberInClass(calledMethod,
+                        "android.content.res.TypedArray")
+                && (call instanceof PsiMethodCallExpression)
+                && typeArrayFromArrayLiteral(((PsiMethodCallExpression) call)
+                    .getMethodExpression().getQualifierExpression())) {
+            // You're generally supposed to provide a styleable to the TypedArray methods,
+            // but you're also allowed to supply an integer array
+            return;
+        }
+
         String message;
-        if (actual != null && actual.size() == 1 && actual.contains(COLOR_INT_MARKER_TYPE)) {
+        if (actual != null && actual.size() == 1 && actual.contains(
+                ResourceEvaluator.COLOR_INT_MARKER_TYPE)) {
             message = "Expected a color resource id (`R.color.`) but received an RGB integer";
-        } else if (expectedType.contains(COLOR_INT_MARKER_TYPE)) {
+        } else if (expectedType.contains(ResourceEvaluator.COLOR_INT_MARKER_TYPE)) {
             message = String.format("Should pass resolved color instead of resource id here: " +
-                    "`getResources().getColor(%1$s)`", argument.toString());
-        } else if (expectedType.size() < ResourceType.getNames().length - 1) {
+              "`getResources().getColor(%1$s)`", argument.getText());
+        } else if (actual != null && actual.size() == 1 && actual.contains(
+          ResourceEvaluator.PX_MARKER_TYPE)) {
+            message = "Expected a dimension resource id (`R.color.`) but received a pixel integer";
+        } else if (expectedType.contains(ResourceEvaluator.PX_MARKER_TYPE)) {
+            message = String.format("Should pass resolved pixel size instead of resource id here: " +
+              "`getResources().getDimension*(%1$s)`", argument.getText());
+        } else if (expectedType.size() < ResourceType.getNames().length - 2) { // -2: marker types
             message = String.format("Expected resource of type %1$s",
                     Joiner.on(" or ").join(expectedType));
         } else {
@@ -893,119 +1148,123 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
         context.report(RESOURCE_TYPE, argument, context.getLocation(argument), message);
     }
 
-    @Nullable
-    private static EnumSet<ResourceType> getResourceTypes(@NonNull JavaContext context,
-            @NonNull Node argument) {
-        if (argument instanceof Select) {
-            Select node = (Select) argument;
-            if (node.astOperand() instanceof Select) {
-                Select select = (Select) node.astOperand();
-                if (select.astOperand() instanceof Select) { // android.R....
-                    Select innerSelect = (Select) select.astOperand();
-                    if (innerSelect.astIdentifier().astValue().equals(R_CLASS)) {
-                        String typeName = select.astIdentifier().astValue();
-                        ResourceType type = ResourceType.getEnum(typeName);
-                        return type != null ? EnumSet.of(type) : null;
-                    }
-                }
-                if (select.astOperand() instanceof VariableReference) {
-                    VariableReference reference = (VariableReference) select.astOperand();
-                    if (reference.astIdentifier().astValue().equals(R_CLASS)) {
-                        String typeName = select.astIdentifier().astValue();
-                        ResourceType type = ResourceType.getEnum(typeName);
-                        return type != null ? EnumSet.of(type) : null;
-                    }
-                }
-            }
-
-            // Arbitrary packages -- android.R.type.name, foo.bar.R.type.name
-            if (node.astIdentifier().astValue().equals(R_CLASS)) {
-                Node parent = node.getParent();
-                if (parent instanceof Select) {
-                    Node grandParent = parent.getParent();
-                    if (grandParent instanceof Select) {
-                        Select select = (Select) grandParent;
-                        Expression typeOperand = select.astOperand();
-                        if (typeOperand instanceof Select) {
-                            Select typeSelect = (Select) typeOperand;
-                            String typeName = typeSelect.astIdentifier().astValue();
-                            ResourceType type = ResourceType.getEnum(typeName);
-                            return type != null ? EnumSet.of(type) : null;
-                        }
-                    }
-                }
-            }
-        } else if (argument instanceof VariableReference) {
-            Statement statement = getParentOfType(argument, Statement.class, false);
-            if (statement != null) {
-                ListIterator<Node> iterator = statement.getParent().getChildren().listIterator();
-                while (iterator.hasNext()) {
-                    if (iterator.next() == statement) {
-                        if (iterator.hasPrevious()) { // should always be true
-                            iterator.previous();
-                        }
-                        break;
-                    }
-                }
-
-                String targetName = ((VariableReference)argument).astIdentifier().astValue();
-                while (iterator.hasPrevious()) {
-                    Node previous = iterator.previous();
-                    if (previous instanceof VariableDeclaration) {
-                        VariableDeclaration declaration = (VariableDeclaration) previous;
-                        VariableDefinition definition = declaration.astDefinition();
-                        for (VariableDefinitionEntry entry : definition
-                                .astVariables()) {
-                            if (entry.astInitializer() != null
-                                    && entry.astName().astValue().equals(targetName)) {
-                                return getResourceTypes(context, entry.astInitializer());
+    /**
+     * Returns true if the node is pointing to a TypedArray whose value was obtained
+     * from an array literal
+     */
+    public static boolean typeArrayFromArrayLiteral(@Nullable PsiElement node) {
+        if (node instanceof PsiMethodCallExpression) {
+            PsiMethodCallExpression expression = (PsiMethodCallExpression) node;
+            String name = expression.getMethodExpression().getReferenceName();
+            if (name != null && "obtainStyledAttributes".equals(name)) {
+                PsiExpressionList argumentList = expression.getArgumentList();
+                PsiExpression[] expressions = argumentList.getExpressions();
+                if (expressions.length > 0) {
+                    int arg;
+                    if (expressions.length == 1) {
+                        // obtainStyledAttributes(int[] attrs)
+                        arg = 0;
+                    } else if (expressions.length == 2) {
+                        // obtainStyledAttributes(AttributeSet set, int[] attrs)
+                        // obtainStyledAttributes(int resid, int[] attrs)
+                        for (arg = 0; arg < expressions.length; arg++) {
+                            PsiType type = expressions[arg].getType();
+                            if (type instanceof PsiArrayType) {
+                                break;
                             }
                         }
-                    } else if (previous instanceof ExpressionStatement) {
-                        ExpressionStatement expressionStatement = (ExpressionStatement) previous;
-                        Expression expression = expressionStatement.astExpression();
-                        if (expression instanceof BinaryExpression &&
-                                ((BinaryExpression) expression).astOperator()
-                                        == BinaryOperator.ASSIGN) {
-                            BinaryExpression binaryExpression = (BinaryExpression) expression;
-                            if (targetName.equals(binaryExpression.astLeft().toString())) {
-                                return getResourceTypes(context, binaryExpression.astRight());
+                        if (arg == expressions.length) {
+                            return false;
+                        }
+                    } else if (expressions.length == 4) {
+                        // obtainStyledAttributes(AttributeSet set, int[] attrs, int defStyleAttr, int defStyleRes)
+                        arg = 1;
+                    } else {
+                        return false;
+                    }
+
+                    return ConstantEvaluator.isArrayLiteral(expressions[arg]);
+                }
+            }
+            return false;
+        } else if (node instanceof PsiReference) {
+            PsiElement resolved = ((PsiReference) node).resolve();
+            if (resolved instanceof PsiField) {
+                PsiField field = (PsiField) resolved;
+                if (field.getInitializer() != null) {
+                    return typeArrayFromArrayLiteral(field.getInitializer());
+                }
+            } else if (resolved instanceof PsiLocalVariable) {
+                PsiLocalVariable variable = (PsiLocalVariable) resolved;
+                PsiStatement statement = PsiTreeUtil.getParentOfType(node, PsiStatement.class,
+                        false);
+                if (statement != null) {
+                    PsiStatement prev = PsiTreeUtil.getPrevSiblingOfType(statement,
+                            PsiStatement.class);
+                    String targetName = variable.getName();
+                    if (targetName == null) {
+                        return false;
+                    }
+                    while (prev != null) {
+                        if (prev instanceof PsiDeclarationStatement) {
+                            for (PsiElement element : ((PsiDeclarationStatement) prev)
+                                    .getDeclaredElements()) {
+                                if (variable.equals(element)) {
+                                    return typeArrayFromArrayLiteral(variable.getInitializer());
+                                }
+                            }
+                        } else if (prev instanceof PsiExpressionStatement) {
+                            PsiExpression expression = ((PsiExpressionStatement) prev)
+                                    .getExpression();
+                            if (expression instanceof PsiAssignmentExpression) {
+                                PsiAssignmentExpression assign
+                                        = (PsiAssignmentExpression) expression;
+                                PsiExpression lhs = assign.getLExpression();
+                                if (lhs instanceof PsiReferenceExpression) {
+                                    PsiReferenceExpression reference = (PsiReferenceExpression) lhs;
+                                    if (targetName.equals(reference.getReferenceName()) &&
+                                            reference.getQualifier() == null) {
+                                        return typeArrayFromArrayLiteral(assign.getRExpression());
+                                    }
+                                }
                             }
                         }
+                        prev = PsiTreeUtil.getPrevSiblingOfType(prev,
+                                PsiStatement.class);
                     }
                 }
             }
-        } else if (argument instanceof MethodInvocation) {
-            ResolvedNode resolved = context.resolve(argument);
-            if (resolved != null) {
-                for (ResolvedAnnotation annotation : resolved.getAnnotations()) {
-                    String signature = annotation.getSignature();
-                    if (signature.equals(COLOR_INT_ANNOTATION)) {
-                        return EnumSet.of(COLOR_INT_MARKER_TYPE);
-                    }
-                    if (signature.endsWith(RES_SUFFIX)
-                            && signature.startsWith(SUPPORT_ANNOTATIONS_PREFIX)) {
-                        String typeString = signature.substring(SUPPORT_ANNOTATIONS_PREFIX.length(),
-                                signature.length() - RES_SUFFIX.length()).toLowerCase(Locale.US);
-                        ResourceType type = ResourceType.getEnum(typeString);
-                        if (type != null) {
-                            return EnumSet.of(type);
-                        } else if (typeString.equals("any")) { // @AnyRes
-                            return getAnyRes();
-                        }
-                    }
-                }
+        } else if (node instanceof PsiNewExpression) {
+            PsiNewExpression creation = (PsiNewExpression) node;
+            if (creation.getArrayInitializer() != null) {
+                return true;
+            }
+            PsiType type = creation.getType();
+            if (type instanceof PsiArrayType) {
+                return true;
+            }
+        } else if (node instanceof PsiParenthesizedExpression) {
+            PsiParenthesizedExpression parenthesizedExpression = (PsiParenthesizedExpression) node;
+            PsiExpression expression = parenthesizedExpression.getExpression();
+            if (expression != null) {
+                return typeArrayFromArrayLiteral(expression);
+            }
+        } else if (node instanceof PsiTypeCastExpression) {
+            PsiTypeCastExpression castExpression = (PsiTypeCastExpression) node;
+            PsiExpression operand = castExpression.getOperand();
+            if (operand != null) {
+                return typeArrayFromArrayLiteral(operand);
             }
         }
 
-        return null;
+        return false;
     }
 
     private static void checkIntRange(
             @NonNull JavaContext context,
-            @NonNull ResolvedAnnotation annotation,
-            @NonNull Node argument,
-            @NonNull Iterable<ResolvedAnnotation> allAnnotations) {
+            @NonNull PsiAnnotation annotation,
+            @NonNull PsiElement argument,
+            @NonNull PsiAnnotation[] allAnnotations) {
         String message = getIntRangeError(context, annotation, argument);
         if (message != null) {
             if (findIntDef(allAnnotations) != null) {
@@ -1026,22 +1285,21 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
     @Nullable
     private static String getIntRangeError(
             @NonNull JavaContext context,
-            @NonNull ResolvedAnnotation annotation,
-            @NonNull Node argument) {
-        if (argument instanceof ArrayCreation) {
-            ArrayCreation creation = (ArrayCreation)argument;
-            ArrayInitializer initializer = creation.astInitializer();
+            @NonNull PsiAnnotation annotation,
+            @NonNull PsiElement argument) {
+        if (argument instanceof PsiNewExpression) {
+            PsiNewExpression newExpression = (PsiNewExpression) argument;
+            PsiArrayInitializerExpression initializer = newExpression.getArrayInitializer();
             if (initializer != null) {
-                for (Expression expression : initializer.astExpressions()) {
+                for (PsiExpression expression : initializer.getInitializers()) {
                     String error = getIntRangeError(context, annotation, expression);
                     if (error != null) {
                         return error;
                     }
                 }
             }
-
-            return null;
         }
+
         Object object = ConstantEvaluator.evaluate(context, argument);
         if (!(object instanceof Number)) {
             return null;
@@ -1077,8 +1335,8 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
 
     private static void checkFloatRange(
             @NonNull JavaContext context,
-            @NonNull ResolvedAnnotation annotation,
-            @NonNull Node argument) {
+            @NonNull PsiAnnotation annotation,
+            @NonNull PsiElement argument) {
         Object object = ConstantEvaluator.evaluate(context, argument);
         if (!(object instanceof Number)) {
             return;
@@ -1101,7 +1359,7 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
      */
     @Nullable
     private static String getFloatRangeError(double value, double from, double to,
-            boolean fromInclusive, boolean toInclusive, @NonNull Node node) {
+            boolean fromInclusive, boolean toInclusive, @NonNull PsiElement node) {
         if (!((fromInclusive && value >= from || !fromInclusive && value > from) &&
                 (toInclusive && value <= to || !toInclusive && value < to))) {
             StringBuilder sb = new StringBuilder(20);
@@ -1148,12 +1406,12 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
                 sb.append(Double.toString(to));
             }
             sb.append(" (was ");
-            if (node instanceof FloatingPointLiteral || node instanceof IntegralLiteral) {
+            if (node instanceof PsiLiteral) {
                 // Use source text instead to avoid rounding errors involved in conversion, e.g
                 //    Error: Value must be > 2.5 (was 2.490000009536743) [Range]
                 //    printAtLeastExclusive(2.49f); // ERROR
                 //                          ~~~~~
-                String str = node.toString();
+                String str = node.getText();
                 if (str.endsWith("f") || str.endsWith("F")) {
                     str = str.substring(0, str.length() - 1);
                 }
@@ -1169,26 +1427,33 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
 
     private static void checkSize(
             @NonNull JavaContext context,
-            @NonNull ResolvedAnnotation annotation,
-            @NonNull Node argument) {
+            @NonNull PsiAnnotation annotation,
+            @NonNull PsiElement argument) {
         int actual;
-        if (argument instanceof StringLiteral) {
-            // Check string length
-            StringLiteral literal = (StringLiteral) argument;
-            String s = literal.astValue();
-            actual = s.length();
-        } else if (argument instanceof ArrayCreation) {
-            ArrayCreation literal = (ArrayCreation) argument;
-            ArrayInitializer initializer = literal.astInitializer();
-            if (initializer == null) {
+        boolean isString = false;
+
+        // TODO: Collections syntax, e.g. Arrays.asList ⇒ param count, emptyList=0, singleton=1, etc
+        // TODO: Flow analysis
+        // No flow analysis for this check yet, only checking literals passed in as parameters
+
+        if (argument instanceof PsiNewExpression) {
+            PsiNewExpression newExpression = (PsiNewExpression) argument;
+            PsiArrayInitializerExpression initializer = newExpression.getArrayInitializer();
+            if (initializer != null) {
+                PsiExpression[] initializers = initializer.getInitializers();
+                actual = initializers.length;
+            } else {
                 return;
             }
-            actual = initializer.astExpressions().size();
         } else {
-            // TODO: Collections syntax, e.g. Arrays.asList => param count, emptyList=0, singleton=1, etc
-            // TODO: Flow analysis
-            // No flow analysis for this check yet, only checking literals passed in as parameters
-            return;
+            Object object = ConstantEvaluator.evaluate(context, argument);
+            // Check string length
+            if (object instanceof String) {
+                actual = ((String)object).length();
+                isString = true;
+            } else {
+                return;
+            }
         }
         long exact = getLongAttribute(annotation, ATTR_VALUE, -1);
         long min = getLongAttribute(annotation, ATTR_MIN, Long.MIN_VALUE);
@@ -1196,7 +1461,6 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
         long multiple = getLongAttribute(annotation, ATTR_MULTIPLE, 1);
 
         String unit;
-        boolean isString = argument instanceof StringLiteral;
         if (isString) {
             unit = "length";
         } else {
@@ -1242,10 +1506,10 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
     }
 
     @Nullable
-    private static ResolvedAnnotation findIntRange(
-            @NonNull Iterable<ResolvedAnnotation> annotations) {
-        for (ResolvedAnnotation annotation : annotations) {
-            if (INT_RANGE_ANNOTATION.equals(annotation.getName())) {
+    private static PsiAnnotation findIntRange(
+            @NonNull PsiAnnotation[] annotations) {
+        for (PsiAnnotation annotation : annotations) {
+            if (INT_RANGE_ANNOTATION.equals(annotation.getQualifiedName())) {
                 return annotation;
             }
         }
@@ -1254,10 +1518,9 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
     }
 
     @Nullable
-    static ResolvedAnnotation findIntDef(
-            @NonNull Iterable<ResolvedAnnotation> annotations) {
-        for (ResolvedAnnotation annotation : annotations) {
-            if (INT_DEF_ANNOTATION.equals(annotation.getName())) {
+    static PsiAnnotation findIntDef(@NonNull PsiAnnotation[] annotations) {
+        for (PsiAnnotation annotation : annotations) {
+            if (INT_DEF_ANNOTATION.equals(annotation.getQualifiedName())) {
                 return annotation;
             }
         }
@@ -1267,97 +1530,84 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
 
     private static void checkTypeDefConstant(
             @NonNull JavaContext context,
-            @NonNull ResolvedAnnotation annotation,
-            @NonNull Node argument,
-            @Nullable Node errorNode,
+            @NonNull PsiAnnotation annotation,
+            @Nullable PsiElement argument,
+            @Nullable PsiElement errorNode,
             boolean flag,
-            @NonNull Iterable<ResolvedAnnotation> allAnnotations) {
-        if (argument instanceof NullLiteral) {
-            // Accepted for @StringDef
+            @NonNull PsiAnnotation[] allAnnotations) {
+        if (argument == null) {
             return;
         }
-
-        if (argument instanceof StringLiteral) {
-            StringLiteral string = (StringLiteral) argument;
-            checkTypeDefConstant(context, annotation, argument, errorNode, false, string.astValue(),
-                    allAnnotations);
-        } else if (argument instanceof IntegralLiteral) {
-            IntegralLiteral literal = (IntegralLiteral) argument;
-            int value = literal.astIntValue();
-            if (flag && value == 0) {
-                // Accepted for a flag @IntDef
+        if (argument instanceof PsiLiteral) {
+            Object value = ((PsiLiteral) argument).getValue();
+            if (value == null) {
+                // Accepted for @StringDef
+                //noinspection UnnecessaryReturnStatement
                 return;
-            }
-
-            ResolvedAnnotation rangeAnnotation = findIntRange(allAnnotations);
-            if (rangeAnnotation != null) {
-                // Allow @IntRange on this number
-                if (getIntRangeError(context, rangeAnnotation, literal) == null) {
+            } else if (value instanceof String) {
+                String string = (String) value;
+                checkTypeDefConstant(context, annotation, argument, errorNode, false, string,
+                        allAnnotations);
+            } else if (value instanceof Integer || value instanceof Long) {
+                long v = value instanceof Long ? ((Long) value) : ((Integer) value).longValue();
+                if (flag && v == 0) {
+                    // Accepted for a flag @IntDef
                     return;
                 }
-            }
 
-            checkTypeDefConstant(context, annotation, argument, errorNode, flag, value,
-                    allAnnotations);
+                checkTypeDefConstant(context, annotation, argument, errorNode, flag, value,
+                        allAnnotations);
+            }
         } else if (isMinusOne(argument)) {
             // -1 is accepted unconditionally for flags
             if (!flag) {
-                ResolvedAnnotation rangeAnnotation = findIntRange(allAnnotations);
-                if (rangeAnnotation != null) {
-                    // Allow @IntRange on this number
-                    if (getIntRangeError(context, rangeAnnotation, argument) == null) {
-                        return;
-                    }
-                }
-
                 reportTypeDef(context, annotation, argument, errorNode, allAnnotations);
             }
-        } else if (argument instanceof InlineIfExpression) {
-            InlineIfExpression expression = (InlineIfExpression) argument;
-            if (expression.astIfTrue() != null) {
-                checkTypeDefConstant(context, annotation, expression.astIfTrue(), errorNode, flag,
-                        allAnnotations);
-            }
-            if (expression.astIfFalse() != null) {
-                checkTypeDefConstant(context, annotation, expression.astIfFalse(), errorNode, flag,
-                        allAnnotations);
-            }
-        } else if (argument instanceof UnaryExpression) {
-            UnaryExpression expression = (UnaryExpression) argument;
-            UnaryOperator operator = expression.astOperator();
+        } else if (argument instanceof PsiPrefixExpression) {
+            PsiPrefixExpression expression = (PsiPrefixExpression) argument;
             if (flag) {
-                checkTypeDefConstant(context, annotation, expression.astOperand(), errorNode, true,
-                        allAnnotations);
-            } else if (operator == UnaryOperator.BINARY_NOT) {
-                if (isIgnoredInIde(TYPE_DEF, context, expression)) {
-                    return;
-                }
-                context.report(TYPE_DEF, expression, context.getLocation(expression),
-                        "Flag not allowed here");
-            } else if (operator == UnaryOperator.UNARY_MINUS) {
-                ResolvedAnnotation rangeAnnotation = findIntRange(allAnnotations);
-                if (rangeAnnotation != null) {
-                    // Allow @IntRange on this number
-                    if (getIntRangeError(context, rangeAnnotation, argument) == null) {
+                checkTypeDefConstant(context, annotation, expression.getOperand(),
+                        errorNode, true, allAnnotations);
+            } else {
+                IElementType operator = expression.getOperationTokenType();
+                if (operator == JavaTokenType.TILDE) {
+                    if (isIgnoredInIde(TYPE_DEF, context, expression)) {
                         return;
                     }
+                    context.report(TYPE_DEF, expression, context.getLocation(expression),
+                            "Flag not allowed here");
+                } else if (operator == JavaTokenType.MINUS) {
+                    reportTypeDef(context, annotation, argument, errorNode, allAnnotations);
                 }
-
-                reportTypeDef(context, annotation, argument, errorNode, allAnnotations);
             }
-        } else if (argument instanceof BinaryExpression) {
+        } else if (argument instanceof PsiParenthesizedExpression) {
+            PsiExpression expression = ((PsiParenthesizedExpression) argument).getExpression();
+            if (expression != null) {
+                checkTypeDefConstant(context, annotation, expression, errorNode, flag, allAnnotations);
+            }
+        } else if (argument instanceof PsiConditionalExpression) {
+            PsiConditionalExpression expression = (PsiConditionalExpression) argument;
+            if (expression.getThenExpression() != null) {
+                checkTypeDefConstant(context, annotation, expression.getThenExpression(), errorNode, flag,
+                        allAnnotations);
+            }
+            if (expression.getElseExpression() != null) {
+                checkTypeDefConstant(context, annotation, expression.getElseExpression(), errorNode, flag,
+                        allAnnotations);
+            }
+        } else if (argument instanceof PsiBinaryExpression) {
             // If it's ?: then check both the if and else clauses
-            BinaryExpression expression = (BinaryExpression) argument;
+            PsiBinaryExpression expression = (PsiBinaryExpression) argument;
             if (flag) {
-                checkTypeDefConstant(context, annotation, expression.astLeft(), errorNode, true,
+                checkTypeDefConstant(context, annotation, expression.getLOperand(), errorNode, true,
                         allAnnotations);
-                checkTypeDefConstant(context, annotation, expression.astRight(), errorNode, true,
+                checkTypeDefConstant(context, annotation, expression.getROperand(), errorNode, true,
                         allAnnotations);
             } else {
-                BinaryOperator operator = expression.astOperator();
-                if (operator == BinaryOperator.BITWISE_AND
-                        || operator == BinaryOperator.BITWISE_OR
-                        || operator == BinaryOperator.BITWISE_XOR) {
+                IElementType operator = expression.getOperationTokenType();
+                if (operator == JavaTokenType.AND
+                        || operator == JavaTokenType.OR
+                        || operator == JavaTokenType.XOR) {
                     if (isIgnoredInIde(TYPE_DEF, context, expression)) {
                         return;
                     }
@@ -1365,81 +1615,86 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
                             "Flag not allowed here");
                 }
             }
-        } else if (argument instanceof ArrayCreation) {
-            ArrayCreation creation = (ArrayCreation) argument;
-            TypeReference typeReference = creation.astComponentTypeReference();
-            ArrayInitializer initializer = creation.astInitializer();
-            if (initializer != null && (TYPE_INT.equals(typeReference.getTypeName())
-                    || TYPE_LONG.equals(typeReference.getTypeName()))) {
-                for (Expression expression : initializer.astExpressions()) {
-                    checkTypeDefConstant(context, annotation, expression, errorNode, flag,
-                            allAnnotations);
-                }
-            }
-        } else {
-            ResolvedNode resolved = context.resolve(argument);
-            if (resolved instanceof ResolvedField) {
-                ResolvedField field = (ResolvedField) resolved;
-                if (field.getType().isArray()) {
+        } else if (argument instanceof PsiReference) {
+            PsiElement resolved = ((PsiReference) argument).resolve();
+            if (resolved instanceof PsiField) {
+                PsiField field = (PsiField) resolved;
+                if (field.getType() instanceof PsiArrayType) {
                     // It's pointing to an array reference; we can't check these individual
                     // elements (because we can't jump from ResolvedNodes to AST elements; this
                     // is part of the motivation for the PSI change in lint 2.0), but we also
                     // don't want to flag it as invalid.
                     return;
                 }
-                int modifiers = field.getModifiers();
-                // If it's a constant (static/final) check that it's one of the allowed ones
-                if ((modifiers & (Modifier.FINAL|Modifier.STATIC))
-                        == (Modifier.FINAL|Modifier.STATIC)) {
-                    checkTypeDefConstant(context, annotation, argument, errorNode, flag, resolved,
-                            allAnnotations);
-                }
-            } else if (argument instanceof VariableReference) {
-                Statement statement = getParentOfType(argument, Statement.class, false);
-                if (statement != null) {
-                    ListIterator<Node> iterator = statement.getParent().getChildren().listIterator();
-                    while (iterator.hasNext()) {
-                        if (iterator.next() == statement) {
-                            if (iterator.hasPrevious()) { // should always be true
-                                iterator.previous();
-                            }
-                            break;
-                        }
-                    }
 
-                    String targetName = ((VariableReference)argument).astIdentifier().astValue();
-                    while (iterator.hasPrevious()) {
-                        Node previous = iterator.previous();
-                        if (previous instanceof VariableDeclaration) {
-                            VariableDeclaration declaration = (VariableDeclaration) previous;
-                            VariableDefinition definition = declaration.astDefinition();
-                            for (VariableDefinitionEntry entry : definition
-                                    .astVariables()) {
-                                if (entry.astInitializer() != null
-                                        && entry.astName().astValue().equals(targetName)) {
+                // If it's a constant (static/final) check that it's one of the allowed ones
+                if (context.getEvaluator().isStatic(field) &&
+                        context.getEvaluator().isFinal(field)) {
+                    checkTypeDefConstant(context, annotation, argument,
+                            errorNode != null ? errorNode : argument,
+                            flag, resolved, allAnnotations);
+
+                }
+            } else if (resolved instanceof PsiLocalVariable) {
+                PsiLocalVariable variable = (PsiLocalVariable) resolved;
+                PsiStatement statement = PsiTreeUtil.getParentOfType(argument, PsiStatement.class,
+                        false);
+                if (statement != null) {
+                    PsiStatement prev = PsiTreeUtil.getPrevSiblingOfType(statement,
+                            PsiStatement.class);
+                    String targetName = variable.getName();
+                    if (targetName == null) {
+                        return;
+                    }
+                    while (prev != null) {
+                        if (prev instanceof PsiDeclarationStatement) {
+                            for (PsiElement element : ((PsiDeclarationStatement) prev)
+                                    .getDeclaredElements()) {
+                                if (variable.equals(element)) {
                                     checkTypeDefConstant(context, annotation,
-                                            entry.astInitializer(),
+                                            variable.getInitializer(),
                                             errorNode != null ? errorNode : argument, flag,
                                             allAnnotations);
                                     return;
                                 }
                             }
-                        } else if (previous instanceof ExpressionStatement) {
-                            ExpressionStatement expressionStatement = (ExpressionStatement) previous;
-                            Expression expression = expressionStatement.astExpression();
-                            if (expression instanceof BinaryExpression &&
-                                    ((BinaryExpression) expression).astOperator()
-                                            == BinaryOperator.ASSIGN) {
-                                BinaryExpression binaryExpression = (BinaryExpression) expression;
-                                if (targetName.equals(binaryExpression.astLeft().toString())) {
-                                    checkTypeDefConstant(context, annotation,
-                                            binaryExpression.astRight(),
-                                            errorNode != null ? errorNode : argument, flag,
-                                            allAnnotations);
-                                    return;
+                        } else if (prev instanceof PsiExpressionStatement) {
+                            PsiExpression expression = ((PsiExpressionStatement) prev)
+                                    .getExpression();
+                            if (expression instanceof PsiAssignmentExpression) {
+                                PsiAssignmentExpression assign
+                                        = (PsiAssignmentExpression) expression;
+                                PsiExpression lhs = assign.getLExpression();
+                                if (lhs instanceof PsiReferenceExpression) {
+                                    PsiReferenceExpression reference = (PsiReferenceExpression) lhs;
+                                    if (targetName.equals(reference.getReferenceName()) &&
+                                            reference.getQualifier() == null) {
+                                        checkTypeDefConstant(context, annotation,
+                                                assign.getRExpression(),
+                                                errorNode != null ? errorNode : argument, flag,
+                                                allAnnotations);
+                                        return;
+                                    }
                                 }
                             }
                         }
+                        prev = PsiTreeUtil.getPrevSiblingOfType(prev,
+                                PsiStatement.class);
+                    }
+                }
+            }
+        } else if (argument instanceof PsiNewExpression) {
+            PsiNewExpression newExpression = (PsiNewExpression) argument;
+            PsiArrayInitializerExpression initializer = newExpression.getArrayInitializer();
+            if (initializer != null) {
+                PsiType type = initializer.getType();
+                if (type != null) {
+                    type = type.getDeepComponentType();
+                }
+                if (PsiType.INT.equals(type) || PsiType.LONG.equals(type)) {
+                    for (PsiExpression expression : initializer.getInitializers()) {
+                        checkTypeDefConstant(context, annotation, expression, errorNode, flag,
+                                allAnnotations);
                     }
                 }
             }
@@ -1447,34 +1702,71 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
     }
 
     private static void checkTypeDefConstant(@NonNull JavaContext context,
-            @NonNull ResolvedAnnotation annotation, @NonNull Node argument,
-            @Nullable Node errorNode, boolean flag, Object value,
-            @NonNull Iterable<ResolvedAnnotation> allAnnotations) {
-        Object allowed = annotation.getValue();
-        if (allowed instanceof Object[]) {
-            Object[] allowedValues = (Object[]) allowed;
-            for (Object o : allowedValues) {
-                if (o.equals(value)) {
+            @NonNull PsiAnnotation annotation, @NonNull PsiElement argument,
+            @Nullable PsiElement errorNode, boolean flag, Object value,
+            @NonNull PsiAnnotation[] allAnnotations) {
+        PsiAnnotation rangeAnnotation = findIntRange(allAnnotations);
+        if (rangeAnnotation != null) {
+            // Allow @IntRange on this number
+            if (getIntRangeError(context, rangeAnnotation, argument) == null) {
+                return;
+            }
+        }
+
+        PsiAnnotationMemberValue allowed = getAnnotationValue(annotation);
+        if (allowed == null) {
+            return;
+        }
+
+        if (allowed instanceof PsiArrayInitializerMemberValue) {
+            PsiArrayInitializerMemberValue initializerExpression =
+                    (PsiArrayInitializerMemberValue) allowed;
+            PsiAnnotationMemberValue[] initializers = initializerExpression.getInitializers();
+            for (PsiAnnotationMemberValue expression : initializers) {
+                if (expression instanceof PsiLiteral) {
+                    if (value.equals(((PsiLiteral)expression).getValue())) {
+                        return;
+                    }
+                } else if (expression instanceof PsiReference) {
+                    PsiElement resolved = ((PsiReference) expression).resolve();
+                    if (resolved != null && resolved.equals(value)) {
+                        return;
+                    }
+                }
+            }
+
+            if (value instanceof PsiField) {
+                PsiField astNode = (PsiField)value;
+                PsiExpression initializer = astNode.getInitializer();
+                if (initializer != null) {
+                    checkTypeDefConstant(context, annotation, initializer, errorNode,
+                            flag, allAnnotations);
                     return;
                 }
             }
-            reportTypeDef(context, argument, errorNode, flag, allowedValues, allAnnotations);
+
+            reportTypeDef(context, argument, errorNode, flag,
+                    initializers, allAnnotations);
         }
     }
 
     private static void reportTypeDef(@NonNull JavaContext context,
-            @NonNull ResolvedAnnotation annotation, @NonNull Node argument,
-            @Nullable Node errorNode, @NonNull Iterable<ResolvedAnnotation> allAnnotations) {
-        Object allowed = annotation.getValue();
-        if (allowed instanceof Object[]) {
-            Object[] allowedValues = (Object[]) allowed;
-            reportTypeDef(context, argument, errorNode, false, allowedValues, allAnnotations);
+            @NonNull PsiAnnotation annotation, @NonNull PsiElement argument,
+            @Nullable PsiElement errorNode, @NonNull PsiAnnotation[] allAnnotations) {
+        //    reportTypeDef(context, argument, errorNode, false, allowedValues, allAnnotations);
+        PsiAnnotationMemberValue allowed = getAnnotationValue(annotation);
+        if (allowed instanceof PsiArrayInitializerMemberValue) {
+            PsiArrayInitializerMemberValue initializerExpression =
+                    (PsiArrayInitializerMemberValue) allowed;
+            PsiAnnotationMemberValue[] initializers = initializerExpression.getInitializers();
+            reportTypeDef(context, argument, errorNode, false, initializers, allAnnotations);
         }
     }
 
-    private static void reportTypeDef(@NonNull JavaContext context, @NonNull Node node,
-            @Nullable Node errorNode, boolean flag, @NonNull Object[] allowedValues,
-            @NonNull Iterable<ResolvedAnnotation> allAnnotations) {
+    private static void reportTypeDef(@NonNull JavaContext context, @NonNull PsiElement node,
+            @Nullable PsiElement errorNode, boolean flag,
+            @NonNull PsiAnnotationMemberValue[] allowedValues,
+            @NonNull PsiAnnotation[] allAnnotations) {
         if (errorNode == null) {
             errorNode = node;
         }
@@ -1490,7 +1782,7 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
             message = "Must be one of: " + values;
         }
 
-        ResolvedAnnotation rangeAnnotation = findIntRange(allAnnotations);
+        PsiAnnotation rangeAnnotation = findIntRange(allAnnotations);
         if (rangeAnnotation != null) {
             // Allow @IntRange on this number
             String rangeError = getIntRangeError(context, rangeAnnotation, node);
@@ -1503,27 +1795,35 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
         context.report(TYPE_DEF, errorNode, context.getLocation(errorNode), message);
     }
 
-    private static String listAllowedValues(@NonNull Object[] allowedValues) {
+    @Nullable
+    private static PsiAnnotationMemberValue getAnnotationValue(@NonNull PsiAnnotation annotation) {
+        PsiNameValuePair[] attributes = annotation.getParameterList().getAttributes();
+        for (PsiNameValuePair pair : attributes) {
+            if (pair.getName() == null || pair.getName().equals(ATTR_VALUE)) {
+                return pair.getValue();
+            }
+        }
+        return null;
+    }
+
+    private static String listAllowedValues(@NonNull PsiAnnotationMemberValue[] allowedValues) {
         StringBuilder sb = new StringBuilder();
-        for (Object allowedValue : allowedValues) {
-            String s;
-            if (allowedValue instanceof Integer) {
-                s = allowedValue.toString();
-            } else if (allowedValue instanceof ResolvedNode) {
-                ResolvedNode node = (ResolvedNode) allowedValue;
-                if (node instanceof ResolvedField) {
-                    ResolvedField field = (ResolvedField) node;
-                    String containingClassName = field.getContainingClassName();
+        for (PsiAnnotationMemberValue allowedValue : allowedValues) {
+            String s = null;
+            if (allowedValue instanceof PsiReference) {
+                PsiElement resolved = ((PsiReference) allowedValue).resolve();
+                if (resolved instanceof PsiField) {
+                    PsiField field = (PsiField) resolved;
+                    String containingClassName = field.getContainingClass() != null
+                            ? field.getContainingClass().getName() : null;
                     if (containingClassName == null) {
                         continue;
                     }
-                    containingClassName = containingClassName.substring(containingClassName.lastIndexOf('.') + 1);
                     s = containingClassName + "." + field.getName();
-                } else {
-                    s = node.getSignature();
                 }
-            } else {
-                continue;
+            }
+            if (s == null) {
+                s = allowedValue.getText();
             }
             if (sb.length() > 0) {
                 sb.append(", ");
@@ -1533,48 +1833,47 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
         return sb.toString();
     }
 
-    private static double getDoubleAttribute(@NonNull ResolvedAnnotation annotation,
+    static double getDoubleAttribute(@NonNull PsiAnnotation annotation,
             @NonNull String name, double defaultValue) {
-        Object value = annotation.getValue(name);
-        if (value instanceof Number) {
-            return ((Number) value).doubleValue();
+        Double value = getAnnotationDoubleValue(annotation, name);
+        if (value != null) {
+            return value;
         }
 
         return defaultValue;
     }
 
-    private static long getLongAttribute(@NonNull ResolvedAnnotation annotation,
+    static long getLongAttribute(@NonNull PsiAnnotation annotation,
             @NonNull String name, long defaultValue) {
-        Object value = annotation.getValue(name);
-        if (value instanceof Number) {
-            return ((Number) value).longValue();
+        Long value = getAnnotationLongValue(annotation, name);
+        if (value != null) {
+            return value;
         }
 
         return defaultValue;
     }
 
-    private static boolean getBoolean(@NonNull ResolvedAnnotation annotation,
+    static boolean getBoolean(@NonNull PsiAnnotation annotation,
             @NonNull String name, boolean defaultValue) {
-        Object value = annotation.getValue(name);
-        if (value instanceof Boolean) {
-            return ((Boolean) value);
+        Boolean value = getAnnotationBooleanValue(annotation, name);
+        if (value != null) {
+            return value;
         }
 
         return defaultValue;
     }
 
     @NonNull
-    static Iterable<ResolvedAnnotation> filterRelevantAnnotations(
-            @NonNull Iterable<ResolvedAnnotation> annotations) {
-        List<ResolvedAnnotation> result = null;
-        Iterator<ResolvedAnnotation> iterator = annotations.iterator();
-        int index = 0;
-        while (iterator.hasNext()) {
-            ResolvedAnnotation annotation = iterator.next();
-            index++;
-
-            String signature = annotation.getSignature();
-            if (signature.startsWith("java.")) {
+    static PsiAnnotation[] filterRelevantAnnotations(
+            @NonNull JavaEvaluator evaluator, @NonNull PsiAnnotation[] annotations) {
+        List<PsiAnnotation> result = null;
+        int length = annotations.length;
+        if (length == 0) {
+            return annotations;
+        }
+        for (PsiAnnotation annotation : annotations) {
+            String signature = annotation.getQualifiedName();
+            if (signature == null || signature.startsWith("java.")) {
                 // @Override, @SuppressWarnings etc. Ignore
                 continue;
             }
@@ -1587,11 +1886,11 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
                 }
 
                 // Common case: there's just one annotation; no need to create a list copy
-                if (!iterator.hasNext() && index == 1) {
+                if (length == 1) {
                     return annotations;
                 }
                 if (result == null) {
-                    result = new ArrayList<ResolvedAnnotation>(2);
+                    result = new ArrayList<>(2);
                 }
                 result.add(annotation);
             }
@@ -1601,50 +1900,59 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
             // annotate it with @IntDef, and then use @foo.bar.Baz in your signatures.
             // Here we want to map from @foo.bar.Baz to the corresponding int def.
             // Don't need to compute this if performing @IntDef or @StringDef lookup
-            ResolvedClass type = annotation.getClassType();
-            if (type != null) {
-                Iterable<ResolvedAnnotation> innerAnnotations = type.getAnnotations();
-                Iterator<ResolvedAnnotation> iterator2 = innerAnnotations.iterator();
-                while (iterator2.hasNext()) {
-                    ResolvedAnnotation inner = iterator2.next();
-                    if (inner.matches(INT_DEF_ANNOTATION)
-                            || inner.matches(PERMISSION_ANNOTATION)
-                            || inner.matches(INT_RANGE_ANNOTATION)
-                            || inner.matches(STRING_DEF_ANNOTATION)) {
-                        if (!iterator.hasNext() && !iterator2.hasNext() && index == 1) {
-                            return innerAnnotations;
-                        }
-                        if (result == null) {
-                            result = new ArrayList<ResolvedAnnotation>(2);
-                        }
-                        result.add(inner);
+            PsiJavaCodeReferenceElement ref = annotation.getNameReferenceElement();
+            if (ref == null) {
+                continue;
+            }
+            PsiElement resolved = ref.resolve();
+            if (!(resolved instanceof PsiClass) || !((PsiClass)resolved).isAnnotationType()) {
+                continue;
+            }
+            PsiClass cls = (PsiClass)resolved;
+            PsiAnnotation[] innerAnnotations = evaluator.getAllAnnotations(cls, false);
+            for (int j = 0; j < innerAnnotations.length; j++) {
+                PsiAnnotation inner = innerAnnotations[j];
+                String a = inner.getQualifiedName();
+                if (a == null || a.startsWith("java.")) {
+                    // @Override, @SuppressWarnings etc. Ignore
+                    continue;
+                }
+                if (a.equals(INT_DEF_ANNOTATION)
+                        || a.equals(PERMISSION_ANNOTATION)
+                        || a.equals(INT_RANGE_ANNOTATION)
+                        || a.equals(STRING_DEF_ANNOTATION)) {
+                    if (length == 1 && j == innerAnnotations.length - 1 && result == null) {
+                        return innerAnnotations;
                     }
+                    if (result == null) {
+                        result = new ArrayList<>(2);
+                    }
+                    result.add(inner);
                 }
             }
         }
 
-        return result != null ? result : Collections.<ResolvedAnnotation>emptyList();
+        return result != null
+                ? result.toArray(PsiAnnotation.EMPTY_ARRAY) : PsiAnnotation.EMPTY_ARRAY;
     }
 
     // ---- Implements JavaScanner ----
 
     @Override
-    public
-    List<Class<? extends Node>> getApplicableNodeTypes() {
-        //noinspection unchecked
-        return Arrays.<Class<? extends Node>>asList(
-          MethodInvocation.class,
-          ConstructorInvocation.class,
-          EnumConstant.class);
+    public List<Class<? extends PsiElement>> getApplicablePsiTypes() {
+        List<Class<? extends PsiElement>> types = new ArrayList<Class<? extends PsiElement>>(2);
+        types.add(PsiCallExpression.class);
+        types.add(PsiEnumConstant.class);
+        return types;
     }
 
     @Nullable
     @Override
-    public AstVisitor createJavaVisitor(@NonNull JavaContext context) {
+    public JavaElementVisitor createPsiVisitor(@NonNull JavaContext context) {
         return new CallVisitor(context);
     }
 
-    private class CallVisitor extends ForwardingAstVisitor {
+    private class CallVisitor extends JavaElementVisitor {
         private final JavaContext mContext;
 
         public CallVisitor(JavaContext context) {
@@ -1652,67 +1960,72 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
         }
 
         @Override
-        public boolean visitMethodInvocation(@NonNull MethodInvocation call) {
-            ResolvedNode resolved = mContext.resolve(call);
-            if (resolved instanceof ResolvedMethod) {
-                ResolvedMethod method = (ResolvedMethod) resolved;
-                checkCall(call, method);
+        public void visitCallExpression(PsiCallExpression call) {
+            PsiMethod method = call.resolveMethod();
+            if (method != null) {
+                checkCall(method, call);
             }
-
-            return false;
         }
 
         @Override
-        public boolean visitConstructorInvocation(@NonNull ConstructorInvocation call) {
-            ResolvedNode resolved = mContext.resolve(call);
-            if (resolved instanceof ResolvedMethod) {
-                ResolvedMethod method = (ResolvedMethod) resolved;
-                checkCall(call, method);
+        public void visitEnumConstant(PsiEnumConstant call) {
+            PsiMethod method = call.resolveMethod();
+            if (method != null) {
+                checkCall(method, call);
             }
-
-            return false;
         }
 
-        @Override
-        public boolean visitEnumConstant(EnumConstant node) {
-            ResolvedNode resolved = mContext.resolve(node);
-            if (resolved instanceof ResolvedMethod) {
-                ResolvedMethod method = (ResolvedMethod) resolved;
-                checkCall(node, method);
-            }
+        public void checkCall(PsiMethod method, PsiCall call) {
+            JavaEvaluator evaluator = mContext.getEvaluator();
 
-            return false;
-        }
-
-        private void checkCall(@NonNull Node call, ResolvedMethod method) {
-            Iterable<ResolvedAnnotation> annotations = method.getAnnotations();
-            annotations = filterRelevantAnnotations(annotations);
-            for (ResolvedAnnotation annotation : annotations) {
-                checkMethodAnnotation(mContext, method, call, annotation);
-            }
+            PsiAnnotation[] methodAnnotations = evaluator.getAllAnnotations(method, true);
+            methodAnnotations = filterRelevantAnnotations(evaluator, methodAnnotations);
 
             // Look for annotations on the class as well: these trickle
             // down to all the methods in the class
-            ResolvedClass containingClass = method.getContainingClass();
-            annotations = containingClass.getAnnotations();
-            annotations = filterRelevantAnnotations(annotations);
-            for (ResolvedAnnotation annotation : annotations) {
-                checkMethodAnnotation(mContext, method, call, annotation);
+            PsiClass containingClass = method.getContainingClass();
+            PsiAnnotation[] classAnnotations;
+            if (containingClass != null) {
+                classAnnotations = evaluator.getAllAnnotations(containingClass, true);
+                classAnnotations = filterRelevantAnnotations(evaluator, classAnnotations);
+            } else {
+                classAnnotations = PsiAnnotation.EMPTY_ARRAY;
             }
 
-            Iterator<Expression> arguments = JavaContext.getParameters(call);
-            for (int i = 0, n = method.getArgumentCount();
-                    i < n && arguments.hasNext();
-                    i++) {
-                Expression argument = arguments.next();
-
-                annotations = method.getParameterAnnotations(i);
-                annotations = filterRelevantAnnotations(annotations);
-                checkParameterAnnotations(mContext, argument, call, method, annotations);
+            for (PsiAnnotation annotation : methodAnnotations) {
+                checkMethodAnnotation(mContext, method, call, annotation, methodAnnotations,
+                        classAnnotations);
             }
-            while (arguments.hasNext()) { // last parameter is varargs (same parameter annotations)
-                Expression argument = arguments.next();
-                checkParameterAnnotations(mContext, argument, call, method, annotations);
+
+            if (classAnnotations.length > 0) {
+                for (PsiAnnotation annotation : classAnnotations) {
+                    checkMethodAnnotation(mContext, method, call, annotation, methodAnnotations,
+                            classAnnotations);
+                }
+            }
+
+            PsiExpressionList argumentList = call.getArgumentList();
+            if (argumentList != null) {
+                PsiExpression[] arguments = argumentList.getExpressions();
+                PsiParameterList parameterList = method.getParameterList();
+                PsiParameter[] parameters = parameterList.getParameters();
+                PsiAnnotation[] annotations = null;
+                for (int i = 0, n = Math.min(parameters.length, arguments.length);
+                        i < n;
+                        i++) {
+                    PsiExpression argument = arguments[i];
+                    PsiParameter parameter = parameters[i];
+                    annotations = evaluator.getAllAnnotations(parameter, true);
+                    annotations = filterRelevantAnnotations(evaluator, annotations);
+                    checkParameterAnnotations(mContext, argument, call, method, annotations);
+                }
+                if (annotations != null) {
+                    // last parameter is varargs (same parameter annotations)
+                    for (int i = parameters.length; i < arguments.length; i++) {
+                        PsiExpression argument = arguments[i];
+                        checkParameterAnnotations(mContext, argument, call, method, annotations);
+                    }
+                }
             }
         }
     }

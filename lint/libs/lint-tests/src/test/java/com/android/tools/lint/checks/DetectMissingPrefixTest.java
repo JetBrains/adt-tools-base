@@ -16,6 +16,7 @@
 
 package com.android.tools.lint.checks;
 
+import com.android.annotations.Nullable;
 import com.android.tools.lint.detector.api.Detector;
 
 @SuppressWarnings("javadoc")
@@ -49,6 +50,13 @@ public class DetectMissingPrefixTest extends AbstractCheckTest {
             "1 errors, 0 warnings\n",
 
             lintFiles("res/layout/namespace2.xml"));
+    }
+
+    public void testCustomAttributesOnFragment() throws Exception {
+        assertEquals(
+            "No warnings.",
+
+            lintFiles("res/layout/fragment_custom_attrs.xml"));
     }
 
     public void testManifest() throws Exception {
@@ -156,5 +164,67 @@ public class DetectMissingPrefixTest extends AbstractCheckTest {
                         + "        </android.support.v7.widget.CardView>"
                         + "    </LinearLayout>\n"
                         + "</layout>")));
+    }
+
+    public void testAppCompat() throws Exception {
+        // Regression test for https://code.google.com/p/android/issues/detail?id=201790
+        assertEquals("No warnings.",
+                lintProject(xml("res/layout/app_compat.xml", ""
+                        + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                        + "<LinearLayout xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                        + "    xmlns:app=\"http://schemas.android.com/apk/res-auto\"\n"
+                        + "    android:layout_width=\"match_parent\"\n"
+                        + "    android:layout_height=\"match_parent\"\n"
+                        + "    android:orientation=\"vertical\">\n"
+                        + "\n"
+                        + "    <ImageButton\n"
+                        + "        android:id=\"@+id/vote_button\"\n"
+                        + "        android:layout_width=\"wrap_content\"\n"
+                        + "        android:layout_height=\"wrap_content\"\n"
+                        + "        app:srcCompat=\"@mipmap/ic_launcher\" />\n"
+                        + "\n"
+                        + "</LinearLayout>")));
+    }
+
+    public void testAppCompatOther() throws Exception {
+        // Regression test for https://code.google.com/p/android/issues/detail?id=211348
+        assertEquals("No warnings.",
+                lintProjectIncrementally(
+                        "res/layout/app_compat.xml",
+                        xml("res/layout/app_compat.xml", ""
+                        + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                        + "<LinearLayout xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                        + "    xmlns:app=\"http://schemas.android.com/apk/res-auto\"\n"
+                        + "    android:layout_width=\"match_parent\"\n"
+                        + "    android:layout_height=\"match_parent\"\n"
+                        + "    android:orientation=\"vertical\">\n"
+                        + "\n"
+                        + "    <ImageButton\n"
+                        + "        android:id=\"@+id/vote_button\"\n"
+                        + "        android:layout_width=\"wrap_content\"\n"
+                        + "        android:layout_height=\"wrap_content\"\n"
+                        + "        app:buttonTint=\"#ff00ff\" />\n"
+                        + "\n"
+                        + "</LinearLayout>"),
+                        xml("res/values/res.xml", ""
+                                + "<resources>\n"
+                                + "    <attr name=\"buttonTint\" />\n"
+                                + "</resources>\n")));
+    }
+
+    @Override
+    protected TestLintClient createClient() {
+        if (getName().equals("testAppCompatOther")) {
+            return new TestLintClient() {
+                // Set fake library name on resources in this test to pretend the
+                // attr comes from appcompat
+                @Override
+                @Nullable
+                protected String getProjectResourceLibraryName() {
+                    return "appcompat-v7";
+                }
+            };
+        }
+        return super.createClient();
     }
 }

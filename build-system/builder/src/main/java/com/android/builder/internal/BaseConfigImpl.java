@@ -36,6 +36,7 @@ public abstract class BaseConfigImpl implements Serializable, BaseConfig {
     private static final long serialVersionUID = 1L;
 
     private String mApplicationIdSuffix = null;
+    private String mVersionNameSuffix = null;
     private final Map<String, ClassField> mBuildConfigFields = Maps.newTreeMap();
     private final Map<String, ClassField> mResValues = Maps.newTreeMap();
     private final List<File> mProguardFiles = Lists.newArrayList();
@@ -55,7 +56,7 @@ public abstract class BaseConfigImpl implements Serializable, BaseConfig {
     private List<File> mJarJarRuleFiles = Lists.newArrayList();
 
     /**
-     * Application id suffix applied to this base config.
+     * @see #getApplicationIdSuffix()
      */
     @NonNull
     public BaseConfigImpl setApplicationIdSuffix(@Nullable String applicationIdSuffix) {
@@ -64,12 +65,36 @@ public abstract class BaseConfigImpl implements Serializable, BaseConfig {
     }
 
     /**
-     * Application id suffix applied to this base config.
+     * Application id suffix.
+     *
+     * <p>This is appended to the "base" application id when calculating the final application id
+     * for a variant.
      */
     @Override
     @Nullable
     public String getApplicationIdSuffix() {
         return mApplicationIdSuffix;
+    }
+
+    /**
+     * @see #getVersionNameSuffix()
+     */
+    @NonNull
+    public BaseConfigImpl setVersionNameSuffix(@Nullable String versionNameSuffix) {
+        mVersionNameSuffix = versionNameSuffix;
+        return this;
+    }
+
+    /**
+     * Version name suffix.
+     *
+     * <p>This is appended to the "base" version name when calculating the final version name
+     * for a variant.
+     */
+    @Override
+    @Nullable
+    public String getVersionNameSuffix() {
+        return mVersionNameSuffix;
     }
 
     /**
@@ -196,6 +221,7 @@ public abstract class BaseConfigImpl implements Serializable, BaseConfig {
         setResValues(that.getResValues());
 
         mApplicationIdSuffix = that.getApplicationIdSuffix();
+        mVersionNameSuffix = that.getVersionNameSuffix();
 
         mProguardFiles.clear();
         mProguardFiles.addAll(that.getProguardFiles());
@@ -240,6 +266,15 @@ public abstract class BaseConfigImpl implements Serializable, BaseConfig {
         mMultiDexEnabled = multiDex;
     }
 
+    /**
+     * Text file that specifies additional classes that will be compiled into the main dex file.
+     *
+     * <p>Classes specified in the file are appended to the main dex classes computed using
+     * {@code aapt}.
+     *
+     * <p>If set, the file should contain one class per line, in the following format:
+     * {@code com/example/MyClass.class}
+     */
     @Override
     @Nullable
     public File getMultiDexKeepFile() {
@@ -250,6 +285,13 @@ public abstract class BaseConfigImpl implements Serializable, BaseConfig {
         mMultiDexKeepFile = file;
     }
 
+    /**
+     * Text file with additional ProGuard rules to be used to determine which classes are compiled
+     * into the main dex file.
+     *
+     * <p>If set, rules from this file are used in combination with the default rules used by the
+     * build system.
+     */
     @Override
     @Nullable
     public File getMultiDexKeepProguard() {
@@ -282,6 +324,7 @@ public abstract class BaseConfigImpl implements Serializable, BaseConfig {
         BaseConfigImpl that = (BaseConfigImpl) o;
 
         return Objects.equal(mApplicationIdSuffix, that.mApplicationIdSuffix) &&
+                Objects.equal(mVersionNameSuffix, that.mVersionNameSuffix) &&
                 Objects.equal(mBuildConfigFields, that.mBuildConfigFields) &&
                 Objects.equal(mConsumerProguardFiles, that.mConsumerProguardFiles) &&
                 Objects.equal(mManifestPlaceholders, that.mManifestPlaceholders) &&
@@ -298,6 +341,7 @@ public abstract class BaseConfigImpl implements Serializable, BaseConfig {
     public int hashCode() {
         return Objects.hashCode(
                 mApplicationIdSuffix,
+                mVersionNameSuffix,
                 mBuildConfigFields,
                 mResValues,
                 mProguardFiles,
@@ -313,6 +357,7 @@ public abstract class BaseConfigImpl implements Serializable, BaseConfig {
     public String toString() {
         return "BaseConfigImpl{" +
                 "applicationIdSuffix=" + mApplicationIdSuffix +
+                ", versionNameSuffix=" + mVersionNameSuffix+
                 ", mBuildConfigFields=" + mBuildConfigFields +
                 ", mResValues=" + mResValues +
                 ", mProguardFiles=" + mProguardFiles +

@@ -37,7 +37,7 @@ import java.util.List;
  * Test case that executes "standard" gradle tasks in all our tests projects.
  *
  * <p>You can run only one test like this:
- * <p>{@code gw :b:i-t:automaticTest --tests=*.CheckAll.lint[abiPureSplits]}
+ * <p>{@code gw :b:i-t:automaticTest --tests=*.CheckAll.assembleAndLint[abiPureSplits]}
  */
 @RunWith(ParallelParameterized.class)
 public class CheckAll {
@@ -74,38 +74,35 @@ public class CheckAll {
     @Rule
     public GradleTestProject project;
 
-    public String projectName;
+    private String projectName;
 
     public CheckAll(String projectName) {
         this.projectName = projectName;
         this.project = GradleTestProject.builder()
                 .fromTestProject(projectName)
-                .forExperimentalPlugin(COMPONENT_MODEL_PROJECTS.contains(projectName))
+                .useExperimentalGradleVersion(COMPONENT_MODEL_PROJECTS.contains(projectName))
                 .create();
     }
 
     @Test
-    public void lint() throws Exception {
+    public void assembleAndLint() throws Exception {
         Assume.assumeFalse(BROKEN_ASSEMBLE.contains(projectName));
-        project.execute("lint");
-    }
-
-    @Test
-    public void assemble() throws Exception {
-        Assume.assumeFalse(BROKEN_ASSEMBLE.contains(projectName));
-        project.execute("assembleDebug", "assembleAndroidTest");
+        project.execute("assembleDebug", "assembleAndroidTest", "lint");
     }
 
     // TODO: Investigate and clear these lists.
     private static final ImmutableSet<String> BROKEN_ASSEMBLE = ImmutableSet.of(
             "ndkRsHelloCompute", // TODO: Fails in C++ code, not sure what the issue is.
+            "jarjarWithJack", // Temporarily disabled until we have buildtools 24.0.0
 
             // These are all right:
             "daggerTwo", // requires Java 7
-            "projectWithLocalDeps", // Doesn't have a build.gradle, not much to check anyway.
             "duplicateNameImport", // Fails on purpose.
+            "filteredOutBuildType", // assembleDebug does not exist as debug build type is removed.
             "instant-unit-tests", // Specific to testing instant run, not a "real" project.
-            "simpleManifestMergingTask" // Not an Android project.
+            "projectWithLocalDeps", // Doesn't have a build.gradle, not much to check anyway.
+            "simpleManifestMergingTask", // Not an Android project.
+            "externalBuildPlugin" // Not an Android Project.
     );
 
     private static final ImmutableSet<String> COMPONENT_MODEL_PROJECTS = ImmutableSet.of(

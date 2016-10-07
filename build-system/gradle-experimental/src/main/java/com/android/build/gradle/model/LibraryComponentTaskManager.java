@@ -20,6 +20,7 @@ import com.android.annotations.NonNull;
 import com.android.build.gradle.AndroidConfig;
 import com.android.build.gradle.internal.DependencyManager;
 import com.android.build.gradle.internal.LibraryTaskManager;
+import com.android.build.gradle.internal.ndk.NdkHandler;
 import com.android.build.gradle.internal.SdkHandler;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.variant.BaseVariantData;
@@ -39,14 +40,22 @@ import java.util.Collection;
 public class LibraryComponentTaskManager extends LibraryTaskManager {
 
     public LibraryComponentTaskManager(
-            Project project,
-            AndroidBuilder androidBuilder,
-            DataBindingBuilder dataBindingBuilder,
-            AndroidConfig extension,
-            SdkHandler sdkHandler,
-            DependencyManager dependencyManager,
-            ToolingModelBuilderRegistry toolingRegistry) {
-        super(project, androidBuilder, dataBindingBuilder, extension, sdkHandler, dependencyManager,
+            @NonNull Project project,
+            @NonNull AndroidBuilder androidBuilder,
+            @NonNull DataBindingBuilder dataBindingBuilder,
+            @NonNull AndroidConfig extension,
+            @NonNull SdkHandler sdkHandler,
+            @NonNull NdkHandler ndkHandler,
+            @NonNull DependencyManager dependencyManager,
+            @NonNull ToolingModelBuilderRegistry toolingRegistry) {
+        super(
+                project,
+                androidBuilder,
+                dataBindingBuilder,
+                extension,
+                sdkHandler,
+                ndkHandler,
+                dependencyManager,
                 toolingRegistry);
         isComponentModelPlugin = true;
     }

@@ -26,17 +26,28 @@ import com.android.resources.ResourceType;
 @SuppressWarnings("deprecation")
 public class ResourceValue extends ResourceReference implements IResourceValue {
     private final ResourceType mType;
+    private final String mLibraryName;
     protected String mValue;
 
     public ResourceValue(ResourceType type, String name, boolean isFramework) {
+        this(type, name, isFramework, null);
+    }
+
+    public ResourceValue(ResourceType type, String name, boolean isFramework, String libraryName) {
         super(name, isFramework);
         mType = type;
+        mLibraryName = libraryName;
     }
 
     public ResourceValue(ResourceType type, String name, String value, boolean isFramework) {
+        this(type, name, value, isFramework, null);
+    }
+
+    public ResourceValue(ResourceType type, String name, String value, boolean isFramework, String libraryName) {
         super(name, isFramework);
         mType = type;
         mValue = value;
+        mLibraryName = libraryName;
     }
 
     public ResourceType getResourceType() {
@@ -51,6 +62,20 @@ public class ResourceValue extends ResourceReference implements IResourceValue {
     @Deprecated
     public String getType() {
         return mType.getName();
+    }
+
+    /**
+     * Returns the name of the library where this resource was found or null if it is not from a library.
+     */
+    public String getLibraryName() {
+        return mLibraryName;
+    }
+
+    /**
+     * Returns true if the resource is user defined.
+     */
+    public boolean isUserDefined() {
+        return !isFramework() && mLibraryName == null;
     }
 
     /**
@@ -93,7 +118,7 @@ public class ResourceValue extends ResourceReference implements IResourceValue {
 
     @Override
     public String toString() {
-        return "ResourceValue [" + mType + "/" + getName() + " = " + mValue  //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+        return getClass().getSimpleName() + " [" + mType + "/" + getName() + " = " + mValue  //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
                 + " (framework:" + isFramework() + ")]"; //$NON-NLS-1$ //$NON-NLS-2$
     }
 

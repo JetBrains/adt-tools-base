@@ -51,14 +51,15 @@ import com.verifier.tests.UnchangedClass;
 import com.verifier.tests.UnchangedClassInitializer1;
 
 import org.junit.Test;
+import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.AnnotationNode;
 
 import java.io.IOException;
 
-/**
- * Tests for the {@link InstantRunVerifier}
- */
+import Lpackage.AnyClassWithMethodInvocation;
+
+/** Tests for the {@link InstantRunVerifier} */
 public class InstantRunVerifierTest {
 
     VerifierHarness harness = new VerifierHarness(true);
@@ -286,5 +287,173 @@ public class InstantRunVerifierTest {
                         Lists.newArrayList(original),
                         Lists.newArrayList(updated),
                         InstantRunVerifier.ANNOTATION_COMPARATOR));
+    }
+
+    @Test
+    public void testDiffListOnAnnotationNodesEntriesDataSwap() throws Exception {
+        AnnotationNode original = new AnnotationNode("Ltest/SomeAnnotation;");
+        original.visit("entry1", "data1");
+        original.visit("entry2", "data2");
+
+        AnnotationNode updated = new AnnotationNode("Ltest/SomeAnnotation;");
+        updated.visit("entry1", "data2");
+        updated.visit("entry2", "data1");
+
+        assertEquals(
+                InstantRunVerifier.Diff.CHANGE,
+                InstantRunVerifier.diffList(
+                        Lists.newArrayList(original),
+                        Lists.newArrayList(updated),
+                        InstantRunVerifier.ANNOTATION_COMPARATOR));
+    }
+
+    @Test
+    public void testDiffListOnAnnotationNodesDiffEntriesOrder() throws Exception {
+        AnnotationNode original = new AnnotationNode("Ltest/SomeAnnotation;");
+        original.visit("entry1", "data1");
+        original.visit("entry2", "data2");
+
+        AnnotationNode updated = new AnnotationNode("Ltest/SomeAnnotation;");
+        updated.visit("entry2", "data2");
+        updated.visit("entry1", "data1");
+
+        assertEquals(
+                InstantRunVerifier.Diff.NONE,
+                InstantRunVerifier.diffList(
+                        Lists.newArrayList(original),
+                        Lists.newArrayList(updated),
+                        InstantRunVerifier.ANNOTATION_COMPARATOR));
+    }
+
+    @Test
+    public void testDiffListOnAnnotationNodesWithEnumEntryValue() throws Exception {
+        AnnotationNode original = new AnnotationNode("Ltest/SomeAnnotation;");
+        original.visitEnum("entry", "Test", "LMyEnum");
+
+        AnnotationNode updated = new AnnotationNode("Ltest/SomeAnnotation;");
+        updated.visitEnum("entry", "Test", "LMyEnum");
+
+        assertEquals(
+                InstantRunVerifier.Diff.NONE,
+                InstantRunVerifier.diffList(
+                        Lists.newArrayList(original),
+                        Lists.newArrayList(updated),
+                        InstantRunVerifier.ANNOTATION_COMPARATOR));
+    }
+
+    @Test
+    public void testDiffListOnAnnotationNodesWithAnnotationNodeValue() throws Exception {
+        AnnotationNode original = new AnnotationNode("Ltest/SomeAnnotation;");
+        AnnotationVisitor newAnnotation = original.visitAnnotation("InnerAnnotation", "LTest;");
+        newAnnotation.visit("innerEntry", "innerValue");
+        newAnnotation.visitEnd();
+
+        AnnotationNode updated = new AnnotationNode("Ltest/SomeAnnotation;");
+        newAnnotation = updated.visitAnnotation("InnerAnnotation", "LTest;");
+        newAnnotation.visit("innerEntry", "innerValue");
+        newAnnotation.visitEnd();
+
+        assertEquals(
+                InstantRunVerifier.Diff.NONE,
+                InstantRunVerifier.diffList(
+                        Lists.newArrayList(original),
+                        Lists.newArrayList(updated),
+                        InstantRunVerifier.ANNOTATION_COMPARATOR));
+    }
+
+
+    @Test
+    public void testDiffListOnAnnotationNodesWithArrayValues() throws Exception {
+        AnnotationNode original = new AnnotationNode("Ltest/SomeAnnotation;");
+        original.visit("byteArray", new byte[] {1, 2, 3});
+        original.visit("booleanArray", new boolean[] {false, true, false});
+        original.visit("shortArray", new short[] {1, 2, 3});
+        original.visit("charArray", new char[] {'a', 'b', 'c'});
+        original.visit("intArray", new int[] {1, 2, 3});
+        original.visit("longArray", new long[] {1, 2, 3});
+        original.visit("floatArray", new float[] {1, 2, 3});
+        original.visit("doubleArray", new double[] {1, 2, 3});
+        original.visit("stringArray", new String[] {"1", "2", "3"});
+
+        AnnotationNode updated = new AnnotationNode("Ltest/SomeAnnotation;");
+        updated.visit("byteArray", new byte[] {1, 2, 3});
+        updated.visit("booleanArray", new boolean[] {false, true, false});
+        updated.visit("shortArray", new short[] {1, 2, 3});
+        updated.visit("charArray", new char[] {'a', 'b', 'c'});
+        updated.visit("intArray", new int[] {1, 2, 3});
+        updated.visit("longArray", new long[] {1, 2, 3});
+        updated.visit("floatArray", new float[] {1, 2, 3});
+        updated.visit("doubleArray", new double[] {1, 2, 3});
+        updated.visit("stringArray", new String[] {"1", "2", "3"});
+
+        assertEquals(
+                InstantRunVerifier.Diff.NONE,
+                InstantRunVerifier.diffList(
+                        Lists.newArrayList(original),
+                        Lists.newArrayList(updated),
+                        InstantRunVerifier.ANNOTATION_COMPARATOR));
+    }
+
+    @Test
+    public void testDiffListOnAnnotationNodesWithAnnotationArrayValue() throws Exception {
+        AnnotationNode original = new AnnotationNode("Ltest/SomeAnnotation;");
+
+        AnnotationVisitor arrayVisitor = original.visitArray("test");
+        AnnotationVisitor newAnnotation = arrayVisitor.visitAnnotation("InnerAnnotation", "LTest;");
+        newAnnotation.visit("innerEntry", "innerValue");
+        newAnnotation.visitEnd();
+
+        newAnnotation = arrayVisitor.visitAnnotation("InnerAnnotation", "LTest;");
+        newAnnotation.visit("innerEntry", "innerValue");
+        newAnnotation.visitEnd();
+        arrayVisitor.visitEnd();
+
+        AnnotationNode updated = new AnnotationNode("Ltest/SomeAnnotation;");
+        arrayVisitor = updated.visitArray("test");
+        newAnnotation = arrayVisitor.visitAnnotation("InnerAnnotation", "LTest;");
+        newAnnotation.visit("innerEntry", "innerValue");
+        newAnnotation.visitEnd();
+
+        newAnnotation = arrayVisitor.visitAnnotation("InnerAnnotation", "LTest;");
+        newAnnotation.visit("innerEntry", "innerValue");
+        newAnnotation.visitEnd();
+        arrayVisitor.visitEnd();
+
+        assertEquals(
+                InstantRunVerifier.Diff.NONE,
+                InstantRunVerifier.diffList(
+                        Lists.newArrayList(original),
+                        Lists.newArrayList(updated),
+                        InstantRunVerifier.ANNOTATION_COMPARATOR));
+    }
+
+    @Test
+    public void testDiffListOnAnnotationNodesWithIntArrayValue() throws Exception {
+        AnnotationNode original = new AnnotationNode("Ltest/SomeAnnotation;");
+        AnnotationVisitor test = original.visitArray("test");
+        test.visit("stub", 1);
+        test.visit("stub", 2);
+        test.visit("stub", 3);
+        test.visitEnd();
+
+        AnnotationNode updated = new AnnotationNode("Ltest/SomeAnnotation;");
+        test = updated.visitArray("test");
+        test.visit("stub", 1);
+        test.visit("stub", 2);
+        test.visit("stub", 3);
+        test.visitEnd();
+
+        assertEquals(
+                InstantRunVerifier.Diff.NONE,
+                InstantRunVerifier.diffList(
+                        Lists.newArrayList(original),
+                        Lists.newArrayList(updated),
+                        InstantRunVerifier.ANNOTATION_COMPARATOR));
+    }
+
+    @Test
+    public void testClassWithObjectTypePrefix() throws IOException {
+        InstantRunVerifierStatus changes = harness.verify(AnyClassWithMethodInvocation.class, null);
+        assertEquals(COMPATIBLE, changes);
     }
 }

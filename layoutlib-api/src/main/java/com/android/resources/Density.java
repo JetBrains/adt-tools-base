@@ -22,7 +22,7 @@ import java.util.Set;
 
 /**
  * Density enum.
- * <p/>This is used in the manifest in the uses-configuration node and in the resource folder names
+ * <p>This is used in the manifest in the uses-configuration node and in the resource folder names
  * as well as other places needing to know the density values.
  */
 public enum Density implements ResourceEnum {
@@ -117,16 +117,7 @@ public enum Density implements ResourceEnum {
     }
 
     public static int getIndex(Density value) {
-        int i = 0;
-        for (Density input : values()) {
-            if (value == input) {
-                return i;
-            }
-
-            i++;
-        }
-
-        return -1;
+        return value == null ? -1 : value.ordinal();
     }
 
     public static Density getByIndex(int index) {

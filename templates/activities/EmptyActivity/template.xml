@@ -3,7 +3,7 @@
     format="5"
     revision="5"
     name="Empty Activity"
-    minApi="7"
+    minApi="9"
     minBuildApi="14"
     description="Creates a new empty activity">
 
@@ -42,6 +42,13 @@
         type="boolean"
         default="false"
         help="If true, this activity will have a CATEGORY_LAUNCHER intent filter, making it visible in the launcher" />
+
+    <parameter
+        id="backwardsCompatibility"
+        name="Backwards Compatibility (AppCompat)"
+        type="boolean"
+        default="true"
+        help="If false, this activity base class will be Activity instead of AppCompatActivity" />
     
     <parameter
         id="packageName"

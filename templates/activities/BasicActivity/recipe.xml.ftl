@@ -16,5 +16,10 @@
                    to="${escapeXmlAttribute(srcOut)}/${activityClass}.java" />
 
     <open file="${escapeXmlAttribute(srcOut)}/${activityClass}.java" />
+<#if useFragment>
+    <open file="${escapeXmlAttribute(resOut)}/layout/${fragmentLayoutName}.xml" />
+<#else>
     <open file="${escapeXmlAttribute(resOut)}/layout/${simpleLayoutName}.xml" />
+</#if>
+
 </recipe>

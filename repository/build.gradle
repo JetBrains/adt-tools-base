@@ -9,6 +9,7 @@ version = rootProject.ext.baseVersion
 dependencies {
     compile project(':base:common')
     compile 'org.apache.commons:commons-compress:1.8.1'
+    compile 'com.google.jimfs:jimfs:1.1'
 
     testCompile 'junit:junit:4.12'
 }
@@ -33,3 +34,6 @@ apply from: "$rootDir/buildSrc/base/publish.gradle"
 apply from: "$rootDir/buildSrc/base/bintray.gradle"
 apply from: "$rootDir/buildSrc/base/javadoc.gradle"
 
+tasks.withType(Javadoc) {
+    options.addStringOption('Xdoclint:none', '-quiet')
+}

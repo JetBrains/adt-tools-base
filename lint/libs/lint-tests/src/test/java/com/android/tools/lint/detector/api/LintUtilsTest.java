@@ -16,21 +16,41 @@
 
 package com.android.tools.lint.detector.api;
 
+import static com.android.SdkConstants.DOT_JAVA;
+import static com.android.tools.lint.client.api.JavaParser.TYPE_BOOLEAN;
+import static com.android.tools.lint.client.api.JavaParser.TYPE_BOOLEAN_WRAPPER;
+import static com.android.tools.lint.client.api.JavaParser.TYPE_BYTE;
+import static com.android.tools.lint.client.api.JavaParser.TYPE_BYTE_WRAPPER;
+import static com.android.tools.lint.client.api.JavaParser.TYPE_CHAR;
+import static com.android.tools.lint.client.api.JavaParser.TYPE_CHARACTER_WRAPPER;
+import static com.android.tools.lint.client.api.JavaParser.TYPE_DOUBLE;
+import static com.android.tools.lint.client.api.JavaParser.TYPE_DOUBLE_WRAPPER;
+import static com.android.tools.lint.client.api.JavaParser.TYPE_FLOAT;
+import static com.android.tools.lint.client.api.JavaParser.TYPE_FLOAT_WRAPPER;
+import static com.android.tools.lint.client.api.JavaParser.TYPE_INT;
+import static com.android.tools.lint.client.api.JavaParser.TYPE_INTEGER_WRAPPER;
+import static com.android.tools.lint.client.api.JavaParser.TYPE_LONG;
+import static com.android.tools.lint.client.api.JavaParser.TYPE_LONG_WRAPPER;
+import static com.android.tools.lint.client.api.JavaParser.TYPE_SHORT;
+import static com.android.tools.lint.client.api.JavaParser.TYPE_SHORT_WRAPPER;
 import static com.android.tools.lint.detector.api.LintUtils.computeResourceName;
 import static com.android.tools.lint.detector.api.LintUtils.convertVersion;
 import static com.android.tools.lint.detector.api.LintUtils.findSubstring;
+import static com.android.tools.lint.detector.api.LintUtils.getAutoBoxedType;
 import static com.android.tools.lint.detector.api.LintUtils.getFormattedParameters;
 import static com.android.tools.lint.detector.api.LintUtils.getLocaleAndRegion;
+import static com.android.tools.lint.detector.api.LintUtils.getPrimitiveType;
 import static com.android.tools.lint.detector.api.LintUtils.isImported;
 import static com.android.tools.lint.detector.api.LintUtils.splitPath;
 import static com.android.utils.SdkUtils.escapePropertyValue;
+import static java.io.File.separatorChar;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.builder.model.AndroidProject;
 import com.android.builder.model.ApiVersion;
+import com.android.ide.common.repository.GradleVersion;
 import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.IAndroidTarget;
 import com.android.tools.lint.LintCliClient;
@@ -38,6 +58,7 @@ import com.android.tools.lint.checks.BuiltinIssueRegistry;
 import com.android.tools.lint.client.api.JavaParser;
 import com.android.tools.lint.client.api.LintDriver;
 import com.google.common.collect.Iterables;
+import com.intellij.psi.PsiJavaFile;
 
 import junit.framework.TestCase;
 
@@ -50,6 +71,8 @@ import java.io.OutputStreamWriter;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Locale;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import lombok.ast.Node;
 
@@ -117,6 +140,14 @@ public class LintUtilsTest extends TestCase {
         assertEquals(3, LintUtils.editDistance("saturday", "sunday"));
         assertEquals(1, LintUtils.editDistance("button", "bitton"));
         assertEquals(6, LintUtils.editDistance("radiobutton", "bitton"));
+
+        assertEquals(6, LintUtils.editDistance("radiobutton", "bitton", 10));
+        assertEquals(6, LintUtils.editDistance("radiobutton", "bitton", 6));
+        assertEquals(Integer.MAX_VALUE, LintUtils.editDistance("radiobutton", "bitton", 3));
+
+        assertTrue(LintUtils.isEditableTo("radiobutton", "bitton", 10));
+        assertTrue(LintUtils.isEditableTo("radiobutton", "bitton", 6));
+        assertFalse(LintUtils.isEditableTo("radiobutton", "bitton", 3));
     }
 
     public void testSplitPath() throws Exception {
@@ -362,14 +393,59 @@ public class LintUtilsTest extends TestCase {
         return getCompilationUnit(javaSource, new File("test"));
     }
 
-
     public static Node getCompilationUnit(@Language("JAVA") String javaSource, File relativePath) {
         JavaContext context = parse(javaSource, relativePath);
         return context.getCompilationUnit();
     }
 
+    private static final Pattern PACKAGE_PATTERN = Pattern.compile("package\\s+(.*)\\s*;");
+    private static final Pattern CLASS_PATTERN = Pattern
+            .compile("class\\s*(\\S+)\\s*(extends.*)?(implements.*)?\\{");
+
+    public static JavaContext parsePsi(@Language("JAVA") String javaSource) {
+        // Figure out the "to" path: the package plus class name + java in the src/ folder
+        Matcher matcher = PACKAGE_PATTERN.matcher(javaSource);
+        String pkg = "";
+        if (matcher.find()) {
+            pkg = matcher.group(1).trim();
+        }
+        matcher = CLASS_PATTERN.matcher(javaSource);
+        assertTrue("Couldn't find class declaration in source", matcher.find());
+        String cls = matcher.group(1).trim();
+        int typeParameter = cls.indexOf('<');
+        if (typeParameter != -1) {
+            cls = cls.substring(0, typeParameter);
+        }
+        String path = "src/" + pkg.replace('.', '/') + '/' + cls + DOT_JAVA;
+        return parsePsi(javaSource, new File(path.replace('/', separatorChar)));
+    }
+
+    public static JavaContext parse(@Language("JAVA") String javaSource) {
+        // Figure out the "to" path: the package plus class name + java in the src/ folder
+        Matcher matcher = PACKAGE_PATTERN.matcher(javaSource);
+        String pkg = "";
+        if (matcher.find()) {
+            pkg = matcher.group(1).trim();
+        }
+        matcher = CLASS_PATTERN.matcher(javaSource);
+        assertTrue("Couldn't find class declaration in source", matcher.find());
+        String cls = matcher.group(1).trim();
+        String path = "src/" + pkg.replace('.', '/') + '/' + cls + DOT_JAVA;
+        return parse(javaSource, new File(path.replace('/', separatorChar)));
+    }
+
     public static JavaContext parse(@Language("JAVA") final String javaSource,
             final File relativePath) {
+        return parse(javaSource, relativePath, true, false);
+    }
+
+    public static JavaContext parsePsi(@Language("JAVA") final String javaSource,
+            final File relativePath) {
+        return parse(javaSource, relativePath, false, true);
+    }
+
+    public static JavaContext parse(@Language("JAVA") final String javaSource,
+            final File relativePath, boolean lombok, boolean psi) {
         File dir = new File("projectDir");
         final File fullPath = new File(dir, relativePath.getPath());
         LintCliClient client = new LintCliClient() {
@@ -404,9 +480,16 @@ public class LintUtilsTest extends TestCase {
         TestContext context = new TestContext(driver, client, project, javaSource, fullPath);
         JavaParser parser = context.getParser();
         parser.prepareJavaParse(Collections.<JavaContext>singletonList(context));
-        Node compilationUnit = parser.parseJava(context);
-        assertNotNull(javaSource, compilationUnit);
-        context.setCompilationUnit(compilationUnit);
+        if (lombok) {
+            Node compilationUnit = parser.parseJava(context);
+            assertNotNull(javaSource, compilationUnit);
+            context.setCompilationUnit(compilationUnit);
+        }
+        if (psi) {
+            PsiJavaFile javaFile = parser.parseJavaToPsi(context);
+            assertNotNull("Couldn't parse source", javaFile);
+            context.setJavaFile(javaFile);
+        }
         return context;
     }
 
@@ -422,29 +505,29 @@ public class LintUtilsTest extends TestCase {
     }
 
     public void testIsModelOlderThan() throws Exception {
-        AndroidProject project = mock(AndroidProject.class);
-        when(project.getModelVersion()).thenReturn("0.10.4");
+        Project project = mock(Project.class);
+        when(project.getGradleModelVersion()).thenReturn(GradleVersion.parse("0.10.4"));
 
         assertTrue(LintUtils.isModelOlderThan(project, 0, 10, 5));
         assertTrue(LintUtils.isModelOlderThan(project, 0, 11, 0));
         assertTrue(LintUtils.isModelOlderThan(project, 0, 11, 4));
         assertTrue(LintUtils.isModelOlderThan(project, 1, 0, 0));
 
-        project = mock(AndroidProject.class);
-        when(project.getModelVersion()).thenReturn("0.11.0");
+        project = mock(Project.class);
+        when(project.getGradleModelVersion()).thenReturn(GradleVersion.parse("0.11.0"));
 
         assertTrue(LintUtils.isModelOlderThan(project, 1, 0, 0));
         assertFalse(LintUtils.isModelOlderThan(project, 0, 11, 0));
         assertFalse(LintUtils.isModelOlderThan(project, 0, 10, 4));
 
-        project = mock(AndroidProject.class);
-        when(project.getModelVersion()).thenReturn("0.11.5");
+        project = mock(Project.class);
+        when(project.getGradleModelVersion()).thenReturn(GradleVersion.parse("0.11.5"));
 
         assertTrue(LintUtils.isModelOlderThan(project, 1, 0, 0));
         assertFalse(LintUtils.isModelOlderThan(project, 0, 11, 0));
 
-        project = mock(AndroidProject.class);
-        when(project.getModelVersion()).thenReturn("1.0.0");
+        project = mock(Project.class);
+        when(project.getGradleModelVersion()).thenReturn(GradleVersion.parse("1.0.0"));
 
         assertTrue(LintUtils.isModelOlderThan(project, 1, 0, 1));
         assertFalse(LintUtils.isModelOlderThan(project, 1, 0, 0));
@@ -500,6 +583,37 @@ public class LintUtilsTest extends TestCase {
         assertEquals(
                 "foofoofoofoofoofoofoofoofoofoofoofoofoofoofoofoofoo\\#foofoofoofoofoofoofoofoofoofoofoofoofoofoofoofoofoofoofoofoofoofoofoofoo",
                 escapePropertyValue("foofoofoofoofoofoofoofoofoofoofoofoofoofoofoofoofoo#foofoofoofoofoofoofoofoofoofoofoofoofoofoofoofoofoofoofoofoofoofoofoofoo"));
+    }
+
+    public void testGetAutoBoxedType() {
+        assertEquals(TYPE_INTEGER_WRAPPER, getAutoBoxedType(TYPE_INT));
+        assertEquals(TYPE_INT, getPrimitiveType(TYPE_INTEGER_WRAPPER));
+
+        String[] pairs = new String[]{
+                TYPE_BOOLEAN,
+                TYPE_BOOLEAN_WRAPPER,
+                TYPE_BYTE,
+                TYPE_BYTE_WRAPPER,
+                TYPE_CHAR,
+                TYPE_CHARACTER_WRAPPER,
+                TYPE_DOUBLE,
+                TYPE_DOUBLE_WRAPPER,
+                TYPE_FLOAT,
+                TYPE_FLOAT_WRAPPER,
+                TYPE_INT,
+                TYPE_INTEGER_WRAPPER,
+                TYPE_LONG,
+                TYPE_LONG_WRAPPER,
+                TYPE_SHORT,
+                TYPE_SHORT_WRAPPER
+        };
+
+        for (int i = 0; i < pairs.length; i += 2) {
+            String primitive = pairs[i];
+            String autoBoxed = pairs[i + 1];
+            assertEquals(autoBoxed, getAutoBoxedType(primitive));
+            assertEquals(primitive, getPrimitiveType(autoBoxed));
+        }
     }
 
     private static class TestContext extends JavaContext {

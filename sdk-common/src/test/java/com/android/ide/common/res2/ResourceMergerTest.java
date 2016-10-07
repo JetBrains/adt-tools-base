@@ -18,6 +18,12 @@ package com.android.ide.common.res2;
 
 import static com.android.SdkConstants.ATTR_NAME;
 import static com.android.SdkConstants.TAG_ATTR;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
@@ -26,16 +32,22 @@ import com.android.ide.common.blame.MergingLog;
 import com.android.ide.common.blame.SourceFile;
 import com.android.ide.common.blame.SourceFilePosition;
 import com.android.ide.common.blame.SourcePosition;
-import com.android.ide.common.internal.PngCruncher;
+import com.android.ide.common.rendering.api.ResourceValue;
 import com.android.resources.ResourceFolderType;
 import com.android.resources.ResourceType;
 import com.android.testutils.TestUtils;
+import com.android.utils.FileUtils;
+import com.android.utils.Pair;
 import com.google.common.base.Charsets;
-import com.google.common.collect.ListMultimap;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
+import com.google.common.base.Predicate;
+import com.google.common.base.Strings;
+import com.google.common.collect.*;
 import com.google.common.io.Files;
 
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.w3c.dom.Attr;
@@ -50,30 +62,30 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 
 public class ResourceMergerTest extends BaseTestCase {
 
     @Mock
-    PngCruncher mPngCruncher;
-
-    @Mock
     ResourcePreprocessor mPreprocessor;
 
-    @Override
-    protected void setUp() throws Exception {
-        super.setUp();
+    @Rule
+    public TemporaryFolder mTemporaryFolder = new TemporaryFolder();
+
+    @Before
+    public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
     }
 
+    @Test
     public void testMergeWithNormalizationByCount() throws Exception {
         ResourceMerger merger = getResourceMerger();
 
-        assertEquals(31, merger.size());
+        assertEquals(36, merger.size());
     }
+
+    @Test
     public void testMergedResourcesWithNormalizationByName() throws Exception {
         ResourceMerger merger = getResourceMerger();
 
@@ -94,8 +106,12 @@ public class ResourceMergerTest extends BaseTestCase {
                 "string/xliff_string",
                 "string/xliff_with_carriage_return",
                 "string/styled_string",
+                "string/two",
+                "string/many",
                 "style/style",
                 "array/string_array",
+                "array/integer_array",
+                "array/my_colors",
                 "attr/dimen_attr",
                 "attr/string_attr",
                 "attr/enum_attr",
@@ -107,7 +123,9 @@ public class ResourceMergerTest extends BaseTestCase {
                 "dimen/dimen",
                 "dimen-sw600dp-v13/offset",
                 "id/item_id",
-                "integer/integer"
+                "integer/integer",
+                "plurals/plurals",
+                "plurals/plurals_with_bad_quantity"
         );
     }
 
@@ -115,6 +133,7 @@ public class ResourceMergerTest extends BaseTestCase {
         return path.replace('/', File.separatorChar);
     }
 
+    @Test
     public void testReplacedLayout() throws Exception {
         ResourceMerger merger = getResourceMerger();
         ListMultimap<String, ResourceItem> mergedMap = merger.getDataMap();
@@ -130,6 +149,7 @@ public class ResourceMergerTest extends BaseTestCase {
             .endsWith(getPlatformPath("overlay/layout/main.xml")));
     }
 
+    @Test
     public void testReplacedAlias() throws Exception {
         ResourceMerger merger = getResourceMerger();
         ListMultimap<String, ResourceItem> mergedMap = merger.getDataMap();
@@ -144,6 +164,7 @@ public class ResourceMergerTest extends BaseTestCase {
         assertNull(layout.getValue());
     }
 
+    @Test
     public void testReplacedFile() throws Exception {
         ResourceMerger merger = getResourceMerger();
         ListMultimap<String, ResourceItem> mergedMap = merger.getDataMap();
@@ -158,13 +179,14 @@ public class ResourceMergerTest extends BaseTestCase {
         assertNotNull(layout.getValue());
     }
 
+    @Test
     public void testMergeWrite() throws Exception {
         ResourceMerger merger = getResourceMerger();
         RecordingLogger logger =  new RecordingLogger();
 
         File folder = getWrittenResources();
 
-        ResourceSet writtenSet = new ResourceSet("unused");
+        ResourceSet writtenSet = new ResourceSet("unused", null);
         writtenSet.addSource(folder);
         writtenSet.loadFromFiles(logger);
 
@@ -174,6 +196,7 @@ public class ResourceMergerTest extends BaseTestCase {
         checkLogger(logger);
     }
 
+    @Test
     public void testXliffString() throws Exception {
         ResourceMerger merger = getResourceMerger();
 
@@ -194,7 +217,7 @@ public class ResourceMergerTest extends BaseTestCase {
         File folder = getWrittenResources();
 
         RecordingLogger logger =  new RecordingLogger();
-        ResourceSet writtenSet = new ResourceSet("unused");
+        ResourceSet writtenSet = new ResourceSet("unused", null);
         writtenSet.addSource(folder);
         writtenSet.loadFromFiles(logger);
 
@@ -212,6 +235,7 @@ public class ResourceMergerTest extends BaseTestCase {
                 string.getValueText());
     }
 
+    @Test
     public void testXliffStringWithCarriageReturn() throws Exception {
         ResourceMerger merger = getResourceMerger();
 
@@ -232,7 +256,7 @@ public class ResourceMergerTest extends BaseTestCase {
         File folder = getWrittenResources();
 
         RecordingLogger logger =  new RecordingLogger();
-        ResourceSet writtenSet = new ResourceSet("unused");
+        ResourceSet writtenSet = new ResourceSet("unused", null);
         writtenSet.addSource(folder);
         writtenSet.loadFromFiles(logger);
 
@@ -250,12 +274,13 @@ public class ResourceMergerTest extends BaseTestCase {
                 newValue);
     }
 
+    @Test
     public void testNotMergedAttr() throws Exception {
         RecordingLogger logger =  new RecordingLogger();
 
         File folder = getWrittenResources();
 
-        ResourceSet writtenSet = new ResourceSet("unused");
+        ResourceSet writtenSet = new ResourceSet("unused", null);
         writtenSet.addSource(folder);
         writtenSet.loadFromFiles(logger);
 
@@ -266,12 +291,13 @@ public class ResourceMergerTest extends BaseTestCase {
         checkLogger(logger);
     }
 
+    @Test
     public void testMergedAttr() throws Exception {
         RecordingLogger logger =  new RecordingLogger();
 
         File folder = getWrittenResources();
 
-        ResourceSet writtenSet = new ResourceSet("unused");
+        ResourceSet writtenSet = new ResourceSet("unused", null);
         writtenSet.addSource(folder);
         writtenSet.loadFromFiles(logger);
 
@@ -282,12 +308,12 @@ public class ResourceMergerTest extends BaseTestCase {
         checkLogger(logger);
     }
 
+    @Test
     public void testNotMergedAttrFromMerge() throws Exception {
         ResourceMerger merger = getResourceMerger();
 
-        File folder = Files.createTempDir();
-        merger.writeBlobTo(folder,
-                getConsumer());
+        File folder = TestUtils.createTempDirDeletedOnExit();
+        merger.writeBlobTo(folder, getConsumer(), false);
 
         ResourceMerger loadedMerger = new ResourceMerger(0);
         assertTrue(loadedMerger.loadFromBlob(folder, true /*incrementalState*/));
@@ -298,12 +324,43 @@ public class ResourceMergerTest extends BaseTestCase {
         assertTrue(items.get(0).getIgnoredFromDiskMerge());
     }
 
+    @Test
+    public void testNotMergedSingleFileItem() throws Exception {
+        ResourceMerger merger = getResourceMerger();
+
+        List<ResourceItem> items = merger.getDataSets().get(0).getDataMap().get("drawable/patch");
+        assertEquals(1, items.size());
+        assertFalse(items.get(0).getIgnoredFromDiskMerge());
+
+        File folder = TestUtils.createTempDirDeletedOnExit();
+        merger.writeBlobTo(folder, getConsumer(), false);
+
+        ResourceMerger loadedMerger = new ResourceMerger(0);
+        assertTrue(loadedMerger.loadFromBlob(folder, true /*incrementalState*/));
+
+        // drawable/patch should survive blob writing / loading
+        List<ResourceItem> loadedItems = loadedMerger.getDataSets().get(0).getDataMap().get("drawable/patch");
+        assertEquals(1, loadedItems.size());
+
+        // Now mark the item ignored and try write + load again
+        loadedItems.get(0).setIgnoredFromDiskMerge(true);
+        folder = TestUtils.createTempDirDeletedOnExit();
+        loadedMerger.writeBlobTo(folder, getConsumer(), false);
+
+        ResourceMerger loadedMerger2 = new ResourceMerger(0);
+        assertTrue(loadedMerger2.loadFromBlob(folder, true /*incrementalState*/));
+
+        List<ResourceItem> loadedItems2 = loadedMerger2.getDataSets().get(0).getDataMap().get("drawable/patch");
+        assertEquals(0, loadedItems2.size());
+    }
+
+    @Test
     public void testWrittenDeclareStyleable() throws Exception {
         RecordingLogger logger =  new RecordingLogger();
 
         File folder = getWrittenResources();
 
-        ResourceSet writtenSet = new ResourceSet("unused");
+        ResourceSet writtenSet = new ResourceSet("unused", null);
         writtenSet.addSource(folder);
         writtenSet.loadFromFiles(logger);
 
@@ -352,23 +409,263 @@ public class ResourceMergerTest extends BaseTestCase {
         checkLogger(logger);
     }
 
+    @Test
     public void testMergeBlob() throws Exception {
         ResourceMerger merger = getResourceMerger();
 
-        File folder = Files.createTempDir();
-        merger.writeBlobTo(folder,
-                getConsumer());
+        File folder = TestUtils.createTempDirDeletedOnExit();
+        merger.writeBlobTo(folder, getConsumer(), false);
 
+        ResourceMerger loadedMerger = new ResourceMerger(0);
+        assertTrue(loadedMerger.loadFromBlob(folder, true /*incrementalState*/));
+
+        compareResourceMaps(merger, loadedMerger, true /*full compare*/);
+
+        // Also check that some of the node values are preserved.
+        List<ResourceItem> fromOrigValue = merger.getDataMap().get("string/xliff_with_carriage_return");
+        assertEquals(1, fromOrigValue.size());
+        ResourceItem fromOrigString = fromOrigValue.get(0);
+        assertEquals("Original String in merger",
+                     "This is should be followed by whitespace:\n        %1$s",
+                     fromOrigString.getValueText());
+
+        List<ResourceItem> fromLoadedValues = loadedMerger.getDataMap().get("string/xliff_with_carriage_return");
+        assertEquals(1, fromLoadedValues.size());
+        ResourceItem fromLoadedString = fromLoadedValues.get(0);
+        assertEquals("Loaded String in merger",
+                     "This is should be followed by whitespace:\n        %1$s",
+                     fromLoadedString.getValueText());
+    }
+
+    @Test
+    public void testMergeIdGeneratingResources() throws Exception {
+        // Test loading and writing Id resources.  Test loading a single file instead of all.
+        File root = TestUtils.getRoot("resources", "idGenerating");
+        ResourceSet resourceSet = new ResourceSet("idResources", null);
+        resourceSet.addSource(root);
+        ResourceMerger merger = new ResourceMerger(0);
+        merger.addDataSet(resourceSet);
+
+        RecordingLogger logger = new RecordingLogger();
+
+        File layoutDir = new File(root, "layout");
+        File layoutFile = new File(layoutDir, "layout_for_id_scan.xml");
+        resourceSet.setShouldParseResourceIds(true);
+        final ResourceFile parsedFile = resourceSet.loadFile(root, layoutFile, logger);
+        assertNotNull(parsedFile);
+        assertTrue(parsedFile.getFile().equals(layoutFile));
+        assertEquals("", parsedFile.getQualifiers());
+        assertEquals(12, parsedFile.getItems().size());
+        Collection<ResourceItem> layoutItems = Collections2.filter(parsedFile.getItems(), new Predicate<ResourceItem>() {
+            @Override
+            public boolean apply(ResourceItem input) {
+                return input.getType() == ResourceType.LAYOUT &&
+                       input.getName().equals("layout_for_id_scan") &&
+                       input.getSource() != null &&
+                       input.getSource().equals(parsedFile);
+            }
+        });
+        assertEquals(1, layoutItems.size());
+        // Also check that the layout item's ResourceValue makes sense.
+        ResourceItem layoutItem = Iterables.getFirst(layoutItems, null);
+        assertNotNull(layoutItem);
+        ResourceValue layoutValue = layoutItem.getResourceValue(false);
+        assertNotNull(layoutValue);
+        assertEquals(layoutFile.getAbsolutePath(), layoutValue.getValue());
+        Collection<ResourceItem> idItems = Collections2.filter(parsedFile.getItems(), new Predicate<ResourceItem>() {
+            @Override
+            public boolean apply(ResourceItem input) {
+                return input.getType() == ResourceType.ID &&
+                       input.getSource() != null &&
+                       input.getSource().equals(parsedFile);
+            }
+        });
+        assertEquals(11, idItems.size());
+
+        File folder = TestUtils.createTempDirDeletedOnExit();
+        folder.deleteOnExit();
+        merger.writeBlobTo(folder, getConsumer(), false);
+
+        // reload it
+        ResourceMerger loadedMerger = new ResourceMerger(0);
+        assertTrue(loadedMerger.loadFromBlob(folder, true /*incrementalState*/));
+
+        compareResourceMaps(merger, loadedMerger, true /*full compare*/);
+        // Also check that the layout item's ResourceValue makes sense after reload.
+        List<ResourceItem> loadedLayoutItems = loadedMerger.getDataMap().get("layout/layout_for_id_scan");
+        assertEquals(1, loadedLayoutItems.size());
+        layoutItem = Iterables.getFirst(loadedLayoutItems, null);
+        assertNotNull(layoutItem);
+        layoutValue = layoutItem.getResourceValue(false);
+        assertNotNull(layoutValue);
+        assertEquals(layoutFile.getAbsolutePath(), layoutValue.getValue());
+
+        // Check that the ID item's ResourceValue is nothing of consequence.
+        List<ResourceItem> loadedIdItems = loadedMerger.getDataMap().get("id/title_refresh_progress");
+        assertEquals(1, loadedIdItems.size());
+        ResourceItem idItem = Iterables.getFirst(loadedIdItems, null);
+        assertNotNull(idItem);
+        ResourceValue idValue = idItem.getResourceValue(false);
+        assertNotNull(idValue);
+        assertTrue(Strings.isNullOrEmpty(idValue.getValue()));
+
+        checkLogger(logger);
+    }
+
+    @Test
+    public void testScanForIdDrawableXmlMixedWithBinary() throws Exception {
+        // Test that in a drawable directory with both XML and PNG, we can pick up IDs
+        // without being confused about the PNG.
+        File srcDrawables = FileUtils.join(TestUtils.getRoot("resources", "idGenerating"), "drawable-v21");
+        File copiedRoot = TestUtils.createTempDirDeletedOnExit();
+        copiedRoot.deleteOnExit();
+        File copiedDrawables = FileUtils.join(copiedRoot, "drawable-v21");
+        copyFolder(srcDrawables, copiedDrawables);
+
+        File srcPng = FileUtils.join(TestUtils.getRoot("resources", "baseSet"), "drawable", "icon.png");
+        FileUtils.copyFileToDirectory(srcPng, copiedDrawables);
+        assertTrue(FileUtils.join(copiedDrawables, "drawable_for_id_scan.xml").exists());
+
+        ResourceSet resourceSet = new ResourceSet("idResources", null);
+        resourceSet.addSource(copiedRoot);
+        resourceSet.setShouldParseResourceIds(true);
+
+        RecordingLogger logger = new RecordingLogger();
+        resourceSet.loadFromFiles(logger);
+        List<ResourceItem> iconRes = resourceSet.getDataMap().get("drawable-v21/icon");
+        assertEquals(1, iconRes.size());
+        List<ResourceItem> drawableRes = resourceSet.getDataMap().get("drawable-v21/drawable_for_id_scan");
+        assertEquals(1, drawableRes.size());
+        List<ResourceItem> focusedId= resourceSet.getDataMap().get("id-v21/focused");
+        assertEquals(1, focusedId.size());
+
+        checkLogger(logger);
+    }
+
+    @Test
+    public void testDontNormalizeQualifiers() throws Exception {
+        File root = TestUtils.getRoot("resources", "idGenerating");
+        File copiedRoot = getFolderCopy(root);
+        copiedRoot.deleteOnExit();
+        // Add some qualifiers to directory before loading.
+        File layoutDirWithQualifiers = new File(copiedRoot, "layout-xlarge-land");
+        FileUtils.renameTo(new File(copiedRoot, "layout"), layoutDirWithQualifiers);
+        File layoutFile = new File(layoutDirWithQualifiers, "layout_for_id_scan.xml");
+
+        ResourceSet resourceSet = new ResourceSet("idResources", null);
+        resourceSet.addSource(copiedRoot);
+        RecordingLogger logger = new RecordingLogger();
+
+        // Try first with normalization, which tacks on a -v4 qualifier.
+        ResourceFile parsedFile = resourceSet.loadFile(copiedRoot, layoutFile, logger);
+        assertNotNull(parsedFile);
+        assertEquals("xlarge-land-v4", parsedFile.getQualifiers());
+
+        // Now try without normalization.
+        resourceSet.setDontNormalizeQualifiers(true);
+        parsedFile = resourceSet.loadFile(copiedRoot, layoutFile, logger);
+        assertNotNull(parsedFile);
+        assertEquals("xlarge-land", parsedFile.getQualifiers());
+
+        checkLogger(logger);
+    }
+
+    @Test
+    public void testWriteAndReadBlobWithTimestamps() throws Exception {
+        ResourceMerger merger = getResourceMerger();
+
+        File folder = TestUtils.createTempDirDeletedOnExit();
+        folder.deleteOnExit();
+        merger.writeBlobToWithTimestamps(folder, getConsumer());
+
+        // new merger to read the blob
         ResourceMerger loadedMerger = new ResourceMerger(0);
         assertTrue(loadedMerger.loadFromBlob(folder, true /*incrementalState*/));
 
         compareResourceMaps(merger, loadedMerger, true /*full compare*/);
     }
 
+    @Test
+    public void testWriteEditAndReadBlobWithTimestamps() throws Exception {
+        Pair<ResourceMerger, File> pair = getResourceMergerBackedByTempFiles();
+        ResourceMerger merger = pair.getFirst();
+        File tempDir = pair.getSecond();
+
+        // Check existence of a values resource.
+        String stringKey = "string/basic_string";
+        assertNotNull(merger.getDataMap().get(stringKey));
+        assertFalse(merger.getDataMap().get(stringKey).isEmpty());
+        ResourceFile resourceFile = merger.getDataMap().get(stringKey).get(0).getSource();
+        assertNotNull(resourceFile);
+        assertTrue(resourceFile.getFile().getName().equals("values.xml"));
+
+        // Write blobs with and without timestamps.
+        File folderWithTimestamps = TestUtils.createTempDirDeletedOnExit();
+        merger.writeBlobToWithTimestamps(folderWithTimestamps, getConsumer());
+
+        File folderWithoutTimestamps = TestUtils.createTempDirDeletedOnExit();
+        merger.writeBlobTo(folderWithoutTimestamps, getConsumer(), false);
+
+        // Simply touch the values file with a sufficiently later timestamp.
+        File subFile = new File(tempDir, FileUtils.join("values", "values.xml"));
+        long oldLastModified = subFile.lastModified();
+        long twoSeconds = 2000;
+        if (!subFile.setLastModified(oldLastModified + twoSeconds)) {
+            // Not supported on this platform
+            return;
+        }
+
+        // Load with and without timestamps to see values omitted due to modification (or not omitted).
+        ResourceMerger loadedWithTimestamps = new ResourceMerger(0);
+        assertTrue(loadedWithTimestamps.loadFromBlob(folderWithTimestamps, true /*incrementalState*/));
+
+        // omitted
+        assertNotNull(loadedWithTimestamps.getDataMap().get(stringKey));
+        assertTrue(loadedWithTimestamps.getDataMap().get(stringKey).isEmpty());
+
+        ResourceMerger loadedWithoutTimestamps = new ResourceMerger(0);
+        assertTrue(loadedWithoutTimestamps.loadFromBlob(folderWithoutTimestamps, true /*incrementalState*/));
+
+        // not omitted
+        assertNotNull(loadedWithoutTimestamps.getDataMap().get(stringKey));
+        assertFalse(loadedWithoutTimestamps.getDataMap().get(stringKey).isEmpty());
+        resourceFile = loadedWithoutTimestamps.getDataMap().get(stringKey).get(0).getSource();
+        assertNotNull(resourceFile);
+        assertTrue(resourceFile.getFile().getName().equals("values.xml"));
+    }
+
+    @Test
+    public void testWriteDeleteAndReadBlobWithTimestamps() throws Exception {
+        Pair<ResourceMerger, File> pair = getResourceMergerBackedByTempFiles();
+        ResourceMerger merger = pair.getFirst();
+        File tempDir = pair.getSecond();
+
+        File folder = TestUtils.createTempDirDeletedOnExit();
+        merger.writeBlobToWithTimestamps(folder, getConsumer());
+
+        String stringKey = "string/basic_string";
+        assertNotNull(merger.getDataMap().get(stringKey));
+        assertFalse(merger.getDataMap().get(stringKey).isEmpty());
+        ResourceFile resourceFile = merger.getDataMap().get(stringKey).get(0).getSource();
+        assertNotNull(resourceFile);
+        assertTrue(resourceFile.getFile().getName().equals("values.xml"));
+
+        File subFile = new File(tempDir, FileUtils.join("values", "values.xml"));
+        assertTrue(subFile.delete());
+
+        // new merger to read the blob
+        ResourceMerger loadedMerger = new ResourceMerger(0);
+        assertTrue(loadedMerger.loadFromBlob(folder, true /*incrementalState*/));
+
+        assertNotNull(loadedMerger.getDataMap().get(stringKey));
+        assertTrue(loadedMerger.getDataMap().get(stringKey).isEmpty());
+    }
+
     /**
      * Tests the path replacement in the merger.xml file loaded from testData/
      * @throws Exception
      */
+    @Test
     public void testLoadingTestPathReplacement() throws Exception {
         File root = TestUtils.getRoot("resources", "baseMerge");
         File fakeRoot = getMergedBlobFolder(root);
@@ -390,6 +687,7 @@ public class ResourceMergerTest extends BaseTestCase {
         }
     }
 
+    @Test
     public void testUpdateWithBasicFiles() throws Exception {
         File root = getIncMergeRoot("basicFiles");
         File fakeRoot = getMergedBlobFolder(root);
@@ -490,13 +788,16 @@ public class ResourceMergerTest extends BaseTestCase {
         File resFolder = getFolderCopy(new File(root, "resOut"));
         resFolder.deleteOnExit();
 
-        File mergeLogFolder = Files.createTempDir();
+        File mergeLogFolder = TestUtils.createTempDirDeletedOnExit();
         mergeLogFolder.deleteOnExit();
 
         // write the content of the resource merger.
-        MergedResourceWriter writer = new MergedResourceWriter(resFolder, mPngCruncher,
-                false /*crunchPng*/, false /*process9Patch*/, null /*publicFile*/, mergeLogFolder,
-                mPreprocessor);
+        MergedResourceWriter writer = MergedResourceWriter.createWriterWithoutPngCruncher(
+                resFolder,
+                null /*publicFile*/,
+                mergeLogFolder,
+                mPreprocessor,
+                mTemporaryFolder.getRoot());
         resourceMerger.mergeData(writer, false /*doCleanUp*/);
 
         // Check the content.
@@ -521,6 +822,7 @@ public class ResourceMergerTest extends BaseTestCase {
                 "basicFiles/main/drawable/touched.png".replace('/', File.separatorChar)));
     }
 
+    @Test
     public void testUpdateWithBasicValues() throws Exception {
         File root = getIncMergeRoot("basicValues");
         File fakeRoot = getMergedBlobFolder(root);
@@ -618,18 +920,16 @@ public class ResourceMergerTest extends BaseTestCase {
         File resFolder = getFolderCopy(new File(root, "resOut"));
 
 
-        File mergeLogFolder = Files.createTempDir();
+        File mergeLogFolder = TestUtils.createTempDirDeletedOnExit();
         mergeLogFolder.deleteOnExit();
 
         // write the content of the resource merger.
-        MergedResourceWriter writer = new MergedResourceWriter(
+        MergedResourceWriter writer = MergedResourceWriter.createWriterWithoutPngCruncher(
                 resFolder,
-                mPngCruncher,
-                false /*crunchPng*/,
-                false /*process9Patch*/,
                 null /*publicFile*/,
                 mergeLogFolder,
-                mPreprocessor);
+                mPreprocessor,
+                mTemporaryFolder.getRoot());
         resourceMerger.mergeData(writer, false /*doCleanUp*/);
 
         // Check the content.
@@ -651,9 +951,13 @@ public class ResourceMergerTest extends BaseTestCase {
         // Blame log sanity check.
         MergingLog mergingLog = new MergingLog(mergeLogFolder);
 
-        SourceFilePosition original = mergingLog.find(new SourceFilePosition(
-                new SourceFile(new File(resFolder, "values" + File.separator + "values.xml")),
-                new SourcePosition(2,5,-1)));
+        SourceFile destFile =
+                mergingLog.destinationFor(
+                        new SourceFile(overlayValuesNew));
+
+        SourceFilePosition original =
+                mergingLog.find(
+                        new SourceFilePosition(destFile, new SourcePosition(2,5,-1)));
 
         assertEquals(new SourcePosition(2, 4, 55, 2, 51, 102), original.getPosition());
         assertTrue(original.getFile().getSourceFile().getAbsolutePath().endsWith(
@@ -661,6 +965,7 @@ public class ResourceMergerTest extends BaseTestCase {
 
     }
 
+    @Test
     public void testUpdateWithBasicValues2() throws Exception {
         File root = getIncMergeRoot("basicValues2");
         File fakeRoot = getMergedBlobFolder(root);
@@ -729,6 +1034,7 @@ public class ResourceMergerTest extends BaseTestCase {
         assertEquals("untouched", map.get("removed_overlay"));
     }
 
+    @Test
     public void testUpdateWithFilesVsValues() throws Exception {
         File root = getIncMergeRoot("filesVsValues");
         File fakeRoot = getMergedBlobFolder(root);
@@ -835,6 +1141,7 @@ public class ResourceMergerTest extends BaseTestCase {
         assertFalse(content.contains("name=\"alias_replaced_by_file\""));
     }
 
+    @Test
     public void testCheckValidUpdate() throws Exception {
         // first merger
         ResourceMerger merger1 = createMerger(new String[][] {
@@ -851,9 +1158,8 @@ public class ResourceMergerTest extends BaseTestCase {
         assertTrue(merger1.checkValidUpdate(merger2.getDataSets()));
 
         // write merger1 on disk to test writing empty ResourceSets.
-        File folder = Files.createTempDir();
-        merger1.writeBlobTo(folder,
-                getConsumer());
+        File folder = TestUtils.createTempDirDeletedOnExit();
+        merger1.writeBlobTo(folder, getConsumer(), false);
 
         // reload it
         ResourceMerger loadedMerger = new ResourceMerger(0);
@@ -873,6 +1179,7 @@ public class ResourceMergerTest extends BaseTestCase {
         }
     }
 
+    @Test
     public void testUpdateWithRemovedOverlay() throws Exception {
         // Test with removed overlay
         ResourceMerger merger1 = createMerger(new String[][] {
@@ -888,6 +1195,7 @@ public class ResourceMergerTest extends BaseTestCase {
         assertFalse(merger1.checkValidUpdate(merger2.getDataSets()));
     }
 
+    @Test
     public void testUpdateWithReplacedOverlays() throws Exception {
         // Test with different overlays
         ResourceMerger merger1 = createMerger(new String[][] {
@@ -904,6 +1212,7 @@ public class ResourceMergerTest extends BaseTestCase {
         assertFalse(merger1.checkValidUpdate(merger2.getDataSets()));
     }
 
+    @Test
     public void testUpdateWithReorderedOverlays() throws Exception {
         // Test with different overlays
         ResourceMerger merger1 = createMerger(new String[][] {
@@ -922,6 +1231,7 @@ public class ResourceMergerTest extends BaseTestCase {
         assertFalse(merger1.checkValidUpdate(merger2.getDataSets()));
     }
 
+    @Test
     public void testUpdateWithRemovedSourceFile() throws Exception {
         // Test with different source files
         ResourceMerger merger1 = createMerger(new String[][] {
@@ -936,6 +1246,7 @@ public class ResourceMergerTest extends BaseTestCase {
         assertFalse(merger1.checkValidUpdate(merger2.getDataSets()));
     }
 
+    @Test
     public void testChangedIgnoredFile() throws Exception {
         ResourceSet res = ResourceSetTest.getBaseResourceSet();
 
@@ -950,6 +1261,7 @@ public class ResourceMergerTest extends BaseTestCase {
         assertEquals(FileValidity.FileStatus.IGNORED_FILE, fileValidity.status);
     }
 
+    @Test
     public void testIncDataForRemovedFile() throws Exception {
         File root = TestUtils.getCanonicalRoot("resources", "removedFile");
         File fakeBlobRoot = getMergedBlobFolder(root);
@@ -1002,8 +1314,8 @@ public class ResourceMergerTest extends BaseTestCase {
         assertTrue(new File(outDrawableFolder, "icon.png").isFile());
 
         // now write the blob
-        File outBlobFolder = Files.createTempDir();
-        resourceMerger.writeBlobTo(outBlobFolder, writer);
+        File outBlobFolder = TestUtils.createTempDirDeletedOnExit();
+        resourceMerger.writeBlobTo(outBlobFolder, writer, false);
 
         // check the removed icon is not present.
         ResourceMerger resourceMerger2 = new ResourceMerger(0);
@@ -1014,19 +1326,20 @@ public class ResourceMergerTest extends BaseTestCase {
         assertTrue(removedIcon.isEmpty());
     }
 
+    @Test
     public void testMergedDeclareStyleable() throws Exception {
         File root = TestUtils.getRoot("resources", "declareStyleable");
 
         // load both base and overlay set
         File baseRoot = new File(root, "base");
-        ResourceSet baseSet = new ResourceSet("main");
+        ResourceSet baseSet = new ResourceSet("main", null);
         baseSet.addSource(baseRoot);
         RecordingLogger logger = new RecordingLogger();
         baseSet.loadFromFiles(logger);
         checkLogger(logger);
 
         File overlayRoot = new File(root, "overlay");
-        ResourceSet overlaySet = new ResourceSet("overlay");
+        ResourceSet overlaySet = new ResourceSet("overlay", null);
         overlaySet.addSource(overlayRoot);
         logger = new RecordingLogger();
         overlaySet.loadFromFiles(logger);
@@ -1038,14 +1351,14 @@ public class ResourceMergerTest extends BaseTestCase {
         resourceMerger.addDataSet(overlaySet);
 
         // write the merge result.
-        File folder = Files.createTempDir();
+        File folder = TestUtils.createTempDirDeletedOnExit();
         folder.deleteOnExit();
 
         MergedResourceWriter writer = getConsumer(folder);
         resourceMerger.mergeData(writer, false /*doCleanUp*/);
 
         // load the result as a set.
-        ResourceSet mergedSet = new ResourceSet("merged");
+        ResourceSet mergedSet = new ResourceSet("merged", null);
         mergedSet.addSource(folder);
         logger = new RecordingLogger();
         mergedSet.loadFromFiles(logger);
@@ -1089,6 +1402,7 @@ public class ResourceMergerTest extends BaseTestCase {
         assertTrue("Check emptiness of " + expectedAttrs.toString(), expectedAttrs.isEmpty());
     }
 
+    @Test
     public void testUnchangedMergedItem() throws Exception {
         // locate the merger file that contains exactly the result of the source folders.
         File root = TestUtils.getRoot("resources", "declareStyleable");
@@ -1110,6 +1424,7 @@ public class ResourceMergerTest extends BaseTestCase {
         assertTrue(consumer.removedItems.isEmpty());
     }
 
+    @Test
     public void testRemovedMergedItem() throws Exception {
         // locate the merger file that contains exactly the result of the source folders.
         File root = TestUtils.getCanonicalRoot("resources", "declareStyleable");
@@ -1160,6 +1475,7 @@ public class ResourceMergerTest extends BaseTestCase {
         assertEquals(1, consumer.removedItems.size());
     }
 
+    @Test
     public void testTouchedMergedItem() throws Exception {
         // locate the merger file that contains exactly the result of the source folders.
         File root = TestUtils.getCanonicalRoot("resources", "declareStyleable");
@@ -1200,6 +1516,7 @@ public class ResourceMergerTest extends BaseTestCase {
         assertTrue(consumer.removedItems.isEmpty());
     }
 
+    @Test
     public void testTouchedNoDiffMergedItem() throws Exception {
         // locate the merger file that contains exactly the result of the source folders.
         File root = TestUtils.getCanonicalRoot("resources", "declareStyleable");
@@ -1240,6 +1557,7 @@ public class ResourceMergerTest extends BaseTestCase {
         assertTrue(consumer.removedItems.isEmpty());
     }
 
+    @Test
     public void testRemovedOtherWithNoNoDiffTouchMergedItem() throws Exception {
         // test that when a non-merged resources is changed/removed, the result of the merge still
         // contain the merged items even if they were touched but had no change.
@@ -1297,11 +1615,12 @@ public class ResourceMergerTest extends BaseTestCase {
         assertEquals(1, consumer.removedItems.size());
     }
 
+    @Test
     public void testStringWhiteSpaces() throws Exception {
         File root = TestUtils.getRoot("resources", "stringWhiteSpaces");
 
         // load res folder
-        ResourceSet baseSet = new ResourceSet("main");
+        ResourceSet baseSet = new ResourceSet("main", null);
         baseSet.addSource(root);
         RecordingLogger logger = new RecordingLogger();
         baseSet.loadFromFiles(logger);
@@ -1312,14 +1631,14 @@ public class ResourceMergerTest extends BaseTestCase {
         resourceMerger.addDataSet(baseSet);
 
         // write the merge result.
-        File folder = Files.createTempDir();
+        File folder = TestUtils.createTempDirDeletedOnExit();
         folder.deleteOnExit();
 
         MergedResourceWriter writer = getConsumer(folder);
         resourceMerger.mergeData(writer, false /*doCleanUp*/);
 
         // load the result as a set.
-        ResourceSet mergedSet = new ResourceSet("merged");
+        ResourceSet mergedSet = new ResourceSet("merged", null);
         mergedSet.addSource(folder);
         logger = new RecordingLogger();
         mergedSet.loadFromFiles(logger);
@@ -1356,7 +1675,7 @@ public class ResourceMergerTest extends BaseTestCase {
     private static ResourceMerger createMerger(String[][] data) {
         ResourceMerger merger = new ResourceMerger(0);
         for (String[] setData : data) {
-            ResourceSet set = new ResourceSet(setData[0]);
+            ResourceSet set = new ResourceSet(setData[0], null);
             merger.addDataSet(set);
             for (int i = 1, n = setData.length; i < n; i++) {
                 set.addSource(new File(setData[i]));
@@ -1374,7 +1693,7 @@ public class ResourceMergerTest extends BaseTestCase {
 
         RecordingLogger logger = new RecordingLogger();
 
-        ResourceSet overlay = new ResourceSet("overlay");
+        ResourceSet overlay = new ResourceSet("overlay", null);
         overlay.addSource(new File(root, "overlay"));
         overlay.loadFromFiles(logger);
 
@@ -1387,10 +1706,30 @@ public class ResourceMergerTest extends BaseTestCase {
         return resourceMerger;
     }
 
+    private static Pair<ResourceMerger, File> getResourceMergerBackedByTempFiles()
+      throws MergingException, IOException {
+        File srcOverlay = TestUtils.getRoot("resources", "baseMerge", "overlay");
+
+        RecordingLogger logger = new RecordingLogger();
+        File testFolder = getFolderCopy(srcOverlay);
+        testFolder.deleteOnExit();
+
+        ResourceSet overlay = new ResourceSet("overlay", null);
+        overlay.addSource(testFolder);
+        overlay.loadFromFiles(logger);
+
+        checkLogger(logger);
+
+        ResourceMerger resourceMerger = new ResourceMerger(0);
+        resourceMerger.addDataSet(overlay);
+
+        return Pair.of(resourceMerger, testFolder);
+    }
+
     private File getWrittenResources() throws MergingException, IOException {
         ResourceMerger resourceMerger = getResourceMerger();
 
-        File folder = Files.createTempDir();
+        File folder = TestUtils.createTempDirDeletedOnExit();
 
         MergedResourceWriter writer = getConsumer(folder);
         resourceMerger.mergeData(writer, false /*doCleanUp*/);
@@ -1404,7 +1743,7 @@ public class ResourceMergerTest extends BaseTestCase {
     }
 
     private static File getFolderCopy(File folder) throws IOException {
-        File dest = Files.createTempDir();
+        File dest = TestUtils.createTempDirDeletedOnExit();
         copyFolder(folder, dest);
         return dest;
     }
@@ -1430,7 +1769,7 @@ public class ResourceMergerTest extends BaseTestCase {
             throws IOException, MergingException {
         Map<String, String> result = Maps.newHashMap();
 
-        Document document = ValueResourceParser2.parseDocument(file);
+        Document document = ValueResourceParser2.parseDocument(file, true);
 
         // get the root node
         Node rootNode = document.getDocumentElement();
@@ -1479,18 +1818,18 @@ public class ResourceMergerTest extends BaseTestCase {
         return result;
     }
 
+    @Test
     public void testWritePermission() throws Exception {
         ResourceMerger merger = getResourceMerger();
 
-        File folder = Files.createTempDir();
+        File folder = TestUtils.createTempDirDeletedOnExit();
         boolean writable = folder.setWritable(false);
         if (!writable) {
             // Not supported on this platform
             return;
         }
         try {
-        merger.writeBlobTo(folder,
-                getConsumer());
+            merger.writeBlobTo(folder, getConsumer(), false);
         } catch (MergingException e) {
             File file = new File(folder, "merger.xml");
             assertEquals(file.getPath() + ": Error: (Permission denied)",
@@ -1500,21 +1839,10 @@ public class ResourceMergerTest extends BaseTestCase {
         fail("Exception not thrown as expected");
     }
 
-    public void testWriteAndReadBlob() throws Exception {
-        ResourceMerger merger = getResourceMerger();
-
-        File folder = Files.createTempDir();
-        merger.writeBlobTo(folder,
-                getConsumer());
-
-        // new merger to read the blob
-        ResourceMerger loadedMerger = new ResourceMerger(0);
-        assertTrue(loadedMerger.loadFromBlob(folder, true /*incrementalState*/));
-    }
-
+    @Test
     public void testInvalidFileNames() throws Exception {
         File root = TestUtils.getRoot("resources", "brokenSet5");
-        ResourceSet resourceSet = new ResourceSet("brokenSet5");
+        ResourceSet resourceSet = new ResourceSet("brokenSet5", null);
         resourceSet.addSource(root);
         RecordingLogger logger =  new RecordingLogger();
 
@@ -1534,9 +1862,10 @@ public class ResourceMergerTest extends BaseTestCase {
         fail("Expected error");
     }
 
+    @Test
     public void testStricterInvalidFileNames() throws Exception {
         File root = TestUtils.getRoot("resources", "brokenSetDrawableFileName");
-        ResourceSet resourceSet = new ResourceSet("brokenSetDrawableFileName");
+        ResourceSet resourceSet = new ResourceSet("brokenSetDrawableFileName", null);
         resourceSet.addSource(root);
         RecordingLogger logger =  new RecordingLogger();
 
@@ -1554,10 +1883,11 @@ public class ResourceMergerTest extends BaseTestCase {
         fail("Expected error");
     }
 
+    @Test
     public void testXmlParseError1() throws Exception {
         File root = TestUtils.getRoot("resources", "brokenSet6");
         try {
-            ResourceSet resourceSet = new ResourceSet("brokenSet6");
+            ResourceSet resourceSet = new ResourceSet("brokenSet6", null);
             resourceSet.addSource(root);
             RecordingLogger logger =  new RecordingLogger();
             resourceSet.loadFromFiles(logger);
@@ -1579,10 +1909,11 @@ public class ResourceMergerTest extends BaseTestCase {
         fail("Expected error");
     }
 
+    @Test
     public void testXmlParseError7() throws Exception {
         File root = TestUtils.getRoot("resources", "brokenSet7");
         try {
-            ResourceSet resourceSet = new ResourceSet("brokenSet7");
+            ResourceSet resourceSet = new ResourceSet("brokenSet7", null);
             resourceSet.addSource(root);
             RecordingLogger logger =  new RecordingLogger();
             resourceSet.loadFromFiles(logger);
@@ -1602,8 +1933,9 @@ public class ResourceMergerTest extends BaseTestCase {
         fail("Expected error");
     }
 
+    @Test
     public void testSdkFiltering() throws Exception {
-        ResourceSet resourceSet = new ResourceSet("filterableSet");
+        ResourceSet resourceSet = new ResourceSet("filterableSet", null);
         resourceSet.addSource(TestUtils.getRoot("resources", "filterableSet"));
         resourceSet.loadFromFiles(new RecordingLogger());
 
@@ -1675,18 +2007,16 @@ public class ResourceMergerTest extends BaseTestCase {
 
     @NonNull
     private MergedResourceWriter getConsumer() {
-        return getConsumer(Files.createTempDir());
+        return getConsumer(TestUtils.createTempDirDeletedOnExit());
     }
 
     @NonNull
     private MergedResourceWriter getConsumer(File tempDir) {
-        return new MergedResourceWriter(
+        return MergedResourceWriter.createWriterWithoutPngCruncher(
                 tempDir,
-                mPngCruncher,
-                false /*crunchPng*/,
-                false /*process9Patch*/,
                 null /*publicFile*/,
                 null /*blameLogFolder*/,
-                mPreprocessor);
+                mPreprocessor,
+                mTemporaryFolder.getRoot());
     }
 }

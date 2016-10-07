@@ -31,7 +31,7 @@ import java.util.List;
 public class BuiltinIssueRegistry extends IssueRegistry {
     private static final List<Issue> sIssues;
 
-    static final int INITIAL_CAPACITY = 253;
+    static final int INITIAL_CAPACITY = 263;
 
     static {
         List<Issue> issues = new ArrayList<Issue>(INITIAL_CAPACITY);
@@ -45,6 +45,7 @@ public class BuiltinIssueRegistry extends IssueRegistry {
         issues.add(AndroidAutoDetector.MISSING_INTENT_FILTER_FOR_MEDIA_SEARCH);
         issues.add(AndroidAutoDetector.MISSING_MEDIA_BROWSER_SERVICE_ACTION_ISSUE);
         issues.add(AndroidAutoDetector.MISSING_ON_PLAY_FROM_SEARCH);
+        issues.add(AnnotationDetector.ANNOTATION_USAGE);
         issues.add(AnnotationDetector.FLAG_STYLE);
         issues.add(AnnotationDetector.INSIDE_METHOD);
         issues.add(AnnotationDetector.SWITCH_TYPE_DEF);
@@ -63,6 +64,7 @@ public class BuiltinIssueRegistry extends IssueRegistry {
         issues.add(ArraySizeDetector.INCONSISTENT);
         issues.add(AssertDetector.ISSUE);
         issues.add(BadHostnameVerifierDetector.ISSUE);
+        issues.add(BatteryDetector.ISSUE);
         issues.add(ButtonDetector.BACK_BUTTON);
         issues.add(ButtonDetector.CASE);
         issues.add(ButtonDetector.ORDER);
@@ -74,9 +76,12 @@ public class BuiltinIssueRegistry extends IssueRegistry {
         issues.add(CipherGetInstanceDetector.ISSUE);
         issues.add(CleanupDetector.COMMIT_FRAGMENT);
         issues.add(CleanupDetector.RECYCLE_RESOURCE);
+        issues.add(CleanupDetector.SHARED_PREF);
         issues.add(ClickableViewAccessibilityDetector.ISSUE);
         issues.add(CommentDetector.EASTER_EGG);
         issues.add(CommentDetector.STOP_SHIP);
+        issues.add(ConstraintLayoutDetector.ISSUE);
+        issues.add(CordovaVersionDetector.ISSUE);
         issues.add(CustomViewDetector.ISSUE);
         issues.add(CutPasteDetector.ISSUE);
         issues.add(DateFormatDetector.DATE_FORMAT);
@@ -111,6 +116,7 @@ public class BuiltinIssueRegistry extends IssueRegistry {
         issues.add(HandlerDetector.ISSUE);
         issues.add(HardcodedDebugModeDetector.ISSUE);
         issues.add(HardcodedValuesDetector.ISSUE);
+        issues.add(HardwareIdDetector.ISSUE);
         issues.add(IconDetector.DUPLICATES_CONFIGURATIONS);
         issues.add(IconDetector.DUPLICATES_NAMES);
         issues.add(IconDetector.GIF_USAGE);
@@ -140,6 +146,7 @@ public class BuiltinIssueRegistry extends IssueRegistry {
         issues.add(LabelForDetector.ISSUE);
         issues.add(LayoutConsistencyDetector.INCONSISTENT_IDS);
         issues.add(LayoutInflationDetector.ISSUE);
+        issues.add(LeakDetector.ISSUE);
         issues.add(LocaleDetector.STRING_LOCALE);
         issues.add(LocaleFolderDetector.DEPRECATED_CODE);
         issues.add(LocaleFolderDetector.INVALID_FOLDER);
@@ -163,6 +170,7 @@ public class BuiltinIssueRegistry extends IssueRegistry {
         issues.add(ManifestDetector.TARGET_NEWER);
         issues.add(ManifestDetector.UNIQUE_PERMISSION);
         issues.add(ManifestDetector.USES_SDK);
+        issues.add(ManifestDetector.WEARABLE_BIND_LISTENER);
         issues.add(ManifestDetector.WRONG_PARENT);
         issues.add(ManifestResourceDetector.ISSUE);
         issues.add(ManifestTypoDetector.ISSUE);
@@ -201,7 +209,8 @@ public class BuiltinIssueRegistry extends IssueRegistry {
         issues.add(PxUsageDetector.PX_ISSUE);
         issues.add(PxUsageDetector.SMALL_SP_ISSUE);
         issues.add(ReadParcelableDetector.ISSUE);
-        issues.add(RecyclerViewDetector.ISSUE);
+        issues.add(RecyclerViewDetector.DATA_BINDER);
+        issues.add(RecyclerViewDetector.FIXED_POSITION);
         issues.add(RegistrationDetector.ISSUE);
         issues.add(RelativeOverlapDetector.ISSUE);
         issues.add(RequiredAttributeDetector.ISSUE);
@@ -227,12 +236,12 @@ public class BuiltinIssueRegistry extends IssueRegistry {
         issues.add(SecurityDetector.WORLD_WRITEABLE);
         issues.add(ServiceCastDetector.ISSUE);
         issues.add(SetJavaScriptEnabledDetector.ISSUE);
-        issues.add(SharedPrefsDetector.ISSUE);
         issues.add(SignatureOrSystemDetector.ISSUE);
         issues.add(SQLiteDetector.ISSUE);
         issues.add(SslCertificateSocketFactoryDetector.CREATE_SOCKET);
         issues.add(SslCertificateSocketFactoryDetector.GET_INSECURE);
         issues.add(StateListDetector.ISSUE);
+        issues.add(StringAuthLeakDetector.AUTH_LEAK);
         issues.add(StringFormatDetector.ARG_COUNT);
         issues.add(StringFormatDetector.ARG_TYPES);
         issues.add(StringFormatDetector.INVALID);
@@ -275,6 +284,7 @@ public class BuiltinIssueRegistry extends IssueRegistry {
         issues.add(UselessViewDetector.USELESS_PARENT);
         issues.add(Utf8Detector.ISSUE);
         issues.add(VectorDetector.ISSUE);
+        issues.add(VectorDrawableCompatDetector.ISSUE);
         issues.add(ViewConstructorDetector.ISSUE);
         issues.add(ViewHolderDetector.ISSUE);
         issues.add(ViewTagDetector.ISSUE);
@@ -312,17 +322,17 @@ public class BuiltinIssueRegistry extends IssueRegistry {
         } else {
             int initialSize = 12;
             if (scope.contains(Scope.RESOURCE_FILE)) {
-                initialSize += 75;
+                initialSize += 80;
             } else if (scope.contains(Scope.ALL_RESOURCE_FILES)) {
-                initialSize += 10;
+                initialSize += 12;
             }
 
             if (scope.contains(Scope.JAVA_FILE)) {
-                initialSize += 72;
+                initialSize += 75;
             } else if (scope.contains(Scope.CLASS_FILE)) {
                 initialSize += 15;
             } else if (scope.contains(Scope.MANIFEST)) {
-                initialSize += 37;
+                initialSize += 38;
             } else if (scope.contains(Scope.GRADLE_FILE)) {
                 initialSize += 5;
             }

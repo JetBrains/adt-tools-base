@@ -14,7 +14,6 @@ android {
         minified.initWith(buildTypes.debug)
         minified {
             minifyEnabled true
-            useJack rootProject.useJack
             proguardFiles getDefaultProguardFile('proguard-android.txt')
         }
     }

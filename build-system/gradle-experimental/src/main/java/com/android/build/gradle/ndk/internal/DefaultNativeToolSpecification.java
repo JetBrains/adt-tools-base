@@ -16,17 +16,15 @@
 
 package com.android.build.gradle.ndk.internal;
 
+import com.android.build.gradle.internal.ndk.NativeToolSpecification;
 import com.google.common.collect.ImmutableList;
-
-import org.gradle.nativeplatform.NativeBinarySpec;
 
 import java.util.List;
 
 /**
  * Default flags that applies to all toolchains.
  */
-public class DefaultNativeToolSpecification extends AbstractNativeToolSpecification
-        implements NativeToolSpecification {
+public class DefaultNativeToolSpecification implements NativeToolSpecification {
 
     private static final List<String> CPP_FLAGS = ImmutableList.of("-fno-rtti", "-fno-exceptions");
 

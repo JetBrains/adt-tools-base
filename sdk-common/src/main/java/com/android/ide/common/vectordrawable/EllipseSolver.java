@@ -251,6 +251,9 @@ class EllipseSolver {
 
         float tempCenterFactor = rxSq * rySq - rxSq * tempY1Sq - rySq * tempX1Sq;
         tempCenterFactor /= rxSq * tempY1Sq + rySq * tempX1Sq;
+        if (tempCenterFactor < 0) {
+            tempCenterFactor = 0;
+        }
         tempCenterFactor = (float) Math.sqrt(tempCenterFactor);
         if (largeArc == sweep) {
             tempCenterFactor = -tempCenterFactor;

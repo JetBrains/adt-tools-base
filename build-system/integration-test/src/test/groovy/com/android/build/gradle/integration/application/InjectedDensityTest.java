@@ -47,12 +47,12 @@ public class InjectedDensityTest {
                     .fromTestApp(new EmptyAndroidTestApp("com.example.app.densities")).create();
 
     @Rule
-    public Expect expect = Expect.create();
+    public Expect expect = Expect.createAndEnableStackTrace();
 
     @BeforeClass
     public static void setup() throws IOException {
 
-        String buildScript = sProject.getGradleBuildscript() + "\n"
+        String buildScript = GradleTestProject.getGradleBuildscript() + "\n"
                 + "apply plugin: 'com.android.application'\n"
                 + "android {\n"
                 + "    compileSdkVersion rootProject.latestCompileSdk\n"

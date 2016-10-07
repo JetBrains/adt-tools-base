@@ -42,19 +42,25 @@ import static com.android.SdkConstants.TAG_USES_PERMISSION;
 import static com.android.SdkConstants.TAG_USES_SDK;
 import static com.android.SdkConstants.TOOLS_URI;
 import static com.android.SdkConstants.VALUE_FALSE;
+import static com.android.ide.common.repository.GradleCoordinate.COMPARE_PLUS_HIGHER;
 import static com.android.xml.AndroidManifest.NODE_ACTION;
 import static com.android.xml.AndroidManifest.NODE_DATA;
 import static com.android.xml.AndroidManifest.NODE_METADATA;
 
 import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
+import com.android.builder.model.AndroidLibrary;
 import com.android.builder.model.AndroidProject;
 import com.android.builder.model.ApiVersion;
 import com.android.builder.model.BuildTypeContainer;
+import com.android.builder.model.Dependencies;
+import com.android.builder.model.MavenCoordinates;
 import com.android.builder.model.ProductFlavor;
 import com.android.builder.model.ProductFlavorContainer;
 import com.android.builder.model.SourceProviderContainer;
 import com.android.builder.model.Variant;
+import com.android.ide.common.repository.GradleCoordinate;
+import com.android.ide.common.repository.MavenRepositories;
+import com.android.ide.common.repository.SdkMavenRepository;
 import com.android.ide.common.res2.AbstractResourceRepository;
 import com.android.ide.common.resources.ResourceUrl;
 import com.android.tools.lint.detector.api.Category;
@@ -198,12 +204,9 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
 
     /**
      * Documentation URL for app backup.
-     * <p>
-     * TODO: Replace with stable API doc reference once this moves out of preview
-     * (tracked in https://code.google.com/p/android/issues/detail?id=182113)
      */
     private static final String BACKUP_DOCUMENTATION_URL
-            = "https://developer.android.com/preview/backup/index.html";
+            = "https://developer.android.com/training/backup/autosyncapi.html";
 
     /** Not explicitly defining allowBackup */
     public static final Issue ALLOW_BACKUP = Issue.create(
@@ -397,9 +400,30 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
             Severity.WARNING,
             IMPLEMENTATION);
 
+    /** Uses Wear Bind Listener which is deprecated */
+    public static final Issue WEARABLE_BIND_LISTENER = Issue.create(
+            "WearableBindListener", //$NON-NLS-1$
+            "Usage of Android Wear BIND_LISTENER is deprecated",
+            "BIND_LISTENER receives all Android Wear events whether the application needs " +
+            "them or not. This can be inefficient and cause applications to wake up " +
+            "unnecessarily. With Google Play Services 8.2.0 or later it is recommended to use " +
+            "a more efficient combination of manifest listeners and api-based live " +
+            "listeners filtered by action, path and/or path prefix. ",
+
+            Category.PERFORMANCE,
+            6,
+            Severity.FATAL,
+            IMPLEMENTATION).addMoreInfo(
+            "http://tools.android.com/tech-docs/bind-listener");
+
     /** Permission name of mock location permission */
     public static final String MOCK_LOCATION_PERMISSION =
             "android.permission.ACCESS_MOCK_LOCATION";   //$NON-NLS-1$
+    // Error message used by quick fix
+    public static final String MISSING_FULL_BACKUP_CONTENT_RESOURCE = "Missing `<full-backup-content>` resource";
+
+    private static final GradleCoordinate MIN_WEARABLE_GMS_VERSION =
+      GradleCoordinate.parseVersionOnly("8.2.0");
 
     /** Constructs a new {@link ManifestDetector} check */
     public ManifestDetector() {
@@ -488,7 +512,7 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
         }
     }
 
-    @Nullable
+    @NonNull
     private Location getMainApplicationTagLocation(@NonNull Context context) {
         if (mApplicationTagHandle != null) {
             return mApplicationTagHandle.resolve();
@@ -499,7 +523,7 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
             return Location.create(manifestFiles.get(0));
         }
 
-        return null;
+        return Location.NONE;
     }
 
     private static void checkDocumentElement(XmlContext context, Element element) {
@@ -653,6 +677,68 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
                 }
 
                 checkMipmapIcon(context, element);
+            } else if (tag.equals(TAG_SERVICE)
+                       && context.getMainProject().isGradleProject()) {
+                Attr bindListenerAttr = null;
+                for (Element child : LintUtils.getChildren(element)) {
+                    if (child.getTagName().equals(TAG_INTENT_FILTER)) {
+                        for (Element innerChild : LintUtils.getChildren(child)) {
+                            if (innerChild.getTagName().equals(NODE_ACTION)) {
+                                Attr nodeNS = innerChild.getAttributeNodeNS(ANDROID_URI, ATTR_NAME);
+                                if (nodeNS != null
+                                    && "com.google.android.gms.wearable.BIND_LISTENER"
+                                        .equals(nodeNS.getValue())) {
+                                    bindListenerAttr = nodeNS;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+                if (bindListenerAttr == null) {
+                    return;
+                }
+                // Ensure that the play-services-wearable version dependency is >= 8.2.0
+                Variant variant = context.getMainProject().getCurrentVariant();
+                if (variant != null) {
+                    Dependencies dependencies = variant.getMainArtifact().getDependencies();
+                    for (AndroidLibrary library : dependencies.getLibraries()) {
+                        if (hasWearableGmsDependency(library)) {
+                            context.report(WEARABLE_BIND_LISTENER,
+                                    bindListenerAttr, context.getLocation(bindListenerAttr),
+                                    "The `com.google.android.gms.wearable.BIND_LISTENER`" +
+                                            " action is deprecated.");
+                            return;
+                        }
+                    }
+                }
+                // It's possible they are using an older version of play services so
+                // check the build version and report an error if compileSdkVersion >= 24
+                if (context.getMainProject().getBuildSdk() >= 24) {
+                    File sdkHome = context.getClient().getSdkHome();
+                    File repository =
+                            SdkMavenRepository.GOOGLE.getRepositoryLocation(sdkHome, true);
+                    String message = "The `com.google.android.gms.wearable.BIND_LISTENER`" +
+                            " action is deprecated. Please upgrade to the latest version" +
+                            " of play-services-wearable 8.2.0 or later";
+                    if (repository != null) {
+                        GradleCoordinate max = MavenRepositories
+                                .getHighestInstalledVersion("com.google.android.gms", //$NON-NLS-1$
+                                        "play-services-wearable", //$NON-NLS-1$
+                                        repository, null, false);
+                        if (max != null
+                                && COMPARE_PLUS_HIGHER.compare(max, MIN_WEARABLE_GMS_VERSION) > 0) {
+                            message = String.format(
+                                    "The `com.google.android.gms.wearable.BIND_LISTENER` " +
+                                    "action is deprecated. Please upgrade to the latest available" +
+                                    " version of play-services-wearable: `%1$s`",
+                                    max.getRevision());
+                        }
+                    }
+
+                    context.report(WEARABLE_BIND_LISTENER,
+                            bindListenerAttr, context.getLocation(bindListenerAttr), message);
+                }
             }
 
             return;
@@ -834,14 +920,14 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
                     fullBackupNode.getValue().startsWith(PREFIX_RESOURCE_REF) &&
                     context.getClient().supportsProjectResources()) {
                 AbstractResourceRepository resources = context.getClient()
-                        .getProjectResources(context.getProject(), true);
+                        .getResourceRepository(context.getProject(), true, false);
                 ResourceUrl url = ResourceUrl.parse(fullBackupNode.getValue());
                 if (url != null && !url.framework
                         && resources != null
                         && !resources.hasResourceItem(url.type, url.name)) {
                     Location location = context.getValueLocation(fullBackupNode);
                     context.report(ALLOW_BACKUP, fullBackupNode, location,
-                            "Missing `<full-backup-content>` resource");
+                            MISSING_FULL_BACKUP_CONTENT_RESOURCE);
                 }
             } else if (fullBackupNode == null && !VALUE_FALSE.equals(allowBackup)
                     && !context.getProject().isLibrary()
@@ -892,6 +978,26 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
                 }
             }
         }
+    }
+
+    // Method to check if the app has a gms wearable dependency that
+    // matches the specific criteria i.e >= MIN_WEARABLE_GMS_VERSION
+    private boolean hasWearableGmsDependency(AndroidLibrary library) {
+        MavenCoordinates mc = library.getResolvedCoordinates();
+        if (mc != null
+            && mc.getArtifactId().equals("play-services-wearable") //$NON-NLS-1$
+            && mc.getGroupId().equals("com.google.android.gms")) { //$NON-NLS-1$
+            GradleCoordinate gc = GradleCoordinate.parseVersionOnly(mc.getVersion());
+            if (COMPARE_PLUS_HIGHER.compare(gc, MIN_WEARABLE_GMS_VERSION) >= 0) {
+                return true;
+            }
+        }
+        for (AndroidLibrary dependency : library.getLibraryDependencies()) {
+            if (hasWearableGmsDependency(dependency)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**

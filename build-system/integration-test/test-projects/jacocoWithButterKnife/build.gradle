@@ -1,10 +1,6 @@
 apply from: "../commonHeader.gradle"
-buildscript { apply from: "../commonBuildScript.gradle", to: buildscript }
+buildscript { apply from: "../commonBuildScript.gradle" }
 apply from: "../commonLocalRepo.gradle"
-
-repositories {
-    jcenter()
-}
 
 apply plugin: 'com.android.application'
 

@@ -114,7 +114,6 @@ public class NinePatch {
      * If <code>false</code> and the bitmap is not a 9 patch, the method will return
      * <code>null</code>.
      * @return a {@link NinePatch} or <code>null</code>.
-     * @throws IOException
      */
     public static NinePatch load(BufferedImage image, boolean is9Patch, boolean convert) {
         if (is9Patch == false) {

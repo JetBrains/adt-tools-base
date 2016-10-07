@@ -439,6 +439,8 @@ public class DeviceParser {
         }
     }
 
+    private static final int MAX_FILE_LENGTH = 640 * 1024;  // ought to be enough for anybody
+
     private static final SAXParserFactory sParserFactory;
 
     static {
@@ -449,6 +451,12 @@ public class DeviceParser {
     @NonNull
     public static Table<String, String, Device> parse(@NonNull File devicesFile)
             throws SAXException, ParserConfigurationException, IOException {
+        if (devicesFile.length() > MAX_FILE_LENGTH) {
+            throw new IOException(String.format(
+              "%s (%d B) is longer than limit (%d B)",
+              devicesFile.getAbsolutePath(), devicesFile.length(), MAX_FILE_LENGTH));
+        }
+
         // stream closed by parseImpl.
         @SuppressWarnings("IOResourceOpenedButNotSafelyClosed")
         InputStream stream = new FileInputStream(devicesFile);
@@ -475,7 +483,7 @@ public class DeviceParser {
                 //noinspection IOResourceOpenedButNotSafelyClosed
                 devices = new BufferedInputStream(devices);  // closed in the finally block.
             }
-            devices.mark(500000);
+            devices.mark(MAX_FILE_LENGTH);
             int version = DeviceSchema.getXmlSchemaVersion(devices);
             SAXParser parser = getParser(version);
             DeviceHandler dHandler = new DeviceHandler(parentDir);

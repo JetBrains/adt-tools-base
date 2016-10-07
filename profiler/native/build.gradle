@@ -1,0 +1,35 @@
+task build {}
+
+configurations {
+    perfa
+}
+
+cmake {
+    name 'host'
+    projectDir "$rootDir/native"
+}
+
+cmake {
+    name 'android'
+    // x86 disabled for now; may be useful for local development if you want to
+    // target emulators. TODO: Enable when we're more confident with this new
+    // build step affecting the whole team.
+    abis 'armeabi-v7a', 'arm64-v8a' //, 'x86'
+    projectDir "$rootDir/native"
+    flags "-DHOST_BUILD_DIR=$buildDir/out/host"
+}
+precompileAndroid.dependsOn compileHost
+
+task assemblePerfa(type: Copy, dependsOn: compileAndroid) {
+    into "$buildDir/artifacts/jni"
+    from("$buildDir/out") {
+        include "*/libperfa.so"
+        exclude "host/**"
+    }
+}
+
+artifacts {
+    perfa file: file("$buildDir/artifacts"), builtBy: assemblePerfa
+}
+// Linking "compileAndroid" to "build" will trigger it's build from IntelliJ, we don't want to do that just yet
+// build.dependsOn compileAndroid

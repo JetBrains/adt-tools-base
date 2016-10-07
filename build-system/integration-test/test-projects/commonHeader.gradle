@@ -14,47 +14,57 @@
  * limitations under the License.
  */
 
+Boolean getBooleanValue(String environmentVariable, String projectProperty) {
+    String env = System.getenv(environmentVariable)
+    if (env != null) {
+        return !env.isEmpty();
+    }
+    String prop = (String) project.properties[projectProperty]
+    if (prop != null) {
+        return Boolean.valueOf(prop);
+    }
+    return null
+}
+
 ext {
     buildToolsVersion = [System.env.CUSTOM_BUILDTOOLS, project.properties["CUSTOM_BUILDTOOLS"], '23.0.2'].find()
     latestCompileSdk = [System.env.COMPILE_SDK, project.properties["CUSTOM_COMPILE_SDK"], 23].find() as int
+    // Uncomment to build with N preview
+    //buildToolsVersion = [System.env.CUSTOM_BUILDTOOLS, project.properties["CUSTOM_BUILDTOOLS"], '24.0.0 rc3'].find()
+    //latestCompileSdk = [System.env.COMPILE_SDK, project.properties["CUSTOM_COMPILE_SDK"], 'android-N'].find()
 
     // Last SDK that contained java 6 bytecode.
     java6BasedSdk = 19
     // Some of our tests use deprecated RenderScript APIs. TODO: upgrade.
     oldSdkForRenderscript = 15
 
-    useJack = System.env.CUSTOM_JACK ||
-            Boolean.valueOf((String) project.properties[
-                    "com.android.build.gradle.integratonTest.useJack"])
+    useJack = getBooleanValue("CUSTOM_JACK", "com.android.build.gradle.integratonTest.useJack")
+    jackInProcess = getBooleanValue("USE_JACK_API", "com.android.build.gradle.integratonTest.jackInProcess")
 
     minifyEnabled = System.env.CUSTOM_MINIFY ||
             Boolean.valueOf((String) project.properties[
                     "com.android.build.gradle.integratonTest.minifyEnabled"])
 
-    useComponentModel = Boolean.valueOf((String) project.properties[
-                    "com.android.build.gradle.integratonTest.useComponentModel"])
-
-    def remoteTestProvider = System.env.REMOTE_TEST_PROVIDER
-    if (remoteTestProvider != null) {
-        plugins.withId('com.android.application') {
-            apply plugin: remoteTestProvider
-        }
-        plugins.withId('com.android.library') {
-            apply plugin: remoteTestProvider
-        }
-        plugins.withId('com.android.model.application') {
-            apply plugin: remoteTestProvider
-        }
-        plugins.withId('com.android.model.library') {
-            apply plugin: remoteTestProvider
-        }
+    plugins.withId('com.android.application') {
+        apply plugin: 'devicepool'
+    }
+    plugins.withId('com.android.library') {
+        apply plugin: 'devicepool'
+    }
+    plugins.withId('com.android.model.application') {
+        apply plugin: 'devicepool'
+    }
+    plugins.withId('com.android.model.library') {
+        apply plugin: 'devicepool'
     }
 }
 
 plugins.withId("com.android.application") { plugin ->
-    plugin.extension.defaultConfig.useJack = ext.useJack
+    if (ext.useJack != null) {
+        plugin.extension.defaultConfig.jackOptions.enabled = ext.useJack
+    }
+    if (ext.jackInProcess != null) {
+        plugin.extension.defaultConfig.jackOptions.jackInProcess = ext.jackInProcess
+    }
 }
 
-plugins.withId("com.android.library") { plugin ->
-    plugin.extension.defaultConfig.useJack = ext.useJack
-}

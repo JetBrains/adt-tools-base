@@ -29,24 +29,24 @@ public interface BuildType extends BaseConfig {
      *
      * @return true if the apk is debuggable
      */
-    Boolean getDebuggable();
-    void setDebuggable(Boolean isDebuggable);
+    boolean getDebuggable();
+    void setDebuggable(boolean isDebuggable);
 
     /**
      * Returns whether the build type is configured to be build with support for code coverage.
      *
      * @return true if code coverage is enabled.
      */
-    Boolean getTestCoverageEnabled();
-    void setTestCoverageEnabled(Boolean isTestCoverageEnabled);
+    boolean getTestCoverageEnabled();
+    void setTestCoverageEnabled(boolean isTestCoverageEnabled);
 
     /**
      * Returns whether the build type is configured to be build with support for pseudolocales.
      *
      * @return true if code coverage is enabled.
      */
-    Boolean getPseudoLocalesEnabled();
-    void setPseudoLocalesEnabled(Boolean isPseudoLocalesEnabled);
+    boolean getPseudoLocalesEnabled();
+    void setPseudoLocalesEnabled(boolean isPseudoLocalesEnabled);
 
     /**
      * Returns whether the build type is configured to generate an apk with debuggable
@@ -54,8 +54,8 @@ public interface BuildType extends BaseConfig {
      *
      * @return true if the apk is debuggable
      */
-    Boolean getRenderscriptDebuggable();
-    void setRenderscriptDebuggable(Boolean isRenderscriptDebuggable);
+    boolean getRenderscriptDebuggable();
+    void setRenderscriptDebuggable(boolean isRenderscriptDebuggable);
 
     /**
      * Returns the optimization level of the renderscript compilation.
@@ -66,34 +66,26 @@ public interface BuildType extends BaseConfig {
     void setRenderscriptOptimLevel(Integer renderscriptOptimLevel);
 
     /**
-     * Returns the version name suffix.
-     *
-     * @return the version name suffix.
-     */
-    String getVersionNameSuffix();
-    void setVersionNameSuffix(String versionNameSuffix);
-
-    /**
      * Returns whether minification is enabled for this build type.
      *
      * @return true if minification is enabled.
      */
-    Boolean getMinifyEnabled();
-    void setMinifyEnabled(Boolean isMinifyEnabled);
+    boolean getMinifyEnabled();
+    void setMinifyEnabled(boolean isMinifyEnabled);
 
     /**
      * Return whether zipalign is enabled for this build type.
      *
      * @return true if zipalign is enabled.
      */
-    Boolean getZipAlignEnabled();
-    void setZipAlignEnabled(Boolean isZipAlignEnabled);
+    boolean getZipAlignEnabled();
+    void setZipAlignEnabled(boolean isZipAlignEnabled);
 
     /**
      * Returns whether the variant embeds the micro app.
      */
-    Boolean getEmbedMicroApp();
-    void setEmbedMicroApp(Boolean isEmbedMicroApp);
+    boolean getEmbedMicroApp();
+    void setEmbedMicroApp(boolean isEmbedMicroApp);
 
     /**
      * Returns the associated signing config or null if none are set on the build type.
@@ -101,14 +93,25 @@ public interface BuildType extends BaseConfig {
     SigningConfig getSigningConfig();
     void setSigningConfig(SigningConfig signingConfig);
 
-    Boolean getUseJack();
-    void setUseJack(Boolean useJack);
+    /**
+     * Returns the Jack options for this build type.
+     */
+    JackOptions getJackOptions();
 
-    Boolean getShrinkResources();
-    void setShrinkResources(Boolean shrinkResources);
+    JavaCompileOptions getJavaCompileOptions();
+
+    /**
+     * Returns the shader compiler options for this build type.
+     */
+    ShaderOptions getShaders();
+
+    boolean getShrinkResources();
+    void setShrinkResources(boolean shrinkResources);
 
     NdkBuildType getNdk();
 
-    Boolean getUseProguard();
-    void setUseProguard(Boolean useProguard);
+    ExternalNativeBuildOptions getExternalNativeBuild();
+
+    boolean getUseProguard();
+    void setUseProguard(boolean useProguard);
 }

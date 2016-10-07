@@ -197,7 +197,8 @@ public class ActionsTest extends TestCase {
 
         ILogger logger = new MockLog();
         XmlDocument cleanedDocument =
-                ToolsInstructionsCleaner.cleanToolsReferences(result.get(), logger);
+                ToolsInstructionsCleaner.cleanToolsReferences(
+                        ManifestMerger2.MergeType.APPLICATION, result.get(), logger);
         assertNotNull(cleanedDocument);
 
         Actions actions = mergingReportBuilder.getActionRecorder().build();
@@ -269,7 +270,7 @@ public class ActionsTest extends TestCase {
         }
     }
 
-    public static boolean findNodeRecordInList(
+    private static boolean findNodeRecordInList(
             Actions.NodeRecord nodeRecord,
             List<Actions.NodeRecord> nodeRecordList) {
         for (Actions.NodeRecord record : nodeRecordList) {

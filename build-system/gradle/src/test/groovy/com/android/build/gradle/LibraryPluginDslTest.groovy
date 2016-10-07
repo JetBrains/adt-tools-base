@@ -41,7 +41,7 @@ public class LibraryPluginDslTest extends BaseTest {
         project.apply plugin: 'com.android.library'
 
         project.android {
-            compileSdkVersion 21
+            compileSdkVersion COMPILE_SDK_VERSION
         }
 
         project.afterEvaluate {
@@ -67,7 +67,7 @@ public class LibraryPluginDslTest extends BaseTest {
         project.apply plugin: 'com.android.library'
 
         project.android {
-            compileSdkVersion 15
+            compileSdkVersion COMPILE_SDK_VERSION
 
             signingConfigs {
                 debug {

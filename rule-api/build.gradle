@@ -9,3 +9,8 @@ dependencies {
     compile project(':base:common')
     compile project(':base:layoutlib-api')
 }
+
+// turn off strict javadoc
+tasks.withType(Javadoc) {
+    options.addStringOption('Xdoclint:none', '-quiet')
+}

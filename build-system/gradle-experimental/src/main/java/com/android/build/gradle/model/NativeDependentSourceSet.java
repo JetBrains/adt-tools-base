@@ -18,7 +18,6 @@ package com.android.build.gradle.model;
 
 import com.android.build.gradle.internal.dependency.AndroidNativeDependencySpecContainer;
 
-import org.gradle.api.Action;
 import org.gradle.language.base.LanguageSourceSet;
 
 /**

@@ -18,7 +18,7 @@ package com.android.tools.lint.checks;
 
 import com.android.tools.lint.detector.api.Detector;
 
-@SuppressWarnings({"javadoc", "ClassNameDiffersFromFileName"})
+@SuppressWarnings({"javadoc", "ClassNameDiffersFromFileName", "ConstantConditions"})
 public class HandlerDetectorTest extends AbstractCheckTest {
     @Override
     protected Detector getDetector() {
@@ -32,7 +32,7 @@ public class HandlerDetectorTest extends AbstractCheckTest {
                 + "                 ~~~~~\n"
                 + "src/test/pkg/HandlerTest.java:18: Warning: This Handler class should be static or leaks might occur (anonymous android.os.Handler) [HandlerLeak]\n"
                 + "        Handler anonymous = new Handler() { // ERROR\n"
-                + "                            ~~~~~~~~~~~\n"
+                + "                                ~~~~~~~\n"
                 + "0 errors, 2 warnings\n",
 
             lintProject(
@@ -46,25 +46,25 @@ public class HandlerDetectorTest extends AbstractCheckTest {
                             + "    public static class StaticInner extends Handler { // OK\n"
                             + "        public void dispatchMessage(Message msg) {\n"
                             + "            super.dispatchMessage(msg);\n"
-                            + "        };\n"
+                            + "        }\n"
                             + "    }\n"
                             + "    public class Inner extends Handler { // ERROR\n"
                             + "        public void dispatchMessage(Message msg) {\n"
                             + "            super.dispatchMessage(msg);\n"
-                            + "        };\n"
+                            + "        }\n"
                             + "    }\n"
                             + "    void method() {\n"
                             + "        Handler anonymous = new Handler() { // ERROR\n"
                             + "            public void dispatchMessage(Message msg) {\n"
                             + "                super.dispatchMessage(msg);\n"
-                            + "            };\n"
+                            + "            }\n"
                             + "        };\n"
                             + "\n"
                             + "        Looper looper = null;\n"
                             + "        Handler anonymous2 = new Handler(looper) { // OK\n"
                             + "            public void dispatchMessage(Message msg) {\n"
                             + "                super.dispatchMessage(msg);\n"
-                            + "            };\n"
+                            + "            }\n"
                             + "        };\n"
                             + "    }\n"
                             + "\n"
@@ -75,7 +75,7 @@ public class HandlerDetectorTest extends AbstractCheckTest {
                             + "\n"
                             + "        public void dispatchMessage(Message msg) {\n"
                             + "            super.dispatchMessage(msg);\n"
-                            + "        };\n"
+                            + "        }\n"
                             + "    }\n"
                             + "}\n")
             ));

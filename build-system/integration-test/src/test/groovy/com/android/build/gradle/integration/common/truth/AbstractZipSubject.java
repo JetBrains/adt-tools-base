@@ -30,7 +30,6 @@ import com.google.common.truth.FailureStrategy;
 import com.google.common.truth.IterableSubject;
 import com.google.common.truth.Subject;
 
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -41,7 +40,6 @@ import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
-import java.util.zip.ZipInputStream;
 
 /**
  * Truth support for zip files.
@@ -107,13 +105,13 @@ public abstract class AbstractZipSubject<T extends Subject<T, File>> extends Sub
      * @return a {@link IterableSubject} propositions for matching entries.
      * @throws IOException of the zip file cannot be opened.
      */
-    public IterableSubject<? extends IterableSubject<?, String, List<String>>, String, List<String>> entries(
+    public IterableSubject<? extends IterableSubject<?, String, List<String>>, String,
+            List<String>> entries(
             @NonNull String conformingTo) throws IOException {
 
         ImmutableList.Builder<String> entries = ImmutableList.builder();
         Pattern pattern = Pattern.compile(conformingTo);
-        ZipFile zipFile = new ZipFile(getSubject());
-        try {
+        try (ZipFile zipFile = new ZipFile(getSubject())) {
             Enumeration<? extends ZipEntry> zipFileEntries = zipFile.entries();
             while (zipFileEntries.hasMoreElements()) {
                 ZipEntry zipEntry = zipFileEntries.nextElement();
@@ -121,10 +119,8 @@ public abstract class AbstractZipSubject<T extends Subject<T, File>> extends Sub
                     entries.add(zipEntry.getName());
                 }
             }
-        } finally {
-            zipFile.close();
         }
-        return check().that(entries.build());
+        return check().<String, List<String>>that(entries.build());
     }
 
     /**
@@ -169,18 +165,12 @@ public abstract class AbstractZipSubject<T extends Subject<T, File>> extends Sub
 
     protected String extractContentAsString(@NonNull String path) {
         try {
-            ZipFile zip = new ZipFile(subject);
-            try {
-                InputStream stream = getInputStream(zip, path);
-                try {
+            try (ZipFile zip = new ZipFile(subject)) {
+                try (InputStream stream = getInputStream(zip, path)) {
                     // standardize on \n no matter which OS wrote the file.
                     return Joiner.on('\n').join(
                             CharStreams.readLines(new InputStreamReader(stream, Charsets.UTF_8)));
-                } finally {
-                    stream.close();
                 }
-            } finally {
-                zip.close();
             }
         } catch (IOException e) {
             failWithRawMessage("IOException when extracting %1$s from zip %2$s: %3$s",
@@ -193,16 +183,10 @@ public abstract class AbstractZipSubject<T extends Subject<T, File>> extends Sub
     @Nullable
     protected byte[] extractContentAsByte(@NonNull String path) {
         try {
-            ZipFile zip = new ZipFile(subject);
-            try {
-                InputStream stream = getInputStream(zip, path);
-                try {
+            try (ZipFile zip = new ZipFile(subject)) {
+                try (InputStream stream = getInputStream(zip, path)) {
                     return ByteStreams.toByteArray(stream);
-                } finally {
-                    stream.close();
                 }
-            } finally {
-                zip.close();
             }
         } catch (IOException e) {
             failWithRawMessage("IOException when extracting %1$s from zip %2$s: %3$s",
@@ -263,8 +247,7 @@ public abstract class AbstractZipSubject<T extends Subject<T, File>> extends Sub
     @Nullable
     protected <T> T extractEntryAndRunAction(String path, ZipEntryAction<T> action)
             throws IOException, ProcessException {
-        ZipFile zipFile = new ZipFile(getSubject());
-        try {
+        try (ZipFile zipFile = new ZipFile(getSubject())) {
             InputStream classDexStream = getInputStream(zipFile, path);
             if (classDexStream == null) {
                 throw new IOException(path + " entry not found !");
@@ -283,8 +266,6 @@ public abstract class AbstractZipSubject<T extends Subject<T, File>> extends Sub
                 classDexStream.close();
             }
 
-        } finally {
-            zipFile.close();
         }
     }
 }

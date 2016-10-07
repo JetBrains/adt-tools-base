@@ -30,7 +30,7 @@ import org.w3c.dom.Node;
 /**
  * A wrapper for an XML parser. This allows tools integrating lint to map directly
  * to builtin services, such as already-parsed data structures in XML editors.
- * <p/>
+ * <p>
  * <b>NOTE: This is not a public or final API; if you rely on this be prepared
  * to adjust your code for the next tools release.</b>
  */

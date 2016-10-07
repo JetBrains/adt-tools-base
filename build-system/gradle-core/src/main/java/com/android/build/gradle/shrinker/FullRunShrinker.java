@@ -17,7 +17,6 @@
 package com.android.build.gradle.shrinker;
 
 import static com.android.utils.FileUtils.getAllFiles;
-import static com.android.utils.FileUtils.withExtension;
 
 import com.android.annotations.NonNull;
 import com.android.build.api.transform.TransformInput;
@@ -105,30 +104,22 @@ public class FullRunShrinker<T> extends AbstractShrinker<T> {
             @NonNull Iterable<TransformInput> programInputs,
             @NonNull Iterable<TransformInput> libraryInputs) throws IOException {
         Stopwatch stopwatch = Stopwatch.createStarted();
-        final PostProcessingData<T> postProcessingData = new PostProcessingData<T>();
+        final PostProcessingData<T> postProcessingData = new PostProcessingData<>();
 
         readPlatformJars();
 
         for (TransformInput input : libraryInputs) {
             for (File directory : getAllDirectories(input)) {
                 for (final File classFile : getClassFiles(directory)) {
-                    mExecutor.execute(new Callable<Void>() {
-                        @Override
-                        public Void call() throws Exception {
-                            processLibraryClass(Files.toByteArray(classFile));
-                            return null;
-                        }
+                    mExecutor.execute(() -> {
+                        processLibraryClass(Files.toByteArray(classFile));
+                        return null;
                     });
                 }
             }
 
             for (final File jarFile : getAllJars(input)) {
-                processJarFile(jarFile, new ByteCodeConsumer() {
-                    @Override
-                    public void process(byte[] bytes) throws IOException {
-                        processLibraryClass(bytes);
-                    }
-                });
+                processJarFile(jarFile, this::processLibraryClass);
             }
         }
 
@@ -181,7 +172,7 @@ public class FullRunShrinker<T> extends AbstractShrinker<T> {
                     TreeTraverser<T> interfaceTraverser =
                             TypeHierarchyTraverser.interfaces(mGraph, mShrinkerLogger);
 
-                    if ((mGraph.getClassModifiers(klass) & Opcodes.ACC_INTERFACE) != 0) {
+                    if ((mGraph.getModifiers(klass) & Opcodes.ACC_INTERFACE) != 0) {
 
                         // The "children" name is unfortunate: in the type hierarchy tree traverser,
                         // these are the interfaces that klass (which is an interface itself)
@@ -224,7 +215,7 @@ public class FullRunShrinker<T> extends AbstractShrinker<T> {
 
     @NonNull
     private static FluentIterable<File> getClassFiles(@NonNull File dir) {
-        return getAllFiles(dir).filter(withExtension("class"));
+        return getAllFiles(dir).filter(f -> Files.getFileExtension(f.getName()).equals("class"));
     }
 
     /**
@@ -279,19 +270,17 @@ public class FullRunShrinker<T> extends AbstractShrinker<T> {
 
                         T matchingMethod = mGraph.findMatchingMethod(current, method);
                         if (matchingMethod != null) {
-                            String name = mGraph.getMethodNameAndDesc(method);
-                            String desc = name.substring(name.indexOf(':') + 1);
-                            name = name.substring(0, name.indexOf(':'));
-                            name = name + SHRINKER_FAKE_MARKER;
+                            String name = mGraph.getMemberName(method) + SHRINKER_FAKE_MARKER;
+                            String desc = mGraph.getMemberDescriptor(method);
                             T fakeMethod = mGraph.addMember(
                                     klass, name, desc,
-                                    mGraph.getMemberModifiers(method));
+                                    mGraph.getModifiers(method));
 
                             // Simulate a super call.
                             mGraph.addDependency(fakeMethod, matchingMethod,
                                     DependencyType.REQUIRED_CLASS_STRUCTURE);
 
-                            if (!isProgramClass(mGraph.getClassForMember(method))) {
+                            if (!isProgramClass(mGraph.getOwnerClass(method))) {
                                 mGraph.addDependency(klass, fakeMethod,
                                         DependencyType.REQUIRED_CLASS_STRUCTURE);
                             } else {
@@ -322,20 +311,22 @@ public class FullRunShrinker<T> extends AbstractShrinker<T> {
             mExecutor.execute(new Callable<Void>() {
                 @Override
                 public Void call() throws Exception {
-                    String methodNameAndDesc = mGraph.getMethodNameAndDesc(method);
-                    if (isJavaLangObjectMethod(methodNameAndDesc)) {
+                    if (isJavaLangObjectMethod(
+                            mGraph.getMemberName(method),
+                            mGraph.getMemberDescriptor(method))) {
                         // If we override an SDK method, it just has to be there at runtime
                         // (if the class itself is kept).
                         mGraph.addDependency(
-                                mGraph.getClassForMember(method),
+                                mGraph.getOwnerClass(method),
                                 method,
                                 DependencyType.REQUIRED_CLASS_STRUCTURE);
                         return null;
                     }
 
                     FluentIterable<T> superTypes =
-                            TypeHierarchyTraverser.superclassesAndInterfaces(mGraph, mShrinkerLogger)
-                                    .preOrderTraversal(mGraph.getClassForMember(method));
+                            TypeHierarchyTraverser
+                                    .superclassesAndInterfaces(mGraph, mShrinkerLogger)
+                                    .preOrderTraversal(mGraph.getOwnerClass(method));
 
                     for (T klass : superTypes) {
                         if (mGraph.getClassName(klass).equals("java/lang/Object")) {
@@ -344,11 +335,11 @@ public class FullRunShrinker<T> extends AbstractShrinker<T> {
 
                         T superMethod = mGraph.findMatchingMethod(klass, method);
                         if (superMethod != null && !superMethod.equals(method)) {
-                            if (!isProgramClass(mGraph.getClassForMember(superMethod))) {
+                            if (!isProgramClass(mGraph.getOwnerClass(superMethod))) {
                                 // If we override an SDK method, it just has to be there at runtime
                                 // (if the class itself is kept).
                                 mGraph.addDependency(
-                                        mGraph.getClassForMember(method),
+                                        mGraph.getOwnerClass(method),
                                         method,
                                         DependencyType.REQUIRED_CLASS_STRUCTURE);
                                 return null;
@@ -357,7 +348,7 @@ public class FullRunShrinker<T> extends AbstractShrinker<T> {
                                 // never called and we will get rid of it. Set up the dependencies
                                 // appropriately.
                                 mGraph.addDependency(
-                                        mGraph.getClassForMember(method),
+                                        mGraph.getOwnerClass(method),
                                         method,
                                         DependencyType.CLASS_IS_KEPT);
                                 mGraph.addDependency(
@@ -373,10 +364,12 @@ public class FullRunShrinker<T> extends AbstractShrinker<T> {
         }
     }
 
-    private static boolean isJavaLangObjectMethod(@NonNull String nameAndDesc) {
-        return nameAndDesc.equals("hashCode:()I")
-                || (nameAndDesc.equals("equals:(Ljava/lang/Object;)Z")
-                || (nameAndDesc.equals("toString:()Ljava/lang/String;")));
+    private static boolean isJavaLangObjectMethod(
+            @NonNull String name,
+            @NonNull String descriptor) {
+        return (name.equals("hashCode") && descriptor.equals("()I"))
+                || (name.equals("equals") && descriptor.equals("(Ljava/lang/Object;)Z"))
+                || (name.equals("toString") && descriptor.equals("()Ljava/lang/String;"));
     }
 
     /**
@@ -387,7 +380,7 @@ public class FullRunShrinker<T> extends AbstractShrinker<T> {
     private void processLibraryClass(@NonNull byte[] source) throws IOException {
         ClassReader classReader = new ClassReader(source);
         classReader.accept(
-                new ClassStructureVisitor<T>(mGraph, null, null),
+                new ClassStructureVisitor<>(mGraph, null, null),
                 ClassReader.SKIP_CODE | ClassReader.SKIP_FRAMES | ClassReader.SKIP_DEBUG);
     }
 
@@ -427,7 +420,7 @@ public class FullRunShrinker<T> extends AbstractShrinker<T> {
                     }
                 };
         ClassVisitor structureVisitor =
-                new ClassStructureVisitor<T>(mGraph, classFile, depsFinder);
+                new ClassStructureVisitor<>(mGraph, classFile, depsFinder);
         ClassReader classReader = new ClassReader(bytes);
         classReader.accept(structureVisitor, ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
     }
@@ -438,26 +431,19 @@ public class FullRunShrinker<T> extends AbstractShrinker<T> {
 
     private void readPlatformJars() throws IOException {
         for (File platformJar : mPlatformJars) {
-            processJarFile(platformJar, new ByteCodeConsumer() {
-                @Override
-                public void process(byte[] bytes) throws IOException {
-                    processLibraryClass(bytes);
-                }
-            });
+            processJarFile(platformJar, this::processLibraryClass);
         }
     }
 
     private void processJarFile(File platformJar, final ByteCodeConsumer consumer)
             throws IOException {
-        JarFile jarFile = new JarFile(platformJar);
-        try {
-            for (Enumeration<JarEntry> entries = jarFile.entries(); entries.hasMoreElements();) {
+        try (JarFile jarFile = new JarFile(platformJar)) {
+            for (Enumeration<JarEntry> entries = jarFile.entries(); entries.hasMoreElements(); ) {
                 JarEntry entry = entries.nextElement();
                 if (!entry.getName().endsWith(".class")) {
                     continue;
                 }
-                final InputStream inputStream = jarFile.getInputStream(entry);
-                try {
+                try (InputStream inputStream = jarFile.getInputStream(entry)) {
                     final byte[] bytes = ByteStreams.toByteArray(inputStream);
                     mExecutor.execute(new Callable<Void>() {
                         @Override
@@ -466,12 +452,8 @@ public class FullRunShrinker<T> extends AbstractShrinker<T> {
                             return null;
                         }
                     });
-                } finally {
-                    inputStream.close();
                 }
             }
-        } finally {
-            jarFile.close();
         }
     }
 

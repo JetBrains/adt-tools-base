@@ -37,7 +37,7 @@ class LibraryComponentPluginTest {
     @Rule
     public GradleTestProject project = GradleTestProject.builder()
             .fromTestApp(new HelloWorldLibraryApp())
-            .forExperimentalPlugin(true)
+            .useExperimentalGradleVersion(true)
             .create();
 
 

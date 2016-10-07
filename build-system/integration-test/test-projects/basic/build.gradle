@@ -1,5 +1,5 @@
 apply from: "../commonHeader.gradle"
-buildscript { apply from: "../commonBuildScript.gradle", to: buildscript }
+buildscript { apply from: "../commonBuildScript.gradle" }
 apply from: "../commonLocalRepo.gradle"
 
 apply plugin: 'com.android.application'
@@ -56,8 +56,6 @@ android {
             buildConfigField "String", "FOO", "\"bar\""
 
             resValue "string", "foo", "foo2"
-
-            useJack project.ext.useJack
         }
     }
 

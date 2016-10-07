@@ -262,9 +262,9 @@ public class IncrementalShrinker<T> extends AbstractShrinker<T> {
         ClassReader classReader = new ClassReader(Files.toByteArray(file));
 
         IncrementalRunVisitor<T> visitor =
-                new IncrementalRunVisitor<T>(mGraph, classesToWrite, unresolvedReferences);
+                new IncrementalRunVisitor<>(mGraph, classesToWrite, unresolvedReferences);
 
-        DependencyRemoverVisitor<T> remover = new DependencyRemoverVisitor<T>(mGraph, visitor);
+        DependencyRemoverVisitor<T> remover = new DependencyRemoverVisitor<>(mGraph, visitor);
 
         classReader.accept(remover, 0);
     }

@@ -43,6 +43,16 @@ android {
         targetSdkVersion <#if targetApiString?matches("^\\d+$")>${targetApiString}<#else>'${targetApiString}'</#if>
         versionCode 1
         versionName "1.0"
+
+        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+
+    <#if includeCppSupport!false && cppFlags != "">
+        externalNativeBuild {
+            cmake {
+                cppFlags "${cppFlags}"
+            }
+        }
+    </#if>
     }
 <#if javaVersion?? && (javaVersion != "1.6" && buildApi lt 21 || javaVersion != "1.7")>
 
@@ -59,20 +69,22 @@ android {
         }
     }
 </#if>
+<#if includeCppSupport!false>
+    externalNativeBuild {
+        cmake {
+            path "CMakeLists.txt"
+        }
+    }
+</#if>
 }
 
 dependencies {
-    <#if dependencyList?? >
-    <#list dependencyList as dependency>
-    compile '${dependency}'
-    </#list>
-    </#if>
     compile fileTree(dir: 'libs', include: ['*.jar'])
+    androidTestCompile('com.android.support.test.espresso:espresso-core:${espressoVersion!"2.0"}', {
+        exclude group: 'com.android.support', module: 'support-annotations'
+    })
 <#if WearprojectName?has_content && NumberOfEnabledFormFactors?has_content && NumberOfEnabledFormFactors gt 1 && Wearincluded>
     wearApp project(':${WearprojectName}')
     compile 'com.google.android.gms:play-services:+'
-</#if>
-<#if unitTestsSupported>
-    testCompile 'junit:junit:${junitVersion}'
 </#if>
 }

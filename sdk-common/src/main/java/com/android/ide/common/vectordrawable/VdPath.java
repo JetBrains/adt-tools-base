@@ -17,11 +17,16 @@
 package com.android.ide.common.vectordrawable;
 
 import com.google.common.collect.ImmutableMap;
+
 import org.w3c.dom.NamedNodeMap;
 
-import java.awt.*;
+import java.awt.BasicStroke;
+import java.awt.Color;
+import java.awt.Graphics2D;
+import java.awt.RenderingHints;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Path2D;
+import java.awt.geom.PathIterator;
 import java.awt.geom.Point2D;
 import java.math.RoundingMode;
 import java.text.DecimalFormat;
@@ -34,14 +39,17 @@ import java.util.logging.Logger;
  * Used to represent one VectorDrawble's path element.
  */
 class VdPath extends VdElement{
-    private static Logger logger = Logger.getLogger(VdPath.class.getSimpleName());
+    private static final Logger LOGGER = Logger.getLogger(VdPath.class.getSimpleName());
 
     private static final String PATH_ID = "android:name";
     private static final String PATH_DESCRIPTION = "android:pathData";
     private static final String PATH_FILL = "android:fillColor";
-    private static final String PATH_FILL_OPACTIY = "android:fillAlpha";
+    private static final String PATH_FILL_OPACITY = "android:fillAlpha";
+    private static final String PATH_FILL_TYPE = "android:fillType";
     private static final String PATH_STROKE = "android:strokeColor";
     private static final String PATH_STROKE_OPACTIY = "android:strokeAlpha";
+
+    private static final String FILL_TYPE_EVEN_ODD = "evenOdd";
 
     private static final String PATH_STROKE_WIDTH = "android:strokeWidth";
     private static final String PATH_TRIM_START = "android:trimPathStart";
@@ -50,7 +58,7 @@ class VdPath extends VdElement{
     private static final String PATH_STROKE_LINECAP = "android:strokeLineCap";
     private static final String PATH_STROKE_LINEJOIN = "android:strokeLineJoin";
     private static final String PATH_STROKE_MITERLIMIT = "android:strokeMiterLimit";
-    private static final String PATH_CLIP = "android:clipToPath";
+
     private static final String LINECAP_BUTT = "butt";
     private static final String LINECAP_ROUND = "round";
     private static final String LINECAP_SQUARE = "square";
@@ -61,21 +69,23 @@ class VdPath extends VdElement{
     private Node[] mNodeList = null;
     private int mStrokeColor = 0;
     private int mFillColor = 0;
+
     private float mStrokeWidth = 0;
     private int mStrokeLineCap = 0;
     private int mStrokeLineJoin = 0;
     private float mStrokeMiterlimit = 4;
     private float mStrokeAlpha = 1.0f;
     private float mFillAlpha = 1.0f;
+    private int mFillType = PathIterator.WIND_NON_ZERO;
     // TODO: support trim path.
     private float mTrimPathStart = 0;
     private float mTrimPathEnd = 1;
     private float mTrimPathOffset = 0;
 
-    public void toPath(Path2D path) {
+    private void toPath(Path2D path) {
         path.reset();
         if (mNodeList != null) {
-            VdNodeRender.creatPath(mNodeList, path);
+            VdNodeRender.createPath(mNodeList, path);
         }
     }
 
@@ -90,7 +100,7 @@ class VdPath extends VdElement{
             return mType;
         }
 
-        public float[] getmParams() {
+        public float[] getParams() {
             return mParams;
         }
 
@@ -394,24 +404,22 @@ class VdPath extends VdElement{
             }
             currentPoint.setLocation(currentX, currentY);
             currentSegmentStartPoint.setLocation(currentSegmentStartX, currentSegmentStartY);
-            return;
         }
 
-        private boolean isTranslationOnly(AffineTransform totalTransform) {
+        private static boolean isTranslationOnly(AffineTransform totalTransform) {
             int type = totalTransform.getType();
-            if (type == AffineTransform.TYPE_IDENTITY || type == AffineTransform.TYPE_TRANSLATION) {
-                return true;
-            }
-            return false;
+            return type == AffineTransform.TYPE_IDENTITY
+                    || type == AffineTransform.TYPE_TRANSLATION;
         }
 
         /**
          * Convert the <code>tempParams</code> into a double array, then apply the
          * delta transform and convert it back to float array.
-         * @params: offset in number of floats, not points.
-         * @params: paramsLen in number of floats, not points.
+         * @param offset in number of floats, not points.
+         * @param paramsLen in number of floats, not points.
          */
-        private void deltaTransform(AffineTransform totalTransform, float[] tempParams, int offset,  int paramsLen) {
+        private static void deltaTransform(AffineTransform totalTransform, float[] tempParams,
+                int offset, int paramsLen) {
             double[] doubleArray = new double[paramsLen];
             for (int i = 0; i < paramsLen; i++)
             {
@@ -430,7 +438,7 @@ class VdPath extends VdElement{
     /**
      * @return color value in #AARRGGBB format.
      */
-    private int calculateColor(String value) {
+    private static int calculateColor(String value) {
         int len = value.length();
         int ret;
         int k = 0;
@@ -471,9 +479,11 @@ class VdPath extends VdElement{
             mName = value;
         } else if (PATH_FILL.equals(name)) {
             mFillColor = calculateColor(value);
+        } else if (PATH_FILL_TYPE.equals(name)) {
+            mFillType = parseFillType(value);
         } else if (PATH_STROKE.equals(name)) {
             mStrokeColor = calculateColor(value);
-        } else if (PATH_FILL_OPACTIY.equals(name)) {
+        } else if (PATH_FILL_OPACITY.equals(name)) {
             mFillAlpha = Float.parseFloat(value);
         } else if (PATH_STROKE_OPACTIY.equals(name)) {
             mStrokeAlpha = Float.parseFloat(value);
@@ -504,9 +514,16 @@ class VdPath extends VdElement{
         } else if (PATH_STROKE_MITERLIMIT.equals(name)) {
             mStrokeMiterlimit = Float.parseFloat(value);
         } else {
-            logger.log(Level.WARNING, ">>>>>> DID NOT UNDERSTAND ! \"" + name + "\" <<<<");
+            LOGGER.log(Level.WARNING, ">>>>>> DID NOT UNDERSTAND ! \"" + name + "\" <<<<");
         }
 
+    }
+
+    private static int parseFillType(String value) {
+        if (FILL_TYPE_EVEN_ODD.equalsIgnoreCase(value)) {
+            return PathIterator.WIND_EVEN_ODD;
+        }
+        return PathIterator.WIND_NON_ZERO;
     }
 
     /**
@@ -525,7 +542,7 @@ class VdPath extends VdElement{
     @Override
     public void draw(Graphics2D g, AffineTransform currentMatrix, float scaleX, float scaleY) {
 
-        Path2D path2d = new Path2D.Double();
+        Path2D path2d = new Path2D.Double(mFillType);
         toPath(path2d);
 
         // SWing operate the matrix is using pre-concatenate by default.
@@ -551,7 +568,6 @@ class VdPath extends VdElement{
             g.setColor(strokeColor);
             g.draw(path2d);
         }
-        return;
     }
 
     @Override
@@ -571,18 +587,15 @@ class VdPath extends VdElement{
 
     @Override
     public String toString() {
-        StringBuilder pathInfo = new StringBuilder();
-        pathInfo.append("Path:");
-        pathInfo.append(" Name: " + mName);
-        pathInfo.append(" Node: " + mNodeList.toString());
-        pathInfo.append(" mFillColor: " + Integer.toHexString(mFillColor));
-        pathInfo.append(" mFillAlpha:" + mFillAlpha);
-        pathInfo.append(" mStrokeColor:" + Integer.toHexString(mStrokeColor));
-        pathInfo.append(" mStrokeWidth:" + mStrokeWidth);
-        pathInfo.append(" mStrokeAlpha:" + mStrokeAlpha);
-
-        return pathInfo.toString();
-
+        //noinspection ImplicitArrayToString
+        return "Path:" +
+                " Name: " + mName +
+                " Node: " + mNodeList.toString() +
+                " mFillColor: " + Integer.toHexString(mFillColor) +
+                " mFillAlpha:" + mFillAlpha +
+                " mFillType:" + mFillType +
+                " mStrokeColor:" + Integer.toHexString(mStrokeColor) +
+                " mStrokeWidth:" + mStrokeWidth +
+                " mStrokeAlpha:" + mStrokeAlpha;
     }
-
-};
+}

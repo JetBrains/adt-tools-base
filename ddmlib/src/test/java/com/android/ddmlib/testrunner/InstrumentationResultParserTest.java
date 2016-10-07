@@ -122,7 +122,7 @@ public class InstrumentationResultParserTest extends TestCase {
 
     /**
      * Test parsing output for a test that produces repeated metrics values
-     * <p/>
+     * <p>
      * This mimics launch performance test output.
      */
     public void testParse_repeatedTestMetrics() {
@@ -228,7 +228,7 @@ public class InstrumentationResultParserTest extends TestCase {
     /**
      * Test parsing output for a test run failure, where an instrumentation component failed to
      * load.
-     * <p/>
+     * <p>
      * Parsing input takes the from of INSTRUMENTATION_RESULT: fff
      */
     public void testParse_failedResult() {
@@ -249,7 +249,7 @@ public class InstrumentationResultParserTest extends TestCase {
 
     /**
      * Test parsing output for a test run that did not complete.
-     * <p/>
+     * <p>
      * This can occur if device spontaneously reboots, or if test method could not be found.
      */
     public void testParse_incomplete() {
@@ -291,7 +291,7 @@ public class InstrumentationResultParserTest extends TestCase {
 
     /**
      * Test parsing output for a test run that produces INSTRUMENTATION_RESULT output.
-     * <p/>
+     * <p>
      * This mimics launch performance test output.
      */
     public void testParse_instrumentationResults() {

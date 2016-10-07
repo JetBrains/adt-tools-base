@@ -16,7 +16,7 @@
 
 package com.android.repository.api;
 
-import static com.android.repository.impl.meta.TypeDetails.*;
+import static com.android.repository.impl.meta.TypeDetails.GenericType;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
@@ -211,7 +211,6 @@ public abstract class RepoManager {
      * Probably should only be needed by a repository UI.
      *
      * @param downloader   The {@link Downloader} to use for downloading source lists, if needed.
-     * @param settings     The settings to use when downloading or reading source lists.
      * @param progress     A {@link ProgressIndicator} for source providers to use to show their
      *                     progress and for logging.
      * @param forceRefresh Individual {@link RepositorySourceProvider}s may cache their results. If
@@ -220,8 +219,7 @@ public abstract class RepoManager {
      * @return The {@link RepositorySource}s obtained from the providers.
      */
     public abstract Set<RepositorySource> getSources(@Nullable Downloader downloader,
-            @Nullable SettingsController settings, @NonNull ProgressIndicator progress,
-            boolean forceRefresh);
+            @NonNull ProgressIndicator progress, boolean forceRefresh);
 
 
     /**
@@ -294,22 +292,7 @@ public abstract class RepoManager {
               public void run() {
                 result.set(false);
               }
-          }), new ProgressRunner() {
-              @Override
-              public void runAsyncWithProgress(@NonNull ProgressRunnable r) {
-                  r.run(progress, this);
-              }
-
-              @Override
-              public void runSyncWithProgress(@NonNull ProgressRunnable r) {
-                  r.run(progress, this);
-              }
-
-              @Override
-              public void runSyncWithoutProgress(@NonNull Runnable r) {
-                  r.run();
-              }
-          }, downloader, settings, true);
+          }), new DummyProgressRunner(progress), downloader, settings, true);
 
         return result.get();
     }
@@ -319,6 +302,25 @@ public abstract class RepoManager {
      * will be done.
      */
     public abstract void markInvalid();
+
+    /**
+     * Causes the cached results of the local repositories to be considered expired. The next time
+     * {@link #load(long, List, List, List, ProgressRunner, Downloader, SettingsController, boolean)}
+     * is called, the load will be done only for the local repositories, the remotes being loaded
+     * from the cache if possible.
+     */
+    public abstract void markLocalCacheInvalid();
+
+    /**
+     * Check to see if there have been any changes to the local repo since the last load.
+     * This includes scanning the local repo for packages, but does not involve any reading or
+     * parsing of package metadata files.
+     * If there have been any changes, or if the cache is older than the default timeout,
+     * the local packages will be reloaded.
+     *
+     * @return {@code true} if a reload is done, {@code false} otherwise.
+     */
+    public abstract boolean reloadLocalIfNeeded(@NonNull ProgressIndicator progress);
 
     /**
      * Gets the currently-loaded {@link RepositoryPackages}.
@@ -347,6 +349,25 @@ public abstract class RepoManager {
     public abstract void registerRemoteChangeListener(@NonNull RepoLoadedCallback listener);
 
     /**
+     * Record that the given package is in the process of being installed by the given installer.
+     */
+    public abstract void installBeginning(@NonNull RepoPackage repoPackage,
+      @NonNull PackageOperation installer);
+
+    /**
+     * Record that the given package is no longer in the process of being installed (that is,
+     * install completed either successfully or unsuccessfully).
+     */
+    public abstract void installEnded(@NonNull RepoPackage repoPackage);
+
+    /**
+     * Gets the previously-registered installer that is currently installing the given package, or
+     * {@code null} if there is none.
+     */
+    @Nullable
+    public abstract PackageOperation getInProgressInstallOperation(@NonNull RepoPackage remotePackage);
+
+    /**
      * Callback for when repository load is completed/partially completed.
      */
     public interface RepoLoadedCallback {
@@ -358,5 +379,28 @@ public abstract class RepoManager {
          *                 {@code packages} will only include local packages.
          */
         void doRun(@NonNull RepositoryPackages packages);
+    }
+
+    protected static class DummyProgressRunner implements ProgressRunner {
+        private final ProgressIndicator mProgress;
+
+        public DummyProgressRunner(@NonNull ProgressIndicator progress) {
+            mProgress = progress;
+        }
+
+        @Override
+        public void runAsyncWithProgress(@NonNull ProgressRunnable r) {
+            r.run(mProgress, this);
+        }
+
+        @Override
+        public void runSyncWithProgress(@NonNull ProgressRunnable r) {
+            r.run(mProgress, this);
+        }
+
+        @Override
+        public void runSyncWithoutProgress(@NonNull Runnable r) {
+            r.run();
+        }
     }
 }

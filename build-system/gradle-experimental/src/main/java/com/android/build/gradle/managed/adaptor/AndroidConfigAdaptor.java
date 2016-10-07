@@ -17,34 +17,31 @@
 package com.android.build.gradle.managed.adaptor;
 
 import com.android.annotations.NonNull;
+import com.android.build.api.transform.Transform;
+import com.android.build.api.variant.VariantFilter;
 import com.android.build.gradle.api.AndroidSourceDirectorySet;
 import com.android.build.gradle.api.AndroidSourceFile;
 import com.android.build.gradle.api.AndroidSourceSet;
-import com.android.build.gradle.api.VariantFilter;
 import com.android.build.gradle.internal.CompileOptions;
-import com.android.build.gradle.internal.dsl.CoreNdkOptions;
 import com.android.build.gradle.internal.coverage.JacocoOptions;
 import com.android.build.gradle.internal.dsl.AaptOptions;
 import com.android.build.gradle.internal.dsl.AdbOptions;
 import com.android.build.gradle.internal.dsl.CoreBuildType;
+import com.android.build.gradle.internal.dsl.CoreNdkOptions;
 import com.android.build.gradle.internal.dsl.CoreProductFlavor;
 import com.android.build.gradle.internal.dsl.DexOptions;
 import com.android.build.gradle.internal.dsl.LintOptions;
 import com.android.build.gradle.internal.dsl.PackagingOptions;
 import com.android.build.gradle.internal.dsl.Splits;
 import com.android.build.gradle.internal.dsl.TestOptions;
-import com.android.build.gradle.managed.BuildType;
-import com.android.build.gradle.managed.ProductFlavor;
-import com.android.build.gradle.managed.SigningConfig;
+import com.android.build.gradle.internal.model.CoreExternalNativeBuild;
 import com.android.build.gradle.managed.AndroidConfig;
-import com.android.build.api.transform.Transform;
 import com.android.builder.core.BuilderConstants;
 import com.android.builder.core.LibraryRequest;
 import com.android.builder.model.DataBindingOptions;
 import com.android.builder.testing.api.DeviceProvider;
 import com.android.builder.testing.api.TestServer;
 import com.android.repository.Revision;
-import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
@@ -158,35 +155,20 @@ public class AndroidConfigAdaptor implements com.android.build.gradle.AndroidCon
 
     @Override
     public Collection<CoreBuildType> getBuildTypes() {
-        return ImmutableList.copyOf(Iterables.transform(model.getBuildTypes().values(),
-                new Function<BuildType, CoreBuildType>() {
-                    @Override
-                    public CoreBuildType apply(BuildType buildType) {
-                        return new BuildTypeAdaptor(buildType);
-                    }
-                }));
+        return ImmutableList.copyOf(model.getBuildTypes().values().stream()
+                .map(BuildTypeAdaptor::new).iterator());
     }
 
     @Override
     public Collection<CoreProductFlavor> getProductFlavors() {
-        return ImmutableList.copyOf(Iterables.transform(model.getProductFlavors().values(),
-                new Function<ProductFlavor, CoreProductFlavor>() {
-                    @Override
-                    public CoreProductFlavor apply(ProductFlavor flavor) {
-                        return new ProductFlavorAdaptor(flavor);
-                    }
-                }));
+        return ImmutableList.copyOf(model.getProductFlavors().values().stream()
+                .map(ProductFlavorAdaptor::new).iterator());
     }
 
     @Override
     public Collection<com.android.builder.model.SigningConfig> getSigningConfigs() {
-        return ImmutableList.copyOf(Iterables.transform(model.getSigningConfigs().values(),
-                new Function<SigningConfig, com.android.builder.model.SigningConfig>() {
-                    @Override
-                    public com.android.builder.model.SigningConfig apply(SigningConfig signingConfig) {
-                        return new SigningConfigAdaptor(signingConfig);
-                    }
-                }));
+        return ImmutableList.copyOf(model.getSigningConfigs().values().stream()
+                .map(SigningConfigAdaptor::new).iterator());
     }
 
     @Override
@@ -242,7 +224,6 @@ public class AndroidConfigAdaptor implements com.android.build.gradle.AndroidCon
         return model.getPackagingOptions();
     }
 
-
     @Override
     public TestOptions getTestOptions() {
         return model.getTestOptions();
@@ -251,6 +232,11 @@ public class AndroidConfigAdaptor implements com.android.build.gradle.AndroidCon
     @Override
     public Splits getSplits() {
         return model.getSplits();
+    }
+
+    @Override
+    public CoreExternalNativeBuild getExternalNativeBuild() {
+        return model.getExternalNativeBuild();
     }
 
     @Override

@@ -16,33 +16,31 @@
 
 package com.android.build.gradle.integration.instant;
 
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat;
 import static com.android.build.gradle.integration.common.utils.DeviceHelper.DEFAULT_ADB_TIMEOUT_MSEC;
-import static com.google.common.truth.Truth.assertThat;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.junit.Assert.assertNotNull;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.build.gradle.OptionalCompilationStep;
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
-import com.android.build.gradle.integration.common.truth.TruthHelper;
+import com.android.build.gradle.integration.common.fixture.Packaging;
 import com.android.build.gradle.internal.incremental.ColdswapMode;
+import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
 import com.android.builder.model.AndroidProject;
 import com.android.builder.model.InstantRun;
+import com.android.builder.model.OptionalCompilationStep;
 import com.android.builder.model.Variant;
 import com.android.builder.testing.api.DeviceException;
-import com.android.ddmlib.AdbCommandRejectedException;
 import com.android.ddmlib.CollectingOutputReceiver;
 import com.android.ddmlib.IDevice;
 import com.android.ddmlib.IShellOutputReceiver;
 import com.android.ddmlib.InstallException;
-import com.android.ddmlib.ShellCommandUnresponsiveException;
-import com.android.ddmlib.TimeoutException;
-import com.android.resources.Density;
-import com.android.sdklib.AndroidVersion;
+import com.android.tools.fd.client.AppState;
 import com.android.tools.fd.client.InstantRunArtifact;
 import com.android.tools.fd.client.InstantRunArtifactType;
 import com.android.tools.fd.client.InstantRunBuildInfo;
+import com.android.tools.fd.client.InstantRunClient;
 import com.google.common.base.Charsets;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
@@ -53,9 +51,13 @@ import com.google.common.io.Files;
 import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
+import java.util.EnumSet;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 public final class InstantRunTestUtils {
+
+    private static final int SLEEP_TIME_MSEC = 200;
 
     @NonNull
     public static InstantRunBuildInfo loadContext(@NonNull InstantRun instantRunModel)
@@ -63,6 +65,16 @@ public final class InstantRunTestUtils {
         InstantRunBuildInfo context = InstantRunBuildInfo.get(
                 Files.toString(instantRunModel.getInfoFile(), Charsets.UTF_8));
         assertNotNull(context);
+        return context;
+    }
+
+    @NonNull
+    public static InstantRunBuildContext loadBuildContext(
+            int apiLevel,
+            @NonNull InstantRun instantRunModel) throws Exception {
+        InstantRunBuildContext context = new InstantRunBuildContext();
+        context.setApiLevel(apiLevel, null, null);
+        context.loadFromXml(Files.toString(instantRunModel.getInfoFile(), Charsets.UTF_8));
         return context;
     }
 
@@ -75,50 +87,6 @@ public final class InstantRunTestUtils {
             }
         }
         throw new AssertionError("Could not find debug variant.");
-    }
-
-    @NonNull
-    public static List<String> getInstantRunArgs(int apiLevel,
-            @NonNull ColdswapMode coldswapMode,
-            @NonNull OptionalCompilationStep... flags) {
-        return getInstantRunArgs(new AndroidVersion(apiLevel, null),
-                null /* density */, coldswapMode, flags);
-    }
-
-    static List<String> getInstantRunArgs(
-            @NonNull IDevice device,
-            @NonNull ColdswapMode coldswapMode,
-            @NonNull OptionalCompilationStep... flags) {
-        return getInstantRunArgs(device.getVersion(),
-                Density.getEnum(device.getDensity()), coldswapMode, flags);
-    }
-
-    @NonNull
-    private static List<String> getInstantRunArgs(
-            @Nullable AndroidVersion androidVersion,
-            @Nullable Density denisty,
-            @NonNull ColdswapMode coldswapMode,
-            @NonNull OptionalCompilationStep[] flags) {
-        ImmutableList.Builder<String> builder = ImmutableList.builder();
-        if (androidVersion != null) {
-            builder.add(String.format(
-                    "-Pandroid.injected.build.api=%s", androidVersion.getApiString()));
-        }
-        if (denisty != null) {
-            builder.add(String.format(
-                    "-Pandroid.injected.build.density=%s", denisty.getResourceValue()));
-        }
-
-        builder.add(String.format("-Pandroid.injected.coldswap.mode=%s", coldswapMode.name()));
-
-        StringBuilder optionalSteps = new StringBuilder()
-                .append("-P").append("android.optional.compilation").append('=')
-                .append("INSTANT_DEV");
-        for (OptionalCompilationStep step : flags) {
-            optionalSteps.append(',').append(step);
-        }
-        builder.add(optionalSteps.toString());
-        return builder.build();
     }
 
     static void doInstall(
@@ -180,31 +148,77 @@ public final class InstantRunTestUtils {
     @NonNull
     static InstantRun doInitialBuild(
             @NonNull GradleTestProject project,
+            @NonNull Packaging packaging,
             int apiLevel,
             @NonNull ColdswapMode coldswapMode) {
         project.execute("clean");
-        InstantRun instantRunModel = getInstantRunModel(project.getSingleModel());
+        InstantRun instantRunModel = getInstantRunModel(project.model().getSingle());
 
-        project.execute(
-                getInstantRunArgs(apiLevel, coldswapMode, OptionalCompilationStep.RESTART_ONLY),
-                "assembleDebug");
+        project.executor()
+                .withInstantRun(apiLevel, coldswapMode, OptionalCompilationStep.FULL_APK)
+                .withPackaging(packaging)
+                .run("assembleDebug");
 
         return instantRunModel;
     }
 
-    /**
-     * Gets the {@link InstantRunArtifact} produced by last build.
-     */
     @NonNull
-    static InstantRunArtifact getCompiledHotSwapCompatibleChange(
-            @NonNull InstantRun instantRunModel) throws Exception {
+    public static InstantRunArtifact getOnlyArtifact(@NonNull InstantRun instantRunModel)
+            throws Exception {
         InstantRunBuildInfo context = loadContext(instantRunModel);
 
-        TruthHelper.assertThat(context.getArtifacts()).hasSize(1);
-        InstantRunArtifact artifact = Iterables.getOnlyElement(context.getArtifacts());
+        assertThat(context.getArtifacts()).hasSize(1);
+        return Iterables.getOnlyElement(context.getArtifacts());
+    }
 
-        TruthHelper.assertThat(artifact.type).isEqualTo(InstantRunArtifactType.RELOAD_DEX);
+    /**
+     * Gets the RELOAD_DEX {@link InstantRunArtifact} produced by last build.
+     */
+    @NonNull
+    public static InstantRunArtifact getReloadDexArtifact(
+            @NonNull InstantRun instantRunModel) throws Exception {
+        InstantRunArtifact artifact = getOnlyArtifact(instantRunModel);
+        assertThat(artifact.type).isEqualTo(InstantRunArtifactType.RELOAD_DEX);
         return artifact;
+    }
+
+    /**
+     * Gets the RESOURCES {@link InstantRunArtifact} produced by last build.
+     */
+    @NonNull
+    public static InstantRunArtifact getResourcesArtifact(
+            @NonNull InstantRun instantRunModel) throws Exception {
+        InstantRunArtifact artifact = getOnlyArtifact(instantRunModel);
+        assertThat(artifact.type).isEqualTo(InstantRunArtifactType.RESOURCES);
+        return artifact;
+    }
+
+    @NonNull
+    public static List<InstantRunArtifact> getCompiledColdSwapChange(
+            @NonNull InstantRun instantRunModel,
+            @NonNull ColdswapMode coldswapMode) throws Exception {
+        List<InstantRunArtifact> artifacts =  loadContext(instantRunModel).getArtifacts();
+        assertThat(artifacts).isNotEmpty();
+
+        EnumSet<InstantRunArtifactType> allowedArtifactTypes;
+        switch (coldswapMode) {
+            case MULTIAPK:
+                allowedArtifactTypes = EnumSet.of(
+                        InstantRunArtifactType.SPLIT, InstantRunArtifactType.SPLIT_MAIN);
+                break;
+            case MULTIDEX:
+                allowedArtifactTypes = EnumSet.of(InstantRunArtifactType.DEX);
+                break;
+            default:
+                throw new IllegalArgumentException(
+                        "Expecting cold swap mode to be explicitly specified");
+        }
+        for (InstantRunArtifact artifact: artifacts) {
+            if (!allowedArtifactTypes.contains(artifact.type)) {
+                throw new AssertionError("Unexpected artifact " + artifact);
+            }
+        }
+        return artifacts;
     }
 
     public static void printBuildInfoFile(@Nullable InstantRun instantRunModel) {
@@ -219,6 +233,25 @@ public final class InstantRunTestUtils {
         } catch (IOException e) {
             System.err.println("Unable to print build info xml file: \n" +
                     Throwables.getStackTraceAsString(e));
+        }
+    }
+
+    static void waitForAppStart(
+            @NonNull InstantRunClient client, @NonNull IDevice device)
+            throws InterruptedException, IOException {
+        AppState appState = null;
+        int times = 0;
+        while (appState != AppState.FOREGROUND) {
+            if (times > TimeUnit.SECONDS.toMillis(15)) {
+                throw new AssertionError("App did not start");
+            }
+            Thread.sleep(SLEEP_TIME_MSEC);
+            times += SLEEP_TIME_MSEC;
+            try {
+                appState = client.getAppState(device);
+            } catch (IOException e) {
+                System.err.println(Throwables.getStackTraceAsString(e));
+            }
         }
     }
 }

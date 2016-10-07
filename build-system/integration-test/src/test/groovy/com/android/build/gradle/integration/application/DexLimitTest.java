@@ -19,15 +19,13 @@ package com.android.build.gradle.integration.application;
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat;
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk;
 
+import com.android.build.gradle.integration.common.fixture.GradleBuildResult;
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
-import com.android.build.gradle.integration.common.fixture.TemporaryProjectModification;
 import com.android.build.gradle.integration.common.fixture.app.AndroidTestApp;
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp;
 import com.android.build.gradle.integration.common.fixture.app.TestSourceFile;
-import com.android.build.gradle.integration.common.utils.TestFileUtils;
-import com.google.common.base.Charsets;
-import com.google.common.collect.ImmutableList;
-import com.google.common.io.Files;
+import com.android.build.gradle.integration.common.utils.DexInProcessHelper;
+import com.android.utils.FileUtils;
 
 import org.junit.Before;
 import org.junit.Rule;
@@ -35,19 +33,18 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
 
+@RunWith(Parameterized.class)
 public class DexLimitTest {
 
-    private static final String CLASS_NAME = "com/example/B";
-    private static final String CLASS_FULL_TYPE = "L" + CLASS_NAME + ";";
-    private static final String CLASS_SRC_LOCATION = "src/main/java/" + CLASS_NAME + ".java";
-
-    private static final String CLASS_CONTENT =  "\n"
-            + "package com.example;\n"
-            + "public class B { }";
+    @Parameterized.Parameters(name="dexInProcess={0}")
+    public static Collection<Object[]> getParameters() {
+        return Arrays.asList(new Object[][] {{false}, {true}});
+    }
 
     private static final AndroidTestApp TEST_APP =
             HelloWorldApp.forPlugin("com.android.application");
@@ -69,13 +66,40 @@ public class DexLimitTest {
 
     @Rule
     public final GradleTestProject mProject = GradleTestProject.builder()
-            .fromTestApp(TEST_APP).captureStdErr(true).withHeap("2G").create();
+            .fromTestApp(TEST_APP).withHeap("2G").create();
+
+    private final boolean mDexInProcess;
+
+    public DexLimitTest(boolean dexInProcess) {
+        mDexInProcess = dexInProcess;
+    }
+
+    @Before
+    public void disableDexInProcess() throws IOException {
+        if (mDexInProcess) {
+            DexInProcessHelper.disableDexInProcess(mProject.getBuildFile());
+        }
+    }
 
     @Test
     public void checkDexErrorMessage() throws Exception {
-        mProject.getStderr().reset();
-        mProject.executeExpectingFailure("assembleDebug");
-        assertThat(mProject.getStderr().toString()).contains(
-                "https://developer.android.com/tools/building/multidex.html");
+        GradleBuildResult result = mProject.executor().expectFailure().run("assembleDebug");
+        if (GradleTestProject.USE_JACK) {
+            assertThat(result.getStderr()).contains(
+                    "Dex writing phase: classes.dex has too many IDs.");
+        } else {
+            assertThat(result.getStderr()).contains(
+                    "https://developer.android.com/tools/building/multidex.html");
+        }
+
+        // Check that when dexing in-process, we don't keep bad state after a failure
+        if (mDexInProcess) {
+            FileUtils.delete(mProject.file("src/main/java/com/example/A.java"));
+            mProject.execute("assembleDebug");
+
+            File apk = mProject.getApk("debug");
+            assertThatApk(apk).doesNotContainClass("Lcom/example/A;");
+            assertThatApk(apk).containsClass("Lcom/example/B;");
+        }
     }
 }

@@ -23,6 +23,7 @@ import com.android.annotations.concurrency.GuardedBy;
 import com.android.annotations.concurrency.Immutable;
 import com.android.ide.common.xml.XmlPrettyPrinter;
 import com.android.repository.Revision;
+import com.android.utils.FileUtils;
 import com.android.utils.ILogger;
 import com.android.utils.Pair;
 import com.android.utils.XmlUtils;
@@ -47,15 +48,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
-/**
- */
-public abstract class PreProcessCache<T extends PreProcessCache.Key> {
+abstract class PreProcessCache<T extends PreProcessCache.Key> {
 
     private static final String NODE_ITEMS = "items";
     private static final String NODE_ITEM = "item";
@@ -68,7 +68,7 @@ public abstract class PreProcessCache<T extends PreProcessCache.Key> {
 
     private static final String XML_VERSION = "2";
 
-    protected interface BaseItem {
+    interface BaseItem {
         @NonNull
         File getSourceFile();
 
@@ -130,7 +130,7 @@ public abstract class PreProcessCache<T extends PreProcessCache.Key> {
         }
 
         @NonNull
-        protected CountDownLatch getLatch() {
+        CountDownLatch getLatch() {
             return mLatch;
         }
 
@@ -157,7 +157,7 @@ public abstract class PreProcessCache<T extends PreProcessCache.Key> {
      * stored in a cache file and then reloaded during the current build.
      */
     @Immutable
-    protected static class StoredItem implements BaseItem {
+    private static class StoredItem implements BaseItem {
         @NonNull
         private final File mSourceFile;
         @NonNull
@@ -229,7 +229,7 @@ public abstract class PreProcessCache<T extends PreProcessCache.Key> {
             return new Key(sourceFile, buildToolsRevision);
         }
 
-        protected Key(@NonNull File sourceFile, @NonNull Revision buildToolsRevision) {
+        Key(@NonNull File sourceFile, @NonNull Revision buildToolsRevision) {
             mSourceFile = sourceFile;
             mBuildToolsRevision = buildToolsRevision;
         }
@@ -244,6 +244,7 @@ public abstract class PreProcessCache<T extends PreProcessCache.Key> {
             return mSourceFile;
         }
 
+        @SuppressWarnings("RedundantIfStatement")
         @Override
         public boolean equals(Object o) {
             if (this == o) {
@@ -271,7 +272,7 @@ public abstract class PreProcessCache<T extends PreProcessCache.Key> {
         }
     }
 
-    protected interface KeyFactory<T> {
+    interface KeyFactory<T> {
         T of(@NonNull File sourceFile, @NonNull Revision revision, @NonNull NamedNodeMap attrMap);
     }
 
@@ -306,13 +307,29 @@ public abstract class PreProcessCache<T extends PreProcessCache.Key> {
     }
 
     /**
+     * Removes a cached item if exists and calls a {@link #getItem}.
+     * This can happen when the generated files was removed by an external event.
+     * @param itemKey the key of the item to re-generate
+     */
+    synchronized Pair<Item, Boolean> regenerateItem(@NonNull ILogger logger, @NonNull T itemKey) {
+        mMap.remove(itemKey);
+        return getItem(logger, itemKey);
+    }
+
+    /**
      * Returns an {@link Item} loaded from the cache. If no item can be found this, throws an
      * exception.
      *
      * @param itemKey the key of the item
      * @return a pair of item, boolean
      */
-    protected synchronized Pair<Item, Boolean> getItem(@NonNull T itemKey) {
+    synchronized Pair<Item, Boolean> getItem(@NonNull ILogger logger, @NonNull T itemKey) {
+
+        File inputFile = itemKey.getSourceFile();
+        if (inputFile.isDirectory()) {
+            throw new RuntimeException(
+                    String.format("Cache cannot handle folder : %s", inputFile.getAbsolutePath()));
+        }
 
         // get the item
         Item item = mMap.get(itemKey);
@@ -323,17 +340,19 @@ public abstract class PreProcessCache<T extends PreProcessCache.Key> {
             // check if we have a stored version.
             StoredItem storedItem = mStoredItems.get(itemKey);
 
-            File inputFile = itemKey.getSourceFile();
+            logger.info("StoredItem is %s", storedItem);
 
             if (storedItem != null) {
                 // check the sha1 is still valid, and the pre-dex files are still there.
+                HashCode hash = getHash(inputFile);
+                logger.info("Hash for %s is %s", inputFile.getAbsolutePath(), hash.toString());
                 if (storedItem.areOutputFilesPresent() &&
-                        storedItem.getSourceHash().equals(getHash(inputFile))) {
+                        storedItem.getSourceHash().equals(hash)) {
 
-                    Logger.getAnonymousLogger().info("Cached result for getItem(" + inputFile + "): "
+                    logger.info("Cached result for getItem(" + inputFile + "): "
                             + storedItem.getOutputFiles());
                     for (File f : storedItem.getOutputFiles()) {
-                        Logger.getAnonymousLogger().info(
+                        logger.info(
                                 String.format("%s l:%d ts:%d", f, f.length(), f.lastModified()));
                     }
 
@@ -351,7 +370,6 @@ public abstract class PreProcessCache<T extends PreProcessCache.Key> {
                 item = new Item(inputFile, new CountDownLatch(1));
                 newItem = true;
             }
-
             mMap.put(itemKey, item);
         }
 
@@ -385,6 +403,7 @@ public abstract class PreProcessCache<T extends PreProcessCache.Key> {
         mStoredItems.clear();
         mHits = 0;
         mMisses = 0;
+        mLoaded = false;
     }
 
     private synchronized void loadItems(@NonNull File itemStorage) {
@@ -454,7 +473,7 @@ public abstract class PreProcessCache<T extends PreProcessCache.Key> {
         }
     }
 
-    protected synchronized void saveItems(@NonNull File itemStorage) throws IOException {
+    private synchronized void saveItems(@NonNull File itemStorage) throws IOException {
         // write "compact" blob
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         factory.setNamespaceAware(true);
@@ -509,9 +528,9 @@ public abstract class PreProcessCache<T extends PreProcessCache.Key> {
 
             String content = XmlPrettyPrinter.prettyPrint(document, true);
 
-            itemStorage.getParentFile().mkdirs();
+            FileUtils.mkdirs(itemStorage.getParentFile());
             Files.write(content, itemStorage, Charsets.UTF_8);
-        } catch (ParserConfigurationException e) {
+        } catch (ParserConfigurationException ignored) {
         }
     }
 
@@ -560,11 +579,11 @@ public abstract class PreProcessCache<T extends PreProcessCache.Key> {
         return itemNode;
     }
 
-    protected synchronized void incrementMisses() {
+    synchronized void incrementMisses() {
         mMisses++;
     }
 
-    protected synchronized void incrementHits() {
+    synchronized void incrementHits() {
         mHits++;
     }
 

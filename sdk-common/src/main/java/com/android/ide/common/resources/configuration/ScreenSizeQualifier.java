@@ -16,6 +16,8 @@
 
 package com.android.ide.common.resources.configuration;
 
+import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.resources.ResourceEnum;
 import com.android.resources.ScreenSize;
 
@@ -26,10 +28,16 @@ public class ScreenSizeQualifier extends EnumBasedResourceQualifier {
 
     public static final String NAME = "Screen Size";
 
-    private ScreenSize mValue = null;
+    /**
+     * The qualifier to be used for configurables when there is no qualifier present. This should
+     * not be used for the reference configuration.
+     */
+    private static final ScreenSizeQualifier NULL_QUALIFIER = new ScreenSizeQualifier();
 
+    private final ScreenSize mValue;
 
     public ScreenSizeQualifier() {
+        this(null);
     }
 
     public ScreenSizeQualifier(ScreenSize value) {
@@ -73,6 +81,11 @@ public class ScreenSizeQualifier extends EnumBasedResourceQualifier {
     }
 
     @Override
+    public ScreenSizeQualifier getNullQualifier() {
+        return NULL_QUALIFIER;
+    }
+
+    @Override
     public boolean isMatchFor(ResourceQualifier qualifier) {
         // This is a match only if the screen size is smaller than the qualifier's screen size.
         if (qualifier instanceof ScreenSizeQualifier) {
@@ -86,19 +99,38 @@ public class ScreenSizeQualifier extends EnumBasedResourceQualifier {
     }
 
     @Override
-    public boolean isBetterMatchThan(ResourceQualifier compareTo, ResourceQualifier reference) {
+    public boolean isValid() {
+        return this != NULL_QUALIFIER;
+    }
+
+    @Override
+    public boolean isBetterMatchThan(@Nullable ResourceQualifier compareTo,
+            @NonNull ResourceQualifier reference) {
         if (compareTo == null) {
-            // Small is better at matching Small than null (i.e. no qualifier)
-            // However null is better than Small at matching any other screen size
-            return getValue() != ScreenSize.SMALL || ((ScreenSizeQualifier)reference).getValue() == ScreenSize.SMALL;
+            return true;
         }
-
         ScreenSizeQualifier compareQ = (ScreenSizeQualifier) compareTo;
-        int thisIndex = ScreenSize.getIndex(mValue);
-        int compareIndex = ScreenSize.getIndex(compareQ.mValue);
-
-        // Return true if this size is larger than reference size. Since isMatchFor() is called
-        // before, it is guaranteed that the size will not be larger than the reference.
-        return thisIndex > compareIndex;
+        // A little backwards compatibility here: undefined is
+        // considered equivalent to normal.  But only if the
+        // requested size is at least normal; otherwise, small
+        // is better than the default.
+        int mySL = ScreenSize.getIndex(mValue);
+        int oSL = ScreenSize.getIndex(compareQ.mValue);
+        int fixedMySL = mySL;
+        int fixedOSL = oSL;
+        int requestedSL = ScreenSize.getIndex(((ScreenSizeQualifier) reference).mValue);
+        if (requestedSL >= ScreenSize.NORMAL.ordinal()) {
+            if (fixedMySL == -1) fixedMySL = ScreenSize.NORMAL.ordinal();
+            if (fixedOSL == -1) fixedOSL = ScreenSize.NORMAL.ordinal();
+        }
+        // For screen size, the best match is the one that is
+        // closest to the requested screen size, but not over
+        // (the not over part is dealt with in isMatchFor()).
+        if (fixedMySL == fixedOSL) {
+            // If the two are the same, but 'this' is actually
+            // undefined, then the other is really a better match.
+            return mySL != -1;
+        }
+        return fixedMySL > fixedOSL;
     }
 }

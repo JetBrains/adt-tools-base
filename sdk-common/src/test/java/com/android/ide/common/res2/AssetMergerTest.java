@@ -16,26 +16,45 @@
 
 package com.android.ide.common.res2;
 
+import static com.google.common.truth.Truth.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
 import com.android.SdkConstants;
+import com.android.testutils.NoErrorsOrWarningsLogger;
 import com.android.testutils.TestUtils;
+import com.google.common.base.Charsets;
 import com.google.common.collect.ListMultimap;
 import com.google.common.io.Files;
 
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
+
+import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.List;
-import java.util.regex.Pattern;
+import java.util.zip.GZIPOutputStream;
 
 public class AssetMergerTest extends BaseTestCase {
 
+    @Rule
+    public final TemporaryFolder mTemporaryFolder = new TemporaryFolder();
+
     private static AssetMerger sAssetMerger = null;
 
+    @Test
     public void testMergeByCount() throws Exception {
         AssetMerger merger = getAssetMerger();
 
         assertEquals(5, merger.size());
     }
 
+    @Test
     public void testMergedAssetsByName() throws Exception {
         AssetMerger merger = getAssetMerger();
 
@@ -48,6 +67,7 @@ public class AssetMergerTest extends BaseTestCase {
         );
     }
 
+    @Test
     public void testMergeWrite() throws Exception {
         AssetMerger merger = getAssetMerger();
 
@@ -66,11 +86,45 @@ public class AssetMergerTest extends BaseTestCase {
         compareResourceMaps(merger, writtenSet, false /*full compare*/);
     }
 
+    @Test
+    public void testExtractGzippedAssets() throws Exception {
+        Path assetsSourceDirectory = mTemporaryFolder.newFolder().toPath();
+
+        // Create gzipped asset
+        Path gzippedAsset = assetsSourceDirectory.resolve("asset.txt.gz");
+        try (GZIPOutputStream out = new GZIPOutputStream(new BufferedOutputStream(
+                java.nio.file.Files.newOutputStream(gzippedAsset)))) {
+            out.write("test.txt file content".getBytes(Charsets.UTF_8));
+        }
+
+        // Load asset set containing gzipped asset
+        AssetSet assetSet = new AssetSet("config");
+        assetSet.addSource(assetsSourceDirectory.toFile());
+        assetSet.loadFromFiles(new NoErrorsOrWarningsLogger());
+
+        AssetMerger merger = new AssetMerger();
+        merger.addDataSet(assetSet);
+
+        assertThat(merger.getDataMap()).containsKey("asset.txt");
+        assertThat(merger.getDataMap()).doesNotContainKey("asset.txt.gz");
+
+        Path outputFolder = mTemporaryFolder.newFolder().toPath();
+
+        MergedAssetWriter writer = new MergedAssetWriter(outputFolder.toFile());
+        merger.mergeData(writer, false /*doCleanUp*/);
+
+        assertTrue(Arrays.equals(
+                Files.toByteArray(outputFolder.resolve("asset.txt").toFile()),
+                "test.txt file content".getBytes(Charsets.UTF_8)));
+    }
+
+    @Test
     public void testMergeBlob() throws Exception {
         AssetMerger merger = getAssetMerger();
 
-        File folder = Files.createTempDir();
-        merger.writeBlobTo(folder, new MergedAssetWriter(Files.createTempDir()));
+        File folder = TestUtils.createTempDirDeletedOnExit();
+        merger.writeBlobTo(
+                folder, new MergedAssetWriter(TestUtils.createTempDirDeletedOnExit()), false);
 
         AssetMerger loadedMerger = new AssetMerger();
         loadedMerger.loadFromBlob(folder, true /*incrementalState*/);
@@ -82,6 +136,7 @@ public class AssetMergerTest extends BaseTestCase {
      * Tests the path replacement in the merger.xml file loaded from testData/
      * @throws Exception
      */
+    @Test
     public void testLoadingTestPathReplacement() throws Exception {
         File root = TestUtils.getRoot("assets", "baseMerge");
         File fakeRoot = getMergedBlobFolder(root);
@@ -103,6 +158,7 @@ public class AssetMergerTest extends BaseTestCase {
         }
     }
 
+    @Test
     public void testUpdate() throws Exception {
         File root = getIncMergeRoot("basicFiles");
         File fakeRoot = getMergedBlobFolder(root);
@@ -214,6 +270,7 @@ public class AssetMergerTest extends BaseTestCase {
         assertFalse(new File(resFolder, "removed.png").isFile());
     }
 
+    @Test
     public void testCheckValidUpdate() throws Exception {
         // first merger
         AssetMerger merger1 = createMerger(new String[][] {
@@ -230,8 +287,9 @@ public class AssetMergerTest extends BaseTestCase {
         assertTrue(merger1.checkValidUpdate(merger2.getDataSets()));
 
         // write merger1 on disk to test writing empty AssetSets.
-        File folder = Files.createTempDir();
-        merger1.writeBlobTo(folder, new MergedAssetWriter(Files.createTempDir()));
+        File folder = TestUtils.createTempDirDeletedOnExit();
+        merger1.writeBlobTo(
+                folder, new MergedAssetWriter(TestUtils.createTempDirDeletedOnExit()), false);
 
         // reload it
         AssetMerger loadedMerger = new AssetMerger();
@@ -251,7 +309,7 @@ public class AssetMergerTest extends BaseTestCase {
         }
     }
 
-
+    @Test
     public void testUpdateWithRemovedOverlay() throws Exception {
         // Test with removed overlay
         AssetMerger merger1 = createMerger(new String[][] {
@@ -267,6 +325,7 @@ public class AssetMergerTest extends BaseTestCase {
         assertFalse(merger1.checkValidUpdate(merger2.getDataSets()));
     }
 
+    @Test
     public void testUpdateWithReplacedOverlays() throws Exception {
         // Test with different overlays
         AssetMerger merger1 = createMerger(new String[][] {
@@ -283,6 +342,7 @@ public class AssetMergerTest extends BaseTestCase {
         assertFalse(merger1.checkValidUpdate(merger2.getDataSets()));
     }
 
+    @Test
     public void testUpdateWithReorderedOverlays() throws Exception {
         // Test with different overlays
         AssetMerger merger1 = createMerger(new String[][] {
@@ -301,6 +361,7 @@ public class AssetMergerTest extends BaseTestCase {
         assertFalse(merger1.checkValidUpdate(merger2.getDataSets()));
     }
 
+    @Test
     public void testUpdateWithRemovedSourceFile() throws Exception {
         // Test with different source files
         AssetMerger merger1 = createMerger(new String[][] {
@@ -315,6 +376,7 @@ public class AssetMergerTest extends BaseTestCase {
         assertFalse(merger1.checkValidUpdate(merger2.getDataSets()));
     }
 
+    @Test
     public void testChangedIgnoredFile() throws Exception {
         AssetSet assetSet = AssetSetTest.getBaseAssetSet();
 
@@ -377,7 +439,7 @@ public class AssetMergerTest extends BaseTestCase {
     private static File getWrittenResources() throws MergingException, IOException {
         AssetMerger assetMerger = getAssetMerger();
 
-        File folder = Files.createTempDir();
+        File folder = TestUtils.createTempDirDeletedOnExit();
 
         MergedAssetWriter writer = new MergedAssetWriter(folder);
         assetMerger.mergeData(writer, false /*doCleanUp*/);
@@ -391,7 +453,7 @@ public class AssetMergerTest extends BaseTestCase {
     }
 
     private static File getFolderCopy(File folder) throws IOException {
-        File dest = Files.createTempDir();
+        File dest = TestUtils.createTempDirDeletedOnExit();
         copyFolder(folder, dest);
         return dest;
     }

@@ -24,6 +24,7 @@ import com.google.common.annotations.VisibleForTesting;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 /**
@@ -71,10 +72,25 @@ public final class FileOpUtils {
      * @throws IOException If the destination already exists, or if there is a problem copying the
      *                     files or creating directories.
      */
-    public static void recursiveCopy(@NonNull File src, @NonNull File dest, @NonNull FileOp fop)
-            throws IOException {
+    public static void recursiveCopy(@NonNull File src, @NonNull File dest, @NonNull FileOp fop,
+            @NonNull ProgressIndicator progress) throws IOException {
+        recursiveCopy(src, dest, false, fop, progress);
+    }
+
+    @VisibleForTesting
+    static void recursiveCopy(@NonNull File src, @NonNull File dest, boolean merge,
+            @NonNull FileOp fop, @NonNull ProgressIndicator progress) throws IOException {
         if (fop.exists(dest)) {
-            throw new IOException(dest + " already exists!");
+            if (!merge) {
+                throw new IOException(dest + " already exists!");
+            }
+            else if (fop.isDirectory(src) != fop.isDirectory(dest)) {
+                throw new IOException(String.format("%s already exists but %s a directory!", dest,
+                        fop.isDirectory(dest) ? "is" : "is not"));
+            }
+        }
+        if (progress.isCanceled()) {
+            throw new IOException("Operation cancelled");
         }
         if (fop.isDirectory(src)) {
             fop.mkdirs(dest);
@@ -82,9 +98,9 @@ public final class FileOpUtils {
             File[] children = fop.listFiles(src);
             for (File child : children) {
                 File newDest = new File(dest, child.getName());
-                recursiveCopy(child, newDest, fop);
+                recursiveCopy(child, newDest, merge, fop, progress);
             }
-        } else if (fop.isFile(src)) {
+        } else if (fop.isFile(src) && !fop.exists(dest)) {
             fop.copyFile(src, dest);
             if (!fop.isWindows() && fop.canExecute(src)) {
                 fop.setExecutablePermission(dest);
@@ -99,52 +115,103 @@ public final class FileOpUtils {
      *
      * @param src      File to move
      * @param dest     Destination. Follows the same rules as {@link #recursiveCopy(File, File,
-     *                 FileOp)}}.
+     *                 FileOp, ProgressIndicator)}}.
      * @param fop      The FileOp to use for file operations.
      * @param progress Currently only used for error logging.
      * @throws IOException If some problem occurs during copies or directory creation.
      */
-    // TODO: Seems strange to use the more-fully-featured ProgressIndicator here.
-    //       Is a more general logger needed?
     public static void safeRecursiveOverwrite(@NonNull File src, @NonNull File dest,
             @NonNull FileOp fop, @NonNull ProgressIndicator progress) throws IOException {
-
-        if (fop.exists(dest)) {
-
-            File toDelete = getNewTempDir("FileOpUtilsToDelete", fop);
-            if (toDelete == null) {
-                // weird, try to delete in place
-                fop.deleteFileOrFolder(dest);
-            } else {
-                FileOpUtils.recursiveCopy(dest, toDelete, fop);
-            }
-            try {
-                fop.deleteFileOrFolder(dest);
-                FileOpUtils.recursiveCopy(src, dest, fop);
-                fop.deleteFileOrFolder(src);
-            } catch (IOException e) {
-                // this is bad
-                progress.logError("Old dir was moved away, but new one failed to be moved into "
-                        + "place. Trying to move old one back.");
+        File destBackup = getTempDir(dest, "backup", fop);
+        boolean success = false;
+        try {
+            if (fop.exists(dest)) {
+                moveOrCopyAndDelete(dest, destBackup, fop, progress);
                 if (fop.exists(dest)) {
-                    fop.deleteFileOrFolder(dest);
+                    throw new IOException("Failed to move away or delete existing target file");
                 }
-                if (toDelete == null) {
-                    // this is the worst case
-                    progress.logError(
-                            "Failed to move old dir back into place! Component was lost.");
-                } else {
-                    FileOpUtils.recursiveCopy(toDelete, dest, fop);
+                success = true;
+            }
+        } finally {
+            if (!success && fop.exists(destBackup)) {
+                try {
+                    // Merge in case some things had been moved and some not.
+                    recursiveCopy(destBackup, dest, true, fop, progress);
+                    fop.deleteFileOrFolder(destBackup);
                 }
-                throw new IOException("failed to move new dir into place", e);
+                catch (IOException e) {
+                    // we're already throwing the exception from the original "try", and there's
+                    // nothing more to be done here. Just log it.
+                    progress.logWarning(String.format(
+                            "Failed to move original content of %s back into place! "
+                                    + "It should be available at %s", dest, destBackup), e);
+                }
             }
-            if (toDelete != null) {
-                fop.deleteFileOrFolder(toDelete);
+            // If the backup doesn't exist we failed before doing anything at all, so there's no
+            // cleanup needed.
+        }
+
+        success = false;
+        // At this point the target should be moved away.
+        try {
+            // Actually move src to dest.
+            moveOrCopyAndDelete(src, dest, fop, progress);
+            success = true;
+        } finally {
+            if (!success) {
+                // It failed. Now we have to restore the backup.
+                fop.deleteFileOrFolder(dest);
+                if (fop.exists(dest)) {
+                    // Failed to delete the new stuff. Move it away and delete later.
+                    File toDelete = getTempDir(dest, "delete", fop);
+                    fop.renameTo(dest, toDelete);
+                    fop.deleteOnExit(toDelete);
+                }
+                try {
+                    if (fop.exists(dest)) {
+                        // Couldn't get rid of the new, partial stuff. Try merging the old ones back
+                        // over.
+                        recursiveCopy(destBackup, dest, true, fop, progress);
+                    } else {
+                        // dest is cleared. Move temp stuff back into place
+                        moveOrCopyAndDelete(destBackup, dest, fop, progress);
+                    }
+                } catch (IOException e) {
+                    // we're already throwing the exception from the original "try", and there's
+                    // nothing more to be done here. Just log it.
+                    progress.logWarning(String.format(
+                            "Failed to move original content of %s back into place! "
+                                    + "It should be available at %s", dest, destBackup), e);
+                }
             }
-        } else {
-            FileOpUtils.recursiveCopy(src, dest, fop);
+        }
+
+        // done, delete the backup
+        fop.deleteFileOrFolder(destBackup);
+    }
+
+    private static void moveOrCopyAndDelete(File src, File dest, FileOp fop,
+            ProgressIndicator progress) throws IOException {
+        if (!fop.renameTo(src, dest)) {
+            // Failed to move. Try copy/delete, with merge in case something already got moved.
+            recursiveCopy(src, dest, true, fop, progress);
             fop.deleteFileOrFolder(src);
         }
+    }
+
+    private static File getTempDir(File orig, String suffix, FileOp fop) {
+        File result = new File(orig + "." + suffix);
+        int i = 1;
+        while (fop.exists(result)) {
+            // The dir is already there. Try to delete it.
+            fop.deleteFileOrFolder(result);
+            if (!fop.exists(result)) {
+                break;
+            }
+            // We couldn't delete it. Make a new dir.
+            result = new File(result.getPath() + "-" + i++);
+        }
+        return result;
     }
 
     /**
@@ -153,14 +220,10 @@ public final class FileOpUtils {
      */
     @Nullable
     public static File getNewTempDir(@NonNull String base, @NonNull FileOp fileOp) {
-        File tempDir = new File(System.getProperty("java.io.tmpdir"));
-        if (!fileOp.exists(tempDir)) {
-            fileOp.mkdirs(tempDir);
-        }
         for (int i = 1; i < 100; i++) {
-            File folder = new File(tempDir,
-                    String.format("%1$s%2$02d", base, i));  //$NON-NLS-1$
+            File folder = getTempDir(base, i);
             if (!fileOp.exists(folder)) {
+                fileOp.mkdirs(folder);
                 return folder;
             }
         }
@@ -168,14 +231,24 @@ public final class FileOpUtils {
     }
 
     /**
+     * Gets the temp dir corresponding to the given base and index.
+     */
+    @NonNull
+    @VisibleForTesting
+    public static File getTempDir(@NonNull String base, int i) {
+        File rootTempDir = new File(System.getProperty("java.io.tmpdir"));
+        return new File(rootTempDir, String.format("%1$s%2$02d", base, i));
+    }
+
+    /**
      * Appends the given {@code segments} to the {@code base} file.
      *
-     * @param base A base file, non-null.
+     * @param base     A base file, non-null.
      * @param segments Individual folder or filename segments to append to the base file.
      * @return A new file representing the concatenation of the base path with all the segments.
      */
     @NonNull
-    public static File append(@NonNull File base, @NonNull String...segments) {
+    public static File append(@NonNull File base, @NonNull String... segments) {
         for (String segment : segments) {
             base = new File(base, segment);
         }
@@ -185,30 +258,28 @@ public final class FileOpUtils {
     /**
      * Appends the given {@code segments} to the {@code base} file.
      *
-     * @param base A base file path, non-empty and non-null.
+     * @param base     A base file path, non-empty and non-null.
      * @param segments Individual folder or filename segments to append to the base path.
      * @return A new file representing the concatenation of the base path with all the segments.
      */
     @NonNull
-    public static File append(@NonNull String base, @NonNull String...segments) {
+    public static File append(@NonNull String base, @NonNull String... segments) {
         return append(new File(base), segments);
     }
+
     /**
      * Computes a relative path from "toBeRelative" relative to "baseDir".
      *
-     * Rule:
-     * - let relative2 = makeRelative(path1, path2)
-     * - then pathJoin(path1 + relative2) == path2 after canonicalization.
+     * Rule: - let relative2 = makeRelative(path1, path2) - then pathJoin(path1 + relative2) ==
+     * path2 after canonicalization.
      *
-     * Principle:
-     * - let base         = /c1/c2.../cN/a1/a2../aN
-     * - let toBeRelative = /c1/c2.../cN/b1/b2../bN
-     * - result is removes the common paths, goes back from aN to cN then to bN:
-     * - result           =              ../..../../1/b2../bN
+     * Principle: - let base         = /c1/c2.../cN/a1/a2../aN - let toBeRelative =
+     * /c1/c2.../cN/b1/b2../bN - result is removes the common paths, goes back from aN to cN then to
+     * bN: - result           =              ../..../../1/b2../bN
      *
-     * @param baseDir The base directory to be relative to.
+     * @param baseDir      The base directory to be relative to.
      * @param toBeRelative The file or directory to make relative to the base.
-     * @param fop FileOp, in this case just to determine the platform.
+     * @param fop          FileOp, in this case just to determine the platform.
      * @return A path that makes toBeRelative relative to baseDir.
      * @throws IOException If drive letters don't match on Windows or path canonicalization fails.
      */
@@ -224,8 +295,7 @@ public final class FileOpUtils {
     }
 
     /**
-     * Implementation detail of makeRelative to make it testable
-     * Independently of the platform.
+     * Implementation detail of makeRelative to make it testable Independently of the platform.
      */
     @VisibleForTesting
     @NonNull
@@ -255,9 +325,9 @@ public final class FileOpUtils {
         int start = 0;
         for (; start < len; start++) {
             // On Windows should compare in case-insensitive.
-            // Mac & Linux file systems can be both type, although their default
+            // Mac and Linux file systems can be both type, although their default
             // is generally to have a case-sensitive file system.
-            if (( isWindows && !segments1[start].equalsIgnoreCase(segments2[start])) ||
+            if ((isWindows && !segments1[start].equalsIgnoreCase(segments2[start])) ||
                     (!isWindows && !segments1[start].equals(segments2[start]))) {
                 break;
             }
@@ -275,6 +345,18 @@ public final class FileOpUtils {
         }
 
         return result.toString();
+    }
+
+    /**
+     * Delete all temp dirs with the given base except for those in {@code retain}.
+     */
+    public static void retainTempDirs(Set<File> retain, String base, FileOp mFop) {
+        for (int i = 0; i < 100; i++) {
+            File dir = getTempDir(base, i);
+            if (mFop.exists(dir) && !retain.contains(dir)) {
+                mFop.deleteFileOrFolder(dir);
+            }
+        }
     }
 
     private FileOpUtils() {

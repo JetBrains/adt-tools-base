@@ -29,6 +29,8 @@ import org.junit.Test
 
 import static org.junit.Assert.assertEquals
 import static org.junit.Assert.assertNotNull
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk
 /**
  * Assemble tests for localJars.
  */
@@ -64,9 +66,8 @@ class LocalJarsTest {
         Collection<Variant> variants = libModel.getVariants()
 
         Variant releaseVariant = ModelHelper.getVariant(variants, "release")
-        assertNotNull(releaseVariant)
 
-        Dependencies dependencies = releaseVariant.getMainArtifact().getDependencies()
+        Dependencies dependencies = releaseVariant.getMainArtifact().getCompileDependencies()
         assertNotNull(dependencies)
 
         Collection<JavaLibrary> javaLibraries = dependencies.getJavaLibraries()

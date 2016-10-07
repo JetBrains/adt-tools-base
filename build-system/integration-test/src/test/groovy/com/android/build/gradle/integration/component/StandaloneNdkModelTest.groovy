@@ -41,12 +41,13 @@ class StandaloneNdkModelTest {
     @Rule
     public GradleTestProject project = GradleTestProject.builder()
             .fromTestApp(new EmptyAndroidTestApp())
-            .forExperimentalPlugin(true)
+            .useExperimentalGradleVersion(true)
             .create()
 
     @Before
     public void setUp() {
         FileUtils.createFile(project.file("src/main/jni/empty.c"), "")
+        FileUtils.createFile(project.file("src/main/headers/empty.h"), "")
     }
 
     private final Set<String> ABIS = ImmutableSet.of(
@@ -211,6 +212,8 @@ model {
             }
 
             assertThat(artifact.groupName).isEqualTo(variant)
+            assertThat(artifact.getAssembleTaskName()).isEqualTo(
+                    "hello-jni${abi.capitalize()}${buildType.capitalize()}${flavor.capitalize()}SharedLibrary".toString());
             assertThat(artifact.outputFile).hasName("libhello-jni.so")
             assertThat(artifact.sourceFiles).isEmpty()
             assertThat(artifact.toolChain).endsWith(abi)

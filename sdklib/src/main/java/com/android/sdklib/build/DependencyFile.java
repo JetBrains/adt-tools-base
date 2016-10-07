@@ -95,7 +95,7 @@ public class DependencyFile {
 
     /**
      * Returns whether the given file is a dependency for this source file.
-     * <p/>Note that the source file itself is not tested against. Therefore if
+     * <p>Note that the source file itself is not tested against. Therefore if
      * {@code file.equals(getSourceFile()} returns {@code true}, this method will return
      * {@code false}.
      * @param file the file to check against

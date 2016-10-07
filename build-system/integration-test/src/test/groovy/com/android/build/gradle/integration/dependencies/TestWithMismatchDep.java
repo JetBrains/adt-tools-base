@@ -20,11 +20,13 @@ import static com.android.build.gradle.integration.common.utils.TestFileUtils.ap
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat;
 import static org.junit.Assert.fail;
 
+import com.android.build.gradle.integration.common.fixture.GradleBuildResult;
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.builder.model.AndroidProject;
 import com.android.builder.model.SyncIssue;
 
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 
@@ -37,8 +39,6 @@ public class TestWithMismatchDep {
     @Rule
     public GradleTestProject project = GradleTestProject.builder()
             .fromTestProject("testDependency")
-            .captureStdOut(true)
-            .captureStdErr(true)
             .create();
 
     @Before
@@ -55,9 +55,10 @@ public class TestWithMismatchDep {
             " See http://g.co/androidstudio/app-test-app-conflict for details.";
 
     @Test
+    @Ignore
     public void testMismatchDependencyErrorIsInTheModel() {
         // Query the model to get the mismatch dep sync error.
-        AndroidProject model = project.getSingleModelIgnoringSyncIssues();
+        AndroidProject model = project.model().ignoreSyncIssues().getSingle();
 
         assertThat(model).hasSingleIssue(
                 SyncIssue.SEVERITY_ERROR,
@@ -70,23 +71,21 @@ public class TestWithMismatchDep {
     public void testMismatchDependencyBreaksTestBuild() {
         // want to check the log, so can't use Junit's expected exception mechanism.
 
-        try {
-            project.execute("assembleAndroidTest");
-            fail("build succeeded");
-        } catch (Exception e) {
-            Throwable t = e;
-            while (t.getCause() != null) {
-                t = t.getCause();
-            }
-
-            // looks like we can't actually test the instance t against GradleException
-            // due to it coming through the tooling API from a different class loader.
-            assertThat(t.getClass().getCanonicalName()).isEqualTo("org.gradle.api.GradleException");
-            assertThat(t.getMessage()).isEqualTo("Dependency Error. See console for details.");
+        GradleBuildResult result =
+                project.executor().expectFailure().run("assembleAndroidTest");
+        Throwable t = result.getException();
+        while (t.getCause() != null) {
+            t = t.getCause();
         }
 
+        // looks like we can't actually test the instance t against GradleException
+        // due to it coming through the tooling API from a different class loader.
+        assertThat(t.getClass().getCanonicalName()).isEqualTo("org.gradle.api.GradleException");
+        assertThat(t.getMessage()).isEqualTo("Dependency Error. See console for details.");
+
+
         // check there is a version of the error, after the task name:
-        assertThat(project.getStderr().toString()).named("stderr").contains(ERROR_MSG);
+        assertThat(result.getStderr()).named("stderr").contains(ERROR_MSG);
 
     }
 
@@ -95,7 +94,7 @@ public class TestWithMismatchDep {
         project.execute("assembleDebug");
 
         // check there is a log output
-        assertThat(project.getStdout().toString()).named("stdout").contains(ERROR_MSG);
+        assertThat(project.getStdout()).named("stdout").contains(ERROR_MSG);
     }
 
     @Test
@@ -105,6 +104,6 @@ public class TestWithMismatchDep {
         project.execute("dependencies");
 
         // check there is a log output
-        assertThat(project.getStdout().toString()).named("stdout").contains(ERROR_MSG);
+        assertThat(project.getStdout()).named("stdout").contains(ERROR_MSG);
     }
 }

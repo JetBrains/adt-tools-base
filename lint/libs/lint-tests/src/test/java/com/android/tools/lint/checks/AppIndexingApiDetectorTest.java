@@ -174,7 +174,7 @@ public class AppIndexingApiDetectorTest extends AbstractCheckTest {
     public void testNoActivity() throws Exception {
         assertEquals(
                 ""
-                        + "AndroidManifest.xml:5: Warning: App is not indexable by Google Search; consider adding at least one Activity with an ACTION-VIEW intent-filler. See issue explanation for more details. [GoogleAppIndexingWarning]\n"
+                        + "AndroidManifest.xml:5: Warning: App is not indexable by Google Search; consider adding at least one Activity with an ACTION-VIEW intent filter. See issue explanation for more details. [GoogleAppIndexingWarning]\n"
                         + "    <application\n"
                         + "    ^\n"
                         + "0 errors, 1 warnings\n",
@@ -221,7 +221,7 @@ public class AppIndexingApiDetectorTest extends AbstractCheckTest {
     public void testNoActionView() throws Exception {
         assertEquals(
                 ""
-                        + "AndroidManifest.xml:5: Warning: App is not indexable by Google Search; consider adding at least one Activity with an ACTION-VIEW intent-filler. See issue explanation for more details. [GoogleAppIndexingWarning]\n"
+                        + "AndroidManifest.xml:5: Warning: App is not indexable by Google Search; consider adding at least one Activity with an ACTION-VIEW intent filter. See issue explanation for more details. [GoogleAppIndexingWarning]\n"
                         + "    <application\n"
                         + "    ^\n"
                         + "0 errors, 1 warnings\n",

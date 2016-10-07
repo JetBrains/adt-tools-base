@@ -20,6 +20,7 @@ import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
+import com.google.common.base.Objects;
 import com.google.common.collect.Lists;
 
 import org.w3c.dom.Attr;
@@ -76,7 +77,7 @@ class NodeUtils {
     static Node duplicateNode(Document document, Node node) {
         Node newNode;
         if (node.getNamespaceURI() != null) {
-            newNode = document.createElementNS(node.getNamespaceURI(), node.getLocalName());
+            newNode = document.createElementNS(node.getNamespaceURI(), node.getNodeName());
         } else {
             newNode = document.createElement(node.getNodeName());
         }
@@ -88,7 +89,7 @@ class NodeUtils {
 
             Attr newAttr;
             if (attr.getNamespaceURI() != null) {
-                newAttr = document.createAttributeNS(attr.getNamespaceURI(), attr.getLocalName());
+                newAttr = document.createAttributeNS(attr.getNamespaceURI(), attr.getNodeName());
                 newNode.getAttributes().setNamedItemNS(newAttr);
             } else {
                 newAttr = document.createAttribute(attr.getName());
@@ -102,10 +103,19 @@ class NodeUtils {
         NodeList children = node.getChildNodes();
         for (int i = 0 ; i < children.getLength() ; i++) {
             Node child = children.item(i);
-            if (child.getNodeType() != Node.ELEMENT_NODE) {
-                continue;
+            Node duplicatedChild;
+            switch (child.getNodeType()) {
+                case Node.ELEMENT_NODE:
+                    duplicatedChild = duplicateNode(document, child);
+                    break;
+                case Node.CDATA_SECTION_NODE:
+                    duplicatedChild = document.createCDATASection(child.getNodeValue());
+                    break;
+                case Node.TEXT_NODE:
+                    duplicatedChild = document.createTextNode(child.getNodeValue());
+                    break;
+                default: continue;
             }
-            Node duplicatedChild = duplicateNode(document, child);
             newNode.appendChild(duplicatedChild);
         }
 
@@ -177,12 +187,18 @@ class NodeUtils {
      * @return false if the attribute is to be dropped
      */
     private static boolean processSingleNodeNamespace(Node node, Document document) {
-        if ("xmlns".equals(node.getLocalName())) {
+        if (SdkConstants.XMLNS.equals(node.getLocalName())) {
             return false;
         }
 
         String ns = node.getNamespaceURI();
         if (ns != null) {
+            // XMLNS prefix declarations will be moved to the top-level docAttributes so remove any local declarations.
+            // The scoping of prefixes will thus be lost, but any prefix overriding in the original document should
+            // have been respected when cloning.
+            if (ns.equals(SdkConstants.XMLNS_URI)) {
+                return false;
+            }
             NamedNodeMap docAttributes = getDocumentNamespaceAttributes(document);
 
             String prefix = getPrefixForNs(docAttributes, ns);
@@ -242,7 +258,14 @@ class NodeUtils {
     }
 
     static boolean compareElementNode(@NonNull Node node1, @NonNull Node node2, boolean strict) {
-        if (!node1.getNodeName().equals(node2.getNodeName())) {
+        // See if either element has a namespace. If so, compare by namespace and local name
+        // so that the prefix in the nodeName is irrelevant. Otherwise, compare the nodeName.
+        if (node1.getNamespaceURI() != null || node2.getNamespaceURI() != null) {
+            if (!Objects.equal(node1.getLocalName(), node2.getLocalName()) ||
+                !Objects.equal(node1.getNamespaceURI(), node2.getNamespaceURI())) {
+                return false;
+            }
+        } else if (!node1.getNodeName().equals(node2.getNodeName()) ){
             return false;
         }
 

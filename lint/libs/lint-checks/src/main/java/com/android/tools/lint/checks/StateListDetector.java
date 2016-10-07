@@ -28,7 +28,6 @@ import com.android.tools.lint.detector.api.Location;
 import com.android.tools.lint.detector.api.ResourceXmlDetector;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
-import com.android.tools.lint.detector.api.Speed;
 import com.android.tools.lint.detector.api.XmlContext;
 
 import org.w3c.dom.Attr;
@@ -71,12 +70,6 @@ public class StateListDetector extends ResourceXmlDetector {
         return folderType == ResourceFolderType.DRAWABLE;
     }
 
-    @NonNull
-    @Override
-    public Speed getSpeed() {
-        return Speed.FAST;
-    }
-
     @Override
     public void visitDocument(@NonNull XmlContext context, @NonNull Document document) {
         // TODO: Look for views that don't specify
@@ -90,24 +83,24 @@ public class StateListDetector extends ResourceXmlDetector {
             Map<Element, Set<String>> states =
                     new HashMap<Element, Set<String>>(children.size());
 
-            for (int i = 0; i < children.size(); i++) {
-                Element child = children.get(i);
+            for (Element child : children) {
                 NamedNodeMap attributes = child.getAttributes();
                 Set<String> stateNames = new HashSet<String>(attributes.getLength());
                 states.put(child, stateNames);
 
                 for (int j = 0; j < attributes.getLength(); j++) {
-                    Attr attribute = (Attr) attributes.item(j);
+                    Attr attribute = (Attr)attributes.item(j);
                     String name = attribute.getLocalName();
                     if (name == null) {
                         continue;
                     }
                     if (name.startsWith(STATE_PREFIX)) {
                         stateNames.add(name + '=' + attribute.getValue());
-                    } else {
+                    }
+                    else {
                         String namespaceUri = attribute.getNamespaceURI();
                         if (namespaceUri != null && !namespaceUri.isEmpty() &&
-                                !ANDROID_URI.equals(namespaceUri)) {
+                            !ANDROID_URI.equals(namespaceUri)) {
                             // There is a custom attribute on this item.
                             // This could be a state, see
                             //   http://code.google.com/p/android/issues/detail?id=22339

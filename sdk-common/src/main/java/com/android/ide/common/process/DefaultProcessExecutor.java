@@ -17,17 +17,22 @@
 package com.android.ide.common.process;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.utils.ILogger;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 import com.google.common.io.ByteStreams;
-import com.google.common.io.Closeables;
+import com.google.common.util.concurrent.FutureCallback;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.SettableFuture;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Simple implementation of ProcessExecutor, using the standard Java Process(Builder) API.
@@ -40,22 +45,25 @@ public class DefaultProcessExecutor implements ProcessExecutor {
         mLogger = logger;
     }
 
-    @NonNull
+    /**
+     * Asynchronously submits a process for execution.
+     *
+     * @param processInfo process execution information
+     * @param processOutputHandler handler for process output
+     * @return a future that will be complete when the process finishes
+     */
     @Override
-    public ProcessResult execute(
-            @NonNull ProcessInfo processInfo,
-            @NonNull ProcessOutputHandler processOutputHandler) {
+    @NonNull
+    public ListenableFuture<ProcessResult> submit(@NonNull ProcessInfo processInfo,
+            @NonNull final ProcessOutputHandler processOutputHandler) {
+        final List<String> command = buildCommand(processInfo);
+        mLogger.info("command: " + Joiner.on(' ').join(command));
 
-        List<String> command = Lists.newArrayList();
-        command.add(processInfo.getExecutable());
-        command.addAll(processInfo.getArgs());
-
-        String commandString = Joiner.on(' ').join(command);
-        mLogger.info("command: " + commandString);
+        final SettableFuture<ProcessResult> result = SettableFuture.create();
 
         try {
-            // launch the command line process
-            ProcessBuilder processBuilder = new ProcessBuilder(command);
+            // Launch the command line process.
+            ProcessBuilder processBuilder = new ProcessBuilder(buildCommand(processInfo));
 
             Map<String, Object> envVariableMap = processInfo.getEnvironment();
 
@@ -66,23 +74,45 @@ public class DefaultProcessExecutor implements ProcessExecutor {
                 }
             }
 
-            // start the process
+            // Start the process.
             Process process = processBuilder.start();
-            // and grab the output, and the exit code
-            ProcessOutput output = processOutputHandler.createOutput();
-            int exitCode = grabProcessOutput(process, output);
 
-            processOutputHandler.handleOutput(output);
+            // Grab the output, and the exit code.
+            final ProcessOutput output = processOutputHandler.createOutput();
+            ListenableFuture<Integer> outputFuture = grabProcessOutput(process, output);
 
-            return new ProcessResultImpl(commandString, exitCode);
-        } catch (IOException e) {
-            return new ProcessResultImpl(commandString, e);
-        } catch (InterruptedException e) {
-            // Restore the interrupted status
-            Thread.currentThread().interrupt();
-            return new ProcessResultImpl(commandString, e);
-        } catch (ProcessException e) {
-            return new ProcessResultImpl(commandString, e);
+            Futures.addCallback(outputFuture, new FutureCallback<Integer>() {
+                @Override
+                public void onSuccess(Integer exit) {
+                    try {
+                        output.close();
+                        processOutputHandler.handleOutput(output);
+                        result.set(new ProcessResultImpl(command, exit));
+                    } catch (Exception e) {
+                        result.set(new ProcessResultImpl(command, e));
+                    }
+                }
+
+                @Override
+                public void onFailure(@Nullable Throwable t) {
+                    result.set(new ProcessResultImpl(command, t));
+                }
+            });
+        } catch (Exception e) {
+            result.set(new ProcessResultImpl(command, e));
+        }
+
+        return result;
+    }
+
+    @NonNull
+    @Override
+    public ProcessResult execute(@NonNull ProcessInfo processInfo,
+            @NonNull ProcessOutputHandler processOutputHandler) {
+        try {
+            return submit(processInfo, processOutputHandler).get();
+        } catch (Exception e) {
+            return new ProcessResultImpl(buildCommand(processInfo), e);
         }
     }
 
@@ -90,17 +120,29 @@ public class DefaultProcessExecutor implements ProcessExecutor {
      * Get the stderr/stdout outputs of a process and return when the process is done.
      * Both <b>must</b> be read or the process will block on windows.
      *
-     * @param process The process to get the output from.
-     * @param output The processOutput containing where to send the output.
-     *      Note that on Windows capturing the output is not optional. If output is null
-     *      the stdout/stderr will be captured and discarded.
-     * @return the process return code.
-     * @throws InterruptedException if {@link Process#waitFor()} was interrupted.
+     * @param process the process to get the output from
+     * @param output the {@link ProcessOutput} where to send the output; note that on Windows
+     * capturing the output is not optional
+     * @return a future with the the process return code
      */
-    private static int grabProcessOutput(
-            @NonNull final Process process,
-            @NonNull final ProcessOutput output) throws InterruptedException {
-        Thread threadErr = new Thread("stderr") {
+    private static ListenableFuture<Integer> grabProcessOutput(@NonNull final Process process,
+            @NonNull final ProcessOutput output) {
+        final SettableFuture<Integer> result = SettableFuture.create();
+        final AtomicReference<Exception> exceptionHolder = new AtomicReference<Exception>();
+
+        /*
+         * It looks like on windows process#waitFor() can return before the thread have filled the
+         * arrays, so we wait for both threads and the process itself.
+         *
+         * To make sure everything is complete before setting the future, the thread handling
+         * "out" will wait for all its input to be read, will wait for the "err" thread to finish
+         * and will wait for the process to finish. Only after all three are done will it set
+         * the future and terminate.
+         *
+         * This means that the future will be set while the "out" thread is still running, but
+         * no output is pending and the process has already finished.
+         */
+        final Thread threadErr = new Thread("stderr") {
             @Override
             public void run() {
                 InputStream stderr = process.getErrorStream();
@@ -110,19 +152,7 @@ public class DefaultProcessExecutor implements ProcessExecutor {
                     ByteStreams.copy(stderr, stream);
                     stream.flush();
                 } catch (IOException e) {
-                    // ignore?
-                } finally {
-                    try {
-                        Closeables.close(stderr, true /* swallowIOException */);
-                    } catch (IOException e) {
-                        // cannot happen
-                    }
-                    try {
-                        Closeables.close(stream, true /* swallowIOException */);
-                    } catch (IOException e) {
-                        // cannot happen
-                    }
-
+                    exceptionHolder.compareAndSet(null, e);
                 }
             }
         };
@@ -136,20 +166,21 @@ public class DefaultProcessExecutor implements ProcessExecutor {
                 try {
                     ByteStreams.copy(stdout, stream);
                     stream.flush();
-                } catch (IOException e) {
-                    // ignore?
-                } finally {
-                    try {
-                        Closeables.close(stdout, true /* swallowIOException */);
-                    } catch (IOException e) {
-                        // cannot happen
-                    }
-                    try {
-                        Closeables.close(stream, true /* swallowIOException */);
-                    } catch (IOException e) {
-                        // cannot happen
+                } catch (Exception e) {
+                    exceptionHolder.compareAndSet(null, e);
+                }
+
+                try {
+                    threadErr.join();
+                    int processResult = process.waitFor();
+                    if (exceptionHolder.get() != null) {
+                        result.setException(exceptionHolder.get());
                     }
 
+                    result.set(processResult);
+                    output.close();
+                } catch (Exception e) {
+                    result.setException(e);
                 }
             }
         };
@@ -157,13 +188,20 @@ public class DefaultProcessExecutor implements ProcessExecutor {
         threadErr.start();
         threadOut.start();
 
-        // it looks like on windows process#waitFor() can return
-        // before the thread have filled the arrays, so we wait for both threads and the
-        // process itself.
-        threadErr.join();
-        threadOut.join();
+        return result;
+    }
 
-        // get the return code from the process
-        return process.waitFor();
+    /**
+     * Constructs the command to execute the given process info.
+     *
+     * @param processInfo the process info to execute
+     * @return a list with the executable and its arguments
+     */
+    @NonNull
+    private static List<String> buildCommand(@NonNull ProcessInfo processInfo) {
+        List<String> command = Lists.newArrayList();
+        command.add(processInfo.getExecutable());
+        command.addAll(processInfo.getArgs());
+        return command;
     }
 }

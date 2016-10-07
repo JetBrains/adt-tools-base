@@ -16,6 +16,9 @@
 
 package com.android.ide.common.resources.configuration;
 
+import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
+
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -43,7 +46,7 @@ public final class VersionQualifier extends ResourceQualifier {
         if (m.matches()) {
             String v = m.group(1);
 
-            int code = -1;
+            int code;
             try {
                 code = Integer.parseInt(v);
             } catch (NumberFormatException e) {
@@ -122,11 +125,9 @@ public final class VersionQualifier extends ResourceQualifier {
 
     @Override
     public boolean equals(Object qualifier) {
-        if (qualifier instanceof VersionQualifier) {
-            return mVersion == ((VersionQualifier)qualifier).mVersion;
-        }
+        return qualifier instanceof VersionQualifier
+                && mVersion == ((VersionQualifier) qualifier).mVersion;
 
-        return false;
     }
 
     @Override
@@ -142,13 +143,14 @@ public final class VersionQualifier extends ResourceQualifier {
     }
 
     @Override
-    public boolean isBetterMatchThan(ResourceQualifier compareTo, ResourceQualifier reference) {
+    public boolean isBetterMatchThan(@Nullable ResourceQualifier compareTo,
+            @NonNull ResourceQualifier reference) {
         if (compareTo == null) {
             return true;
         }
 
-        VersionQualifier compareQ = (VersionQualifier)compareTo;
-        VersionQualifier referenceQ = (VersionQualifier)reference;
+        VersionQualifier compareQ = (VersionQualifier) compareTo;
+        VersionQualifier referenceQ = (VersionQualifier) reference;
 
         if (compareQ.mVersion == referenceQ.mVersion) {
             // what we have is already the best possible match (exact match)

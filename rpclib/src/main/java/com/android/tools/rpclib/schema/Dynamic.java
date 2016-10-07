@@ -26,6 +26,9 @@ public class Dynamic implements BinaryObject {
 
     private Klass mKlass;
 
+    /**
+     * This can actually sometimes be an array of arrays!
+     */
     private Object[] mFields;
 
     public Dynamic(Klass klass) {
@@ -50,8 +53,21 @@ public class Dynamic implements BinaryObject {
         return mKlass.mType.getFields()[index];
     }
 
+    /**
+     * @return may return an Object, or an Object[]
+     */
     public Object getFieldValue(int index) {
         return mFields[index];
+    }
+
+    public void setFieldValue(int index, Object value) {
+        mFields[index] = value;
+    }
+
+    public Dynamic copy() {
+        Dynamic result = new Dynamic(mKlass);
+        result.mFields = Arrays.copyOf(mFields, mFields.length);
+        return result;
     }
 
     @NotNull
@@ -68,12 +84,12 @@ public class Dynamic implements BinaryObject {
             return false;
         }
         Dynamic d = (Dynamic)obj;
-        return type().equals(d.type()) && Arrays.equals(mFields, d.mFields);
+        return type().equals(d.type()) && Arrays.deepEquals(mFields, d.mFields);
     }
 
     @Override
     public int hashCode() {
-        return mKlass.hashCode() + 31 * Arrays.hashCode(mFields);
+        return mKlass.hashCode() + 31 * Arrays.deepHashCode(mFields);
     }
 
     @Override
@@ -85,7 +101,8 @@ public class Dynamic implements BinaryObject {
             if (i > 0) {
                 result.append(", ");
             }
-            result.append(fields[i].getName()).append(": ").append(mFields[i]);
+            String fieldsString = mFields[i] instanceof Object[] ? Arrays.toString((Object[])mFields[i]) : String.valueOf(mFields[i]);
+            result.append(fields[i].getName()).append(": ").append(fieldsString);
         }
         result.append('}');
         return result.toString();

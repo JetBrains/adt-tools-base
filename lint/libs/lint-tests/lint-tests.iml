@@ -12,7 +12,6 @@
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="inheritedJdk" />
     <orderEntry type="module" module-name="common" exported="" />
-    <orderEntry type="module" module-name="integration-test" />
     <orderEntry type="module" module-name="lint-checks-base" exported="" />
     <orderEntry type="module" module-name="lint-cli" exported="" />
     <orderEntry type="module" module-name="testutils" exported="" />

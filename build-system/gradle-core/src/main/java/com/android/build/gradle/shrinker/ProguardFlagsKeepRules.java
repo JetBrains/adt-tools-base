@@ -105,10 +105,10 @@ public class ProguardFlagsKeepRules implements KeepRules {
 
         for (FieldSpecification fieldSpec : classSpec.getFieldSpecifications()) {
             boolean found = false;
-            for (T method : graph.getMethods(klass)) {
-                if (matchesField(method, fieldSpec, graph)) {
+            for (T field : graph.getFields(klass)) {
+                if (matchesField(field, fieldSpec, graph)) {
                     found = true;
-                    result.add(method);
+                    result.add(field);
                 }
             }
 
@@ -150,9 +150,9 @@ public class ProguardFlagsKeepRules implements KeepRules {
             T field,
             FieldSpecification spec,
             ShrinkerGraph<T> graph) {
-        return matches(spec.getName(), graph.getFieldName(field))
-                && matches(spec.getModifier(), graph.getMemberModifiers(field))
-                && matches(spec.getTypeSignature(), graph.getFieldDesc(field))
+        return matches(spec.getName(), graph.getMemberName(field))
+                && matches(spec.getModifier(), graph.getModifiers(field))
+                && matches(spec.getTypeSignature(), graph.getMemberDescriptor(field))
                 && matchesAnnotations(field, spec.getAnnotations(), graph);
     }
 
@@ -160,8 +160,10 @@ public class ProguardFlagsKeepRules implements KeepRules {
             T method,
             MethodSpecification spec,
             ShrinkerGraph<T> graph) {
-        return matches(spec.getName(), graph.getMethodNameAndDesc(method))
-                && matches(spec.getModifiers(), graph.getMemberModifiers(method))
+        String nameAndDescriptor =
+                graph.getMemberName(method) + ":" + graph.getMemberDescriptor(method);
+        return matches(spec.getName(), nameAndDescriptor)
+                && matches(spec.getModifiers(), graph.getModifiers(method))
                 && matchesAnnotations(method, spec.getAnnotations(), graph);
     }
 
@@ -169,7 +171,7 @@ public class ProguardFlagsKeepRules implements KeepRules {
             T klass,
             ClassSpecification spec,
             ShrinkerGraph<T> graph) {
-        int classModifiers = graph.getClassModifiers(klass);
+        int classModifiers = graph.getModifiers(klass);
         return matches(spec.getName(), graph.getClassName(klass))
                 && matches(spec.getClassType(), classModifiers)
                 && matches(spec.getModifier(), classModifiers)

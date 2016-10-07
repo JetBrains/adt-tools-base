@@ -15,17 +15,22 @@
  */
 
 def env = new Object() {
-    String gradleVersion
+    String buildVersion
+    String experimentalVersion
     String experimentalGradleVersion
 };
-apply from: "commonGradlePluginVersion.gradle", to: env
 
-apply from: "commonLocalRepo.gradle"
+def commonScriptFolder = buildscript.sourceFile.parent
+apply from: "$commonScriptFolder/commonGradlePluginVersion.gradle", to: env
 
-dependencies {
-    classpath "com.android.tools.build:gradle:$env.gradleVersion"
-    classpath "com.google.gms:google-services:$env.gradleVersion"
-    if (System.env.TEST_CLASSPATH_DEPENDENCY) {
-        classpath System.env.TEST_CLASSPATH_DEPENDENCY
+project.buildscript { buildscript ->
+    apply from: "$commonScriptFolder/commonLocalRepo.gradle", to:buildscript
+    dependencies {
+        classpath "com.android.tools.build:gradle:$env.buildVersion"
+        if (env.experimentalGradleVersion != null
+                && project.gradle.gradleVersion.startsWith(env.experimentalGradleVersion)) {
+            classpath "com.android.tools.build:gradle-experimental:$env.experimentalVersion"
+        }
+        classpath 'com.android.tools.internal.build.test:devicepool:0.1'
     }
 }

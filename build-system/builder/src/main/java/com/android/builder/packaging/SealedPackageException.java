@@ -19,15 +19,15 @@ package com.android.builder.packaging;
 /**
  * An exception thrown when trying to add files to a sealed APK.
  */
-public final class SealedPackageException extends Exception {
+public final class SealedPackageException extends PackagerException {
     private static final long serialVersionUID = 1L;
 
     public SealedPackageException(String format, Object... args) {
-        super(String.format(format, args));
+        super(format, args);
     }
 
     public SealedPackageException(Throwable cause, String format, Object... args) {
-        super(String.format(format, args), cause);
+        super(cause, format, args);
     }
 
     public SealedPackageException(Throwable cause) {

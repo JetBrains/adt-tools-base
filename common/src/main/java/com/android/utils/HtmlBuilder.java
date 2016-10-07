@@ -18,6 +18,7 @@ package com.android.utils;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 
+import java.awt.Color;
 import java.net.URL;
 
 public class HtmlBuilder {
@@ -78,6 +79,18 @@ public class HtmlBuilder {
         return this;
     }
 
+    public HtmlBuilder beginNoBr() {
+        mStringBuilder.append("<NOBR>");
+
+        return this;
+    }
+
+    public HtmlBuilder endNoBr() {
+        mStringBuilder.append("</NOBR>");
+
+        return this;
+    }
+
     public HtmlBuilder addLink(@Nullable String textBefore,
             @NonNull String linkText,
             @Nullable String textAfter,
@@ -130,6 +143,12 @@ public class HtmlBuilder {
         return this;
     }
 
+    public HtmlBuilder add(@NonNull String text, int start, int end) {
+        XmlUtils.appendXmlTextValue(mStringBuilder, text, start, end);
+
+        return this;
+    }
+
     @NonNull
     public String getHtml() {
         return mStringBuilder.toString();
@@ -143,6 +162,51 @@ public class HtmlBuilder {
 
     public HtmlBuilder endBold() {
         mStringBuilder.append("</B>");
+
+        return this;
+    }
+
+    public HtmlBuilder beginUnderline() {
+        mStringBuilder.append("<U>");
+
+        return this;
+    }
+
+    public HtmlBuilder endUnderline() {
+        mStringBuilder.append("</U>");
+
+        return this;
+    }
+
+    public HtmlBuilder coloredText(@NonNull Color color, @NonNull String text) {
+        beginColor(color);
+        add(text);
+        endColor();
+        return this;
+    }
+
+    public HtmlBuilder beginColor(@NonNull Color color) {
+        mStringBuilder.append("<FONT color=\"#");
+        final String R = Integer.toHexString(color.getRed());
+        final String G = Integer.toHexString(color.getGreen());
+        final String B = Integer.toHexString(color.getBlue());
+        mStringBuilder.append(R.length() < 2 ? "0" : "").append(R).append(G.length() < 2 ? "0" : "")
+                .append(G).append(B.length() < 2
+                ? "0" : "").append(B);
+        mStringBuilder.append("\">");
+
+        return this;
+    }
+
+    public HtmlBuilder endColor() {
+        mStringBuilder.append("</FONT>");
+
+        return this;
+    }
+    public HtmlBuilder addUnderlined(String text) {
+        beginUnderline();
+        add(text);
+        endUnderline();
 
         return this;
     }

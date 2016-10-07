@@ -16,207 +16,205 @@
 
 package com.android.builder.core;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
+import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.ide.common.process.JavaProcessInfo;
 import com.android.ide.common.process.ProcessEnvBuilder;
 import com.android.ide.common.process.ProcessException;
 import com.android.ide.common.process.ProcessInfoBuilder;
 import com.android.sdklib.BuildToolInfo;
-import com.android.repository.Revision;
-import com.google.common.collect.Lists;
+import com.android.utils.FileUtils;
+import com.google.common.base.Charsets;
+import com.google.common.base.Joiner;
+import com.google.common.io.Files;
 
 import java.io.File;
-import java.util.Collection;
-import java.util.List;
+import java.io.IOException;
+import java.util.stream.Collectors;
 
 /**
  * A builder to create a Jack-specific ProcessInfoBuilder
  */
 public class JackProcessBuilder extends ProcessEnvBuilder<JackProcessBuilder> {
 
-    static final Revision JACK_MIN_REV = new Revision(21, 1, 0);
-
-    private boolean mDebugLog = false;
-    private boolean mVerbose = false;
-    private String mClasspath = null;
-    private File mDexOutputFolder = null;
-    private File mJackOutputFile = null;
-    private List<File> mImportFiles = null;
-    private List<File> mProguardFiles = null;
-    private String mJavaMaxHeapSize = null;
-    private File mMappingFile = null;
-    private boolean mMultiDex = false;
-    private int mMinSdkVersion = 21;
-    private File mEcjOptionFile = null;
-    private Collection<File> mJarJarRuleFiles = null;
-    private File mIncrementalDir = null;
-
-    public JackProcessBuilder() {
-    }
-
     @NonNull
-    public JackProcessBuilder setDebugLog(boolean debugLog) {
-        mDebugLog = debugLog;
-        return this;
-    }
+    private final JackProcessOptions options;
 
-    @NonNull
-    public JackProcessBuilder setVerbose(boolean verbose) {
-        mVerbose = verbose;
-        return this;
-    }
-
-    @NonNull
-    public JackProcessBuilder setJavaMaxHeapSize(String javaMaxHeapSize) {
-        mJavaMaxHeapSize = javaMaxHeapSize;
-        return this;
-    }
-
-    @NonNull
-    public JackProcessBuilder setClasspath(String classpath) {
-        mClasspath = classpath;
-        return this;
-    }
-
-    @NonNull
-    public JackProcessBuilder setDexOutputFolder(File dexOutputFolder) {
-        mDexOutputFolder = dexOutputFolder;
-        return this;
-    }
-
-    @NonNull
-    public JackProcessBuilder setJackOutputFile(File jackOutputFile) {
-        mJackOutputFile = jackOutputFile;
-        return this;
-    }
-
-    @NonNull
-    public JackProcessBuilder addImportFiles(@NonNull Collection<File> importFiles) {
-        if (mImportFiles == null) {
-            mImportFiles = Lists.newArrayListWithExpectedSize(importFiles.size());
-        }
-
-        mImportFiles.addAll(importFiles);
-        return this;
-    }
-
-    @NonNull
-    public JackProcessBuilder addProguardFiles(@NonNull Collection<File> proguardFiles) {
-        if (mProguardFiles == null) {
-            mProguardFiles = Lists.newArrayListWithExpectedSize(proguardFiles.size());
-        }
-
-        mProguardFiles.addAll(proguardFiles);
-        return this;
-    }
-
-    @NonNull
-    public JackProcessBuilder setMappingFile(File mappingFile) {
-        mMappingFile = mappingFile;
-        return this;
-    }
-
-    @NonNull
-    public JackProcessBuilder setMultiDex(boolean multiDex) {
-        mMultiDex = multiDex;
-        return this;
-    }
-
-    @NonNull
-    public JackProcessBuilder setMinSdkVersion(int minSdkVersion) {
-        mMinSdkVersion = minSdkVersion;
-        return this;
-    }
-
-    @NonNull
-    public JackProcessBuilder setEcjOptionFile(File ecjOptionFile) {
-        mEcjOptionFile = ecjOptionFile;
-        return this;
-    }
-
-    @NonNull
-    public JackProcessBuilder setJarJarRuleFiles(@NonNull Collection<File> jarJarRuleFiles) {
-        mJarJarRuleFiles = jarJarRuleFiles;
-        return this;
+    public JackProcessBuilder(@NonNull JackProcessOptions options) {
+        this.options = options;
     }
 
     @NonNull
     public JavaProcessInfo build(@NonNull BuildToolInfo buildToolInfo) throws ProcessException {
-
-        Revision revision = buildToolInfo.getRevision();
-        if (revision.compareTo(JACK_MIN_REV) < 0) {
-            throw new ProcessException(
-                    "Jack requires Build Tools " + JACK_MIN_REV.toString() +
-                    " or later");
-        }
-
         ProcessInfoBuilder builder = new ProcessInfoBuilder();
         builder.addEnvironments(mEnvironment);
 
-        String jackJar = buildToolInfo.getPath(BuildToolInfo.PathId.JACK);
+        String jackLocation = System.getenv("USE_JACK_LOCATION");
+        String jackJar = jackLocation != null
+                ? jackLocation + File.separator + SdkConstants.FN_JACK
+                : buildToolInfo.getPath(BuildToolInfo.PathId.JACK);
         if (jackJar == null || !new File(jackJar).isFile()) {
-            throw new IllegalStateException("jack.jar is missing");
+            throw new IllegalStateException("Unable to find jack.jar at " + jackJar);
         }
 
         builder.setClasspath(jackJar);
         builder.setMain("com.android.jack.Main");
 
-        if (mJavaMaxHeapSize != null) {
-            builder.addJvmArg("-Xmx" + mJavaMaxHeapSize);
+        if (options.getJavaMaxHeapSize() != null) {
+            builder.addJvmArg("-Xmx" + options.getJavaMaxHeapSize());
         } else {
             builder.addJvmArg("-Xmx1024M");
         }
 
-        if (mDebugLog) {
+        builder.addArgs("-D", "jack.dex.optimize=" + Boolean.toString(options.getDexOptimize()));
+
+        if (options.isDebugLog()) {
             builder.addArgs("--verbose", "debug");
-        } else if (mVerbose) {
+        } else if (options.isVerbose()) {
             builder.addArgs("--verbose", "info");
         }
 
-        builder.addArgs("--classpath", mClasspath);
+        builder.addArgs("-D", "jack.dex.debug.vars=" + options.isDebuggable());
 
-        if (mImportFiles != null) {
-            for (File lib : mImportFiles) {
-                builder.addArgs("--import", lib.getAbsolutePath());
-            }
+        if (!options.getClasspaths().isEmpty()) {
+            builder.addArgs("--classpath", FileUtils.joinFilePaths(options.getClasspaths()));
         }
 
-        builder.addArgs("--output-dex", mDexOutputFolder.getAbsolutePath());
+        for (File lib : options.getImportFiles()) {
+            builder.addArgs("--import", lib.getAbsolutePath());
+        }
 
-        builder.addArgs("--output-jack", mJackOutputFile.getAbsolutePath());
+        if (options.getDexOutputDirectory() != null) {
+            builder.addArgs("--output-dex", options.getDexOutputDirectory().getAbsolutePath());
+        }
 
+        if (options.getOutputFile() != null) {
+            builder.addArgs("--output-jack", options.getOutputFile().getAbsolutePath());
+        }
+
+        builder.addArgs("-D", "jack.import.type.policy=keep-first");
         builder.addArgs("-D", "jack.import.resource.policy=keep-first");
 
-        builder.addArgs("-D", "jack.reporter=sdk");
-
-        if (mProguardFiles != null && !mProguardFiles.isEmpty()) {
-            for (File file : mProguardFiles) {
-                builder.addArgs("--config-proguard", file.getAbsolutePath());
-            }
+        for (File file : options.getProguardFiles()) {
+            builder.addArgs("--config-proguard", file.getAbsolutePath());
         }
 
-        if (mMappingFile != null) {
+        if (options.getMappingFile() != null) {
             builder.addArgs("-D", "jack.obfuscation.mapping.dump=true");
-            builder.addArgs("-D", "jack.obfuscation.mapping.dump.file=" + mMappingFile.getAbsolutePath());
+            builder.addArgs("-D", "jack.obfuscation.mapping.dump.file=" + options.getMappingFile().getAbsolutePath());
         }
 
-        if (mMultiDex) {
+        if (options.isMultiDex()) {
             builder.addArgs("--multi-dex");
-            if (mMinSdkVersion < 21) {
+            if (options.getMinSdkVersion() < 21) {
                 builder.addArgs("legacy");
             } else {
                 builder.addArgs("native");
             }
         }
 
-        if (mJarJarRuleFiles != null) {
-            for (File jarjarRuleFile : mJarJarRuleFiles) {
-                builder.addArgs("--config-jarjar", jarjarRuleFile.getAbsolutePath());
+        for (File jarjarRuleFile : options.getJarJarRuleFiles()) {
+            builder.addArgs("--config-jarjar", jarjarRuleFile.getAbsolutePath());
+        }
+
+        if (options.getSourceCompatibility() != null) {
+            builder.addArgs("-D", "jack.java.source.version=" + options.getSourceCompatibility());
+        }
+
+        if (options.getIncrementalDir() != null && options.getIncrementalDir().exists()) {
+            builder.addArgs("--incremental-folder", options.getIncrementalDir().getAbsolutePath());
+        }
+
+        if (options.getMinSdkVersion() > 0) {
+            builder.addArgs("-D", "jack.android.min-api-level=" + options.getMinSdkVersion());
+        }
+
+        if (!options.getAnnotationProcessorNames().isEmpty()) {
+            builder.addArgs("-D", "jack.annotation-processor.manual=true");
+            builder.addArgs("-D",
+                    "jack.annotation-processor.manual.list="
+                            + Joiner.on(',').join(options.getAnnotationProcessorNames()));
+        }
+        if (!options.getAnnotationProcessorClassPath().isEmpty()) {
+            builder.addArgs("-D", "jack.annotation-processor.path=true");
+            builder.addArgs("-D",
+                    "jack.annotation-processor.path.list="
+                            + FileUtils.joinFilePaths(options.getAnnotationProcessorClassPath()));
+        }
+        if (!options.getAnnotationProcessorOptions().isEmpty()) {
+            String processorOptions = options.getAnnotationProcessorOptions().entrySet().stream()
+                    .map(entry -> entry.getKey() + "=" + entry.getValue())
+                    .collect(Collectors.joining(","));
+            builder.addArgs("-D", "jack.annotation-processor.options=" + processorOptions);
+        }
+        if (options.getAnnotationProcessorOutputDirectory() != null) {
+            FileUtils.mkdirs(options.getAnnotationProcessorOutputDirectory());
+            builder.addArgs(
+                    "-D",
+                    "jack.annotation-processor.source.output="
+                            + options.getAnnotationProcessorOutputDirectory().getAbsolutePath());
+        }
+
+        if (!options.getInputFiles().isEmpty()) {
+            if (options.getEcjOptionFile() != null) {
+                try {
+                    createEcjOptionFile();
+                } catch (IOException e) {
+                    throw new ProcessException(
+                            "Unable to create " + options.getEcjOptionFile() + ".");
+                }
+                builder.addArgs("@" + options.getEcjOptionFile().getAbsolutePath());
+            } else {
+                for (File file : options.getInputFiles()) {
+                    builder.addArgs(file.getAbsolutePath());
+                }
             }
         }
 
-        builder.addArgs("@" + mEcjOptionFile.getAbsolutePath());
+        if (options.getCoverageMetadataFile() != null) {
+            if (buildToolInfo.getRevision().compareTo(JackProcessOptions.DOUARN_REV) >= 0) {
+                String coveragePluginPath = buildToolInfo.getPath(
+                        BuildToolInfo.PathId.JACK_COVERAGE_PLUGIN);
+                builder.addArgs("--pluginpath", coveragePluginPath);
+                builder.addArgs("--plugin", JackProcessOptions.COVERAGE_PLUGIN_NAME);
+                builder.addArgs(
+                        "-D",
+                        "jack.coverage.metadata.file="
+                                + options.getCoverageMetadataFile().getAbsolutePath());
+            } else {
+                builder.addArgs("-D", "jack.coverage=true");
+                builder.addArgs(
+                        "-D",
+                        "jack.coverage.metadata.file="
+                                + options.getCoverageMetadataFile().getAbsolutePath());
+            };
+        }
+
+        // apply all additional params
+        for (String paramKey: options.getAdditionalParameters().keySet()) {
+            String paramValue = options.getAdditionalParameters().get(paramKey);
+            builder.addArgs(paramKey, paramValue);
+        }
 
         return builder.createJavaProcess();
     }
+
+    private void createEcjOptionFile() throws IOException {
+        checkNotNull(options.getEcjOptionFile());
+
+        StringBuilder sb = new StringBuilder();
+        for (File sourceFile : options.getInputFiles()) {
+            sb.append('\"')
+                    .append(FileUtils.toSystemIndependentPath(sourceFile.getAbsolutePath()))
+                    .append('\"')
+                    .append("\n");
+        }
+
+        FileUtils.mkdirs(options.getEcjOptionFile().getParentFile());
+
+        Files.write(sb.toString(), options.getEcjOptionFile(), Charsets.UTF_8);
+    }
+
 }

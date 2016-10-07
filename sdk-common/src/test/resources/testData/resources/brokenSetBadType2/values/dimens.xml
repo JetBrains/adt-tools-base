@@ -1,0 +1,4 @@
+<resources>
+    <item type="dimenot2" name="activity_horizontal_margin">16dp</item>
+    <dimen name="activity_vertical_margin">16dp</dimen>
+</resources>

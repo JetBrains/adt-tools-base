@@ -11,12 +11,6 @@ version = rootProject.ext.baseVersion
 project.ext.pomName = 'Android Tools Annotations library'
 project.ext.pomDesc = 'annotations used throughout the Android tools libraries.'
 
-javadoc {
-  if (JavaVersion.current().isJava8Compatible()) {
-      options.addStringOption 'Xdoclint:none', '-quiet'
-  }
-}
-
 apply from: "$rootDir/buildSrc/base/publish.gradle"
 apply from: "$rootDir/buildSrc/base/bintray.gradle"
 apply from: "$rootDir/buildSrc/base/javadoc.gradle"

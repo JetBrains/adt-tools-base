@@ -29,6 +29,7 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.sdklib.AndroidVersion;
 import com.android.testutils.SdkTestCase;
+import com.android.testutils.TestUtils;
 import com.android.tools.lint.checks.PermissionHolder.SetPermissionLookup;
 import com.android.tools.lint.client.api.JavaParser.ResolvedAnnotation;
 import com.android.utils.XmlUtils;
@@ -37,6 +38,11 @@ import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.common.io.Files;
+import com.intellij.psi.JavaTokenType;
+import com.intellij.psi.PsiAnnotation;
+import com.intellij.psi.PsiAnnotationParameterList;
+import com.intellij.psi.PsiLiteral;
+import com.intellij.psi.PsiNameValuePair;
 
 import junit.framework.TestCase;
 
@@ -53,18 +59,31 @@ import java.util.List;
 import java.util.Set;
 import java.util.regex.Pattern;
 
-import lombok.ast.BinaryOperator;
-
 public class PermissionRequirementTest extends TestCase {
-    private static ResolvedAnnotation createAnnotation(
+    private static PsiAnnotation createAnnotation(
             @NonNull String name,
+            // TODO: Put better mocks in here
             @NonNull ResolvedAnnotation.Value... values) {
-        ResolvedAnnotation annotation = mock(ResolvedAnnotation.class);
-        when(annotation.getName()).thenReturn(name);
-        when(annotation.getValues()).thenReturn(Arrays.asList(values));
+        PsiAnnotation annotation = mock(PsiAnnotation.class);
+        when(annotation.getQualifiedName()).thenReturn(name);
+
+        PsiAnnotationParameterList parameterList = mock(PsiAnnotationParameterList.class);
+        when(annotation.getParameterList()).thenReturn(parameterList);
+
+        List<PsiNameValuePair> pairs = Lists.newArrayListWithCapacity(10);
         for (ResolvedAnnotation.Value value : values) {
-            when(annotation.getValue(value.name)).thenReturn(value.value);
+            PsiNameValuePair pair = mock(PsiNameValuePair.class);
+            when (pair.getName()).thenReturn(value.name);
+            PsiLiteral literal = mock(PsiLiteral.class);
+            when(literal.getValue()).thenReturn(value.value);
+            when (pair.getValue()).thenReturn(literal);
+
+            when(annotation.findAttributeValue(value.name)).thenReturn(literal);
+            when(annotation.findDeclaredAttributeValue(value.name)).thenReturn(literal);
         }
+        PsiNameValuePair[] attributes = pairs.toArray(PsiNameValuePair.EMPTY_ARRAY);
+        when(parameterList.getAttributes()).thenReturn(attributes);
+
         return annotation;
     }
 
@@ -73,7 +92,7 @@ public class PermissionRequirementTest extends TestCase {
                 "android.permission.ACCESS_FINE_LOCATION");
         Set<String> emptySet = Collections.emptySet();
         Set<String> fineSet = Collections.singleton("android.permission.ACCESS_FINE_LOCATION");
-        ResolvedAnnotation annotation = createAnnotation(PERMISSION_ANNOTATION, values);
+        PsiAnnotation annotation = createAnnotation(PERMISSION_ANNOTATION, values);
         PermissionRequirement req = PermissionRequirement.create(null, annotation);
         assertTrue(req.isRevocable(new SetPermissionLookup(emptySet)));
 
@@ -100,7 +119,7 @@ public class PermissionRequirementTest extends TestCase {
                 "android.permission.ACCESS_FINE_LOCATION",
                 "android.permission.ACCESS_COARSE_LOCATION");
 
-        ResolvedAnnotation annotation = createAnnotation(PERMISSION_ANNOTATION, values);
+        PsiAnnotation annotation = createAnnotation(PERMISSION_ANNOTATION, values);
         PermissionRequirement req = PermissionRequirement.create(null, annotation);
         assertTrue(req.isRevocable(new SetPermissionLookup(emptySet)));
         assertFalse(req.isSatisfied(new SetPermissionLookup(emptySet)));
@@ -112,7 +131,7 @@ public class PermissionRequirementTest extends TestCase {
                 req.describeMissingPermissions(new SetPermissionLookup(emptySet)));
         assertEquals(bothSet, req.getMissingPermissions(new SetPermissionLookup(emptySet)));
         assertEquals(bothSet, req.getRevocablePermissions(new SetPermissionLookup(emptySet)));
-        assertSame(BinaryOperator.LOGICAL_OR, req.getOperator());
+        assertSame(JavaTokenType.OROR, req.getOperator());
     }
 
     public void testAll() {
@@ -126,7 +145,7 @@ public class PermissionRequirementTest extends TestCase {
                 "android.permission.ACCESS_FINE_LOCATION",
                 "android.permission.ACCESS_COARSE_LOCATION");
 
-        ResolvedAnnotation annotation = createAnnotation(PERMISSION_ANNOTATION, values);
+        PsiAnnotation annotation = createAnnotation(PERMISSION_ANNOTATION, values);
         PermissionRequirement req = PermissionRequirement.create(null, annotation);
         assertTrue(req.isRevocable(new SetPermissionLookup(emptySet)));
         assertFalse(req.isSatisfied(new SetPermissionLookup(emptySet)));
@@ -147,7 +166,15 @@ public class PermissionRequirementTest extends TestCase {
                 req.describeMissingPermissions(new SetPermissionLookup(coarseSet)));
         assertEquals(fineSet, req.getMissingPermissions(new SetPermissionLookup(coarseSet)));
         assertEquals(bothSet, req.getRevocablePermissions(new SetPermissionLookup(emptySet)));
-        assertSame(BinaryOperator.LOGICAL_AND, req.getOperator());
+        assertSame(JavaTokenType.ANDAND, req.getOperator());
+    }
+
+    public void testSingleAsArray() {
+        // Annotations let you supply a single string to an array method
+        ResolvedAnnotation.Value values = new ResolvedAnnotation.Value("allOf",
+                "android.permission.ACCESS_FINE_LOCATION");
+        PsiAnnotation annotation = createAnnotation(PERMISSION_ANNOTATION, values);
+        assertTrue(PermissionRequirement.create(null, annotation).isSingle());
     }
 
     public void testSingleAsArray() {
@@ -170,7 +197,7 @@ public class PermissionRequirementTest extends TestCase {
     }
 
     public void testAppliesTo() {
-        ResolvedAnnotation annotation;
+        PsiAnnotation annotation;
         PermissionRequirement req;
 
         // No date range applies to permission
@@ -220,6 +247,15 @@ public class PermissionRequirementTest extends TestCase {
                 new AndroidVersion(target, null));
     }
 
+    public void testDangerousPermissionsOrder() {
+        // The order must be alphabetical to ensure binary search will work correctly
+        String prev = null;
+        for (String permission : REVOCABLE_PERMISSION_NAMES) {
+            assertTrue(prev == null || prev.compareTo(permission) < 0);
+            prev = permission;
+        }
+    }
+
     public static void testDbUpToDate() throws Exception {
         List<String> expected = getDangerousPermissions();
         if (expected == null) {
@@ -234,7 +270,7 @@ public class PermissionRequirementTest extends TestCase {
             fail("List of revocable permissions has changed:\n" +
                 // Make the diff show what it take to bring the actual results into the
                 // expected results
-                SdkTestCase.getDiff(Joiner.on('\n').join(actual),
+                TestUtils.getDiff(Joiner.on('\n').join(actual),
                     Joiner.on('\n').join(expected)));
         }
     }
@@ -243,10 +279,11 @@ public class PermissionRequirementTest extends TestCase {
     private static List<String> getDangerousPermissions() throws IOException {
         Pattern pattern = Pattern.compile("dangerous");
         String top = System.getenv("ANDROID_BUILD_TOP");   //$NON-NLS-1$
-        if (top == null) {
-            top = "/Volumes/android/mnc-dev";
-        }
 
+        // Alternatively, you can look up the version for the release branch on ag via
+        // something like
+        //   platform/frameworks/base/+/nyc-release/core/res/AndroidManifest.xml
+        // and then set file = new File(path to copy of above)
         // TODO: We should ship this file with the SDK!
         File file = new File(top, "frameworks/base/core/res/AndroidManifest.xml");
         if (!file.exists()) {
@@ -278,6 +315,26 @@ public class PermissionRequirementTest extends TestCase {
                     String name = element.getAttributeNS(ANDROID_URI, ATTR_NAME);
                     if (!name.isEmpty() && pattern.matcher(protectionLevel).find()) {
                         revocable.add(name);
+                    } else {
+                        // Some permissions have been removed. We need to know about the historical
+                        // data for these. Whenever a new annotation i
+                        if (name.equals("android.permission.READ_SOCIAL_STREAM") ||
+                            name.equals("android.permission.WRITE_SOCIAL_STREAM") ||
+                            name.equals("android.permission.READ_PROFILE") ||
+                            name.equals("android.permission.WRITE_PROFILE")) {
+                            // Removed in 6d2c0e5
+                            revocable.add(name);
+                        } else if (name.equals("android.permission.USE_FINGERPRINT")) {
+                            // Made normal in d6bd9da; apply targetSdkVersion?
+                            // (It's not clear whether app developers have to worry about
+                            // this in M. Find out.)
+                            revocable.add(name);
+                        } else if (name.equals("android.permission.WRITE_SETTINGS")) {
+                            // This one seems to have gone from a dangerous permission
+                            // in M to a signature permission
+                            revocable.add(name);
+
+                        }
                     }
                 }
             }

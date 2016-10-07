@@ -215,7 +215,7 @@ public class LintCliClient extends LintClient {
             @NonNull Context context,
             @NonNull Issue issue,
             @NonNull Severity severity,
-            @Nullable Location location,
+            @NonNull Location location,
             @NonNull String message,
             @NonNull TextFormat format) {
         assert context.isEnabled(issue) || issue == LINT_ERROR;
@@ -238,69 +238,72 @@ public class LintCliClient extends LintClient {
         Warning warning = new Warning(issue, message, severity, context.getProject());
         mWarnings.add(warning);
 
-        if (location != null) {
-            warning.location = location;
-            File file = location.getFile();
-            if (file != null) {
-                warning.file = file;
-                warning.path = getDisplayPath(context.getProject(), file);
-            }
+        //noinspection ConstantConditions
+        if (location == null) {
+            // Misbehaving third party lint rules
+            log(Severity.ERROR, null, "No location provided for issue " + issue);
+            return;
+        }
 
-            Position startPosition = location.getStart();
-            if (startPosition != null) {
-                int line = startPosition.getLine();
-                warning.line = line;
-                warning.offset = startPosition.getOffset();
-                if (line >= 0) {
-                    if (context.file == location.getFile()) {
-                        warning.fileContents = context.getContents();
-                    }
-                    if (warning.fileContents == null) {
-                        warning.fileContents = getContents(location.getFile());
-                    }
+        warning.location = location;
+        File file = location.getFile();
+        warning.file = file;
+        warning.path = getDisplayPath(context.getProject(), file);
 
-                    if (mFlags.isShowSourceLines()) {
-                        // Compute error line contents
-                        warning.errorLine = getLine(warning.fileContents, line);
-                        if (warning.errorLine != null) {
-                            // Replace tabs with spaces such that the column
-                            // marker (^) lines up properly:
-                            warning.errorLine = warning.errorLine.replace('\t', ' ');
-                            int column = startPosition.getColumn();
-                            if (column < 0) {
-                                column = 0;
-                                for (int i = 0; i < warning.errorLine.length(); i++, column++) {
-                                    if (!Character.isWhitespace(warning.errorLine.charAt(i))) {
-                                        break;
-                                    }
+        Position startPosition = location.getStart();
+        if (startPosition != null) {
+            int line = startPosition.getLine();
+            warning.line = line;
+            warning.offset = startPosition.getOffset();
+            if (line >= 0) {
+                if (context.file == location.getFile()) {
+                    warning.fileContents = context.getContents();
+                }
+                if (warning.fileContents == null) {
+                    warning.fileContents = getContents(location.getFile());
+                }
+
+                if (mFlags.isShowSourceLines()) {
+                    // Compute error line contents
+                    warning.errorLine = getLine(warning.fileContents, line);
+                    if (warning.errorLine != null) {
+                        // Replace tabs with spaces such that the column
+                        // marker (^) lines up properly:
+                        warning.errorLine = warning.errorLine.replace('\t', ' ');
+                        int column = startPosition.getColumn();
+                        if (column < 0) {
+                            column = 0;
+                            for (int i = 0; i < warning.errorLine.length(); i++, column++) {
+                                if (!Character.isWhitespace(warning.errorLine.charAt(i))) {
+                                    break;
                                 }
                             }
-                            StringBuilder sb = new StringBuilder(100);
-                            sb.append(warning.errorLine);
-                            sb.append('\n');
-                            for (int i = 0; i < column; i++) {
-                                sb.append(' ');
-                            }
-
-                            boolean displayCaret = true;
-                            Position endPosition = location.getEnd();
-                            if (endPosition != null) {
-                                int endLine = endPosition.getLine();
-                                int endColumn = endPosition.getColumn();
-                                if (endLine == line && endColumn > column) {
-                                    for (int i = column; i < endColumn; i++) {
-                                        sb.append('~');
-                                    }
-                                    displayCaret = false;
-                                }
-                            }
-
-                            if (displayCaret) {
-                                sb.append('^');
-                            }
-                            sb.append('\n');
-                            warning.errorLine = sb.toString();
                         }
+                        StringBuilder sb = new StringBuilder(100);
+                        sb.append(warning.errorLine);
+                        sb.append('\n');
+                        for (int i = 0; i < column; i++) {
+                            sb.append(' ');
+                        }
+
+                        boolean displayCaret = true;
+                        Position endPosition = location.getEnd();
+                        if (endPosition != null) {
+                            int endLine = endPosition.getLine();
+                            int endColumn = endPosition.getColumn();
+                            if (endLine == line && endColumn > column) {
+                                for (int i = column; i < endColumn; i++) {
+                                    sb.append('~');
+                                }
+                                displayCaret = false;
+                            }
+                        }
+
+                        if (displayCaret) {
+                            sb.append('^');
+                        }
+                        sb.append('\n');
+                        warning.errorLine = sb.toString();
                     }
                 }
             }
@@ -760,5 +763,15 @@ public class LintCliClient extends LintClient {
 
     public boolean haveErrors() {
         return mErrorCount > 0;
+    }
+
+    @VisibleForTesting
+    public void reset() {
+        mWarnings.clear();
+        mErrorCount = 0;
+        mWarningCount = 0;
+
+        mProjectDirs = Sets.newHashSet();
+        mDirToProject = null;
     }
 }

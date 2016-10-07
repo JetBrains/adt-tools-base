@@ -6,6 +6,7 @@
                 <tr><td>Name</td></tr>
             </thead>
             <tr><td>aaptOptions</td></tr>
+            <tr><td>adbExecutable</td></tr>
             <tr><td>adbOptions</td></tr>
             <tr><td>buildToolsVersion</td></tr>
             <tr><td>buildTypes</td></tr>
@@ -14,6 +15,7 @@
             <tr><td>defaultConfig</td></tr>
             <tr><td>defaultPublishConfig</td></tr>
             <tr><td>dexOptions</td></tr>
+            <tr><td>externalNativeBuild</td></tr>
             <tr><td>flavorDimensionList</td></tr>
             <tr><td>generatePureSplits</td></tr>
             <tr><td>jacoco</td></tr>
@@ -45,6 +47,7 @@
             <tr><td>dataBinding</td></tr>
             <tr><td>defaultConfig</td></tr>
             <tr><td>dexOptions</td></tr>
+            <tr><td>externalNativeBuild</td></tr>
             <tr><td>flavorDimensions</td></tr>
             <tr><td>jacoco</td></tr>
             <tr><td>lintOptions</td></tr>

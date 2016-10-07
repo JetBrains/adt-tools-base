@@ -18,12 +18,12 @@ package com.android.build.gradle.model;
 
 import com.android.build.gradle.managed.NativeBuildConfig;
 
-import org.gradle.platform.base.ComponentSpec;
+import org.gradle.platform.base.GeneralComponentSpec;
 
 /**
  * Component for ExternalNativeComponentModelPlugin.
  */
-public interface ExternalNativeComponentSpec extends ComponentSpec {
+public interface ExternalNativeComponentSpec extends GeneralComponentSpec {
     NativeBuildConfig getConfig();
 
     void setConfig(NativeBuildConfig config);

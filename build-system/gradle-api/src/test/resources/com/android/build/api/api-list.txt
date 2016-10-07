@@ -1,0 +1,76 @@
+com.android.build.api.transform.Context
+com.android.build.api.transform.Context.getLogging: org.gradle.api.logging.LoggingManager ()
+com.android.build.api.transform.Context.getPath: java.lang.String ()
+com.android.build.api.transform.Context.getTemporaryDir: java.io.File ()
+com.android.build.api.transform.DirectoryInput
+com.android.build.api.transform.DirectoryInput.getChangedFiles: java.util.Map<java.io.File, com.android.build.api.transform.Status> ()
+com.android.build.api.transform.Format
+com.android.build.api.transform.Format.valueOf: com.android.build.api.transform.Format (java.lang.String)
+com.android.build.api.transform.Format.values: com.android.build.api.transform.Format[] ()
+com.android.build.api.transform.JarInput
+com.android.build.api.transform.JarInput.getStatus: com.android.build.api.transform.Status ()
+com.android.build.api.transform.QualifiedContent
+com.android.build.api.transform.QualifiedContent$ContentType
+com.android.build.api.transform.QualifiedContent$ContentType.getValue: int ()
+com.android.build.api.transform.QualifiedContent$ContentType.name: java.lang.String ()
+com.android.build.api.transform.QualifiedContent$DefaultContentType
+com.android.build.api.transform.QualifiedContent$DefaultContentType.getValue: int ()
+com.android.build.api.transform.QualifiedContent$DefaultContentType.valueOf: com.android.build.api.transform.QualifiedContent$DefaultContentType (java.lang.String)
+com.android.build.api.transform.QualifiedContent$DefaultContentType.values: com.android.build.api.transform.QualifiedContent$DefaultContentType[] ()
+com.android.build.api.transform.QualifiedContent$Scope
+com.android.build.api.transform.QualifiedContent$Scope.getValue: int ()
+com.android.build.api.transform.QualifiedContent$Scope.valueOf: com.android.build.api.transform.QualifiedContent$Scope (java.lang.String)
+com.android.build.api.transform.QualifiedContent$Scope.values: com.android.build.api.transform.QualifiedContent$Scope[] ()
+com.android.build.api.transform.QualifiedContent.getContentTypes: java.util.Set<com.android.build.api.transform.QualifiedContent$ContentType> ()
+com.android.build.api.transform.QualifiedContent.getFile: java.io.File ()
+com.android.build.api.transform.QualifiedContent.getName: java.lang.String ()
+com.android.build.api.transform.QualifiedContent.getScopes: java.util.Set<com.android.build.api.transform.QualifiedContent$Scope> ()
+com.android.build.api.transform.SecondaryFile
+com.android.build.api.transform.SecondaryFile.<init>: com.android.build.api.transform.SecondaryFile (java.io.File, boolean)
+com.android.build.api.transform.SecondaryFile.getFile: java.io.File ()
+com.android.build.api.transform.SecondaryFile.incremental: com.android.build.api.transform.SecondaryFile (java.io.File)
+com.android.build.api.transform.SecondaryFile.nonIncremental: com.android.build.api.transform.SecondaryFile (java.io.File)
+com.android.build.api.transform.SecondaryFile.supportsIncrementalBuild: boolean ()
+com.android.build.api.transform.SecondaryInput
+com.android.build.api.transform.SecondaryInput.getSecondaryInput: com.android.build.api.transform.SecondaryFile ()
+com.android.build.api.transform.SecondaryInput.getStatus: com.android.build.api.transform.Status ()
+com.android.build.api.transform.Status
+com.android.build.api.transform.Status.valueOf: com.android.build.api.transform.Status (java.lang.String)
+com.android.build.api.transform.Status.values: com.android.build.api.transform.Status[] ()
+com.android.build.api.transform.Transform
+com.android.build.api.transform.Transform.<init>: com.android.build.api.transform.Transform ()
+com.android.build.api.transform.Transform.getInputTypes: java.util.Set<com.android.build.api.transform.QualifiedContent$ContentType> ()
+com.android.build.api.transform.Transform.getName: java.lang.String ()
+com.android.build.api.transform.Transform.getOutputTypes: java.util.Set<com.android.build.api.transform.QualifiedContent$ContentType> ()
+com.android.build.api.transform.Transform.getParameterInputs: java.util.Map<java.lang.String, java.lang.Object> ()
+com.android.build.api.transform.Transform.getReferencedScopes: java.util.Set<com.android.build.api.transform.QualifiedContent$Scope> ()
+com.android.build.api.transform.Transform.getScopes: java.util.Set<com.android.build.api.transform.QualifiedContent$Scope> ()
+com.android.build.api.transform.Transform.getSecondaryDirectoryOutputs: java.util.Collection<java.io.File> ()
+com.android.build.api.transform.Transform.getSecondaryFileInputs: java.util.Collection<java.io.File> ()
+com.android.build.api.transform.Transform.getSecondaryFileOutputs: java.util.Collection<java.io.File> ()
+com.android.build.api.transform.Transform.getSecondaryFiles: java.util.Collection<com.android.build.api.transform.SecondaryFile> ()
+com.android.build.api.transform.Transform.isIncremental: boolean ()
+com.android.build.api.transform.Transform.transform: void (com.android.build.api.transform.Context, java.util.Collection<com.android.build.api.transform.TransformInput>, java.util.Collection<com.android.build.api.transform.TransformInput>, com.android.build.api.transform.TransformOutputProvider, boolean) throws java.io.IOException, com.android.build.api.transform.TransformException, java.lang.InterruptedException
+com.android.build.api.transform.Transform.transform: void (com.android.build.api.transform.TransformInvocation) throws com.android.build.api.transform.TransformException, java.lang.InterruptedException, java.io.IOException
+com.android.build.api.transform.TransformException
+com.android.build.api.transform.TransformException.<init>: com.android.build.api.transform.TransformException (java.lang.String)
+com.android.build.api.transform.TransformException.<init>: com.android.build.api.transform.TransformException (java.lang.Throwable)
+com.android.build.api.transform.TransformInput
+com.android.build.api.transform.TransformInput.getDirectoryInputs: java.util.Collection<com.android.build.api.transform.DirectoryInput> ()
+com.android.build.api.transform.TransformInput.getJarInputs: java.util.Collection<com.android.build.api.transform.JarInput> ()
+com.android.build.api.transform.TransformInvocation
+com.android.build.api.transform.TransformInvocation.getContext: com.android.build.api.transform.Context ()
+com.android.build.api.transform.TransformInvocation.getInputs: java.util.Collection<com.android.build.api.transform.TransformInput> ()
+com.android.build.api.transform.TransformInvocation.getOutputProvider: com.android.build.api.transform.TransformOutputProvider ()
+com.android.build.api.transform.TransformInvocation.getReferencedInputs: java.util.Collection<com.android.build.api.transform.TransformInput> ()
+com.android.build.api.transform.TransformInvocation.getSecondaryInputs: java.util.Collection<com.android.build.api.transform.SecondaryInput> ()
+com.android.build.api.transform.TransformInvocation.isIncremental: boolean ()
+com.android.build.api.transform.TransformOutputProvider
+com.android.build.api.transform.TransformOutputProvider.deleteAll: void () throws java.io.IOException
+com.android.build.api.transform.TransformOutputProvider.getContentLocation: java.io.File (java.lang.String, java.util.Set<com.android.build.api.transform.QualifiedContent$ContentType>, java.util.Set<com.android.build.api.transform.QualifiedContent$Scope>, com.android.build.api.transform.Format)
+com.android.build.api.variant.VariantFilter
+com.android.build.api.variant.VariantFilter.getBuildType: com.android.builder.model.BuildType ()
+com.android.build.api.variant.VariantFilter.getDefaultConfig: com.android.builder.model.ProductFlavor ()
+com.android.build.api.variant.VariantFilter.getFlavors: java.util.List<com.android.builder.model.ProductFlavor> ()
+com.android.build.api.variant.VariantFilter.getName: java.lang.String ()
+com.android.build.api.variant.VariantFilter.setIgnore: void (boolean)

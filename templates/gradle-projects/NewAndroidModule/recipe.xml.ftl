@@ -1,7 +1,13 @@
 <?xml version="1.0"?>
 <recipe>
 
+<#if backwardsCompatibility!true>
     <dependency mavenUrl="com.android.support:appcompat-v7:${buildApi}.+"/>
+</#if>
+
+<#if unitTestsSupported>
+    <dependency mavenUrl="junit:junit:4.12" gradleConfiguration="testCompile" />
+</#if>
 
 <#if !createActivity>
     <mkdir at="${escapeXmlAttribute(srcOut)}" />
@@ -49,12 +55,19 @@
     <instantiate from="root/res/values/strings.xml.ftl"
                    to="${escapeXmlAttribute(resOut)}/values/strings.xml" />
 
-    <instantiate from="root/test/app_package/ApplicationTest.java.ftl"
-                   to="${escapeXmlAttribute(testOut)}/ApplicationTest.java" />
+    <instantiate from="root/test/app_package/ExampleInstrumentedTest.java.ftl"
+                   to="${escapeXmlAttribute(testOut)}/ExampleInstrumentedTest.java" />
 
 <#if unitTestsSupported>
     <instantiate from="root/test/app_package/ExampleUnitTest.java.ftl"
                    to="${escapeXmlAttribute(unitTestOut)}/ExampleUnitTest.java" />
+</#if>
+<#if includeCppSupport!false>
+    <instantiate from="root/CMakeLists.txt.ftl"
+                   to="${escapeXmlAttribute(projectOut)}/CMakeLists.txt" />
+
+    <mkdir at="${nativeSrcOut}" />
+    <instantiate from="root/native-lib.cpp.ftl" to="${nativeSrcOut}/native-lib.cpp" />
 </#if>
 
 </recipe>

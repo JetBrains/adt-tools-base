@@ -17,9 +17,13 @@
 package com.android.ide.common.resources.configuration;
 
 
+import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
+
 /**
  * Base class for resource qualifiers.
- * <p/>The resource qualifier classes are designed as immutable.
+ *
+ * The resource qualifier classes are designed as immutable.
  */
 public abstract class ResourceQualifier implements Comparable<ResourceQualifier> {
 
@@ -30,12 +34,13 @@ public abstract class ResourceQualifier implements Comparable<ResourceQualifier>
 
     /**
      * Returns a shorter human readable name for the qualifier.
+     *
      * @see #getName()
      */
     public abstract String getShortName();
 
     /**
-     * Returns when this qualifier was added to Android.
+     * Returns the API level when this qualifier was added to Android.
      */
     public abstract int since();
 
@@ -53,14 +58,16 @@ public abstract class ResourceQualifier implements Comparable<ResourceQualifier>
 
     /**
      * Returns whether the qualifier has a fake value.
-     * <p/>Fake values are used internally and should not be used as real qualifier value.
+     *
+     * Fake values are used internally and should not be used as real qualifier value.
      */
     public abstract boolean hasFakeValue();
 
     /**
-     * Check if the value is valid for this qualifier, and if so sets the value
-     * into a Folder Configuration.
-     * @param value The value to check and set. Must not be null.
+     * Check if the value is valid for this qualifier, and if so sets the value into a Folder
+     * Configuration.
+     *
+     * @param value  The value to check and set. Must not be null.
      * @param config The folder configuration to receive the value. Must not be null.
      * @return true if the value was valid and was set.
      */
@@ -68,15 +75,31 @@ public abstract class ResourceQualifier implements Comparable<ResourceQualifier>
 
     /**
      * Returns a string formatted to be used in a folder name.
-     * <p/>This is declared as abstract to force children classes to implement it.
      */
     public abstract String getFolderSegment();
 
     /**
+     * Returns the qualifier that can be used in {@link #isBetterMatchThan(ResourceQualifier,
+     * ResourceQualifier)} when no qualifier is present in the config.
+     *
+     * null has a special meaning when trying to match the best config (it's the worst qualifier,
+     * unless not other alternative matches). If a qualifier type has a different definition of best
+     * in regards to the null qualifier, this method should be subclassed and a special value should
+     * be returned from here, which can then be used to call {@link #isBetterMatchThan
+     * (ResourceQualifier, ResourceQualifier)} which can implement the custom logic.
+     */
+    public ResourceQualifier getNullQualifier() {
+        return null;
+    }
+
+    /**
      * Returns whether the given qualifier is a match for the receiver.
-     * <p/>The default implementation returns the result of {@link #equals(Object)}.
-     * <p/>Children class that re-implements this must implement
-     * {@link #isBetterMatchThan(ResourceQualifier, ResourceQualifier)} too.
+     *
+     * The default implementation returns the result of {@link #equals(Object)}.
+     *
+     * Children class that re-implements this must implement {@link #isBetterMatchThan
+     * (ResourceQualifier, ResourceQualifier)} too.
+     *
      * @param qualifier the reference qualifier
      * @return true if the receiver is a match.
      */
@@ -85,14 +108,15 @@ public abstract class ResourceQualifier implements Comparable<ResourceQualifier>
     }
 
     /**
-     * Returns true if the receiver is a better match for the given <var>reference</var> than
-     * the given <var>compareTo</var> comparable.
-     * @param compareTo The {@link ResourceQualifier} to compare to. Can be null, in which
-     * case the method must return <code>true</code>.
-     * @param reference The reference qualifier value for which the match is.
-     * @return true if the receiver is a better match.
+     * Returns true if the receiver (this) is a better match for the given {@code reference} than
+     * the given {@code compareTo} comparable.
+     *
+     * @param compareTo The {@link ResourceQualifier} to compare to.
+     * @param reference The reference qualifier value for which the match is (from phone's
+     *                  folderConfig).
      */
-    public boolean isBetterMatchThan(ResourceQualifier compareTo, ResourceQualifier reference) {
+    public boolean isBetterMatchThan(@Nullable ResourceQualifier compareTo,
+            @NonNull ResourceQualifier reference) {
         // the default is to always return false. This gives less overhead than always returning
         // true, as it would only compare same values anyway.
         return compareTo == null;
@@ -114,21 +138,27 @@ public abstract class ResourceQualifier implements Comparable<ResourceQualifier>
     public abstract String getLongDisplayValue();
 
     /**
-     * Returns <code>true</code> if both objects are equal.
-     * <p/>This is declared as abstract to force children classes to implement it.
+     * Returns {@code true} if both objects are equal.
+     *
+     * This is declared as abstract to force children classes to implement it.
      */
     @Override
     public abstract boolean equals(Object object);
 
     /**
      * Returns a hash code value for the object.
-     * <p/>This is declared as abstract to force children classes to implement it.
+     *
+     * This is declared as abstract to force children classes to implement it.
      */
     @Override
     public abstract int hashCode();
 
     @Override
-    public final int compareTo(ResourceQualifier o) {
+    public final int compareTo(@NonNull ResourceQualifier o) {
         return toString().compareTo(o.toString());
+    }
+
+    public static boolean isValid(@Nullable ResourceQualifier qualifier) {
+        return qualifier != null && qualifier.isValid();
     }
 }

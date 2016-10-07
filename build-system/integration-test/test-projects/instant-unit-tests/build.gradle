@@ -15,7 +15,7 @@
  */
 
 apply from: "../commonHeader.gradle"
-buildscript { apply from: "../commonBuildScript.gradle", to: buildscript }
+buildscript { apply from: "../commonBuildScript.gradle" }
 apply from: "../commonLocalRepo.gradle"
 
 def env = new Object() {
@@ -26,6 +26,8 @@ def env = new Object() {
             String apiVersion
             String nativeApiVersion
             String experimentalVersion
+            String experimentalGradleVersion
+            String versionModifier
         }
     }
 }
@@ -78,7 +80,8 @@ if (!instantRunServer.exists()) {
 }
 
 dependencies {
-    compile 'com.android.tools:common:' + env.project.ext.baseVersion
+    compile 'com.android.tools:annotations:' + env.project.ext.baseVersion
+    compile 'com.google.guava:guava:17.0'
     compile files(instantRunServer)
     compile files("build/incremental-test-classes-jar/instrumentedBaseClasses.jar")
 
@@ -119,12 +122,9 @@ class DexTask extends DefaultTask {
                 false /* multiDexEnabled */,
                 null /*getMainDexListFile */,
                 new com.android.build.gradle.internal.dsl.DexOptions(),
-                ImmutableList.<String>of() /* getAdditionalParameters */,
-                false /* incremental */,
-                true /* optimize */,
+                false /* optimize */,
                 new com.android.ide.common.process.LoggedProcessOutputHandler(
-                        new com.android.build.gradle.internal.LoggerWrapper(getLogger())),
-                false /*instantRunMode*/)
+                        new com.android.build.gradle.internal.LoggerWrapper(getLogger())))
         Iterable<File> files =
                 Files.fileTreeTraverser().preOrderTraversal(classesFolder).filter(Files.isFile());
 

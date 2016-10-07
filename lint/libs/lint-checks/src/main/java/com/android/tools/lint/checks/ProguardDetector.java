@@ -115,7 +115,7 @@ public class ProguardDetector extends Detector {
                     // Only complain if project.properties actually references this file;
                     // no need to bother the users who got a default proguard.cfg file
                     // when they created their projects but haven't actually hooked it up
-                    // to shrinking & obfuscation.
+                    // to shrinking and obfuscation.
                     File propertyFile = new File(context.file.getParentFile(), PROJECT_PROPERTIES);
                     if (!propertyFile.exists()) {
                         return;

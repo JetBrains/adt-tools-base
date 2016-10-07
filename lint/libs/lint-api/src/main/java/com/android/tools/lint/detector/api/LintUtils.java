@@ -16,6 +16,41 @@
 
 package com.android.tools.lint.detector.api;
 
+import static com.android.SdkConstants.ANDROID_MANIFEST_XML;
+import static com.android.SdkConstants.ANDROID_PREFIX;
+import static com.android.SdkConstants.ANDROID_URI;
+import static com.android.SdkConstants.ATTR_LOCALE;
+import static com.android.SdkConstants.BIN_FOLDER;
+import static com.android.SdkConstants.DOT_GIF;
+import static com.android.SdkConstants.DOT_JPEG;
+import static com.android.SdkConstants.DOT_JPG;
+import static com.android.SdkConstants.DOT_PNG;
+import static com.android.SdkConstants.DOT_WEBP;
+import static com.android.SdkConstants.DOT_XML;
+import static com.android.SdkConstants.FN_BUILD_GRADLE;
+import static com.android.SdkConstants.ID_PREFIX;
+import static com.android.SdkConstants.NEW_ID_PREFIX;
+import static com.android.SdkConstants.TOOLS_URI;
+import static com.android.SdkConstants.UTF_8;
+import static com.android.ide.common.resources.configuration.FolderConfiguration.QUALIFIER_SPLITTER;
+import static com.android.ide.common.resources.configuration.LocaleQualifier.BCP_47_PREFIX;
+import static com.android.tools.lint.client.api.JavaParser.TYPE_BOOLEAN;
+import static com.android.tools.lint.client.api.JavaParser.TYPE_BOOLEAN_WRAPPER;
+import static com.android.tools.lint.client.api.JavaParser.TYPE_BYTE;
+import static com.android.tools.lint.client.api.JavaParser.TYPE_BYTE_WRAPPER;
+import static com.android.tools.lint.client.api.JavaParser.TYPE_CHAR;
+import static com.android.tools.lint.client.api.JavaParser.TYPE_CHARACTER_WRAPPER;
+import static com.android.tools.lint.client.api.JavaParser.TYPE_DOUBLE;
+import static com.android.tools.lint.client.api.JavaParser.TYPE_DOUBLE_WRAPPER;
+import static com.android.tools.lint.client.api.JavaParser.TYPE_FLOAT;
+import static com.android.tools.lint.client.api.JavaParser.TYPE_FLOAT_WRAPPER;
+import static com.android.tools.lint.client.api.JavaParser.TYPE_INT;
+import static com.android.tools.lint.client.api.JavaParser.TYPE_INTEGER_WRAPPER;
+import static com.android.tools.lint.client.api.JavaParser.TYPE_LONG;
+import static com.android.tools.lint.client.api.JavaParser.TYPE_LONG_WRAPPER;
+import static com.android.tools.lint.client.api.JavaParser.TYPE_SHORT;
+import static com.android.tools.lint.client.api.JavaParser.TYPE_SHORT_WRAPPER;
+
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.builder.model.AndroidProject;
@@ -23,12 +58,12 @@ import com.android.builder.model.ApiVersion;
 import com.android.ide.common.rendering.api.ItemResourceValue;
 import com.android.ide.common.rendering.api.ResourceValue;
 import com.android.ide.common.rendering.api.StyleResourceValue;
+import com.android.ide.common.repository.GradleVersion;
 import com.android.ide.common.res2.AbstractResourceRepository;
 import com.android.ide.common.res2.ResourceItem;
 import com.android.ide.common.resources.ResourceUrl;
 import com.android.ide.common.resources.configuration.FolderConfiguration;
 import com.android.ide.common.resources.configuration.LocaleQualifier;
-import com.android.repository.Revision;
 import com.android.resources.FolderTypeRelationship;
 import com.android.resources.ResourceFolderType;
 import com.android.resources.ResourceType;
@@ -39,15 +74,24 @@ import com.android.tools.lint.client.api.LintClient;
 import com.android.utils.PositionXmlParser;
 import com.android.utils.SdkUtils;
 import com.google.common.annotations.Beta;
+import com.google.common.base.Objects;
 import com.google.common.base.Splitter;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
-import lombok.ast.ImportDeclaration;
-import org.jetbrains.org.objectweb.asm.Opcodes;
-import org.jetbrains.org.objectweb.asm.tree.AbstractInsnNode;
-import org.jetbrains.org.objectweb.asm.tree.ClassNode;
-import org.jetbrains.org.objectweb.asm.tree.FieldNode;
+import com.intellij.psi.CommonClassNames;
+import com.intellij.psi.PsiClassType;
+import com.intellij.psi.PsiElement;
+import com.intellij.psi.PsiImportStatement;
+import com.intellij.psi.PsiLiteral;
+import com.intellij.psi.PsiParenthesizedExpression;
+import com.intellij.psi.PsiType;
+import com.intellij.psi.PsiWhiteSpace;
+
+import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.tree.AbstractInsnNode;
+import org.objectweb.asm.tree.ClassNode;
+import org.objectweb.asm.tree.FieldNode;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -55,14 +99,17 @@ import org.w3c.dom.NodeList;
 import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.util.*;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Queue;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
-import static com.android.SdkConstants.*;
-import static com.android.ide.common.resources.configuration.FolderConfiguration.QUALIFIER_SPLITTER;
-import static com.android.ide.common.resources.configuration.LocaleQualifier.BCP_47_PREFIX;
+import lombok.ast.ImportDeclaration;
 
 
 /**
@@ -312,6 +359,22 @@ public class LintUtils {
     }
 
     /**
+     * Returns true if the first string can be edited (Via insertions, deletions or
+     * substitutions) into the second string in at most the given number of editing
+     * operations. This computes the edit distance between the two strings and returns
+     * true if it is less than or equal to the given threshold.
+     *
+     * @param s   the first string to compare
+     * @param t   the second string to compare
+     * @param max the maximum number of edit operations allowed
+     * @return true if the first string is editable to the second string in at most the given number
+     * of steps
+     */
+    public static boolean isEditableTo(@NonNull String s, @NonNull String t, int max) {
+        return editDistance(s, t, max) <= max;
+    }
+
+    /**
      * Computes the edit distance (number of insertions, deletions or substitutions
      * to edit one string into the other) between two strings. In particular,
      * this will compute the Levenshtein distance.
@@ -323,6 +386,36 @@ public class LintUtils {
      * @return the edit distance between the two strings
      */
     public static int editDistance(@NonNull String s, @NonNull String t) {
+        return editDistance(s, t, Integer.MAX_VALUE);
+    }
+
+    /**
+     * Computes the edit distance (number of insertions, deletions or substitutions
+     * to edit one string into the other) between two strings. In particular,
+     * this will compute the Levenshtein distance.
+     * <p>
+     * See http://en.wikipedia.org/wiki/Levenshtein_distance for details.
+     *
+     * @param s   the first string to compare
+     * @param t   the second string to compare
+     * @param max the maximum edit distance that we care about; if for example the string length
+     *            delta is greater than this we don't bother computing the exact edit distance since
+     *            the caller has indicated they're not interested in the result
+     * @return the edit distance between the two strings, or some other value greater than that if
+     * the edit distance is at least as big as the {@code max} parameter
+     */
+    public static int editDistance(@NonNull String s, @NonNull String t, int max) {
+        if (s.equals(t)) {
+            return 0;
+        }
+
+        if (Math.abs(s.length() - t.length()) > max) {
+            // The string lengths differ more than the allowed edit distance;
+            // no point in even attempting to compute the edit distance (requires
+            // O(n*m) storage and O(n*m) speed, where n and m are the string lengths)
+            return Integer.MAX_VALUE;
+        }
+
         int m = s.length();
         int n = t.length();
         int[][] d = new int[m + 1][n + 1];
@@ -787,7 +880,10 @@ public class LintUtils {
      * @param fullyQualifiedName the fully qualified class name
      * @return true if the given imported name refers to the given fully
      *         qualified name
+     * @deprecated Use PSI element hierarchies instead where type resolution is more directly
+     *  available (call {@link PsiImportStatement#resolve()})
      */
+    @Deprecated
     public static boolean isImported(
             @Nullable lombok.ast.Node compilationUnit,
             @NonNull String fullyQualifiedName) {
@@ -837,7 +933,7 @@ public class LintUtils {
             return null;
         }
 
-        AbstractResourceRepository resources = client.getProjectResources(project, true);
+        AbstractResourceRepository resources = client.getResourceRepository(project, true, true);
         if (resources == null) {
             return null;
         }
@@ -911,7 +1007,7 @@ public class LintUtils {
             return null;
         }
 
-        AbstractResourceRepository resources = client.getProjectResources(project, true);
+        AbstractResourceRepository resources = client.getResourceRepository(project, true, true);
         if (resources == null) {
             return null;
         }
@@ -1064,25 +1160,20 @@ public class LintUtils {
     /**
      * Returns true if the given Gradle model is older than the given version number
      */
-    public static boolean isModelOlderThan(@Nullable AndroidProject project,
+    public static boolean isModelOlderThan(@NonNull Project project,
             int major, int minor, int micro) {
-        if (project != null) {
-            String modelVersion = project.getModelVersion();
-            try {
-                Revision version = Revision.parseRevision(modelVersion);
-                if (version.getMajor() != major) {
-                    return version.getMajor() < major;
-                }
-                if (version.getMinor() != minor) {
-                    return version.getMinor() < minor;
-                }
-                return version.getMicro() < micro;
-            } catch (NumberFormatException e) {
-                // ignore
-            }
+        GradleVersion version = project.getGradleModelVersion();
+        if (version == null) {
+            return false;
         }
 
-        return false;
+        if (version.getMajor() != major) {
+            return version.getMajor() < major;
+        }
+        if (version.getMinor() != minor) {
+            return version.getMinor() < minor;
+        }
+        return version.getMicro() < micro;
     }
 
     /**
@@ -1240,5 +1331,112 @@ public class LintUtils {
             location = Location.create(dir);
         }
         return location;
+    }
+
+    /**
+     * Returns true if the given element is the null literal
+     *
+     * @param element the element to check
+     * @return true if the element is "null"
+     */
+    public static boolean isNullLiteral(@Nullable PsiElement element) {
+        return element instanceof PsiLiteral && "null".equals(element.getText());
+    }
+
+    public static boolean isTrueLiteral(@Nullable PsiElement element) {
+        return element instanceof PsiLiteral && "true".equals(element.getText());
+    }
+
+    public static boolean isFalseLiteral(@Nullable PsiElement element) {
+        return element instanceof PsiLiteral && "false".equals(element.getText());
+    }
+
+    @Nullable
+    public static PsiElement skipParentheses(@Nullable PsiElement element) {
+        while (element instanceof PsiParenthesizedExpression) {
+            element = element.getParent();
+        }
+
+        return element;
+    }
+
+    @Nullable
+    public static PsiElement nextNonWhitespace(@Nullable PsiElement element) {
+        if (element != null) {
+            element = element.getNextSibling();
+            while (element instanceof PsiWhiteSpace) {
+                element = element.getNextSibling();
+            }
+        }
+
+        return element;
+    }
+
+    @Nullable
+    public static PsiElement prevNonWhitespace(@Nullable PsiElement element) {
+        if (element != null) {
+            element = element.getPrevSibling();
+            while (element instanceof PsiWhiteSpace) {
+                element = element.getPrevSibling();
+            }
+        }
+
+        return element;
+    }
+
+    public static boolean isString(@NonNull PsiType type) {
+        if (type instanceof PsiClassType) {
+            final String shortName = ((PsiClassType)type).getClassName();
+            if (!Objects.equal(shortName, CommonClassNames.JAVA_LANG_STRING_SHORT)) {
+                return false;
+            }
+        }
+        return CommonClassNames.JAVA_LANG_STRING.equals(type.getCanonicalText());
+    }
+
+    @Nullable
+    public static String getAutoBoxedType(@NonNull String primitive) {
+        if (TYPE_INT.equals(primitive)) {
+            return TYPE_INTEGER_WRAPPER;
+        } else if (TYPE_LONG.equals(primitive)) {
+            return TYPE_LONG_WRAPPER;
+        } else if (TYPE_CHAR.equals(primitive)) {
+            return TYPE_CHARACTER_WRAPPER;
+        } else if (TYPE_FLOAT.equals(primitive)) {
+            return TYPE_FLOAT_WRAPPER;
+        } else if (TYPE_DOUBLE.equals(primitive)) {
+            return TYPE_DOUBLE_WRAPPER;
+        } else if (TYPE_BOOLEAN.equals(primitive)) {
+            return TYPE_BOOLEAN_WRAPPER;
+        } else if (TYPE_SHORT.equals(primitive)) {
+            return TYPE_SHORT_WRAPPER;
+        } else if (TYPE_BYTE.equals(primitive)) {
+            return TYPE_BYTE_WRAPPER;
+        }
+
+        return null;
+    }
+
+    @Nullable
+    public static String getPrimitiveType(@NonNull String autoBoxedType) {
+        if (TYPE_INTEGER_WRAPPER.equals(autoBoxedType)) {
+            return TYPE_INT;
+        } else if (TYPE_LONG_WRAPPER.equals(autoBoxedType)) {
+            return TYPE_LONG;
+        } else if (TYPE_CHARACTER_WRAPPER.equals(autoBoxedType)) {
+            return TYPE_CHAR;
+        } else if (TYPE_FLOAT_WRAPPER.equals(autoBoxedType)) {
+            return TYPE_FLOAT;
+        } else if (TYPE_DOUBLE_WRAPPER.equals(autoBoxedType)) {
+            return TYPE_DOUBLE;
+        } else if (TYPE_BOOLEAN_WRAPPER.equals(autoBoxedType)) {
+            return TYPE_BOOLEAN;
+        } else if (TYPE_SHORT_WRAPPER.equals(autoBoxedType)) {
+            return TYPE_SHORT;
+        } else if (TYPE_BYTE_WRAPPER.equals(autoBoxedType)) {
+            return TYPE_BYTE;
+        }
+
+        return null;
     }
 }

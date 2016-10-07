@@ -18,10 +18,14 @@ package com.android.ide.common.res2;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.google.common.io.Files;
+import com.google.common.base.Preconditions;
 
+import java.io.BufferedInputStream;
 import java.io.File;
-import java.util.concurrent.Callable;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+import java.util.zip.GZIPInputStream;
 
 /**
  * A {@link MergeWriter} for assets, using {@link AssetItem}.
@@ -36,25 +40,29 @@ public class MergedAssetWriter extends MergeWriter<AssetItem> {
     public void addItem(@NonNull final AssetItem item) throws ConsumerException {
         // Only write it if the state is TOUCHED.
         if (item.isTouched()) {
-            getExecutor().execute(new Callable<Void>() {
-                @Override
-                public Void call() throws Exception {
-                    AssetFile assetFile = item.getSource();
+            getExecutor().execute(() -> {
+                AssetFile assetFile = Preconditions.checkNotNull(item.getSource());
 
-                    File fromFile = assetFile.getFile();
+                Path fromFile = assetFile.getFile().toPath();
 
-                    // the out file is computed from the item key since that includes the
-                    // relative folder.
-                    File toFile = new File(getRootFolder(),
-                            item.getKey().replace('/', File.separatorChar));
+                // the out file is computed from the item key since that includes the
+                // relative folder.
+                Path toFile = new File(getRootFolder(),
+                        item.getKey().replace('/', File.separatorChar)).toPath();
 
-                    // make sure the folders are created
-                    toFile.getParentFile().mkdirs();
+                Files.createDirectories(toFile.getParent());
 
-                    Files.copy(fromFile, toFile);
-
-                    return null;
+                if (item.shouldBeUnGzipped()) {
+                    // When AAPT processed resources, it would uncompress gzipped files, as they will be
+                    // compressed in the APK anyway. They are renamed in AssetItem#create(File, File)
+                    try (GZIPInputStream gzipInputStream = new GZIPInputStream(
+                            new BufferedInputStream(Files.newInputStream(fromFile)))) {
+                        Files.copy(gzipInputStream, toFile, StandardCopyOption.REPLACE_EXISTING);
+                    }
+                } else {
+                    Files.copy(fromFile, toFile, StandardCopyOption.REPLACE_EXISTING);
                 }
+                return null;
             });
         }
     }

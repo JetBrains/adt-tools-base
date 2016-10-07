@@ -291,7 +291,7 @@ final class Device implements IDevice {
     }
 
     @Override
-    public String getProperty(String name) {
+    public String getProperty(@NonNull String name) {
         Map<String, String> properties = mPropFetcher.getProperties();
         long timeout = properties.isEmpty() ? INITIAL_GET_PROP_TIMEOUT_MS : GET_PROP_TIMEOUT_MS;
 
@@ -547,9 +547,11 @@ final class Device implements IDevice {
     }
 
     @Override
-    public void startScreenRecorder(String remoteFilePath, ScreenRecorderOptions options,
-            IShellOutputReceiver receiver) throws TimeoutException, AdbCommandRejectedException,
-            IOException, ShellCommandUnresponsiveException {
+    public void startScreenRecorder(
+            @NonNull String remoteFilePath,
+            @NonNull ScreenRecorderOptions options,
+            @NonNull IShellOutputReceiver receiver) throws TimeoutException,
+            AdbCommandRejectedException, IOException, ShellCommandUnresponsiveException {
         executeShellCommand(getScreenRecorderCommand(remoteFilePath, options), receiver, 0, null);
     }
 

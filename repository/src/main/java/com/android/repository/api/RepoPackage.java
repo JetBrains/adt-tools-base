@@ -20,6 +20,7 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.repository.Revision;
 import com.android.repository.impl.meta.CommonFactory;
+import com.android.repository.impl.meta.RepoPackageImpl;
 import com.android.repository.impl.meta.TypeDetails;
 
 import java.util.Collection;
@@ -82,4 +83,12 @@ public interface RepoPackage extends Comparable<RepoPackage> {
      */
     @NonNull
     CommonFactory createFactory();
+
+    /**
+     * Returns a package with the same content as this one that can be marshalled using JAXB
+     * (or {@code this} if it already can be marshalled).
+     */
+    @NonNull
+    RepoPackageImpl asMarshallable();
+
 }

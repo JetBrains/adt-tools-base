@@ -33,7 +33,7 @@ class NdkVariantsTest {
 
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
-            .forExperimentalPlugin(true)
+            .useExperimentalGradleVersion(true)
             .fromTestProject("ndkVariants")
             .create()
 

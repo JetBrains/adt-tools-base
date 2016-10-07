@@ -39,7 +39,7 @@ public interface JillProvider {
    * Returns whether an interface representing a {@link JillConfig} API version is supported.
    *
    * @param cls the {@link JillConfig} API interface
-   * @return <code>true</true> if the config is supported
+   * @return <code>true</code> if the config is supported
    */
   @Nonnull
   <T extends JillConfig> boolean isConfigSupported(@Nonnull Class<T> cls);

@@ -20,11 +20,9 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 
 import org.gradle.model.Managed;
-import org.gradle.model.Unmanaged;
 
 import java.io.File;
 import java.util.List;
-import java.util.concurrent.Callable;
 
 /**
  * A source file for a native library.
@@ -35,20 +33,25 @@ public interface NativeSourceFolder {
     /**
      * The source folder.
      */
+    @Nullable
     File getSrc();
     void setSrc(File src);
 
     /**
-     * List of compiler flags for all C files.
+     * Compiler flags for all C files.
+     *
+     * Lowercase 'c' because otherwise it would produce CFlags instead of cFlags.
      */
-    @NonNull
-    List<String> getCFlags();
+    @Nullable
+    String getcFlags();
+    void setcFlags(String flags);
 
     /**
-     * List of compiler flags for all C++ files.
+     * Compiler flags for all C++ files.
      */
-    @NonNull
-    List<String> getCppFlags();
+    @Nullable
+    String getCppFlags();
+    void setCppFlags(String flags);
 
     /**
      * The working directory for the compiler.

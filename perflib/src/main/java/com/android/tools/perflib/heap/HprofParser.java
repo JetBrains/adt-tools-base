@@ -24,6 +24,7 @@ import com.google.common.primitives.UnsignedInts;
 import java.io.EOFException;
 import java.io.IOException;
 
+import gnu.trove.TIntObjectHashMap;
 import gnu.trove.TLongObjectHashMap;
 
 class HprofParser {
@@ -126,6 +127,9 @@ class HprofParser {
 
     Snapshot mSnapshot;
 
+    @NonNull
+    private final ProguardMap mProguardMap;
+
     /*
      * These are only needed while parsing so are not kept as part of the
      * heap data.
@@ -134,15 +138,19 @@ class HprofParser {
     TLongObjectHashMap<String> mStrings = new TLongObjectHashMap<String>();
 
     @NonNull
-    TLongObjectHashMap<String> mClassNames = new TLongObjectHashMap<String>();
+    TLongObjectHashMap<String> mClassNamesById = new TLongObjectHashMap<String>();
 
-    static void parseBuffer(@NonNull Snapshot snapshot, @NonNull DataBuffer buffer) {
-        new HprofParser(snapshot, buffer).parse();
+    @NonNull
+    TIntObjectHashMap<String> mClassNamesBySerial = new TIntObjectHashMap<String>();
+
+    static void parseBuffer(@NonNull Snapshot snapshot, @NonNull DataBuffer buffer, @NonNull ProguardMap map) {
+        new HprofParser(snapshot, buffer, map).parse();
     }
 
-    private HprofParser(@NonNull Snapshot snapshot, @NonNull DataBuffer buffer) {
+    private HprofParser(@NonNull Snapshot snapshot, @NonNull DataBuffer buffer, @NonNull ProguardMap map) {
         mInput = buffer;
         mSnapshot = snapshot;
+        mProguardMap = map;
     }
 
     private void parse() {
@@ -204,7 +212,8 @@ class HprofParser {
             e.printStackTrace();
         }
 
-        mClassNames.clear();
+        mClassNamesById.clear();
+        mClassNamesBySerial.clear();
         mStrings.clear();
     }
 
@@ -262,12 +271,14 @@ class HprofParser {
     }
 
     private void loadClass() throws IOException {
-        mInput.readInt();  // Ignored: Class serial number.
+        int serial = mInput.readInt();
         long id = readId();
         mInput.readInt(); // Ignored: Stack trace serial number.
         String name = mStrings.get(readId());
 
-        mClassNames.put(id, name);
+        String className = mProguardMap.getClassName(name);
+        mClassNamesById.put(id, className);
+        mClassNamesBySerial.put(serial, className);
     }
 
     private void loadStackFrame() throws IOException {
@@ -278,10 +289,12 @@ class HprofParser {
         int serial = mInput.readInt();
         int lineNumber = mInput.readInt();
 
-        StackFrame frame = new StackFrame(id, methodName, methodSignature,
-                sourceFile, serial, lineNumber);
+        String className = mClassNamesBySerial.get(serial);
+        ProguardMap.Frame frame = mProguardMap.getFrame(className, methodName, methodSignature, sourceFile, lineNumber);
+        StackFrame stackFrame = new StackFrame(id, frame.methodName, frame.signature,
+                frame.filename, serial, frame.line);
 
-        mSnapshot.addStackFrame(frame);
+        mSnapshot.addStackFrame(stackFrame);
     }
 
     private void loadStackTrace() throws IOException {
@@ -505,7 +518,8 @@ class HprofParser {
             bytesRead += 2 + skipValue();
         }
 
-        final ClassObj theClass = new ClassObj(id, stack, mClassNames.get(id), mInput.position());
+        String className = mClassNamesById.get(id);
+        final ClassObj theClass = new ClassObj(id, stack, className, mInput.position());
         theClass.setSuperClassId(superClassId);
         theClass.setClassLoaderId(classLoaderId);
 
@@ -516,7 +530,7 @@ class HprofParser {
         Field[] staticFields = new Field[numEntries];
 
         for (int i = 0; i < numEntries; i++) {
-            String name = mStrings.get(readId());
+            String name = mProguardMap.getFieldName(className, mStrings.get(readId()));
             Type type = Type.getType(mInput.readByte());
 
             staticFields[i] = new Field(type, name);
@@ -534,7 +548,7 @@ class HprofParser {
         Field[] fields = new Field[numEntries];
 
         for (int i = 0; i < numEntries; i++) {
-            String name = mStrings.get(readId());
+            String name = mProguardMap.getFieldName(className, mStrings.get(readId()));
             Type type = Type.getType(readUnsignedByte());
 
             fields[i] = new Field(type, name);

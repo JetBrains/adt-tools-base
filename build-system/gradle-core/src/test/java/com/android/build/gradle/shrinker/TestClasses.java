@@ -28,13 +28,13 @@ import org.objectweb.asm.Type;
  * Code for generating test classes for the {@link FullRunShrinker}. This were created using the ASM
  * bytecode outliner plugin for IJ.
  */
-@SuppressWarnings("unused") // Outliner plugin generates some unused visitors.
-public class TestClasses implements Opcodes {
+@SuppressWarnings({"unused", "UnusedAssignment"}) // Outliner plugin generates some unused visitors.
+class TestClasses implements Opcodes {
 
     /**
      * Simple scenario with two related classes and one unused class.
      */
-    public static class SimpleScenario {
+    static class SimpleScenario {
         static byte[] aaa() {
             ClassWriter cw = new ClassWriter(0);
             FieldVisitor fv;
@@ -156,8 +156,8 @@ public class TestClasses implements Opcodes {
     /**
      * Virtual calls.
      */
-    public static class VirtualCalls {
-        public static byte[] abstractClass() throws Exception {
+    static class VirtualCalls {
+        static byte[] abstractClass() throws Exception {
 
             ClassWriter cw = new ClassWriter(0);
             FieldVisitor fv;
@@ -185,7 +185,7 @@ public class TestClasses implements Opcodes {
             return cw.toByteArray();
         }
 
-        public static byte[] impl(int i) throws Exception {
+        static byte[] impl(int i) throws Exception {
 
             ClassWriter cw = new ClassWriter(0);
             FieldVisitor fv;
@@ -217,7 +217,7 @@ public class TestClasses implements Opcodes {
             return cw.toByteArray();
         }
 
-        public static byte[] main_concreteType() throws Exception {
+        static byte[] main_concreteType() throws Exception {
 
             ClassWriter cw = new ClassWriter(0);
             FieldVisitor fv;
@@ -262,7 +262,7 @@ public class TestClasses implements Opcodes {
             return cw.toByteArray();
         }
 
-        public static byte[] main_abstractType() throws Exception {
+        static byte[] main_abstractType() throws Exception {
 
             ClassWriter cw = new ClassWriter(0);
             FieldVisitor fv;
@@ -307,7 +307,7 @@ public class TestClasses implements Opcodes {
             return cw.toByteArray();
         }
 
-        public static byte[] main_parentChild() throws Exception {
+        static byte[] main_parentChild() throws Exception {
 
             ClassWriter cw = new ClassWriter(0);
             FieldVisitor fv;
@@ -370,7 +370,7 @@ public class TestClasses implements Opcodes {
             return cw.toByteArray();
         }
 
-        public static byte[] parent() throws Exception {
+        static byte[] parent() throws Exception {
 
             ClassWriter cw = new ClassWriter(0);
             FieldVisitor fv;
@@ -417,7 +417,7 @@ public class TestClasses implements Opcodes {
             return cw.toByteArray();
         }
 
-        public static byte[] child() throws Exception {
+        static byte[] child() throws Exception {
 
             ClassWriter cw = new ClassWriter(0);
             FieldVisitor fv;
@@ -455,8 +455,8 @@ public class TestClasses implements Opcodes {
     /**
      * SDK types.
      */
-    public static class SdkTypes {
-        public static byte[] main() throws Exception {
+    static class SdkTypes {
+        static byte[] main() throws Exception {
 
             ClassWriter cw = new ClassWriter(0);
             FieldVisitor fv;
@@ -495,7 +495,7 @@ public class TestClasses implements Opcodes {
          * It inherits from an SDK class, overrides one method from Exception, one from Object (we
          * may have special handling code for Object, so check both) and adds one unused method.
          */
-        public static byte[] myException() throws Exception {
+        static byte[] myException() throws Exception {
 
             ClassWriter cw = new ClassWriter(0);
             FieldVisitor fv;
@@ -546,8 +546,8 @@ public class TestClasses implements Opcodes {
     /**
      * Interfaces.
      */
-    public static class Interfaces {
-        public static byte[] main() throws Exception {
+    static class Interfaces {
+        static byte[] main() throws Exception {
 
             ClassWriter cw = new ClassWriter(0);
             FieldVisitor fv;
@@ -694,7 +694,7 @@ public class TestClasses implements Opcodes {
             return cw.toByteArray();
         }
 
-        public static byte[] myCharSequence() throws Exception {
+        static byte[] myCharSequence() throws Exception {
 
             ClassWriter cw = new ClassWriter(0);
             FieldVisitor fv;
@@ -746,7 +746,7 @@ public class TestClasses implements Opcodes {
         /**
          * Program interface that extends an SDK interface.
          */
-        public static byte[] namedRunnable() throws Exception {
+        static byte[] namedRunnable() throws Exception {
 
             ClassWriter cw = new ClassWriter(0);
             FieldVisitor fv;
@@ -767,7 +767,7 @@ public class TestClasses implements Opcodes {
             return cw.toByteArray();
         }
 
-        public static byte[] namedRunnableImpl() throws Exception {
+        static byte[] namedRunnableImpl() throws Exception {
 
             ClassWriter cw = new ClassWriter(0);
             FieldVisitor fv;
@@ -807,7 +807,7 @@ public class TestClasses implements Opcodes {
             return cw.toByteArray();
         }
 
-        public static byte[] myInterface() throws Exception {
+        static byte[] myInterface() throws Exception {
 
             ClassWriter cw = new ClassWriter(0);
             FieldVisitor fv;
@@ -828,7 +828,7 @@ public class TestClasses implements Opcodes {
         }
 
 
-        public static byte[] mySubInterface() throws Exception {
+        static byte[] mySubInterface() throws Exception {
 
             ClassWriter cw = new ClassWriter(0);
             FieldVisitor fv;
@@ -849,7 +849,7 @@ public class TestClasses implements Opcodes {
             return cw.toByteArray();
         }
 
-        public static byte[] myImpl() throws Exception {
+        static byte[] myImpl() throws Exception {
 
             ClassWriter cw = new ClassWriter(0);
             FieldVisitor fv;
@@ -891,7 +891,7 @@ public class TestClasses implements Opcodes {
          * This class happens to have a method matching the interface signature. It does not
          * implement the interface.
          */
-        public static byte[] doesSomething() throws Exception {
+        static byte[] doesSomething() throws Exception {
 
             ClassWriter cw = new ClassWriter(0);
             FieldVisitor fv;
@@ -942,7 +942,7 @@ public class TestClasses implements Opcodes {
          * This class extends DoesSomething and implements MyInterface. Extending DoesSomething
          * is enough to implement the interface.
          */
-        public static byte[] implementationFromSuperclass() throws Exception {
+        static byte[] implementationFromSuperclass() throws Exception {
 
             ClassWriter cw = new ClassWriter(0);
             FieldVisitor fv;
@@ -980,10 +980,10 @@ public class TestClasses implements Opcodes {
         }
 
         /**
-         * This class extends DoesSomething and implements MyInterface. Extending DoesSomething 
+         * This class extends DoesSomething and implements MyInterface. Extending DoesSomething
          * is enough to implement the interface.
          */
-        public static byte[] implementationFromSuperclass_subInterface() throws Exception {
+        static byte[] implementationFromSuperclass_subInterface() throws Exception {
 
             ClassWriter cw = new ClassWriter(0);
             FieldVisitor fv;
@@ -1038,9 +1038,9 @@ public class TestClasses implements Opcodes {
     /**
      * Fields.
      */
-    public static class Fields {
+    static class Fields {
 
-        public static byte[] main() throws Exception {
+        static byte[] main() throws Exception {
 
             ClassWriter cw = new ClassWriter(0);
             FieldVisitor fv;
@@ -1104,7 +1104,7 @@ public class TestClasses implements Opcodes {
             return cw.toByteArray();
         }
 
-        public static byte[] myFields() throws Exception {
+        static byte[] myFields() throws Exception {
 
             ClassWriter cw = new ClassWriter(0);
             FieldVisitor fv;
@@ -1184,7 +1184,7 @@ public class TestClasses implements Opcodes {
             return cw.toByteArray();
         }
 
-        public static byte[] myFieldsSubclass() throws Exception {
+        static byte[] myFieldsSubclass() throws Exception {
 
             ClassWriter cw = new ClassWriter(0);
             FieldVisitor fv;
@@ -1212,8 +1212,8 @@ public class TestClasses implements Opcodes {
     /**
      * Method overrides multiples interfaces.
      */
-    public static class MultipleOverriddenMethods {
-        public static byte[] main() throws Exception {
+    static class MultipleOverriddenMethods {
+        static byte[] main() throws Exception {
 
             ClassWriter cw = new ClassWriter(0);
             FieldVisitor fv;
@@ -1282,7 +1282,7 @@ public class TestClasses implements Opcodes {
             return cw.toByteArray();
         }
 
-        public static byte[] interfaceOne() throws Exception {
+        static byte[] interfaceOne() throws Exception {
 
             ClassWriter cw = new ClassWriter(0);
             FieldVisitor fv;
@@ -1301,7 +1301,7 @@ public class TestClasses implements Opcodes {
             return cw.toByteArray();
         }
 
-        public static byte[] interfaceTwo() throws Exception {
+        static byte[] interfaceTwo() throws Exception {
 
             ClassWriter cw = new ClassWriter(0);
             FieldVisitor fv;
@@ -1320,7 +1320,7 @@ public class TestClasses implements Opcodes {
             return cw.toByteArray();
         }
 
-        public static byte[] implementation() throws Exception {
+        static byte[] implementation() throws Exception {
 
             ClassWriter cw = new ClassWriter(0);
             FieldVisitor fv;
@@ -1357,8 +1357,8 @@ public class TestClasses implements Opcodes {
     /**
      * Annotations.
      */
-    public static class Annotations {
-        public static byte[] myAnnotation() throws Exception {
+    static class Annotations {
+        static byte[] myAnnotation() throws Exception {
 
             ClassWriter cw = new ClassWriter(0);
             FieldVisitor fv;
@@ -1423,7 +1423,7 @@ public class TestClasses implements Opcodes {
             return cw.toByteArray();
         }
 
-        public static byte[] myEnum() throws Exception {
+        static byte[] myEnum() throws Exception {
 
             ClassWriter cw = new ClassWriter(0);
             FieldVisitor fv;
@@ -1557,7 +1557,7 @@ public class TestClasses implements Opcodes {
             return cw.toByteArray();
         }
 
-        public static byte[] main_noAnnotations() throws Exception {
+        static byte[] main_noAnnotations() throws Exception {
 
             ClassWriter cw = new ClassWriter(0);
             FieldVisitor fv;
@@ -1595,7 +1595,7 @@ public class TestClasses implements Opcodes {
             return cw.toByteArray();
         }
 
-        public static byte[] main_annotatedClass() throws Exception {
+        static byte[] main_annotatedClass() throws Exception {
 
             ClassWriter cw = new ClassWriter(0);
             FieldVisitor fv;
@@ -1649,7 +1649,7 @@ public class TestClasses implements Opcodes {
             return cw.toByteArray();
         }
 
-        public static byte[] main_annotatedMethod() throws Exception {
+        static byte[] main_annotatedMethod() throws Exception {
 
             ClassWriter cw = new ClassWriter(0);
             FieldVisitor fv;
@@ -1704,7 +1704,7 @@ public class TestClasses implements Opcodes {
             return cw.toByteArray();
         }
 
-        public static byte[] nested() throws Exception {
+        static byte[] nested() throws Exception {
 
             ClassWriter cw = new ClassWriter(0);
             FieldVisitor fv;
@@ -1729,8 +1729,8 @@ public class TestClasses implements Opcodes {
     /**
      * Generic signatures.
      */
-    public static class Signatures {
-        public static byte[] main() throws Exception {
+    static class Signatures {
+        static byte[] main() throws Exception {
 
             ClassWriter cw = new ClassWriter(0);
             FieldVisitor fv;
@@ -1776,7 +1776,7 @@ public class TestClasses implements Opcodes {
             return cw.toByteArray();
         }
 
-        public static byte[] namedMap() throws Exception {
+        static byte[] namedMap() throws Exception {
 
             ClassWriter cw = new ClassWriter(0);
             FieldVisitor fv;
@@ -1814,7 +1814,7 @@ public class TestClasses implements Opcodes {
             return cw.toByteArray();
         }
 
-        public static byte[] named() throws Exception {
+        static byte[] named() throws Exception {
 
             ClassWriter cw = new ClassWriter(0);
             FieldVisitor fv;
@@ -1835,7 +1835,7 @@ public class TestClasses implements Opcodes {
         }
 
         @SuppressWarnings("NonBooleanMethodNameMayNotStartWithQuestion") // Mirrors interface name.
-        public static byte[] hasAge() throws Exception {
+        static byte[] hasAge() throws Exception {
 
             ClassWriter cw = new ClassWriter(0);
             FieldVisitor fv;
@@ -1859,8 +1859,8 @@ public class TestClasses implements Opcodes {
     /**
      * invokespecial when making "normal" super calls.
      */
-    public static class SuperCalls {
-        public static byte[] aaa() throws Exception {
+    static class SuperCalls {
+        static byte[] aaa() throws Exception {
 
             ClassWriter cw = new ClassWriter(0);
             FieldVisitor fv;
@@ -1921,7 +1921,7 @@ public class TestClasses implements Opcodes {
             return cw.toByteArray();
         }
 
-        public static byte[] bbb() throws Exception {
+        static byte[] bbb() throws Exception {
 
             ClassWriter cw = new ClassWriter(0);
             FieldVisitor fv;
@@ -1983,7 +1983,7 @@ public class TestClasses implements Opcodes {
             return cw.toByteArray();
         }
 
-        public static byte[] ccc() throws Exception {
+        static byte[] ccc() throws Exception {
 
             ClassWriter cw = new ClassWriter(0);
             FieldVisitor fv;
@@ -2078,8 +2078,8 @@ public class TestClasses implements Opcodes {
         }
     }
 
-    public static class InnerClasses {
-        public static byte[] main_useOuterClass() throws Exception {
+    static class InnerClasses {
+        static byte[] main_useOuterClass() throws Exception {
 
             ClassWriter cw = new ClassWriter(0);
             FieldVisitor fv;
@@ -2116,7 +2116,7 @@ public class TestClasses implements Opcodes {
             return cw.toByteArray();
         }
 
-        public static byte[] main_useOuterClass_makeAnonymousClass() throws Exception {
+        static byte[] main_useOuterClass_makeAnonymousClass() throws Exception {
 
             ClassWriter cw = new ClassWriter(0);
             FieldVisitor fv;
@@ -2153,7 +2153,7 @@ public class TestClasses implements Opcodes {
             return cw.toByteArray();
         }
 
-        public static byte[] main_useStaticInnerClass() throws Exception {
+        static byte[] main_useStaticInnerClass() throws Exception {
 
             ClassWriter cw = new ClassWriter(0);
             FieldVisitor fv;
@@ -2196,7 +2196,7 @@ public class TestClasses implements Opcodes {
             return cw.toByteArray();
         }
 
-        public static byte[] main_useInnerClass() throws Exception {
+        static byte[] main_useInnerClass() throws Exception {
 
             ClassWriter cw = new ClassWriter(0);
             FieldVisitor fv;
@@ -2244,7 +2244,7 @@ public class TestClasses implements Opcodes {
             return cw.toByteArray();
         }
 
-        public static byte[] main_empty() throws Exception {
+        static byte[] main_empty() throws Exception {
 
             ClassWriter cw = new ClassWriter(0);
             FieldVisitor fv;
@@ -2275,7 +2275,7 @@ public class TestClasses implements Opcodes {
             return cw.toByteArray();
         }
 
-        public static byte[] outer() throws Exception {
+        static byte[] outer() throws Exception {
 
             ClassWriter cw = new ClassWriter(0);
             FieldVisitor fv;
@@ -2327,7 +2327,7 @@ public class TestClasses implements Opcodes {
             return cw.toByteArray();
         }
 
-        public static byte[] inner() throws Exception {
+        static byte[] inner() throws Exception {
 
             ClassWriter cw = new ClassWriter(0);
             FieldVisitor fv;
@@ -2371,7 +2371,7 @@ public class TestClasses implements Opcodes {
             return cw.toByteArray();
         }
 
-        public static byte[] staticInner() throws Exception {
+        static byte[] staticInner() throws Exception {
 
             ClassWriter cw = new ClassWriter(0);
             FieldVisitor fv;
@@ -2407,7 +2407,7 @@ public class TestClasses implements Opcodes {
             return cw.toByteArray();
         }
 
-        public static byte[] anonymous() throws Exception {
+        static byte[] anonymous() throws Exception {
 
             ClassWriter cw = new ClassWriter(0);
             FieldVisitor fv;
@@ -2454,8 +2454,8 @@ public class TestClasses implements Opcodes {
         }
     }
 
-    public static class StaticMembers {
-        public static byte[] main() throws Exception {
+    static class StaticMembers {
+        static byte[] main() throws Exception {
 
             ClassWriter cw = new ClassWriter(0);
             FieldVisitor fv;
@@ -2520,7 +2520,7 @@ public class TestClasses implements Opcodes {
             return cw.toByteArray();
         }
 
-        public static byte[] utils() throws Exception {
+        static byte[] utils() throws Exception {
 
             ClassWriter cw = new ClassWriter(0);
             FieldVisitor fv;
@@ -2573,9 +2573,9 @@ public class TestClasses implements Opcodes {
         }
     }
 
-    public static class Reflection {
+    static class Reflection {
 
-        public static byte[] main_instanceOf() throws Exception {
+        static byte[] main_instanceOf() throws Exception {
 
             ClassWriter cw = new ClassWriter(0);
             FieldVisitor fv;
@@ -2625,7 +2625,7 @@ public class TestClasses implements Opcodes {
             return cw.toByteArray();
         }
 
-        public static byte[] main_classLiteral() throws Exception {
+        static byte[] main_classLiteral() throws Exception {
 
             ClassWriter cw = new ClassWriter(0);
             FieldVisitor fv;
@@ -2671,7 +2671,7 @@ public class TestClasses implements Opcodes {
             return cw.toByteArray();
         }
 
-        public static byte[] main_classForName() throws Exception {
+        static byte[] main_classForName() throws Exception {
 
             ClassWriter cw = new ClassWriter(0);
             FieldVisitor fv;
@@ -2707,7 +2707,7 @@ public class TestClasses implements Opcodes {
             return cw.toByteArray();
         }
 
-        public static byte[] main_classForName_dynamic() throws Exception {
+        static byte[] main_classForName_dynamic() throws Exception {
 
             ClassWriter cw = new ClassWriter(0);
             FieldVisitor fv;
@@ -2757,7 +2757,7 @@ public class TestClasses implements Opcodes {
             return cw.toByteArray();
         }
 
-        public static byte[] main_atomicIntegerFieldUpdater() throws Exception {
+        static byte[] main_atomicIntegerFieldUpdater() throws Exception {
 
             ClassWriter cw = new ClassWriter(0);
             FieldVisitor fv;
@@ -2798,7 +2798,7 @@ public class TestClasses implements Opcodes {
             return cw.toByteArray();
         }
 
-        public static byte[] main_atomicLongFieldUpdater() throws Exception {
+        static byte[] main_atomicLongFieldUpdater() throws Exception {
 
             ClassWriter cw = new ClassWriter(0);
             FieldVisitor fv;
@@ -2841,7 +2841,7 @@ public class TestClasses implements Opcodes {
             return cw.toByteArray();
         }
 
-        public static byte[] main_atomicReferenceFieldUpdater() throws Exception {
+        static byte[] main_atomicReferenceFieldUpdater() throws Exception {
 
             ClassWriter cw = new ClassWriter(0);
             FieldVisitor fv;
@@ -2882,7 +2882,7 @@ public class TestClasses implements Opcodes {
             return cw.toByteArray();
         }
 
-        public static byte[] main_getField() throws Exception {
+        static byte[] main_getField() throws Exception {
 
             ClassWriter cw = new ClassWriter(0);
             FieldVisitor fv;
@@ -2920,7 +2920,7 @@ public class TestClasses implements Opcodes {
             return cw.toByteArray();
         }
 
-        public static byte[] classWithFields() throws Exception {
+        static byte[] classWithFields() throws Exception {
 
             ClassWriter cw = new ClassWriter(0);
             FieldVisitor fv;
@@ -2959,8 +2959,8 @@ public class TestClasses implements Opcodes {
         }
     }
 
-    public static class TryCatch {
-        public static byte[] main() throws Exception {
+    static class TryCatch {
+        static byte[] main() throws Exception {
 
             ClassWriter cw = new ClassWriter(0);
             FieldVisitor fv;
@@ -3014,7 +3014,7 @@ public class TestClasses implements Opcodes {
             return cw.toByteArray();
         }
 
-        public static byte[] customException() throws Exception {
+        static byte[] customException() throws Exception {
 
             ClassWriter cw = new ClassWriter(0);
             FieldVisitor fv;
@@ -3038,7 +3038,7 @@ public class TestClasses implements Opcodes {
             return cw.toByteArray();
         }
 
-        public static byte[] main_tryFinally() throws Exception {
+        static byte[] main_tryFinally() throws Exception {
 
             ClassWriter cw = new ClassWriter(0);
             FieldVisitor fv;
@@ -3099,8 +3099,8 @@ public class TestClasses implements Opcodes {
         }
     }
 
-    public static class AbstractClasses {
-        public static byte[] myInterface() throws Exception {
+    static class AbstractClasses {
+        static byte[] myInterface() throws Exception {
 
             ClassWriter cw = new ClassWriter(0);
             FieldVisitor fv;
@@ -3121,7 +3121,7 @@ public class TestClasses implements Opcodes {
             return cw.toByteArray();
         }
 
-        public static byte[] abstractImpl() throws Exception {
+        static byte[] abstractImpl() throws Exception {
 
             ClassWriter cw = new ClassWriter(0);
             FieldVisitor fv;
@@ -3175,7 +3175,7 @@ public class TestClasses implements Opcodes {
             return cw.toByteArray();
         }
 
-        public static byte[] realImpl() throws Exception {
+        static byte[] realImpl() throws Exception {
 
             ClassWriter cw = new ClassWriter(0);
             FieldVisitor fv;
@@ -3244,8 +3244,8 @@ public class TestClasses implements Opcodes {
         }
     }
 
-    public static class Primitives {
-        public static byte[] main() throws Exception {
+    static class Primitives {
+        static byte[] main() throws Exception {
 
             ClassWriter cw = new ClassWriter(0);
             FieldVisitor fv;
@@ -3311,8 +3311,8 @@ public class TestClasses implements Opcodes {
         }
     }
 
-    public static class InvalidReferences {
-        public static byte[] main_sunMiscUnsafe() throws Exception {
+    static class InvalidReferences {
+        static byte[] main_sunMiscUnsafe() throws Exception {
 
             ClassWriter cw = new ClassWriter(0);
             FieldVisitor fv;
@@ -3372,7 +3372,7 @@ public class TestClasses implements Opcodes {
             return cw.toByteArray();
         }
 
-        public static byte[] main_javaInstrumentation() throws Exception {
+        static byte[] main_javaInstrumentation() throws Exception {
 
             ClassWriter cw = new ClassWriter(0);
             FieldVisitor fv;
@@ -3461,7 +3461,7 @@ public class TestClasses implements Opcodes {
         }
     }
 
-    public static byte[] emptyClass(String name) throws Exception {
+    static byte[] emptyClass(String name) throws Exception {
 
         ClassWriter cw = new ClassWriter(0);
         FieldVisitor fv;
@@ -3479,6 +3479,46 @@ public class TestClasses implements Opcodes {
             mv.visitInsn(RETURN);
             mv.visitMaxs(1, 1);
             mv.visitEnd();
+        }
+        cw.visitEnd();
+
+        return cw.toByteArray();
+    }
+
+    static byte[] classWithEmptyMethods(
+            String className,
+            String... namesAndDescriptors) throws Exception {
+
+        ClassWriter cw = new ClassWriter(0);
+        FieldVisitor fv;
+        MethodVisitor mv;
+        AnnotationVisitor av0;
+
+        cw.visit(V1_6, ACC_PUBLIC + ACC_SUPER, "test/" + className, null,
+                "java/lang/Object", null);
+
+        {
+            mv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
+            mv.visitCode();
+            mv.visitVarInsn(ALOAD, 0);
+            mv.visitMethodInsn(INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false);
+            mv.visitInsn(RETURN);
+            mv.visitMaxs(1, 1);
+            mv.visitEnd();
+        }
+        for (String namesAndDescriptor : namesAndDescriptors) {
+            int colon = namesAndDescriptor.indexOf(':');
+            String methodName = namesAndDescriptor.substring(0, colon);
+            String descriptor = namesAndDescriptor.substring(colon+1, namesAndDescriptor.length());
+            {
+                mv = cw.visitMethod(ACC_PUBLIC, methodName, descriptor, null, null);
+                mv.visitCode();
+                // This bytecode is only valid for some signatures (void methods). This class is used
+                // for testing the parser, we don't ever load these classes to a running VM anyway.
+                mv.visitInsn(RETURN);
+                mv.visitMaxs(0, 1);
+                mv.visitEnd();
+            }
         }
         cw.visitEnd();
 

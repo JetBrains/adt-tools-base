@@ -34,7 +34,6 @@ import com.android.resources.ScreenOrientation;
 import com.android.resources.ScreenRatio;
 import com.android.resources.ScreenSize;
 import com.android.resources.TouchScreen;
-import com.android.sdklib.ISystemImage.LocationType;
 import com.android.sdklib.devices.ButtonType;
 import com.android.sdklib.devices.Device;
 import com.android.sdklib.devices.Device.Builder;
@@ -50,9 +49,9 @@ import com.android.sdklib.devices.Storage;
 import com.android.sdklib.devices.Storage.Unit;
 import com.android.sdklib.mock.MockLog;
 import com.android.sdklib.repository.PkgProps;
-import com.android.sdklib.repository.local.LocalPlatformPkgInfo;
-import com.android.sdklib.repository.local.LocalSysImgPkgInfo;
-import com.android.sdklib.repositoryv2.AndroidSdkHandler;
+import com.android.sdklib.repository.legacy.local.LocalPlatformPkgInfo;
+import com.android.sdklib.repository.legacy.local.LocalSysImgPkgInfo;
+import com.android.sdklib.repository.AndroidSdkHandler;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -63,7 +62,7 @@ import java.util.List;
 
 /**
  * Base Test case that allocates a temporary SDK, a temporary AVD base folder with an SdkManager and
- * an AvdManager that points to them. <p/> Also overrides the {@link AndroidLocation} to point to
+ * an AvdManager that points to them. <p> Also overrides the {@link AndroidLocation} to point to
  * temp one.
  */
 public abstract class SdkManagerTestCase extends AndroidLocationTestCase {
@@ -129,7 +128,7 @@ public abstract class SdkManagerTestCase extends AndroidLocationTestCase {
     }
 
     /**
-     * Build enough of a skeleton SDK to make the tests pass. <p/> Ideally this wouldn't touch the
+     * Build enough of a skeleton SDK to make the tests pass. <p> Ideally this wouldn't touch the
      * file system but the current structure of the SdkManager and AvdManager makes this
      * impossible.
      */
@@ -472,10 +471,16 @@ public abstract class SdkManagerTestCase extends AndroidLocationTestCase {
                 BuildToolInfo.PathId.LD_ARM, SdkConstants.FN_LD_ARM);
         createFakeBuildToolsFile(
                 buildToolsDir, revision,
+                BuildToolInfo.PathId.LD_ARM64, SdkConstants.FN_LD_ARM64);
+        createFakeBuildToolsFile(
+                buildToolsDir, revision,
                 BuildToolInfo.PathId.LD_MIPS, SdkConstants.FN_LD_MIPS);
         createFakeBuildToolsFile(
                 buildToolsDir, revision,
                 BuildToolInfo.PathId.LD_X86, SdkConstants.FN_LD_X86);
+        createFakeBuildToolsFile(
+                buildToolsDir, revision,
+                BuildToolInfo.PathId.LD_X86_64, SdkConstants.FN_LD_X86_64);
     }
 
     private void createFakeBuildToolsFile(@NonNull File dir,

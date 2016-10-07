@@ -31,7 +31,7 @@ import java.net.URL;
  */
 public class VdIcon implements Icon, Comparable<VdIcon> {
 
-    private VdTree mVdTree;
+    private final VdTree mVdTree;
 
     private final String mName;
 
@@ -39,15 +39,43 @@ public class VdIcon implements Icon, Comparable<VdIcon> {
 
     private boolean mDrawCheckerBoardBackground;
 
-    private Rectangle myRectangle = new Rectangle();
+    private final Rectangle myRectangle = new Rectangle();
+
+    private final int mWidth;
+
+    private final int mHeight;
+
+    private final Color mBackground;
 
     private static final Color CHECKER_COLOR = new Color(238, 238, 238);
 
     public VdIcon(URL url) {
+        this(url, 0, 0);
+    }
+
+    public VdIcon(URL url, int width, int height) {
         mVdTree = parseVdTree(url);
         mUrl = url;
         String fileName = url.getFile();
         mName = fileName.substring(fileName.lastIndexOf("/") + 1);
+        if (width != 0 && height != 0) {
+            mWidth = width;
+            mHeight = height;
+        }
+        else {
+            mWidth = (int)(mVdTree != null ? mVdTree.getPortWidth() : 0);
+            mHeight = (int)(mVdTree != null ? mVdTree.getPortHeight() : 0);
+        }
+        mBackground = null;
+    }
+
+    public VdIcon(VdIcon icon, Color background) {
+        mVdTree = icon.mVdTree;
+        mUrl = icon.mUrl;
+        mName = icon.mName;
+        mWidth = icon.mWidth;
+        mHeight = icon.mHeight;
+        mBackground = background;
     }
 
     public String getName() {
@@ -58,7 +86,7 @@ public class VdIcon implements Icon, Comparable<VdIcon> {
         return mUrl;
     }
 
-    private VdTree parseVdTree(URL url) {
+    private static VdTree parseVdTree(URL url) {
         final VdParser p = new VdParser();
         VdTree result = null;
         try {
@@ -74,7 +102,7 @@ public class VdIcon implements Icon, Comparable<VdIcon> {
      * Paints a checkered board style background. Each grid square is {@code cellSize} pixels.
      */
     public static void paintCheckeredBackground(Graphics g, Color backgroundColor,
-            Color checkeredColor, Shape clip, int cellSize) {
+                                                Color checkeredColor, Shape clip, int cellSize) {
         final Shape savedClip = g.getClip();
         ((Graphics2D)g).clip(clip);
 
@@ -95,7 +123,11 @@ public class VdIcon implements Icon, Comparable<VdIcon> {
     public void paintIcon(Component c, Graphics g, int x, int y) {
         // Draw the checker board first, even when the tree is empty.
         myRectangle.setBounds(0, 0, c.getWidth(), c.getHeight());
-        if (mDrawCheckerBoardBackground) {
+        if (mBackground != null) {
+            g.setColor(mBackground);
+            g.fillRect(myRectangle.x, myRectangle.y, myRectangle.width, myRectangle.height);
+        }
+        else if (mDrawCheckerBoardBackground) {
             paintCheckeredBackground(g, Color.LIGHT_GRAY, CHECKER_COLOR, myRectangle, 8);
         }
 
@@ -113,12 +145,12 @@ public class VdIcon implements Icon, Comparable<VdIcon> {
 
     @Override
     public int getIconWidth() {
-        return (int) (mVdTree != null ? mVdTree.getPortWidth() : 0);
+        return mWidth;
     }
 
     @Override
     public int getIconHeight() {
-        return (int) (mVdTree != null ? mVdTree.getPortHeight() : 0);
+        return mHeight;
     }
 
     @Override

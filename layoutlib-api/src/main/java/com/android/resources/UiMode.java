@@ -18,7 +18,7 @@ package com.android.resources;
 
 /**
  * UI Mode enum.
- * <p/>This is used in the resource folder names.
+ * <p>This is used in the resource folder names.
  */
 public enum UiMode implements ResourceEnum {
     NORMAL("", "Normal", 1),
@@ -73,16 +73,7 @@ public enum UiMode implements ResourceEnum {
     }
 
     public static int getIndex(UiMode value) {
-        int i = 0;
-        for (UiMode mode : values()) {
-            if (mode == value) {
-                return i;
-            }
-
-            i++;
-        }
-
-        return -1;
+        return value == null ? -1 : value.ordinal();
     }
 
     public static UiMode getByIndex(int index) {

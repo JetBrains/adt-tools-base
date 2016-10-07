@@ -32,7 +32,6 @@ import com.google.common.base.Optional;
 import com.google.common.base.Predicate;
 import com.google.common.base.Stopwatch;
 import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
 import com.google.common.io.ByteStreams;
 import com.google.common.io.Files;
 
@@ -43,12 +42,12 @@ import org.objectweb.asm.ClassWriter;
 import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
+import java.util.stream.Collectors;
 
 /**
  * Common code for both types of shrinker runs, {@link FullRunShrinker} and
@@ -88,6 +87,7 @@ public abstract class AbstractShrinker<T> {
         } else {
             return className.startsWith("java/")
                     || (className.startsWith("android/")
+                            && !className.contains("/databinding/")
                             // Match android/support and android/preview/support, possibly others.
                             && !className.contains("/support/"));
         }
@@ -134,12 +134,9 @@ public abstract class AbstractShrinker<T> {
      */
     @NonNull
     protected static Collection<File> getAllDirectories(@NonNull TransformInput input) {
-        List<File> files = Lists.newArrayList();
-        for (DirectoryInput directoryInput : input.getDirectoryInputs()) {
-            files.add(directoryInput.getFile());
-        }
-
-        return files;
+        return input.getDirectoryInputs().stream()
+                .map(DirectoryInput::getFile)
+                .collect(Collectors.toList());
     }
 
     /**
@@ -148,28 +145,25 @@ public abstract class AbstractShrinker<T> {
      */
     @NonNull
     protected static Collection<File> getAllJars(@NonNull TransformInput input) {
-        List<File> files = Lists.newArrayList();
-        for (JarInput jarInput : input.getJarInputs()) {
-            files.add(jarInput.getFile());
-        }
-
-        return files;
+        return input.getJarInputs().stream()
+                .map(JarInput::getFile)
+                .collect(Collectors.toList());
     }
 
     /**
      * Increments the counter on the given graph node. If the node just became reachable, keeps on
      * walking the graph to find newly reachable nodes.
      *
-     * @param member node to increment
+     * @param node node to increment
      * @param dependencyType type of counter to increment
      * @param counterSet set of counters to work on
      */
     protected void incrementCounter(
-            @NonNull T member,
+            @NonNull T node,
             @NonNull DependencyType dependencyType,
             @NonNull CounterSet counterSet) {
-        if (mGraph.incrementAndCheck(member, dependencyType, counterSet)) {
-            for (Dependency<T> dependency : mGraph.getDependencies(member)) {
+        if (mGraph.incrementAndCheck(node, dependencyType, counterSet)) {
+            for (Dependency<T> dependency : mGraph.getDependencies(node)) {
                 incrementCounter(dependency.target, dependency.type, counterSet);
             }
         }
@@ -187,12 +181,12 @@ public abstract class AbstractShrinker<T> {
                 public Void call() {
                     T target = unresolvedReference.target;
                     T source = unresolvedReference.method;
-                    T startClass = mGraph.getClassForMember(target);
+                    T startClass = mGraph.getOwnerClass(target);
 
                     if (unresolvedReference.invokespecial) {
                         // With invokespecial we disregard the class in target and start walking up
                         // the type hierarchy, starting from the superclass of the caller.
-                        T sourceClass = mGraph.getClassForMember(source);
+                        T sourceClass = mGraph.getOwnerClass(source);
                         try {
                             startClass = mGraph.getSuperclass(sourceClass);
                             checkState(startClass != null);
@@ -205,7 +199,7 @@ public abstract class AbstractShrinker<T> {
 
                     if (!mGraph.isClassKnown(startClass)) {
                         mShrinkerLogger.invalidClassReference(
-                                mGraph.getMemberName(source),
+                                mGraph.getFullMemberName(source),
                                 mGraph.getClassName(startClass));
 
                         return null;
@@ -219,7 +213,7 @@ public abstract class AbstractShrinker<T> {
                                 currentClass,
                                 target);
                         if (matchingMethod != null) {
-                            if (isProgramClass(mGraph.getClassForMember(matchingMethod))) {
+                            if (isProgramClass(mGraph.getOwnerClass(matchingMethod))) {
                                 mGraph.addDependency(
                                         source,
                                         currentClass,
@@ -234,8 +228,8 @@ public abstract class AbstractShrinker<T> {
                     }
 
                     mShrinkerLogger.invalidMemberReference(
-                            mGraph.getMemberName(source),
-                            mGraph.getMemberName(target));
+                            mGraph.getFullMemberName(source),
+                            mGraph.getFullMemberName(target));
 
                     return null;
                 }
@@ -261,12 +255,9 @@ public abstract class AbstractShrinker<T> {
         if (Files.getFileExtension(classFile.getName()).equals("class")) {
             bytes = Files.toByteArray(classFile);
         } else {
-            JarFile jarFile = new JarFile(classFile);
-            try {
+            try (JarFile jarFile = new JarFile(classFile)) {
                 JarEntry jarEntry = jarFile.getJarEntry(className + ".class");
                 bytes = ByteStreams.toByteArray(jarFile.getInputStream(jarEntry));
-            } finally {
-                jarFile.close();
             }
         }
 
@@ -354,9 +345,7 @@ public abstract class AbstractShrinker<T> {
     protected void waitForAllTasks() {
         try {
             mExecutor.waitForTasksWithQuickFail(true);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        } catch (LoggedErrorException e) {
+        } catch (InterruptedException | LoggedErrorException e) {
             throw new RuntimeException(e);
         }
     }

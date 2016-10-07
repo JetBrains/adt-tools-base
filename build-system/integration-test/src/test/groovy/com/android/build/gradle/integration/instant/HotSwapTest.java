@@ -17,18 +17,23 @@
 package com.android.build.gradle.integration.instant;
 
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat;
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk;
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatZip;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import com.android.annotations.NonNull;
-import com.android.build.gradle.OptionalCompilationStep;
 import com.android.build.gradle.integration.common.category.DeviceTests;
+import com.android.build.gradle.integration.common.fixture.Adb;
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.common.fixture.Logcat;
+import com.android.build.gradle.integration.common.fixture.Packaging;
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp;
+import com.android.build.gradle.integration.common.runner.FilterableParameterized;
 import com.android.build.gradle.integration.common.truth.AbstractAndroidSubject;
 import com.android.build.gradle.integration.common.truth.ApkSubject;
 import com.android.build.gradle.integration.common.truth.DexFileSubject;
+import com.android.build.gradle.integration.common.utils.AndroidVersionMatcher;
 import com.android.build.gradle.integration.common.utils.TestFileUtils;
 import com.android.build.gradle.internal.incremental.ColdswapMode;
 import com.android.builder.model.InstantRun;
@@ -45,128 +50,199 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.junit.runners.Parameterized;
 
+import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.Collection;
 
 /**
  * Smoke test for hot swap builds.
  */
-@RunWith(MockitoJUnitRunner.class)
+@RunWith(FilterableParameterized.class)
 public class HotSwapTest {
 
+    private static final int VERSION_CODE = 17;
+    private static final String VERSION_NAME = "0.0.1";
     private static final ColdswapMode COLDSWAP_MODE = ColdswapMode.MULTIDEX;
-
     private static final String LOG_TAG = "hotswapTest";
+
+    @Parameterized.Parameters(name = "{0}")
+    public static Collection<Object[]> data() {
+        return Packaging.getParameters();
+    }
+
+    @Parameterized.Parameter
+    public Packaging packaging;
+
+    @Rule
+    public final Adb adb = new Adb();
 
     @Rule
     public GradleTestProject project =
             GradleTestProject.builder()
-                    .fromTestApp(HelloWorldApp.forPlugin("com.android.application")).create();
+                    .fromTestApp(HelloWorldApp.forPlugin("com.android.application"))
+                    .create();
 
     @Rule
     public Logcat logcat = Logcat.create();
 
     @Rule
-    public Expect expect = Expect.create();
+    public Expect expect = Expect.createAndEnableStackTrace();
 
     @Before
     public void activityClass() throws IOException {
+        Assume.assumeFalse("Disabled until instant run supports Jack", GradleTestProject.USE_JACK);
         createActivityClass("Original");
+    }
+
+    @Before
+    public void setVersionInBuildFile() throws IOException {
+        TestFileUtils.appendToFile(
+                project.getBuildFile(), "android.defaultConfig.versionCode = " + VERSION_CODE);
+        TestFileUtils.appendToFile(
+                project.getBuildFile(),
+                "android.defaultConfig.versionName = '" + VERSION_NAME + "'");
     }
 
     @Test
     public void buildIncrementallyWithInstantRun() throws Exception {
-        project.execute("clean");
-        InstantRun instantRunModel = InstantRunTestUtils
-                .getInstantRunModel(project.getSingleModel());
+        InstantRun instantRunModel =
+                InstantRunTestUtils.getInstantRunModel(project.model().getSingle());
 
-        project.execute(
-                InstantRunTestUtils.getInstantRunArgs(19,
-                        COLDSWAP_MODE, OptionalCompilationStep.RESTART_ONLY),
-                "assembleDebug");
+        InstantRunTestUtils.doInitialBuild(project, packaging, 19, COLDSWAP_MODE);
 
         // As no injected API level, will default to no splits.
         ApkSubject apkFile = expect.about(ApkSubject.FACTORY)
                 .that(project.getApk("debug"));
-        apkFile.getClass("Lcom/example/helloworld/HelloWorld;",
+        apkFile.hasClass("Lcom/example/helloworld/HelloWorld;",
                 AbstractAndroidSubject.ClassFileScope.MAIN)
                 .that().hasMethod("onCreate");
-        apkFile.getClass("Lcom/android/tools/fd/runtime/BootstrapApplication;",
+        apkFile.hasClass("Lcom/android/tools/fd/runtime/BootstrapApplication;",
                 AbstractAndroidSubject.ClassFileScope.MAIN);
 
-        makeBasicHotswapChange();
+        makeHotSwapChange();
 
-        project.execute(InstantRunTestUtils.getInstantRunArgs(19, COLDSWAP_MODE),
-                instantRunModel.getIncrementalAssembleTaskName());
+        project.executor()
+                .withInstantRun(19, COLDSWAP_MODE)
+                .withPackaging(packaging)
+                .run("assembleDebug");
 
         InstantRunArtifact artifact =
-                InstantRunTestUtils.getCompiledHotSwapCompatibleChange(instantRunModel);
+                InstantRunTestUtils.getReloadDexArtifact(instantRunModel);
 
         expect.about(DexFileSubject.FACTORY)
                 .that(artifact.file)
-                .hasClass("Lcom/example/helloworld/HelloWorld$override;")
-                .that().hasMethod("onCreate");
+                .hasClass("Lcom/example/helloworld/HelloWorld$1$override;")
+                .that().hasMethod("call");
+    }
+
+    @Test
+    public void updateResources() throws Exception {
+        File asset = project.file("src/main/assets/movie.mp4");
+        Files.createParentDirs(asset);
+        Files.write("this is a movie", asset, StandardCharsets.UTF_8);
+
+        InstantRun instantRunModel =
+                InstantRunTestUtils.getInstantRunModel(project.model().getSingle());
+
+        InstantRunTestUtils.doInitialBuild(project, packaging, 21, COLDSWAP_MODE);
+        File apk = project.getApk("debug");
+        assertThatApk(apk).contains("assets/movie.mp4");
+        assertThatApk(apk).contains("classes.dex");
+        assertThatApk(apk).contains("instant-run.zip");
+
+        TestFileUtils.appendToFile(asset, " upgraded");
+
+        project.executor()
+                .withInstantRun(21, COLDSWAP_MODE)
+                .withPackaging(packaging)
+                .run("assembleDebug");
+
+        InstantRunArtifact artifact =
+                InstantRunTestUtils.getResourcesArtifact(instantRunModel);
+
+        assertThat(artifact.file.getName()).endsWith(".ir.ap_");
+        assertThatZip(artifact.file).contains("assets/movie.mp4");
+        assertThatZip(artifact.file).doesNotContain("classes.dex");
+        assertThatZip(artifact.file).doesNotContain("instant-run.zip");
     }
 
     @Test
     public void testModel() throws Exception {
         InstantRun instantRunModel = InstantRunTestUtils.getInstantRunModel(
-                project.getSingleModel());
+                project.model().getSingle());
 
         assertTrue(instantRunModel.isSupportedByArtifact());
 
-        TestFileUtils.appendToFile(project.getBuildFile(), "\nandroid.buildTypes.debug.useJack = true");
+        TestFileUtils.appendToFile(
+                project.getBuildFile(), "\nandroid.buildTypes.debug.useJack = true");
 
         instantRunModel = InstantRunTestUtils.getInstantRunModel(
-                project.getSingleModel());
+                project.model().getSingle());
 
         assertFalse(instantRunModel.isSupportedByArtifact());
     }
 
     @Test
     @Category(DeviceTests.class)
-    public void doHotSwapChangeTest() throws Exception {
+    public void artHotSwapChangeTest() throws Exception {
+        doHotSwapChangeTest(adb.getDevice(AndroidVersionMatcher.thatUsesArt()));
+    }
+
+    @Test
+    @Category(DeviceTests.class)
+    public void dalvikHotSwapChangeTest() throws Exception {
+        doHotSwapChangeTest(adb.getDevice(AndroidVersionMatcher.thatUsesDalvik()));
+    }
+
+    private void doHotSwapChangeTest(@NonNull IDevice device) throws Exception {
         HotSwapTester.run(
                 project,
+                packaging,
                 "com.example.helloworld",
                 "HelloWorld",
                 LOG_TAG,
+                device,
                 logcat,
-                new HotSwapTester.Callbacks() {
+                new HotSwapTester.Steps() {
                     @Override
-                    public void verifyOriginalCode(@NonNull InstantRunClient client,
+                    public void verifyOriginalCode(
+                            @NonNull InstantRunClient client,
                             @NonNull Logcat logcat,
-                            @NonNull IDevice device) throws Exception {
+                            @NonNull IDevice device)
+                            throws Exception {
                         assertThat(logcat).containsMessageWithText("Original");
                         assertThat(logcat).doesNotContainMessageWithText("HOT SWAP!");
                     }
 
                     @Override
                     public void makeChange() throws Exception {
-                        makeBasicHotswapChange();
+                        makeHotSwapChange();
                     }
 
                     @Override
-                    public void verifyNewCode(@NonNull InstantRunClient client,
+                    public void verifyNewCode(
+                            @NonNull InstantRunClient client,
                             @NonNull Logcat logcat,
-                            @NonNull IDevice device) throws Exception {
+                            @NonNull IDevice device)
+                            throws Exception {
                         // Should not have restarted activity
                         assertThat(logcat).doesNotContainMessageWithText("Original");
                         assertThat(logcat).doesNotContainMessageWithText("HOT SWAP!");
 
                         client.restartActivity(device);
-                        Thread.sleep(500); // TODO: blocking logcat assertions with timeouts.
+                        InstantRunTestUtils.waitForAppStart(client, device);
 
                         assertThat(logcat).doesNotContainMessageWithText("Original");
                         assertThat(logcat).containsMessageWithText("HOT SWAP!");
                     }
-                }
-        );
+                });
 
     }
 
-    private void makeBasicHotswapChange() throws IOException {
+    private void makeHotSwapChange() throws IOException {
         createActivityClass("HOT SWAP!");
     }
 
@@ -177,14 +253,27 @@ public class HotSwapTest {
                 + "import android.os.Bundle;\n"
                 + "import java.util.logging.Logger;\n"
                 + "\n"
+                + "import java.util.concurrent.Callable;\n"
+                + "\n"
                 + "public class HelloWorld extends Activity {\n"
                 + "    /** Called when the activity is first created. */\n"
                 + "    @Override\n"
                 + "    public void onCreate(Bundle savedInstanceState) {\n"
                 + "        super.onCreate(savedInstanceState);\n"
                 + "        setContentView(R.layout.main);\n"
-                + "        Logger.getLogger(\"" + LOG_TAG + "\")\n"
-                + "                .warning(\"" + message + "\");"
+                + "        Callable<Void> callable = new Callable<Void>() {\n"
+                + "            @Override\n"
+                + "            public Void call() throws Exception {\n"
+                + "                Logger.getLogger(\"" + LOG_TAG + "\")\n"
+                + "                        .warning(\"" + message + "\");"
+                + "                return null;\n"
+                + "            }\n"
+                + "        };\n"
+                + "        try {\n"
+                + "            callable.call();\n"
+                + "        } catch (Exception e) {\n"
+                + "            throw new RuntimeException(e);\n"
+                + "        }\n"
                 + "    }\n"
                 + "}\n";
         Files.write(javaCompile,

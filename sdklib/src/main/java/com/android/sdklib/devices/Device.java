@@ -307,10 +307,7 @@ public final class Device {
             for (State s : d.getAllStates()) {
                 mState.add(s.deepCopy());
             }
-            mSoftware.addAll(d.getAllSoftware());
-            mState.addAll(d.getAllStates());
             mMeta = d.getMeta();
-            mDefaultState = d.getDefaultState();
         }
 
         public void setName(@NonNull String name) {
@@ -388,7 +385,15 @@ public final class Device {
             }
 
             if (mId == null) {
-                mId = mName;
+                if ("android-wear".equals(mTagId)) {
+                    // b.android.com/200772
+                    // When api 21 wear images are removed (hopefully reasonably soon post-api-24),
+                    // this also should be, since it is obviously a horrible hack.
+                    mId = "wear_" + mName.substring(mName.lastIndexOf(' ') + 1).toLowerCase();
+                }
+                else {
+                    mId = mName;
+                }
             }
 
             if (mMeta == null) {
@@ -522,10 +527,10 @@ public final class Device {
      * is user friendly with devices using names first sorted alphabetically
      * followed by all devices that use a numeric screen size sorted by actual
      * size.
-     * <p/>
+     * <p>
      * Note that although the name results in a proper sort, it is not a name
      * that you actually want to display to the user.
-     * <p/>
+     * <p>
      * Extracted from DeviceMenuListener. Modified to remove the leading space
      * insertion as it doesn't render neatly in the avd manager. Instead added
      * the option to add leading zeroes to make the string names sort properly.

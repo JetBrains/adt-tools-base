@@ -26,14 +26,18 @@ import com.android.build.gradle.integration.common.utils.ModelHelper;
 import com.android.builder.model.AndroidLibrary;
 import com.android.builder.model.AndroidProject;
 import com.android.builder.model.Dependencies;
+import com.android.builder.model.JavaLibrary;
 import com.android.builder.model.Variant;
 import com.android.ide.common.process.ProcessException;
+import com.google.common.base.Charsets;
 import com.google.common.collect.Iterables;
+import com.google.common.io.Files;
 import com.google.common.truth.Truth;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -53,11 +57,13 @@ public class LibWithProvidedDirectJarTest {
 
     @BeforeClass
     public static void setUp() throws IOException {
+        Files.write("include 'app', 'library', 'jar'", project.getSettingsFile(), Charsets.UTF_8);
+
         appendToFile(project.getSubproject("app").getBuildFile(),
                 "\n" +
-                        "dependencies {\n" +
-                        "    compile project(\":library\")\n" +
-                        "}\n");
+                "dependencies {\n" +
+                "    compile project(\":library\")\n" +
+                "}\n");
 
         appendToFile(project.getSubproject("library").getBuildFile(),
                 "\n" +
@@ -81,35 +87,40 @@ public class LibWithProvidedDirectJarTest {
     }
 
     @Test
-    public void checkProvidedJarIsIntheMainArtifactDeps() {
+    @Ignore
+    public void checkProvidedJarIsIntheLibCompileDeps() {
         Variant variant = ModelHelper.getVariant(models.get(":library").getVariants(), "debug");
-        Truth.assertThat(variant).isNotNull();
 
-        Dependencies deps = variant.getMainArtifact().getDependencies();
-        TruthHelper.assertThat(deps.getProjects()).containsExactly(":jar");
+        Dependencies deps = variant.getMainArtifact().getCompileDependencies();
+
+        Collection<JavaLibrary> javaLibraries = deps.getJavaLibraries();
+        assertThat(javaLibraries).hasSize(1);
+
+        JavaLibrary javaLibrary = Iterables.getOnlyElement(javaLibraries);
+        assertThat(javaLibrary.getProject()).isEqualTo(":jar");
+        assertThat(javaLibrary.isProvided()).isTrue();
     }
 
     @Test
-    public void checkProvidedJarIsNotInThePublishedDeps() {
-        Variant variant = ModelHelper.getVariant(models.get(":app").getVariants(), "debug");
-        Truth.assertThat(variant).isNotNull();
+    public void checkProvidedJarIsNotIntheLibPackageDeps() {
+        Variant variant = ModelHelper.getVariant(models.get(":library").getVariants(), "debug");
 
-        Dependencies deps = variant.getMainArtifact().getDependencies();
+        Dependencies deps = variant.getMainArtifact().getPackageDependencies();
+
+        Collection<JavaLibrary> javaLibraries = deps.getJavaLibraries();
+        assertThat(javaLibraries).isEmpty();
+    }
+
+    @Test
+    public void checkProvidedJarIsNotInTheAppDeps() {
+        Variant variant = ModelHelper.getVariant(models.get(":app").getVariants(), "debug");
+
+        Dependencies deps = variant.getMainArtifact().getCompileDependencies();
         Collection<AndroidLibrary> libraries = deps.getLibraries();
         assertThat(libraries).hasSize(1);
 
         AndroidLibrary androidLibrary = Iterables.getOnlyElement(libraries);
-
-        // TODO: check that this library does not have a jar dependency since it's provided.
-    }
-
-    @Test
-    public void checkProvidedJarIsInTheAndroidTestDependency() {
-        // TODO
-    }
-
-    @Test
-    public void checkProvidedJarIsInTheUnitTestDependency() {
-        // TODO
+        assertThat(androidLibrary.getProject()).isEqualTo(":library");
+        assertThat(androidLibrary.getJavaDependencies()).isEmpty();
     }
 }

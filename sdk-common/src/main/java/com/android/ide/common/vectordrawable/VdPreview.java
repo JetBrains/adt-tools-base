@@ -257,7 +257,7 @@ public class VdPreview {
 
     /**
      * This generates an image according to the VectorDrawable's content {@code xmlFileContent}.
-     * At the same time, {@vdErrorLog} captures all the errors found during parsing.
+     * At the same time, {@code vdErrorLog} captures all the errors found during parsing.
      * The size of image is determined by the {@code size}.
      *
      * @param targetSize the size of result image.

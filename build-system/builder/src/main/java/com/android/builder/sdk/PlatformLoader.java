@@ -17,6 +17,7 @@
 package com.android.builder.sdk;
 
 import static com.android.SdkConstants.FN_AAPT;
+import static com.android.SdkConstants.FN_AAPT2;
 import static com.android.SdkConstants.FN_AIDL;
 import static com.android.SdkConstants.FN_BCC_COMPAT;
 import static com.android.SdkConstants.FN_RENDERSCRIPT;
@@ -29,9 +30,12 @@ import com.android.sdklib.BuildToolInfo;
 import com.android.sdklib.IAndroidTarget;
 import com.android.repository.Revision;
 import com.android.utils.ILogger;
+import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 
 import java.io.File;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Singleton-based implementation of SdkLoader for a platform-based SDK.
@@ -68,15 +72,17 @@ public class PlatformLoader implements SdkLoader {
 
     @NonNull
     @Override
-    public TargetInfo getTargetInfo(@NonNull String targetHash,
-            @NonNull Revision buildToolRevision, @NonNull ILogger logger) {
+    public TargetInfo getTargetInfo(
+            @NonNull String targetHash,
+            @NonNull Revision buildToolRevision,
+            @NonNull ILogger logger,
+            @NonNull SdkLibData sdkLibData) {
         init(logger);
-
         IAndroidTarget androidTarget = new FakeAndroidTarget(mTreeLocation.getPath(), targetHash);
 
         File hostTools = getHostToolsFolder();
 
-        BuildToolInfo buildToolInfo = new BuildToolInfo(
+        BuildToolInfo buildToolInfo = BuildToolInfo.modifiedLayout(
                 buildToolRevision,
                 mTreeLocation,
                 new File(hostTools, FN_AAPT),
@@ -88,9 +94,12 @@ public class PlatformLoader implements SdkLoader {
                 new File(mTreeLocation, "prebuilts/sdk/renderscript/clang-include"),
                 new File(hostTools, FN_BCC_COMPAT),
                 new File(hostTools, "arm-linux-androideabi-ld"),
+                new File(hostTools, "aarch64-linux-android-ld"),
                 new File(hostTools, "i686-linux-android-ld"),
+                new File(hostTools, "x86_64-linux-android-ld"),
                 new File(hostTools, "mipsel-linux-android-ld"),
-                new File(hostTools, FN_ZIPALIGN));
+                new File(hostTools, FN_ZIPALIGN),
+                new File(hostTools, FN_AAPT2));
 
         return new TargetInfo(androidTarget, buildToolInfo);
     }
@@ -106,6 +115,15 @@ public class PlatformLoader implements SdkLoader {
     @NonNull
     public ImmutableList<File> getRepositories() {
         return mRepositories;
+    }
+
+    @NonNull
+    @Override
+    public List<File> updateRepositories(
+            @NonNull List<String> repositoryPaths,
+            @NonNull SdkLibData sdkLibData,
+            @NonNull ILogger logger) {
+        return Collections.EMPTY_LIST;
     }
 
     private PlatformLoader(@NonNull File treeLocation) {

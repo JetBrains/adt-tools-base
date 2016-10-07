@@ -25,7 +25,7 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
 import com.android.repository.api.LocalPackage;
-import com.android.sdklib.repositoryv2.AndroidSdkHandler;
+import com.android.sdklib.repository.AndroidSdkHandler;
 import com.android.tools.lint.client.api.LintClient;
 import com.android.tools.lint.detector.api.LintUtils;
 import com.android.utils.Pair;
@@ -116,7 +116,14 @@ public class ApiLookup {
         synchronized (ApiLookup.class) {
             ApiLookup db = sInstance.get();
             if (db == null) {
-                File file = client.findResource(XML_FILE_PATH);
+                // Fallbacks: Allow the API database
+                String env = System.getProperty("LINT_API_DATABASE");
+                File file;
+                if (env != null) {
+                    file = new File(env);
+                } else {
+                    file = client.findResource(XML_FILE_PATH);
+                }
                 if (file == null) {
                     // AOSP build environment?
                     String build = System.getenv("ANDROID_BUILD_TOP");   //$NON-NLS-1$
@@ -753,8 +760,7 @@ public class ApiLookup {
         //noinspection VariableNotUsedInsideIf
         if (mData != null) {
             return getClassVersion(findClass(className));
-        }  else {
-            assert mInfo != null;
+        }  else if (mInfo != null) {
             ApiClass clz = mInfo.getClass(className);
             if (clz != null) {
                 int since = clz.getSince();
@@ -822,8 +828,7 @@ public class ApiLookup {
                     return getClassVersion(classNumber);
                 }
             }
-        }  else {
-            assert mInfo != null;
+        }  else if (mInfo != null) {
             ApiClass clz = mInfo.getClass(sourceClass);
             if (clz != null) {
                 List<Pair<String, Integer>> interfaces = clz.getInterfaces();
@@ -860,8 +865,7 @@ public class ApiLookup {
                 int deprecatedIn = UnsignedBytes.toInt(mData[offset]);
                 return deprecatedIn != 0 ? deprecatedIn : -1;
             }
-        }  else {
-            assert mInfo != null;
+        }  else if (mInfo != null) {
             ApiClass clz = mInfo.getClass(className);
             if (clz != null) {
                 int deprecatedIn = clz.getDeprecatedIn();
@@ -904,8 +908,7 @@ public class ApiLookup {
                 }
                 return api;
             }
-        }  else {
-            assert mInfo != null;
+        }  else if (mInfo != null) {
             ApiClass clz = mInfo.getClass(owner);
             if (clz != null) {
                 String signature = name + desc;
@@ -943,8 +946,7 @@ public class ApiLookup {
                 int deprecatedIn = findMemberDeprecatedIn(classNumber, name, desc);
                 return deprecatedIn != 0 ? deprecatedIn : -1;
             }
-        }  else {
-            assert mInfo != null;
+        }  else if (mInfo != null) {
             ApiClass clz = mInfo.getClass(owner);
             if (clz != null) {
                 String signature = name + desc;
@@ -985,8 +987,7 @@ public class ApiLookup {
                 }
                 return api;
             }
-        }  else {
-            assert mInfo != null;
+        }  else if (mInfo != null) {
             ApiClass clz = mInfo.getClass(owner);
             if (clz != null) {
                 int since = clz.getField(name, mInfo);
@@ -1021,8 +1022,7 @@ public class ApiLookup {
                 int deprecatedIn = findMemberDeprecatedIn(classNumber, name, null);
                 return deprecatedIn != 0 ? deprecatedIn : -1;
             }
-        }  else {
-            assert mInfo != null;
+        }  else if (mInfo != null) {
             ApiClass clz = mInfo.getClass(owner);
             if (clz != null) {
                 int deprecatedIn = clz.getMemberDeprecatedIn(name, mInfo);

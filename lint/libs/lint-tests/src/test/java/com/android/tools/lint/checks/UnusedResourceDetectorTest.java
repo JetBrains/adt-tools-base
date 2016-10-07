@@ -126,7 +126,33 @@ public class UnusedResourceDetectorTest extends AbstractCheckTest {
                 "res/layout/accessibility.xml"));
     }
 
+    public void testImplicitFragmentUsage() throws Exception {
+        mEnableIds = true;
+        // Regression test for https://code.google.com/p/android/issues/detail?id=209393
+        // Ensure fragment id's aren't deleted.
+        assertEquals("No warnings.",
+
+                lintProject(
+                        xml("res/layout/has_fragment.xml", ""
+                                + "<LinearLayout xmlns:android=\"http://schemas.android.com/apk/res/android\">\n"
+                                + "<fragment\n"
+                                + "    android:id=\"@+id/viewer\"\n"
+                                + "    android:name=\"package.name.MyFragment\"\n"
+                                + "    android:layout_width=\"match_parent\"\n"
+                                + "    android:layout_height=\"match_parent\"/>\n"
+                                + "</LinearLayout>\n"),
+                        java("src/test/pkg/Test.java", ""
+                                + "package test.pkg;\n"
+                                + "public class Test {\n"
+                                + "    public void test() {"
+                                + "        int used = R.layout.has_fragment;\n"
+                                + "    }"
+                                + "}")
+                ));
+    }
+
     public void testArrayReference() throws Exception {
+        mEnableIds = false;
         assertEquals(""
                 // The string is unused, but only because the array referencing it is unused too.
                 + "res/values/arrayusage.xml:2: Warning: The resource R.string.my_item appears to be unused [UnusedResources]\n"
@@ -149,6 +175,7 @@ public class UnusedResourceDetectorTest extends AbstractCheckTest {
     }
 
     public void testArrayReferenceIncluded() throws Exception {
+        mEnableIds = false;
         assertEquals("No warnings.",
 
                 lintProject(
@@ -420,6 +447,31 @@ public class UnusedResourceDetectorTest extends AbstractCheckTest {
                 ));
     }
 
+    public void testDataBindingIds() throws Exception {
+        // Make sure id's in data binding layouts aren't considered unused
+        // (since the compiler will generate accessors for these that
+        // may not be visible when running lint on edited sources)
+        // Regression test for https://code.google.com/p/android/issues/detail?id=189065
+        mEnableIds = true;
+        assertEquals("No warnings.",
+
+                lintProject(
+                        xml("res/layout/db.xml", ""
+                                + "<layout xmlns:android=\"http://schemas.android.com/apk/res/android\""
+                                + "    xmlns:tools=\"http://schemas.android.com/tools\" "
+                                + "    tools:keep=\"@layout/db\">\n"
+                                + "   <data>\n"
+                                + "       <variable name=\"user\" type=\"com.example.User\"/>\n"
+                                + "   </data>\n"
+                                + "   <LinearLayout\n"
+                                + "       android:orientation=\"vertical\"\n"
+                                + "       android:id=\"@+id/my_id\"\n"
+                                + "       android:layout_width=\"match_parent\"\n"
+                                + "       android:layout_height=\"match_parent\" />\n"
+                                + "</layout>")
+                ));
+    }
+
     public void testPublic() throws Exception {
         // Resources marked as public should not be listed as potentially unused
         mEnableIds = false;
@@ -525,6 +577,60 @@ public class UnusedResourceDetectorTest extends AbstractCheckTest {
 
                                 + "    <style name=\"ImplicitUsed\" parent=\"android:Widget.ActionBar\"/>\n"
                                 + "</resources>")
+                ));
+    }
+
+
+    public void testThemeFromLayout() throws Exception {
+        mEnableIds = false;
+        assertEquals("No warnings.",
+
+                lintProject(
+                        xml("res/values/styles.xml", ""
+                                + "<resources>\n"
+                                + "    <style name=\"InlineActionView\" />\n"
+                                + "    <style name=\"InlineActionView.Like\">\n"
+                                + "    </style>\n"
+                                + "</resources>\n"),
+                        xml("res/layout/main.xml", ""
+                                + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                                + "<LinearLayout xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                                + "    android:orientation=\"vertical\" android:layout_width=\"match_parent\"\n"
+                                + "    android:layout_height=\"match_parent\">\n"
+                                + "\n"
+                                + "    <Button\n"
+                                + "        android:layout_width=\"wrap_content\"\n"
+                                + "        android:layout_height=\"wrap_content\"\n"
+                                + "        style=\"@style/InlineActionView.Like\"\n"
+                                + "        android:layout_gravity=\"center_horizontal\" />\n"
+                                + "</LinearLayout>"),
+                        java("test/my/pkg/MyTest.java", ""
+                                + "package my.pkg;\n"
+                                + "class MyTest {\n"
+                                + "    public void test() {\n"
+                                + "        System.out.println(R.layout.main);\n"
+                                + "    }\n"
+                                + "}\n")
+                ));
+    }
+
+    public void testKeepAndDiscard() throws Exception {
+        mEnableIds = false;
+        assertEquals("No warnings.",
+
+                lintProject(
+                        // By name
+                        xml("res/raw/keep.xml", ""
+                                + "<foo/>"),
+
+                        // By content
+                        xml("res/raw/used.xml", ""
+                                + "<resources\n"
+                                + "        xmlns:tools=\"http://schemas.android.com/tools\"\n"
+                                + "        tools:shrinkMode=\"strict\"\n"
+                                + "        tools:discard=\"@raw/unused\"\n"
+                                + "        tools:keep=\"@raw/used\" />\n")
+
                 ));
     }
 
@@ -635,7 +741,7 @@ public class UnusedResourceDetectorTest extends AbstractCheckTest {
 
     @Override
     protected void checkReportedError(@NonNull Context context, @NonNull Issue issue,
-            @NonNull Severity severity, @Nullable Location location, @NonNull String message) {
+            @NonNull Severity severity, @NonNull Location location, @NonNull String message) {
         assertNotNull(message, UnusedResourceDetector.getUnusedResource(message, TEXT));
     }
 }

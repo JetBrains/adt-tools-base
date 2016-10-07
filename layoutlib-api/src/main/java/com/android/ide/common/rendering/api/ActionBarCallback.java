@@ -80,7 +80,7 @@ public class ActionBarCallback {
 
     /**
      * Returns the type of navigation for home button to be used in the action bar.
-     * <p/>
+     * <p>
      * For example, for showHomeAsUp, an arrow is shown alongside the "home" icon.
      *
      * @return navigation type for home button. Never null.

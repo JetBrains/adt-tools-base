@@ -52,7 +52,8 @@ import javax.xml.parsers.ParserConfigurationException;
  *
  * This is able to save its post work state and reload this for incremental update.
  */
-abstract class DataMerger<I extends DataItem<F>, F extends DataFile<I>, S extends DataSet<I,F>> implements DataMap<I> {
+abstract class DataMerger<I extends DataItem<F>, F extends DataFile<I>, S extends DataSet<I,F>>
+        implements DataMap<I> {
 
     static final String FN_MERGER_XML = "merger.xml";
     static final String NODE_MERGER = "merger";
@@ -270,7 +271,8 @@ abstract class DataMerger<I extends DataItem<F>, F extends DataFile<I>, S extend
                 }
 
                 // now need to handle, the type of each (single res file, multi res file), whether
-                // they are the same object or not, whether the previously written object was deleted.
+                // they are the same object or not, whether the previously written object was
+                // deleted.
 
                 if (toWrite == null) {
                     // nothing to write? delete only then.
@@ -308,12 +310,13 @@ abstract class DataMerger<I extends DataItem<F>, F extends DataFile<I>, S extend
      *
      * @param blobRootFolder the root folder where blobs are store.
      * @param consumer the merge consumer that was used by the merge.
+     * @param includeTimestamps true if the files should be tagged with lastModified timestamps
      *
      * @throws MergingException if something goes wrong
      *
      * @see #loadFromBlob(File, boolean)
      */
-    public void writeBlobTo(@NonNull File blobRootFolder, @NonNull MergeConsumer<I> consumer)
+    public void writeBlobTo(@NonNull File blobRootFolder, @NonNull MergeConsumer<I> consumer, boolean includeTimestamps)
             throws MergingException {
         // write "compact" blob
         DocumentBuilder builder;
@@ -332,7 +335,7 @@ abstract class DataMerger<I extends DataItem<F>, F extends DataFile<I>, S extend
                 Node dataSetNode = document.createElement(NODE_DATA_SET);
                 rootNode.appendChild(dataSetNode);
 
-                dataSet.appendToXml(dataSetNode, document, consumer);
+                dataSet.appendToXml(dataSetNode, document, consumer, includeTimestamps);
             }
 
             // write merged items
@@ -357,6 +360,22 @@ abstract class DataMerger<I extends DataItem<F>, F extends DataFile<I>, S extend
     }
 
     /**
+     * Writes a single blob file to store all that the DataMerger knows about, and tag file entries with
+     * lastModified timestamps.
+     *
+     * @param blobRootFolder the root folder where blobs are store.
+     * @param consumer the merge consumer that was used by the merge.
+     *
+     * @throws MergingException if something goes wrong
+     *
+     * @see #loadFromBlob(File, boolean)
+     */
+    public void writeBlobToWithTimestamps(@NonNull File blobRootFolder, @NonNull MergeConsumer<I> consumer)
+            throws MergingException {
+        writeBlobTo(blobRootFolder, consumer, true);
+    }
+
+    /**
      * Loads the merger state from a blob file.
      *
      * This can be loaded into two different ways that differ only by the state on the
@@ -374,7 +393,7 @@ abstract class DataMerger<I extends DataItem<F>, F extends DataFile<I>, S extend
      * @return true if the blob was loaded.
      * @throws MergingException if something goes wrong
      *
-     * @see #writeBlobTo(File, MergeConsumer)
+     * @see #writeBlobTo(File, MergeConsumer, boolean)
      */
     public boolean loadFromBlob(@NonNull File blobRootFolder, boolean incrementalState)
             throws MergingException {
@@ -705,4 +724,5 @@ abstract class DataMerger<I extends DataItem<F>, F extends DataFile<I>, S extend
     protected boolean filterAccept(@NonNull I dataItem) {
         return true;
     }
+
 }

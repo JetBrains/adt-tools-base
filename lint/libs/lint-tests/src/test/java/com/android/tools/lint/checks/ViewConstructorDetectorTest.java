@@ -77,4 +77,21 @@ public class ViewConstructorDetectorTest extends AbstractCheckTest {
                         "bytecode/AbstractCustomView.class.data=>bin/classes/test/bytecode/AbstractCustomView.class"
                 ));
     }
+
+    @SuppressWarnings("ClassNameDiffersFromFileName")
+    public void testPrivate() throws Exception {
+        assertEquals("No warnings.",
+            lintProject(java("src/test/pkg/Test.java", ""
+                + "package test.pkg;\n"
+                + "\n"
+                + "import android.view.View;\n"
+                + "\n"
+                + "public class Test {\n"
+                + "    private static class PrivateCustomView extends View {\n"
+                + "        public PrivateCustomView() {\n"
+                + "            super(null);\n"
+                + "        }\n"
+                + "    }\n"
+                + "}\n")));
+    }
 }

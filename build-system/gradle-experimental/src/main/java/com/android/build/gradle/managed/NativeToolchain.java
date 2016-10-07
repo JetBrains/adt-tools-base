@@ -16,7 +16,6 @@
 
 package com.android.build.gradle.managed;
 
-import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 
 import org.gradle.api.Named;

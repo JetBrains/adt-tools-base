@@ -203,4 +203,23 @@ public class RequiredAttributeDetectorTest extends AbstractCheckTest {
         assertFalse(RequiredAttributeDetector.hasLayoutVariations(
                 new File(projectDir, "res/layout/size2.xml".replace('/', File.separatorChar))));
     }
+
+    public void testDataBinding() throws Exception {
+        assertEquals("No warnings.",
+                lintProject(xml("res/layout/db.xml", ""
+                        + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                        + "<layout>\n"
+                        + "    <data>\n"
+                        + "        <variable />\n"
+                        + "    </data>\n"
+                        + "<RelativeLayout xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                        + "                android:orientation=\"vertical\"\n"
+                        + "                android:layout_width=\"match_parent\"\n"
+                        + "                android:layout_height=\"match_parent\">\n"
+                        + "\n"
+                        + "    <LinerLayout android:layout_width=\"match_parent\"\n"
+                        + "                 android:layout_height=\"match_parent\"/>\n"
+                        + "</RelativeLayout>\n"
+                        + "</layout>\n")));
+    }
 }

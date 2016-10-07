@@ -20,8 +20,6 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.repository.api.Downloader;
 import com.android.repository.api.ProgressIndicator;
-import com.android.repository.api.SettingsController;
-import com.android.repository.io.FileOp;
 import com.google.common.collect.Maps;
 import com.google.common.io.ByteStreams;
 
@@ -40,19 +38,19 @@ public class FakeDownloader implements Downloader {
 
     private final MockFileOp mFileOp;
 
+    private final Map<URL, byte[]> mRegisteredFiles = Maps.newHashMap();
+
     public FakeDownloader(MockFileOp fop) {
         mFileOp = fop;
     }
 
     public void registerUrl(URL url, byte[] data) {
-        String filename = getFileName(url);
-        mFileOp.recordExistingFile(filename, data);
+        mRegisteredFiles.put(url, data);
     }
 
     public void registerUrl(URL url, InputStream content) throws IOException {
         byte[] data = ByteStreams.toByteArray(content);
-        String filename = getFileName(url);
-        mFileOp.recordExistingFile(filename, data);
+        mRegisteredFiles.put(url, data);
     }
 
     @NonNull
@@ -62,26 +60,29 @@ public class FakeDownloader implements Downloader {
 
     @Override
     @NonNull
-    public InputStream downloadAndStream(@NonNull URL url, @Nullable SettingsController controller,
-                                         @NonNull ProgressIndicator indicator) throws IOException {
-        InputStream toWrap = null;
-        try {
-            toWrap = mFileOp.newFileInputStream(new File(getFileName(url)));
+    public InputStream downloadAndStream(@NonNull URL url, @NonNull ProgressIndicator indicator)
+            throws IOException {
+        byte[] content = mRegisteredFiles.get(url);
+        if (content == null) {
+            throw new IOException("no content at " + url);
         }
-        catch (Exception e) {
-            // nothing
-        }
-        if (toWrap != null) {
-            return new ReopeningInputStream(toWrap);
-        }
-        throw new IOException("Failed to open " + url);
+        InputStream toWrap = new ByteArrayInputStream(content);
+        return new ReopeningInputStream(toWrap);
     }
 
     @Nullable
     @Override
-    public File downloadFully(@NonNull URL url, @Nullable SettingsController settings,
+    public File downloadFully(@NonNull URL url, @NonNull ProgressIndicator indicator)
+            throws IOException {
+        String filename = getFileName(url);
+        mFileOp.recordExistingFile(filename, mRegisteredFiles.get(url));
+        return new File(filename);
+    }
+
+    @Override
+    public void downloadFully(@NonNull URL url, @NonNull File target, @Nullable String checksum,
             @NonNull ProgressIndicator indicator) throws IOException {
-        return new File(getFileName(url));
+        mFileOp.recordExistingFile(mFileOp.getAgnosticAbsPath(target), mRegisteredFiles.get(url));
     }
 
     /**

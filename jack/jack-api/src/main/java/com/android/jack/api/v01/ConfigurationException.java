@@ -24,14 +24,27 @@ import javax.annotation.Nonnull;
 public class ConfigurationException extends ChainedException {
   private static final long serialVersionUID = 1L;
 
+  /**
+   * Construct the exception with a {@link String} message.
+   * @param message the message
+   */
   public ConfigurationException(@Nonnull String message) {
     super(message);
   }
 
+  /**
+   * Construct the exception with a {@link String} message and a {@link Throwable} cause.
+   * @param message the message
+   * @param cause the cause
+   */
   public ConfigurationException(@Nonnull String message, @Nonnull Throwable cause) {
     super(message, cause);
   }
 
+  /**
+   * Construct the exception with a {@link Throwable} cause.
+   * @param cause the cause
+   */
   public ConfigurationException(@Nonnull Throwable cause) {
     super(cause);
   }

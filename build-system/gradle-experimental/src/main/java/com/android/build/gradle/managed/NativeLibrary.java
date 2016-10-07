@@ -33,21 +33,21 @@ import java.util.List;
 public interface NativeLibrary extends Named {
 
     /**
-     * Executable for building the library.
+     * Command for building the library.
      */
-    @Nullable
-    String getExecutable();
-    void setExecutable(String executable);
+    String getBuildCommand();
+    void setBuildCommand(String command);
 
-    /**
-     * Arguments to the executable for building the project.
-     */
-    @NonNull
-    List<String> getArgs();
+    String getBuildType();
+    void setBuildType(String buildType);
 
     @Nullable
     String getGroupName();
     void setGroupName(String groupName);
+
+    @Nullable
+    String getAssembleTaskName();
+    void setAssembleTaskName(String taskName);
 
     /**
      * Target ABI.
@@ -55,6 +55,13 @@ public interface NativeLibrary extends Named {
     @Nullable
     String getAbi();
     void setAbi(String abi);
+
+    /**
+     * Target name.
+     */
+    @Nullable
+    String getArtifactName();
+    void setArtifactName(String target);
 
     /**
      * Name of the toolchain.

@@ -127,8 +127,7 @@ public class GradleVersion implements Comparable<GradleVersion>, Serializable {
                 boolean snapshot = false;
 
                 if (qualifiers != null) {
-                    String snapshotQualifier = "SNAPSHOT";
-                    if (qualifiers.equalsIgnoreCase(snapshotQualifier)) {
+                    if (isSnapshotQualifier(qualifiers)) {
                         snapshot = true;
                         qualifiers = null;
                     }
@@ -137,7 +136,7 @@ public class GradleVersion implements Comparable<GradleVersion>, Serializable {
                         int lastDashIndex = qualifiers.lastIndexOf(dash);
                         if (lastDashIndex != -1) {
                             String mayBeSnapshot = qualifiers.substring(lastDashIndex + 1);
-                            if (mayBeSnapshot.equalsIgnoreCase(snapshotQualifier)) {
+                            if (isSnapshotQualifier(mayBeSnapshot)) {
                                 snapshot = true;
                                 qualifiers = qualifiers.substring(0, lastDashIndex);
                             }
@@ -148,10 +147,11 @@ public class GradleVersion implements Comparable<GradleVersion>, Serializable {
                         if (matcher.matches()) {
                             previewType = matcher.group(1);
                             if (matcher.groupCount() == 2) {
-                                preview = Integer.parseInt(matcher.group(2));
+                                String group = matcher.group(2);
+                                if (!isNullOrEmpty(group)) {
+                                    preview = Integer.parseInt(group);
+                                }
                             }
-                        } else {
-                            throw parsingFailure(value);
                         }
                     }
                 }
@@ -189,6 +189,10 @@ public class GradleVersion implements Comparable<GradleVersion>, Serializable {
             return segments;
         }
         return Collections.singletonList(new VersionSegment(text));
+    }
+
+    private static boolean isSnapshotQualifier(@NonNull String value) {
+        return "SNAPSHOT".equalsIgnoreCase(value) || "dev".equalsIgnoreCase(value);
     }
 
     @NonNull
@@ -369,7 +373,23 @@ public class GradleVersion implements Comparable<GradleVersion>, Serializable {
 
         VersionSegment(@NonNull String text) {
             mText = text;
-            mValue = PLUS.equals(text) ? Integer.MAX_VALUE : Integer.parseInt(text);
+            if (PLUS.equals(text)) {
+                mValue = Integer.MAX_VALUE;
+            } else {
+                // +1 is a valid number which will be parsed correctly but it is not a correct
+                // version segment.
+                if (text.startsWith(PLUS)) {
+                    throw new NumberFormatException("Version segment cannot start with +");
+                }
+                int value;
+                try {
+                    value = Integer.parseInt(text);
+                }
+                catch (NumberFormatException e) {
+                    value = 0;
+                }
+                mValue = value;
+            }
         }
 
         @NonNull

@@ -162,7 +162,7 @@ public class Actions {
     /**
      * Defines all possible actions taken from the merging tool for an xml element or attribute.
      */
-    enum ActionType {
+    public enum ActionType {
         /**
          * The element was added into the resulting merged manifest.
          */
@@ -219,6 +219,11 @@ public class Actions {
         @NonNull
         public XmlNode.NodeKey getTargetId() {
             return mTargetId;
+        }
+
+        @Nullable
+        public String getReason() {
+            return mReason;
         }
 
         public void print(@NonNull StringBuilder stringBuilder) {

@@ -16,8 +16,7 @@
 
 package com.android.apigenerator;
 
-import com.android.SdkConstants;
-import com.android.utils.Pair;
+import com.android.apigenerator.ApiClass.Pair;
 import com.google.common.io.ByteStreams;
 import com.google.common.io.Closeables;
 import org.objectweb.asm.ClassReader;
@@ -33,6 +32,7 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.HashMap;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.zip.ZipEntry;
@@ -82,7 +82,7 @@ public class AndroidJarReader {
                 while (entry != null) {
                     String name = entry.getName();
 
-                    if (name.endsWith(SdkConstants.DOT_CLASS)) {
+                    if (name.endsWith(".class")) {
                         byte[] bytes = ByteStreams.toByteArray(zis);
                         if (bytes == null) {
                             System.err.println("Warning: Couldn't read " + name);
@@ -91,7 +91,7 @@ public class AndroidJarReader {
                         }
 
                         ClassReader reader = new ClassReader(bytes);
-                        ClassNode classNode = new ClassNode();
+                        ClassNode classNode = new ClassNode(Opcodes.ASM5);
                         reader.accept(classNode, 0 /*flags*/);
 
                         ApiClass theClass = addClass(map, classNode.name, apiLevel,
@@ -145,6 +145,7 @@ public class AndroidJarReader {
             }
         }
 
+        removeImplicitInterfaces(map);
         postProcessClasses(map);
 
         return map;
@@ -254,6 +255,91 @@ public class AndroidJarReader {
         }
 
         return false;
+    }
+
+    /**
+     * The bytecode visitor registers interfaces listed for a class. However,
+     * a class will <b>also</b> implement interfaces implemented by the super classes.
+     * This isn't available in the class file, so after all classes have been read in,
+     * we iterate through all classes, and for those that have interfaces, we check up
+     * the inheritance chain to see if it has already been introduced in a super class
+     * at an earlier API level.
+     */
+    private void removeImplicitInterfaces(Map<String, ApiClass> classes) {
+        for (ApiClass theClass : classes.values()) {
+            List<Pair<String, Integer>> interfaces = theClass.getInterfaces();
+            if (interfaces.isEmpty()) {
+                continue;
+            }
+            List<Pair<String, Integer>> superClasses = theClass.getSuperClasses();
+            if (superClasses.isEmpty()) {
+                continue;
+            }
+
+            ListIterator<Pair<String, Integer>> iterator = interfaces.listIterator();
+            while (iterator.hasNext()) {
+                Pair<String,Integer> interfacePair = iterator.next();
+                String interfaceName = interfacePair.getFirst();
+                int interfaceApi = interfacePair.getSecond();
+
+                for (Pair<String, Integer> superClassPair : superClasses) {
+                    if (superClassPair.getSecond() > interfaceApi) {
+                        // Doesn't apply: wasn't a super class at the time the interface was introduced
+                        continue;
+                    }
+                    String superClassName = superClassPair.getFirst();
+                    int api = getImplementedIn(interfaceName, superClassName, classes, interfaceApi);
+                    if (api <= interfaceApi) {
+                        iterator.remove();
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    private int getImplementedIn(String interfaceName,
+                                 String superClassName,
+                                 Map<String, ApiClass> classes,
+                                 int from) {
+        int api = Integer.MAX_VALUE;
+
+        if (superClassName == null) {
+            return api;
+        }
+
+        ApiClass apiClass = classes.get(superClassName);
+        if (apiClass != null) {
+            List<Pair<String, Integer>> interfacePairs = apiClass.getInterfaces();
+            for (Pair<String, Integer> interfacePair : interfacePairs) {
+                if (interfaceName.equals(interfacePair.getFirst())) {
+                    api = Math.min(api, interfacePair.getSecond());
+                } else {
+                    // See if the interface itself extends this one, e.g.
+                    // the super class may extend a sub interface of the target
+                    // interface
+                    ApiClass cls = classes.get(interfacePair.getFirst());
+                    if (cls != null) {
+                        List<Pair<String, Integer>> superClassPairs = cls.getSuperClasses();
+                        for (Pair<String, Integer> superClassPair : superClassPairs) {
+                            if (superClassPair.getSecond() <= from) {
+                                api = Math.min(api, getImplementedIn(interfaceName, superClassPair.getFirst(),
+                                        classes, from));
+                            }
+                        }
+                    }
+                }
+            }
+
+            List<Pair<String, Integer>> superClassPairs = apiClass.getSuperClasses();
+            for (Pair<String, Integer> superClassPair : superClassPairs) {
+                if (superClassPair.getSecond() <= from) {
+                    api = Math.min(api, getImplementedIn(interfaceName, superClassPair.getFirst(), classes, from));
+                }
+            }
+        }
+
+        return api;
     }
 
     private ApiClass addClass(HashMap<String, ApiClass> classes, String name, int apiLevel, boolean deprecated) {

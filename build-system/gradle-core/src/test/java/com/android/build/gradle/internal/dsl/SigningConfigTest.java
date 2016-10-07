@@ -30,5 +30,7 @@ public class SigningConfigTest extends TestCase {
         assertEquals(debug.getStorePassword(), foo.getStorePassword());
         assertEquals(debug.getKeyAlias(), foo.getKeyAlias());
         assertEquals(debug.getKeyPassword(), foo.getKeyPassword());
+        assertEquals(debug.isV1SigningEnabled(), foo.isV1SigningEnabled());
+        assertEquals(debug.isV2SigningEnabled(), foo.isV2SigningEnabled());
     }
 }

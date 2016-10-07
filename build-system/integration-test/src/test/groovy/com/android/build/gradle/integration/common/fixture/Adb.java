@@ -24,50 +24,88 @@ import com.android.build.gradle.integration.common.utils.SdkHelper;
 import com.android.ddmlib.AndroidDebugBridge;
 import com.android.ddmlib.IDevice;
 import com.android.sdklib.AndroidVersion;
+import com.android.tools.build.test.multidevice.DevicePoolClient;
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
+import com.google.common.base.Throwables;
+import com.google.common.collect.Lists;
 
-import org.hamcrest.BaseMatcher;
 import org.hamcrest.Matcher;
 import org.hamcrest.StringDescription;
 import org.junit.rules.TestRule;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
 
+import java.io.IOException;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 
 /**
  * Utilities for handling real devices.
  *
- * This is of the form of a test rule so it can cache things and do clean up when devices are used
- * from a central pool.
+ * To request a device use {@link #getDevice(Matcher)}. This reserves the device from the device
+ * pool, allowing the connected integration tests to run in parallel without interfering with each
+ * other.
+ *
+ * At the end of the test method, the device is returned to the pool.
  */
 public class Adb implements TestRule {
 
-    private Adb() {
-
-    }
-
-    public static Adb create() {
-        return new Adb();
-    }
+    private List<String> devicesToReturn = Lists.newArrayList();
+    private boolean exclusiveAccess = false;
+    private String displayName;
 
     @Override
-    public Statement apply(@NonNull final Statement base, @NonNull Description description) {
+    public Statement apply(@NonNull final Statement base, @NonNull final Description description) {
         return new Statement() {
             @Override
             public void evaluate() throws Throwable {
-                base.evaluate();
+                try {
+                    displayName = description.getDisplayName();
+                    base.evaluate();
+                } finally {
+                    if (!devicesToReturn.isEmpty()) {
+                        DevicePoolClient.returnDevices(devicesToReturn, displayName);
+                    } else if (exclusiveAccess) {
+                        DevicePoolClient.returnAllDevices(displayName);
+                    }
+                }
             }
         };
     }
 
+    /**
+     * Reserves and returns a connected device that has a version that satisfies the matcher.
+     */
     public IDevice getDevice(@NonNull Matcher<AndroidVersion> matcher) {
+        if (exclusiveAccess) {
+            throw new IllegalStateException("Cannot call both getDevice() and exclusiveAccess() "
+                    + "in one test");
+        }
         IDevice[] devices = getBridge().getDevices();
+
+        List<String> possibleDeviceSerials = Lists.newArrayList();
         for (IDevice device: devices) {
             if (matcher.matches(device.getVersion())) {
-                return device;
+                possibleDeviceSerials.add(device.getSerialNumber());
+            }
+        }
+
+        if (!possibleDeviceSerials.isEmpty()) {
+            String deviceSerial;
+            try {
+                deviceSerial = DevicePoolClient.reserveDevice(possibleDeviceSerials, displayName);
+                devicesToReturn.add(deviceSerial);
+            } catch (IOException e) {
+                throw new AssertionError("Failed to reserve device" + Throwables
+                        .getStackTraceAsString(e));
+            }
+
+            for (IDevice device : devices) {
+                if (device.getSerialNumber().equals(deviceSerial)) {
+                    return device;
+                }
             }
         }
 
@@ -84,35 +122,53 @@ public class Adb implements TestRule {
         throw new AssertionError(errorMessage);
     }
 
-    private static Supplier<AndroidDebugBridge> sAdbGetter = Suppliers.memoizeWithExpiration(
-            new Supplier<AndroidDebugBridge>() {
-                @Override
-                public AndroidDebugBridge get() {
-                    AndroidDebugBridge.init(false /*clientSupport*/);
-                    AndroidDebugBridge bridge = AndroidDebugBridge.createBridge(
-                            SdkHelper.getAdb().getAbsolutePath(), false /*forceNewBridge*/);
-                    assertNotNull("Debug bridge", bridge);
-                    long timeOut = DeviceHelper.DEFAULT_ADB_TIMEOUT_MSEC;
-                    int sleepTime = 1000;
-                    while (!bridge.hasInitialDeviceList() && timeOut > 0) {
-                        try {
-                            Thread.sleep(sleepTime);
-                        } catch (InterruptedException e) {
-                            throw new RuntimeException(e);
-                        }
-                        timeOut -= sleepTime;
-                    }
+    /**
+     * Reserves all of the devices.
+     *
+     * This is useful for integration tests that exercise the ordinary connectedDeviceProvider,
+     * either through the connectedCheck, install or uninstall tasks.
+     */
+    public void exclusiveAccess() throws IOException {
+        if (!devicesToReturn.isEmpty()) {
+            throw new IllegalStateException("Cannot call both getDevice() and exclusiveAccess() "
+                    + "in one test");
+        }
+        exclusiveAccess = true;
+        DevicePoolClient.reserveAllDevices(displayName);
 
-                    if (timeOut <= 0 && !bridge.hasInitialDeviceList()) {
-                        throw new RuntimeException("Timeout getting device list.");
+    }
+
+    private static Supplier<AndroidDebugBridge> sAdbGetter = Suppliers.memoizeWithExpiration(
+            () -> {
+                AndroidDebugBridge.init(false /*clientSupport*/);
+                AndroidDebugBridge bridge = AndroidDebugBridge.createBridge(
+                        SdkHelper.getAdb().getAbsolutePath(), false /*forceNewBridge*/);
+                assertNotNull("Debug bridge", bridge);
+                long timeOut = DeviceHelper.DEFAULT_ADB_TIMEOUT_MSEC;
+                int sleepTime = 1000;
+                while (!bridge.hasInitialDeviceList() && timeOut > 0) {
+                    try {
+                        Thread.sleep(sleepTime);
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
                     }
-                    return bridge;
+                    timeOut -= sleepTime;
                 }
+
+                if (timeOut <= 0 && !bridge.hasInitialDeviceList()) {
+                    throw new RuntimeException("Timeout getting device list.");
+                }
+                return bridge;
             },
             10, TimeUnit.MINUTES);
 
 
     private static AndroidDebugBridge getBridge() {
         return sAdbGetter.get();
+    }
+
+
+    public static String getInjectToDeviceProviderProperty(@NonNull IDevice device) {
+        return "-Pcom.android.test.devicepool.serial=" + device.getSerialNumber();
     }
 }

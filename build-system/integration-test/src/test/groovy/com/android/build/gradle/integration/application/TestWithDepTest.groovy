@@ -47,7 +47,7 @@ class TestWithDepTest {
 
     @BeforeClass
     static void setUp() {
-        model = project.getSingleModel()
+        model = project.model().getSingle()
     }
 
     @AfterClass
@@ -60,14 +60,13 @@ class TestWithDepTest {
     void "check there is a dep on the test variant"() throws Exception {
         Collection<Variant> variants = model.getVariants()
         Variant debugVariant = ModelHelper.getVariant(variants, DEBUG)
-        assertNotNull(debugVariant)
 
         Collection<AndroidArtifact> extraAndroidArtifact = debugVariant.getExtraAndroidArtifacts()
         AndroidArtifact testArtifact = ModelHelper.getAndroidArtifact(extraAndroidArtifact,
                 ARTIFACT_ANDROID_TEST)
         assertNotNull(testArtifact)
 
-        Dependencies testDependencies = testArtifact.getDependencies()
+        Dependencies testDependencies = testArtifact.getCompileDependencies()
         assertEquals(1, testDependencies.getJavaLibraries().size())
     }
 }

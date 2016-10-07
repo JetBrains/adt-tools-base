@@ -17,83 +17,61 @@
 package com.android.builder.internal.packaging.zip;
 
 import com.android.annotations.NonNull;
-import com.google.common.base.Verify;
-import com.google.common.collect.Lists;
-
-import java.util.List;
+import com.google.common.base.Preconditions;
 
 /**
- * Alignment rules maintains a list of {@link AlignmentRule} and allows checking the alignment for
- * a file. Rules in the list are kept in order and the first rule to apply to a file will be the
- * one used.
+ * Factory for instances of {@link AlignmentRule}.
  */
-public class AlignmentRules {
+public final class AlignmentRules {
+
+    private AlignmentRules() {}
 
     /**
-     * Default alignment to return if no rule matches a file.
+     * A rule that defines a constant alignment for all files.
+     *
+     * @param alignment the alignment
+     * @return the rule
      */
-    private static final int DEFAULT_ALIGNMENT = 1;
+    public static AlignmentRule constant(int alignment) {
+        Preconditions.checkArgument(alignment > 0, "alignment <= 0");
 
-    /**
-     * The alignment rules.
-     */
-    @NonNull
-    private List<AlignmentRule> mRules;
-
-    /**
-     * Creates a new empty set of rules.
-     */
-    public AlignmentRules() {
-        mRules = Lists.newArrayList();
+        return (String path) -> alignment;
     }
 
     /**
-     * Adds a new alignment rule to the end of the list.
+     * A rule that defines constant alignment for all files with a certain suffix, placing no
+     * restrictions on other files.
      *
-     * @param rule the rule to add
+     * @param suffix the suffix
+     * @param alignment the alignment for paths that match the provided suffix
+     * @return the rule
      */
-    public void add(@NonNull AlignmentRule rule) {
-        mRules.add(rule);
+    public static AlignmentRule constantForSuffix(@NonNull String suffix, int alignment) {
+        Preconditions.checkArgument(!suffix.isEmpty(), "suffix.isEmpty()");
+        Preconditions.checkArgument(alignment > 0, "alignment <= 0");
+
+        return (String path) -> path.endsWith(suffix) ? alignment : AlignmentRule.NO_ALIGNMENT;
     }
 
     /**
-     * Finds the alignment of a file with a certain path.
+     * A rule that applies other rules in order.
      *
-     * @param path the path
-     * @return the alignment or {@code 1} if there are no rules for this file, never returns less
-     * than {@code 1}
+     * @param rules all rules to be tried; the first rule that does not return
+     * {@link AlignmentRule#NO_ALIGNMENT} will define the alignment for a path; if there are no
+     * rules that return a value different from {@link AlignmentRule#NO_ALIGNMENT}, then
+     * {@link AlignmentRule#NO_ALIGNMENT} is returned
+     * @return the composition rule
      */
-    public int alignment(@NonNull String path) {
-        /*
-         * Remove the trailing separator, if there is one.
-         */
-        if (path.endsWith(Character.toString(ZFile.SEPARATOR))) {
-            path = path.substring(0, path.length() - 1);
-        }
-
-        /*
-         * The zip specification guarantees that there are no absolute paths in the zip. This means
-         * that any separator, if it exists, cannot be the first character. (See section 4.4.17.)
-         */
-        int lastSlashIdx = path.lastIndexOf(ZFile.SEPARATOR);
-        Verify.verify(lastSlashIdx != 0);
-        if (lastSlashIdx > 0) {
-            path = path.substring(lastSlashIdx + 1);
-        }
-
-        /*
-         * Now path, does not contain any separator and is the file name. Check if any rule applies
-         * or return the default value if no rule does.
-         */
-        Verify.verify(path.indexOf(ZFile.SEPARATOR) == -1);
-        for (AlignmentRule rule : mRules) {
-            if (rule.getPattern().matcher(path).matches()) {
-                int alignment = rule.getAlignment();
-                Verify.verify(alignment >= 1);
-                return alignment;
+    public static AlignmentRule compose(@NonNull AlignmentRule... rules) {
+        return (String path) -> {
+            for (AlignmentRule r : rules) {
+                int align = r.alignment(path);
+                if (align != AlignmentRule.NO_ALIGNMENT) {
+                    return align;
+                }
             }
-        }
 
-        return DEFAULT_ALIGNMENT;
+            return AlignmentRule.NO_ALIGNMENT;
+        };
     }
 }

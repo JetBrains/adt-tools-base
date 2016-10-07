@@ -19,6 +19,7 @@ package com.android.tools.lint.checks;
 import static com.android.SdkConstants.ATTR_NAME;
 import static com.android.SdkConstants.TAG_DECLARE_STYLEABLE;
 import static com.android.SdkConstants.TAG_RESOURCES;
+import static com.android.SdkConstants.TAG_STYLE;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
@@ -37,6 +38,7 @@ import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
 import com.android.tools.lint.detector.api.Speed;
 import com.android.tools.lint.detector.api.XmlContext;
+import com.android.utils.SdkUtils;
 
 import org.w3c.dom.Attr;
 import org.w3c.dom.Element;
@@ -73,7 +75,7 @@ public class ResourcePrefixDetector extends ResourceXmlDetector implements
                     Scope.RESOURCE_FILE_SCOPE,
                     Scope.BINARY_RESOURCE_FILE_SCOPE));
 
-    /** Constructs a new {@link com.android.tools.lint.checks.ResourcePrefixDetector} */
+    /** Constructs a new {@link ResourcePrefixDetector} */
     public ResourcePrefixDetector() {
     }
 
@@ -171,6 +173,21 @@ public class ResourcePrefixDetector extends ResourceXmlDetector implements
             if (nameAttribute != null) {
                 String name = nameAttribute.getValue();
                 if (!name.startsWith(mPrefix)) {
+                    // For styleables, allow case insensitive prefix match, and if the
+                    // prefix ends with a "_" it's not required, e.g. prefix "foo_"
+                    // should accept FooView as a styleable, and shouldn't require
+                    // foo_View or Foo_View.
+                    String tagName = item.getTagName();
+                    if ((tagName.equals(TAG_DECLARE_STYLEABLE) || tagName.equals(TAG_STYLE)) &&
+                        (SdkUtils.startsWithIgnoreCase(name, mPrefix) ||
+                            mPrefix.endsWith("_") && name.regionMatches(true, 0, mPrefix, 0,
+                                    mPrefix.length() - 1))) {
+                        continue;
+                    }
+                    if (name.indexOf(':') != -1) {
+                        // Don't flag names in other namespaces, such as android:textColor
+                        continue;
+                    }
                     String message = getErrorMessage(name);
                     context.report(ISSUE, nameAttribute, context.getLocation(nameAttribute),
                             message);

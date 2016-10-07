@@ -39,10 +39,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public class AaptProcess {
 
-    private static final int DEFAULT_SLAVE_APPT_TIMEOUT_IN_SECONDS = 5;
+    private static final int DEFAULT_SLAVE_AAPT_TIMEOUT_IN_SECONDS = 5;
     private static final int SLAVE_AAPT_TIMEOUT_IN_SECONDS =
             System.getenv("SLAVE_AAPT_TIMEOUT") == null
-                    ? DEFAULT_SLAVE_APPT_TIMEOUT_IN_SECONDS
+                    ? DEFAULT_SLAVE_AAPT_TIMEOUT_IN_SECONDS
                     : Integer.parseInt(System.getenv("SLAVE_AAPT_TIMEOUT"));
 
     private final String mAaptLocation;
@@ -88,7 +88,7 @@ public class AaptProcess {
         NotifierProcessOutput notifier =
                 new NotifierProcessOutput(job, mProcessOutputFacade, mLogger);
 
-        mLogger.verbose("Processs(%1$d) length = %2$d:$3$d",
+        mLogger.verbose("Process(%1$d) length = %2$d:%3$d",
                 hashCode(), in.getAbsolutePath().length(), out.getAbsolutePath().length());
         mProcessOutputFacade.setNotifier(notifier);
         mWriter.write("s\n");
@@ -113,7 +113,11 @@ public class AaptProcess {
                     mAaptLocation, SLAVE_AAPT_TIMEOUT_IN_SECONDS));
         }
 
-        mLogger.verbose("Slave %1$s is ready", hashCode());
+        if (mReady.get()) {
+            mLogger.verbose("Slave %1$s is ready", hashCode());
+        } else {
+            mLogger.verbose("Slave %1$s failed to start", hashCode());
+        }
     }
 
     @Override
@@ -237,6 +241,12 @@ public class AaptProcess {
                     mLogger.error(null, "AAPT err(%1$s) : No Delegate set : lost message:%2$s",
                             toString(), line);
                 }
+            }
+            // Even after the aapt error, we should notify the main thread that we are ready.
+            // The error state will be handled there
+            if (!mReadyLatch.isSignalled()) {
+                AaptProcess.this.mReady.set(false);
+                mReadyLatch.signal();
             }
         }
 

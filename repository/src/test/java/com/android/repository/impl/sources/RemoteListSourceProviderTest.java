@@ -18,12 +18,12 @@ package com.android.repository.impl.sources;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.repository.api.Downloader;
 import com.android.repository.api.ProgressIndicator;
 import com.android.repository.api.RemoteListSourceProvider;
 import com.android.repository.api.RepoManager;
 import com.android.repository.api.RepositorySource;
 import com.android.repository.api.SchemaModule;
-import com.android.repository.api.SettingsController;
 import com.android.repository.testframework.FakeDownloader;
 import com.android.repository.testframework.FakeProgressIndicator;
 import com.android.repository.testframework.MockFileOp;
@@ -58,7 +58,7 @@ public class RemoteListSourceProviderTest extends TestCase {
         downloader.registerUrl(new URL("http://example.com/sourceList.xml"),
                 getClass().getResourceAsStream("../testData/testSourceList-1.xml"));
         FakeProgressIndicator progress = new FakeProgressIndicator();
-        List<RepositorySource> sources = provider.getSources(downloader, null, progress, false);
+        List<RepositorySource> sources = provider.getSources(downloader, progress, false);
         progress.assertNoErrorsOrWarnings();
         RepositorySource source1 = sources.get(0);
         assertEquals("My Example Add-ons.", source1.getDisplayName());
@@ -86,30 +86,35 @@ public class RemoteListSourceProviderTest extends TestCase {
         downloader.registerUrl(new URL("http://example.com/sourceList.xml"),
                 getClass().getResourceAsStream("../testData/testSourceList-1.xml"));
         FakeProgressIndicator progress = new FakeProgressIndicator();
-        provider.getSources(downloader, null, progress, false);
+        provider.getSources(downloader, progress, false);
         progress.assertNoErrorsOrWarnings();
 
-        downloader = new FakeDownloader(fop) {
+        Downloader failingDownloader = new Downloader() {
             @NonNull
             @Override
             public InputStream downloadAndStream(@NonNull URL url,
-                                                 @Nullable SettingsController controller,
-                                                 @NonNull ProgressIndicator indicator) throws IOException {
-                fail("shouldn't be downloading again");
-                return null;
-            }
-
-            @NonNull
-            @Override
-            public File downloadFully(@NonNull URL url,
-                    @Nullable SettingsController controller,
                     @NonNull ProgressIndicator indicator) throws IOException {
                 fail("shouldn't be downloading again");
                 return null;
             }
+
+            @NonNull
+            @Override
+            public File downloadFully(@NonNull URL url, @NonNull ProgressIndicator indicator)
+                    throws IOException {
+                fail("shouldn't be downloading again");
+                return null;
+            }
+
+            @Override
+            public void downloadFully(@NonNull URL url, @Nullable File target,
+                    @Nullable String checksum, @NonNull ProgressIndicator indicator)
+                    throws IOException {
+                fail("shouldn't be downloading again");
+            }
         };
 
-        List<RepositorySource> sources = provider.getSources(downloader, null, progress, false);
+        List<RepositorySource> sources = provider.getSources(failingDownloader, progress, false);
         progress.assertNoErrorsOrWarnings();
         RepositorySource source1 = sources.get(0);
         assertEquals("My Example Add-ons.", source1.getDisplayName());
@@ -137,13 +142,13 @@ public class RemoteListSourceProviderTest extends TestCase {
         downloader.registerUrl(new URL("http://example.com/sourceList.xml"),
                 getClass().getResourceAsStream("../testData/testSourceList-1.xml"));
         FakeProgressIndicator progress = new FakeProgressIndicator();
-        provider.getSources(downloader, null, progress, false);
+        provider.getSources(downloader, progress, false);
         progress.assertNoErrorsOrWarnings();
 
         downloader.registerUrl(new URL("http://example.com/sourceList.xml"),
                 getClass().getResourceAsStream("../testData/testSourceList2-1.xml"));
 
-        List<RepositorySource> sources = provider.getSources(downloader, null, progress, true);
+        List<RepositorySource> sources = provider.getSources(downloader, progress, true);
         progress.assertNoErrorsOrWarnings();
         RepositorySource source1 = sources.get(0);
         assertEquals("A different displayname from testSourceList-1", source1.getDisplayName());

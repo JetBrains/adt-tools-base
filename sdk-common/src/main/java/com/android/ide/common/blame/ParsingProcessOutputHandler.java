@@ -17,14 +17,11 @@
 package com.android.ide.common.blame;
 
 import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
 import com.android.ide.common.blame.parser.ToolOutputParser;
 import com.android.ide.common.process.BaseProcessOutputHandler;
 import com.android.ide.common.process.ProcessException;
 import com.android.ide.common.process.ProcessOutput;
-import com.android.utils.ILogger;
 import com.google.common.collect.ImmutableList;
-
 import java.util.List;
 
 /**

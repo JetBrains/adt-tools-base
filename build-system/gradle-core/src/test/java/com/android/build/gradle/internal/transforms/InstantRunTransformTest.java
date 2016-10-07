@@ -23,11 +23,6 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.when;
 
 import com.android.annotations.NonNull;
-import com.android.build.api.transform.SecondaryInput;
-import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
-import com.android.build.gradle.internal.pipeline.TransformInvocationBuilder;
-import com.android.build.gradle.internal.scope.GlobalScope;
-import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.api.transform.Context;
 import com.android.build.api.transform.DirectoryInput;
 import com.android.build.api.transform.Format;
@@ -39,16 +34,22 @@ import com.android.build.api.transform.Status;
 import com.android.build.api.transform.TransformException;
 import com.android.build.api.transform.TransformInput;
 import com.android.build.api.transform.TransformOutputProvider;
+import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
+import com.android.build.gradle.internal.incremental.InstantRunBuildMode;
+import com.android.build.gradle.internal.pipeline.TransformInvocationBuilder;
+import com.android.build.gradle.internal.scope.GlobalScope;
+import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.builder.core.AndroidBuilder;
 import com.android.utils.FileUtils;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.io.Files;
-import com.google.common.truth.Truth;
 
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
@@ -76,6 +77,9 @@ public class InstantRunTransformTest {
     @Mock
     InstantRunBuildContext instantRunBuildContext;
 
+    @Rule
+    public TemporaryFolder temporaryFolder = new TemporaryFolder();
+
     @Before
     public void setUpMock() {
         MockitoAnnotations.initMocks(this);
@@ -84,6 +88,8 @@ public class InstantRunTransformTest {
         when(globalScope.getAndroidBuilder()).thenReturn(mockBuilder);
         when(variantScope.getGlobalScope()).thenReturn(globalScope);
         when(variantScope.getInstantRunBuildContext()).thenReturn(instantRunBuildContext);
+        when(variantScope.getInstantRunBootClasspath()).thenReturn(ImmutableList.of());
+        when(instantRunBuildContext.getBuildMode()).thenReturn(InstantRunBuildMode.HOT_WARM);
     }
 
     @Test
@@ -96,8 +102,7 @@ public class InstantRunTransformTest {
             @Override
             protected void transformToClasses2Format(
                     @NonNull File inputDir, @NonNull File inputFile, @NonNull File outputDir,
-                    @NonNull Status status,
-                    @NonNull RecordingPolicy recordingPolicy)
+                    @NonNull Status status)
                     throws IOException {
                 filesElectedForClasses2Transformation.add(inputFile);
             }
@@ -190,7 +195,7 @@ public class InstantRunTransformTest {
     @Test
     public void fileDeletionTest() throws IOException, TransformException, InterruptedException {
 
-        final File tmpFolder = Files.createTempDir();
+        final File tmpFolder = temporaryFolder.newFolder();
 
         final File inputFolder = new File(tmpFolder, "input");
         FileUtils.mkdirs(inputFolder);
@@ -216,8 +221,7 @@ public class InstantRunTransformTest {
                     @NonNull File inputDir,
                     @NonNull File inputFile,
                     @NonNull File outputDir,
-                    @NonNull Status status,
-                    @NonNull RecordingPolicy recordingPolicy)
+                    @NonNull Status status)
                     throws IOException {
                 filesElectedForClasses2Transformation.add(inputFile);
             }
@@ -300,44 +304,7 @@ public class InstantRunTransformTest {
         assertFalse("Incremental support class file should have been deleted.", outputFile.exists());
         assertFalse("Enhanced class file should have been deleted.", outputEnhancedFile.exists());
 
-        FileUtils.deleteFolder(tmpFolder);
-    }
-
-    @Test
-    public void testChangeRecordsMerging() {
-        ChangeRecords pastIteration = new ChangeRecords();
-        pastIteration.add(Status.CHANGED, "file/to/be/deleted");
-        pastIteration.add(Status.CHANGED, "file/that/will/remain");
-
-        ChangeRecords newIteration = new ChangeRecords();
-        newIteration.add(Status.REMOVED, "file/to/be/deleted");
-        newIteration.add(Status.CHANGED, "new/file/changed");
-
-        InstantRunTransform.merge(newIteration, pastIteration);
-        assertThat(newIteration.records.size()).isEqualTo(3);
-        assertThat(newIteration.getFilesForStatus(Status.CHANGED)).containsExactly(
-                "file/that/will/remain", "new/file/changed");
-        assertThat(newIteration.getFilesForStatus(Status.REMOVED)).containsExactly(
-                "file/to/be/deleted");
-    }
-
-    @Test
-    public void testChangeRecordsRemovedAndReAdded() {
-        ChangeRecords pastIteration = new ChangeRecords();
-        pastIteration.add(Status.REMOVED, "file/to/be/deleted/and/added");
-        pastIteration.add(Status.CHANGED, "file/that/will/remain");
-
-
-        ChangeRecords newIteration = new ChangeRecords();
-        newIteration.add(Status.ADDED, "file/to/be/deleted/and/added");
-        newIteration.add(Status.CHANGED, "new/file/changed");
-
-        InstantRunTransform.merge(newIteration, pastIteration);
-        assertThat(newIteration.records.size()).isEqualTo(3);
-        assertThat(newIteration.getFilesForStatus(Status.CHANGED)).containsExactly(
-                "file/that/will/remain", "new/file/changed");
-        assertThat(newIteration.getFilesForStatus(Status.ADDED)).containsExactly(
-                "file/to/be/deleted/and/added");
+        FileUtils.deletePath(tmpFolder);
     }
 
     private static File createEmptyFile(File folder, String path)

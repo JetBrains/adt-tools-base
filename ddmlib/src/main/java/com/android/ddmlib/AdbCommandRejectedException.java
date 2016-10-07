@@ -46,7 +46,7 @@ public class AdbCommandRejectedException extends Exception {
 
     /**
      * Returns whether adb refused to target a given device for the command.
-     * <p/>If false, adb refused the command itself, if true, it refused to target the given
+     * <p>If false, adb refused the command itself, if true, it refused to target the given
      * device.
      */
     public boolean wasErrorDuringDeviceSelection() {

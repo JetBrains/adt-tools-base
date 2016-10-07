@@ -45,6 +45,7 @@ import java.util.Set;
 public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavor {
     private static final long serialVersionUID = 1L;
 
+    @NonNull
     private final String mName;
     @Nullable
     private String mDimension;
@@ -58,6 +59,8 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
     private Integer mRenderscriptTargetApi;
     @Nullable
     private Boolean mRenderscriptSupportModeEnabled;
+    @Nullable
+    private Boolean mRenderscriptSupportModeBlasEnabled;
     @Nullable
     private Boolean mRenderscriptNdkModeEnabled;
     @Nullable
@@ -81,7 +84,9 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
     @Nullable
     private Set<String> mResourceConfiguration;
     @NonNull
-    private DefaultVectorDrawablesOptions mVectorDrawablesOptions = new DefaultVectorDrawablesOptions();
+    private DefaultVectorDrawablesOptions mVectorDrawablesOptions;
+    @Nullable
+    private Boolean mWearAppUnbundled;
 
     /**
      * Creates a ProductFlavor with a given name.
@@ -93,6 +98,14 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
      */
     public DefaultProductFlavor(@NonNull String name) {
         mName = name;
+        mVectorDrawablesOptions = new DefaultVectorDrawablesOptions();
+    }
+
+    public DefaultProductFlavor(
+            @NonNull String name,
+            @NonNull DefaultVectorDrawablesOptions vectorDrawablesOptions) {
+        mName = name;
+        mVectorDrawablesOptions = vectorDrawablesOptions;
     }
 
     @Override
@@ -193,7 +206,10 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
     @Nullable
     @Override
     public ApiVersion getMinSdkVersion() {
-        return mMinSdkVersion;
+        // FIXME once VariantConfiguration reads manifest attrs from all sourcesets, use it instead
+        return VariantConfiguration
+                .getCalculatedApiVersions(mMinSdkVersion, mTargetSdkVersion)
+                .minSdkVersion;
     }
 
     /** Sets the targetSdkVersion to the given value. */
@@ -209,7 +225,10 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
     @Nullable
     @Override
     public ApiVersion getTargetSdkVersion() {
-        return mTargetSdkVersion;
+        // FIXME once VariantConfiguration reads manifest attrs from all sourcesets, use it instead
+        return VariantConfiguration
+                .getCalculatedApiVersions(mMinSdkVersion, mTargetSdkVersion)
+                .targetSdkVersion;
     }
 
     @NonNull
@@ -241,12 +260,27 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
         return mRenderscriptSupportModeEnabled;
     }
 
+    @Override
+    @Nullable
+    public Boolean getRenderscriptSupportModeBlasEnabled() {
+        return mRenderscriptSupportModeBlasEnabled;
+    }
+
     /**
      * Sets whether the renderscript code should be compiled in support mode to make it compatible
      * with older versions of Android.
      */
     public ProductFlavor setRenderscriptSupportModeEnabled(Boolean renderscriptSupportMode) {
         mRenderscriptSupportModeEnabled = renderscriptSupportMode;
+        return this;
+    }
+
+    /**
+     * Sets whether RenderScript BLAS support lib should be used to make it compatible
+     * with older versions of Android.
+     */
+    public ProductFlavor setRenderscriptSupportModeBlasEnabled(Boolean renderscriptSupportModeBlas) {
+        mRenderscriptSupportModeBlasEnabled = renderscriptSupportModeBlas;
         return this;
     }
 
@@ -327,6 +361,7 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
      * ./gradlew connectedAndroidTest -Pandroid.testInstrumentationRunnerArguments.foo=bar
      * </pre>
      */
+    @SuppressWarnings("SpellCheckingInspection")
     @Override
     @NonNull
     public Map<String, String> getTestInstrumentationRunnerArguments() {
@@ -381,10 +416,35 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
         return this;
     }
 
+    /**
+     * Options to configure the build-time support for {@code vector} drawables.
+     */
     @NonNull
     @Override
     public DefaultVectorDrawablesOptions getVectorDrawables() {
         return mVectorDrawablesOptions;
+    }
+
+    /**
+     * Returns whether to enable unbundling mode for embedded wear app.
+     *
+     * If true, this enables the app to transition from an embedded wear app to one
+     * distributed by the play store directly.
+     */
+    @Nullable
+    @Override
+    public Boolean getWearAppUnbundled() {
+        return mWearAppUnbundled;
+    }
+
+    /**
+     * Sets whether to enable unbundling mode for embedded wear app.
+     *
+     * If true, this enables the app to transition from an embedded wear app to one
+     * distributed by the play store directly.
+     */
+    public void setWearAppUnbundled(@Nullable Boolean wearAppUnbundled) {
+        mWearAppUnbundled = wearAppUnbundled;
     }
 
     /**
@@ -464,6 +524,9 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
         flavor.mRenderscriptSupportModeEnabled = chooseNotNull(
                 overlay.getRenderscriptSupportModeEnabled(),
                 base.getRenderscriptSupportModeEnabled());
+        flavor.mRenderscriptSupportModeBlasEnabled = chooseNotNull(
+                overlay.getRenderscriptSupportModeBlasEnabled(),
+                base.getRenderscriptSupportModeBlasEnabled());
         flavor.mRenderscriptNdkModeEnabled = chooseNotNull(
                 overlay.getRenderscriptNdkModeEnabled(),
                 base.getRenderscriptNdkModeEnabled());
@@ -471,16 +534,15 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
         flavor.mVersionCode = chooseNotNull(overlay.getVersionCode(), base.getVersionCode());
         flavor.mVersionName = chooseNotNull(overlay.getVersionName(), base.getVersionName());
 
+        flavor.setVersionNameSuffix(
+                mergeVersionNameSuffix(
+                        overlay.getVersionNameSuffix(), base.getVersionNameSuffix()));
+
         flavor.mApplicationId = chooseNotNull(overlay.getApplicationId(), base.getApplicationId());
 
-        if (!Strings.isNullOrEmpty(overlay.getApplicationIdSuffix())) {
-            String baseSuffix = chooseNotNull(base.getApplicationIdSuffix(), "");
-            if (overlay.getApplicationIdSuffix().charAt(0) == '.') {
-                flavor.setApplicationIdSuffix(baseSuffix + overlay.getApplicationIdSuffix());
-            } else {
-                flavor.setApplicationIdSuffix(baseSuffix + '.' + overlay.getApplicationIdSuffix());
-            }
-        }
+        flavor.setApplicationIdSuffix(
+                mergeApplicationIdSuffix(
+                        overlay.getApplicationIdSuffix(), base.getApplicationIdSuffix()));
 
         flavor.mTestApplicationId = chooseNotNull(
                 overlay.getTestApplicationId(),
@@ -505,6 +567,10 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
         flavor.mSigningConfig = chooseNotNull(
                 overlay.getSigningConfig(),
                 base.getSigningConfig());
+
+        flavor.mWearAppUnbundled = chooseNotNull(
+                overlay.getWearAppUnbundled(),
+                base.getWearAppUnbundled());
 
         flavor.addResourceConfigurations(base.getResourceConfigurations());
         flavor.addResourceConfigurations(overlay.getResourceConfigurations());
@@ -562,10 +628,12 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
         flavor.mMaxSdkVersion = productFlavor.getMaxSdkVersion();
         flavor.mRenderscriptTargetApi = productFlavor.getRenderscriptTargetApi();
         flavor.mRenderscriptSupportModeEnabled = productFlavor.getRenderscriptSupportModeEnabled();
+        flavor.mRenderscriptSupportModeBlasEnabled = productFlavor.getRenderscriptSupportModeBlasEnabled();
         flavor.mRenderscriptNdkModeEnabled = productFlavor.getRenderscriptNdkModeEnabled();
 
         flavor.mVersionCode = productFlavor.getVersionCode();
         flavor.mVersionName = productFlavor.getVersionName();
+        flavor.setVersionNameSuffix(productFlavor.getVersionNameSuffix());
 
         flavor.mApplicationId = productFlavor.getApplicationId();
 
@@ -579,6 +647,7 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
 
         flavor.mVectorDrawablesOptions =
                 DefaultVectorDrawablesOptions.copyOf(productFlavor.getVectorDrawables());
+        flavor.mWearAppUnbundled = productFlavor.getWearAppUnbundled();
 
         flavor.addResourceConfigurations(productFlavor.getResourceConfigurations());
         flavor.addManifestPlaceholders(productFlavor.getManifestPlaceholders());
@@ -597,6 +666,30 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
 
     private static <T> T chooseNotNull(T overlay, T base) {
         return overlay != null ? overlay : base;
+    }
+
+    public static String mergeApplicationIdSuffix(@Nullable String overlay, @Nullable String base){
+        return Strings.nullToEmpty(joinWithSeparator(overlay, base, '.'));
+    }
+
+    public static String mergeVersionNameSuffix(@Nullable String overlay, @Nullable String base){
+        return Strings.nullToEmpty(joinWithSeparator(overlay, base, null));
+    }
+
+    @Nullable
+    private static String joinWithSeparator(@Nullable String overlay, @Nullable String base,
+            @Nullable Character separator){
+        if (!Strings.isNullOrEmpty(overlay)) {
+            String baseSuffix = chooseNotNull(base, "");
+            if (separator == null || overlay.charAt(0) == separator) {
+                return baseSuffix + overlay;
+            } else {
+                return baseSuffix + separator + overlay;
+            }
+        }
+        else{
+            return base;
+        }
     }
 
     @Override
@@ -621,6 +714,8 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
                 Objects.equal(mRenderscriptNdkModeEnabled, that.mRenderscriptNdkModeEnabled) &&
                 Objects.equal(mRenderscriptSupportModeEnabled,
                         that.mRenderscriptSupportModeEnabled) &&
+                Objects.equal(mRenderscriptSupportModeBlasEnabled,
+                        that.mRenderscriptSupportModeBlasEnabled) &&
                 Objects.equal(mRenderscriptTargetApi, that.mRenderscriptTargetApi) &&
                 Objects.equal(mResourceConfiguration, that.mResourceConfiguration) &&
                 Objects.equal(mSigningConfig, that.mSigningConfig) &&
@@ -632,7 +727,8 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
                 Objects.equal(mTestInstrumentationRunnerArguments,
                         that.mTestInstrumentationRunnerArguments) &&
                 Objects.equal(mVersionCode, that.mVersionCode) &&
-                Objects.equal(mVersionName, that.mVersionName);
+                Objects.equal(mVersionName, that.mVersionName) &&
+                Objects.equal(mWearAppUnbundled, that.mWearAppUnbundled);
     }
 
     @Override
@@ -646,6 +742,7 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
                 mMaxSdkVersion,
                 mRenderscriptTargetApi,
                 mRenderscriptSupportModeEnabled,
+                mRenderscriptSupportModeBlasEnabled,
                 mRenderscriptNdkModeEnabled,
                 mVersionCode,
                 mVersionName,
@@ -656,7 +753,8 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
                 mTestHandleProfiling,
                 mTestFunctionalTest,
                 mSigningConfig,
-                mResourceConfiguration);
+                mResourceConfiguration,
+                mWearAppUnbundled);
     }
 
     @Override
@@ -669,6 +767,7 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
                 .add("targetSdkVersion", mTargetSdkVersion)
                 .add("renderscriptTargetApi", mRenderscriptTargetApi)
                 .add("renderscriptSupportModeEnabled", mRenderscriptSupportModeEnabled)
+                .add("renderscriptSupportModeBlasEnabled", mRenderscriptSupportModeBlasEnabled)
                 .add("renderscriptNdkModeEnabled", mRenderscriptNdkModeEnabled)
                 .add("versionCode", mVersionCode)
                 .add("versionName", mVersionName)
@@ -685,6 +784,7 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
                 .add("mProguardFiles", getProguardFiles())
                 .add("mConsumerProguardFiles", getConsumerProguardFiles())
                 .add("mManifestPlaceholders", getManifestPlaceholders())
+                .add("mWearAppUnbundled", mWearAppUnbundled)
                 .toString();
     }
 }

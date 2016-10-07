@@ -18,9 +18,12 @@ package com.android.builder.internal.packaging.zip;
 
 import com.android.annotations.NonNull;
 import com.android.builder.internal.packaging.zip.utils.MsDosDateTimeUtils;
-import com.google.common.base.Preconditions;
+import com.google.common.base.Verify;
 
+import java.io.IOException;
 import java.util.Arrays;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 
 /**
  * The Central Directory Header contains information about files stored in the zip. Instances of
@@ -28,8 +31,17 @@ import java.util.Arrays;
  * read from the Central Directory. But some instances of this class are used for new files.
  * Because instances of this class can refer to files not yet on the zip, some of the fields may
  * not be filled in, or may be filled in with default values.
+ * <p>
+ * Because compression decision is done lazily, some data is stored with futures.
  */
 public class CentralDirectoryHeader implements Cloneable {
+
+    /**
+     * Default "version made by" field: upper byte needs to be 0 to set to MS-DOS compatibility.
+     * Lower byte can be anything, really. We use 18 because aapt uses 17 :)
+     */
+    private static final int DEFAULT_VERSION_MADE_BY = 0x0018;
+
     /**
      * Name of the file.
      */
@@ -42,30 +54,14 @@ public class CentralDirectoryHeader implements Cloneable {
     private long mCrc32;
 
     /**
-     * Size of the file compressed. 0 if the file has no data.
-     */
-    private long mCompressedSize;
-
-    /**
      * Size of the file uncompressed. 0 if the file has no data.
      */
     private long mUncompressedSize;
 
     /**
-     * The compression method.
-     */
-    @NonNull
-    private CompressionMethod mMethod;
-
-    /**
      * Code of the program that made the zip. We actually don't care about this.
      */
     private long mMadeBy;
-
-    /**
-     * Version needed to extract the zip.
-     */
-    private long mVersionExtract;
 
     /**
      * General-purpose bit flag.
@@ -113,32 +109,39 @@ public class CentralDirectoryHeader implements Cloneable {
     private long mOffset;
 
     /**
+     * Encoded file name.
+     */
+    private byte[] mEncodedFileName;
+
+    /**
+     * Compress information that may not have been computed yet due to lazy compression.
+     */
+    @NonNull
+    private Future<CentralDirectoryHeaderCompressInfo> mCompressInfo;
+
+    /**
      * Creates data for a file.
      *
      * @param name the file name
-     * @param compressedSize the compressed file size
      * @param uncompressedSize the uncompressed file size
-     * @param method the compression method used on the file
+     * @param compressInfo computation that defines the compression information
+     * @param flags flags used in the entry
      */
-    CentralDirectoryHeader(@NonNull String name, long compressedSize, long uncompressedSize,
-            @NonNull CompressionMethod method) {
+    CentralDirectoryHeader(
+            @NonNull String name,
+            long uncompressedSize,
+            @NonNull Future<CentralDirectoryHeaderCompressInfo> compressInfo,
+            @NonNull GPFlags flags) {
         mName = name;
-        mCompressedSize = compressedSize;
         mUncompressedSize = uncompressedSize;
-        mMethod = method;
         mCrc32 = 0;
-
-        if (method == CompressionMethod.STORE) {
-            Preconditions.checkArgument(uncompressedSize == compressedSize,
-                    "File data with STORE but compressed size != uncompressed size ("
-                            + compressedSize + " vs " + uncompressedSize + " )");
-        }
 
         /*
          * Set sensible defaults for the rest.
          */
-        mMadeBy = 0;
-        mGpBit = GPFlags.makeDefault();
+        mMadeBy = DEFAULT_VERSION_MADE_BY;
+
+        mGpBit = flags;
         mLastModTime = MsDosDateTimeUtils.packCurrentTime();
         mLastModDate = MsDosDateTimeUtils.packCurrentDate();
         mExtraField = new byte[0];
@@ -146,15 +149,8 @@ public class CentralDirectoryHeader implements Cloneable {
         mInternalAttributes = 0;
         mExternalAttributes = 0;
         mOffset = -1;
-
-        if (name.endsWith("/") || method == CompressionMethod.DEFLATE) {
-            /*
-             * Directories and compressed files only in version 2.0.
-             */
-            mVersionExtract = 20;
-        } else {
-            mVersionExtract = 10;
-        }
+        mEncodedFileName = EncodeUtils.encode(name, mGpBit);
+        mCompressInfo = compressInfo;
     }
 
     /**
@@ -174,54 +170,6 @@ public class CentralDirectoryHeader implements Cloneable {
      */
     public long getUncompressedSize() {
         return mUncompressedSize;
-    }
-
-    /**
-     * Obtains the size of the compressed file.
-     *
-     * @return the size of the file
-     */
-    public long getCompressedSize() {
-        return mCompressedSize;
-    }
-
-    /**
-     * Sets the compression method. Can only be called if the compression method is
-     * {@link CompressionMethod#DEFLATE}.
-     *
-     * @param compressedSize the compressed data size
-     */
-    public void setCompressedSize(long compressedSize) {
-        Preconditions.checkState(mMethod == CompressionMethod.DEFLATE, "Cannot set the compressed "
-                + "size if compression method is not DEFLATE.");
-
-        mCompressedSize = compressedSize;
-    }
-
-    /**
-     * Obtains the compression method to use.
-     *
-     * @return the compression method
-     */
-    @NonNull
-    public CompressionMethod getMethod() {
-        return mMethod;
-    }
-
-    /**
-     * Sets the compression method. The compression method can only be set to
-     * {@link CompressionMethod#STORE} if the compressed and uncompressed sizes are equal.
-     *
-     * @param method the compression method
-     */
-    public void setMethod(@NonNull CompressionMethod method) {
-        if (method == CompressionMethod.STORE) {
-            Preconditions.checkState(mCompressedSize == mUncompressedSize, "Cannot mark a file "
-                    + "as STORE if the compressed size (%s) is not the same as the uncompressed "
-                    + "size (%s).", mCompressedSize, mUncompressedSize);
-        }
-
-        mMethod = method;
     }
 
     /**
@@ -261,23 +209,6 @@ public class CentralDirectoryHeader implements Cloneable {
     }
 
     /**
-     * Obtains the version needed to extract the entry.
-     * @return the version number
-     */
-    public long getVersionExtract() {
-        return mVersionExtract;
-    }
-
-    /**
-     * Sets the version needed to extract the entry.
-     *
-     * @param versionExtract the version number
-     */
-    public void setVersionExtract(long versionExtract) {
-        mVersionExtract = versionExtract;
-    }
-
-    /**
      * Obtains the general-purpose bit flag.
      *
      * @return the bit flag
@@ -285,15 +216,6 @@ public class CentralDirectoryHeader implements Cloneable {
     @NonNull
     public GPFlags getGpBit() {
         return mGpBit;
-    }
-
-    /**
-     * Sets the general-purpose bit flag.
-     *
-     * @param gpBit the bit flag
-     */
-    public void setGpBit(@NonNull GPFlags gpBit) {
-        mGpBit = gpBit;
     }
 
     /**
@@ -413,7 +335,8 @@ public class CentralDirectoryHeader implements Cloneable {
     /**
      * Obtains the offset in the zip file where this entry's data is.
      *
-     * @return the offset or {@code -1} if the file is new and has no data in the zip yet
+     * @return the offset or {@code -1} if the file has no data in the zip and, therefore, data
+     * is stored in memory
      */
     public long getOffset() {
         return mOffset;
@@ -428,11 +351,63 @@ public class CentralDirectoryHeader implements Cloneable {
         mOffset = offset;
     }
 
+    /**
+     * Obtains the encoded file name.
+     *
+     * @return the encoded file name
+     */
+    public byte[] getEncodedFileName() {
+        return mEncodedFileName;
+    }
+
+    /**
+     * Resets the deferred CRC flag in the GP flags.
+     */
+    public void resetDeferredCrc() {
+        /*
+         * We actually create a new set of flags. Since the only information we care about is the
+         * UTF-8 encoding, we'll just create a brand new object.
+         */
+        mGpBit = GPFlags.make(mGpBit.isUtf8FileName());
+    }
+
     @Override
     protected CentralDirectoryHeader clone() throws CloneNotSupportedException {
         CentralDirectoryHeader cdr = (CentralDirectoryHeader) super.clone();
         cdr.mExtraField = Arrays.copyOf(mExtraField, mExtraField.length);
         cdr.mComment = Arrays.copyOf(mComment, mComment.length);
+        cdr.mEncodedFileName = Arrays.copyOf(mEncodedFileName, mEncodedFileName.length);
         return cdr;
+    }
+
+    /**
+     * Obtains the future with the compression information.
+     *
+     * @return the information
+     */
+    @NonNull
+    public Future<CentralDirectoryHeaderCompressInfo> getCompressionInfo() {
+        return mCompressInfo;
+    }
+
+    /**
+     * Equivalent to {@code getCompressionInfo().get()} but masking the possible exceptions and
+     * guaranteeing non-{@code null} return.
+     *
+     * @return the result of the future
+     * @throws IOException failed to get the information
+     */
+    @NonNull
+    public CentralDirectoryHeaderCompressInfo getCompressionInfoWithWait()
+            throws IOException {
+        try {
+            CentralDirectoryHeaderCompressInfo info = getCompressionInfo().get();
+            Verify.verifyNotNull(info, "info == null");
+            return info;
+        } catch (InterruptedException e) {
+            throw new IOException("Interrupted while waiting for compression information.", e);
+        } catch (ExecutionException e) {
+            throw new IOException("Execution of compression failed.", e);
+        }
     }
 }

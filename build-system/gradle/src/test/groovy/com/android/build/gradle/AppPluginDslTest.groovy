@@ -27,13 +27,14 @@ import com.android.build.gradle.internal.SdkHandler
 import com.android.build.gradle.internal.core.GradleVariantConfiguration
 import com.android.build.gradle.internal.tasks.MockableAndroidJarTask
 import com.android.build.gradle.internal.test.BaseTest
+import com.android.utils.StringHelper
 import org.gradle.api.JavaVersion
 import org.gradle.api.Project
 import org.gradle.testfixtures.ProjectBuilder
-import org.junit.Ignore
 
 import static com.android.build.gradle.DslTestUtil.DEFAULT_VARIANTS
 import static com.android.build.gradle.DslTestUtil.countVariants
+import static com.google.common.truth.Truth.assertThat
 /**
  * Tests for the public DSL of the App plugin ("android")
  */
@@ -52,7 +53,7 @@ public class AppPluginDslTest extends BaseTest {
 
         project.android {
             compileSdkVersion COMPILE_SDK_VERSION
-            buildToolsVersion '20.0.0'
+            buildToolsVersion BUILD_TOOL_VERSION
         }
 
         AppPlugin plugin = project.plugins.getPlugin(AppPlugin)
@@ -82,7 +83,7 @@ public class AppPluginDslTest extends BaseTest {
 
         project.android {
             compileSdkVersion COMPILE_SDK_VERSION
-            buildToolsVersion '20.0.0'
+            buildToolsVersion BUILD_TOOL_VERSION
         }
 
         AppPlugin plugin = project.plugins.getPlugin(AppPlugin)
@@ -109,7 +110,7 @@ public class AppPluginDslTest extends BaseTest {
 
         project.android {
             compileSdkVersion "android-" + COMPILE_SDK_VERSION
-            buildToolsVersion '20.0.0'
+            buildToolsVersion BUILD_TOOL_VERSION
         }
 
         AppPlugin plugin = project.plugins.getPlugin(AppPlugin)
@@ -136,7 +137,7 @@ public class AppPluginDslTest extends BaseTest {
 
         project.android {
             compileSdkVersion COMPILE_SDK_VERSION
-            buildToolsVersion '20.0.0'
+            buildToolsVersion BUILD_TOOL_VERSION
 
             sourceSets {
                 main {
@@ -158,7 +159,7 @@ public class AppPluginDslTest extends BaseTest {
 
         project.android {
             compileSdkVersion COMPILE_SDK_VERSION
-            buildToolsVersion '20.0.0'
+            buildToolsVersion BUILD_TOOL_VERSION
             testBuildType "staging"
 
             buildTypes {
@@ -198,7 +199,7 @@ public class AppPluginDslTest extends BaseTest {
 
         project.android {
             compileSdkVersion COMPILE_SDK_VERSION
-            buildToolsVersion '20.0.0'
+            buildToolsVersion BUILD_TOOL_VERSION
 
             productFlavors {
                 flavor1 {
@@ -241,26 +242,31 @@ public class AppPluginDslTest extends BaseTest {
 
         project.android {
             compileSdkVersion COMPILE_SDK_VERSION
-            buildToolsVersion '20.0.0'
+            buildToolsVersion BUILD_TOOL_VERSION
 
             flavorDimensions   "dimension1", "dimension2"
 
             productFlavors {
                 f1 {
                     dimension   "dimension1"
+                    javaCompileOptions.annotationProcessorOptions.className "f1"
                 }
                 f2 {
                     dimension   "dimension1"
+                    javaCompileOptions.annotationProcessorOptions.className "f2"
                 }
 
                 fa {
                     dimension   "dimension2"
+                    javaCompileOptions.annotationProcessorOptions.className "fa"
                 }
                 fb {
                     dimension   "dimension2"
+                    javaCompileOptions.annotationProcessorOptions.className "fb"
                 }
                 fc {
                     dimension   "dimension2"
+                    javaCompileOptions.annotationProcessorOptions.className "fc"
                 }
             }
         }
@@ -288,6 +294,18 @@ public class AppPluginDslTest extends BaseTest {
         checkTestedVariant("f2FbDebug", "f2FbDebugAndroidTest", variants, testVariants)
         checkTestedVariant("f2FcDebug", "f2FcDebugAndroidTest", variants, testVariants)
 
+        def variantsData = plugin.variantManager.variantDataList
+        Map<String, GradleVariantConfiguration> variantMap =
+                variantsData.collectEntries {[it.name, it.variantConfiguration]}
+        for (String dim1 : ["f1", "f2"]) {
+            for (String dim2 : ["fa", "fb", "fc"]) {
+                String variantName = StringHelper.combineAsCamelCase([dim1, dim2, "debug"]);
+                GradleVariantConfiguration variant = variantMap[variantName];
+                assertThat(variant.getJavaCompileOptions().getAnnotationProcessorOptions()
+                        .getClassNames()).containsExactly(dim2, dim1).inOrder()
+            }
+        }
+
         checkNonTestedVariant("f1FaRelease", variants)
         checkNonTestedVariant("f1FbRelease", variants)
         checkNonTestedVariant("f1FcRelease", variants)
@@ -304,7 +322,7 @@ public class AppPluginDslTest extends BaseTest {
 
         project.android {
             compileSdkVersion COMPILE_SDK_VERSION
-            buildToolsVersion '20.0.0'
+            buildToolsVersion BUILD_TOOL_VERSION
         }
 
         // query the sourceSets, will throw if missing
@@ -323,7 +341,7 @@ public class AppPluginDslTest extends BaseTest {
 
         project.android {
             compileSdkVersion COMPILE_SDK_VERSION
-            buildToolsVersion '20.0.0'
+            buildToolsVersion BUILD_TOOL_VERSION
 
             buildTypes {
                 release {
@@ -361,7 +379,7 @@ public class AppPluginDslTest extends BaseTest {
 
         project.android {
             compileSdkVersion COMPILE_SDK_VERSION
-            buildToolsVersion '20.0.0'
+            buildToolsVersion BUILD_TOOL_VERSION
 
             buildTypes {
                 release {
@@ -424,7 +442,7 @@ public class AppPluginDslTest extends BaseTest {
 
         project.android {
             compileSdkVersion COMPILE_SDK_VERSION
-            buildToolsVersion '20.0.0'
+            buildToolsVersion BUILD_TOOL_VERSION
 
             buildTypes {
                 common {
@@ -467,7 +485,7 @@ public class AppPluginDslTest extends BaseTest {
             project.apply plugin: 'com.android.application'
             project.android {
                 compileSdkVersion version
-                buildToolsVersion '20.0.0'
+                buildToolsVersion BUILD_TOOL_VERSION
             }
 
             AppPlugin plugin = project.plugins.getPlugin(AppPlugin)
@@ -511,7 +529,7 @@ public class AppPluginDslTest extends BaseTest {
         project.apply plugin: 'com.android.application'
         project.android {
             compileSdkVersion COMPILE_SDK_VERSION
-            buildToolsVersion '20.0.0'
+            buildToolsVersion BUILD_TOOL_VERSION
 
             compileOptions {
                 sourceCompatibility JavaVersion.VERSION_1_6
@@ -537,7 +555,7 @@ public class AppPluginDslTest extends BaseTest {
 
         project.android {
             compileSdkVersion "Google Inc.:Google APIs:" + COMPILE_SDK_VERSION
-            buildToolsVersion '20.0.0'
+            buildToolsVersion BUILD_TOOL_VERSION
         }
 
         AppPlugin plugin = project.plugins.getPlugin(AppPlugin)
@@ -558,7 +576,7 @@ public class AppPluginDslTest extends BaseTest {
         project.apply plugin: 'com.android.application'
         project.android {
             compileSdkVersion COMPILE_SDK_VERSION
-            buildToolsVersion '20.0.0'
+            buildToolsVersion BUILD_TOOL_VERSION
 
             compileOptions {
                 encoding "foo"
@@ -581,7 +599,7 @@ public class AppPluginDslTest extends BaseTest {
 
         project.android {
             compileSdkVersion COMPILE_SDK_VERSION
-            buildToolsVersion '20.0.0'
+            buildToolsVersion BUILD_TOOL_VERSION
 
             defaultConfig {
                 testInstrumentationRunnerArguments(value: "default", size: "small")
@@ -641,7 +659,7 @@ public class AppPluginDslTest extends BaseTest {
 
                 f2  {
                     vectorDrawables {
-                        generatedDensities = ["ldpi"]
+                        generatedDensities "ldpi"
                         generatedDensities += ["mdpi"]
                     }
                 }
@@ -685,7 +703,7 @@ public class AppPluginDslTest extends BaseTest {
 
         project.android {
             compileSdkVersion COMPILE_SDK_VERSION
-            buildToolsVersion '20.0.0'
+            buildToolsVersion BUILD_TOOL_VERSION
         }
 
         AppPlugin plugin = project.plugins.getPlugin(AppPlugin)
@@ -702,7 +720,7 @@ public class AppPluginDslTest extends BaseTest {
 
         project.android {
             compileSdkVersion COMPILE_SDK_VERSION
-            buildToolsVersion '20.0.0'
+            buildToolsVersion BUILD_TOOL_VERSION
 
             productFlavors {
                 f1 {
@@ -710,7 +728,7 @@ public class AppPluginDslTest extends BaseTest {
 
                 f2  {
                     vectorDrawables {
-                        useSupportLibrary = true
+                        useSupportLibrary true
                     }
                 }
 
@@ -729,7 +747,57 @@ public class AppPluginDslTest extends BaseTest {
         assert project.mergeF2DebugResources.disableVectorDrawables == true
         assert project.mergeF3DebugResources.disableVectorDrawables == false
     }
-    
+
+    /**
+     * Make sure DSL objects don't need "=" everywhere.
+     */
+    public void testSetters() throws Exception {
+        Project project = ProjectBuilder.builder().withProjectDir(
+                new File(testDir, "${FOLDER_TEST_PROJECTS}/basic")).build()
+
+        project.apply plugin: 'com.android.application'
+
+        project.android {
+            compileSdkVersion COMPILE_SDK_VERSION
+            buildToolsVersion BUILD_TOOL_VERSION
+
+            buildTypes {
+                debug {
+                    useProguard false
+                    shrinkResources true
+                    useJack true
+                }
+            }
+        }
+
+        assert project.android.buildTypes.debug.useProguard == false
+        assert project.android.buildTypes.debug.shrinkResources == true
+        assert project.android.buildTypes.debug.useJack == true
+    }
+
+    public void testAdbExe() throws Exception {
+        Project project = ProjectBuilder.builder().withProjectDir(
+                new File(testDir, "${FOLDER_TEST_PROJECTS}/basic")).build()
+
+        project.apply plugin: 'com.android.application'
+
+        def valueOne = null
+        def valueTwo = null
+
+        project.android {
+            compileSdkVersion COMPILE_SDK_VERSION
+            buildToolsVersion BUILD_TOOL_VERSION
+
+            valueOne = adbExe
+            valueTwo = adbExecutable
+        }
+
+        AppPlugin plugin = project.plugins.getPlugin(AppPlugin)
+        plugin.createAndroidTasks(false)
+
+        assert valueOne != null && valueTwo != null && valueOne.equals(valueTwo)
+    }
+
     private static void checkTestedVariant(@NonNull String variantName,
                                            @NonNull String testedVariantName,
                                            @NonNull Collection<ApplicationVariant> variants,
@@ -778,11 +846,16 @@ public class AppPluginDslTest extends BaseTest {
             for (BaseVariantOutput baseVariantOutput : variant.outputs) {
                 ApkVariantOutput apkVariantOutput = (ApkVariantOutput) baseVariantOutput
 
-                // tested variant are never zipAligned.
-                if (!isTestVariant && variant.buildType.zipAlignEnabled) {
-                    assertNotNull(apkVariantOutput.zipAlign)
-                } else {
+                // Check if we did the right thing, depending on the default value of the flag.
+                if (!AndroidGradleOptions.DEFAULT_USE_OLD_PACKAGING) {
                     assertNull(apkVariantOutput.zipAlign)
+                } else {
+                    // tested variant are never zipAligned.
+                    if (!isTestVariant && variant.buildType.zipAlignEnabled) {
+                        assertNotNull(apkVariantOutput.zipAlign)
+                    } else {
+                        assertNull(apkVariantOutput.zipAlign)
+                    }
                 }
             }
         } else {

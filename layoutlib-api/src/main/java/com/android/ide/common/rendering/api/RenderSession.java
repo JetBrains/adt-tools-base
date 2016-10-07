@@ -19,6 +19,7 @@ package com.android.ide.common.rendering.api;
 import static com.android.ide.common.rendering.api.Result.Status.NOT_IMPLEMENTED;
 
 import com.android.ide.common.rendering.api.Result.Status;
+import com.android.util.PropertiesMap;
 
 import java.awt.image.BufferedImage;
 import java.util.List;
@@ -44,16 +45,16 @@ public class RenderSession {
 
     /**
      * Returns the {@link ViewInfo} objects for the top level views.
-     * <p/>
+     * <p>
      * It contains {@code ViewInfo} for only the views in the layout. For {@code ViewInfo} of the
      * System UI surrounding the layout use {@link #getSystemRootViews()}. In most cases the list
      * will only contain one item. If the top level node is a {@code merge} though then it will
      * contain all the items under the {@code merge} tag.
-     * <p/>
+     * <p>
      * This is reset to a new instance every time {@link #render()} is called and can be
      * <code>null</code> if the call failed (and the method returned a {@link Result} with
      * {@link Status#ERROR_UNKNOWN} or {@link Status#NOT_IMPLEMENTED}.
-     * <p/>
+     * <p>
      * This can be safely modified by the caller, but {@code #getSystemRootViews} and
      * {@code #getRootViews} share some view infos, so modifying one result can affect the other.
      *
@@ -67,10 +68,10 @@ public class RenderSession {
 
     /**
      * Returns the {@link ViewInfo} objects for the system decor views, like the ActionBar.
-     * <p/>
+     * <p>
      * This is reset to a new instance every time {@link #render()} is called and can be
      * <code>null</code> if the call failed, or there was no system decor.
-     * <p/>
+     * <p>
      * This can be safely modified by the caller, but {@code #getSystemRootViews} and
      * {@code #getRootViews} share some view infos, so modifying one result can affect the other.
      *
@@ -86,7 +87,7 @@ public class RenderSession {
      * This is reset to a new instance every time {@link #render()} is called and can be
      * <code>null</code> if the call failed (and the method returned a {@link Result} with
      * {@link Status#ERROR_UNKNOWN} or {@link Status#NOT_IMPLEMENTED}.
-     * <p/>
+     * <p>
      * This can be safely modified by the caller.
      */
     public BufferedImage getImage() {
@@ -107,8 +108,18 @@ public class RenderSession {
      * values, for the given view Object.
      * @param viewObject the view object.
      * @return a map of the default property values or null.
+     * @deprecated use {@link #getDefaultProperties()}
      */
+    @Deprecated
     public Map<String, String> getDefaultProperties(Object viewObject) {
+        return null;
+    }
+
+    /**
+     * Returns the map of View Cookie → properties (attribute name, attribute value) for all the
+     * views that have a view cookie.
+     */
+    public Map<Object, PropertiesMap> getDefaultProperties() {
         return null;
     }
 
@@ -165,10 +176,10 @@ public class RenderSession {
 
     /**
      * Sets the value of a given property on a given object.
-     * <p/>
+     * <p>
      * This does nothing more than change the property. To render the scene in its new state, a
      * call to {@link #render()} is required.
-     * <p/>
+     * <p>
      * Any amount of actions can be taken on the scene before {@link #render()} is called.
      *
      * @param objectView
@@ -185,7 +196,7 @@ public class RenderSession {
 
     /**
      * returns the value of a given property on a given object.
-     * <p/>
+     * <p>
      * This returns a {@link Result} object. If the operation of querying the object for its
      * property was successful (check {@link Result#isSuccess()}), then the property value
      * is set in the result and can be accessed through {@link Result#getData()}.
@@ -203,17 +214,17 @@ public class RenderSession {
 
     /**
      * Inserts a new child in a ViewGroup object, and renders the result.
-     * <p/>
-     * The child is first inflated and then added to its new parent, at the given <var>index<var>
+     * <p>
+     * The child is first inflated and then added to its new parent, at the given <var>index</var>
      * position. If the <var>index</var> is -1 then the child is added at the end of the parent.
-     * <p/>
+     * <p>
      * If an animation listener is passed then the rendering is done asynchronously and the
      * result is sent to the listener.
      * If the listener is null, then the rendering is done synchronously.
-     * <p/>
+     * <p>
      * The child stays in the view hierarchy after the rendering is done. To remove it call
      * {@link #removeChild(Object, IAnimationListener)}
-     * <p/>
+     * <p>
      * The returned {@link Result} object will contain the android.view.View object for
      * the newly inflated child. It is accessible through {@link Result#getData()}.
      *
@@ -233,20 +244,20 @@ public class RenderSession {
 
     /**
      * Move a new child to a different ViewGroup object.
-     * <p/>
+     * <p>
      * The child is first removed from its current parent, and then added to its new parent, at the
-     * given <var>index<var> position. In case the <var>parentView</var> is the current parent of
+     * given <var>index</var> position. In case the <var>parentView</var> is the current parent of
      * <var>childView</var> then the index must be the value with the <var>childView</var> removed
      * from its parent. If the <var>index</var> is -1 then the child is added at the end of
      * the parent.
-     * <p/>
+     * <p>
      * If an animation listener is passed then the rendering is done asynchronously and the
      * result is sent to the listener.
      * If the listener is null, then the rendering is done synchronously.
-     * <p/>
+     * <p>
      * The child stays in the view hierarchy after the rendering is done. To remove it call
      * {@link #removeChild(Object, IAnimationListener)}
-     * <p/>
+     * <p>
      * The returned {@link Result} object will contain the android.view.ViewGroup.LayoutParams
      * object created from the <var>layoutParams</var> map if it was non <code>null</code>.
      *
@@ -269,10 +280,10 @@ public class RenderSession {
 
     /**
      * Removes a child from a ViewGroup object.
-     * <p/>
+     * <p>
      * This does nothing more than change the layout. To render the scene in its new state, a
      * call to {@link #render()} is required.
-     * <p/>
+     * <p>
      * Any amount of actions can be taken on the scene before {@link #render()} is called.
      *
      * @param childView the view object to remove from its parent
@@ -286,7 +297,7 @@ public class RenderSession {
 
     /**
      * Starts playing an given animation on a given object.
-     * <p/>
+     * <p>
      * The animation playback is asynchronous and the rendered frame is sent vi the
      * <var>listener</var>.
      *
@@ -303,7 +314,7 @@ public class RenderSession {
 
     /**
      * Sets the current system time in nanos.
-     * <p/>Calls to this method must check that layoutlib supports {@link Features#SYSTEM_TIME}
+     * <p>Calls to this method must check that layoutlib supports {@link Features#SYSTEM_TIME}
      */
     public void setSystemTimeNanos(long nanos) {
         throw new UnsupportedOperationException(
@@ -312,7 +323,7 @@ public class RenderSession {
 
     /**
      * Sets the system boot time in nanos.
-     * <p/>Calls to this method must check that layoutlib supports {@link Features#SYSTEM_TIME}
+     * <p>Calls to this method must check that layoutlib supports {@link Features#SYSTEM_TIME}
      */
     public void setSystemBootTimeNanos(long nanos) {
         throw new UnsupportedOperationException(
@@ -322,7 +333,7 @@ public class RenderSession {
     /**
      * Sets the time for which the next frame will be selected. The time is the elapsed time from
      * the current system nanos time.
-     * <p/>Calls to this method must check that layoutlib supports {@link Features#SYSTEM_TIME}
+     * <p>Calls to this method must check that layoutlib supports {@link Features#SYSTEM_TIME}
      */
     public void setElapsedFrameTimeNanos(long nanos) {
         throw new UnsupportedOperationException(

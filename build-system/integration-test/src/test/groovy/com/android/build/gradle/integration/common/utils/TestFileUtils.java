@@ -20,8 +20,10 @@ import static com.android.build.gradle.integration.common.truth.TruthHelper.asse
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
+import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.utils.FileUtils;
 import com.google.common.base.Charsets;
 import com.google.common.base.Joiner;
 import com.google.common.base.Predicate;
@@ -31,6 +33,7 @@ import com.google.common.io.Files;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -47,12 +50,9 @@ public class TestFileUtils {
 
         List<String> fileList = Lists.newArrayList();
         for (File file : Files.fileTreeTraverser().preOrderTraversal(base).filter(
-                new Predicate<File>() {
-                    @Override
-                    public boolean apply(@Nullable File file) {
-                        // we want to skip directories and symlinks, so isFile is the best check.
-                        return file != null && file.isFile();
-                    }
+                f -> {
+                    // we want to skip directories and symlinks, so isFile is the best check.
+                    return f != null && f.isFile();
                 })) {
             assertThat(file.toString()).startsWith(base.toString());
             String fileName = file.toString().substring(base.toString().length());
@@ -82,7 +82,15 @@ public class TestFileUtils {
             @NonNull String replace) throws IOException {
         String content = Files.toString(file, Charset.defaultCharset());
         String newContent = content.replaceAll(search, replace);
-        assertNotEquals("No match in file.", content, newContent);
+        assertNotEquals("No match in file", content, newContent);
+
+        // Gradle has a bug, where it may not notice rapid changes to build.gradle if the length of
+        // the file has not changed. Work around this by appending a new line at the end.
+        if (file.getName().equals(SdkConstants.FN_BUILD_GRADLE)
+                && content.length() == newContent.length()) {
+            newContent += System.lineSeparator();
+        }
+
         Files.write(newContent, file, Charset.defaultCharset());
     }
 
@@ -112,10 +120,19 @@ public class TestFileUtils {
             @NonNull File javaFile,
             @NonNull String methodCode) throws IOException {
         // Put the method code before the last closing brace.
-        searchAndReplace(javaFile, "\n}\\s+$", methodCode + "\n\n}");
+        searchAndReplace(javaFile, "\n}\\s*$", methodCode + "\n\n}");
     }
 
     public static void appendToFile(@NonNull File file, @NonNull String content) throws IOException {
-        Files.append(content, file, Charset.defaultCharset());
+        Files.append(System.lineSeparator() + content, file, Charset.defaultCharset());
+    }
+
+    /**
+     * Return a list of path folders and file (if applicable)
+     */
+    public static List<String> splitPath(@NonNull File path) {
+        return Arrays.asList(
+                FileUtils.toSystemIndependentPath(
+                        path.getPath()).split("/"));
     }
 }

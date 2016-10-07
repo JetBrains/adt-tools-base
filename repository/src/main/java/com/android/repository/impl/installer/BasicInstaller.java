@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 The Android Open Source Project
+ * Copyright (C) 2016 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,12 +19,10 @@ package com.android.repository.impl.installer;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.repository.api.Downloader;
-import com.android.repository.api.LocalPackage;
+import com.android.repository.api.Installer;
 import com.android.repository.api.ProgressIndicator;
 import com.android.repository.api.RemotePackage;
 import com.android.repository.api.RepoManager;
-import com.android.repository.api.RepoPackage;
-import com.android.repository.api.SettingsController;
 import com.android.repository.impl.meta.Archive;
 import com.android.repository.io.FileOp;
 import com.android.repository.io.FileOpUtils;
@@ -32,94 +30,120 @@ import com.android.repository.util.InstallerUtil;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.URL;
+import java.nio.file.Paths;
 
 /**
- * A simple {@link PackageInstaller} that just unzips the {@code complete} version of an {@link
+ * A simple {@link Installer} that just unzips the {@code complete} version of an {@link
  * Archive} into its destination directory.
+ *
+ * Probably instances should be created by {@link BasicInstallerFactory}
  */
-public class BasicInstaller implements PackageInstaller {
+class BasicInstaller extends AbstractInstaller {
+    private static final String FN_UNZIP_DIR = "unzip";
 
-    /**
-     * Just deletes the package.
-     *
-     * @param p        The {@link LocalPackage} to delete.
-     * @param progress A {@link ProgressIndicator}. Unused by this installer.
-     * @param manager  A {@link RepoManager} that knows about this package.
-     * @param fop      The {@link FileOp} to use. Should be {@link FileOpUtils#create()} if not in
-     *                 a unit test.
-     * @return {@code true} if the uninstall was successful, {@code false} otherwise.
-     */
-    @Override
-    public boolean uninstall(@NonNull LocalPackage p, @NonNull ProgressIndicator progress,
-            @NonNull RepoManager manager, @NonNull FileOp fop) {
-        String path = p.getPath();
-        path = path.replace(RepoPackage.PATH_SEPARATOR, File.separatorChar);
-        File location = new File(manager.getLocalPath(), path);
-
-        fop.deleteFileOrFolder(location);
-        manager.markInvalid();
-
-        return !fop.exists(location);
+    BasicInstaller(@NonNull RemotePackage p, @NonNull RepoManager mgr,
+      @NonNull Downloader downloader, @NonNull FileOp fop) {
+        super(p, mgr, downloader, fop);
     }
 
     /**
-     * Installs the package by unzipping into its {@code path}.
+     * Downloads and unzips the complete archive for {@code p} into {@code installTempPath}.
      *
-     * {@inheritDoc}
+     * @see #prepare(ProgressIndicator)
      */
     @Override
-    public boolean install(@NonNull RemotePackage p, @NonNull Downloader downloader,
-            @Nullable SettingsController settings, @NonNull ProgressIndicator progress,
-            @NonNull RepoManager manager, @NonNull FileOp fop) {
-        URL url = InstallerUtil.resolveCompleteArchiveUrl(p, progress);
+    protected boolean doPrepare(@NonNull File installTempPath,
+      @NonNull ProgressIndicator progress) {
+        URL url = InstallerUtil.resolveCompleteArchiveUrl(getPackage(), progress);
         if (url == null) {
+            progress.logWarning("No compatible archive found!");
+            return false;
+        }
+        Archive archive = getPackage().getArchive();
+        assert archive != null;
+        try {
+            String fileName = url.getPath();
+            fileName = fileName.substring(fileName.lastIndexOf('/') + 1);
+            File downloadLocation = new File(installTempPath, fileName);
+            // TODO: allow resuming of partial downloads
+            String checksum = archive.getComplete().getChecksum();
+            getDownloader().downloadFully(url, downloadLocation, checksum, progress);
+            if (progress.isCanceled()) {
+                return false;
+            }
+            if (!mFop.exists(downloadLocation)) {
+                progress.logWarning("Failed to download package!");
+                return false;
+            }
+            File unzip = new File(installTempPath, FN_UNZIP_DIR);
+            mFop.mkdirs(unzip);
+            InstallerUtil.unzip(downloadLocation, unzip, mFop,
+              archive.getComplete().getSize(), progress);
+            if (progress.isCanceled()) {
+                return false;
+            }
+            mFop.delete(downloadLocation);
+
+            return true;
+        } catch (IOException e) {
+            String message = e.getMessage();
+            progress.logWarning(String.format(
+              "An error occurred while preparing SDK package %1$s%2$s",
+              getPackage().getDisplayName(),
+              (message.isEmpty() ? "." : ": " + message + ".")), e);
+        }
+        return false;
+    }
+
+    @SuppressWarnings("MethodMayBeStatic")
+    protected void cleanup(@NonNull File installPath, @NonNull FileOp fop) {
+        fop.deleteFileOrFolder(new File(installPath, InstallerUtil.INSTALLER_DIR_FN));
+    }
+
+    /**
+     * Just moves the prepared files into place.
+     *
+     * @see #complete(ProgressIndicator)
+     */
+    @Override
+    protected boolean doComplete(@Nullable File installTempPath,
+            @NonNull ProgressIndicator progress) {
+        if (installTempPath == null) {
             return false;
         }
         try {
-            String path = p.getPath();
-            path = path.replace(RepoPackage.PATH_SEPARATOR, File.separatorChar);
-            File dest = new File(manager.getLocalPath(), path);
-            if (!InstallerUtil.checkValidPath(dest, manager, progress)) {
+            if (progress.isCanceled()) {
                 return false;
             }
-
-            File in = downloader.downloadFully(url, settings, progress);
-
-            File out = FileOpUtils.getNewTempDir("BasicInstaller", fop);
-            if (out == null || !fop.mkdirs(out)) {
-                throw new IOException("Failed to create temp dir");
-            }
-            fop.deleteOnExit(out);
-            progress.logInfo(String.format("Installing %1$s in %2$s", p.getDisplayName(), dest));
-            InstallerUtil.unzip(in, out, fop, p.getArchive().getComplete().getSize(), progress);
-            fop.delete(in);
-
             // Archives must contain a single top-level directory.
-            File[] topDirContents = fop.listFiles(out);
+            File unzipDir = new File(installTempPath, FN_UNZIP_DIR);
+            File[] topDirContents = mFop.listFiles(unzipDir);
             File packageRoot;
             if (topDirContents.length != 1) {
                 // TODO: we should be consistent and only support packages with a single top-level
                 // directory, but right now haxm doesn't have one. Put this check back when it's
                 // fixed.
                 // throw new IOException("Archive didn't have single top level directory");
-                packageRoot = out;
-            }
-            else {
+                packageRoot = unzipDir;
+            } else {
                 packageRoot = topDirContents[0];
             }
 
-            InstallerUtil.writePackageXml(p, packageRoot, manager, fop, progress);
+            progress
+              .logInfo(String.format("Installing %1$s in %2$s", getPackage().getDisplayName(),
+                getLocation(progress)));
 
             // Move the final unzipped archive into place.
-            FileOpUtils.safeRecursiveOverwrite(packageRoot, dest, fop, progress);
-            manager.markInvalid();
+            FileOpUtils.safeRecursiveOverwrite(packageRoot, getLocation(progress), mFop, progress);
+
             return true;
         } catch (IOException e) {
             String message = e.getMessage();
             progress.logWarning("An error occurred during installation" +
-                    (message.isEmpty() ? "." : ": " + message + "."), e);
+              (message.isEmpty() ? "." : ": " + message + "."), e);
+        } finally {
+            progress.setFraction(1);
         }
 
         return false;

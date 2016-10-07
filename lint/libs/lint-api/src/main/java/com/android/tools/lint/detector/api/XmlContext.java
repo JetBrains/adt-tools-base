@@ -31,7 +31,7 @@ import java.io.File;
 
 /**
  * A {@link Context} used when checking XML files.
- * <p/>
+ * <p>
  * <b>NOTE: This is not a public or final API; if you rely on this be prepared
  * to adjust your code for the next tools release.</b>
  */
@@ -133,7 +133,7 @@ public class XmlContext extends ResourceContext {
     public void report(
             @NonNull Issue issue,
             @Nullable Node scope,
-            @Nullable Location location,
+            @NonNull Location location,
             @NonNull String message) {
         if (scope != null && mDriver.isSuppressed(this, issue, scope)) {
             return;
@@ -154,7 +154,7 @@ public class XmlContext extends ResourceContext {
     public void report(
             @NonNull Issue issue,
             @Nullable Node scope,
-            @Nullable Location location,
+            @NonNull Location location,
             @NonNull String message,
             @SuppressWarnings("UnusedParameters") @Nullable Object data) {
         report(issue, scope, location, message);
@@ -163,7 +163,7 @@ public class XmlContext extends ResourceContext {
     @Override
     public void report(
             @NonNull Issue issue,
-            @Nullable Location location,
+            @NonNull Location location,
             @NonNull String message) {
         // Warn if clients use the non-scoped form? No, there are cases where an
         //  XML detector's error isn't applicable to one particular location (or it's

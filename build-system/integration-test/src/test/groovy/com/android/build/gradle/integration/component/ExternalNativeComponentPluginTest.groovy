@@ -20,9 +20,11 @@ import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldJniApp
 import com.android.builder.model.NativeAndroidProject
 import com.android.builder.model.NativeArtifact
+import com.android.builder.model.NativeFile
+import com.android.builder.model.NativeFolder
 import com.android.builder.model.NativeSettings
 import com.android.builder.model.NativeToolchain
-import org.junit.Ignore
+import groovy.transform.CompileStatic
 import org.junit.Rule
 import org.junit.Test
 
@@ -31,13 +33,13 @@ import static com.android.build.gradle.integration.common.truth.TruthHelper.asse
 /**
  * Test the ExternalNativeComponentModelPlugin.
  */
-@Ignore
+@CompileStatic
 class ExternalNativeComponentPluginTest {
 
     @Rule
     public GradleTestProject project = GradleTestProject.builder()
             .fromTestApp(new HelloWorldJniApp())
-            .forExperimentalPlugin(true)
+            .useExperimentalGradleVersion(true)
             .create();
 
     @Test
@@ -48,31 +50,35 @@ apply plugin: 'com.android.model.external'
 model {
     nativeBuild {
         create {
-            config "config.json"
+            configs.add(file("config.json"))
         }
     }
 }
 """
         project.file("config.json") << """
 {
+    "cleanCommands" : ["rm output.txt"],
     "buildFiles" : ["CMakeLists.txt"],
     "libraries" : {
         "foo" : {
-            "executable" : "touch",
-            "args" : ["output.txt"],
+            "buildCommand" : "touch output.txt",
+            "artifactName" : "output",
             "toolchain" : "toolchain1",
             "output" : "build/libfoo.so",
+            "abi" : "x86",
             "folders" : [
                 {
-                    src : "src/main/jni",
-                    cFlags : ["folderCFlag1", "folderCFlag2"],
-                    cppFlags : ["folderCppFlag1", "folderCppFlag2"]
+                    "src" : "src/main/jni",
+                    "cFlags" : "folderCFlag1 folderCFlag2",
+                    "cppFlags" : "folderCppFlag1 folderCppFlag2",
+                    "workingDirectory" : "workingDir"
                 }
             ],
             "files" : [
                 {
                     "src" : "src/main/jni/hello.c",
-                    "flags" : ["fileFlag1", "fileFlag2"]
+                    "flags" : "fileFlag1 fileFlag2",
+                    "workingDirectory" : "workingDir"
                 }
             ]
         }
@@ -89,6 +95,8 @@ model {
 """
         NativeAndroidProject model = project.executeAndReturnModel(NativeAndroidProject.class, "assemble")
         checkModel(model);
+        project.execute("clean")
+        assertThat(project.file("output.txt")).doesNotExist()
     }
 
     @Test
@@ -99,24 +107,33 @@ apply plugin: 'com.android.model.external'
 model {
     nativeBuild {
         create {
-            config "config1.json"
-            commandString "./generate_config1.sh"
+            configs.addAll([
+                file("config1.json"),
+                file("config2.json")
+            ])
+            command "./generate_configs.sh"
         }
         create {
-            config "config2.json"
+            configs.addAll([
+                file("config3.json"),
+                file("config4.json")
+            ])
         }
     }
 }
 """
-        project.file("generate_config1.sh") << """echo '
+        project.file("generate_configs.sh") << """
+echo '
 {
     "buildFiles" : ["CMakeLists.txt"],
     "libraries" : {
-        "foo" : {
-            "executable" : "touch",
-            "args" : ["foo.txt"],
+        "foo-DEBUG" : {
+            "buildCommand" : "touch foo.txt",
+            "buildType" : "debug",
+            "artifactName" : "foo",
+            "abi" : "x86",
             "toolchain" : "toolchain1",
-            "output" : "build/libfoo.so"
+            "output" : "build/debug/libfoo.so"
         }
     },
     "toolchains" : {
@@ -126,18 +143,61 @@ model {
         }
     }
 }' > config1.json
-"""
-        project.file("generate_config1.sh").setExecutable(true)
-
-        project.file("config2.json") << """
+echo '
 {
     "buildFiles" : ["CMakeLists.txt"],
     "libraries" : {
-        "bar" : {
-            "executable" : "touch",
-            "args" : ["bar.txt"],
+        "foo-RELEASE" : {
+            "buildCommand" : "touch foo.txt",
+            "buildType" : "release",
+            "artifactName" : "foo",
+            "abi" : "x86",
+            "toolchain" : "toolchain1",
+            "output" : "build/release/libfoo.so"
+        }
+    },
+    "toolchains" : {
+        "toolchain1" : {
+            "cCompilerExecutable" : "clang",
+            "cppCompilerExecutable" : "clang++"
+        }
+    }
+}' > config2.json
+"""
+        project.file("generate_configs.sh").setExecutable(true)
+
+        project.file("config3.json") << """
+{
+    "buildFiles" : ["CMakeLists.txt"],
+    "libraries" : {
+        "bar-DEBUG" : {
+            "buildCommand" : "touch bar.txt",
+            "buildType" : "debug",
+            "artifactName" : "bar",
+            "abi" : "x86",
             "toolchain" : "toolchain2",
-            "output" : "build/libbar.so"
+            "output" : "build/debug/libbar.so"
+        }
+    },
+    "toolchains" : {
+        "toolchain2" : {
+            "cCompilerExecutable" : "gcc",
+            "cppCompilerExecutable" : "g++"
+        }
+    }
+}
+"""
+        project.file("config4.json") << """
+{
+    "buildFiles" : ["CMakeLists.txt"],
+    "libraries" : {
+        "bar-RELEASE" : {
+            "buildCommand" : "touch bar.txt",
+            "buildType" : "release",
+            "artifactName" : "bar",
+            "abi" : "x86",
+            "toolchain" : "toolchain2",
+            "output" : "build/release/libbar.so"
         }
     },
     "toolchains" : {
@@ -149,8 +209,10 @@ model {
 }
 """
         assertThat(project.file("config1.json")).doesNotExist()
-        project.execute("generateConfigfile")
+        assertThat(project.file("config2.json")).doesNotExist()
+        project.execute("generateConfigFiles")
         assertThat(project.file("config1.json")).exists()
+        assertThat(project.file("config2.json")).exists()
 
         NativeAndroidProject model = project.executeAndReturnModel(NativeAndroidProject.class, "assemble")
         assertThat(model.getFileExtensions()).containsEntry("c", "c")
@@ -162,14 +224,26 @@ model {
         assertThat(model.getFileExtensions()).containsEntry("cpp", "c++")
         assertThat(model.getFileExtensions()).containsEntry("cxx", "c++")
 
-        assertThat(model.artifacts).hasSize(2)
+        assertThat(model.artifacts).hasSize(4)
         for (NativeArtifact artifact : model.artifacts) {
-            if (artifact.getName().equals("foo")) {
-                assertThat(artifact.getName()).isEqualTo("foo")
+            if (artifact.getName().startsWith("foo")) {
+                if (artifact.getName().endsWith("DEBUG")) {
+                    assertThat(artifact.getName()).isEqualTo("foo-DEBUG")
+                    assertThat(artifact.getAssembleTaskName()).isEqualTo("createFoo-DEBUG")
+                } else {
+                    assertThat(artifact.getName()).isEqualTo("foo-RELEASE")
+                    assertThat(artifact.getAssembleTaskName()).isEqualTo("createFoo-RELEASE")
+                }
                 assertThat(artifact.getToolChain()).isEqualTo("toolchain1")
                 assertThat(artifact.getOutputFile()).hasName("libfoo.so")
             } else {
-                assertThat(artifact.getName()).isEqualTo("bar")
+                if (artifact.getName().endsWith("DEBUG")) {
+                    assertThat(artifact.getName()).isEqualTo("bar-DEBUG")
+                    assertThat(artifact.getAssembleTaskName()).isEqualTo("createBar-DEBUG")
+                } else {
+                    assertThat(artifact.getName()).isEqualTo("bar-RELEASE")
+                    assertThat(artifact.getAssembleTaskName()).isEqualTo("createBar-RELEASE")
+                }
                 assertThat(artifact.getToolChain()).isEqualTo("toolchain2")
                 assertThat(artifact.getOutputFile()).hasName("libbar.so")
             }
@@ -197,27 +271,31 @@ apply plugin: 'com.android.model.external'
 
 model {
     nativeBuildConfig {
+        cleanCommands.add("rm output.txt")
         buildFiles.addAll([file("CMakeLists.txt")])
-        CFileExtensions.add("c")
+        cFileExtensions.add("c")
         cppFileExtensions.add("cpp")
 
         libraries {
             create("foo") {
-                executable "touch"
-                args.addAll(["output.txt"])
+                buildCommand "touch output.txt"
+                abi "x86"
+                artifactName "output"
                 toolchain "toolchain1"
                 output file("build/libfoo.so")
                 folders {
                     create() {
                         src "src/main/jni"
-                        CFlags.addAll(["folderCFlag1", "folderCFlag2"])
-                        cppFlags.addAll(["folderCppFlag1", "folderCppFlag2"])
+                        cFlags "folderCFlag1 folderCFlag2"
+                        cppFlags "folderCppFlag1 folderCppFlag2"
+                        workingDirectory "workingDir"
                     }
                 }
                 files {
                     create() {
                         src "src/main/jni/hello.c"
-                        flags.addAll(["fileFlag1", "fileFlag2"])
+                        flags "fileFlag1 fileFlag2"
+                        workingDirectory "workingDir"
                     }
                 }
 
@@ -225,6 +303,8 @@ model {
         }
         toolchains {
             create("toolchain1") {
+                // Needs to be CCompilerExecutable instead of the more correct cCompilerExecutable because,
+                // of a stupid bug with Gradle.
                 CCompilerExecutable = "clang"
                 cppCompilerExecutable "clang++"
 
@@ -235,6 +315,8 @@ model {
 """
         NativeAndroidProject model = project.executeAndReturnModel(NativeAndroidProject.class, "assemble")
         checkModel(model);
+        project.execute("clean")
+        assertThat(project.file("output.txt")).doesNotExist()
     }
 
     private void checkModel(NativeAndroidProject model) {
@@ -248,16 +330,22 @@ model {
 
         NativeArtifact artifact = model.artifacts.first()
         assertThat(artifact.getToolChain()).isEqualTo("toolchain1")
+
+        // Source Folders
         assertThat(artifact.sourceFolders).hasSize(1)
-        assertThat(artifact.sourceFolders.first().folderPath.toString()).endsWith("src/main/jni")
-        NativeSettings setting = settingsMap.find { it.getName() == artifact.sourceFolders.first().perLanguageSettings.get("c") }
+        NativeFolder folder = artifact.sourceFolders.first()
+        assertThat(folder.folderPath).isEqualTo(project.file("src/main/jni"))
+        assertThat(folder.getWorkingDirectory()).isEqualTo(project.file("workingDir"))
+        NativeSettings setting = settingsMap.find { it.getName() == folder.perLanguageSettings.get("c") }
         assertThat(setting.getCompilerFlags()).containsAllOf("folderCFlag1", "folderCFlag2");
         setting = settingsMap.find { it.getName() == artifact.sourceFolders.first().perLanguageSettings.get("c++") }
         assertThat(setting.getCompilerFlags()).containsAllOf("folderCppFlag1", "folderCppFlag2");
 
         assertThat(artifact.sourceFiles).hasSize(1)
-        assertThat(artifact.sourceFiles.first().filePath.toString()).endsWith("src/main/jni/hello.c")
-        setting = settingsMap.find { it.getName() == artifact.sourceFiles.first().settingsName }
+        NativeFile file = artifact.sourceFiles.first()
+        assertThat(file.filePath).isEqualTo(project.file("src/main/jni/hello.c"))
+        assertThat(file.getWorkingDirectory()).isEqualTo(project.file("workingDir"))
+        setting = settingsMap.find { it.getName() == file.settingsName }
         assertThat(setting.getCompilerFlags()).containsAllOf("fileFlag1", "fileFlag2");
 
         assertThat(model.getToolChains()).hasSize(1)

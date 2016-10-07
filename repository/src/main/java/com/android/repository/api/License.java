@@ -18,13 +18,19 @@ package com.android.repository.api;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.annotations.VisibleForTesting;
+import com.android.repository.io.FileOp;
 import com.google.common.base.Charsets;
 import com.google.common.base.Objects;
 import com.google.common.hash.Hashing;
+import com.google.common.io.ByteStreams;
+import com.google.common.io.CharStreams;
 import com.google.common.io.Files;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
 
 import javax.xml.bind.annotation.XmlTransient;
 
@@ -38,7 +44,8 @@ public abstract class License {
     /**
      * The name of the directory used to store tokens indicating approval of licenses.
      */
-    private static final String LICENSE_DIR = "licenses";
+    @VisibleForTesting
+    static final String LICENSE_DIR = "licenses";
 
     /**
      * Gets the ID of this license, used to refer to it from within a {@link RepoPackage}.
@@ -94,10 +101,10 @@ public abstract class License {
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append("<License ref:")
-          .append(getId())
-          .append(", text:")
-          .append(getValue())
-          .append(">");
+                .append(getId())
+                .append(", text:")
+                .append(getValue())
+                .append(">");
         return sb.toString();
     }
 
@@ -125,7 +132,7 @@ public abstract class License {
         }
         License other = (License) obj;
         return Objects.equal(getValue(), other.getValue()) &&
-          Objects.equal(getId(), other.getId());
+                Objects.equal(getId(), other.getId());
     }
 
     /**
@@ -133,21 +140,26 @@ public abstract class License {
      * @param repositoryRoot The root directory of the repository
      * @return true if this license has already been accepted
      */
-    public boolean checkAccepted(@Nullable File repositoryRoot) {
+    public boolean checkAccepted(@Nullable File repositoryRoot, @NonNull FileOp fop) {
         if (repositoryRoot == null) {
             return false;
         }
         File licenseDir = new File(repositoryRoot, LICENSE_DIR);
         File licenseFile = new File(licenseDir, getId() == null ? getLicenseHash() : getId());
-        if (!licenseFile.exists()) {
+        if (!fop.exists(licenseFile)) {
             return false;
         }
         try {
-            String hash = Files.readFirstLine(licenseFile, Charsets.UTF_8);
-            return hash.equals(getLicenseHash());
+            for (String hash : CharStreams.readLines(
+                    new InputStreamReader(fop.newFileInputStream(licenseFile)))) {
+                if (hash.equals(getLicenseHash())) {
+                    return true;
+                }
+            }
         } catch (IOException e) {
             return false;
         }
+        return false;
     }
 
     /**
@@ -156,23 +168,25 @@ public abstract class License {
      * @param repositoryRoot The root directory of the repository
      * @return true if the acceptance was persisted successfully.
      */
-    public boolean setAccepted(@Nullable File repositoryRoot) {
+    public boolean setAccepted(@Nullable File repositoryRoot, @NonNull FileOp fop) {
         if (repositoryRoot == null) {
             return false;
         }
-        if (checkAccepted(repositoryRoot)) {
+        if (checkAccepted(repositoryRoot, fop)) {
             return true;
         }
         File licenseDir = new File(repositoryRoot, LICENSE_DIR);
-        if (licenseDir.exists() && !licenseDir.isDirectory()) {
+        if (fop.exists(licenseDir) && !fop.isDirectory(licenseDir)) {
             return false;
         }
-        if (!licenseDir.exists()) {
-            licenseDir.mkdir();
+        if (!fop.exists(licenseDir)) {
+            if (!fop.mkdirs(licenseDir)) {
+                return false;
+            }
         }
         File licenseFile = new File(licenseDir, getId() == null ? getLicenseHash(): getId());
-        try {
-            Files.write(getLicenseHash(), licenseFile, Charsets.UTF_8);
+        try (OutputStream os = fop.newFileOutputStream(licenseFile, true)) {
+            os.write(String.format("%n%s", getLicenseHash()).getBytes());
         }
         catch (IOException e) {
             return false;

@@ -26,6 +26,10 @@ import java.util.Map;
  * Entry point for the model of the Android native support.
  */
 public interface NativeAndroidProject {
+   String BUILD_SYSTEM_UNKNOWN = "unknown";
+   String BUILD_SYSTEM_GRADLE = "gradle";
+   String BUILD_SYSTEM_CMAKE = "cmake";
+   String BUILD_SYSTEM_NDK_BUILD = "ndkBuild";
 
    /**
     * Returns the model version. This is a string in the format X.Y.Z
@@ -35,12 +39,12 @@ public interface NativeAndroidProject {
 
    /**
     * Returns the model api version.
-    * <p/>
+    * <p>
     * This is different from {@link #getModelVersion()} in a way that new model
     * version might increment model version but keep existing api. That means that
     * code which was built against particular 'api version' might be safely re-used for all
     * new model versions as long as they don't change the api.
-    * <p/>
+    * <p>
     * Every new model version is assumed to return an 'api version' value which
     * is equal or greater than the value used by the previous model version.
     */
@@ -83,4 +87,10 @@ public interface NativeAndroidProject {
     */
    @NonNull
    Map<String, String> getFileExtensions();
+
+    /**
+     * Return the names of build systems used to create the native artifacts.
+     */
+   @NonNull
+   Collection<String> getBuildSystems();
 }

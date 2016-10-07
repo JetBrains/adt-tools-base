@@ -14,10 +14,11 @@
  * limitations under the License.
  */
 
-gradleVersion = System.env.CUSTOM_GRADLE
+buildVersion = System.env.CUSTOM_PLUGIN_VERSION
+experimentalVersion = System.env.CUSTOM_EXPERIMENTAL_PLUGIN_VERSION
 experimentalGradleVersion = System.env.CUSTOM_EXPERIMENTAL_GRADLE
 
-if (gradleVersion == null && System.env.CUSTOM_REPO != null) {
+if (buildVersion == null && System.env.CUSTOM_REPO != null) {
     // Extract the version from the top level buildSrc, relative to CUSTOM_REPO.
     // Have a fake environment for buildSrc/base/version.gradle can insert the version info into.
     def env = new Object() {
@@ -26,18 +27,21 @@ if (gradleVersion == null && System.env.CUSTOM_REPO != null) {
                 String buildVersion
                 String baseVersion
                 String experimentalVersion
+                String experimentalGradleVersion
                 String apiVersion
                 String nativeApiVersion
+                String versionModifier
             }
         }
     }
     apply from: "$System.env.CUSTOM_REPO/../../tools/buildSrc/base/version.gradle", to: env
-    gradleVersion = env.project.ext.buildVersion
-    experimentalGradleVersion = env.project.ext.experimentalVersion
+    buildVersion = env.project.ext.buildVersion
+    experimentalVersion = env.project.ext.experimentalVersion
+    experimentalGradleVersion = env.project.ext.experimentalGradleVersion
 }
 
-if (gradleVersion == null) {
+if (buildVersion == null) {
     throw new RuntimeException(
-            "Unknown Android Gradle plugin version.  Set 'CUSTOM_REPO' or 'CUSTOM_GRADLE' to " +
-                    "proceed.")
+            "Unknown Android Gradle plugin version.  Set 'CUSTOM_REPO' or " +
+                    "'CUSTOM_PLUGIN_VERSION' to proceed.")
 }

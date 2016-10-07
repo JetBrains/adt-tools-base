@@ -19,7 +19,7 @@ package com.android.build.gradle.integration.instant;
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat;
 import static org.junit.Assert.assertTrue;
 
-import com.android.build.gradle.OptionalCompilationStep;
+import com.android.builder.model.OptionalCompilationStep;
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.common.fixture.app.AndroidTestApp;
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp;
@@ -35,7 +35,7 @@ import com.google.common.base.Charsets;
 import com.google.common.io.Files;
 import com.google.common.truth.Expect;
 
-import org.hamcrest.Factory;
+import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -62,7 +62,7 @@ public class InstantRunAddLibraryTest {
                     .create();
 
     @Rule
-    public Expect expect = Expect.create();
+    public Expect expect = Expect.createAndEnableStackTrace();
 
     @Before
     public void addBlankUtilClass() throws IOException {
@@ -72,15 +72,21 @@ public class InstantRunAddLibraryTest {
                 + "android.packagingOptions.exclude 'META-INF/maven/com.google.guava/guava/pom.properties'\n");
     }
 
+    @Before
+    public void skipOnJack() throws Exception {
+        // Instant Run doesn't work with Jack.
+        Assume.assumeFalse(GradleTestProject.USE_JACK);
+    }
+
     @Test
     public void checkAddedLibraryCausesColdSwap() throws Exception {
         project.execute("clean");
         InstantRun instantRunModel = InstantRunTestUtils
-                .getInstantRunModel(project.getSingleModel());
+                .getInstantRunModel(project.model().getSingle());
 
-        project.execute(InstantRunTestUtils.getInstantRunArgs(23,
-                ColdswapMode.DEFAULT, OptionalCompilationStep.RESTART_ONLY),
-                "assembleDebug");
+        project.executor()
+                .withInstantRun(23, ColdswapMode.DEFAULT, OptionalCompilationStep.RESTART_ONLY)
+                .run("assembleDebug");
 
         // Add dependency
         TestFileUtils.appendToFile(project.getBuildFile(), "\n"
@@ -91,8 +97,8 @@ public class InstantRunAddLibraryTest {
         // Use that dependency
         writeClass("com.google.common.base.Strings.nullToEmpty(null);");
 
-        project.execute(InstantRunTestUtils.getInstantRunArgs(23, ColdswapMode.MULTIDEX),
-                instantRunModel.getIncrementalAssembleTaskName());
+        project.executor().withInstantRun(23, ColdswapMode.MULTIDEX)
+                .run("assembleDebug");
 
         InstantRunBuildInfo context = InstantRunTestUtils.loadContext(instantRunModel);
 

@@ -69,8 +69,7 @@ public class AarSubject extends AbstractAndroidSubject<AarSubject> {
 
     @NonNull
     public StringSubject textSymbolFile() throws IOException {
-        ZipFile zipFile = new ZipFile(getSubject());
-        try {
+        try (ZipFile zipFile = new ZipFile(getSubject())) {
             InputStream stream = getInputStream(zipFile, "R.txt");
 
             InputStreamReader inputStreamReader = new InputStreamReader(stream, Charsets.UTF_8);
@@ -79,8 +78,6 @@ public class AarSubject extends AbstractAndroidSubject<AarSubject> {
             } finally {
                 inputStreamReader.close();
             }
-        } finally {
-            zipFile.close();
         }
     }
 
@@ -112,8 +109,7 @@ public class AarSubject extends AbstractAndroidSubject<AarSubject> {
                 // intended fall-through
             case SECONDARY:
                 // get all the entries and search for local jars.
-                ZipFile zipFile = new ZipFile(getSubject());
-                try {
+                try (ZipFile zipFile = new ZipFile(getSubject())) {
                     Enumeration<? extends ZipEntry> zipFileEntries = zipFile.entries();
                     while (zipFileEntries.hasMoreElements()) {
                         ZipEntry zipEntry = zipFileEntries.nextElement();
@@ -124,8 +120,6 @@ public class AarSubject extends AbstractAndroidSubject<AarSubject> {
                             }
                         }
                     }
-                } finally {
-                    zipFile.close();
                 }
 
                 break;
@@ -137,9 +131,7 @@ public class AarSubject extends AbstractAndroidSubject<AarSubject> {
     private boolean searchForEntryinZip(
             @NonNull String entryName,
             @NonNull String zipPath) throws IOException {
-        Closer closer = Closer.create();
-        ZipFile zipFile = new ZipFile(getSubject());
-        try {
+        try (Closer closer = Closer.create(); ZipFile zipFile = new ZipFile(getSubject())) {
             InputStream stream = closer.register(getInputStream(zipFile, zipPath));
             ZipInputStream zis = closer.register(new ZipInputStream(stream));
             ZipEntry zipEntry;
@@ -151,9 +143,6 @@ public class AarSubject extends AbstractAndroidSubject<AarSubject> {
 
             // didn't find the class.
             return false;
-        } finally {
-            closer.close();
-            zipFile.close();
         }
     }
 
@@ -212,16 +201,11 @@ public class AarSubject extends AbstractAndroidSubject<AarSubject> {
     private File extractClassesJar() throws IOException {
         File classesJar = File.createTempFile("classes", ".jar");
 
-        Closer closer = Closer.create();
-        ZipFile zipFile = new ZipFile(getSubject());
-        try {
+        try (Closer closer = Closer.create(); ZipFile zipFile = new ZipFile(getSubject())) {
             InputStream stream = closer.register(getInputStream(zipFile, FN_CLASSES_JAR));
             ByteStreams.copy(stream, closer.register(new FileOutputStream(classesJar)));
 
             return classesJar;
-        } finally {
-            closer.close();
-            zipFile.close();
         }
     }
 }

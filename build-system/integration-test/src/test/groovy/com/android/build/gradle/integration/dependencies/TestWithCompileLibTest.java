@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.integration.dependencies;
 
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat;
 import static com.android.build.gradle.integration.common.utils.TestFileUtils.appendToFile;
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk;
 import static com.android.build.gradle.integration.common.utils.ModelHelper.getAndroidArtifact;
@@ -26,10 +27,15 @@ import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.common.truth.TruthHelper;
 import com.android.build.gradle.integration.common.utils.ModelHelper;
 import com.android.builder.model.AndroidArtifact;
+import com.android.builder.model.AndroidLibrary;
 import com.android.builder.model.AndroidProject;
 import com.android.builder.model.Dependencies;
+import com.android.builder.model.JavaLibrary;
 import com.android.builder.model.Variant;
 import com.android.ide.common.process.ProcessException;
+import com.google.common.base.Charsets;
+import com.google.common.collect.Iterables;
+import com.google.common.io.Files;
 import com.google.common.truth.Truth;
 
 import org.junit.AfterClass;
@@ -54,11 +60,13 @@ public class TestWithCompileLibTest {
 
     @BeforeClass
     public static void setUp() throws IOException {
+        Files.write("include 'app', 'library'", project.getSettingsFile(), Charsets.UTF_8);
+
         appendToFile(project.getSubproject("app").getBuildFile(),
                 "\n" +
-                "dependencies {\n" +
-                "    androidTestCompile project(\":library\")\n" +
-                "}\n");
+                        "dependencies {\n" +
+                        "    androidTestCompile project(\":library\")\n" +
+                        "}\n");
         models = project.executeAndReturnMultiModel("clean", ":app:assembleDebugAndroidTest");
     }
 
@@ -70,20 +78,22 @@ public class TestWithCompileLibTest {
 
     @Test
     public void checkCompiledLibraryIsPackaged() throws IOException, ProcessException {
-        assertThatApk(project.getSubproject("app").getApk("debug", "androidTest", "unaligned"))
+        assertThatApk(project.getSubproject("app").getTestApk("debug"))
                 .containsClass("Lcom/example/android/multiproject/library/PersonView;");
     }
 
     @Test
     public void checkCompiledLibraryIsInTheTestArtifactModel() {
         Variant variant = ModelHelper.getVariant(models.get(":app").getVariants(), "debug");
-        Truth.assertThat(variant).isNotNull();
 
         Collection<AndroidArtifact> androidArtifacts = variant.getExtraAndroidArtifacts();
         AndroidArtifact testArtifact = getAndroidArtifact(androidArtifacts, ARTIFACT_ANDROID_TEST);
         assertNotNull(testArtifact);
 
-        Dependencies deps = testArtifact.getDependencies();
+        Dependencies deps = testArtifact.getCompileDependencies();
         TruthHelper.assertThat(deps.getLibraries()).hasSize(1);
+
+        AndroidLibrary androidLibrary = Iterables.getOnlyElement(deps.getLibraries());
+        assertThat(androidLibrary.getProject()).isEqualTo(":library");
     }
 }

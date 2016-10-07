@@ -1,0 +1,10 @@
+The structure of this project is not common. It's testing an external build system
+integration but taking the application intermediary states and packaging them
+together for instant-run.
+
+Structure :
+  - jars/                   contains all binary jar file that contains .class and java resources.
+  - apk_manifest            example manifest file
+  (for reference only, one will be created by the test).
+  - resources.ap_           resources for the APK.
+  - AndroidManifest.xml     merged manifest file.

@@ -1,5 +1,5 @@
 apply from: "../commonHeader.gradle"
-buildscript { apply from: "../commonBuildScript.gradle", to: buildscript }
+buildscript { apply from: "../commonBuildScript.gradle" }
 
 apply plugin: 'com.android.application'
 
@@ -11,10 +11,12 @@ android {
 
     defaultConfig {
         minSdkVersion 19
-        if (project.properties['checkDefaultDensities'] == null) {
+        vectorDrawables {
             generatedDensities = ["hdpi"]
-            generatedDensities += "xhdpi"
         }
+
+        // Make sure the old DSL still works.
+        generatedDensities += "xhdpi"
     }
 
     // Don't modify files when merging.

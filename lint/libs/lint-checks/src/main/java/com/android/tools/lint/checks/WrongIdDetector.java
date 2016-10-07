@@ -21,6 +21,7 @@ import static com.android.SdkConstants.ATTR_ID;
 import static com.android.SdkConstants.ATTR_LAYOUT_RESOURCE_PREFIX;
 import static com.android.SdkConstants.ATTR_NAME;
 import static com.android.SdkConstants.ATTR_TYPE;
+import static com.android.SdkConstants.AUTO_URI;
 import static com.android.SdkConstants.FD_RES_VALUES;
 import static com.android.SdkConstants.ID_PREFIX;
 import static com.android.SdkConstants.NEW_ID_PREFIX;
@@ -33,6 +34,7 @@ import static com.android.tools.lint.detector.api.LintUtils.getChildren;
 import static com.android.tools.lint.detector.api.LintUtils.isSameResourceFile;
 import static com.android.tools.lint.detector.api.LintUtils.stripIdPrefix;
 
+import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.ide.common.res2.AbstractResourceRepository;
@@ -96,7 +98,11 @@ public class WrongIdDetector extends LayoutDetector {
      */
     private List<Pair<String, Location.Handle>> mHandles;
 
-    /** List of RelativeLayout elements in the current layout */
+    /**
+     * List of RelativeLayout elements in the current layout (and percent layouts,
+     * and constraint layouts, etc -- any elements that have constraints among their
+     * children with id references
+     */
     private List<Element> mRelativeLayouts;
 
     /** Reference to an unknown id */
@@ -188,7 +194,8 @@ public class WrongIdDetector extends LayoutDetector {
 
     @Override
     public Collection<String> getApplicableElements() {
-        return Arrays.asList(RELATIVE_LAYOUT, TAG_ITEM, PERCENT_RELATIVE_LAYOUT);
+        return Arrays.asList(RELATIVE_LAYOUT, TAG_ITEM, PERCENT_RELATIVE_LAYOUT,
+                SdkConstants.CLASS_CONSTRAINT_LAYOUT);
     }
 
     @Override
@@ -215,6 +222,8 @@ public class WrongIdDetector extends LayoutDetector {
                     }
                 }
 
+                boolean isConstraintLayout = layout.getTagName().equals(SdkConstants.CLASS_CONSTRAINT_LAYOUT);
+
                 for (Element element : children) {
                     String selfId = stripIdPrefix(element.getAttributeNS(ANDROID_URI, ATTR_ID));
 
@@ -224,8 +233,9 @@ public class WrongIdDetector extends LayoutDetector {
                         String value = attr.getValue();
                         if ((value.startsWith(NEW_ID_PREFIX) ||
                                 value.startsWith(ID_PREFIX))
-                                && ANDROID_URI.equals(attr.getNamespaceURI())
-                                && attr.getLocalName().startsWith(ATTR_LAYOUT_RESOURCE_PREFIX)) {
+                                && attr.getLocalName().startsWith(ATTR_LAYOUT_RESOURCE_PREFIX)
+                                && (ANDROID_URI.equals(attr.getNamespaceURI()) ||
+                                   AUTO_URI.equals(attr.getNamespaceURI()))) {
                             if (!idDefined(mFileIds, value)) {
                                 // Stash a reference to this id and location such that
                                 // we can check after the *whole* layout has been processed,
@@ -264,6 +274,13 @@ public class WrongIdDetector extends LayoutDetector {
                                 } else {
                                     assert value.startsWith(ID_PREFIX) : value;
                                     if (ids.contains(NEW_ID_PREFIX + stripIdPrefix(value))) {
+                                        continue;
+                                    }
+                                }
+                                if (isConstraintLayout) {
+                                    // A reference to the ConstraintLayout from a child is valid
+                                    String parentId = stripIdPrefix(layout.getAttributeNS(ANDROID_URI, ATTR_ID));
+                                    if (parentId.equals(stripIdPrefix(value))) {
                                         continue;
                                     }
                                 }
@@ -315,7 +332,7 @@ public class WrongIdDetector extends LayoutDetector {
                     Set<String> spellingDictionary = mGlobalIds;
                     if (!projectScope && client.supportsProjectResources()) {
                         AbstractResourceRepository resources =
-                                client.getProjectResources(context.getProject(), true);
+                                client.getResourceRepository(context.getProject(), true, false);
                         if (resources != null) {
                             spellingDictionary = Sets.newHashSet(
                                     resources.getItemsOfType(ResourceType.ID));
@@ -385,8 +402,9 @@ public class WrongIdDetector extends LayoutDetector {
                 }
             }
         } else {
-            assert tagName.equals(RELATIVE_LAYOUT) || tagName.equals(
-                    PERCENT_RELATIVE_LAYOUT);
+            assert tagName.equals(RELATIVE_LAYOUT)
+                    || tagName.equals(PERCENT_RELATIVE_LAYOUT)
+                    || tagName.equals(SdkConstants.CLASS_CONSTRAINT_LAYOUT);
             if (mRelativeLayouts == null) {
                 mRelativeLayouts = new ArrayList<Element>();
             }
@@ -437,7 +455,7 @@ public class WrongIdDetector extends LayoutDetector {
     private boolean idDefined(@NonNull Context context, @NonNull String id,
             @Nullable File notIn) {
         AbstractResourceRepository resources =
-                context.getClient().getProjectResources(context.getProject(), true);
+                context.getClient().getResourceRepository(context.getProject(), true, true);
         if (resources != null) {
             List<ResourceItem> items = resources.getResourceItem(ResourceType.ID,
                     stripIdPrefix(id));
@@ -478,13 +496,7 @@ public class WrongIdDetector extends LayoutDetector {
         if (!ids.isEmpty()) {
             for (String matchWith : ids) {
                 matchWith = stripIdPrefix(matchWith);
-                if (Math.abs(id.length() - matchWith.length()) > maxDistance) {
-                    // The string lengths differ more than the allowed edit distance;
-                    // no point in even attempting to compute the edit distance (requires
-                    // O(n*m) storage and O(n*m) speed, where n and m are the string lengths)
-                    continue;
-                }
-                int distance = editDistance(id, matchWith);
+                int distance = editDistance(id, matchWith, maxDistance);
                 if (distance <= maxDistance) {
                     matches.put(distance, matchWith);
                 }

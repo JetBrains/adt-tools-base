@@ -30,7 +30,7 @@ import org.junit.Test
 
 import static org.junit.Assert.assertEquals
 import static org.junit.Assert.assertNotNull
-import static org.junit.Assert.assertTrue
+
 /**
  * Assemble tests for customArtifactDep.
  */
@@ -44,7 +44,7 @@ class CustomArtifactDepTest {
 
     @BeforeClass
     static void setUp() {
-        models = project.getAllModels()
+        models = project.model().getMulti()
     }
 
     @AfterClass
@@ -62,17 +62,12 @@ class CustomArtifactDepTest {
         assertEquals("Variant count", 2, variants.size())
 
         Variant variant = ModelHelper.getVariant(variants, "release")
-        assertNotNull("release variant null-check", variant)
 
         AndroidArtifact mainInfo = variant.getMainArtifact()
         assertNotNull("Main Artifact null-check", mainInfo)
 
-        Dependencies dependencies = mainInfo.getDependencies()
+        Dependencies dependencies = mainInfo.getCompileDependencies()
         assertNotNull("Dependencies null-check", dependencies)
-
-        Collection<String> projects = dependencies.getProjects()
-        assertNotNull("project dep list null-check", projects)
-        assertTrue("project dep empty check", projects.isEmpty())
 
         Collection<JavaLibrary> javaLibraries = dependencies.getJavaLibraries()
         assertNotNull("jar dep list null-check", javaLibraries)

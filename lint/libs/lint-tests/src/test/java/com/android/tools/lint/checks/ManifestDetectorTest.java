@@ -17,25 +17,33 @@
 package com.android.tools.lint.checks;
 
 import static com.android.SdkConstants.ANDROID_MANIFEST_XML;
+import static com.android.tools.lint.checks.GradleDetectorTest.createSdkPaths;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.builder.model.AndroidArtifact;
+import com.android.builder.model.AndroidLibrary;
 import com.android.builder.model.AndroidProject;
 import com.android.builder.model.ApiVersion;
 import com.android.builder.model.BuildType;
 import com.android.builder.model.BuildTypeContainer;
+import com.android.builder.model.Dependencies;
+import com.android.builder.model.MavenCoordinates;
 import com.android.builder.model.ProductFlavor;
 import com.android.builder.model.ProductFlavorContainer;
 import com.android.builder.model.SourceProvider;
 import com.android.builder.model.SourceProviderContainer;
 import com.android.builder.model.Variant;
+import com.android.testutils.TestUtils;
 import com.android.tools.lint.client.api.LintClient;
 import com.android.tools.lint.detector.api.Detector;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.Project;
 import com.google.common.collect.Lists;
+
+import org.mockito.stubbing.Answer;
 
 import java.io.File;
 import java.util.Arrays;
@@ -46,6 +54,9 @@ import java.util.Set;
 
 @SuppressWarnings("javadoc")
 public class ManifestDetectorTest extends AbstractCheckTest {
+
+    private File mSdkDir;
+
     @Override
     protected Detector getDetector() {
         return new ManifestDetector();
@@ -61,6 +72,16 @@ public class ManifestDetectorTest extends AbstractCheckTest {
                 return super.isEnabled(issue) && mEnabled.contains(issue);
             }
         };
+    }
+
+    @Override
+    protected void tearDown() throws Exception {
+        super.tearDown();
+
+        if (mSdkDir != null) {
+            deleteFile(mSdkDir);
+            mSdkDir = null;
+        }
     }
 
     public void testOrderOk() throws Exception {
@@ -680,7 +701,7 @@ public class ManifestDetectorTest extends AbstractCheckTest {
                 + "be automatically backed up and restored on app install. Consider "
                 + "adding the attribute android:fullBackupContent to specify an @xml "
                 + "resource which configures which files to backup. More info: "
-                + "https://developer.android.com/preview/backup/index.html [AllowBackup]\n"
+                + "https://developer.android.com/training/backup/autosyncapi.html [AllowBackup]\n"
                 + "    <application\n"
                 + "    ^\n"
                 + "0 errors, 1 warnings\n",
@@ -745,7 +766,7 @@ public class ManifestDetectorTest extends AbstractCheckTest {
                 + "data will be automatically backed up and restored on app install. "
                 + "Consider adding the attribute android:fullBackupContent to specify "
                 + "an @xml resource which configures which files to backup. "
-                + "More info: https://developer.android.com/preview/backup/index.html [AllowBackup]\n"
+                + "More info: https://developer.android.com/training/backup/autosyncapi.html [AllowBackup]\n"
                 + "    <application\n"
                 + "    ^\n"
                 + "0 errors, 1 warnings\n",
@@ -801,7 +822,7 @@ public class ManifestDetectorTest extends AbstractCheckTest {
                 + "it is excluded from the back-up set. Use the attribute "
                 + "android:fullBackupContent to specify an @xml resource which "
                 + "configures which files to backup. More info: "
-                + "https://developer.android.com/preview/backup/index.html [AllowBackup]\n"
+                + "https://developer.android.com/training/backup/autosyncapi.html [AllowBackup]\n"
                 + "    <application\n"
                 + "    ^\n"
                 + "0 errors, 1 warnings\n",
@@ -858,6 +879,90 @@ public class ManifestDetectorTest extends AbstractCheckTest {
                                 + "</manifest>\n")));
     }
 
+    public void testWearableBindListener() throws Exception {
+        mEnabled = Collections.singleton(ManifestDetector.WEARABLE_BIND_LISTENER);
+        assertEquals("AndroidManifest.xml:11: Error: The com.google.android.gms.wearable.BIND_LISTENER action is deprecated. [WearableBindListener]\n"
+                        + "                  <action android:name=\"com.google.android.gms.wearable.BIND_LISTENER\" />\n"
+                        + "                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                        + "1 errors, 0 warnings\n",
+
+                lintProject(
+                        xml("AndroidManifest.xml", ""
+                                + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                                + "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                                + "    package=\"com.example.helloworld\" >\n"
+                                + "    <uses-sdk android:targetSdkVersion=\"22\" />"
+                                + "\n"
+                                + "    <application\n"
+                                + "        android:label=\"@string/app_name\"\n"
+                                + "        android:allowBackup=\"false\"\n"
+                                + "        android:theme=\"@style/AppTheme\" >\n"
+                                + "        <service android:name=\".WearMessageListenerService\">\n"
+                                + "              <intent-filter>\n"
+                                + "                  <action android:name=\"com.google.android.gms.wearable.BIND_LISTENER\" />\n"
+                                + "              </intent-filter>\n"
+                                + "        </service>\n"
+                                + "    </application>\n"
+                                + "\n"
+                                + "</manifest>\n")));
+    }
+
+    // No warnings here because the variant points to a gms dependency version 8.1.0
+    public void testWearableBindListenerNoWarn() throws Exception {
+        mEnabled = Collections.singleton(ManifestDetector.WEARABLE_BIND_LISTENER);
+        assertEquals("No warnings.",
+
+                lintProject(
+                        xml("AndroidManifest.xml", ""
+                                + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                                + "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                                + "    package=\"com.example.helloworld\" >\n"
+                                + "    <uses-sdk android:targetSdkVersion=\"22\" />"
+                                + "\n"
+                                + "    <application\n"
+                                + "        android:label=\"@string/app_name\"\n"
+                                + "        android:allowBackup=\"false\"\n"
+                                + "        android:theme=\"@style/AppTheme\" >\n"
+                                + "        <service android:name=\".WearMessageListenerService\">\n"
+                                + "              <intent-filter>\n"
+                                + "                  <action android:name=\"com.google.android.gms.wearable.BIND_LISTENER\" />\n"
+                                + "              </intent-filter>\n"
+                                + "        </service>\n"
+                                + "    </application>\n"
+                                + "\n"
+                                + "</manifest>\n")));
+    }
+
+    // This test uses a mock SDK home to ensure that the latest expected
+    // version is 8.4.0.
+    public void testWearableBindListenerCompileSdk24() throws Exception {
+        mEnabled = Collections.singleton(ManifestDetector.WEARABLE_BIND_LISTENER);
+        assertEquals("AndroidManifest.xml:11: Error: The com.google.android.gms.wearable.BIND_LISTENER action is deprecated. Please upgrade to the latest available version of play-services-wearable: 8.4.0 [WearableBindListener]\n"
+                        + "                  <action android:name=\"com.google.android.gms.wearable.BIND_LISTENER\" />\n"
+                        + "                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                        + "1 errors, 0 warnings\n",
+
+                lintProject(
+                        xml("AndroidManifest.xml", ""
+                                + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                                + "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                                + "    package=\"com.example.helloworld\" >\n"
+                                + "    <uses-sdk android:targetSdkVersion=\"22\" />"
+                                + "\n"
+                                + "    <application\n"
+                                + "        android:label=\"@string/app_name\"\n"
+                                + "        android:allowBackup=\"false\"\n"
+                                + "        android:theme=\"@style/AppTheme\" >\n"
+                                + "        <service android:name=\".WearMessageListenerService\">\n"
+                                + "              <intent-filter>\n"
+                                + "                  <action android:name=\"com.google.android.gms.wearable.BIND_LISTENER\" />\n"
+                                + "              </intent-filter>\n"
+                                + "        </service>\n"
+                                + "    </application>\n"
+                                + "\n"
+                                + "</manifest>\n")));
+    }
+
     // Custom project which locates all manifest files in the project rather than just
     // being hardcoded to the root level
 
@@ -867,6 +972,7 @@ public class ManifestDetectorTest extends AbstractCheckTest {
             // Set up a mock project model for the resource configuration test(s)
             // where we provide a subset of densities to be included
             return new TestLintClient() {
+
                 @NonNull
                 @Override
                 protected Project createProject(@NonNull File dir, @NonNull File referenceDir) {
@@ -1091,7 +1197,97 @@ public class ManifestDetectorTest extends AbstractCheckTest {
                 }
             };
 
+        } else if (mEnabled.contains(ManifestDetector.WEARABLE_BIND_LISTENER)) {
+            return new TestLintClient() {
+
+                @Override
+                public File getSdkHome() {
+                    return getMockSupportLibraryInstallation();
+                }
+
+                @NonNull
+                @Override
+                protected Project createProject(@NonNull File dir, @NonNull File referenceDir) {
+                    return new Project(this, dir, referenceDir) {
+
+                        @Override
+                        public boolean isGradleProject() {
+                            return true;
+                        }
+
+                        @Override
+                        public int getBuildSdk() {
+                            if (getName().equals(
+                                    "ManifestDetectorTest_testWearableBindListenerCompileSdk24")) {
+                                return 24;
+                            }
+                            return super.getBuildSdk();
+                        }
+
+                        @Nullable
+                        @Override
+                        public Variant getCurrentVariant() {
+                            // testWearableBindListener or testWearableBindListenerNoWarn
+                            String version =
+                                    getName().endsWith("testWearableBindListener")
+                                            ? "8.4.0" : "8.1.+";
+                            AndroidLibrary library = mock(AndroidLibrary.class);
+                            when(library.getResolvedCoordinates()).then(
+                                    (Answer<MavenCoordinates>) invocation -> {
+                                        MavenCoordinates mc = mock(MavenCoordinates.class);
+                                        when(mc.getArtifactId())
+                                                .thenReturn("play-services-wearable");
+                                        when(mc.getGroupId())
+                                                .thenReturn("com.google.android.gms");
+                                        when(mc.getVersion()).thenReturn(version);
+                                        return mc;
+                                    });
+                            AndroidLibrary mainLibrary = mock(AndroidLibrary.class);
+                            when(mainLibrary.getResolvedCoordinates()).then(
+                                    (Answer<MavenCoordinates>) invocation -> {
+                                        MavenCoordinates mc = mock(MavenCoordinates.class);
+                                        when(mc.getArtifactId())
+                                                .thenReturn("test-intermediate-dep");
+                                        when(mc.getGroupId())
+                                                .thenReturn("com.sample.useful");
+                                        when(mc.getVersion()).thenReturn(version);
+                                        return mc;
+                                    });
+
+                            when(mainLibrary.getLibraryDependencies())
+                                    .thenAnswer(
+                                            (Answer<List<? extends AndroidLibrary>>)
+                                                    invocation -> Collections.singletonList(library)
+                                    );
+                            Dependencies dependencies = mock(Dependencies.class);
+                            when(dependencies.getLibraries())
+                                    .thenReturn(Collections.singleton(library));
+                            AndroidArtifact artifact = mock(AndroidArtifact.class);
+                            when(artifact.getDependencies()).thenReturn(dependencies);
+                            Variant mockVariant = mock(Variant.class);
+                            when(mockVariant.getMainArtifact()).thenReturn(artifact);
+                            return mockVariant;
+                        }
+                    };
+                }
+            };
         }
         return super.createClient();
+    }
+
+    private File getMockSupportLibraryInstallation() {
+        if (mSdkDir == null) {
+            // Make fake SDK "installation" such that we can predict the set
+            // of Maven repositories discovered by this test
+            mSdkDir = TestUtils.createTempDirDeletedOnExit();
+
+            String[] paths = new String[]{
+                    "extras/google/m2repository/com/google/android/gms/play-services-wearable/8.4.0/play-services-wearable-8.4.0.aar",
+            };
+
+            createSdkPaths(mSdkDir, paths);
+        }
+
+        return mSdkDir;
     }
 }

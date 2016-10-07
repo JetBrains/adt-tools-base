@@ -21,40 +21,51 @@ import static com.android.build.gradle.model.ModelConstants.ANDROID_BUILDER;
 import static com.android.build.gradle.model.ModelConstants.ANDROID_CONFIG_ADAPTOR;
 import static com.android.build.gradle.model.ModelConstants.EXTRA_MODEL_INFO;
 import static com.android.build.gradle.model.ModelConstants.JNILIBS_DEPENDENCIES;
+import static com.android.build.gradle.model.ModelConstants.NATIVE_BUILD_CONFIG_VALUES;
+import static com.android.build.gradle.model.ModelConstants.NATIVE_BUILD_SYSTEMS;
 import static com.android.builder.core.BuilderConstants.DEBUG;
 import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES;
 
 import com.android.annotations.NonNull;
+import com.android.build.api.transform.Transform;
 import com.android.build.gradle.AndroidGradleOptions;
-import com.android.build.gradle.OptionalCompilationStep;
+import com.android.build.gradle.external.gson.NativeBuildConfigValue;
 import com.android.build.gradle.internal.AndroidConfigHelper;
 import com.android.build.gradle.internal.ExecutionConfigurationUtil;
 import com.android.build.gradle.internal.ExtraModelInfo;
 import com.android.build.gradle.internal.JniLibsLanguageTransform;
 import com.android.build.gradle.internal.LibraryCache;
 import com.android.build.gradle.internal.LoggerWrapper;
+import com.android.build.gradle.internal.NativeBuildConfigGsonUtil;
 import com.android.build.gradle.internal.NativeDependencyLinkage;
-import com.android.build.gradle.internal.NdkHandler;
 import com.android.build.gradle.internal.NdkOptionsHelper;
 import com.android.build.gradle.internal.ProductFlavorCombo;
 import com.android.build.gradle.internal.SdkHandler;
 import com.android.build.gradle.internal.TaskManager;
+import com.android.build.gradle.internal.ToolingRegistryProvider;
 import com.android.build.gradle.internal.VariantManager;
 import com.android.build.gradle.internal.coverage.JacocoPlugin;
 import com.android.build.gradle.internal.dependency.AndroidNativeDependencySpec;
 import com.android.build.gradle.internal.dependency.NativeDependencyResolveResult;
 import com.android.build.gradle.internal.dependency.NativeDependencyResolver;
+import com.android.build.gradle.internal.dependency.VariantDependencies;
+import com.android.build.gradle.internal.model.CoreExternalNativeBuild;
+import com.android.build.gradle.internal.ndk.NdkHandler;
 import com.android.build.gradle.internal.pipeline.TransformTask;
 import com.android.build.gradle.internal.process.GradleJavaProcessExecutor;
 import com.android.build.gradle.internal.process.GradleProcessExecutor;
-import com.android.build.gradle.internal.profile.RecordingBuildListener;
+import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.tasks.DependencyReportTask;
 import com.android.build.gradle.internal.tasks.SigningReportTask;
 import com.android.build.gradle.internal.transforms.DexTransform;
+import com.android.build.gradle.internal.variant.BaseVariantData;
+import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.build.gradle.internal.variant.VariantFactory;
 import com.android.build.gradle.managed.AndroidConfig;
 import com.android.build.gradle.managed.BuildType;
 import com.android.build.gradle.managed.DataBindingOptions;
+import com.android.build.gradle.managed.NativeBuildConfig;
+import com.android.build.gradle.managed.NativeLibrary;
 import com.android.build.gradle.managed.NdkConfig;
 import com.android.build.gradle.managed.NdkOptions;
 import com.android.build.gradle.managed.ProductFlavor;
@@ -66,26 +77,29 @@ import com.android.build.gradle.managed.adaptor.DataBindingOptionsAdapter;
 import com.android.build.gradle.managed.adaptor.ProductFlavorAdaptor;
 import com.android.build.gradle.model.internal.AndroidBinaryInternal;
 import com.android.build.gradle.model.internal.AndroidComponentSpecInternal;
-import com.android.build.gradle.tasks.JillTask;
-import com.android.builder.Version;
+import com.android.build.gradle.model.internal.DefaultAndroidLanguageSourceSet;
+import com.android.build.gradle.model.internal.DefaultJniLibsSourceSet;
+import com.android.build.gradle.tasks.ExternalNativeBuildTaskUtils;
+import com.android.build.gradle.tasks.ExternalNativeJsonGenerator;
+import com.android.build.gradle.tasks.JackPreDexTransform;
 import com.android.builder.core.AndroidBuilder;
 import com.android.builder.internal.compiler.JackConversionCache;
 import com.android.builder.internal.compiler.PreDexCache;
-import com.android.builder.profile.ProcessRecorderFactory;
-import com.android.builder.profile.Recorder;
-import com.android.builder.profile.ThreadRecorder;
+import com.android.builder.model.InstantRun;
+import com.android.builder.profile.ProcessRecorder;
 import com.android.builder.sdk.TargetInfo;
 import com.android.builder.signing.DefaultSigningConfig;
 import com.android.ide.common.internal.ExecutorSingleton;
+import com.android.ide.common.process.ProcessException;
 import com.android.ide.common.signing.KeystoreHelper;
 import com.android.prefs.AndroidLocation;
 import com.android.resources.Density;
 import com.android.utils.ILogger;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
-import com.google.common.collect.Sets;
 
 import org.gradle.api.Action;
 import org.gradle.api.Plugin;
@@ -93,7 +107,6 @@ import org.gradle.api.Project;
 import org.gradle.api.Task;
 import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.artifacts.ConfigurationContainer;
-import org.gradle.api.artifacts.repositories.MavenArtifactRepository;
 import org.gradle.api.execution.TaskExecutionGraph;
 import org.gradle.api.logging.LogLevel;
 import org.gradle.api.plugins.JavaBasePlugin;
@@ -111,7 +124,8 @@ import org.gradle.model.RuleSource;
 import org.gradle.model.internal.core.ModelReference;
 import org.gradle.model.internal.core.ModelRegistrations;
 import org.gradle.model.internal.registry.ModelRegistry;
-import org.gradle.platform.base.ComponentSpecContainer;
+import org.gradle.platform.base.ComponentType;
+import org.gradle.platform.base.TypeBuilder;
 import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry;
 
 import android.databinding.tool.DataBindingBuilder;
@@ -120,18 +134,20 @@ import java.io.File;
 import java.io.IOException;
 import java.security.KeyStore;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
 import groovy.lang.Closure;
 
-public class BaseComponentModelPlugin implements Plugin<Project> {
+public class BaseComponentModelPlugin implements Plugin<Project>, ToolingRegistryProvider {
 
-    private ToolingModelBuilderRegistry toolingRegistry;
+    private final ToolingModelBuilderRegistry toolingRegistry;
 
-    private ModelRegistry modelRegistry;
+    private final ModelRegistry modelRegistry;
 
     @Inject
     protected BaseComponentModelPlugin(ToolingModelBuilderRegistry toolingRegistry,
@@ -146,30 +162,13 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
     @Override
     public void apply(Project project) {
         ExecutionConfigurationUtil.setThreadPoolSize(project);
-        try {
-            List<Recorder.Property> propertyList = Lists.newArrayList(
-                    new Recorder.Property("plugin_version", Version.ANDROID_GRADLE_PLUGIN_VERSION),
-                    new Recorder.Property("next_gen_plugin", "true"),
-                    new Recorder.Property("gradle_version", project.getGradle().getGradleVersion())
-            );
-            String benchmarkName = AndroidGradleOptions.getBenchmarkName(project);
-            if (benchmarkName != null) {
-                propertyList.add(new Recorder.Property("benchmark_name", benchmarkName));
-            }
-            String benchmarkMode = AndroidGradleOptions.getBenchmarkMode(project);
-            if (benchmarkMode != null) {
-                propertyList.add(new Recorder.Property("benchmark_mode", benchmarkMode));
-            }
 
-            ProcessRecorderFactory.initialize(
-                    new LoggerWrapper(project.getLogger()),
-                    project.getRootProject()
-                            .file("profiler" + System.currentTimeMillis() + ".json"),
-                    propertyList);
-        } catch (IOException e) {
-            throw new RuntimeException("Unable to initialize ProcessRecorderFactory");
+
+        String benchmarkName = AndroidGradleOptions.getBenchmarkName(project);
+        String benchmarkMode = AndroidGradleOptions.getBenchmarkMode(project);
+        if (benchmarkName != null && benchmarkMode != null) {
+            ProcessRecorder.setBenchmark(benchmarkName, benchmarkMode);
         }
-        project.getGradle().addListener(new RecordingBuildListener(ThreadRecorder.get()));
 
         project.getPlugins().apply(AndroidComponentModelPlugin.class);
         project.getPlugins().apply(JavaBasePlugin.class);
@@ -183,18 +182,32 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
         // created.
         // TODO: Migrate to new dependency management if it's ready.
         ConfigurationContainer configurations = project.getConfigurations();
-        createConfiguration(configurations, "compile", "Classpath for compiling the default sources.");
-        createConfiguration(configurations, "testCompile", "Classpath for compiling the test sources.");
-        createConfiguration(configurations, "androidTestCompile", "Classpath for compiling the androidTest sources.");
-        createConfiguration(configurations, "default-metadata", "Metadata for published APKs");
-        createConfiguration(configurations, "default-mapping", "Metadata for published APKs");
+        createConfiguration(
+                configurations,
+                "compile", "Classpath for compiling the default sources.");
+        createConfiguration(
+                configurations,
+                "testCompile", "Classpath for compiling the test sources.");
+        createConfiguration(
+                configurations,
+                "androidTestCompile", "Classpath for compiling the androidTest sources.");
+        createConfiguration(
+                configurations,
+                "provided", "Classpath for compiling the default sources.");
+        createConfiguration(
+                configurations,
+                "default" + VariantDependencies.CONFIGURATION_METADATA,
+                "Metadata for published APKs");
+        createConfiguration(
+                configurations,
+                "default" + VariantDependencies.CONFIGURATION_MAPPING,
+                "Metadata for published APKs");
+        createConfiguration(
+                configurations,
+                "annotationProcessor",
+                "Classpath for annotation processors.");
 
         project.getPlugins().apply(NdkComponentModelPlugin.class);
-
-        // Remove this when our models no longer depends on Project.
-        modelRegistry.register(ModelRegistrations
-                .bridgedInstance(ModelReference.of("projectModel", Project.class), project)
-                .descriptor("Model of project.").build());
 
         toolingRegistry.register(new ComponentModelBuilder(modelRegistry));
 
@@ -209,6 +222,11 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
         modelRegistry.register(ModelRegistrations.bridgedInstance(
                 ModelReference.of("createSdkHandler", SdkHandler.class),
                 sdkHandler).descriptor("SDK handler.").build());
+
+        // Apply additional plugins
+        for (String plugin : AndroidGradleOptions.getAdditionalPlugins(project)) {
+            project.apply(ImmutableMap.of("plugin", plugin));
+        }
     }
 
     private SdkHandler createSdkHandler(final Project project) {
@@ -241,32 +259,25 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
             public void doCall(TaskExecutionGraph taskGraph) {
                 for (Task task : taskGraph.getAllTasks()) {
                     if (task instanceof TransformTask) {
-                        if (((TransformTask) task).getTransform() instanceof DexTransform) {
-                            PreDexCache.getCache().load(project.getRootProject()
-                                    .file(String.valueOf(project.getRootProject().getBuildDir())
-                                            + "/" + FD_INTERMEDIATES + "/dex-cache/cache.xml"));
+                        Transform transform = ((TransformTask) task).getTransform();
+                        if (transform instanceof DexTransform) {
+                            PreDexCache.getCache().load(
+                                    new File(project.getRootProject().getBuildDir(),
+                                            FD_INTERMEDIATES + "/dex-cache/cache.xml"));
+                            break;
+                        } else if (transform instanceof JackPreDexTransform) {
+                            JackConversionCache.getCache().load(
+                                    new File(project.getRootProject().getBuildDir(),
+                                            FD_INTERMEDIATES + "/jack-cache/cache.xml"));
                             break;
                         }
-                    } else if (task instanceof JillTask) {
-                        JackConversionCache.getCache().load(project.getRootProject()
-                                .file(String.valueOf(project.getRootProject().getBuildDir())
-                                        + "/" + FD_INTERMEDIATES + "/jack-cache/cache.xml"));
-                        break;
                     }
                 }
             }
         });
 
         // setup SDK repositories.
-        for (final File file : sdkHandler.getSdkLoader().getRepositories()) {
-            project.getRepositories().maven(new Action<MavenArtifactRepository>() {
-                @Override
-                public void execute(MavenArtifactRepository repo) {
-                    repo.setUrl(file.toURI());
-
-                }
-            });
-        }
+        sdkHandler.addLocalRepositories(project);
         return sdkHandler;
     }
 
@@ -281,7 +292,26 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
         configuration.setDescription(configurationDescription);
     }
 
+    @NonNull
+    @Override
+    public ToolingModelBuilderRegistry getModelBuilderRegistry() {
+        return toolingRegistry;
+    }
+
     public static class Rules extends RuleSource {
+
+        @ComponentType
+        public static void registerJniLibsSourceSet(TypeBuilder<JniLibsSourceSet> builder) {
+            //builder.setLanguageName("jniLibs");
+            builder.defaultImplementation(DefaultJniLibsSourceSet.class);
+        }
+
+        @ComponentType
+        public static void registerAndroidLanguageSourceSet(
+                TypeBuilder<AndroidLanguageSourceSet> builder) {
+            //builder.setLanguageName("android");
+            builder.defaultImplementation(DefaultAndroidLanguageSourceSet.class);
+        }
 
         @Mutate
         public static void registerLanguageTransform(
@@ -294,32 +324,30 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
         @Defaults
         public static void configureAndroidModel(
                 AndroidConfig androidModel,
+                ExtraModelInfo extraModelInfo,
                 ServiceRegistry serviceRegistry) {
             Instantiator instantiator = serviceRegistry.get(Instantiator.class);
-            AndroidConfigHelper.configure(androidModel, instantiator);
+            AndroidConfigHelper.configure(androidModel, extraModelInfo, instantiator);
         }
 
         @Defaults
         public static void initSigningConfigs(
                 @Path("android.signingConfigs") ModelMap<SigningConfig> signingConfigs) {
-            signingConfigs.beforeEach(new Action<SigningConfig>() {
-                @Override
-                public void execute(SigningConfig signingConfig) {
-                    signingConfig.setStoreType(KeyStore.getDefaultType());
-                }
+            signingConfigs.beforeEach(signingConfig -> {
+                signingConfig.setStoreType(KeyStore.getDefaultType());
+                signingConfig.setV1SigningEnabled(true);
+                signingConfig.setV2SigningEnabled(true);
             });
-            signingConfigs.create(DEBUG, new Action<SigningConfig>() {
-                @Override
-                public void execute(SigningConfig signingConfig) {
-                    try {
-                        signingConfig.setStoreFile(
-                                new File(KeystoreHelper.defaultDebugKeystoreLocation()));
-                        signingConfig.setStorePassword(DefaultSigningConfig.DEFAULT_PASSWORD);
-                        signingConfig.setKeyAlias(DefaultSigningConfig.DEFAULT_ALIAS);
-                        signingConfig.setKeyPassword(DefaultSigningConfig.DEFAULT_PASSWORD);
-                    } catch (AndroidLocation.AndroidLocationException e) {
-                        throw new RuntimeException(e);
-                    }
+
+            signingConfigs.create(DEBUG, signingConfig -> {
+                try {
+                    signingConfig.setStoreFile(
+                            new File(KeystoreHelper.defaultDebugKeystoreLocation()));
+                    signingConfig.setStorePassword(DefaultSigningConfig.DEFAULT_PASSWORD);
+                    signingConfig.setKeyAlias(DefaultSigningConfig.DEFAULT_ALIAS);
+                    signingConfig.setKeyPassword(DefaultSigningConfig.DEFAULT_PASSWORD);
+                } catch (AndroidLocation.AndroidLocationException e) {
+                    throw new RuntimeException(e);
                 }
             });
         }
@@ -371,18 +399,10 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
         public static void initDebugBuildTypes(
                 @Path("android.buildTypes") ModelMap<BuildType> buildTypes,
                 @Path("android.signingConfigs") final ModelMap<SigningConfig> signingConfigs) {
-            buildTypes.beforeEach(new Action<BuildType>() {
-                @Override
-                public void execute(BuildType buildType) {
-                    initBuildType(buildType);
-                }
-            });
+            buildTypes.beforeEach(Rules::initBuildType);
 
-            buildTypes.named(DEBUG, new Action<BuildType>() {
-                @Override
-                public void execute(BuildType buildType) {
-                    buildType.setSigningConfig(signingConfigs.get(DEBUG));
-                }
+            buildTypes.named(DEBUG, buildType -> {
+                buildType.setSigningConfig(signingConfigs.get(DEBUG));
             });
         }
 
@@ -396,7 +416,6 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
             buildType.setUseProguard(true);
             buildType.setZipAlignEnabled(true);
             buildType.setEmbedMicroApp(true);
-            buildType.setUseJack(false);
             buildType.setShrinkResources(false);
         }
 
@@ -406,10 +425,8 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
             vectorDrawablesOptions.setUseSupportLibrary(false);
 
             Set<Density> densities = Density.getRecommendedValuesForDevice();
-            Set<String> strings = Sets.newHashSetWithExpectedSize(densities.size());
-            for (Density density : densities) {
-                strings.add(density.getResourceValue());
-            }
+            Set<String> strings =
+                    densities.stream().map(Density::getResourceValue).collect(Collectors.toSet());
 
             vectorDrawablesOptions.setGeneratedDensities(strings);
         }
@@ -417,27 +434,37 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
         @Defaults
         public static void addDefaultAndroidSourceSet(
                 @Path("android.sources") ModelMap<FunctionalSourceSet> sources) {
-            sources.all(new Action<FunctionalSourceSet>() {
-                @Override
-                public void execute(FunctionalSourceSet sourceSet) {
-                    sourceSet.create("resources", AndroidLanguageSourceSet.class);
-                    sourceSet.create("java", AndroidLanguageSourceSet.class);
-                    sourceSet.create("manifest", AndroidLanguageSourceSet.class);
-                    sourceSet.create("res", AndroidLanguageSourceSet.class);
-                    sourceSet.create("assets", AndroidLanguageSourceSet.class);
-                    sourceSet.create("aidl", AndroidLanguageSourceSet.class);
-                    sourceSet.create("renderscript", AndroidLanguageSourceSet.class);
-                    sourceSet.create("jniLibs", JniLibsSourceSet.class);
+            sources.beforeEach(sourceSet -> {
+                DefaultSourceSetAction srcDirSetter =
+                        new DefaultSourceSetAction(sourceSet.getName());
+                sourceSet.create("resources", AndroidLanguageSourceSet.class, srcDirSetter);
+                sourceSet.create("java", AndroidLanguageSourceSet.class, srcDirSetter);
+                sourceSet.create("manifest", AndroidLanguageSourceSet.class, srcDirSetter);
+                sourceSet.create("res", AndroidLanguageSourceSet.class, srcDirSetter);
+                sourceSet.create("assets", AndroidLanguageSourceSet.class, srcDirSetter);
+                sourceSet.create("aidl", AndroidLanguageSourceSet.class, srcDirSetter);
+                sourceSet.create("renderscript", AndroidLanguageSourceSet.class, srcDirSetter);
+                sourceSet.create("jniLibs", JniLibsSourceSet.class, srcDirSetter);
 
-                    sourceSet.named("manifest", new Action<LanguageSourceSet>() {
-                        @Override
-                        public void execute(LanguageSourceSet manifest) {
-                            manifest.getSource().setIncludes(
-                                    ImmutableList.of("AndroidManifest.xml"));
-                        }
-                    });
-                }
+                sourceSet.named("manifest", manifest -> {
+                    manifest.getSource().setIncludes(ImmutableList.of("AndroidManifest.xml"));
+                });
             });
+        }
+
+        private static class DefaultSourceSetAction implements Action<LanguageSourceSet> {
+            private final String name;
+
+            private DefaultSourceSetAction(String name) {
+                this.name = name;
+            }
+
+            @Override
+            public void execute(LanguageSourceSet sourceSet) {
+                sourceSet.getSource().setSrcDirs(
+                        Collections.singleton("src/" + name + "/" + sourceSet.getName()));
+
+            }
         }
 
         @Mutate
@@ -459,7 +486,7 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
 
         @Model(JNILIBS_DEPENDENCIES)
         public static Multimap<String, NativeDependencyResolveResult> resolveJniLibsDependencies(
-                ModelMap<AndroidBinary> androidBinary,
+                @Path("binaries") ModelMap<AndroidBinary> androidBinary,
                 @Path("android.sources") final ModelMap<FunctionalSourceSet> sources,
                 final ServiceRegistry serviceRegistry) {
             Multimap<String, NativeDependencyResolveResult> dependencies =
@@ -488,7 +515,7 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
 
         @Mutate
         public static void createAndroidComponents(
-                ComponentSpecContainer androidSpecs,
+                ModelMap<AndroidComponentSpec> androidSpecs,
                 ServiceRegistry serviceRegistry, AndroidConfig androidExtension,
                 com.android.build.gradle.AndroidConfig adaptedModel,
                 @Path("android.buildTypes") ModelMap<BuildType> buildTypes,
@@ -525,33 +552,33 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
                 variantManager.addProductFlavor(new ProductFlavorAdaptor(productFlavor));
             }
 
-            AndroidComponentSpecInternal spec =
-                    (AndroidComponentSpecInternal) androidSpecs.get(COMPONENT_NAME);
-            spec.setExtension(androidExtension);
-            spec.setVariantManager(variantManager);
+            androidSpecs.named(COMPONENT_NAME, androidSpec -> {
+                AndroidComponentSpecInternal spec = (AndroidComponentSpecInternal) androidSpec;
+                spec.setExtension(androidExtension);
+                spec.setVariantManager(variantManager);
+            });
         }
 
         @Mutate
         public static void createVariantData(
-                ModelMap<AndroidBinaryInternal> binaries,
+                @Path("binaries") ModelMap<AndroidBinaryInternal> binaries,
                 ModelMap<AndroidComponentSpec> specs,
                 TaskManager taskManager) {
             final VariantManager variantManager =
                     ((AndroidComponentSpecInternal) specs.get(COMPONENT_NAME)).getVariantManager();
-            binaries.afterEach(new Action<AndroidBinaryInternal>() {
-                @Override
-                public void execute(AndroidBinaryInternal binary) {
-                    List<ProductFlavorAdaptor> adaptedFlavors = Lists.newArrayList();
-                    for (ProductFlavor flavor : binary.getProductFlavors()) {
-                        adaptedFlavors.add(new ProductFlavorAdaptor(flavor));
-                    }
-                    binary.setVariantData(
-                            variantManager.createVariantData(
-                                    new BuildTypeAdaptor(binary.getBuildType()),
-                                    adaptedFlavors));
-                    binary.getVariantData().getVariantConfiguration().setEnableInstantRunOverride(false);
-                    variantManager.getVariantDataList().add(binary.getVariantData());
-                }
+            binaries.afterEach(binary -> {
+                List<ProductFlavorAdaptor> adaptedFlavors = binary.getProductFlavors().stream()
+                        .map(ProductFlavorAdaptor::new)
+                        .collect(Collectors.toList());
+                binary.setVariantData(
+                        variantManager.createVariantData(
+                                new BuildTypeAdaptor(binary.getBuildType()),
+                                adaptedFlavors));
+                binary.getVariantData()
+                        .getVariantConfiguration()
+                        .setInstantRunSupportStatusOverride(
+                                InstantRun.STATUS_NOT_SUPPORTED_FOR_EXPERIMENTAL_PLUGIN);
+                variantManager.getVariantDataList().add(binary.getVariantData());
             });
         }
 
@@ -561,7 +588,7 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
         }
 
         @Mutate
-        public void addDataBindingDependenciesIfNecessary(
+        public static void addDataBindingDependenciesIfNecessary(
                 TaskManager taskManager,
                 @Path("android.dataBinding") DataBindingOptions dataBindingOptions) {
             taskManager.addDataBindingDependenciesIfNecessary(
@@ -576,15 +603,7 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
                 SdkHandler sdkHandler,
                 Project project,
                 @Path("android.sources") ModelMap<FunctionalSourceSet> androidSources) {
-            // setup SDK repositories.
-            for (final File file : sdkHandler.getSdkLoader().getRepositories()) {
-                project.getRepositories().maven(new Action<MavenArtifactRepository>() {
-                    @Override
-                    public void execute(MavenArtifactRepository repo) {
-                        repo.setUrl(file.toURI());
-                    }
-                });
-            }
+            sdkHandler.addLocalRepositories(project);
             // TODO: determine how to provide functionalities of variant API objects.
         }
 
@@ -592,7 +611,7 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
         @Mutate
         public static void createBinaryTasks(
                 final ModelMap<Task> tasks,
-                ModelMap<AndroidBinaryInternal> binaries,
+                @Path("binaries") ModelMap<AndroidBinaryInternal> binaries,
                 ModelMap<AndroidComponentSpec> specs,
                 TaskManager taskManager) {
             final VariantManager variantManager =
@@ -602,6 +621,112 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
                         new TaskModelMapAdaptor(tasks),
                         binary.getVariantData());
             }
+        }
+
+        @Model(NATIVE_BUILD_CONFIG_VALUES)
+        public static List<NativeBuildConfigValue> createExternalNativeBuildJsonGenerators(
+                Project project,
+                AndroidConfig androidExtension,
+                AndroidBuilder androidBuilder,
+                SdkHandler sdkHandler,
+                ModelMap<AndroidComponentSpec> specs) throws IOException, ProcessException {
+            CoreExternalNativeBuild externalNativeBuild = androidExtension.getExternalNativeBuild();
+            ExternalNativeBuildTaskUtils.ExternalNativeBuildProjectPathResolution pathResolution =
+                    ExternalNativeBuildTaskUtils.getProjectPath(externalNativeBuild);
+            if (pathResolution.makeFile == null) {
+                // There is no external native build system.
+                return Lists.newArrayList();
+            }
+
+
+            // Create and read external native build JSON files depending on what's happening right
+            // now.
+            //
+            // CREATE PHASE:
+            // Creates JSONs by shelling out to external build system when:
+            //   - Any one of AndroidProject.PROPERTY_INVOKED_FROM_IDE,
+            //      AndroidProject.PROPERTY_BUILD_MODEL_ONLY_ADVANCED,
+            //      AndroidProject.PROPERTY_BUILD_MODEL_ONLY,
+            //      AndroidProject.PROPERTY_REFRESH_EXTERNAL_NATIVE_MODEL are set.
+            //   - *and* AndroidProject.PROPERTY_REFRESH_EXTERNAL_NATIVE_MODEL is set
+            //      or JSON files don't exist or are out-of-date.
+            // Create phase may cause ProcessException (from cmake.exe for example)
+            //
+            // READ PHASE:
+            // Reads and deserializes JSONs when:
+            //   - Any one of AndroidProject.PROPERTY_INVOKED_FROM_IDE,
+            //      AndroidProject.PROPERTY_BUILD_MODEL_ONLY_ADVANCED,
+            //      AndroidProject.PROPERTY_BUILD_MODEL_ONLY,
+            //      AndroidProject.PROPERTY_REFRESH_EXTERNAL_NATIVE_MODEL are set.
+            // Read phase may produce IOException if the file can't be read for standard IO reasons.
+            // Read phase may produce JsonSyntaxException in the case that the content of the file is
+            // corrupt.
+            boolean createJsons =
+                    ExternalNativeBuildTaskUtils.shouldRegenerateOutOfDateJsons(project);
+            boolean forceRegeneration = AndroidGradleOptions.refreshExternalNativeModel(project);
+            final VariantManager variantManager =
+                    ((AndroidComponentSpecInternal) specs.get(COMPONENT_NAME)).getVariantManager();
+            List<NativeBuildConfigValue> configValues = Lists.newArrayList();
+
+            for (BaseVariantData<? extends BaseVariantOutputData> variantData
+                    : variantManager.getVariantDataList()) {
+                if (variantData.getType().isForTesting()) {
+                    continue;
+                }
+                VariantScope scope = variantData.getScope();
+                ExternalNativeJsonGenerator generator = ExternalNativeJsonGenerator.create(
+                        project.getProjectDir(),
+                        pathResolution.buildSystem,
+                        pathResolution.makeFile,
+                        androidBuilder,
+                        sdkHandler,
+                        scope
+                );
+
+                if (generator == null) {
+                    continue;
+                }
+
+                if (createJsons) {
+                    generator.build(forceRegeneration);
+                }
+
+                configValues.addAll(generator.readExistingNativeBuildConfigurations());
+            }
+
+            return configValues;
+        }
+
+        @Mutate
+        public static void modifyBuildSystemList(
+                @Path(NATIVE_BUILD_SYSTEMS) List<String> buildSystems,
+                AndroidConfig androidExtension) {
+            CoreExternalNativeBuild externalNativeBuild = androidExtension.getExternalNativeBuild();
+            ExternalNativeBuildTaskUtils.ExternalNativeBuildProjectPathResolution pathResolution =
+                    ExternalNativeBuildTaskUtils.getProjectPath(externalNativeBuild);
+            if (pathResolution.buildSystem != null) {
+                buildSystems.add(pathResolution.buildSystem.getName());
+            }
+        }
+
+        @Mutate
+        public static void modifyNativeBuildModel(
+                @Path(ModelConstants.EXTERNAL_BUILD_CONFIG)
+                NativeBuildConfig config,
+                @Path(NATIVE_BUILD_CONFIG_VALUES)
+                List<NativeBuildConfigValue> configValues) {
+            for (NativeBuildConfigValue configValue : configValues) {
+                NativeBuildConfigGsonUtil.copyToNativeBuildConfig(configValue, config);
+            }
+
+            config.getLibraries().afterEach(new Action<NativeLibrary>() {
+                @Override
+                public void execute(NativeLibrary nativeLibrary) {
+                    nativeLibrary.setAssembleTaskName(
+                            String.format("%sExternalNativeBuild",
+                                    nativeLibrary.getGroupName()));
+                }
+            });
         }
 
         /**
@@ -627,26 +752,19 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
             final VariantManager variantManager = specs.get(COMPONENT_NAME).getVariantManager();
 
             tasks.create("androidDependencies", DependencyReportTask.class,
-                    new Action<DependencyReportTask>() {
-                        @Override
-                        public void execute(DependencyReportTask dependencyReportTask) {
-                            dependencyReportTask.setDescription(
-                                    "Displays the Android dependencies of the project");
-                            dependencyReportTask.setVariants(variantManager.getVariantDataList());
-                            dependencyReportTask.setGroup("Android");
-                        }
+                    dependencyReportTask -> {
+                        dependencyReportTask.setDescription(
+                                "Displays the Android dependencies of the project");
+                        dependencyReportTask.setVariants(variantManager.getVariantDataList());
+                        dependencyReportTask.setGroup("Android");
                     });
 
             tasks.create("signingReport", SigningReportTask.class,
-                    new Action<SigningReportTask>() {
-                        @Override
-                        public void execute(SigningReportTask signingReportTask) {
-                            signingReportTask
-                                    .setDescription("Displays the signing info for each variant");
-                            signingReportTask.setVariants(variantManager.getVariantDataList());
-                            signingReportTask.setGroup("Android");
-
-                        }
+                    signingReportTask -> {
+                        signingReportTask
+                                .setDescription("Displays the signing info for each variant");
+                        signingReportTask.setVariants(variantManager.getVariantDataList());
+                        signingReportTask.setGroup("Android");
                     });
         }
 

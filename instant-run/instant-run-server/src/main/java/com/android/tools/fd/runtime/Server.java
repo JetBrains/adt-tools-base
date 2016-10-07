@@ -92,8 +92,8 @@ public class Server {
         mApplication = application;
         try {
             mServerSocket = new LocalServerSocket(packageName);
-            if (Log.isLoggable(LOG_TAG, Log.INFO)) {
-                Log.i(LOG_TAG, "Starting server socket listening for package " + packageName
+            if (Log.isLoggable(LOG_TAG, Log.VERBOSE)) {
+                Log.v(LOG_TAG, "Starting server socket listening for package " + packageName
                         + " on " + mServerSocket.getLocalSocketAddress());
             }
         } catch (IOException e) {
@@ -102,8 +102,8 @@ public class Server {
         }
         startServer();
 
-        if (Log.isLoggable(LOG_TAG, Log.INFO)) {
-            Log.i(LOG_TAG, "Started server for package " + packageName);
+        if (Log.isLoggable(LOG_TAG, Log.VERBOSE)) {
+            Log.v(LOG_TAG, "Started server for package " + packageName);
         }
     }
 
@@ -114,7 +114,9 @@ public class Server {
         } catch (Throwable e) {
             // Make sure an exception doesn't cause the rest of the user's
             // onCreate() method to be invoked
-            Log.i(LOG_TAG, "Fatal error starting server", e);
+            if (Log.isLoggable(LOG_TAG, Log.ERROR)) {
+                Log.e(LOG_TAG, "Fatal error starting Instant Run server", e);
+            }
         }
     }
 
@@ -130,7 +132,7 @@ public class Server {
                         handler.post(new Runnable() {
                             @Override
                             public void run() {
-                                Log.i(LOG_TAG, "Instant Run server still here...");
+                                Log.v(LOG_TAG, "Instant Run server still here...");
                             }
                         });
                     }
@@ -147,8 +149,8 @@ public class Server {
                     }
                     LocalSocket socket = serverSocket.accept();
 
-                    if (Log.isLoggable(LOG_TAG, Log.INFO)) {
-                        Log.i(LOG_TAG, "Received connection from IDE: spawning connection thread");
+                    if (Log.isLoggable(LOG_TAG, Log.VERBOSE)) {
+                        Log.v(LOG_TAG, "Received connection from IDE: spawning connection thread");
                     }
 
                     SocketServerReplyThread socketServerReplyThread = new SocketServerReplyThread(
@@ -156,15 +158,15 @@ public class Server {
                     socketServerReplyThread.run();
 
                     if (sWrongTokenCount > 50) {
-                        if (Log.isLoggable(LOG_TAG, Log.INFO)) {
-                            Log.i(LOG_TAG, "Stopping server: too many wrong token connections");
+                        if (Log.isLoggable(LOG_TAG, Log.VERBOSE)) {
+                            Log.v(LOG_TAG, "Stopping server: too many wrong token connections");
                         }
                         mServerSocket.close();
                         break;
                     }
                 } catch (Throwable e) {
-                    if (Log.isLoggable(LOG_TAG, Log.INFO)) {
-                        Log.i(LOG_TAG, "Fatal error accepting connection on local socket", e);
+                    if (Log.isLoggable(LOG_TAG, Log.VERBOSE)) {
+                        Log.v(LOG_TAG, "Fatal error accepting connection on local socket", e);
                     }
                 }
             }
@@ -197,8 +199,8 @@ public class Server {
                     }
                 }
             } catch (IOException e) {
-                if (Log.isLoggable(LOG_TAG, Log.INFO)) {
-                    Log.i(LOG_TAG, "Fatal error receiving messages", e);
+                if (Log.isLoggable(LOG_TAG, Log.VERBOSE)) {
+                    Log.v(LOG_TAG, "Fatal error receiving messages", e);
                 }
             }
         }
@@ -226,8 +228,8 @@ public class Server {
                 int message = input.readInt();
                 switch (message) {
                     case MESSAGE_EOF: {
-                        if (Log.isLoggable(LOG_TAG, Log.INFO)) {
-                            Log.i(LOG_TAG, "Received EOF from the IDE");
+                        if (Log.isLoggable(LOG_TAG, Log.VERBOSE)) {
+                            Log.v(LOG_TAG, "Received EOF from the IDE");
                         }
                         return;
                     }
@@ -238,8 +240,8 @@ public class Server {
                         // foreground.
                         boolean active = Restarter.getForegroundActivity(mApplication) != null;
                         output.writeBoolean(active);
-                        if (Log.isLoggable(LOG_TAG, Log.INFO)) {
-                            Log.i(LOG_TAG, "Received Ping message from the IDE; " +
+                        if (Log.isLoggable(LOG_TAG, Log.VERBOSE)) {
+                            Log.v(LOG_TAG, "Received Ping message from the IDE; " +
                                     "returned active = " + active);
                         }
                         continue;
@@ -249,8 +251,8 @@ public class Server {
                         String path = input.readUTF();
                         long size = FileManager.getFileSize(path);
                         output.writeLong(size);
-                        if (Log.isLoggable(LOG_TAG, Log.INFO)) {
-                            Log.i(LOG_TAG, "Received path-exists(" + path + ") from the " +
+                        if (Log.isLoggable(LOG_TAG, Log.VERBOSE)) {
+                            Log.v(LOG_TAG, "Received path-exists(" + path + ") from the " +
                                     "IDE; returned size=" + size);
                         }
                         continue;
@@ -263,16 +265,16 @@ public class Server {
                         if (checksum != null) {
                             output.writeInt(checksum.length);
                             output.write(checksum);
-                            if (Log.isLoggable(LOG_TAG, Log.INFO)) {
+                            if (Log.isLoggable(LOG_TAG, Log.VERBOSE)) {
                                 long end = System.currentTimeMillis();
                                 String hash = new BigInteger(1, checksum).toString(16);
-                                Log.i(LOG_TAG, "Received checksum(" + path + ") from the " +
+                                Log.v(LOG_TAG, "Received checksum(" + path + ") from the " +
                                         "IDE: took " + (end - begin) + "ms to compute " + hash);
                             }
                         } else {
                             output.writeInt(0);
-                            if (Log.isLoggable(LOG_TAG, Log.INFO)) {
-                                Log.i(LOG_TAG, "Received checksum(" + path + ") from the " +
+                            if (Log.isLoggable(LOG_TAG, Log.VERBOSE)) {
+                                Log.v(LOG_TAG, "Received checksum(" + path + ") from the " +
                                         "IDE: returning <null>");
                             }
                         }
@@ -286,8 +288,8 @@ public class Server {
 
                         Activity activity = Restarter.getForegroundActivity(mApplication);
                         if (activity != null) {
-                            if (Log.isLoggable(LOG_TAG, Log.INFO)) {
-                                Log.i(LOG_TAG, "Restarting activity per user request");
+                            if (Log.isLoggable(LOG_TAG, Log.VERBOSE)) {
+                                Log.v(LOG_TAG, "Restarting activity per user request");
                             }
                             Restarter.restartActivityOnUiThread(activity);
                         }
@@ -322,8 +324,8 @@ public class Server {
                         Activity foreground = Restarter.getForegroundActivity(mApplication);
                         if (foreground != null) {
                             Restarter.showToast(foreground, text);
-                        } else if (Log.isLoggable(LOG_TAG, Log.INFO)) {
-                            Log.i(LOG_TAG, "Couldn't show toast (no activity) : " + text);
+                        } else if (Log.isLoggable(LOG_TAG, Log.VERBOSE)) {
+                            Log.v(LOG_TAG, "Couldn't show toast (no activity) : " + text);
                         }
                         continue;
                     }
@@ -412,8 +414,8 @@ public class Server {
 
     private static int handleResourcePatch(int updateMode, @NonNull ApplicationPatch patch,
             @NonNull String path) {
-        if (Log.isLoggable(LOG_TAG, Log.INFO)) {
-            Log.i(LOG_TAG, "Received resource changes (" + path + ")");
+        if (Log.isLoggable(LOG_TAG, Log.VERBOSE)) {
+            Log.v(LOG_TAG, "Received resource changes (" + path + ")");
         }
         FileManager.writeAaptResources(path, patch.getBytes());
         //noinspection ResourceType
@@ -422,16 +424,16 @@ public class Server {
     }
 
     private int handleHotSwapPatch(int updateMode, @NonNull ApplicationPatch patch) {
-        if (Log.isLoggable(LOG_TAG, Log.INFO)) {
-            Log.i(LOG_TAG, "Received incremental code patch");
+        if (Log.isLoggable(LOG_TAG, Log.VERBOSE)) {
+            Log.v(LOG_TAG, "Received incremental code patch");
         }
         try {
             String dexFile = FileManager.writeTempDexFile(patch.getBytes());
             if (dexFile == null) {
                 Log.e(LOG_TAG, "No file to write the code to");
                 return updateMode;
-            } else if (Log.isLoggable(LOG_TAG, Log.INFO)) {
-                Log.i(LOG_TAG, "Reading live code from " + dexFile);
+            } else if (Log.isLoggable(LOG_TAG, Log.VERBOSE)) {
+                Log.v(LOG_TAG, "Reading live code from " + dexFile);
             }
             String nativeLibraryPath = FileManager.getNativeLibraryFolder().getPath();
             DexClassLoader dexClassLoader = new DexClassLoader(dexFile,
@@ -442,20 +444,20 @@ public class Server {
             Class<?> aClass = Class.forName(
                     "com.android.tools.fd.runtime.AppPatchesLoaderImpl", true, dexClassLoader);
             try {
-                if (Log.isLoggable(LOG_TAG, Log.INFO)) {
-                    Log.i(LOG_TAG, "Got the patcher class " + aClass);
+                if (Log.isLoggable(LOG_TAG, Log.VERBOSE)) {
+                    Log.v(LOG_TAG, "Got the patcher class " + aClass);
                 }
 
                 PatchesLoader loader = (PatchesLoader) aClass.newInstance();
-                if (Log.isLoggable(LOG_TAG, Log.INFO)) {
-                    Log.i(LOG_TAG, "Got the patcher instance " + loader);
+                if (Log.isLoggable(LOG_TAG, Log.VERBOSE)) {
+                    Log.v(LOG_TAG, "Got the patcher instance " + loader);
                 }
                 String[] getPatchedClasses = (String[]) aClass
                         .getDeclaredMethod("getPatchedClasses").invoke(loader);
-                if (Log.isLoggable(LOG_TAG, Log.INFO)) {
-                    Log.i(LOG_TAG, "Got the list of classes ");
+                if (Log.isLoggable(LOG_TAG, Log.VERBOSE)) {
+                    Log.v(LOG_TAG, "Got the list of classes ");
                     for (String getPatchedClass : getPatchedClasses) {
-                        Log.i(LOG_TAG, "class " + getPatchedClass);
+                        Log.v(LOG_TAG, "class " + getPatchedClass);
                     }
                 }
                 if (!loader.load()) {
@@ -476,20 +478,20 @@ public class Server {
     private static void handleColdSwapPatch(@NonNull ApplicationPatch patch) {
         if (patch.path.startsWith(Paths.DEX_SLICE_PREFIX)) {
             File file = FileManager.writeDexShard(patch.getBytes(), patch.path);
-            if (Log.isLoggable(LOG_TAG, Log.INFO)) {
-                Log.i(LOG_TAG, "Received dex shard " + file);
+            if (Log.isLoggable(LOG_TAG, Log.VERBOSE)) {
+                Log.v(LOG_TAG, "Received dex shard " + file);
             }
         }
     }
 
     private void restart(int updateMode, boolean incrementalResources, boolean toast) {
-        if (Log.isLoggable(LOG_TAG, Log.INFO)) {
-            Log.i(LOG_TAG, "Finished loading changes; update mode =" + updateMode);
+        if (Log.isLoggable(LOG_TAG, Log.VERBOSE)) {
+            Log.v(LOG_TAG, "Finished loading changes; update mode =" + updateMode);
         }
 
         if (updateMode == UPDATE_MODE_NONE || updateMode == UPDATE_MODE_HOT_SWAP) {
-            if (Log.isLoggable(LOG_TAG, Log.INFO)) {
-                Log.i(LOG_TAG, "Applying incremental code without restart");
+            if (Log.isLoggable(LOG_TAG, Log.VERBOSE)) {
+                Log.v(LOG_TAG, "Applying incremental code without restart");
             }
 
             if (toast) {
@@ -497,8 +499,8 @@ public class Server {
                 if (foreground != null) {
                     Restarter.showToast(foreground, "Applied code changes without activity " +
                             "restart");
-                } else if (Log.isLoggable(LOG_TAG, Log.INFO)) {
-                    Log.i(LOG_TAG, "Couldn't show toast: no activity found");
+                } else if (Log.isLoggable(LOG_TAG, Log.VERBOSE)) {
+                    Log.v(LOG_TAG, "Couldn't show toast: no activity found");
                 }
             }
             return;
@@ -510,8 +512,8 @@ public class Server {
             // Try to just replace the resources on the fly!
             File file = FileManager.getExternalResourceFile();
 
-            if (Log.isLoggable(LOG_TAG, Log.INFO)) {
-                Log.i(LOG_TAG, "About to update resource file=" + file +
+            if (Log.isLoggable(LOG_TAG, Log.VERBOSE)) {
+                Log.v(LOG_TAG, "About to update resource file=" + file +
                         ", activities=" + activities);
             }
 
@@ -528,8 +530,8 @@ public class Server {
         Activity activity = Restarter.getForegroundActivity(mApplication);
         if (updateMode == UPDATE_MODE_WARM_SWAP) {
             if (activity != null) {
-                if (Log.isLoggable(LOG_TAG, Log.INFO)) {
-                    Log.i(LOG_TAG, "Restarting activity only!");
+                if (Log.isLoggable(LOG_TAG, Log.VERBOSE)) {
+                    Log.v(LOG_TAG, "Restarting activity only!");
                 }
 
                 boolean handledRestart = false;
@@ -539,8 +541,8 @@ public class Server {
                     // and returning true if the change was handled manually
                     Method method = activity.getClass().getMethod("onHandleCodeChange", Long.TYPE);
                     Object result = method.invoke(activity, 0L);
-                    if (Log.isLoggable(LOG_TAG, Log.INFO)) {
-                        Log.i(LOG_TAG, "Activity " + activity
+                    if (Log.isLoggable(LOG_TAG, Log.VERBOSE)) {
+                        Log.v(LOG_TAG, "Activity " + activity
                                 + " provided manual restart method; return " + result);
                     }
                     if (Boolean.TRUE.equals(result)) {
@@ -561,8 +563,8 @@ public class Server {
                 return;
             }
 
-            if (Log.isLoggable(LOG_TAG, Log.INFO)) {
-                Log.i(LOG_TAG, "No activity found, falling through to do a full app restart");
+            if (Log.isLoggable(LOG_TAG, Log.VERBOSE)) {
+                Log.v(LOG_TAG, "No activity found, falling through to do a full app restart");
             }
             updateMode = UPDATE_MODE_COLD_SWAP;
         }
@@ -575,14 +577,14 @@ public class Server {
         }
 
         if (RESTART_LOCALLY) {
-            if (Log.isLoggable(LOG_TAG, Log.INFO)) {
-                Log.i(LOG_TAG, "Performing full app restart");
+            if (Log.isLoggable(LOG_TAG, Log.VERBOSE)) {
+                Log.v(LOG_TAG, "Performing full app restart");
             }
 
             Restarter.restartApp(mApplication, activities, toast);
         } else {
-            if (Log.isLoggable(LOG_TAG, Log.INFO)) {
-                Log.i(LOG_TAG, "Waiting for app to be killed and restarted by the IDE...");
+            if (Log.isLoggable(LOG_TAG, Log.VERBOSE)) {
+                Log.v(LOG_TAG, "Waiting for app to be killed and restarted by the IDE...");
             }
         }
     }

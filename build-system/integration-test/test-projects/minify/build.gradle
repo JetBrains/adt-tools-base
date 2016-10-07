@@ -1,5 +1,5 @@
 apply from: "../commonHeader.gradle"
-buildscript { apply from: "../commonBuildScript.gradle", to: buildscript }
+buildscript { apply from: "../commonBuildScript.gradle" }
 apply from: "../commonLocalRepo.gradle"
 
 apply plugin: 'com.android.application'
@@ -18,10 +18,9 @@ android {
     }
 
     buildTypes {
-        minified.initWith(buildTypes.debug)
         minified {
+            initWith debug
             minifyEnabled true
-            useJack rootProject.useJack
             proguardFiles getDefaultProguardFile('proguard-android.txt'), "proguard-rules.pro"
             testProguardFile "test-proguard-rules.pro"
             testCoverageEnabled true

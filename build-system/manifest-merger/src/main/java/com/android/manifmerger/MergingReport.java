@@ -27,6 +27,7 @@ import com.android.utils.ILogger;
 import com.google.common.base.CaseFormat;
 import com.google.common.collect.ImmutableList;
 
+import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
@@ -68,6 +69,8 @@ public class MergingReport {
     @NonNull
     private final Map<MergedManifestKind, String> mMergedDocuments;
     @NonNull
+    private final Map<MergedManifestKind, XmlDocument> mMergedXmlDocuments;
+    @NonNull
     private final Result mResult;
     // list of logging events, ordered by their recording time.
     @NonNull
@@ -78,11 +81,13 @@ public class MergingReport {
     private final Actions mActions;
 
     private MergingReport(@NonNull Map<MergedManifestKind, String> mergedDocuments,
+            @NonNull Map<MergedManifestKind, XmlDocument> mergedXmlDocuments,
             @NonNull Result result,
             @NonNull ImmutableList<Record> records,
             @NonNull ImmutableList<String> intermediaryStages,
             @NonNull Actions actions) {
         mMergedDocuments = mergedDocuments;
+        mMergedXmlDocuments = mergedXmlDocuments;
         mResult = result;
         mRecords = records;
         mIntermediaryStages = intermediaryStages;
@@ -117,8 +122,13 @@ public class MergingReport {
     }
 
     @Nullable
-    public String getMergedDocument(MergedManifestKind state) {
+    public String getMergedDocument(@NonNull MergedManifestKind state) {
         return mMergedDocuments.get(state);
+    }
+
+    @Nullable
+    public XmlDocument getMergedXmlDocument(@NonNull MergedManifestKind state) {
+        return mMergedXmlDocuments.get(state);
     }
 
     /**
@@ -250,11 +260,14 @@ public class MergingReport {
 
         private Map<MergedManifestKind, String> mergedDocuments =
                 new EnumMap<MergedManifestKind, String>(MergedManifestKind.class);
+        private Map<MergedManifestKind, XmlDocument> mergedXmlDocuments =
+          new EnumMap<MergedManifestKind, XmlDocument>(MergedManifestKind.class);
+
+
         @NonNull
         private ImmutableList.Builder<Record> mRecordBuilder = new ImmutableList.Builder<Record>();
         @NonNull
         private ImmutableList.Builder<String> mIntermediaryStages = new ImmutableList.Builder<String>();
-        @Nullable
         private boolean mHasWarnings = false;
         private boolean mHasErrors = false;
         @NonNull
@@ -267,6 +280,11 @@ public class MergingReport {
 
         Builder setMergedDocument(@NonNull MergedManifestKind mergedManifestKind, @NonNull String mergedDocument) {
             this.mergedDocuments.put(mergedManifestKind, mergedDocument);
+            return this;
+        }
+
+        Builder setMergedXmlDocument(@NonNull MergedManifestKind mergedManifestKind, @NonNull XmlDocument mergedDocument) {
+            this.mergedXmlDocuments.put(mergedManifestKind, mergedDocument);
             return this;
         }
 
@@ -338,6 +356,7 @@ public class MergingReport {
 
             return new MergingReport(
                     mergedDocuments,
+                    mergedXmlDocuments,
                     result,
                     mRecordBuilder.build(),
                     mIntermediaryStages.build(),

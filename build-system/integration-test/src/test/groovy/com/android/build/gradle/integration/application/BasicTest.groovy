@@ -17,6 +17,7 @@
 package com.android.build.gradle.integration.application
 import com.android.build.gradle.integration.common.category.DeviceTests
 import com.android.build.gradle.integration.common.category.SmokeTests
+import com.android.build.gradle.integration.common.fixture.Adb
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.utils.ModelHelper
 import com.android.builder.model.AndroidArtifact
@@ -24,9 +25,11 @@ import com.android.builder.model.AndroidProject
 import com.android.builder.model.JavaCompileOptions
 import com.android.builder.model.Variant
 import groovy.transform.CompileStatic
+import org.gradle.api.JavaVersion
 import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.ClassRule
+import org.junit.Rule
 import org.junit.Test
 import org.junit.experimental.categories.Category
 
@@ -47,6 +50,9 @@ class BasicTest {
             .fromTestProject("basic")
             .withoutNdk()
             .create()
+
+    @Rule
+    public Adb adb = new Adb();
 
     static public AndroidProject model
 
@@ -83,12 +89,21 @@ class BasicTest {
                 "aaptOptions getFailOnMissingConfigEntry",
                 model.getAaptOptions().getFailOnMissingConfigEntry())
 
+        // Since source and target compatibility are not explicitly set in the build.gradle,
+        // the default value depends on the JDK used.
+        JavaVersion expected;
+        if (JavaVersion.current().isJava7Compatible()) {
+            expected = JavaVersion.VERSION_1_7;
+        } else {
+            expected = JavaVersion.VERSION_1_6;
+        }
+
         JavaCompileOptions javaCompileOptions = model.getJavaCompileOptions()
-        // since source and target compatibility are not explicitly set in the build.gradle,
-        // the default value should be the JDK version used to build against.
-        assertEquals(System.getProperty("java.specification.version"),
+        assertEquals(
+                expected.toString(),
                 javaCompileOptions.getSourceCompatibility())
-        assertEquals(System.getProperty("java.specification.version"),
+        assertEquals(
+                expected.toString(),
                 javaCompileOptions.getTargetCompatibility())
         assertEquals("UTF-8", javaCompileOptions.getEncoding())
     }
@@ -117,7 +132,7 @@ class BasicTest {
 
     @Test
     void generationInModel() {
-        AndroidProject model = project.getSingleModel()
+        AndroidProject model = project.model().getSingle()
         assertThat(model.getPluginGeneration())
                 .named("Plugin Generation")
                 .isEqualTo(AndroidProject.GENERATION_ORIGINAL)
@@ -126,7 +141,7 @@ class BasicTest {
     @Test
     @Category(DeviceTests.class)
     void install() {
-        GradleTestProject.assumeLocalDevice();
+        adb.exclusiveAccess()
         project.execute("installDebug", "uninstallAll")
     }
 

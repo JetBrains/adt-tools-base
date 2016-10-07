@@ -16,19 +16,25 @@
 
 package com.android.ddmlib;
 
-import junit.framework.TestCase;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertTrue;
+
+import org.junit.Assume;
+import org.junit.Before;
+import org.junit.Ignore;
+import org.junit.Test;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
-public class AndroidDebugBridgeTest extends TestCase {
+public class AndroidDebugBridgeTest {
     private String mAndroidHome;
     private File mAdbPath;
 
-    @Override
-    protected void setUp() throws Exception {
+    @Before
+    public void setUp() throws Exception {
         mAndroidHome = System.getenv("ANDROID_HOME");
         assertNotNull(
                 "This test requires ANDROID_HOME environment variable to point to a valid SDK",
@@ -40,7 +46,10 @@ public class AndroidDebugBridgeTest extends TestCase {
     }
 
     // https://code.google.com/p/android/issues/detail?id=63170
-    public void testCanRecreateAdb() throws IOException {
+    @Test
+    public void recreateAdb() throws IOException {
+        Assume.assumeTrue("Flaky: Disabled in CI",
+                System.getenv("BUILDBOT_BUILDNUMBER") == null);
         AndroidDebugBridge adb = AndroidDebugBridge.createBridge(mAdbPath.getCanonicalPath(), true);
         assertNotNull(adb);
         AndroidDebugBridge.terminate();
@@ -55,13 +64,16 @@ public class AndroidDebugBridgeTest extends TestCase {
     // We should be able to create a bridge in such a case as well.
     // This test will fail if adb is not currently on the path. It is disabled since we
     // can't enforce that condition (adb on $PATH) very well from a test..
-    public void disabled_testEmptyAdbPath() throws Exception {
+    @Test
+    @Ignore
+    public void emptyAdbPath() throws Exception {
         AdbVersion version = AndroidDebugBridge.getAdbVersion(
                 new File("adb")).get(5, TimeUnit.SECONDS);
         assertTrue(version.compareTo(AdbVersion.parseFrom("1.0.20")) > 0);
     }
 
-    public void testAdbVersion() throws Exception {
+    @Test
+    public void adbVersion() throws Exception {
         AdbVersion version = AndroidDebugBridge
                 .getAdbVersion(mAdbPath).get(5, TimeUnit.SECONDS);
         assertNotSame(version, AdbVersion.UNKNOWN);

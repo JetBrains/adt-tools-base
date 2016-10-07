@@ -18,6 +18,7 @@ package com.android.build.gradle.integration.application
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.runner.FilterableParameterized
 import com.android.build.gradle.integration.common.truth.ApkSubject
+import com.android.build.gradle.integration.shrinker.ShrinkerTestUtils
 import groovy.transform.CompileStatic
 import org.junit.Before
 import org.junit.Rule
@@ -54,7 +55,9 @@ public class MinifyLibAndAppWithJavaResTest {
 
     @Before
     void setUp() {
-        project.getSubproject("app").buildFile << "android.buildTypes.release.useProguard $useProguard"
+        if (!useProguard) {
+            ShrinkerTestUtils.enableShrinker(project.getSubproject("app"), "release")
+        }
     }
 
     @Test

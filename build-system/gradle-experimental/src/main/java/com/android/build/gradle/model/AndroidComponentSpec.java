@@ -18,11 +18,11 @@ package com.android.build.gradle.model;
 
 import com.android.build.gradle.managed.AndroidConfig;
 
-import org.gradle.platform.base.ComponentSpec;
+import org.gradle.platform.base.GeneralComponentSpec;
 
 /**
  * Android ComponentSpec.
  */
-public interface AndroidComponentSpec extends ComponentSpec{
+public interface AndroidComponentSpec extends GeneralComponentSpec {
     AndroidConfig getExtension();
 }

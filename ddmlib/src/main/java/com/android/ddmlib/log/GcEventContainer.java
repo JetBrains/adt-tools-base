@@ -22,7 +22,7 @@ import com.android.ddmlib.log.LogReceiver.LogEntry;
 /**
  * Custom Event Container for the Gc event since this event doesn't simply output data in
  * int or long format, but encodes several values on 4 longs.
- * <p/>
+ * <p>
  * The array of {@link EventValueDescription}s parsed from the "event-log-tags" file must
  * be ignored, and instead, the array returned from {@link #getValueDescriptions()} must be used. 
  */

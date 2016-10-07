@@ -20,7 +20,7 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.repository.impl.meta.CommonFactory;
 import com.android.repository.impl.meta.LocalPackageImpl;
-import com.android.repository.impl.meta.RepoPackageImpl;
+import com.android.repository.impl.meta.RemotePackageImpl;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 
@@ -45,10 +45,7 @@ public abstract class Repository {
      */
     @VisibleForTesting
     @NonNull
-    public List<License> getLicense() {
-        // Stub
-        return ImmutableList.of();
-    }
+    public abstract List<License> getLicense();
 
     /**
      * Convenience method to add a {@link License} to this repository.
@@ -57,11 +54,26 @@ public abstract class Repository {
         getLicense().add(l);
     }
 
+    /**
+     * @return The {@link Channel}s included in this repository. In general licenses should be
+     * obtained from {@link RepoPackage}s, not directly from the repository (as they might not
+     * even apply to any packages.
+     */
+    @NonNull
+    public abstract List<Channel> getChannel();
+
+    /**
+     * Convenience method to add a {@link Channel} to this repository.
+     */
+    public void addChannel(@NonNull Channel c) {
+        getChannel().add(c);
+    }
+
     @NonNull
     public abstract CommonFactory createFactory();
 
     @NonNull
-    public List<? extends RemotePackage> getRemotePackage() {
+    public List<RemotePackageImpl> getRemotePackage() {
         // Stub.
         return ImmutableList.of();
     }

@@ -21,7 +21,7 @@ public abstract class LineUtil {
 
     /**
      * Reformats a line so that it fits in 78 characters max.
-     * <p/>
+     * <p>
      * When wrapping the second line and following, prefix the string with a number of
      * spaces. This will use the first colon (:) to determine the prefix size
      * or use 4 as a minimum if there are no colons in the string.

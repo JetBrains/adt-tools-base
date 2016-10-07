@@ -27,6 +27,7 @@ import com.android.build.gradle.integration.common.truth.ApkSubject;
 import com.android.ide.common.process.ProcessException;
 import com.google.common.base.Joiner;
 
+import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -43,7 +44,7 @@ public class DataBindingTest {
 
     @Parameterized.Parameters(name="library={0},forExperimentalPlugin={1},withoutAdapters={2}")
     public static Collection<Object[]> getParameters() {
-        List<Object[]> options = new ArrayList<Object[]>();
+        List<Object[]> options = new ArrayList<>();
         for (int i = 0 ; i < 8; i ++) {
             options.add(new Object[]{
                 (i & 1) != 0, (i & 2) != 0, (i & 4) != 0
@@ -53,12 +54,13 @@ public class DataBindingTest {
     }
     private final boolean myWithoutAdapters;
     private final boolean myLibrary;
+    private final String buildFile;
 
     public DataBindingTest(boolean library, boolean forExperimentalPlugin, boolean withoutAdapters) {
         myWithoutAdapters = withoutAdapters;
         myLibrary = library;
 
-        List<String> options = new ArrayList<String>();
+        List<String> options = new ArrayList<>();
         if (library) {
             options.add("library");
         }
@@ -69,26 +71,28 @@ public class DataBindingTest {
             options.add("forexperimental");
         }
         project = GradleTestProject.builder()
-                .fromTestProject("databinding", options.isEmpty() ? null : Joiner.on('-').join(options))
-                .captureStdOut(true)
-                .forExperimentalPlugin(forExperimentalPlugin)
+                .fromTestProject("databinding")
+                .useExperimentalGradleVersion(forExperimentalPlugin)
                 .create();
+        buildFile = options.isEmpty()
+                ? null
+                : "build." + Joiner.on('-').join(options) + ".gradle";
     }
 
     @Rule
     public final GradleTestProject project;
 
-    private String buildOutput;
-
     @Before
-    public void setUp() {
-        project.getStdout().reset();
-        project.execute("assembleDebug");
-        buildOutput = project.getStdout().toString();
+    public void skipOnJack() throws Exception {
+        Assume.assumeFalse(GradleTestProject.USE_JACK);
     }
 
     @Test
-    public void checkApkContainsDatabindingClasses() throws IOException, ProcessException {
+    public void checkApkContainsDataBindingClasses() throws IOException, ProcessException {
+        project.setBuildFile(buildFile);
+        project.execute("assembleDebug");
+        String buildOutput = project.getStdout();
+
         assertTrue(buildOutput.contains(":dataBindingProcessLayoutsDebug"));
         if (myLibrary) {
             AarSubject aar = assertThatAar(project.getAar("debug"));

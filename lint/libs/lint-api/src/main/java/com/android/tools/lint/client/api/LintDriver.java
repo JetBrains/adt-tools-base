@@ -16,24 +16,81 @@
 
 package com.android.tools.lint.client.api;
 
+import static com.android.SdkConstants.ATTR_IGNORE;
+import static com.android.SdkConstants.CLASS_CONSTRUCTOR;
+import static com.android.SdkConstants.CONSTRUCTOR_NAME;
+import static com.android.SdkConstants.DOT_CLASS;
+import static com.android.SdkConstants.DOT_JAR;
+import static com.android.SdkConstants.DOT_JAVA;
+import static com.android.SdkConstants.FD_GRADLE_WRAPPER;
+import static com.android.SdkConstants.FN_GRADLE_WRAPPER_PROPERTIES;
+import static com.android.SdkConstants.FN_LOCAL_PROPERTIES;
+import static com.android.SdkConstants.FQCN_SUPPRESS_LINT;
+import static com.android.SdkConstants.RES_FOLDER;
+import static com.android.SdkConstants.SUPPRESS_ALL;
+import static com.android.SdkConstants.SUPPRESS_LINT;
+import static com.android.SdkConstants.TOOLS_URI;
+import static com.android.ide.common.resources.configuration.FolderConfiguration.QUALIFIER_SPLITTER;
+import static com.android.tools.lint.detector.api.LintUtils.isAnonymousClass;
+import static java.io.File.separator;
+
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.ide.common.repository.ResourceVisibilityLookup;
 import com.android.ide.common.res2.AbstractResourceRepository;
 import com.android.ide.common.res2.ResourceItem;
+import com.android.repository.api.ProgressIndicator;
 import com.android.resources.ResourceFolderType;
 import com.android.sdklib.BuildToolInfo;
 import com.android.sdklib.IAndroidTarget;
-import com.android.sdklib.repositoryv2.AndroidSdkHandler;
+import com.android.sdklib.repository.AndroidSdkHandler;
 import com.android.tools.lint.client.api.LintListener.EventType;
-import com.android.tools.lint.detector.api.*;
+import com.android.tools.lint.detector.api.ClassContext;
+import com.android.tools.lint.detector.api.Context;
+import com.android.tools.lint.detector.api.Detector;
+import com.android.tools.lint.detector.api.Issue;
+import com.android.tools.lint.detector.api.JavaContext;
+import com.android.tools.lint.detector.api.LintUtils;
+import com.android.tools.lint.detector.api.Location;
+import com.android.tools.lint.detector.api.Project;
+import com.android.tools.lint.detector.api.ResourceContext;
+import com.android.tools.lint.detector.api.ResourceXmlDetector;
+import com.android.tools.lint.detector.api.Scope;
+import com.android.tools.lint.detector.api.Severity;
+import com.android.tools.lint.detector.api.TextFormat;
+import com.android.tools.lint.detector.api.XmlContext;
 import com.google.common.annotations.Beta;
+import com.google.common.base.Joiner;
 import com.google.common.base.Objects;
-import com.google.common.collect.*;
-import lombok.ast.*;
-import org.jetbrains.org.objectweb.asm.ClassReader;
-import org.jetbrains.org.objectweb.asm.Opcodes;
-import org.jetbrains.org.objectweb.asm.tree.*;
+import com.google.common.base.Splitter;
+import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Multimap;
+import com.google.common.collect.Sets;
+import com.intellij.psi.PsiAnnotation;
+import com.intellij.psi.PsiAnnotationMemberValue;
+import com.intellij.psi.PsiAnnotationParameterList;
+import com.intellij.psi.PsiArrayInitializerExpression;
+import com.intellij.psi.PsiArrayInitializerMemberValue;
+import com.intellij.psi.PsiElement;
+import com.intellij.psi.PsiExpression;
+import com.intellij.psi.PsiFile;
+import com.intellij.psi.PsiLiteral;
+import com.intellij.psi.PsiModifierList;
+import com.intellij.psi.PsiModifierListOwner;
+import com.intellij.psi.PsiNameValuePair;
+
+import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.tree.AbstractInsnNode;
+import org.objectweb.asm.tree.AnnotationNode;
+import org.objectweb.asm.tree.ClassNode;
+import org.objectweb.asm.tree.FieldInsnNode;
+import org.objectweb.asm.tree.FieldNode;
+import org.objectweb.asm.tree.InsnList;
+import org.objectweb.asm.tree.MethodInsnNode;
+import org.objectweb.asm.tree.MethodNode;
 import org.w3c.dom.Attr;
 import org.w3c.dom.Element;
 
@@ -41,14 +98,40 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.net.URLConnection;
-import java.util.*;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Deque;
+import java.util.EnumMap;
+import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.IdentityHashMap;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static com.android.SdkConstants.*;
-import static com.android.ide.common.resources.configuration.FolderConfiguration.QUALIFIER_SPLITTER;
-import static com.android.tools.lint.detector.api.LintUtils.isAnonymousClass;
-import static java.io.File.separator;
+import lombok.ast.Annotation;
+import lombok.ast.AnnotationElement;
+import lombok.ast.AnnotationMethodDeclaration;
+import lombok.ast.AnnotationValue;
+import lombok.ast.ArrayInitializer;
+import lombok.ast.ConstructorDeclaration;
+import lombok.ast.Expression;
+import lombok.ast.MethodDeclaration;
+import lombok.ast.Modifiers;
+import lombok.ast.Node;
+import lombok.ast.StrictListAccessor;
+import lombok.ast.StringLiteral;
+import lombok.ast.TypeDeclaration;
+import lombok.ast.TypeReference;
+import lombok.ast.VariableDefinition;
 
 /**
  * Analyzes Android projects and files
@@ -83,6 +166,8 @@ public class LintDriver {
     private boolean mAbbreviating = true;
     private boolean mParserErrors;
     private Map<Object,Object> mProperties;
+    /** Whether we need to look for legacy (old Lombok-based Java API) detectors */
+    private boolean mRunCompatChecks = true;
 
     /**
      * Creates a new {@link LintDriver}
@@ -411,7 +496,10 @@ public class LintDriver {
             registries.add(mRegistry);
             for (File jarFile : jarFiles) {
                 try {
-                    IssueRegistry registry = JarFileIssueRegistry.get(mClient, jarFile);
+                    JarFileIssueRegistry registry = JarFileIssueRegistry.get(mClient, jarFile);
+                    if (registry.hasLegacyDetectors()) {
+                        mRunCompatChecks = true;
+                    }
                     if (myCustomIssues == null) {
                         myCustomIssues = Sets.newHashSet();
                     }
@@ -591,13 +679,17 @@ public class LintDriver {
             List<Detector> javaCodeDetectors = mScopeDetectors.get(Scope.ALL_JAVA_FILES);
             if (javaCodeDetectors != null) {
                 for (Detector detector : javaCodeDetectors) {
-                    assert detector instanceof Detector.JavaScanner : detector;
+                    assert detector instanceof Detector.JavaScanner ||
+                            // TODO: Migrate all
+                            detector instanceof Detector.JavaPsiScanner : detector;
                 }
             }
             List<Detector> javaFileDetectors = mScopeDetectors.get(Scope.JAVA_FILE);
             if (javaFileDetectors != null) {
                 for (Detector detector : javaFileDetectors) {
-                    assert detector instanceof Detector.JavaScanner : detector;
+                    assert detector instanceof Detector.JavaScanner ||
+                            // TODO: Migrate all
+                            detector instanceof Detector.JavaPsiScanner : detector;
                 }
             }
 
@@ -661,13 +753,15 @@ public class LintDriver {
 
         // Ensure that we have absolute paths such that if you lint
         //  "foo bar" in "baz" we can show baz/ as the root
-        if (files.size() > 1) {
-            List<File> absolute = new ArrayList<File>(files.size());
-            for (File file : files) {
-                absolute.add(file.getAbsoluteFile());
-            }
-            files = absolute;
+        List<File> absolute = new ArrayList<File>(files.size());
+        for (File file : files) {
+            absolute.add(file.getAbsoluteFile());
+        }
+        // Always use absoluteFiles so that we can check the file's getParentFile()
+        // which is null if the file is not absolute.
+        files = absolute;
 
+        if (files.size() > 1) {
             sharedRoot = LintUtils.getCommonParent(files);
             if (sharedRoot != null && sharedRoot.getParentFile() == null) { // "/" ?
                 sharedRoot = null;
@@ -886,7 +980,7 @@ public class LintDriver {
                     // Must provide an issue since API guarantees that the issue parameter
                 IssueRegistry.CANCELLED,
                 Severity.INFORMATIONAL,
-                null /*range*/,
+                Location.create(project.getDir()),
                 "Lint canceled by user", TextFormat.RAW);
         }
 
@@ -1449,22 +1543,87 @@ public class LintDriver {
             gatherJavaFiles(folder, sources);
         }
         if (!sources.isEmpty()) {
-            JavaVisitor visitor = new JavaVisitor(javaParser, checks);
             List<JavaContext> contexts = Lists.newArrayListWithExpectedSize(sources.size());
             for (File file : sources) {
                 JavaContext context = new JavaContext(this, project, main, file, javaParser);
                 contexts.add(context);
             }
+            visitJavaFiles(checks, javaParser, contexts);
+        }
+    }
 
-            visitor.prepare(contexts);
-            for (JavaContext context : contexts) {
-                fireEvent(EventType.SCANNING_FILE, context);
-                visitor.visitFile(context);
-                if (mCanceled) {
-                    return;
+    private void visitJavaFiles(@NonNull List<Detector> checks, JavaParser javaParser,
+            List<JavaContext> contexts) {
+        // Temporary: we still have some builtin checks that aren't migrated to
+        // PSI. Until that's complete, remove them from the list here
+        //List<Detector> scanners = checks;
+        List<Detector> scanners = Lists.newArrayListWithCapacity(checks.size());
+        for (Detector detector : checks) {
+            if (detector instanceof Detector.JavaPsiScanner) {
+                scanners.add(detector);
+            }
+        }
+
+        JavaPsiVisitor visitor = new JavaPsiVisitor(javaParser, scanners);
+        visitor.prepare(contexts);
+        for (JavaContext context : contexts) {
+            fireEvent(EventType.SCANNING_FILE, context);
+            visitor.visitFile(context);
+            if (mCanceled) {
+                return;
+            }
+        }
+
+        visitor.dispose();
+
+        // Only if the user is using some custom lint rules that haven't been updated
+        // yet
+        //noinspection ConstantConditions
+        if (mRunCompatChecks) {
+            // Filter the checks to only those that implement JavaScanner
+            List<Detector> filtered = Lists.newArrayListWithCapacity(checks.size());
+            for (Detector detector : checks) {
+                if (detector instanceof Detector.JavaScanner) {
+                    filtered.add(detector);
                 }
             }
-            visitor.dispose();
+
+            if (!filtered.isEmpty()) {
+                List<String> detectorNames = Lists.newArrayListWithCapacity(filtered.size());
+                for (Detector detector : filtered) {
+                    detectorNames.add(detector.getClass().getName());
+                }
+                Collections.sort(detectorNames);
+
+                /* Let's not complain quite yet
+                String message = String.format("Lint found one or more custom checks using its "
+                        + "older Java API; these checks are still run in compatibility mode, "
+                        + "but this causes duplicated parsing, and in the next version lint "
+                        + "will no longer include this legacy mode. Make sure the following "
+                        + "lint detectors are upgraded to the new API: %1$s",
+                        Joiner.on(", ").join(detectorNames));
+                JavaContext first = contexts.get(0);
+                Project project = first.getProject();
+                Location location = Location.create(project.getDir());
+                mClient.report(first,
+                        IssueRegistry.LINT_ERROR,
+                        project.getConfiguration(this).getSeverity(IssueRegistry.LINT_ERROR),
+                        location, message, TextFormat.RAW);
+                */
+
+
+                JavaVisitor oldVisitor = new JavaVisitor(javaParser, filtered);
+
+                oldVisitor.prepare(contexts);
+                for (JavaContext context : contexts) {
+                    fireEvent(EventType.SCANNING_FILE, context);
+                    oldVisitor.visitFile(context);
+                    if (mCanceled) {
+                        return;
+                    }
+                }
+                oldVisitor.dispose();
+            }
         }
     }
 
@@ -1480,8 +1639,6 @@ public class LintDriver {
             return;
         }
 
-        JavaVisitor visitor = new JavaVisitor(javaParser, checks);
-
         List<JavaContext> contexts = Lists.newArrayListWithExpectedSize(files.size());
         for (File file : files) {
             if (file.isFile() && file.getPath().endsWith(DOT_JAVA)) {
@@ -1493,21 +1650,7 @@ public class LintDriver {
             return;
         }
 
-        visitor.prepare(contexts);
-
-        if (mCanceled) {
-            return;
-        }
-
-        for (JavaContext context : contexts) {
-            fireEvent(EventType.SCANNING_FILE, context);
-            visitor.visitFile(context);
-            if (mCanceled) {
-                return;
-            }
-        }
-
-        visitor.dispose();
+        visitJavaFiles(checks, javaParser, contexts);
     }
 
     private static void gatherJavaFiles(@NonNull File dir, @NonNull List<File> result) {
@@ -1777,9 +1920,16 @@ public class LintDriver {
                 @NonNull Context context,
                 @NonNull Issue issue,
                 @NonNull Severity severity,
-                @Nullable Location location,
+                @NonNull Location location,
                 @NonNull String message,
                 @NonNull TextFormat format) {
+            //noinspection ConstantConditions
+            if (location == null) {
+                // Misbehaving third-party lint detectors
+                assert false : issue;
+                return;
+            }
+
             assert mCurrentProject != null;
             if (!mCurrentProject.getReportIssues()) {
                 return;
@@ -2047,11 +2197,26 @@ public class LintDriver {
             return mDelegate.supportsProjectResources();
         }
 
+        @SuppressWarnings("deprecation") // forwarding required API
         @Nullable
         @Override
         public AbstractResourceRepository getProjectResources(Project project,
                 boolean includeDependencies) {
             return mDelegate.getProjectResources(project, includeDependencies);
+        }
+
+        @Nullable
+        @Override
+        public AbstractResourceRepository getResourceRepository(Project project,
+                boolean includeModuleDependencies, boolean includeLibraries) {
+            return mDelegate.getResourceRepository(project, includeModuleDependencies,
+                    includeLibraries);
+        }
+
+        @NonNull
+        @Override
+        public ProgressIndicator getRepositoryLogger() {
+            return mDelegate.getRepositoryLogger();
         }
 
         @NonNull
@@ -2339,6 +2504,36 @@ public class LintDriver {
     }
 
     /**
+     * Returns true if the given issue is suppressed by the given suppress string; this
+     * is typically the same as the issue id, but is allowed to not match case sensitively,
+     * and is allowed to be a comma separated list, and can be the string "all"
+     *
+     * @param issue  the issue id to match
+     * @param string the suppress string -- typically the id, or "all", or a comma separated list
+     *               of ids
+     * @return true if the issue is suppressed by the given string
+     */
+    private static boolean isSuppressed(@NonNull Issue issue, @NonNull String string) {
+        if (string.isEmpty()) {
+            return false;
+        }
+
+        if (string.indexOf(',') == -1) {
+            if (matches(issue, string)) {
+                return true;
+            }
+        } else {
+            for (String id : Splitter.on(',').trimResults().split(string)) {
+                if (matches(issue, id)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * Returns whether the given issue is suppressed in the given parse tree node.
      *
      * @param context the context for the source being scanned
@@ -2394,6 +2589,31 @@ public class LintDriver {
             }
 
             scope = scope.getParent();
+        }
+
+        return false;
+    }
+
+    public boolean isSuppressed(@Nullable JavaContext context, @NonNull Issue issue,
+            @Nullable PsiElement scope) {
+        boolean checkComments = mClient.checkForSuppressComments() &&
+                context != null && context.containsCommentSuppress();
+        while (scope != null) {
+            if (scope instanceof PsiModifierListOwner) {
+                PsiModifierListOwner owner = (PsiModifierListOwner) scope;
+                if (isSuppressed(issue, owner.getModifierList())) {
+                    return true;
+                }
+            }
+
+            if (checkComments && context.isSuppressedWithComment(scope, issue)) {
+                return true;
+            }
+
+            scope = scope.getParent();
+            if (scope instanceof PsiFile) {
+                return false;
+            }
         }
 
         return false;
@@ -2460,6 +2680,79 @@ public class LintDriver {
         return false;
     }
 
+    public static final String SUPPRESS_WARNINGS_FQCN = "java.lang.SuppressWarnings";
+
+
+    /**
+     * Returns true if the given AST modifier has a suppress annotation for the
+     * given issue (which can be null to check for the "all" annotation)
+     *
+     * @param issue the issue to be checked
+     * @param modifierList the modifier to check
+     * @return true if the issue or all issues should be suppressed for this
+     *         modifier
+     */
+    public static boolean isSuppressed(@NonNull Issue issue,
+            @Nullable PsiModifierList modifierList) {
+        if (modifierList == null) {
+            return false;
+        }
+
+        for (PsiAnnotation annotation : modifierList.getAnnotations()) {
+            String fqcn = annotation.getQualifiedName();
+            if (fqcn != null && (fqcn.equals(FQCN_SUPPRESS_LINT)
+                    || fqcn.equals(SUPPRESS_WARNINGS_FQCN)
+                    || fqcn.equals(SUPPRESS_LINT))) { // when missing imports
+                PsiAnnotationParameterList parameterList = annotation.getParameterList();
+                for (PsiNameValuePair pair : parameterList.getAttributes()) {
+                    if (isSuppressed(issue, pair.getValue())) {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Returns true if the annotation member value, assumed to be specified on a a SuppressWarnings
+     * or SuppressLint annotation, specifies the given id (or "all").
+     *
+     * @param issue the issue to be checked
+     * @param value     the member value to check
+     * @return true if the issue or all issues should be suppressed for this modifier
+     */
+    public static boolean isSuppressed(@NonNull Issue issue,
+            @Nullable PsiAnnotationMemberValue value) {
+        if (value instanceof PsiLiteral) {
+            PsiLiteral literal = (PsiLiteral)value;
+            Object literalValue = literal.getValue();
+            if (literalValue instanceof String) {
+                if (isSuppressed(issue, (String) literalValue)) {
+                    return true;
+                }
+            }
+        } else if (value instanceof PsiArrayInitializerMemberValue) {
+            PsiArrayInitializerMemberValue mv = (PsiArrayInitializerMemberValue)value;
+            for (PsiAnnotationMemberValue mmv : mv.getInitializers()) {
+                if (isSuppressed(issue, mmv)) {
+                    return true;
+                }
+            }
+        } else if (value instanceof PsiArrayInitializerExpression) {
+            PsiArrayInitializerExpression expression = (PsiArrayInitializerExpression) value;
+            PsiExpression[] initializers = expression.getInitializers();
+            for (PsiExpression e : initializers) {
+                if (isSuppressed(issue, e)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
     /**
      * Returns whether the given issue is suppressed in the given XML DOM node.
      *
@@ -2480,16 +2773,8 @@ public class LintDriver {
                 Element element = (Element) node;
                 if (element.hasAttributeNS(TOOLS_URI, ATTR_IGNORE)) {
                     String ignore = element.getAttributeNS(TOOLS_URI, ATTR_IGNORE);
-                    if (ignore.indexOf(',') == -1) {
-                        if (matches(issue, ignore)) {
-                            return true;
-                        }
-                    } else {
-                        for (String id : ignore.split(",")) { //$NON-NLS-1$
-                            if (matches(issue, id)) {
-                                return true;
-                            }
-                        }
+                    if (isSuppressed(issue, ignore)) {
+                        return true;
                     }
                 } else if (checkComments && context.isSuppressedWithComment(node, issue)) {
                     return true;

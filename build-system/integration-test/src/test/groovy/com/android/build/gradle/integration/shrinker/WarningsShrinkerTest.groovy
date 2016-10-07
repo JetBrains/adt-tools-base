@@ -20,6 +20,7 @@ import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
 import com.android.build.gradle.integration.common.utils.TestFileUtils
 import groovy.transform.CompileStatic
 import org.gradle.tooling.GradleConnectionException
+import org.junit.Assume
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -34,12 +35,16 @@ class WarningsShrinkerTest {
     @Rule
     public GradleTestProject project = GradleTestProject.builder()
             .fromTestApp(HelloWorldApp.forPlugin("com.android.application"))
-            .captureStdOut(true)
             .create()
 
     private File rules
     private File activity
     private int changeCounter
+
+    @Before
+    public void skipOnJack() throws Exception {
+        Assume.assumeFalse(GradleTestProject.USE_JACK)
+    }
 
     @Before
     public void enableShrinking() throws Exception {
@@ -88,7 +93,7 @@ class WarningsShrinkerTest {
     public void "Warnings stop build"() throws Exception {
         project.executeExpectingFailure("assembleDebug")
 
-        String output = project.stdout.toString()
+        String output = project.getStdout()
         assertThat(output).contains("references unknown")
         assertThat(output).contains("Unsafe")
         assertThat(output).contains("Nullable")
@@ -96,10 +101,9 @@ class WarningsShrinkerTest {
 
         changeCode()
 
-        project.stdout.reset()
         project.executeExpectingFailure("assembleDebug")
 
-        output = project.stdout.toString()
+        output = project.getStdout()
         assertThat(output).contains("references unknown")
         assertThat(output).contains("Unsafe")
         assertThat(output).contains("Nullable")
@@ -114,7 +118,7 @@ class WarningsShrinkerTest {
 
         project.executeExpectingFailure("assembleDebug")
 
-        String output = project.stdout.toString()
+        String output = project.getStdout()
         assertThat(output).contains("references unknown")
         assertThat(output).doesNotContain("Unsafe")
         assertThat(output).contains("Nullable")
@@ -126,7 +130,7 @@ class WarningsShrinkerTest {
         rules << "-dontwarn"
         project.execute("assembleDebug")
 
-        String output = project.stdout.toString()
+        String output = project.getStdout()
         assertThat(output).doesNotContain("references unknown")
         assertThat(output).doesNotContain("Unsafe")
         assertThat(output).doesNotContain("Nullable")
@@ -134,10 +138,9 @@ class WarningsShrinkerTest {
 
         changeCode()
 
-        project.stdout.reset()
         project.execute("assembleDebug")
 
-        output = project.stdout.toString()
+        output = project.getStdout()
         assertThat(output).doesNotContain("references unknown")
         assertThat(output).doesNotContain("Unsafe")
         assertThat(output).doesNotContain("Nullable")
@@ -149,7 +152,7 @@ class WarningsShrinkerTest {
         rules << "-dontwarn com.google.common.**"
         project.execute("assembleDebug")
 
-        String output = project.stdout.toString()
+        String output = project.getStdout()
         assertThat(output).doesNotContain("references unknown")
         assertThat(output).doesNotContain("Unsafe")
         assertThat(output).doesNotContain("Nullable")
@@ -157,10 +160,9 @@ class WarningsShrinkerTest {
 
         changeCode()
 
-        project.stdout.reset()
         project.execute("assembleDebug")
 
-        output = project.stdout.toString()
+        output = project.getStdout()
         assertThat(output).doesNotContain("references unknown")
         assertThat(output).doesNotContain("Unsafe")
         assertThat(output).doesNotContain("Nullable")
@@ -176,7 +178,7 @@ class WarningsShrinkerTest {
 
         project.execute("assembleDebug")
 
-        String output = project.stdout.toString()
+        String output = project.getStdout()
         assertThat(output).doesNotContain("references unknown")
         assertThat(output).doesNotContain("Unsafe")
         assertThat(output).doesNotContain("Nullable")
@@ -184,10 +186,9 @@ class WarningsShrinkerTest {
 
         changeCode()
 
-        project.stdout.reset()
         project.execute("assembleDebug")
 
-        output = project.stdout.toString()
+        output = project.getStdout()
         assertThat(output).doesNotContain("references unknown")
         assertThat(output).doesNotContain("Unsafe")
         assertThat(output).doesNotContain("Nullable")

@@ -20,6 +20,11 @@ import static com.android.build.gradle.tasks.ResourceUsageAnalyzer.NO_MATCH;
 import static com.android.build.gradle.tasks.ResourceUsageAnalyzer.REPLACE_DELETED_WITH_EMPTY;
 import static com.android.build.gradle.tasks.ResourceUsageAnalyzer.convertFormatStringToRegexp;
 import static java.io.File.separatorChar;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
@@ -30,7 +35,9 @@ import com.google.common.collect.Lists;
 import com.google.common.io.ByteStreams;
 import com.google.common.io.Files;
 
-import junit.framework.TestCase;
+import org.junit.ClassRule;
+import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -46,26 +53,33 @@ import java.util.zip.ZipOutputStream;
 
 /** TODO: Test Resources#getIdentifier() handling */
 @SuppressWarnings("SpellCheckingInspection")
-public class ResourceUsageAnalyzerTest extends TestCase {
+public class ResourceUsageAnalyzerTest {
 
+    @ClassRule
+    public static TemporaryFolder sTemporaryFolder = new TemporaryFolder();
+
+    @Test
     public void testObfuscatedInPlace() throws Exception {
         check(true, true);
     }
 
+    @Test
     public void testObfuscatedCopy() throws Exception {
         check(true, false);
     }
 
+    @Test
     public void testNoProGuardInPlace() throws Exception {
         check(false, true);
     }
 
+    @Test
     public void testNoProGuardCopy() throws Exception {
         check(false, false);
     }
 
     private static void check(boolean useProguard, boolean inPlace) throws Exception {
-        File dir = Files.createTempDir();
+        File dir = sTemporaryFolder.newFolder();
 
         File mapping;
         File classes;
@@ -127,7 +141,7 @@ public class ResourceUsageAnalyzerTest extends TestCase {
         assertTrue(unusedBitmap.exists());
 
         if (ResourceUsageAnalyzer.TWO_PASS_AAPT) {
-            File destination = inPlace ? null : Files.createTempDir();
+            File destination = inPlace ? null : sTemporaryFolder.newFolder();
 
             analyzer.setDryRun(true);
             analyzer.removeUnused(destination);
@@ -278,21 +292,15 @@ public class ResourceUsageAnalyzerTest extends TestCase {
     private static String dumpZipContents(File zipFile) throws IOException {
         StringBuilder sb = new StringBuilder();
 
-        FileInputStream fis = new FileInputStream(zipFile);
-        try {
-            ZipInputStream zis = new ZipInputStream(fis);
-            try {
+        try (FileInputStream fis = new FileInputStream(zipFile)) {
+            try (ZipInputStream zis = new ZipInputStream(fis)) {
                 ZipEntry entry = zis.getNextEntry();
                 while (entry != null) {
                     sb.append(entry.getName());
                     sb.append('\n');
                     entry = zis.getNextEntry();
                 }
-            } finally {
-                zis.close();
             }
-        } finally {
-            fis.close();
         }
 
         return sb.toString();
@@ -300,10 +308,8 @@ public class ResourceUsageAnalyzerTest extends TestCase {
 
     @Nullable
     private static byte[] getZipContents(File zipFile, String name) throws IOException {
-        FileInputStream fis = new FileInputStream(zipFile);
-        try {
-            ZipInputStream zis = new ZipInputStream(fis);
-            try {
+        try (FileInputStream fis = new FileInputStream(zipFile)) {
+            try (ZipInputStream zis = new ZipInputStream(fis)) {
                 ZipEntry entry = zis.getNextEntry();
                 while (entry != null) {
                     if (name.equals(entry.getName())) {
@@ -311,11 +317,7 @@ public class ResourceUsageAnalyzerTest extends TestCase {
                     }
                     entry = zis.getNextEntry();
                 }
-            } finally {
-                zis.close();
             }
-        } finally {
-            fis.close();
         }
 
         return null;
@@ -981,6 +983,7 @@ public class ResourceUsageAnalyzerTest extends TestCase {
                 + "    boolean toInclusive() -> toInclusive\n");
     }
 
+    @Test
     public void testFormatStringRegexp() {
         assertEquals(NO_MATCH, convertFormatStringToRegexp(""));
         assertEquals("\\Qfoo_\\E", convertFormatStringToRegexp("foo_"));
@@ -994,12 +997,29 @@ public class ResourceUsageAnalyzerTest extends TestCase {
         assertEquals(NO_MATCH, convertFormatStringToRegexp("%s%s%s%s"));
         assertEquals(NO_MATCH, convertFormatStringToRegexp("%s_%s_%s"));
         assertEquals(NO_MATCH, convertFormatStringToRegexp("%.0f%s"));
+
         assertEquals(".*\\Qabc\\E", convertFormatStringToRegexp("%sabc"));
-        assertEquals("\\Qa\\E.*", convertFormatStringToRegexp("a%d%s"));
+        assertTrue("abc".matches(convertFormatStringToRegexp("%sabc")));
+        assertTrue("somethingabc".matches(convertFormatStringToRegexp("%sabc")));
+
+        assertEquals("\\Qa\\E\\p{Digit}+.*", convertFormatStringToRegexp("a%d%s"));
+        assertTrue("a52hello".matches(convertFormatStringToRegexp("a%d%s")));
+
+        assertEquals("\\Qprefix\\E0*\\p{Digit}+\\Qsuffix\\E", convertFormatStringToRegexp("prefix%05dsuffix"));
+        assertTrue("prefix012345suffix".matches(convertFormatStringToRegexp("prefix%05dsuffix")));
+
+        assertEquals("\\p{Digit}+\\Qk\\E", convertFormatStringToRegexp("%dk"));
+        assertTrue("1234k".matches(convertFormatStringToRegexp("%dk")));
+        assertFalse("ic_shield_dark".matches(convertFormatStringToRegexp("%dk")));
 
         assertTrue("foo_".matches(convertFormatStringToRegexp("foo_")));
         assertTrue("fooA_BBend".matches(convertFormatStringToRegexp("foo%s_%1$send")));
         assertFalse("A_BBend".matches(convertFormatStringToRegexp("foo%s_%1$send")));
+
+        // Comprehensive test
+        String p = "prefix%s%%%n%c%x%d%o%b%h%f%e%a%g%C%X%5B%E%A%G";
+        String s = String.format(p, "", 'c', 1, 1, 1, true, 1, 1f, 1f, 1f, 1f, 'c', 1, 1, 1f, 1f, 1f);
+        assertTrue(s.matches(convertFormatStringToRegexp(p)));
     }
 
     /** Utility method to generate byte array literal dump (used by classesJarBytecode above) */
@@ -1083,6 +1103,7 @@ public class ResourceUsageAnalyzerTest extends TestCase {
         }
     }
 
+    @Test
     public void testIsResourceClass() throws Exception {
         File dummy = new File("dummy");
         File mappingFile = createMappingFile(Files.createTempDir());

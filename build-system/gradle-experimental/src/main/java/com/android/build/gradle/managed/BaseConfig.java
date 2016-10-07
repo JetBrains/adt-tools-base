@@ -23,12 +23,9 @@ import com.android.builder.model.AndroidArtifact;
 import org.gradle.api.Named;
 import org.gradle.model.Managed;
 import org.gradle.model.ModelSet;
-import org.gradle.model.Unmanaged;
 
 import java.io.File;
-import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 /**
@@ -45,6 +42,17 @@ public interface BaseConfig extends Named {
      */
     String getApplicationIdSuffix();
     void setApplicationIdSuffix(String applicationIdSuffix);
+
+    /**
+     * Returns the version name suffix of this flavor or null if none have been set.
+     * This is only the value set on this product flavor, not necessarily the actual
+     * version name suffix used.
+     *
+     * @return the version name suffix, or {@code null} if not specified
+     */
+    @Nullable
+    String getVersionNameSuffix();
+    void setVersionNameSuffix(String versionNameSuffix);
 
     /**
      * Map of Build Config Fields where the key is the field name.

@@ -16,17 +16,23 @@
 
 package com.android.ide.common.repository;
 
-import com.android.annotations.Nullable;
+import com.android.repository.Revision;
+import com.android.repository.api.RepoPackage;
+import com.android.repository.testframework.FakePackage;
 import com.android.repository.testframework.FakeProgressIndicator;
 import com.android.repository.testframework.MockFileOp;
-import com.android.sdklib.repositoryv2.AndroidSdkHandler;
+import com.android.sdklib.repository.AndroidSdkHandler;
+import com.android.sdklib.repository.meta.DetailsTypes;
+import com.google.common.collect.ImmutableList;
+
 import junit.framework.TestCase;
 
 import java.io.File;
+import java.util.List;
 
 public class SdkMavenRepositoryTest extends TestCase {
+    private static final File SDK_HOME = new File("/sdk");
 
-    public static final File SDK_HOME = new File("/sdk");
     private MockFileOp mFileOp;
     private AndroidSdkHandler mSdkHandler;
 
@@ -147,21 +153,80 @@ public class SdkMavenRepositoryTest extends TestCase {
         assertEquals("google", SdkMavenRepository.GOOGLE.getDirName());
     }
 
-    @SuppressWarnings("ConstantConditions")
     public void testGetByGroupId() {
-        assertSame(SdkMavenRepository.ANDROID, SdkMavenRepository.getByGroupId(
-                GradleCoordinate.parseCoordinateString(
-                        "com.android.support:appcompat-v7:13.0.0").getGroupId()));
-        assertSame(SdkMavenRepository.ANDROID, SdkMavenRepository.getByGroupId(
-                GradleCoordinate.parseCoordinateString(
-                        "com.android.support.test:espresso:0.2").getGroupId()));
-        assertSame(SdkMavenRepository.GOOGLE, SdkMavenRepository.getByGroupId(
-                GradleCoordinate.parseCoordinateString(
-                        "com.google.android.gms:play-services:5.2.08").getGroupId()));
-        assertSame(SdkMavenRepository.GOOGLE, SdkMavenRepository.getByGroupId(
-                GradleCoordinate.parseCoordinateString(
-                        "com.google.android.gms:play-services-wearable:5.0.77").getGroupId()));
-        assertNull(SdkMavenRepository.getByGroupId(GradleCoordinate.parseCoordinateString(
-                "com.google.guava:guava:11.0.2").getGroupId()));
+        mFileOp.recordExistingFolder(
+                "/sdk/extras/android/m2repository/com/android/support/appcompat-v7/19.0.0");
+        mFileOp.recordExistingFolder(
+                "/sdk/extras/google/m2repository/com/google/android/gms/play-services/5.2.08");
+
+        assertSame(
+                SdkMavenRepository.ANDROID,
+                SdkMavenRepository.find(SDK_HOME, "com.android.support", "appcompat-v7", mFileOp));
+        assertSame(
+                SdkMavenRepository.GOOGLE,
+                SdkMavenRepository.find(
+                        SDK_HOME, "com.google.android.gms", "play-services", mFileOp));
+        assertNull(
+                SdkMavenRepository.find(SDK_HOME, "com.google.guava", "guava", mFileOp));
+    }
+
+    public void testGetSdkPath() throws Exception {
+        GradleCoordinate coord = new GradleCoordinate("foo.bar.baz", "artifact1",
+                GradleCoordinate.parseRevisionNumber("1.2.3-alpha1"), null);
+        String result = DetailsTypes.MavenType.getRepositoryPath(
+                coord.getGroupId(), coord.getArtifactId(), coord.getRevision());
+        assertEquals("extras;m2repository;foo;bar;baz;artifact1;1.2.3-alpha1", result);
+
+        coord = new GradleCoordinate("foo.bar.baz", "artifact1", 1);
+        result = DetailsTypes.MavenType.getRepositoryPath(
+                coord.getGroupId(), coord.getArtifactId(), coord.getRevision());
+        assertEquals("extras;m2repository;foo;bar;baz;artifact1;1", result);
+    }
+
+    public void testGetCoordinateFromSdkPath() throws Exception {
+        GradleCoordinate result = SdkMavenRepository
+                .getCoordinateFromSdkPath("extras;m2repository;foo;bar;baz;artifact1;1.2.3-alpha1");
+        assertEquals(new GradleCoordinate("foo.bar.baz", "artifact1",
+                GradleCoordinate.parseRevisionNumber("1.2.3-alpha1"), null), result);
+
+        result = SdkMavenRepository
+                .getCoordinateFromSdkPath("extras;m2repository;foo;bar;baz;artifact1;1");
+        assertEquals(new GradleCoordinate("foo.bar.baz", "artifact1", 1), result);
+
+        result = SdkMavenRepository.getCoordinateFromSdkPath("bogus;foo;bar;baz;artifact1;1");
+        assertNull(result);
+    }
+
+    public void testFindBestPackage() {
+        FakePackage r1 = new FakePackage("extras;m2repository;group;artifact;1", new Revision(1),
+                null);
+        FakePackage r123 = new FakePackage("extras;m2repository;group;artifact;1.2.3",
+                new Revision(1), null);
+        FakePackage r2 = new FakePackage("extras;m2repository;group;artifact;2", new Revision(1),
+                null);
+        FakePackage r211 = new FakePackage("extras;m2repository;group;artifact;2.1.1",
+                new Revision(1), null);
+        FakePackage bogus = new FakePackage("foo;group;artifact;2.1.2", new Revision(1), null);
+        FakePackage other = new FakePackage("extras;m2repository;group2;artifact;2.1.3",
+                new Revision(1), null);
+        List<RepoPackage> packages = ImmutableList.of(r1, r123, r2, r211, bogus, other);
+
+        GradleCoordinate pattern = new GradleCoordinate("group", "artifact", 1);
+        assertEquals(r1, SdkMavenRepository.findBestPackageMatching(pattern, packages));
+
+        pattern = new GradleCoordinate("group", "artifact", 1, 2, 3);
+        assertEquals(r123, SdkMavenRepository.findBestPackageMatching(pattern, packages));
+
+        pattern = new GradleCoordinate("group", "artifact", 1, GradleCoordinate.PLUS_REV_VALUE);
+        assertEquals(r123, SdkMavenRepository.findBestPackageMatching(pattern, packages));
+
+        pattern = new GradleCoordinate("group", "artifact", 1, 0);
+        assertEquals(r1, SdkMavenRepository.findBestPackageMatching(pattern, packages));
+
+        pattern = new GradleCoordinate("group", "artifact", 2, 1, 2);
+        assertNull(SdkMavenRepository.findBestPackageMatching(pattern, packages));
+
+        pattern = new GradleCoordinate("group", "artifact", 2, 1, 3);
+        assertNull(SdkMavenRepository.findBestPackageMatching(pattern, packages));
     }
 }

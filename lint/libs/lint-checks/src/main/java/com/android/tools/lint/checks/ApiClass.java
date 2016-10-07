@@ -40,7 +40,7 @@ import java.util.Set;
 public class ApiClass implements Comparable<ApiClass> {
     private final String mName;
     private final int mSince;
-    private int mDeprecatedIn;
+    private final int mDeprecatedIn;
 
     private final List<Pair<String, Integer>> mSuperClasses = Lists.newArrayList();
     private final List<Pair<String, Integer>> mInterfaces = Lists.newArrayList();

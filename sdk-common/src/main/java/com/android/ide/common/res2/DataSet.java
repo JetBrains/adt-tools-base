@@ -62,6 +62,7 @@ abstract class DataSet<I extends DataItem<F>, F extends DataFile<I>> implements 
     static final String ATTR_CONFIG = "config";
     static final String ATTR_PATH = "path";
     static final String ATTR_NAME = "name";
+    static final String ATTR_TIMESTAMP = "timestamp";
 
     private final String mConfigName;
 
@@ -105,7 +106,7 @@ abstract class DataSet<I extends DataItem<F>, F extends DataFile<I>> implements 
 
     /**
      * Creates a DataFile and associated DataItems from an XML node from a file created with
-     * {@link DataSet#appendToXml(org.w3c.dom.Node, org.w3c.dom.Document, MergeConsumer)}
+     * {@link DataSet#appendToXml(Node, Document, MergeConsumer, boolean)}
      *
      * @param file the file represented by the DataFile
      * @param fileNode the XML node.
@@ -166,28 +167,34 @@ abstract class DataSet<I extends DataItem<F>, F extends DataFile<I>> implements 
     }
 
     /**
-     * Returns a matching Source file that contains a given file.
+     * Returns the longest path matching Source file that contains a given file.
      *
      * "contains" means that the source file/folder is the root folder
      * of this file. The folder and/or file doesn't have to exist.
+     * "longest" means that if two source folder satisfy the contains predicate above, the longest
+     * absolute path will be returned.
      *
      * @param file the file to search for
      * @return the Source file or null if no match is found.
      */
     @Override
     public File findMatchingSourceFile(File file) {
+        File matchingSourceFile = null;
         for (File sourceFile : mSourceFiles) {
             if (sourceFile.equals(file)) {
                 return sourceFile;
             } else if (sourceFile.isDirectory()) {
                 String sourcePath = sourceFile.getAbsolutePath() + File.separator;
-                if (file.getAbsolutePath().startsWith(sourcePath)) {
-                    return sourceFile;
+                if (file.getAbsolutePath().startsWith(sourcePath) &&
+                        (matchingSourceFile == null ||
+                        matchingSourceFile.getAbsolutePath().length()
+                                < sourceFile.getAbsolutePath().length())) {
+                    matchingSourceFile = sourceFile;
                 }
             }
         }
 
-        return null;
+        return matchingSourceFile;
     }
 
     /**
@@ -252,13 +259,29 @@ abstract class DataSet<I extends DataItem<F>, F extends DataFile<I>> implements 
     }
 
     /**
+     * Loads a single dataFile from the given source folder (rather than load / parse from all source folders).
+     *
+     * Like loadFromFiles, all loaded items are set to TOUCHED.
+     *
+     * @param sourceFolder the source folder
+     * @param dataFile     the data file within source folder
+     * @param logger       logs errors
+     * @return a DataFile if successfully loaded, and null otherwise
+     */
+    @Nullable
+    public F loadFile(@NonNull File sourceFolder, @NonNull File dataFile, @NonNull ILogger logger) throws MergingException {
+        return handleNewFile(sourceFolder, dataFile, logger);
+    }
+
+    /**
      * Appends the DataSet to a given DOM object.
      *
      * @param setNode the root node for this set.
      * @param document The root XML document
+     * @param includeTimestamps whether or not FILE nodes should be tagged with a timestamp.
      */
     void appendToXml(@NonNull Node setNode, @NonNull Document document,
-            @NonNull MergeConsumer<I> consumer) {
+                     @NonNull MergeConsumer<I> consumer, boolean includeTimestamps) {
         // add the config name attribute
         NodeUtils.addAttribute(document, setNode, null, ATTR_CONFIG, mConfigName);
 
@@ -280,13 +303,7 @@ abstract class DataSet<I extends DataItem<F>, F extends DataFile<I>> implements 
                     continue;
                 }
 
-                // the node for the file and its path and qualifiers attribute
-                Node fileNode = document.createElement(NODE_FILE);
-                sourceNode.appendChild(fileNode);
-                NodeUtils.addAttribute(document, fileNode, null, ATTR_PATH,
-                        dataFile.getFile().getAbsolutePath());
-                dataFile.addExtraAttributes(document, fileNode, null);
-
+                Node fileNode = null;
                 switch (dataFile.getType()) {
                     case GENERATED_FILES:
                         // Fall through. getDetailsXml() will return the XML which describes the
@@ -295,6 +312,9 @@ abstract class DataSet<I extends DataItem<F>, F extends DataFile<I>> implements 
                         for (I item : dataFile.getItems()) {
                             if (item.isRemoved()|| consumer.ignoreItemInMerge(item)) {
                                 continue;
+                            }
+                            if (fileNode == null) {
+                                fileNode = createFileElement(document, sourceNode, dataFile, includeTimestamps);
                             }
                             Node adoptedNode = item.getDetailsXml(document);
                             if (adoptedNode != null) {
@@ -306,6 +326,10 @@ abstract class DataSet<I extends DataItem<F>, F extends DataFile<I>> implements 
                         // no need to check for isRemoved here since it's checked
                         // at the file level and there's only one item.
                         I dataItem = dataFile.getItem();
+                        if (consumer.ignoreItemInMerge(dataItem)) {
+                            continue;
+                        }
+                        fileNode = createFileElement(document, sourceNode, dataFile, includeTimestamps);
                         NodeUtils.addAttribute(document, fileNode, null, ATTR_NAME, dataItem.getName());
                         dataItem.addExtraAttributes(document, fileNode, null);
                         break;
@@ -316,9 +340,25 @@ abstract class DataSet<I extends DataItem<F>, F extends DataFile<I>> implements 
         }
     }
 
+    private Node createFileElement(@NonNull Document document, Node sourceNode, F dataFile, boolean includeTimestamps) {
+        // the node for the file and its path and qualifiers attribute
+        Node fileNode = document.createElement(NODE_FILE);
+        sourceNode.appendChild(fileNode);
+        NodeUtils.addAttribute(document, fileNode, null, ATTR_PATH,
+                               dataFile.getFile().getAbsolutePath());
+        if (includeTimestamps) {
+            long timestamp = dataFile.getFile().lastModified();
+            if (timestamp != 0) {
+                NodeUtils.addAttribute(document, fileNode, null, ATTR_TIMESTAMP, Long.toString(timestamp));
+            }
+        }
+        dataFile.addExtraAttributes(document, fileNode, null);
+        return fileNode;
+    }
+
     /**
      * Creates and returns a new DataSet from an XML node that was created with
-     * {@link #appendToXml(org.w3c.dom.Node, org.w3c.dom.Document, MergeConsumer)}
+     * {@link #appendToXml(Node, Document, MergeConsumer, boolean)}
      *
      * The object this method is called on is not modified. This should be static but can't be
      * due to children classes.
@@ -368,8 +408,22 @@ abstract class DataSet<I extends DataItem<F>, F extends DataFile<I>> implements 
                 if (pathAttr == null) {
                     continue;
                 }
+                File actualFile = new File(pathAttr.getValue());
+                // Check the optional timestamp.
+                Attr timestampAttr = (Attr) fileNode.getAttributes().getNamedItem(ATTR_TIMESTAMP);
+                if (timestampAttr != null) {
+                    try {
+                        long blobDataFileTimestamp = Long.parseLong(timestampAttr.getValue());
+                        long actualFileTimestamp = actualFile.lastModified();
+                        if (actualFileTimestamp == 0 || blobDataFileTimestamp < actualFileTimestamp) {
+                            continue;
+                        }
+                    } catch (NumberFormatException e) {
+                        continue;
+                    }
+                }
                 
-                F dataFile = createFileAndItemsFromXml(new File(pathAttr.getValue()), fileNode);
+                F dataFile = createFileAndItemsFromXml(actualFile, fileNode);
 
                 if (dataFile != null) {
                     dataSet.processNewDataFile(sourceFolder, dataFile, false /*setTouched*/);
@@ -427,7 +481,8 @@ abstract class DataSet<I extends DataItem<F>, F extends DataFile<I>> implements 
             throws MergingException {
         switch (fileStatus) {
             case NEW:
-                return handleNewFile(sourceFolder, changedFile, logger);
+                handleNewFile(sourceFolder, changedFile, logger);
+                return true;
             case CHANGED:
                 return handleChangedFile(sourceFolder, changedFile, logger);
             case REMOVED:
@@ -455,13 +510,14 @@ abstract class DataSet<I extends DataItem<F>, F extends DataFile<I>> implements 
         return checkFileForAndroidRes(file);
     }
 
-    protected boolean handleNewFile(File sourceFolder, File file, ILogger logger)
+    @Nullable
+    protected F handleNewFile(File sourceFolder, File file, ILogger logger)
             throws MergingException {
         F dataFile = createFileAndItems(sourceFolder, file, logger);
         if (dataFile != null) {
             processNewDataFile(sourceFolder, dataFile, true /*setTouched*/);
         }
-        return true;
+        return dataFile;
     }
 
     protected void processNewDataFile(@NonNull File sourceFolder,

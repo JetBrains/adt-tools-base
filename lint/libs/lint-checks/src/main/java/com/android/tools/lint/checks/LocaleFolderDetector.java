@@ -37,7 +37,6 @@ import com.android.tools.lint.detector.api.Location;
 import com.android.tools.lint.detector.api.ResourceContext;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
-import com.android.tools.lint.detector.api.Speed;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Lists;
@@ -154,12 +153,6 @@ public class LocaleFolderDetector extends Detector implements Detector.ResourceF
     public LocaleFolderDetector() {
     }
 
-    @NonNull
-    @Override
-    public Speed getSpeed() {
-        return Speed.FAST;
-    }
-
     // ---- Implements ResourceFolderScanner ----
 
     @Override
@@ -180,7 +173,7 @@ public class LocaleFolderDetector extends Detector implements Detector.ResourceF
             } else if (language.equals("yi")) {
                 replace = "ji";
             }
-            // Note: there is also fil=>tl
+            // Note: there is also fil⇒tl
 
             if (replace != null) {
                 // TODO: Check for suppress somewhere other than lint.xml?
@@ -215,7 +208,8 @@ public class LocaleFolderDetector extends Detector implements Detector.ResourceF
 
             if (region != null && region.length() == 2) {
                 List<String> relevantRegions = LocaleManager.getRelevantRegions(language);
-                if (!relevantRegions.isEmpty() && !relevantRegions.contains(region)) {
+                if (!relevantRegions.isEmpty() && !relevantRegions.contains(region)
+                        && LocaleManager.isValidRegionCode(region)) {
                     List<String> sortedRegions = sortRegions(language, relevantRegions);
                     List<String> suggestions = Lists.newArrayList();
                     for (String code : sortedRegions) {
@@ -374,7 +368,8 @@ public class LocaleFolderDetector extends Detector implements Detector.ResourceF
                     boolean localeOnly = true;
                     for (int i = 0, n = FolderConfiguration.getQualifierCount(); i < n; i++) {
                         ResourceQualifier qualifier = config.getQualifier(i);
-                        if (qualifier != null && !(qualifier instanceof LocaleQualifier)) {
+                        if (ResourceQualifier.isValid(qualifier)
+                                && !(qualifier instanceof LocaleQualifier)) {
                             localeOnly = false;
                             break;
                         }
@@ -401,6 +396,7 @@ public class LocaleFolderDetector extends Detector implements Detector.ResourceF
                     String message = String.format(
                             "Multiple locale folders for language `%1$s` map to a single folder in versions < API 21: %2$s",
                             language, Joiner.on(", ").join(folderNames));
+                    assert location != null; // because we will iterate at least once in the loop
                     context.report(INVALID_FOLDER, location, message);
                 }
             }

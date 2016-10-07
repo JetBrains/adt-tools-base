@@ -14,5 +14,6 @@
     <orderEntry type="module" module-name="layoutlib-api" exported="" />
     <orderEntry type="library" scope="TEST" name="JUnit4" level="project" />
     <orderEntry type="module" module-name="sdk-common" />
+    <orderEntry type="library" scope="TEST" name="mockito" level="project" />
   </component>
 </module>

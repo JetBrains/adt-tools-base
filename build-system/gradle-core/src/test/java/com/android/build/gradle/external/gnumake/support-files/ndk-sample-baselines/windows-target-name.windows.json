@@ -1,0 +1,291 @@
+{
+  "buildFiles": [
+    {
+      "path": "{testPath}"
+    }
+  ],
+  "cleanCommands": [
+    "echo build command clean"
+  ],
+  "libraries": {
+    "hello-jni-debug-mips": {
+      "buildCommand": "echo build command {project}\\.externalNativeBuild\\ndkBuild\\debug\\obj/local/mips/libhello-jni.so",
+      "toolchain": "toolchain-mips",
+      "abi": "mips",
+      "artifactName": "hello-jni",
+      "files": [
+        {
+          "src": {
+            "path": "{project}/src/main/jni/hello-jni.c"
+          },
+          "flags": "\"-fpic\" \"-finline-functions\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-fmessage-length\u003d0\" \"-fno-inline-functions-called-once\" \"-fgcse-after-reload\" \"-frerun-cse-after-loop\" \"-frename-registers\" \"-no-canonical-prefixes\" \"-g\" \"-O2\" \"-DNDEBUG\" \"-I{project}/src/main/jni\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-isystem\" \"{ndk}/platforms/android-9/arch-mips/usr/include\""
+        }
+      ],
+      "output": {
+        "path": "{project}\\.externalNativeBuild\\ndkBuild\\debug\\obj/local/mips/libhello-jni.so"
+      }
+    },
+    "hello-jni-release-mips64": {
+      "buildCommand": "echo build command {project}\\.externalNativeBuild\\ndkBuild\\debug\\obj/local/mips64/libhello-jni.so",
+      "toolchain": "toolchain-mips64",
+      "abi": "mips64",
+      "artifactName": "hello-jni",
+      "files": [
+        {
+          "src": {
+            "path": "{project}/src/main/jni/hello-jni.c"
+          },
+          "flags": "\"-fpic\" \"-finline-functions\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-fmessage-length\u003d0\" \"-fno-inline-functions-called-once\" \"-fgcse-after-reload\" \"-frerun-cse-after-loop\" \"-frename-registers\" \"-no-canonical-prefixes\" \"-g\" \"-O2\" \"-DNDEBUG\" \"-I{project}/src/main/jni\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-isystem\" \"{ndk}/platforms/android-21/arch-mips64/usr/include\""
+        }
+      ],
+      "output": {
+        "path": "{project}\\.externalNativeBuild\\ndkBuild\\debug\\obj/local/mips64/libhello-jni.so"
+      }
+    },
+    "hello-jni-debug-armeabi-v7a": {
+      "buildCommand": "echo build command {project}\\.externalNativeBuild\\ndkBuild\\debug\\obj/local/armeabi-v7a/libhello-jni.so",
+      "toolchain": "toolchain-armeabi-v7a",
+      "abi": "armeabi-v7a",
+      "artifactName": "hello-jni",
+      "files": [
+        {
+          "src": {
+            "path": "{project}/src/main/jni/hello-jni.c"
+          },
+          "flags": "\"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-g\" \"-march\u003darmv7-a\" \"-mfpu\u003dvfpv3-d16\" \"-mfloat-abi\u003dsoftfp\" \"-mthumb\" \"-Os\" \"-DNDEBUG\" \"-I{project}/src/main/jni\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-isystem\" \"{ndk}/platforms/android-9/arch-arm/usr/include\""
+        }
+      ],
+      "output": {
+        "path": "{project}\\.externalNativeBuild\\ndkBuild\\debug\\obj/local/armeabi-v7a/libhello-jni.so"
+      }
+    },
+    "hello-jni-debug-armeabi": {
+      "buildCommand": "echo build command {project}\\.externalNativeBuild\\ndkBuild\\debug\\obj/local/armeabi/libhello-jni.so",
+      "toolchain": "toolchain-armeabi",
+      "abi": "armeabi",
+      "artifactName": "hello-jni",
+      "files": [
+        {
+          "src": {
+            "path": "{project}/src/main/jni/hello-jni.c"
+          },
+          "flags": "\"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-g\" \"-march\u003darmv5te\" \"-mtune\u003dxscale\" \"-msoft-float\" \"-mthumb\" \"-Os\" \"-DNDEBUG\" \"-I{project}/src/main/jni\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-isystem\" \"{ndk}/platforms/android-9/arch-arm/usr/include\""
+        }
+      ],
+      "output": {
+        "path": "{project}\\.externalNativeBuild\\ndkBuild\\debug\\obj/local/armeabi/libhello-jni.so"
+      }
+    },
+    "hello-jni-debug-x86_64": {
+      "buildCommand": "echo build command {project}\\.externalNativeBuild\\ndkBuild\\debug\\obj/local/x86_64/libhello-jni.so",
+      "toolchain": "toolchain-x86_64",
+      "abi": "x86_64",
+      "artifactName": "hello-jni",
+      "files": [
+        {
+          "src": {
+            "path": "{project}/src/main/jni/hello-jni.c"
+          },
+          "flags": "\"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-g\" \"-O2\" \"-DNDEBUG\" \"-I{project}/src/main/jni\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-isystem\" \"{ndk}/platforms/android-21/arch-x86_64/usr/include\""
+        }
+      ],
+      "output": {
+        "path": "{project}\\.externalNativeBuild\\ndkBuild\\debug\\obj/local/x86_64/libhello-jni.so"
+      }
+    },
+    "hello-jni-release-arm64-v8a": {
+      "buildCommand": "echo build command {project}\\.externalNativeBuild\\ndkBuild\\debug\\obj/local/arm64-v8a/libhello-jni.so",
+      "toolchain": "toolchain-arm64-v8a",
+      "abi": "arm64-v8a",
+      "artifactName": "hello-jni",
+      "files": [
+        {
+          "src": {
+            "path": "{project}/src/main/jni/hello-jni.c"
+          },
+          "flags": "\"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-g\" \"-O2\" \"-DNDEBUG\" \"-I{project}/src/main/jni\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-isystem\" \"{ndk}/platforms/android-21/arch-arm64/usr/include\""
+        }
+      ],
+      "output": {
+        "path": "{project}\\.externalNativeBuild\\ndkBuild\\debug\\obj/local/arm64-v8a/libhello-jni.so"
+      }
+    },
+    "hello-jni-release-armeabi": {
+      "buildCommand": "echo build command {project}\\.externalNativeBuild\\ndkBuild\\debug\\obj/local/armeabi/libhello-jni.so",
+      "toolchain": "toolchain-armeabi",
+      "abi": "armeabi",
+      "artifactName": "hello-jni",
+      "files": [
+        {
+          "src": {
+            "path": "{project}/src/main/jni/hello-jni.c"
+          },
+          "flags": "\"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-g\" \"-march\u003darmv5te\" \"-mtune\u003dxscale\" \"-msoft-float\" \"-mthumb\" \"-Os\" \"-DNDEBUG\" \"-I{project}/src/main/jni\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-isystem\" \"{ndk}/platforms/android-9/arch-arm/usr/include\""
+        }
+      ],
+      "output": {
+        "path": "{project}\\.externalNativeBuild\\ndkBuild\\debug\\obj/local/armeabi/libhello-jni.so"
+      }
+    },
+    "hello-jni-release-x86": {
+      "buildCommand": "echo build command {project}\\.externalNativeBuild\\ndkBuild\\debug\\obj/local/x86/libhello-jni.so",
+      "toolchain": "toolchain-x86",
+      "abi": "x86",
+      "artifactName": "hello-jni",
+      "files": [
+        {
+          "src": {
+            "path": "{project}/src/main/jni/hello-jni.c"
+          },
+          "flags": "\"-ffunction-sections\" \"-funwind-tables\" \"-no-canonical-prefixes\" \"-g\" \"-fstack-protector-strong\" \"-O2\" \"-DNDEBUG\" \"-I{project}/src/main/jni\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-isystem\" \"{ndk}/platforms/android-9/arch-x86/usr/include\""
+        }
+      ],
+      "output": {
+        "path": "{project}\\.externalNativeBuild\\ndkBuild\\debug\\obj/local/x86/libhello-jni.so"
+      }
+    },
+    "hello-jni-debug-mips64": {
+      "buildCommand": "echo build command {project}\\.externalNativeBuild\\ndkBuild\\debug\\obj/local/mips64/libhello-jni.so",
+      "toolchain": "toolchain-mips64",
+      "abi": "mips64",
+      "artifactName": "hello-jni",
+      "files": [
+        {
+          "src": {
+            "path": "{project}/src/main/jni/hello-jni.c"
+          },
+          "flags": "\"-fpic\" \"-finline-functions\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-fmessage-length\u003d0\" \"-fno-inline-functions-called-once\" \"-fgcse-after-reload\" \"-frerun-cse-after-loop\" \"-frename-registers\" \"-no-canonical-prefixes\" \"-g\" \"-O2\" \"-DNDEBUG\" \"-I{project}/src/main/jni\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-isystem\" \"{ndk}/platforms/android-21/arch-mips64/usr/include\""
+        }
+      ],
+      "output": {
+        "path": "{project}\\.externalNativeBuild\\ndkBuild\\debug\\obj/local/mips64/libhello-jni.so"
+      }
+    },
+    "hello-jni-release-x86_64": {
+      "buildCommand": "echo build command {project}\\.externalNativeBuild\\ndkBuild\\debug\\obj/local/x86_64/libhello-jni.so",
+      "toolchain": "toolchain-x86_64",
+      "abi": "x86_64",
+      "artifactName": "hello-jni",
+      "files": [
+        {
+          "src": {
+            "path": "{project}/src/main/jni/hello-jni.c"
+          },
+          "flags": "\"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-g\" \"-O2\" \"-DNDEBUG\" \"-I{project}/src/main/jni\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-isystem\" \"{ndk}/platforms/android-21/arch-x86_64/usr/include\""
+        }
+      ],
+      "output": {
+        "path": "{project}\\.externalNativeBuild\\ndkBuild\\debug\\obj/local/x86_64/libhello-jni.so"
+      }
+    },
+    "hello-jni-debug-arm64-v8a": {
+      "buildCommand": "echo build command {project}\\.externalNativeBuild\\ndkBuild\\debug\\obj/local/arm64-v8a/libhello-jni.so",
+      "toolchain": "toolchain-arm64-v8a",
+      "abi": "arm64-v8a",
+      "artifactName": "hello-jni",
+      "files": [
+        {
+          "src": {
+            "path": "{project}/src/main/jni/hello-jni.c"
+          },
+          "flags": "\"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-g\" \"-O2\" \"-DNDEBUG\" \"-I{project}/src/main/jni\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-isystem\" \"{ndk}/platforms/android-21/arch-arm64/usr/include\""
+        }
+      ],
+      "output": {
+        "path": "{project}\\.externalNativeBuild\\ndkBuild\\debug\\obj/local/arm64-v8a/libhello-jni.so"
+      }
+    },
+    "hello-jni-debug-x86": {
+      "buildCommand": "echo build command {project}\\.externalNativeBuild\\ndkBuild\\debug\\obj/local/x86/libhello-jni.so",
+      "toolchain": "toolchain-x86",
+      "abi": "x86",
+      "artifactName": "hello-jni",
+      "files": [
+        {
+          "src": {
+            "path": "{project}/src/main/jni/hello-jni.c"
+          },
+          "flags": "\"-ffunction-sections\" \"-funwind-tables\" \"-no-canonical-prefixes\" \"-g\" \"-fstack-protector-strong\" \"-O2\" \"-DNDEBUG\" \"-I{project}/src/main/jni\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-isystem\" \"{ndk}/platforms/android-9/arch-x86/usr/include\""
+        }
+      ],
+      "output": {
+        "path": "{project}\\.externalNativeBuild\\ndkBuild\\debug\\obj/local/x86/libhello-jni.so"
+      }
+    },
+    "hello-jni-release-armeabi-v7a": {
+      "buildCommand": "echo build command {project}\\.externalNativeBuild\\ndkBuild\\debug\\obj/local/armeabi-v7a/libhello-jni.so",
+      "toolchain": "toolchain-armeabi-v7a",
+      "abi": "armeabi-v7a",
+      "artifactName": "hello-jni",
+      "files": [
+        {
+          "src": {
+            "path": "{project}/src/main/jni/hello-jni.c"
+          },
+          "flags": "\"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-g\" \"-march\u003darmv7-a\" \"-mfpu\u003dvfpv3-d16\" \"-mfloat-abi\u003dsoftfp\" \"-mthumb\" \"-Os\" \"-DNDEBUG\" \"-I{project}/src/main/jni\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-isystem\" \"{ndk}/platforms/android-9/arch-arm/usr/include\""
+        }
+      ],
+      "output": {
+        "path": "{project}\\.externalNativeBuild\\ndkBuild\\debug\\obj/local/armeabi-v7a/libhello-jni.so"
+      }
+    },
+    "hello-jni-release-mips": {
+      "buildCommand": "echo build command {project}\\.externalNativeBuild\\ndkBuild\\debug\\obj/local/mips/libhello-jni.so",
+      "toolchain": "toolchain-mips",
+      "abi": "mips",
+      "artifactName": "hello-jni",
+      "files": [
+        {
+          "src": {
+            "path": "{project}/src/main/jni/hello-jni.c"
+          },
+          "flags": "\"-fpic\" \"-finline-functions\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-fmessage-length\u003d0\" \"-fno-inline-functions-called-once\" \"-fgcse-after-reload\" \"-frerun-cse-after-loop\" \"-frename-registers\" \"-no-canonical-prefixes\" \"-g\" \"-O2\" \"-DNDEBUG\" \"-I{project}/src/main/jni\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-isystem\" \"{ndk}/platforms/android-9/arch-mips/usr/include\""
+        }
+      ],
+      "output": {
+        "path": "{project}\\.externalNativeBuild\\ndkBuild\\debug\\obj/local/mips/libhello-jni.so"
+      }
+    }
+  },
+  "toolchains": {
+    "toolchain-armeabi": {
+      "cCompilerExecutable": {
+        "path": "{ndk}/toolchains/arm-linux-androideabi-4.9/prebuilt/windows-x86_64/bin/arm-linux-androideabi-gcc"
+      }
+    },
+    "toolchain-mips64": {
+      "cCompilerExecutable": {
+        "path": "{ndk}/toolchains/mips64el-linux-android-4.9/prebuilt/windows-x86_64/bin/mips64el-linux-android-gcc"
+      }
+    },
+    "toolchain-mips": {
+      "cCompilerExecutable": {
+        "path": "{ndk}/toolchains/mipsel-linux-android-4.9/prebuilt/windows-x86_64/bin/mipsel-linux-android-gcc"
+      }
+    },
+    "toolchain-arm64-v8a": {
+      "cCompilerExecutable": {
+        "path": "{ndk}/toolchains/aarch64-linux-android-4.9/prebuilt/windows-x86_64/bin/aarch64-linux-android-gcc"
+      }
+    },
+    "toolchain-x86_64": {
+      "cCompilerExecutable": {
+        "path": "{ndk}/toolchains/x86_64-4.9/prebuilt/windows-x86_64/bin/x86_64-linux-android-gcc"
+      }
+    },
+    "toolchain-armeabi-v7a": {
+      "cCompilerExecutable": {
+        "path": "{ndk}/toolchains/arm-linux-androideabi-4.9/prebuilt/windows-x86_64/bin/arm-linux-androideabi-gcc"
+      }
+    },
+    "toolchain-x86": {
+      "cCompilerExecutable": {
+        "path": "{ndk}/toolchains/x86-4.9/prebuilt/windows-x86_64/bin/i686-linux-android-gcc"
+      }
+    }
+  },
+  "cFileExtensions": [
+    "c"
+  ],
+  "cppFileExtensions": []
+}

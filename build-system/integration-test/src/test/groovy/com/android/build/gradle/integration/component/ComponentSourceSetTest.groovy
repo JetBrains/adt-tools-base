@@ -56,7 +56,7 @@ class ComponentSourceSetTest {
     @ClassRule
     public static GradleTestProject project = GradleTestProject.builder()
             .fromTestApp(app)
-            .forExperimentalPlugin(true)
+            .useExperimentalGradleVersion(true)
             .create();
 
     @BeforeClass

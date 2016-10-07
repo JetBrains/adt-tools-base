@@ -16,25 +16,18 @@
 
 package com.android.build.gradle.internal.incremental;
 
-import org.gradle.internal.reflect.NoSuchMethodException;
 import org.junit.Test;
 
-import org.objectweb.asm.*;
+import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.util.CheckClassAdapter;
 import org.objectweb.asm.commons.GeneratorAdapter;
-import org.objectweb.asm.commons.*;
-import org.objectweb.asm.tree.MethodNode;
 
-import static org.objectweb.asm.Opcodes.*;
-
-import com.android.utils.AsmUtils;
-
-import java.lang.reflect.*;
 import java.lang.reflect.Method;
 
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.Set;
 
 
 /**
@@ -97,7 +90,7 @@ public class StringSwitchTest {
                         mv.visitLdcInsn("No Match Found");
                         mv.visitInsn(Opcodes.ARETURN);
                     }
-                }.visit(ga, new HashSet<String>(Arrays.asList(strings)));
+                }.visit(ga, new HashSet<>(Arrays.asList(strings)));
                 mv.visitMaxs(1, 1);
                 mv.visitEnd();
             }

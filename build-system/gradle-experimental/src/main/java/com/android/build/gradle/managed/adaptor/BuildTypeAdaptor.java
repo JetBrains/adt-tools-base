@@ -19,7 +19,11 @@ package com.android.build.gradle.managed.adaptor;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.internal.dsl.CoreBuildType;
+import com.android.build.gradle.internal.dsl.CoreExternalNativeBuildOptions;
+import com.android.build.gradle.internal.dsl.CoreJackOptions;
+import com.android.build.gradle.internal.dsl.CoreJavaCompileOptions;
 import com.android.build.gradle.internal.dsl.CoreNdkOptions;
+import com.android.build.gradle.internal.dsl.CoreShaderOptions;
 import com.android.build.gradle.managed.BuildType;
 import com.android.builder.model.SigningConfig;
 import com.google.common.base.Objects;
@@ -66,12 +70,6 @@ public class BuildTypeAdaptor extends BaseConfigAdaptor implements CoreBuildType
         return buildType.getRenderscriptOptimLevel();
     }
 
-    @Nullable
-    @Override
-    public String getVersionNameSuffix() {
-        return buildType.getVersionNameSuffix();
-    }
-
     @Override
     public boolean isMinifyEnabled() {
         return buildType.getMinifyEnabled();
@@ -98,9 +96,28 @@ public class BuildTypeAdaptor extends BaseConfigAdaptor implements CoreBuildType
         return new NdkOptionsAdaptor(buildType.getNdk());
     }
 
+    @Nullable
     @Override
-    public Boolean getUseJack() {
-        return buildType.getUseJack();
+    public CoreExternalNativeBuildOptions getExternalNativeBuildOptions() {
+        return new ExternalNativeBuildOptionsAdaptor(buildType.getExternalNativeBuild());
+    }
+
+    @Override
+    @NonNull
+    public CoreJackOptions getJackOptions() {
+        return new JackOptionsAdaptor(buildType.getJackOptions());
+    }
+
+    @Override
+    @NonNull
+    public CoreJavaCompileOptions getJavaCompileOptions() {
+        return new JavaCompileOptionsAdaptor(buildType.getJavaCompileOptions());
+    }
+
+    @NonNull
+    @Override
+    public CoreShaderOptions getShaders() {
+        return new ShaderOptionsAdaptor(buildType.getShaders());
     }
 
     @Override

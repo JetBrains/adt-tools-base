@@ -38,8 +38,7 @@ class NdkIncrementalTest {
     @Rule
     public GradleTestProject project = GradleTestProject.builder()
             .fromTestApp(new HelloWorldJniApp())
-            .forExperimentalPlugin(true)
-            .captureStdOut(true)
+            .useExperimentalGradleVersion(true)
             .create();
 
     @Before
@@ -66,21 +65,20 @@ model {
     public void "check adding file"() {
         File helloJniO = FileUtils.find(
                 project.file("build/intermediates/objectFiles"),
-                Pattern.compile("x86Debug.*/hello-jni\\.o")).first()
+                Pattern.compile("X86Debug.*/hello-jni\\.o")).first()
         long helloJniTimestamp = helloJniO.lastModified()
 
         // check new-file.o does not exist.
         assertThat(FileUtils.find(
                 project.file("build/intermediates/objectFiles"),
-                Pattern.compile("x86Debug.*/new-file\\.o"))).hasSize(0)
+                Pattern.compile("X86Debug.*/new-file\\.o"))).hasSize(0)
 
         project.file("src/main/jni/new-file.c") << " ";
 
-        project.stdout.reset()
         project.execute("assembleDebug")
 
         IncrementalTaskOutputVerifier verifier =
-                new IncrementalTaskOutputVerifier(project.stdout.toString());
+                new IncrementalTaskOutputVerifier(project.getStdout());
         verifier.assertThatFile(project.file("src/main/jni/new-file.c")).hasBeenAdded()
         verifier.assertThatFile(project.file("src/main/jni/hello-jni.c")).hasNotBeenChanged()
 
@@ -88,27 +86,26 @@ model {
 
         assertThat(FileUtils.find(
                 project.file("build/intermediates/objectFiles"),
-                Pattern.compile("x86Debug.*/new-file\\.o"))).hasSize(1)
+                Pattern.compile("X86Debug.*/new-file\\.o"))).hasSize(1)
     }
 
     @Test
     public void "check removing file"() {
         File helloJniO = FileUtils.find(
                 project.file("build/intermediates/objectFiles"),
-                Pattern.compile("x86Debug.*/hello-jni\\.o")).first()
+                Pattern.compile("X86Debug.*/hello-jni\\.o")).first()
         long helloJniTimestamp = helloJniO.lastModified()
 
         assertThat(FileUtils.find(
                 project.file("build/intermediates/objectFiles"),
-                Pattern.compile("x86Debug.*/empty\\.o"))).hasSize(1)
+                Pattern.compile("X86Debug.*/empty\\.o"))).hasSize(1)
 
         project.file("src/main/jni/empty.c").delete()
 
-        project.stdout.reset()
         project.execute("assembleDebug")
 
         IncrementalTaskOutputVerifier verifier =
-                new IncrementalTaskOutputVerifier(project.stdout.toString());
+                new IncrementalTaskOutputVerifier(project.getStdout());
         verifier.assertThatFile(project.file("src/main/jni/empty.c")).hasBeenRemoved()
         verifier.assertThatFile(project.file("src/main/jni/hello-jni.c")).hasNotBeenChanged()
 
@@ -116,28 +113,27 @@ model {
 
         assertThat(FileUtils.find(
                 project.file("build/intermediates/objectFiles"),
-                Pattern.compile("x86Debug.*/empty\\.o"))).hasSize(0)
+                Pattern.compile("X86Debug.*/empty\\.o"))).hasSize(0)
     }
 
     @Test
     public void "check changing file"() {
         File helloJniO = FileUtils.find(
                 project.file("build/intermediates/objectFiles"),
-                Pattern.compile("x86Debug.*/hello-jni\\.o")).first()
+                Pattern.compile("X86Debug.*/hello-jni\\.o")).first()
         long helloJniTimestamp = helloJniO.lastModified()
 
         File emptyO = FileUtils.find(
                 project.file("build/intermediates/objectFiles"),
-                Pattern.compile("x86Debug.*/empty\\.o")).first()
+                Pattern.compile("X86Debug.*/empty\\.o")).first()
         long emptyTimestamp = emptyO.lastModified()
 
         project.file("src/main/jni/empty.c") << " ";
 
-        project.stdout.reset()
         project.execute("assembleDebug")
 
         IncrementalTaskOutputVerifier verifier =
-                new IncrementalTaskOutputVerifier(project.stdout.toString());
+                new IncrementalTaskOutputVerifier(project.getStdout());
         verifier.assertThatFile(project.file("src/main/jni/empty.c")).hasChanged()
         verifier.assertThatFile(project.file("src/main/jni/hello-jni.c")).hasNotBeenChanged()
 

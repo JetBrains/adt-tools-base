@@ -16,26 +16,28 @@
 
 package com.android.build.gradle.integration.instant;
 
+import static com.android.build.gradle.integration.common.truth.AbstractAndroidSubject.ClassFileScope.INSTANT_RUN;
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat;
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk;
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatDex;
 
 import com.android.annotations.NonNull;
 import com.android.build.gradle.integration.common.category.DeviceTests;
+import com.android.build.gradle.integration.common.fixture.Adb;
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.common.fixture.Logcat;
+import com.android.build.gradle.integration.common.fixture.Packaging;
 import com.android.build.gradle.integration.common.runner.FilterableParameterized;
 import com.android.build.gradle.integration.common.utils.TestFileUtils;
 import com.android.build.gradle.internal.incremental.ColdswapMode;
+import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
 import com.android.build.gradle.internal.incremental.InstantRunVerifierStatus;
 import com.android.builder.model.InstantRun;
 import com.android.ddmlib.IDevice;
 import com.android.tools.fd.client.InstantRunArtifact;
-import com.android.tools.fd.client.InstantRunArtifactType;
-import com.android.tools.fd.client.InstantRunBuildInfo;
 import com.android.tools.fd.client.InstantRunClient;
 import com.google.common.collect.Iterables;
 
-import org.apache.commons.lang.SystemUtils;
 import org.gradle.api.JavaVersion;
 import org.junit.Assume;
 import org.junit.Before;
@@ -44,28 +46,38 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
-import org.mockito.MockitoAnnotations;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 
 /**
  * Tests support for Dagger and Instant Run.
  */
 @RunWith(FilterableParameterized.class)
 public class DaggerTest {
+
     private static final ColdswapMode COLDSWAP_MODE = ColdswapMode.MULTIDEX;
     private static final String ORIGINAL_MESSAGE = "from module";
     private static final String HOTSWAP_MESSAGE = "hotswap";
+    private static final String APP_MODULE_DESC = "Lcom/android/tests/AppModule;";
+    private static final String GET_MESSAGE = "getMessage";
 
     @Rule
     public Logcat logcat = Logcat.create();
 
-    @Parameterized.Parameters(name = "{0}")
+    @Rule
+    public final Adb adb = new Adb();
+
+    @Parameterized.Parameters(name = "{0},useAndroidApt={1}")
     public static Collection<Object[]> data() {
-        return Arrays.asList(new Object[][] {{"daggerOne"}, {"daggerTwo"}});
+        return Arrays.asList(new Object[][] {
+                {"daggerOne", true},
+                {"daggerTwo", true},
+                {"daggerTwo", false}
+        });
     }
 
     @Rule
@@ -74,9 +86,11 @@ public class DaggerTest {
     private File mAppModule;
 
     private final String testProject;
+    private final boolean useAndroidApt;
 
-    public DaggerTest(String testProject) {
+    public DaggerTest(String testProject, boolean useAndroidApt) {
         this.testProject = testProject;
+        this.useAndroidApt = useAndroidApt;
 
         project = GradleTestProject.builder()
                 .fromTestProject(testProject)
@@ -92,6 +106,10 @@ public class DaggerTest {
                     JavaVersion.current().isJava7Compatible());
         }
         mAppModule = project.file("src/main/java/com/android/tests/AppModule.java");
+
+        if (testProject.equals("daggerTwo") && !useAndroidApt) {
+            project.setBuildFile("build.no-apt.gradle");
+        }
     }
 
     @Test
@@ -101,43 +119,47 @@ public class DaggerTest {
 
     @Test
     public void coldSwap() throws Exception {
-        InstantRun instantRunModel = InstantRunTestUtils.doInitialBuild(project, 23, COLDSWAP_MODE);
+        new ColdSwapTester(project).testMultiDex(new ColdSwapTester.Steps() {
+            @Override
+            public void checkApk(@NonNull File apk) throws Exception {
+                assertThatApk(apk).hasClass(APP_MODULE_DESC, INSTANT_RUN);
+            }
 
-        InstantRunBuildInfo initialContext = InstantRunTestUtils.loadContext(instantRunModel);
-        String startBuildId = initialContext.getTimeStamp();
+            @Override
+            public void makeChange() throws Exception {
+                TestFileUtils.addMethod(
+                        mAppModule,
+                        "public String getMessage() { return \"coldswap\"; }");
+                TestFileUtils.searchAndReplace(mAppModule, "\"from module\"", "getMessage()");
+            }
 
-        makeColdSwapChange();
+            @Override
+            public void checkVerifierStatus(@NonNull InstantRunVerifierStatus status) throws Exception {
+                assertThat(status).isEqualTo(InstantRunVerifierStatus.METHOD_ADDED);
+            }
 
-        project.execute(
-                InstantRunTestUtils.getInstantRunArgs(23, COLDSWAP_MODE),
-                instantRunModel.getIncrementalAssembleTaskName());
-
-        InstantRunBuildInfo coldSwapContext = InstantRunTestUtils.loadContext(instantRunModel);
-
-        assertThat(coldSwapContext.getVerifierStatus()).named("verifier status")
-                .isEqualTo(InstantRunVerifierStatus.METHOD_ADDED.toString());
-        assertThat(coldSwapContext.getTimeStamp()).named("build id").isNotEqualTo(startBuildId);
-
-        assertThat(coldSwapContext.getArtifacts()).hasSize(1);
-        InstantRunArtifact artifact = Iterables.getOnlyElement(coldSwapContext.getArtifacts());
-
-        assertThat(artifact.type).isEqualTo(InstantRunArtifactType.DEX);
-        assertThatDex(artifact.file)
-                .hasClass("Lcom/android/tests/AppModule;")
-                .that().hasMethod("getMessage");
+            @Override
+            public void checkArtifacts(@NonNull List<InstantRunBuildContext.Artifact> artifacts) throws Exception {
+                InstantRunBuildContext.Artifact artifact = Iterables.getOnlyElement(artifacts);
+                assertThatDex(artifact.getLocation())
+                        .hasClass(APP_MODULE_DESC)
+                        .that().hasMethod(GET_MESSAGE);
+            }
+        });
     }
 
     @Test
     public void hotSwap() throws Exception {
-        InstantRun instantRunModel = InstantRunTestUtils.doInitialBuild(project, 23, COLDSWAP_MODE);
+        InstantRun instantRunModel =
+                InstantRunTestUtils.doInitialBuild(project, Packaging.DEFAULT, 23, COLDSWAP_MODE);
 
         makeHotSwapChange();
 
-        project.execute(InstantRunTestUtils.getInstantRunArgs(23, COLDSWAP_MODE),
-                instantRunModel.getIncrementalAssembleTaskName());
+        project.executor().withInstantRun(23, COLDSWAP_MODE)
+                .run("assembleDebug");
 
         InstantRunArtifact artifact =
-                InstantRunTestUtils.getCompiledHotSwapCompatibleChange(instantRunModel);
+                InstantRunTestUtils.getReloadDexArtifact(instantRunModel);
 
         assertThatDex(artifact.file).hasClass("Lcom/android/tests/AppModule$override;");
     }
@@ -147,11 +169,13 @@ public class DaggerTest {
     public void hotSwap_device() throws Exception {
         HotSwapTester.run(
                 project,
+                Packaging.DEFAULT,
                 "com.android.tests",
                 "MainActivity",
                 this.testProject,
+                adb,
                 logcat,
-                new HotSwapTester.Callbacks() {
+                new HotSwapTester.Steps() {
                     @Override
                     public void verifyOriginalCode(
                             @NonNull InstantRunClient client,
@@ -175,19 +199,10 @@ public class DaggerTest {
                         assertThat(logcat).doesNotContainMessageWithText(HOTSWAP_MESSAGE);
 
                         client.restartActivity(device);
-                        Thread.sleep(500); // TODO: blocking logcat assertions with timeouts.
-
+                        logcat.listenForMessage(HOTSWAP_MESSAGE).await();
                         assertThat(logcat).doesNotContainMessageWithText(ORIGINAL_MESSAGE);
-                        assertThat(logcat).containsMessageWithText(HOTSWAP_MESSAGE);
                     }
                 });
-    }
-
-    private void makeColdSwapChange() throws Exception {
-        TestFileUtils.addMethod(
-                mAppModule,
-                "public String getMessage() { return \"coldswap\"; }");
-        TestFileUtils.searchAndReplace(mAppModule, "\"from module\"", "getMessage()");
     }
 
     private void makeHotSwapChange() throws Exception {

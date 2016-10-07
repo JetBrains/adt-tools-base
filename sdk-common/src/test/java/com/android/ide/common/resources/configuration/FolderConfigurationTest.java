@@ -173,6 +173,8 @@ public class FolderConfigurationTest extends TestCase {
         assertEquals("en,US", configForFolder.toShortDisplayString());
         assertEquals("layout-en-rUS", configForFolder.getFolderName(ResourceFolderType.LAYOUT));
         assertEquals("-en-rUS", configForFolder.getUniqueKey());
+        assertEquals("en-rUS", configForFolder.getQualifierString());
+        assertEquals("", new FolderConfiguration().getQualifierString());
     }
 
     public void testNormalize() {
@@ -210,6 +212,7 @@ public class FolderConfigurationTest extends TestCase {
     public void testConfigMatch() {
         FolderConfiguration ref = new FolderConfiguration();
         ref.createDefault();
+        ref.setDensityQualifier(new DensityQualifier(Density.XHIGH));
         ref.addQualifier(new ScreenOrientationQualifier(ScreenOrientation.PORTRAIT));
         List<Configurable> configurables = getConfigurable(
                 "",                // No qualifier
@@ -248,6 +251,66 @@ public class FolderConfigurationTest extends TestCase {
                 "en",
                 "en-round-hdpi",
                 "port-12key");
+    }
+
+    public void testDensityQualifier() {
+
+        // test find correct density
+        runConfigMatchTest("hdpi", 2,
+                "ldpi",
+                "mdpi",
+                "hdpi",
+                "xhdpi");
+
+        // test mdpi matches no-density
+        runConfigMatchTest("mdpi", 0,
+                "",
+                "ldpi",
+                "hdpi");
+
+        // test, if there is no no-density, that we match the higher dpi
+        runConfigMatchTest("mdpi", 1,
+                "ldpi",
+                "hdpi");
+
+        // mdpi is better than no-density
+        runConfigMatchTest("mdpi", 1,
+                "",
+                "mdpi",
+                "hdpi");
+        runConfigMatchTest("xhdpi", 2,
+                "ldpi",
+                "",
+                "mdpi");
+
+        // scale down better than scale up
+        runConfigMatchTest("xhdpi", 4,
+                "",
+                "ldpi",
+                "mdpi",
+                "hdpi",
+                "xxxhdpi");
+        runConfigMatchTest("hdpi", 3,
+                "",
+                "ldpi",
+                "mdpi",
+                "xhdpi",
+                "xxhdpi");
+        runConfigMatchTest("mdpi", 0,
+                "ldpi",
+                "400dpi",
+                "xxhdpi",
+                "xxxhdpi");
+    }
+
+    public void testNullQualifierValidity() {
+        FolderConfiguration folderConfiguration = new FolderConfiguration();
+        for (int i = 0; i < FolderConfiguration.getQualifierCount(); i++) {
+            ResourceQualifier qualifier = folderConfiguration.getQualifier(i);
+            if (qualifier != null) {
+                assertFalse(qualifier.isValid());
+            }
+        }
     }
 
     // --- helper methods
@@ -386,44 +449,44 @@ public class FolderConfigurationTest extends TestCase {
     }
 
     public void testFindMatchingConfigurables() {
-        ResourceItem itemBlank = new ResourceItem("foo", ResourceType.STRING, null) {
+        ResourceItem itemBlank = new ResourceItem("foo", ResourceType.STRING, null, null) {
             @Override
             public String toString() {
                 return "itemBlank";
             }
         };
-        ResourceFile sourceBlank = new ResourceFile(new File("sourceBlank"), itemBlank, "");
+        ResourceFile sourceBlank = ResourceFile.createSingle(new File("sourceBlank"), itemBlank, "");
         itemBlank.setSource(sourceBlank);
         FolderConfiguration configBlank = itemBlank.getConfiguration();
 
-        ResourceItem itemEn = new ResourceItem("foo", ResourceType.STRING, null) {
+        ResourceItem itemEn = new ResourceItem("foo", ResourceType.STRING, null, null) {
             @Override
             public String toString() {
                 return "itemEn";
             }
         };
-        ResourceFile sourceEn = new ResourceFile(new File("sourceEn"), itemBlank, "en");
+        ResourceFile sourceEn = ResourceFile.createSingle(new File("sourceEn"), itemBlank, "en");
         itemEn.setSource(sourceEn);
         FolderConfiguration configEn = itemEn.getConfiguration();
 
-        ResourceItem itemBcpEn = new ResourceItem("foo", ResourceType.STRING, null) {
+        ResourceItem itemBcpEn = new ResourceItem("foo", ResourceType.STRING, null, null) {
             @Override
             public String toString() {
                 return "itemBcpEn";
             }
         };
-        ResourceFile sourceBcpEn = new ResourceFile(new File("sourceBcpEn"), itemBlank, "b+en");
+        ResourceFile sourceBcpEn = ResourceFile.createSingle(new File("sourceBcpEn"), itemBlank, "b+en");
         itemBcpEn.setSource(sourceBcpEn);
         FolderConfiguration configBcpEn = itemBcpEn.getConfiguration();
 
-        ResourceItem itemDe = new ResourceItem("foo", ResourceType.STRING, null) {
+        ResourceItem itemDe = new ResourceItem("foo", ResourceType.STRING, null, null) {
             @Override
             public String toString() {
                 return "itemDe";
             }
         };
 
-        ResourceFile sourceDe = new ResourceFile(new File("sourceDe"), itemBlank, "de");
+        ResourceFile sourceDe = ResourceFile.createSingle(new File("sourceDe"), itemBlank, "de");
         itemDe.setSource(sourceDe);
         FolderConfiguration configDe = itemDe.getConfiguration();
 
@@ -485,7 +548,8 @@ public class FolderConfigurationTest extends TestCase {
 
         copy.setDensityQualifier(new DensityQualifier(Density.HIGH));
         assertEquals(Density.HIGH, copy.getDensityQualifier().getValue());
-        assertNull(deBcp47Folder.getDensityQualifier());
+        assertEquals(new FolderConfiguration().getDensityQualifier(),
+                deBcp47Folder.getDensityQualifier());
 
         FolderConfiguration blankFolder = FolderConfiguration.getConfigForFolder("values");
         copy = FolderConfiguration.copyOf(blankFolder);

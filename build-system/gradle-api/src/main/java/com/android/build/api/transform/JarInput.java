@@ -23,12 +23,12 @@ import java.util.Collection;
 
 /**
  * A {@link QualifiedContent} of type jar.
- * <p/>
+ * <p>
  * This means the {@link #getFile()} is the jar file containing the content.
- * <p/>
+ * <p>
  * This also contains the incremental state of the jar file, if the transform is in incremental
  * mode through {@link #getStatus()}.
- * <p/>
+ * <p>
  * For a transform to run in incremental mode:
  * <ul>
  *     <li>{@link Transform#isIncremental()} must return <code>true</code></li>
@@ -39,11 +39,7 @@ import java.util.Collection;
  *
  * If the transform is not in incremental mode, {@link #getStatus()} always returns
  * {@link Status#NOTCHANGED}.
- * <p/>
- * <strong>This API is non final and is subject to change. We are looking for feedback, and will
- * attempt to stabilize it in the 1.6 time frame.</strong>
  */
-@Beta
 public interface JarInput extends QualifiedContent {
 
     @NonNull

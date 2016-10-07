@@ -198,7 +198,7 @@ public class SecureRandomGeneratorDetector extends Detector implements ClassScan
     @VisibleForTesting
     static int getDescArity(String desc) {
         int arity = 0;
-        // For example, (ILjava/security/Key;)V => 2
+        // For example, (ILjava/security/Key;)V ⇒ 2
         for (int i = 1, max = desc.length(); i < max; i++) {
             char c = desc.charAt(i);
             if (c == ')') {

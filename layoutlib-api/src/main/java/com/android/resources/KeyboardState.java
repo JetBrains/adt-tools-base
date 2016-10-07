@@ -18,7 +18,7 @@ package com.android.resources;
 
 /**
  * Keyboard state enum.
- * <p/>This is used in the manifest in the uses-configuration node and in the resource folder names.
+ * <p>This is used in the manifest in the uses-configuration node and in the resource folder names.
  */
 public enum KeyboardState implements ResourceEnum {
     EXPOSED("keysexposed", "Exposed", "Exposed keyboard"), //$NON-NLS-1$
@@ -66,16 +66,7 @@ public enum KeyboardState implements ResourceEnum {
     }
 
     public static int getIndex(KeyboardState value) {
-        int i = 0;
-        for (KeyboardState input : values()) {
-            if (value == input) {
-                return i;
-            }
-
-            i++;
-        }
-
-        return -1;
+        return value == null ? -1 : value.ordinal();
     }
 
     public static KeyboardState getByIndex(int index) {

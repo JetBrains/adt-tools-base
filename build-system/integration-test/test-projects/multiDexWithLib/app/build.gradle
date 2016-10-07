@@ -8,7 +8,6 @@ android {
     buildConfigField "String", "FOO", "\"foo\""
 
     multiDexEnabled = true
-    useJack rootProject.useJack
   }
 
   productFlavors {

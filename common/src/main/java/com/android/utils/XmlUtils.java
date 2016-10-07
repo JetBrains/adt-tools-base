@@ -37,7 +37,6 @@ import com.android.ide.common.blame.SourceFile;
 import com.android.ide.common.blame.SourceFilePosition;
 import com.android.ide.common.blame.SourcePosition;
 import com.google.common.base.CharMatcher;
-import com.google.common.collect.Maps;
 import com.google.common.io.Files;
 
 import org.w3c.dom.Attr;
@@ -49,9 +48,12 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
+import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.StringReader;
@@ -62,6 +64,9 @@ import java.util.Map;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.stream.XMLInputFactory;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamReader;
 
 /** XML Utilities */
 public class XmlUtils {
@@ -196,7 +201,7 @@ public class XmlUtils {
         for (int i = 1; visited.contains(prefix); i++) {
             prefix = base + Integer.toString(i);
         }
-        // Also create & define this prefix/URI in the XML document as an attribute in the
+        // Also create and define this prefix/URI in the XML document as an attribute in the
         // first element of the document.
         if (doc != null) {
             node = doc.getFirstChild();
@@ -319,7 +324,20 @@ public class XmlUtils {
      * @param textValue the text value to be appended and escaped
      */
     public static void appendXmlTextValue(@NonNull StringBuilder sb, @NonNull String textValue) {
-        for (int i = 0, n = textValue.length(); i < n; i++) {
+        appendXmlTextValue(sb, textValue, 0, textValue.length());
+    }
+
+    /**
+     * Appends text to the given {@link StringBuilder} and escapes it as required for a
+     * DOM text node.
+     *
+     * @param sb        the string builder
+     * @param start     the starting offset in the text string
+     * @param end       the ending offset in the text string
+     * @param textValue the text value to be appended and escaped
+     */
+    public static void appendXmlTextValue(@NonNull StringBuilder sb, @NonNull String textValue, int start, int end) {
+        for (int i = start, n = Math.min(textValue.length(), end); i < n; i++) {
             char c = textValue.charAt(i);
             if (c == '<') {
                 sb.append(LT_ENTITY);
@@ -429,8 +447,22 @@ public class XmlUtils {
     public static Document parseDocument(@NonNull String xml, boolean namespaceAware)
             throws ParserConfigurationException, IOException, SAXException {
         xml = stripBom(xml);
+        return parseDocument(new StringReader(xml), namespaceAware);
+    }
+
+    /**
+     * Parses the given {@link Reader} as a DOM document, using the JDK parser. The parser does not
+     * validate, and is optionally namespace aware.
+     *
+     * @param xml            a reader for the XML content to be parsed (must be well formed)
+     * @param namespaceAware whether the parser is namespace aware
+     * @return the DOM document
+     */
+    @NonNull
+    public static Document parseDocument(@NonNull Reader xml, boolean namespaceAware)
+            throws ParserConfigurationException, IOException, SAXException {
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-        InputSource is = new InputSource(new StringReader(xml));
+        InputSource is = new InputSource(xml);
         factory.setNamespaceAware(namespaceAware);
         factory.setValidating(false);
         DocumentBuilder builder = factory.newDocumentBuilder();
@@ -675,5 +707,29 @@ public class XmlUtils {
         } else {
             return Integer.toString((int) value);
         }
+    }
+
+    /**
+     * Returns the name of the root element tag stored in the given file, or null if it can't be
+     * determined.
+     */
+    @Nullable
+    public static String getRootTagName(@NonNull File xmlFile) {
+        try (InputStream stream = new BufferedInputStream(new FileInputStream(xmlFile))) {
+            XMLInputFactory factory = XMLInputFactory.newFactory();
+            XMLStreamReader xmlStreamReader =
+                    factory.createXMLStreamReader(stream);
+
+            while (xmlStreamReader.hasNext()) {
+                int event = xmlStreamReader.next();
+                if (event == XMLStreamReader.START_ELEMENT) {
+                    return xmlStreamReader.getLocalName();
+                }
+            }
+        } catch (XMLStreamException | IOException ignored) {
+            // Ignored.
+        }
+
+        return null;
     }
 }

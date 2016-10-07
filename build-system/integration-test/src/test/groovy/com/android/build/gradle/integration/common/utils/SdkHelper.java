@@ -20,11 +20,13 @@ import static com.android.SdkConstants.FD_PLATFORM_TOOLS;
 import static com.android.SdkConstants.FN_ADB;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.repository.Revision;
 import com.android.repository.testframework.FakeProgressIndicator;
 import com.android.sdklib.BuildToolInfo;
-import com.android.sdklib.repositoryv2.AndroidSdkHandler;
+import com.android.sdklib.IAndroidTarget;
+import com.android.sdklib.repository.AndroidSdkHandler;
 import com.android.utils.FileUtils;
 
 import java.io.File;
@@ -54,24 +56,34 @@ public class SdkHelper {
     }
 
     @NonNull
-    public static File getAapt() {
-        return getBuildTool(
-                Revision.parseRevision(
-                        GradleTestProject.DEFAULT_BUILD_TOOL_VERSION, Revision.Precision.MICRO),
-                BuildToolInfo.PathId.AAPT);
+    public static File getAdb() {
+        File adb = FileUtils.join(findSdkDir(), FD_PLATFORM_TOOLS, FN_ADB);
+        if (!adb.exists()) {
+            throw new RuntimeException("Unable to find adb.");
+        }
+        return adb;
     }
 
     @NonNull
-    public static File getAapt(@NonNull Revision revision) {
-        return getBuildTool(revision, BuildToolInfo.PathId.AAPT);
+    public static File getAapt() {
+        return getBuildTool(BuildToolInfo.PathId.AAPT);
     }
 
     @NonNull
     public static File getDexDump() {
-        return getBuildTool(
-                Revision.parseRevision(
-                        GradleTestProject.DEFAULT_BUILD_TOOL_VERSION, Revision.Precision.MICRO),
-                BuildToolInfo.PathId.DEXDUMP);
+        return getBuildTool(BuildToolInfo.PathId.DEXDUMP);
+    }
+
+    @NonNull
+    public static File getDxJar() {
+        return getBuildTool(BuildToolInfo.PathId.DX_JAR);
+    }
+
+    @NonNull
+    public static File getBuildTool(@NonNull BuildToolInfo.PathId pathId) {
+        Revision revision = Revision.parseRevision(
+                GradleTestProject.DEFAULT_BUILD_TOOL_VERSION, Revision.Precision.MICRO);
+        return getBuildTool(revision, pathId);
     }
 
     @NonNull
@@ -87,12 +99,17 @@ public class SdkHelper {
         return new File(buildToolInfo.getPath(pathId));
     }
 
-    @NonNull
-    public static File getAdb() {
-        File adb = FileUtils.join(findSdkDir(), FD_PLATFORM_TOOLS, FN_ADB);
-        if (!adb.exists()) {
-            throw new RuntimeException("Unable to find adb.");
-        }
-        return adb;
+    /**
+     * Returns a {@link IAndroidTarget} with a minimum api level.
+     * @param minimumApiLevel the desired api level.
+     * @return the IAndroidTarget of that api level or above or null if not found.
+     */
+    @Nullable
+    public static IAndroidTarget getTarget(int minimumApiLevel) {
+        FakeProgressIndicator progressIndicator = new FakeProgressIndicator();
+        IAndroidTarget target = AndroidSdkHandler.getInstance(findSdkDir())
+                .getAndroidTargetManager(progressIndicator)
+                .getTargetOfAtLeastApiLevel(minimumApiLevel, progressIndicator);
+        return target;
     }
 }

@@ -19,11 +19,12 @@ package com.android.builder.profile;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
+import com.android.tools.analytics.AnalyticsSettings;
+import com.android.tools.analytics.Anonymizer;
+import com.android.tools.analytics.UsageTracker;
 import com.android.utils.ILogger;
 import com.android.utils.StdLogger;
 import com.google.common.base.Strings;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Lists;
 import com.google.common.io.ByteStreams;
 
 import java.io.BufferedInputStream;
@@ -35,12 +36,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
-import java.lang.management.GarbageCollectorMXBean;
-import java.lang.management.ManagementFactory;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.util.List;
-import java.util.UUID;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Configures and creates instances of {@link ProcessRecorder}.
@@ -55,17 +55,7 @@ public class ProcessRecorderFactory {
 
     public static void shutdown() throws InterruptedException {
         synchronized (LOCK) {
-            List<GarbageCollectorMXBean> garbageCollectorMXBeans = ManagementFactory
-                    .getGarbageCollectorMXBeans();
-            ThreadRecorder.get().record(ExecutionType.FINAL_METADATA, Recorder.EmptyBlock,
-                    new Recorder.Property("build_time",
-                            Long.toString(System.currentTimeMillis() - sINSTANCE.startTime)),
-                    new Recorder.Property("gc_count",
-                            Long.toString(garbageCollectorMXBeans.get(0).getCollectionCount()
-                                    - sINSTANCE.gcCountAtStart)),
-                    new Recorder.Property("gc_time",
-                            Long.toString(garbageCollectorMXBeans.get(0).getCollectionTime()
-                                    - sINSTANCE.gcTimeAtStart)));
+
             if (sINSTANCE.isInitialized()) {
                 sINSTANCE.get().finish();
                 sINSTANCE.uploadData();
@@ -74,76 +64,15 @@ public class ProcessRecorderFactory {
         }
     }
 
-    public static void initialize(
-            @NonNull ILogger logger,
-            @NonNull File out,
-            @NonNull List<Recorder.Property> properties) throws IOException {
-
-        synchronized (LOCK) {
-            if (sINSTANCE.isInitialized() || !isEnabled()) {
-                return;
-            }
-            sINSTANCE.setLogger(logger);
-            sINSTANCE.setOutputFile(out);
-            sINSTANCE.setRecordWriter(new ProcessRecorder.JsonRecordWriter(new FileWriter(out)));
-            sINSTANCE.get(); // Initialize the ProcessRecorder instance
-            publishInitialRecords(properties);
-        }
-    }
-
-    public static void publishInitialRecords(@NonNull List<Recorder.Property> properties) {
-
-        List<Recorder.Property> propertyList = Lists.newArrayListWithExpectedSize(
-                6 + properties.size());
-
-        propertyList.add(new Recorder.Property(
-                "build_id",
-                UUID.randomUUID().toString()));
-        propertyList.add(new Recorder.Property(
-                "os_name",
-                System.getProperty("os.name")));
-        propertyList.add(new Recorder.Property(
-                "os_version",
-                System.getProperty("os.version")));
-        propertyList.add(new Recorder.Property(
-                "java_version",
-                System.getProperty("java.version")));
-        propertyList.add(new Recorder.Property(
-                "java_vm_version",
-                System.getProperty("java.vm.version")));
-        propertyList.add(new Recorder.Property(
-                "max_memory",
-                Long.toString(Runtime.getRuntime().maxMemory())));
-        propertyList.addAll(properties);
-
-        ThreadRecorder.get().record(
-                ExecutionType.INITIAL_METADATA,
-                Recorder.EmptyBlock,
-                propertyList);
-    }
-
     private static boolean sENABLED = !Strings.isNullOrEmpty(System.getenv("RECORD_SPANS"));
 
-    private final long startTime;
-    private final long gcCountAtStart;
-    private final long gcTimeAtStart;
+    @NonNull
+    private ScheduledExecutorService mScheduledExecutorService = Executors.newScheduledThreadPool(1);
 
-    ProcessRecorderFactory() {
-        startTime = System.currentTimeMillis();
-        List<GarbageCollectorMXBean> garbageCollectorMXBeans = ManagementFactory
-                .getGarbageCollectorMXBeans();
-        gcCountAtStart = garbageCollectorMXBeans.get(0).getCollectionCount();
-        gcTimeAtStart = garbageCollectorMXBeans.get(0).getCollectionTime();
-    }
-
-    public static void initializeForTests(ProcessRecorder.ExecutionRecordWriter recordWriter) {
-        sINSTANCE = new ProcessRecorderFactory();
-        ProcessRecorder.resetForTests();
-        setEnabled(true);
-        sINSTANCE.setRecordWriter(recordWriter);
-        sINSTANCE.get(); // Initialize the ProcessRecorder instance
-        publishInitialRecords(ImmutableList.<Recorder.Property>of());
-    }
+    @VisibleForTesting
+    ProcessRecorderFactory() {}
+    @Nullable
+    private ILogger mLogger = null;
 
     static boolean isEnabled() {
         return sENABLED;
@@ -164,9 +93,62 @@ public class ProcessRecorderFactory {
         this.recordWriter = recordWriter;
     }
 
+    /**
+     * Set up the the ProcessRecorder. Idempotent for multi-project builds.
+     *
+     */
+    public static void initialize(
+            @NonNull File projectPath,
+            @NonNull String gradleVersion,
+            @NonNull ILogger logger,
+            @NonNull File out) {
+
+        synchronized (LOCK) {
+            if (sINSTANCE.isInitialized()) {
+                return;
+            }
+            sINSTANCE.setLogger(logger);
+            if (isEnabled()) {
+                sINSTANCE.setOutputFile(out);
+                try {
+                    sINSTANCE.setRecordWriter(
+                            new ProcessRecorder.JsonRecordWriter(new FileWriter(out)));
+                } catch (IOException e) {
+                    // This can only happen in performance test mode.
+                    throw new RuntimeException("Unable to open json profile for writing", e);
+                }
+            }
+
+            ProcessRecorder recorder = sINSTANCE.get(); // Initialize the ProcessRecorder instance
+
+            setGlobalProperties(recorder, projectPath, gradleVersion, logger);
+        }
+    }
+
+    private static void setGlobalProperties(
+            @NonNull ProcessRecorder recorder,
+            @NonNull File projectPath,
+            @NonNull String gradleVersion,
+            @NonNull ILogger logger) {
+        recorder.getProperties()
+                .setOsName(Strings.nullToEmpty(System.getProperty("os.name")))
+                .setOsVersion(Strings.nullToEmpty(System.getProperty("os.version")))
+                .setJavaVersion(Strings.nullToEmpty(System.getProperty("java.version")))
+                .setJavaVmVersion(Strings.nullToEmpty(System.getProperty("java.vm.version")))
+                .setMaxMemory(Runtime.getRuntime().maxMemory())
+                .setGradleVersion(Strings.nullToEmpty(gradleVersion));
+
+        try {
+            recorder.getProperties().setProjectId(
+                    Anonymizer.anonymizeUtf8(logger, projectPath.getAbsolutePath()));
+        } catch (IOException e) {
+            logger.error(e, "Could not anonymize project id.");
+        }
+    }
+
     public synchronized void setLogger(@NonNull ILogger iLogger) {
         assertRecorderNotCreated();
-        this.iLogger = iLogger;
+        this.mLogger = iLogger;
     }
 
     public static ProcessRecorderFactory getFactory() {
@@ -184,15 +166,45 @@ public class ProcessRecorderFactory {
         }
     }
 
-    static final Object LOCK = new Object();
+    private static final Object LOCK = new Object();
     static ProcessRecorderFactory sINSTANCE = new ProcessRecorderFactory();
 
     @Nullable
     private ProcessRecorder processRecorder = null;
     @Nullable
     private ProcessRecorder.ExecutionRecordWriter recordWriter = null;
-    @Nullable
-    private ILogger iLogger = null;
+
+    @VisibleForTesting
+    public static void initializeForTests(ProcessRecorder.ExecutionRecordWriter recordWriter) {
+        sINSTANCE = new ProcessRecorderFactory();
+        ProcessRecorder.resetForTests();
+        setEnabled(true);
+        sINSTANCE.setRecordWriter(recordWriter);
+        ProcessRecorder recorder = sINSTANCE.get(); // Initialize the ProcessRecorder instance
+        setGlobalProperties(recorder,
+                new File("fake/path/to/test_project/"),
+                "2.10",
+                new StdLogger(StdLogger.Level.VERBOSE));
+    }
+
+    private static void initializeAnalytics(@NonNull ILogger logger,
+            @NonNull ScheduledExecutorService eventLoop) {
+        AnalyticsSettings settings;
+        try {
+            settings = AnalyticsSettings.loadSettings();
+            if (settings == null) {
+                settings = AnalyticsSettings.createNewAnalyticsSettings();
+            }
+        } catch (IOException e) {
+            logger.error(e, "Could not initialize analytics, treating as opt-out.");
+            settings = new AnalyticsSettings();
+            settings.setHasOptedIn(false);
+        }
+        UsageTracker.initialize(settings, eventLoop);
+        UsageTracker tracker = UsageTracker.getInstance();
+        tracker.setMaxJournalTime(10, TimeUnit.MINUTES);
+        tracker.setMaxJournalSize(1000);
+    }
 
     private File outputFile = null;
 
@@ -202,14 +214,13 @@ public class ProcessRecorderFactory {
 
     synchronized ProcessRecorder get() {
         if (processRecorder == null) {
-            if (recordWriter == null) {
-                throw new RuntimeException("recordWriter not configured.");
+            if (mLogger == null) {
+                mLogger = new StdLogger(StdLogger.Level.INFO);
             }
-            if (iLogger == null) {
-                iLogger = new StdLogger(StdLogger.Level.INFO);
-            }
-            processRecorder = new ProcessRecorder(recordWriter, iLogger);
+            initializeAnalytics(mLogger, mScheduledExecutorService);
+            processRecorder = new ProcessRecorder(recordWriter, mLogger);
         }
+
         return processRecorder;
     }
 
@@ -220,38 +231,31 @@ public class ProcessRecorderFactory {
         }
         try {
             URL u = new URL("http://android-devtools-logging.appspot.com/log/");
-            HttpURLConnection conn = null;
-            conn = (HttpURLConnection) u.openConnection();
+            HttpURLConnection conn = (HttpURLConnection) u.openConnection();
             conn.setDoOutput(true);
             conn.setRequestMethod("POST");
 
             conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
             conn.setRequestProperty("Content-Length", String.valueOf(outputFile.length()));
-            InputStream is = null;
-            try {
-                is = new BufferedInputStream(new FileInputStream(outputFile));
-                OutputStream os = conn.getOutputStream();
+            try (InputStream is = new BufferedInputStream(new FileInputStream(outputFile));
+                 OutputStream os = conn.getOutputStream()) {
                 ByteStreams.copy(is, os);
-                os.close();
-            } finally {
-                if (is != null) {
-                    is.close();
-                }
             }
 
             String line;
-            BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+            try (BufferedReader reader =
+                         new BufferedReader(new InputStreamReader(conn.getInputStream()))) {
 
-            while ((line = reader.readLine()) != null) {
-                if (iLogger != null) {
-                    iLogger.info("From POST : " + line);
+                while ((line = reader.readLine()) != null) {
+                    if (mLogger != null) {
+                        mLogger.info("From POST : " + line);
+                    }
                 }
             }
-            reader.close();
         } catch(Exception e) {
-            if (iLogger != null) {
-                iLogger.warning("An exception while generated while uploading the profiler data");
-                iLogger.error(e, "Exception while uploading the profiler data");
+            if (mLogger != null) {
+                mLogger.warning("An exception while generated while uploading the profiler data");
+                mLogger.error(e, "Exception while uploading the profiler data");
             }
         }
     }

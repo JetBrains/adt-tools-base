@@ -20,8 +20,8 @@ import static com.android.build.gradle.shrinker.AbstractShrinker.isSdkPackage;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.build.gradle.internal.incremental.ByteCodeUtils;
 import com.android.build.gradle.shrinker.PostProcessingData.UnresolvedReference;
-import com.android.utils.AsmUtils;
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableMap;
 
@@ -99,7 +99,7 @@ abstract class DependencyFinderVisitor<T> extends ClassVisitor {
             String[] exceptions) {
         T method = mGraph.getMemberReference(mClassName, name, desc);
 
-        if ((access & Opcodes.ACC_STATIC) == 0 && !name.equals(AsmUtils.CONSTRUCTOR)) {
+        if ((access & Opcodes.ACC_STATIC) == 0 && !name.equals(ByteCodeUtils.CONSTRUCTOR)) {
             handleVirtualMethod(method);
         }
 
@@ -109,7 +109,7 @@ abstract class DependencyFinderVisitor<T> extends ClassVisitor {
             handleDeclarationType(method, argType);
         }
 
-        if (name.equals(AsmUtils.CLASS_INITIALIZER)) {
+        if (name.equals(ByteCodeUtils.CLASS_INITIALIZER)) {
             handleDependency(mKlass, method, DependencyType.REQUIRED_CLASS_STRUCTURE);
         }
 
@@ -232,7 +232,7 @@ abstract class DependencyFinderVisitor<T> extends ClassVisitor {
         DependencyFinderMethodVisitor(T method, MethodVisitor mv) {
             super(Opcodes.ASM5, mv);
             this.mMethod = method;
-            mLastLdcs = new ArrayDeque<Object>();
+            mLastLdcs = new ArrayDeque<>();
         }
 
         @Override
@@ -275,7 +275,7 @@ abstract class DependencyFinderVisitor<T> extends ClassVisitor {
                         DependencyType.REQUIRED_CODE_REFERENCE);
                 T target = mGraph.getMemberReference(owner, name, desc);
                 handleUnresolvedReference(
-                        new UnresolvedReference<T>(
+                        new UnresolvedReference<>(
                                 mMethod,
                                 target,
                                 opcode == Opcodes.INVOKESPECIAL));
@@ -309,7 +309,7 @@ abstract class DependencyFinderVisitor<T> extends ClassVisitor {
             // This can be the case when calling "clone" on arrays, which is done in Enum classes.
             // Just ignore it, we know arrays not declared in the program, so there's no point in
             // creating the dependency.
-            Type type = Type.getType(owner);
+            Type type = Type.getObjectType(owner);
             if (type.getSort() != Type.ARRAY && !isSdkPackage(owner)) {
                 handleDependency(
                         mMethod,
@@ -319,7 +319,7 @@ abstract class DependencyFinderVisitor<T> extends ClassVisitor {
                 T target = mGraph.getMemberReference(owner, name, desc);
 
                 if (opcode == Opcodes.INVOKESPECIAL
-                        && (name.equals(AsmUtils.CONSTRUCTOR) || owner.equals(mClassName))) {
+                        && (name.equals(ByteCodeUtils.CONSTRUCTOR) || owner.equals(mClassName))) {
                     // The "invokenonvirtual" semantics of invokespecial, for calling constructors
                     // and private methods.
                     handleDependency(mMethod, target, DependencyType.REQUIRED_CODE_REFERENCE);
@@ -327,7 +327,7 @@ abstract class DependencyFinderVisitor<T> extends ClassVisitor {
                     // In all other cases we have to go through resolution stage (including fields,
                     // static methods etc).
                     handleUnresolvedReference(
-                            new UnresolvedReference<T>(
+                            new UnresolvedReference<>(
                                     mMethod,
                                     target,
                                     opcode == Opcodes.INVOKESPECIAL));
@@ -338,7 +338,7 @@ abstract class DependencyFinderVisitor<T> extends ClassVisitor {
                     ReflectionMethod.findBySignature(new Signature(owner, name, desc));
 
             if (reflectionMethod != null) {
-                Deque<Object> stackCopy = new ArrayDeque<Object>(mLastLdcs);
+                Deque<Object> stackCopy = new ArrayDeque<>(mLastLdcs);
                 T target = reflectionMethod.getMember(mGraph, stackCopy);
                 if (target != null) {
                     if (reflectionMethod == ReflectionMethod.CLASS_FOR_NAME) {
@@ -350,7 +350,7 @@ abstract class DependencyFinderVisitor<T> extends ClassVisitor {
                     } else {
                         // Resolve the exact dependency.
                         handleUnresolvedReference(
-                                new UnresolvedReference<T>(
+                                new UnresolvedReference<>(
                                         mMethod,
                                         target,
                                         false,
@@ -551,7 +551,7 @@ abstract class DependencyFinderVisitor<T> extends ClassVisitor {
                     return null;
                 }
 
-                return graph.getClassReference(AsmUtils.toInternalName((String) stack.pop()));
+                return graph.getClassReference(ByteCodeUtils.toInternalName((String) stack.pop()));
             }
         },
         ATOMIC_INTEGER_FIELD_UPDATER(

@@ -1,0 +1,6 @@
+package org.apache.cordova;
+
+// Dummy version of cordova Device used in versions before 3.x.x
+public class Device {
+    public static String cordovaVersion = "2.7.0";
+}

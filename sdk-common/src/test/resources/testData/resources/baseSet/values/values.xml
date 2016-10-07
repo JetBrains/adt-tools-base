@@ -3,7 +3,9 @@
  * Some comment to throw off the XML parser if it doesn't properly handle
  * Document.getDocumentElement().
 -->
-<resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
+<resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2"
+           xmlns:tools="http://schemas.android.com/tools"
+           xmlns:alias_for_tools="http://schemas.android.com/tools">
 
     <drawable name="color_drawable">#ffffffff</drawable>
     <drawable name="drawable_ref">@drawable/stat_notify_sync_anim0</drawable>
@@ -14,6 +16,8 @@
     <string name="xliff_with_carriage_return">This is should be followed by whitespace:
         <xliff:g id="firstName">%1$s</xliff:g></string>
     <string name="styled_string">Forgot your username or password\?\nVisit <b>google.com/accounts/recovery</b>.</string>
+    <string name="two">Two</string>
+    <string name="many">Many</string>
 
     <style name="style" parent="@android:style/Holo.Light">
         <item name="android:singleLine">true</item>
@@ -24,7 +28,9 @@
     </style>
 
     <!-- list of 3- or 4-letter mnemonics for a 10-key numeric keypad -->
-    <string-array translatable="false" name="string_array">
+    <string-array translatable="false" name="string_array"
+                  xmlns:tools="http://schemas.android.com/tools"
+                  tools:index="4">
         <item></item><!-- 0 -->
         <item></item><!-- 1 -->
         <item>ABC</item><!-- 2 -->
@@ -36,6 +42,19 @@
         <item>TUV</item><!-- 8 -->
         <item>WXYZ</item><!-- 9 -->
     </string-array>
+
+    <integer-array name="integer_array" tools:index="nonsense">
+        <item>3</item>
+        <item>2</item>
+        <item>1</item>
+        <item>0</item>
+    </integer-array>
+
+    <array name="my_colors">
+        <item>#FFFF0000</item>
+        <item>#FF00FF00</item>
+        <item>@color/color</item>
+    </array>
 
     <attr name="dimen_attr" format="dimension" />
 
@@ -88,7 +107,16 @@
     <item type="layout" name="layout_ref">@layout/ref</item>
     <item type="layout" name="alias_replaced_by_file">@layout/ref</item>
 
-    <plurals name="plurals">
+    <plurals name="plurals" alias_for_tools:quantity="two">
         <item quantity="one">test2 <xliff:g xmlns="urn:oasis:names:tc:xliff:document:1.2" id="test3">%s</xliff:g> test4</item>
+        <item quantity="two">@string/two</item>
+        <item quantity="other">@string/many</item>
     </plurals>
+
+    <plurals name="plurals_with_bad_quantity" tools:quantity="nonsense">
+        <item quantity="one">one</item>
+        <item quantity="two">@string/two</item>
+        <item quantity="other">@string/many</item>
+    </plurals>
+
 </resources>

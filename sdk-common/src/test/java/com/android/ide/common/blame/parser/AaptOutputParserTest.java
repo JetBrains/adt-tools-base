@@ -20,6 +20,8 @@ import static com.android.SdkConstants.DOT_XML;
 import static com.android.SdkConstants.PLATFORM_WINDOWS;
 import static com.android.SdkConstants.currentPlatform;
 import static com.android.utils.SdkUtils.createPathComment;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
@@ -34,7 +36,11 @@ import com.google.common.base.Charsets;
 import com.google.common.io.Closeables;
 import com.google.common.io.Files;
 
-import junit.framework.TestCase;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -47,7 +53,11 @@ import java.util.Locale;
 /**
  * Tests for {@link ToolOutputParser}.
  */
-public class AaptOutputParserTest extends TestCase {
+public class AaptOutputParserTest {
+
+    @Rule
+    public TemporaryFolder temporaryFolder = new TemporaryFolder();
+
     private File sourceFile;
 
     private String sourceFilePath;
@@ -88,19 +98,17 @@ public class AaptOutputParserTest extends TestCase {
         return sb.toString();
     }
 
-    @Override
+    @Before
     public void setUp() throws Exception {
-        super.setUp();
         parser = new ToolOutputParser(new AaptOutputParser(),
                 new StdLogger(StdLogger.Level.VERBOSE));
     }
 
-    @Override
+    @After
     public void tearDown() throws Exception {
         if (sourceFile != null) {
             sourceFile.delete();
         }
-        super.tearDown();
     }
 
     public void testParseDisplayingUnhandledMessages() {
@@ -323,6 +331,7 @@ public class AaptOutputParserTest extends TestCase {
         assertEquals("[position column]", expectedColumn, position.getPosition().getStartColumn() + 1);
     }
 
+    @Test
     public void testRedirectValueLinksOutput() throws Exception {
         if (!setupSdkHome()) {
             System.out.println(
@@ -331,7 +340,7 @@ public class AaptOutputParserTest extends TestCase {
         }
 
         // Need file to be named (exactly) values.xml
-        File tempDir = Files.createTempDir();
+        File tempDir = temporaryFolder.newFolder();
         File valueDir = new File(tempDir, "values-en");
         valueDir.mkdirs();
         sourceFile = new File(valueDir,
@@ -340,7 +349,9 @@ public class AaptOutputParserTest extends TestCase {
 
         writeToFile(
                 "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +
-                        "<resources xmlns:ns1=\"urn:oasis:names:tc:xliff:document:1.2\">\n" +
+                        "<resources xmlns:ns1=\"urn:oasis:names:tc:xliff:document:1.2\"" +
+                        "           xmlns:tools=\"http://schemas.android.com/tools\"" +
+                        "           xmlns:alias_for_tools=\"http://schemas.android.com/tools\">\n" +
                         "\n" +
                         "    <!-- From: src/test/resources/testData/resources/baseSet/values/values.xml -->\n"
                         +
@@ -445,10 +456,11 @@ public class AaptOutputParserTest extends TestCase {
         assertEquals("[message text]", messageText, message.getText());
         assertEquals(1, message.getSourceFilePositions().size());
         SourcePosition pos = message.getSourceFilePositions().get(0).getPosition();
-        assertEquals("[position line]", 9, pos.getStartLine() + 1);
+        assertEquals("[position line]", 11, pos.getStartLine() + 1);
         assertEquals("[position column]", 35, pos.getStartColumn() + 1);
     }
 
+    @Test
     public void testRedirectFileLinksOutput() throws Exception {
         if (!setupSdkHome()) {
             System.out.println(
@@ -457,7 +469,7 @@ public class AaptOutputParserTest extends TestCase {
         }
 
         // Need file to be named (exactly) values.xml
-        File tempDir = Files.createTempDir();
+        File tempDir = temporaryFolder.newFolder();
         File layoutDir = new File(tempDir, "layout-land");
         layoutDir.mkdirs();
         sourceFile = new File(layoutDir, "main.xml");
@@ -501,7 +513,7 @@ public class AaptOutputParserTest extends TestCase {
     }
 
     public void test() throws Exception {
-        File tempDir = Files.createTempDir();
+        File tempDir = temporaryFolder.newFolder();
         sourceFile = new File(tempDir, "values.xml"); // Name matters for position search
         sourceFilePath = sourceFile.getAbsolutePath();
         File source = new File(tempDir, "dimens.xml");
@@ -596,8 +608,9 @@ public class AaptOutputParserTest extends TestCase {
         tempDir.delete();
     }
 
+    @Test
     public void testDashes() throws Exception {
-        File tempDir = Files.createTempDir();
+        File tempDir = temporaryFolder.newFolder();
         String dirName = currentPlatform() == PLATFORM_WINDOWS ? "My -- Q&A Dir" : "My -- Q&A< Dir";
         File dir = new File(tempDir,
                 dirName); // path which should force encoding of path chars, see for example issue 60050
@@ -668,8 +681,9 @@ public class AaptOutputParserTest extends TestCase {
         tempDir.delete();
     }
 
+    @Test
     public void testLayoutFileSuffix() throws Exception {
-        File tempDir = Files.createTempDir();
+        File tempDir = temporaryFolder.newFolder();
         sourceFile = new File(tempDir, "layout.xml");
         sourceFilePath = sourceFile.getAbsolutePath();
         File source = new File(tempDir, "real-layout.xml");
@@ -762,6 +776,7 @@ public class AaptOutputParserTest extends TestCase {
         tempDir.delete();
     }
 
+    @Test
     public void testMismatchedTag() throws Exception {
         // https://code.google.com/p/android/issues/detail?id=59824
         createTempXmlFile();

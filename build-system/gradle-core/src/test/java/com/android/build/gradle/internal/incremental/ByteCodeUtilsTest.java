@@ -16,14 +16,14 @@
 
 package com.android.build.gradle.internal.incremental;
 
+import static com.google.common.truth.Truth.assertThat;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
-import org.junit.Before;
+import java.util.Optional;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.GeneratorAdapter;
@@ -64,5 +64,11 @@ public class ByteCodeUtilsTest {
     public void testObjectUnbox() {
         ByteCodeUtils.unbox(generator, Type.getType(String.class));
         verify(generator, times(1)).unbox(Type.getType(String.class));
+    }
+
+    @Test
+    public void testGetPackageName() throws Exception {
+        assertThat(ByteCodeUtils.getPackageName("foo/bar/Baz")).isEqualTo(Optional.of("foo.bar"));
+        assertThat(ByteCodeUtils.getPackageName("Baz")).isEqualTo(Optional.empty());
     }
 }

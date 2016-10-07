@@ -3,10 +3,11 @@
 // backwards compatible.
 
 apply from: "../commonHeader.gradle"
-buildscript { apply from: "../commonBuildScript.gradle", to: buildscript }
+buildscript { apply from: "../commonBuildScript.gradle" }
 
 apply plugin: 'com.android.application'
 
+import com.android.annotations.NonNull
 import com.android.builder.model.ArtifactMetaData
 import com.android.builder.model.SourceProvider
 
@@ -92,47 +93,63 @@ public class SourceProviderImpl implements SourceProvider, Serializable {
         this.name = name
     }
 
+    @NonNull
     String getName() {
         return name
     }
 
+    @NonNull
     File getManifestFile() {
         return new File(name)
     }
 
+    @NonNull
     Collection<File> getJavaDirectories() {
         return Collections.emptyList()
     }
 
+    @NonNull
     Collection<File> getResourcesDirectories() {
         return Collections.emptyList()
     }
 
+    @NonNull
     Collection<File> getAidlDirectories() {
         return Collections.emptyList()
     }
 
+    @NonNull
     Collection<File> getRenderscriptDirectories() {
         return Collections.emptyList()
     }
 
+    @NonNull
     Collection<File> getCDirectories() {
         return Collections.emptyList()
     }
 
+    @NonNull
     Collection<File> getCppDirectories() {
         return Collections.emptyList()
     }
 
+    @NonNull
     Collection<File> getJniLibsDirectories() {
         return Collections.emptyList()
     }
 
+    @NonNull
     Collection<File> getResDirectories() {
         return Collections.emptyList()
     }
 
+    @NonNull
     Collection<File> getAssetsDirectories() {
+        return Collections.emptyList()
+    }
+
+    @NonNull
+    Collection<File> getShadersDirectories() {
         return Collections.emptyList()
     }
 }

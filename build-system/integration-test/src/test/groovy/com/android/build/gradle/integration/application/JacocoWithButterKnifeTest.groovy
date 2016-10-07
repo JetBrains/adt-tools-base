@@ -44,18 +44,24 @@ class JacocoWithButterKnifeTest {
 
     @Test
     void build() {
-        project.execute("transformClassesWithJacocoForDebug")
+        if (GradleTestProject.USE_JACK) {
+            project.execute("transformJackWithJackForDebug")
+            assertThat(project.file("build/intermediates/jack/debug/coverage.em")).exists();
+        } else {
+            project.execute("transformClassesWithJacocoForDebug")
+            File javaFile = FileUtils.join(project.getTestDir(),
+                    "build",
+                    "generated",
+                    "source",
+                    "apt",
+                    "debug",
+                    "com",
+                    "test",
+                    "jacoco",
+                    "annotation",
+                    "BindActivity\$\$ViewBinder.java")
+            assertThat(javaFile).exists();
+        }
 
-        File javaFile = FileUtils.join(project.getTestDir(),
-                "build",
-                "intermediates",
-                "classes",
-                "debug",
-                "com",
-                "test",
-                "jacoco",
-                "annotation",
-                "BindActivity\$\$ViewBinder.java")
-        assertThat(javaFile).exists();
     }
 }

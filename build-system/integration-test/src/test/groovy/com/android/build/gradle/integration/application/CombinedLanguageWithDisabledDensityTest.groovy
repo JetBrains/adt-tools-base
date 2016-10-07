@@ -18,6 +18,7 @@ package com.android.build.gradle.integration.application
 import com.android.build.OutputFile
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.utils.ApkHelper
+import com.android.build.gradle.integration.common.utils.AssumeUtil
 import com.android.build.gradle.integration.common.utils.ModelHelper
 import com.android.builder.model.AndroidArtifact
 import com.android.builder.model.AndroidArtifactOutput
@@ -48,7 +49,7 @@ class CombinedLanguageWithDisabledDensityTest {
 
     @BeforeClass
     static void setup() {
-        GradleTestProject.assumeBuildToolsAtLeast(21)
+        AssumeUtil.assumeBuildToolsAtLeast(21)
         project.getBuildFile() << """android {
             splits {
                 density {
@@ -75,7 +76,6 @@ class CombinedLanguageWithDisabledDensityTest {
 
         // get the main artifact of the debug artifact
         Variant debugVariant = ModelHelper.getVariant(variants, DEBUG)
-        assertNotNull("debug Variant null-check", debugVariant)
         AndroidArtifact debugMainArtifact = debugVariant.getMainArtifact()
         assertNotNull("Debug main info null-check", debugMainArtifact)
 

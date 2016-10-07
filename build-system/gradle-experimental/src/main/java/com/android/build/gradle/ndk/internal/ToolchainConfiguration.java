@@ -16,23 +16,22 @@
 
 package com.android.build.gradle.ndk.internal;
 
-import com.android.build.gradle.internal.NdkHandler;
 import com.android.build.gradle.internal.core.Abi;
 import com.android.build.gradle.internal.core.Toolchain;
+import com.android.build.gradle.internal.ndk.NdkHandler;
 import com.android.build.gradle.managed.NdkAbiOptions;
 
-import org.gradle.api.Action;
+import org.gradle.internal.os.OperatingSystem;
 import org.gradle.model.ModelMap;
 import org.gradle.nativeplatform.platform.NativePlatform;
 import org.gradle.nativeplatform.toolchain.Clang;
 import org.gradle.nativeplatform.toolchain.Gcc;
 import org.gradle.nativeplatform.toolchain.GccCompatibleToolChain;
-import org.gradle.nativeplatform.toolchain.GccPlatformToolChain;
 import org.gradle.nativeplatform.toolchain.NativeToolChainRegistry;
+import org.gradle.nativeplatform.toolchain.internal.gcc.DefaultGccPlatformToolChain;
 import org.gradle.platform.base.PlatformContainer;
 
 import java.util.Collections;
-import java.util.List;
 
 /**
  * Action to configure toolchain for native binaries.
@@ -49,7 +48,6 @@ public class ToolchainConfiguration {
             platform.architecture("ppc");
             platform.operatingSystem("linux");
         }
-
     }
 
     /**
@@ -61,80 +59,69 @@ public class ToolchainConfiguration {
             final ModelMap<NdkAbiOptions> abiConfigs,
             final NdkHandler ndkHandler) {
         final Toolchain ndkToolchain = Toolchain.getByName(toolchainName);
-        toolchainRegistry.create("ndk-" + toolchainName,
-                (Class <? extends GccCompatibleToolChain>)
+        toolchainRegistry.create(
+                "ndk-" + toolchainName,
+                (Class<? extends GccCompatibleToolChain>)
                         (toolchainName.equals("gcc") ? Gcc.class : Clang.class),
-                new Action<GccCompatibleToolChain>() {
-                    @Override
-                    public void execute(GccCompatibleToolChain toolchain) {
-                        // Configure each platform.
-                        for (final Abi abi : ndkHandler.getSupportedAbis()) {
-                            toolchain.target(abi.getName(), new Action<GccPlatformToolChain>() {
-                                @Override
-                                public void execute(GccPlatformToolChain targetPlatform) {
-                                    if (Toolchain.GCC.equals(ndkToolchain)) {
-                                        String gccPrefix = abi.getGccExecutablePrefix();
-                                        targetPlatform.getcCompiler()
-                                                .setExecutable(gccPrefix + "-gcc");
-                                        targetPlatform.getCppCompiler()
-                                                .setExecutable(gccPrefix + "-g++");
-                                        targetPlatform.getLinker()
-                                                .setExecutable(gccPrefix + "-g++");
-                                        targetPlatform.getAssembler()
-                                                .setExecutable(gccPrefix + "-as");
-                                        targetPlatform.getStaticLibArchiver()
-                                                .setExecutable(gccPrefix + "-ar");
-                                    }
+                toolchain -> {
+                    // Configure each platform.
+                    for (final Abi abi : ndkHandler.getSupportedAbis()) {
+                        toolchain.target(abi.getName(), targetPlatform -> {
+                            // Disable usage of response file as clang do not handle file
+                            // with \r\n properly.
+                            if (OperatingSystem.current().isWindows()
+                                    && toolchainName.equals("clang")) {
+                                ((DefaultGccPlatformToolChain) targetPlatform)
+                                        .setCanUseCommandFile(false);
+                            }
 
-                                    // By default, gradle will use -Xlinker to pass arguments to the linker.
-                                    // Removing it as it prevents -sysroot from being properly set.
-                                    targetPlatform.getLinker().withArguments(
-                                            new Action<List<String>>() {
-                                                @Override
-                                                public void execute(List<String> args) {
-                                                    args.removeAll(Collections.singleton("-Xlinker"));
-                                                }
-                                            });
+                            if (Toolchain.GCC == ndkToolchain) {
+                                String gccPrefix = abi.getGccExecutablePrefix();
+                                targetPlatform.getcCompiler().setExecutable(gccPrefix + "-gcc");
+                                targetPlatform.getCppCompiler().setExecutable(gccPrefix + "-g++");
+                                targetPlatform.getLinker().setExecutable(gccPrefix + "-g++");
+                                targetPlatform.getAssembler().setExecutable(gccPrefix + "-as");
+                            }
+                            // For clang, we use the ar from the GCC toolchain.
+                            targetPlatform.getStaticLibArchiver().setExecutable(
+                                    ndkHandler.getAr(abi).getName());
 
-                                    final NdkAbiOptions config = abiConfigs.get(abi.getName());
+                            // By default, gradle will use -Xlinker to pass arguments to the linker.
+                            // Removing it as it prevents -sysroot from being properly set.
+                            targetPlatform.getLinker().withArguments(
+                                    args -> args.removeAll(Collections.singleton("-Xlinker")));
 
-                                    if (config != null) {
-                                        // Specify ABI specific flags.
-                                        targetPlatform.getcCompiler().withArguments(
-                                                new Action<List<String>>() {
-                                                    @Override
-                                                    public void execute(List<String> args) {
-                                                        for (String flag : config.getCFlags()) {
-                                                            args.add(flag);
-                                                        }
-                                                    }
-                                                });
-                                        targetPlatform.getCppCompiler().withArguments(
-                                                new Action<List<String>>() {
-                                                    @Override
-                                                    public void execute(List<String> args) {
-                                                        for (String flag : config.getCppFlags()) {
-                                                            args.add(flag);
-                                                        }
-                                                    }
-                                                });
-                                        targetPlatform.getLinker().withArguments(
-                                                new Action<List<String>>() {
-                                                    @Override
-                                                    public void execute(List<String> args) {
-                                                        for (String flag : config.getLdFlags()) {
-                                                            args.add(flag);
-                                                        }
-                                                        for (String lib : config.getLdLibs()) {
-                                                            args.add("-l" + lib);
-                                                        }
-                                                    }
-                                                });
-                                    }
-                                }
-                            });
-                            toolchain.path(ndkHandler.getCCompiler(abi).getParentFile());
-                        }
+                            final NdkAbiOptions config = abiConfigs.get(abi.getName());
+                            String sysroot = (config == null || config.getPlatformVersion() == null)
+                                    ? ndkHandler.getSysroot(abi)
+                                    : ndkHandler.getSysroot(abi, config.getPlatformVersion());
+
+                            targetPlatform.getcCompiler().withArguments(
+                                    args -> args.add("--sysroot=" + sysroot));
+                            targetPlatform.getCppCompiler().withArguments(
+                                    args -> args.add("--sysroot=" + sysroot));
+                            targetPlatform.getLinker().withArguments(
+                                    args -> args.add("--sysroot=" + sysroot));
+
+                            if (config != null) {
+                                // Specify ABI specific flags.
+                                targetPlatform.getcCompiler().withArguments(
+                                        args -> args.addAll(config.getCFlags()));
+                                targetPlatform.getCppCompiler().withArguments(
+                                        args -> args.addAll(config.getCppFlags()));
+                                targetPlatform.getLinker().withArguments(
+                                        args -> {
+                                            args.addAll(config.getLdFlags());
+
+                                            for (String lib : config.getLdLibs()) {
+                                                args.add("-l" + lib);
+                                            }
+                                        });
+                            }
+                        });
+                        toolchain.path(
+                                ndkHandler.getCCompiler(abi).getParentFile(),
+                                ndkHandler.getAr(abi).getParentFile());
                     }
                 });
     }

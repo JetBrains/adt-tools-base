@@ -71,17 +71,17 @@ import java.util.Map;
  * <p>
  * A stub application that patches the class loader, then replaces itself with the real application
  * by applying a liberal amount of reflection on Android internals.
- * <p/>
+ * <p>
  * <p>This is, of course, terribly error-prone. Most of this code was tested with API versions
  * 8, 10, 14, 15, 16, 17, 18, 19 and 21 on the Android emulator, a Nexus 5 running Lollipop LRX22C
  * and a Samsung GT-I5800 running Froyo XWJPE. The exception is {@code monkeyPatchAssetManagers},
  * which only works on Kitkat and Lollipop.
- * <p/>
+ * <p>
  * <p>Note that due to a bug in Dalvik, this only works on Kitkat if ART is the Java runtime.
- * <p/>
+ * <p>
  * <p>Unfortunately, if this does not work, we don't have a fallback mechanism: as soon as we
  * build the APK with this class as the Application, we are committed to going through with it.
- * <p/>
+ * <p>
  * <p>This class should use as few other classes as possible before the class loader is patched
  * because any class loaded before it cannot be incrementally deployed.
  */
@@ -368,12 +368,16 @@ public class MonkeyPatcher {
                         mtm.setAccessible(true);
                         mtm.invoke(activity);
 
-                        Method mCreateTheme = AssetManager.class.getDeclaredMethod("createTheme");
-                        mCreateTheme.setAccessible(true);
-                        Object internalTheme = mCreateTheme.invoke(newAssetManager);
-                        Field mTheme = Resources.Theme.class.getDeclaredField("mTheme");
-                        mTheme.setAccessible(true);
-                        mTheme.set(theme, internalTheme);
+                        if (SDK_INT < 24) { // As of API 24, mTheme is gone (but updates work
+                                            // without these changes
+                            Method mCreateTheme = AssetManager.class
+                                    .getDeclaredMethod("createTheme");
+                            mCreateTheme.setAccessible(true);
+                            Object internalTheme = mCreateTheme.invoke(newAssetManager);
+                            Field mTheme = Resources.Theme.class.getDeclaredField("mTheme");
+                            mTheme.setAccessible(true);
+                            mTheme.set(theme, internalTheme);
+                        }
                     } catch (Throwable e) {
                         Log.e(LOG_TAG, "Failed to update existing theme for activity " + activity,
                                 e);
@@ -504,6 +508,10 @@ public class MonkeyPatcher {
             if (SDK_INT >= M) {
                 pruneResourceCache(resources, "mAnimatorCache");
                 pruneResourceCache(resources, "mStateListAnimatorCache");
+            } else if (SDK_INT == KITKAT) {
+                pruneResourceCache(resources, "sPreloadedDrawables");
+                pruneResourceCache(resources, "sPreloadedColorDrawables");
+                pruneResourceCache(resources, "sPreloadedColorStateLists");
             }
         }
     }
@@ -550,10 +558,28 @@ public class MonkeyPatcher {
                     clearArrayMap.invoke(resources, cache, -1);
                     return true;
                 } else if (type.isAssignableFrom(LongSparseArray.class)) {
-                    Method clearSparseMap = Resources.class.getDeclaredMethod(
-                            "clearDrawableCachesLocked", LongSparseArray.class, Integer.TYPE);
-                    clearSparseMap.setAccessible(true);
-                    clearSparseMap.invoke(resources, cache, -1);
+                    try {
+                        Method clearSparseMap = Resources.class.getDeclaredMethod(
+                                "clearDrawableCachesLocked", LongSparseArray.class, Integer.TYPE);
+                        clearSparseMap.setAccessible(true);
+                        clearSparseMap.invoke(resources, cache, -1);
+                        return true;
+                    } catch (NoSuchMethodException e) {
+                        if (cache instanceof LongSparseArray) {
+                            //noinspection AndroidLintNewApi
+                            ((LongSparseArray)cache).clear();
+                            return true;
+                        }
+                    }
+                } else if (type.isArray() &&
+                        type.getComponentType().isAssignableFrom(LongSparseArray.class)) {
+                    LongSparseArray[] arrays = (LongSparseArray[])cache;
+                    for (LongSparseArray array : arrays) {
+                        if (array != null) {
+                            //noinspection AndroidLintNewApi
+                            array.clear();
+                        }
+                    }
                     return true;
                 }
             } else {

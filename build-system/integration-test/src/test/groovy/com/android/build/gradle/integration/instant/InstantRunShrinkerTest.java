@@ -18,7 +18,7 @@ package com.android.build.gradle.integration.instant;
 
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk;
 
-import com.android.build.gradle.OptionalCompilationStep;
+import com.android.builder.model.OptionalCompilationStep;
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.common.fixture.app.AndroidTestApp;
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp;
@@ -28,6 +28,7 @@ import com.android.build.gradle.integration.common.utils.TestFileUtils;
 import com.android.build.gradle.internal.incremental.ColdswapMode;
 import com.google.common.truth.Expect;
 
+import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -76,14 +77,14 @@ public class InstantRunShrinkerTest {
     public GradleTestProject project =
             GradleTestProject.builder()
                     .fromTestApp(TEST_APP)
-                    .captureStdErr(true).captureStdOut(true)
                     .create();
 
     @Rule
-    public Expect expect = Expect.create();
+    public Expect expect = Expect.createAndEnableStackTrace();
 
     @Before
     public void addProvidedLibrary() throws IOException {
+        Assume.assumeFalse("Disabled until instant run supports Jack", GradleTestProject.USE_JACK);
         TestFileUtils.appendToFile(project.getBuildFile(), "\n"
                 + "android.buildTypes.debug {\n"
                 + "    minifyEnabled true\n"
@@ -96,9 +97,9 @@ public class InstantRunShrinkerTest {
     @Test
     public void checkApplicationIsNotRemoved() throws Exception {
         project.execute("clean");
-        project.execute(InstantRunTestUtils.getInstantRunArgs(23,
-                ColdswapMode.DEFAULT, OptionalCompilationStep.RESTART_ONLY),
-                "assembleDebug");
+        project.executor()
+                .withInstantRun(23, ColdswapMode.DEFAULT, OptionalCompilationStep.RESTART_ONLY)
+                .run("assembleDebug");
 
         // Check the custom application class was included.
         assertThatApk(project.getApk("debug"))

@@ -35,8 +35,11 @@ import com.android.builder.model.MavenCoordinates;
 import com.android.builder.model.Variant;
 import com.android.ide.common.repository.GradleCoordinate;
 import com.android.ide.common.repository.GradleCoordinate.RevisionComponent;
+import com.android.ide.common.repository.GradleVersion;
+import com.android.ide.common.repository.MavenRepositories;
 import com.android.ide.common.repository.SdkMavenRepository;
 import com.android.repository.Revision;
+import com.android.repository.io.FileOpUtils;
 import com.android.tools.lint.client.api.LintClient;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Context;
@@ -265,6 +268,8 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
 
     /** Group ID for GMS */
     public static final String GMS_GROUP_ID = "com.google.android.gms";
+    public static final String GOOGLE_SUPPORT_GROUP_ID = "com.google.android.support";
+    public static final String ANDROID_WEAR_GROUP_ID = "com.google.android.support";
 
     private int mMinSdkVersion;
     private int mCompileSdkVersion;
@@ -478,7 +483,7 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
         } else if (property.equals("applicationIdSuffix")) {
             String suffix = getStringLiteralValue(value);
             if (suffix != null && !suffix.startsWith(".")) {
-                String message = "Package suffix should probably start with a \".\"";
+                String message = "Application ID suffix should probably start with a \".\"";
                 report(context, valueCookie, PATH, message);
             }
         }
@@ -488,9 +493,11 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
     private static GradleCoordinate resolveCoordinate(@NonNull Context context,
             @NonNull GradleCoordinate gc) {
         assert gc.getRevision().contains("$") : gc.getRevision();
-        Variant variant = context.getProject().getCurrentVariant();
+        Project project = context.getProject();
+        Variant variant = project.getCurrentVariant();
         if (variant != null) {
-            Dependencies dependencies = variant.getMainArtifact().getDependencies();
+            Dependencies dependencies = getCompileDependencies(variant.getMainArtifact(),
+                    project.getGradleModelVersion());
             for (AndroidLibrary library : dependencies.getLibraries()) {
                 MavenCoordinates mc = library.getResolvedCoordinates();
                 if (mc != null
@@ -718,7 +725,7 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
     }
 
     private static boolean isModelOlderThan011(@NonNull Context context) {
-        return LintUtils.isModelOlderThan(context.getProject().getGradleProjectModel(), 0, 11, 0);
+        return LintUtils.isModelOlderThan(context.getProject(), 0, 11, 0);
     }
 
     private static int sMajorBuildTools;
@@ -740,7 +747,7 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
 
             List<Revision> revisions = Lists.newArrayList();
             if (major == 23) {
-                revisions.add(new Revision(23, 0, 1));
+                revisions.add(new Revision(23, 0, 2));
             } else if (major == 22) {
                 revisions.add(new Revision(22, 0, 1));
             } else if (major == 21) {
@@ -822,7 +829,7 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
             @NonNull Context context,
             @NonNull GradleCoordinate dependency,
             @NonNull Object cookie) {
-        if ("com.android.support".equals(dependency.getGroupId())) {
+        if (dependency.getGroupId() != null && dependency.getGroupId().startsWith("com.android.support")) {
             checkSupportLibraries(context, dependency, cookie);
             if (mMinSdkVersion >= 14 && "appcompat-v7".equals(dependency.getArtifactId())
                   && mCompileSdkVersion >= 1 && mCompileSdkVersion < 21) {
@@ -831,7 +838,9 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
                             + "compileSdkVersion < 21 is not necessary");
             }
             return;
-        } else if (GMS_GROUP_ID.equals(dependency.getGroupId())
+        } else if ((GMS_GROUP_ID.equals(dependency.getGroupId())
+                || GOOGLE_SUPPORT_GROUP_ID.equals(dependency.getGroupId())
+                || ANDROID_WEAR_GROUP_ID.equals(dependency.getGroupId()))
                 && dependency.getArtifactId() != null) {
 
             // 5.2.08 is not supported; special case and warn about this
@@ -843,7 +852,7 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
                 File sdkHome = context.getClient().getSdkHome();
                 File repository = SdkMavenRepository.GOOGLE.getRepositoryLocation(sdkHome, true);
                 if (repository != null) {
-                    GradleCoordinate max = SdkMavenRepository.getHighestInstalledVersion(
+                    GradleCoordinate max = MavenRepositories.getHighestInstalledVersion(
                             dependency.getGroupId(), dependency.getArtifactId(), repository,
                             null, false);
                     if (max != null) {
@@ -1071,7 +1080,7 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
         GradleCoordinate latestPlugin = GradleCoordinate.parseCoordinateString(
                 SdkConstants.GRADLE_PLUGIN_NAME +
                         GRADLE_PLUGIN_MINIMUM_VERSION);
-        if (GradleCoordinate.COMPARE_PLUS_HIGHER.compare(dependency, latestPlugin) < 0) {
+        if (COMPARE_PLUS_HIGHER.compare(dependency, latestPlugin) < 0) {
             String message = "You must use a newer version of the Android Gradle plugin. The "
                     + "minimum supported version is " + GRADLE_PLUGIN_MINIMUM_VERSION +
                     " and the recommended version is " + GRADLE_PLUGIN_RECOMMENDED_VERSION;
@@ -1087,24 +1096,29 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
         String artifactId = dependency.getArtifactId();
         assert groupId != null && artifactId != null;
 
-        if (mCompileSdkVersion >= 18 && dependency.getMajorVersion() != mCompileSdkVersion &&
-                dependency.getMajorVersion() != GradleCoordinate.PLUS_REV_VALUE &&
-                // The multidex library doesn't follow normal supportlib numbering scheme
-                !dependency.getArtifactId().startsWith("multidex") &&
-                context.isEnabled(COMPATIBILITY)) {
-            String message = "This support library should not use a different version ("
-                    + dependency.getMajorVersion() + ") than the `compileSdkVersion` ("
-                    + mCompileSdkVersion + ")";
-            report(context, cookie, COMPATIBILITY, message);
-        } else if (mTargetSdkVersion > 0 && dependency.getMajorVersion() < mTargetSdkVersion &&
-                dependency.getMajorVersion() != GradleCoordinate.PLUS_REV_VALUE &&
-                // The multidex library doesn't follow normal supportlib numbering scheme
-                !dependency.getArtifactId().startsWith("multidex") &&
-                context.isEnabled(COMPATIBILITY)) {
-            String message = "This support library should not use a lower version ("
-                + dependency.getMajorVersion() + ") than the `targetSdkVersion` ("
-                    + mTargetSdkVersion + ")";
-            report(context, cookie, COMPATIBILITY, message);
+        // For artifacts that follow the platform numbering scheme, check that it matches the SDK
+        // versions used.
+        if ("com.android.support".equals(groupId)
+                && !artifactId.startsWith("multidex")
+                // Support annotation libraries work with any compileSdkVersion
+                && !artifactId.equals("support-annotations")) {
+            if (mCompileSdkVersion >= 18
+                    && dependency.getMajorVersion() != mCompileSdkVersion
+                    && dependency.getMajorVersion() != GradleCoordinate.PLUS_REV_VALUE
+                    && context.isEnabled(COMPATIBILITY)) {
+                String message = "This support library should not use a different version ("
+                        + dependency.getMajorVersion() + ") than the `compileSdkVersion` ("
+                        + mCompileSdkVersion + ")";
+                report(context, cookie, COMPATIBILITY, message);
+            } else if (mTargetSdkVersion > 0
+                    && dependency.getMajorVersion() < mTargetSdkVersion
+                    && dependency.getMajorVersion() != GradleCoordinate.PLUS_REV_VALUE
+                    && context.isEnabled(COMPATIBILITY)) {
+                String message = "This support library should not use a lower version ("
+                        + dependency.getMajorVersion() + ") than the `targetSdkVersion` ("
+                        + mTargetSdkVersion + ")";
+                report(context, cookie, COMPATIBILITY, message);
+            }
         }
 
         // Check to make sure you have the Android support repository installed
@@ -1171,7 +1185,10 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
             return;
         }
         AndroidArtifact artifact = variant.getMainArtifact();
-        Collection<AndroidLibrary> libraries = artifact.getDependencies().getLibraries();
+        GradleVersion version = project.getGradleModelVersion();
+        Collection<AndroidLibrary> libraries;
+        Dependencies compileDependencies = getCompileDependencies(artifact, version);
+        libraries = compileDependencies.getLibraries();
         Multimap<String, MavenCoordinates> versionToCoordinate = ArrayListMultimap.create();
         for (AndroidLibrary library : libraries) {
             addGmsLibraryVersions(versionToCoordinate, library);
@@ -1221,8 +1238,8 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
 
     private void checkLocalMavenVersions(Context context, GradleCoordinate dependency,
             Object cookie, String groupId, String artifactId, File repository) {
-        GradleCoordinate max = SdkMavenRepository.getHighestInstalledVersion(groupId, artifactId,
-                repository, null, false);
+        GradleCoordinate max = MavenRepositories.getHighestInstalledVersion(
+                groupId, artifactId, repository, null, false, FileOpUtils.create());
         if (max != null) {
             if (COMPARE_PLUS_HIGHER.compare(dependency, max) < 0
                     && context.isEnabled(DEPENDENCY)) {
@@ -1293,7 +1310,7 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
       return cookie;
     }
 
-    @SuppressWarnings("MethodMayBeStatic")
+    @SuppressWarnings({"MethodMayBeStatic", "UnusedParameters"})
     protected int getStartOffset(@NonNull Context context, @NonNull Object cookie) {
         return -1;
     }
@@ -1301,5 +1318,21 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
     @SuppressWarnings({"MethodMayBeStatic", "UnusedParameters"})
     protected Location createLocation(@NonNull Context context, @NonNull Object cookie) {
         return null;
+    }
+
+    @NonNull
+    public static Dependencies getCompileDependencies(@NonNull AndroidArtifact artifact,
+            @Nullable GradleVersion version) {
+        // getCompileDependencies was added in builder model 2.2; in older versions, just
+        // use getDependencies
+        Dependencies compileDependencies;
+        if (version != null &&
+                (version.getMajor() > 2 || version.getMajor() == 2 && version.getMinor() >= 2)) {
+            compileDependencies = artifact.getCompileDependencies();
+        } else {
+            //noinspection deprecation
+            compileDependencies = artifact.getDependencies();
+        }
+        return compileDependencies;
     }
 }

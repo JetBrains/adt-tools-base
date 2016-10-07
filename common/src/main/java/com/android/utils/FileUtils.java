@@ -18,29 +18,30 @@ package com.android.utils;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
+import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.google.common.base.Charsets;
-import com.google.common.base.Function;
 import com.google.common.base.Joiner;
 import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
-import com.google.common.base.Predicate;
 import com.google.common.base.Predicates;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.Iterables;
 import com.google.common.hash.HashCode;
 import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;
-import com.google.common.io.Closeables;
 import com.google.common.io.Files;
 
 import java.io.EOFException;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.StandardCopyOption;
 import java.util.List;
 import java.util.regex.Pattern;
 
+@SuppressWarnings("WeakerAccess") // These are utility methods, meant to be public.
 public final class FileUtils {
 
     private FileUtils() {}
@@ -49,80 +50,180 @@ public final class FileUtils {
     private static final Joiner COMMA_SEPARATED_JOINER = Joiner.on(", ");
     private static final Joiner UNIX_NEW_LINE_JOINER = Joiner.on('\n');
 
-    public static final Function<File, String> GET_NAME = new Function<File, String>() {
-        @Override
-        public String apply(File file) {
-            return file.getName();
-        }
-    };
-
-    public static final Function<File, String> GET_PATH = new Function<File, String>() {
-        @Override
-        public String apply(File file) {
-            return file.getPath();
-        }
-    };
-
-    @NonNull
-    public static Predicate<File> withExtension(@NonNull final String extension) {
-        checkArgument(extension.charAt(0) != '.', "Extension should not start with a dot.");
-
-        return new Predicate<File>() {
-            @Override
-            public boolean apply(File input) {
-                return Files.getFileExtension(input.getName()).equals(extension);
-            }
-        };
-    }
-
-    public static void deleteFolder(@NonNull final File folder) throws IOException {
-        if (!folder.exists()) {
+    /**
+     * Recursively deletes a path.
+     *
+     * @param path the path delete, may exist or not
+     * @throws IOException failed to delete the file / directory
+     */
+    public static void deletePath(@NonNull final File path) throws IOException {
+        if (!path.exists()) {
             return;
         }
-        File[] files = folder.listFiles();
-        if (files != null) { // i.e. is a directory.
-            for (final File file : files) {
-                deleteFolder(file);
+
+        if (path.isDirectory()) {
+            deleteDirectoryContents(path);
+        }
+
+        if (!path.delete()) {
+            throw new IOException(String.format("Could not delete path '%s'.", path));
+        }
+    }
+
+    /**
+     * Recursively deletes a directory or file.
+     *
+     * @param directory the directory, that must exist and be a valid directory
+     * @throws IOException failed to delete the file / directory
+     */
+    public static void deleteDirectoryContents(@NonNull final File directory) throws IOException {
+        Preconditions.checkArgument(directory.isDirectory(), "!directory.isDirectory");
+
+        File[] files = directory.listFiles();
+        Preconditions.checkNotNull(files);
+        for (File file : files) {
+            deletePath(file);
+        }
+    }
+
+    /**
+     * Makes sure {@code path} is an empty directory. If {@code path} is a directory, its contents
+     * are removed recursively, leaving an empty directory. If {@code path} is not a directory,
+     * it is removed and a directory created with the given path. If {@code path} does not
+     * exist, a directory is created with the given path.
+     *
+     * @param path the path, that may exist or not and may be a file or directory
+     * @throws IOException failed to delete directory contents, failed to delete {@code path} or
+     * failed to create a directory at {@code path}
+     */
+    public static void cleanOutputDir(@NonNull File path) throws IOException {
+        if (!path.isDirectory()) {
+            if (path.exists()) {
+                deletePath(path);
             }
+
+            if (!path.mkdirs()) {
+                throw new IOException(String.format("Could not create empty folder %s", path));
+            }
+
+            return;
         }
-        if (!folder.delete()) {
-            throw new IOException(String.format("Could not delete folder %s", folder));
-        }
+
+        deleteDirectoryContents(path);
     }
 
-    public static void emptyFolder(@NonNull final File folder) throws IOException {
-        deleteFolder(folder);
-        if (!folder.mkdirs()) {
-            throw new IOException(String.format("Could not create empty folder %s", folder));
-        }
+    /**
+     * Copies a regular file from one path to another, preserving file attributes. If the
+     * destination file exists, it gets overwritten.
+     */
+    public static void copyFile(@NonNull File from, @NonNull File to) throws IOException {
+        java.nio.file.Files.copy(
+                from.toPath(),
+                to.toPath(),
+                StandardCopyOption.COPY_ATTRIBUTES,
+                StandardCopyOption.REPLACE_EXISTING);
     }
 
-    public static void copy(@NonNull final File from, @NonNull final File toDir)
-            throws IOException {
-        File to = new File(toDir, from.getName());
-        if (from.isDirectory()) {
-            mkdirs(to);
+    /**
+     * Copies a directory from one path to another. If the destination directory exists, the file
+     * contents are merged and files from the source directory overwrite files in the destination.
+     */
+    public static void copyDirectory(@NonNull File from, @NonNull File to) throws IOException {
+        Preconditions.checkArgument(from.isDirectory(), "Source path is not a directory.");
+        Preconditions.checkArgument(
+                !to.exists() || to.isDirectory(),
+                "Destination path exists and is not a directory.");
 
-            File[] children = from.listFiles();
-            if (children != null) {
-                for (File child : children) {
-                    copy(child, to);
+        mkdirs(to);
+        File[] children = from.listFiles();
+        if (children != null) {
+            for (File child : children) {
+                if (child.isFile()) {
+                    copyFileToDirectory(child, to);
+                } else if (child.isDirectory()) {
+                    copyDirectoryToDirectory(child, to);
+                } else {
+                    throw new IllegalArgumentException(
+                            "Don't know how to copy file " + child.getAbsolutePath());
                 }
             }
-        } else if (from.isFile()) {
-            Files.copy(from, to);
         }
     }
 
-    public static void mkdirs(@NonNull File folder) {
+    /**
+     * Makes a copy of the given file in the specified directory, preserving the name and file
+     * attributes.
+     */
+    public static void copyFileToDirectory(@NonNull final File from, @NonNull final File to)
+            throws IOException {
+        copyFile(from, new File(to, from.getName()));
+    }
+
+    /**
+     * Makes a copy of the given directory in the specified destination directory.
+     *
+     * @see #copyDirectory(File, File)
+     */
+    public static void copyDirectoryToDirectory(@NonNull final File from, @NonNull final File to)
+            throws IOException {
+        copyDirectory(from, new File(to, from.getName()));
+    }
+
+    /**
+     * Makes a copy of the directory's content, in the specified location, while maintaining the
+     * directory structure. So the entire directory tree from the source will be copied.
+     *
+     * @param from directory from which the content is copied
+     * @param to destination directory, will be created if does not exist
+     */
+    public static void copyDirectoryContentToDirectory(
+            @NonNull final File from, @NonNull final File to) throws IOException {
+        Preconditions.checkArgument(from.isDirectory(), "Source path is not a directory.");
+
+        File[] children = from.listFiles();
+        if (children != null) {
+            for (File f : children) {
+                if (f.isDirectory()) {
+                    File destination = new File(to, relativePath(f, from));
+                    Files.createParentDirs(destination);
+                    mkdirs(destination);
+
+                    copyDirectoryContentToDirectory(f, destination);
+                } else if (f.isFile()) {
+                    File destination = new File(to, relativePath(f.getParentFile(), from));
+                    Files.createParentDirs(destination);
+                    mkdirs(destination);
+
+                    copyFileToDirectory(f, destination);
+                }
+            }
+        }
+    }
+
+    /**
+     * Creates a directory, if it doesn't exist.
+     *
+     * @param folder the directory to create, may already exist
+     * @return {@code folder}
+     */
+    @NonNull
+    public static File mkdirs(@NonNull File folder) {
         // attempt to create first.
         // if failure only throw if folder does not exist.
         // This makes this method able to create the same folder(s) from different thread
         if (!folder.mkdirs() && !folder.exists()) {
             throw new RuntimeException("Cannot create directory " + folder);
         }
+
+        return folder;
     }
 
+    /**
+     * Deletes a file.
+     *
+     * @param file the file to delete; the file must exist
+     * @throws IOException failed to delete the file
+     */
     public static void delete(@NonNull File file) throws IOException {
         boolean result = file.delete();
         if (!result) {
@@ -277,7 +378,7 @@ public final class FileUtils {
 
     @NonNull
     public static String getNamesAsCommaSeparatedList(@NonNull Iterable<File> files) {
-        return COMMA_SEPARATED_JOINER.join(Iterables.transform(files, GET_NAME));
+        return COMMA_SEPARATED_JOINER.join(Iterables.transform(files, File::getName));
     }
 
     /**
@@ -314,10 +415,10 @@ public final class FileUtils {
      * Find a list of files in a directory, using a specified path pattern.
      */
     public static List<File> find(@NonNull File base, @NonNull final Pattern pattern) {
-        checkArgument(base.isDirectory(), "'base' must be a directory.");
+        checkArgument(base.isDirectory(), "'%s' must be a directory.", base.getAbsolutePath());
         return Files.fileTreeTraverser()
                 .preOrderTraversal(base)
-                .filter(Predicates.compose(Predicates.contains(pattern), GET_PATH))
+                .filter(Predicates.compose(Predicates.contains(pattern), File::getPath))
                 .toList();
     }
 
@@ -325,10 +426,10 @@ public final class FileUtils {
      * Find a file with the specified name in a given directory .
      */
     public static Optional<File> find(@NonNull File base, @NonNull final String name) {
-        checkArgument(base.isDirectory(), "'base' must be a directory.");
+        checkArgument(base.isDirectory(), "'%s' must be a directory.", base.getAbsolutePath());
         return Files.fileTreeTraverser()
                 .preOrderTraversal(base)
-                .filter(Predicates.compose(Predicates.equalTo(name), GET_NAME))
+                .filter(Predicates.compose(Predicates.equalTo(name), File::getName))
                 .last();
     }
 
@@ -347,9 +448,7 @@ public final class FileUtils {
         Preconditions.checkArgument(length >= 0, "length < 0");
 
         byte data[];
-        boolean threw = true;
-        RandomAccessFile raf = new RandomAccessFile(file, "r");
-        try {
+        try (RandomAccessFile raf = new RandomAccessFile(file, "r")) {
             raf.seek(start);
 
             data = new byte[length];
@@ -362,12 +461,91 @@ public final class FileUtils {
 
                 tot += r;
             }
-
-            threw = false;
-        } finally {
-            Closeables.close(raf, threw);
         }
 
         return data;
+    }
+
+    /**
+     * Join multiple file paths as String.
+     */
+    @NonNull
+    public static String joinFilePaths(@NonNull Iterable<File> files) {
+        return Joiner.on(File.pathSeparatorChar)
+                .join(Iterables.transform(files, File::getAbsolutePath));
+    }
+
+    /**
+     * Returns a valid file name modified from the requested file name. This method guarantees that
+     * there is a one-to-one mapping between the requested file names and the returned file names
+     * (i.e., if the input file names are different, the returned file names will also be
+     * different). The file name consists of a base name and an extension (which is an empty string
+     * if there is no extension). A directory where the file is located is also provided to check
+     * the length of the file path and keep both the file name and file path's lengths within limit.
+     *
+     * @param baseName the base name of the requested file name
+     * @param extension the extension of the requested file name (empty string if not available)
+     * @param directory the directory where the file will be located
+     * @throws IOException if the requested file name or file path is too long
+     */
+    @NonNull
+    public static String getValidFileName(
+            @NonNull String baseName, @NonNull String extension, @NonNull File directory)
+            throws IOException {
+        String fileName = (extension.isEmpty() ? baseName : (baseName + "." + extension));
+
+        String validBaseName = baseName.replaceAll("[^a-zA-Z0-9]", "_");
+        String validExtension = extension.replaceAll("[^a-zA-Z0-9]", "_");
+        String validExtensionWithDot = (validExtension.isEmpty() ? "" : ("." + validExtension));
+        String validFileName = validBaseName + validExtensionWithDot;
+
+        // Add a hash code to the returned file name to avoid accidental collision (when two
+        // different requested file names produce the same returned file name)
+        String fileHash = Hashing.sha1().hashString(fileName, StandardCharsets.UTF_8).toString();
+        if (!validFileName.equals(fileName)) {
+            validFileName = validBaseName + "_" + fileHash + validExtensionWithDot;
+        }
+
+        // If the file name/file path is too long, retain the hash code only and also keep the
+        // extension
+        if (isFilePathTooLong(validFileName, directory)) {
+            validFileName = fileHash + validExtensionWithDot;
+
+            // If the file name/file path is still too long, throw a RuntimeException
+            if (isFilePathTooLong(validFileName, directory)) {
+                throw new IOException("File name or file path is too long: "
+                        + new File(directory, validFileName).getAbsolutePath());
+            }
+        }
+
+        return validFileName;
+    }
+
+    /**
+     * Returns <code>true</code> if the file name is too long.
+     *
+     * @param fileName the file name
+     */
+    public static boolean isFileNameTooLong(@NonNull String fileName) {
+        return fileName.length() > 255;
+    }
+
+    /**
+     * Returns <code>true</code> if the file name or file path is too long.
+     *
+     * @param fileName the file name
+     * @param directory the directory where the file will be located
+     */
+    public static boolean isFilePathTooLong(@NonNull String fileName, @NonNull File directory) {
+        if (isFileNameTooLong(fileName)) {
+            return true;
+        }
+
+        int filePathLength = new File(directory, fileName).getAbsolutePath().length();
+        if (SdkConstants.currentPlatform() == SdkConstants.PLATFORM_WINDOWS) {
+            return filePathLength > 260;
+        } else {
+            return filePathLength > 4096;
+        }
     }
 }

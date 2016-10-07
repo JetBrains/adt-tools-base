@@ -17,6 +17,7 @@
 package com.android.tools.lint.checks;
 
 import static com.android.SdkConstants.ATTR_NAME;
+import static com.android.SdkConstants.ATTR_TRANSLATABLE;
 import static com.android.SdkConstants.TAG_PLURALS;
 import static com.android.SdkConstants.TAG_STRING;
 import static com.android.SdkConstants.TAG_STRING_ARRAY;
@@ -34,6 +35,7 @@ import com.android.tools.lint.detector.api.Severity;
 import com.android.tools.lint.detector.api.Speed;
 import com.android.tools.lint.detector.api.XmlContext;
 
+import org.w3c.dom.Attr;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -226,6 +228,18 @@ public class TypographyDetector extends ResourceXmlDetector {
 
     @Override
     public void visitElement(@NonNull XmlContext context, @NonNull Element element) {
+        // Don't make typography suggestions on strings that are either
+        // service keys, or are non-translatable (these are typically also
+        // service keys)
+        String name = element.getAttribute(ATTR_NAME);
+        if (TranslationDetector.isServiceKey(name)) {
+            return;
+        }
+        Attr translatable = element.getAttributeNode(ATTR_TRANSLATABLE);
+        if (translatable != null && !Boolean.valueOf(translatable.getValue())) {
+            return;
+        }
+
         NodeList childNodes = element.getChildNodes();
         for (int i = 0, n = childNodes.getLength(); i < n; i++) {
             Node child = childNodes.item(i);

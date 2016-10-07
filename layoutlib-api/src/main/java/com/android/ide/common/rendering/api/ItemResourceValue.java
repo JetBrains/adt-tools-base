@@ -23,10 +23,25 @@ public class ItemResourceValue extends ResourceValue {
     private final boolean mIsFrameworkAttr;
 
     /**
-     * @see #ItemResourceValue(String, boolean, String, boolean)
+     * @see #ItemResourceValue(String, boolean, String, boolean, String)
      */
     public ItemResourceValue(String name, boolean isFrameworkAttr, boolean isFrameworkStyle) {
-        this(name, isFrameworkAttr, null, isFrameworkStyle);
+        this(name, isFrameworkAttr, null, isFrameworkStyle, null);
+    }
+
+    /**
+     * @see #ItemResourceValue(String, boolean, String, boolean, String)
+     */
+    public ItemResourceValue(String name, boolean isFrameworkAttr, boolean isFrameworkStyle, String libraryName) {
+        this(name, isFrameworkAttr, null, isFrameworkStyle, libraryName);
+    }
+
+    /**
+     * @see #ItemResourceValue(String, boolean, String, boolean, String)
+     */
+    public ItemResourceValue(String attributeName, boolean isFrameworkAttr, String value,
+            boolean isFrameworkStyle) {
+        this(attributeName, isFrameworkStyle, value, isFrameworkStyle, null);
     }
 
     /**
@@ -49,8 +64,8 @@ public class ItemResourceValue extends ResourceValue {
      * @param isFrameworkStyle if the style is a framework file or project file.
      */
     public ItemResourceValue(String attributeName, boolean isFrameworkAttr, String value,
-            boolean isFrameworkStyle) {
-        super(null, attributeName, value, isFrameworkStyle);
+            boolean isFrameworkStyle, String libraryName) {
+        super(null, attributeName, value, isFrameworkStyle, libraryName);
         mIsFrameworkAttr = isFrameworkAttr;
     }
 
@@ -58,14 +73,19 @@ public class ItemResourceValue extends ResourceValue {
         return mIsFrameworkAttr;
     }
 
+    @Override
+    public String toString() {
+        return super.toString() + " (mIsFrameworkAttr=" + mIsFrameworkAttr + ")";
+    }
+
     Attribute getAttribute() {
         return new Attribute(getName(), mIsFrameworkAttr);
     }
 
-    static ItemResourceValue fromResourceValue(ResourceValue res, boolean isFrameworkAttr) {
+    static ItemResourceValue fromResourceValue(ResourceValue res, boolean isFrameworkAttr, String libraryName) {
         assert res.getResourceType() == null : res.getResourceType() + " is not null";
         return new ItemResourceValue(res.getName(), isFrameworkAttr, res.getValue(),
-                res.isFramework());
+                res.isFramework(), libraryName);
     }
 
     static final class Attribute {

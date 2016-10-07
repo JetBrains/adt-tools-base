@@ -15,50 +15,38 @@
  */
 
 package com.android.build.gradle.integration.application
+
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.utils.ModelHelper
 import com.android.build.gradle.integration.common.utils.SourceProviderHelper
-import com.android.utils.StringHelper
 import com.android.builder.model.AndroidArtifact
 import com.android.builder.model.AndroidProject
 import com.android.builder.model.ProductFlavorContainer
 import com.android.builder.model.SourceProviderContainer
 import com.android.builder.model.Variant
+import com.android.utils.StringHelper
 import groovy.transform.CompileStatic
-import org.junit.AfterClass
-import org.junit.BeforeClass
-import org.junit.ClassRule
+import org.junit.Rule
 import org.junit.Test
 
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatAar
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk
 import static com.android.builder.core.VariantType.ANDROID_TEST
 import static com.android.builder.model.AndroidProject.ARTIFACT_ANDROID_TEST
 import static com.google.common.truth.Truth.assertThat
-
 /**
  * Assemble tests for basicMultiFlavors
  */
 @CompileStatic
 class BasicMultiFlavorTest {
-    @ClassRule
-    static public GradleTestProject project = GradleTestProject.builder()
+    @Rule
+    public GradleTestProject project = GradleTestProject.builder()
             .fromTestProject("basicMultiFlavors")
             .create()
 
-    static public AndroidProject model
-
-    @BeforeClass
-    static void setUp() {
-        model = project.getSingleModel()
-    }
-
-    @AfterClass
-    static void cleanUp() {
-        project = null
-        model = null
-    }
-
     @Test
     void "check source providers"() {
+        AndroidProject model = project.model().getSingle()
         File projectDir = project.getTestDir()
         ModelHelper.testDefaultSourceSets(model, projectDir)
 
@@ -95,5 +83,54 @@ class BasicMultiFlavorTest {
             assertThat(artifact.getVariantSourceProvider()).isNotNull()
             assertThat(artifact.getMultiFlavorSourceProvider()).isNotNull()
         }
+    }
+
+    @Test
+    void "check precedence for multi-flavor"() {
+        project.execute("assembleFreeBetaDebug")
+
+        // Make sure "beta" overrides "free" and "defaultConfig".
+        assertThatApk(project.getApk("free", "beta", "debug")).hasMaxSdkVersion(19)
+
+        // Make sure the suffixes are applied in the right order.
+        assertThatApk(project.getApk("free", "beta", "debug"))
+                .hasVersionName("com.example.default.free.beta.debug")
+    }
+
+    @Test
+    void "check res values and manifest placeholders for multi-flavor"() {
+        addResValuesAndPlaceholders()
+        AndroidProject model = project.executeAndReturnModel("assembleFreeBetaDebug")
+
+        Variant variant = ModelHelper.findVariantByName(model.getVariants(), "freeBetaDebug")
+
+        assertThat(variant.mergedFlavor.resValues.get("VALUE_DEBUG").value)
+                .isEqualTo("13") // Value from "beta".
+
+        assertThat(variant.mergedFlavor.manifestPlaceholders.get("holder")).isEqualTo("beta")
+    }
+
+    @Test
+    void "check resources resolution"() {
+        project.execute("assembleFreeBetaDebug")
+        assertThatAar(project.getApk("free", "beta", "debug"))
+                .containsResource("drawable/free.png")
+    }
+
+    private void addResValuesAndPlaceholders() {
+        project.getBuildFile() << """
+android {
+    productFlavors {
+        free {
+            resValue "string", "VALUE_DEBUG",   "10"
+            manifestPlaceholders = ["holder":"free"]
+        }
+        beta {
+            resValue "string", "VALUE_DEBUG",   "13"
+            manifestPlaceholders = ["holder":"beta"]
+        }
+    }
+}
+"""
     }
 }

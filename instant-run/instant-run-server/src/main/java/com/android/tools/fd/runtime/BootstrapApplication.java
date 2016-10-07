@@ -20,11 +20,13 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 
 import android.app.ActivityManager;
+import android.content.ComponentCallbacks;
 import android.os.Process;
 import android.app.ActivityManager.RunningAppProcessInfo;
 import android.app.Application;
 import android.content.Context;
 import android.content.ContextWrapper;
+import android.content.pm.PackageManager;
 import android.util.Log;
 
 import java.io.File;
@@ -47,17 +49,17 @@ import java.util.logging.Level;
 /**
  * A stub application that patches the class loader, then replaces itself with the real application
  * by applying a liberal amount of reflection on Android internals.
- * <p/>
+ * <p>
  * <p>This is, of course, terribly error-prone. Most of this code was tested with API versions
  * 8, 10, 14, 15, 16, 17, 18, 19 and 21 on the Android emulator, a Nexus 5 running Lollipop LRX22C
  * and a Samsung GT-I5800 running Froyo XWJPE. The exception is {@code monkeyPatchAssetManagers},
  * which only works on Kitkat and Lollipop.
- * <p/>
+ * <p>
  * <p>Note that due to a bug in Dalvik, this only works on Kitkat if ART is the Java runtime.
- * <p/>
+ * <p>
  * <p>Unfortunately, if this does not work, we don't have a fallback mechanism: as soon as we
  * build the APK with this class as the Application, we are committed to going through with it.
- * <p/>
+ * <p>
  * <p>This class should use as few other classes as possible before the class loader is patched
  * because any class loaded before it cannot be incrementally deployed.
  */
@@ -75,10 +77,10 @@ public class BootstrapApplication extends Application {
             @Override
             public boolean isLoggable(@NonNull Level level) {
                 if (level == Level.SEVERE) {
-                    return Log.isLoggable(BootstrapApplication.LOG_TAG, Log.ERROR);
+                    return Log.isLoggable(LOG_TAG, Log.ERROR);
                 } else if (level == Level.FINE) {
-                    return Log.isLoggable(BootstrapApplication.LOG_TAG, Log.VERBOSE);
-                } else return Log.isLoggable(BootstrapApplication.LOG_TAG, Log.INFO);
+                    return Log.isLoggable(LOG_TAG, Log.VERBOSE);
+                } else return Log.isLoggable(LOG_TAG, Log.INFO);
             }
 
             @Override
@@ -86,23 +88,23 @@ public class BootstrapApplication extends Application {
                     @Nullable Throwable throwable) {
                 if (level == Level.SEVERE) {
                     if (throwable == null) {
-                        Log.e(BootstrapApplication.LOG_TAG, string);
+                        Log.e(LOG_TAG, string);
                     } else {
-                        Log.e(BootstrapApplication.LOG_TAG, string, throwable);
+                        Log.e(LOG_TAG, string, throwable);
                     }
                 } else if (level == Level.FINE) {
-                    if (Log.isLoggable(BootstrapApplication.LOG_TAG, Log.VERBOSE)) {
+                    if (Log.isLoggable(LOG_TAG, Log.VERBOSE)) {
                         if (throwable == null) {
-                            Log.v(BootstrapApplication.LOG_TAG, string);
+                            Log.v(LOG_TAG, string);
                         } else {
-                            Log.v(BootstrapApplication.LOG_TAG, string, throwable);
+                            Log.v(LOG_TAG, string, throwable);
                         }
                     }
-                } else if (Log.isLoggable(BootstrapApplication.LOG_TAG, Log.INFO)) {
+                } else if (Log.isLoggable(LOG_TAG, Log.INFO)) {
                     if (throwable == null) {
-                        Log.i(BootstrapApplication.LOG_TAG, string);
+                        Log.i(LOG_TAG, string);
                     } else {
-                        Log.i(BootstrapApplication.LOG_TAG, string, throwable);
+                        Log.i(LOG_TAG, string, throwable);
                     }
                 }
             }
@@ -113,11 +115,10 @@ public class BootstrapApplication extends Application {
     private Application realApplication;
 
     public BootstrapApplication() {
-        if (Log.isLoggable(LOG_TAG, Log.INFO)) {
-            Log.i(LOG_TAG, String.format(
-                    "BootstrapApplication created. Android package is %s, real application class is %s.",
-                    AppInfo.applicationId, AppInfo.applicationClass));
-        }
+        // always log such that we can debug issues like http://b.android.com/215805
+        Log.i(LOG_TAG, String.format(
+                "Instant Run Runtime started. Android package is %s, real application class is %s.",
+                AppInfo.applicationId, AppInfo.applicationClass));
     }
 
     private void createResources(long apkModified) {
@@ -127,22 +128,22 @@ public class BootstrapApplication extends Application {
         File file = FileManager.getExternalResourceFile();
         externalResourcePath = file != null ? file.getPath() : null;
 
-        if (Log.isLoggable(LOG_TAG, Log.INFO)) {
-            Log.i(LOG_TAG, "Resource override is " + externalResourcePath);
+        if (Log.isLoggable(LOG_TAG, Log.VERBOSE)) {
+            Log.v(LOG_TAG, "Resource override is " + externalResourcePath);
         }
 
         if (file != null) {
             try {
                 long resourceModified = file.lastModified();
-                if (Log.isLoggable(LOG_TAG, Log.INFO)) {
-                    Log.i(LOG_TAG, "Resource patch last modified: " + resourceModified);
-                    Log.i(LOG_TAG, "APK last modified: " + apkModified + " " +
+                if (Log.isLoggable(LOG_TAG, Log.VERBOSE)) {
+                    Log.v(LOG_TAG, "Resource patch last modified: " + resourceModified);
+                    Log.v(LOG_TAG, "APK last modified: " + apkModified + " " +
                             (apkModified > resourceModified ? ">" : "<") + " resource patch");
                 }
 
                 if (apkModified == 0L || resourceModified <= apkModified) {
-                    if (Log.isLoggable(LOG_TAG, Log.INFO)) {
-                        Log.i(LOG_TAG, "Ignoring resource file, older than APK");
+                    if (Log.isLoggable(LOG_TAG, Log.VERBOSE)) {
+                        Log.v(LOG_TAG, "Ignoring resource file, older than APK");
                     }
                     externalResourcePath = null;
                 }
@@ -160,8 +161,8 @@ public class BootstrapApplication extends Application {
         @SuppressWarnings("unused") Class<MonkeyPatcher> patcher = MonkeyPatcher.class;
 
         if (!dexList.isEmpty()) {
-            if (Log.isLoggable(LOG_TAG, Log.INFO)) {
-                Log.i(LOG_TAG, "Bootstrapping class loader with dex list " + join('\n', dexList));
+            if (Log.isLoggable(LOG_TAG, Log.VERBOSE)) {
+                Log.v(LOG_TAG, "Bootstrapping class loader with dex list " + join('\n', dexList));
             }
 
             ClassLoader classLoader = BootstrapApplication.class.getClassLoader();
@@ -169,8 +170,8 @@ public class BootstrapApplication extends Application {
             try {
                 nativeLibraryPath = (String) classLoader.getClass().getMethod("getLdLibraryPath")
                                 .invoke(classLoader);
-                if (Log.isLoggable(LOG_TAG, Log.INFO)) {
-                    Log.i(LOG_TAG, "Native library path: " + nativeLibraryPath);
+                if (Log.isLoggable(LOG_TAG, Log.VERBOSE)) {
+                    Log.v(LOG_TAG, "Native library path: " + nativeLibraryPath);
                 }
             } catch (Throwable t) {
                 Log.e(LOG_TAG, "Failed to determine native library path " + t.getMessage());
@@ -181,6 +182,8 @@ public class BootstrapApplication extends Application {
                     nativeLibraryPath,
                     codeCacheDir,
                     dexList);
+        } else {
+            Log.w(LOG_TAG, "No instant run dex files added to classpath");
         }
     }
 
@@ -195,8 +198,8 @@ public class BootstrapApplication extends Application {
 
     private void createRealApplication() {
         if (AppInfo.applicationClass != null) {
-            if (Log.isLoggable(LOG_TAG, Log.INFO)) {
-                Log.i(LOG_TAG, "About to create real application of class name = " +
+            if (Log.isLoggable(LOG_TAG, Log.VERBOSE)) {
+                Log.v(LOG_TAG, "About to create real application of class name = " +
                         AppInfo.applicationClass);
             }
 
@@ -204,14 +207,14 @@ public class BootstrapApplication extends Application {
                 @SuppressWarnings("unchecked")
                 Class<? extends Application> realClass =
                         (Class<? extends Application>) Class.forName(AppInfo.applicationClass);
-                if (Log.isLoggable(LOG_TAG, Log.INFO)) {
-                    Log.i(LOG_TAG, "Created delegate app class successfully : " + realClass +
+                if (Log.isLoggable(LOG_TAG, Log.VERBOSE)) {
+                    Log.v(LOG_TAG, "Created delegate app class successfully : " + realClass +
                             " with class loader " + realClass.getClassLoader());
                 }
                 Constructor<? extends Application> constructor = realClass.getConstructor();
                 realApplication = constructor.newInstance();
-                if (Log.isLoggable(LOG_TAG, Log.INFO)) {
-                    Log.i(LOG_TAG, "Created real app instance successfully :" + realApplication);
+                if (Log.isLoggable(LOG_TAG, Log.VERBOSE)) {
+                    Log.v(LOG_TAG, "Created real app instance successfully :" + realApplication);
                 }
             } catch (Exception e) {
                 throw new IllegalStateException(e);
@@ -250,6 +253,47 @@ public class BootstrapApplication extends Application {
                 throw new IllegalStateException(e);
             }
         }
+    }
+
+    @Override
+    public Context createPackageContext(String packageName, int flags)
+            throws PackageManager.NameNotFoundException {
+        Context c = realApplication.createPackageContext(packageName, flags);
+        return c == null ? realApplication : c;
+    }
+
+    @Override
+    public void registerComponentCallbacks(ComponentCallbacks callback) {
+        realApplication.registerComponentCallbacks(callback);
+    }
+
+    @Override
+    public void registerActivityLifecycleCallbacks(
+            ActivityLifecycleCallbacks callback) {
+        realApplication.registerActivityLifecycleCallbacks(callback);
+    }
+
+    @Override
+    public void registerOnProvideAssistDataListener(
+            OnProvideAssistDataListener callback) {
+        realApplication.registerOnProvideAssistDataListener(callback);
+    }
+
+    @Override
+    public void unregisterComponentCallbacks(ComponentCallbacks callback) {
+        realApplication.unregisterComponentCallbacks(callback);
+    }
+
+    @Override
+    public void unregisterActivityLifecycleCallbacks(
+            ActivityLifecycleCallbacks callback) {
+        realApplication.unregisterActivityLifecycleCallbacks(callback);
+    }
+
+    @Override
+    public void unregisterOnProvideAssistDataListener(
+            OnProvideAssistDataListener callback) {
+        realApplication.unregisterOnProvideAssistDataListener(callback);
     }
 
     @Override
@@ -301,8 +345,8 @@ public class BootstrapApplication extends Application {
                         // start the server anyway. This safeguards against apps doing strange
                         // things with the process name.
                         startServer = true;
-                        if (Log.isLoggable(LOG_TAG, Log.INFO)) {
-                            Log.i(LOG_TAG, "Multiprocess but didn't find process with package: "
+                        if (Log.isLoggable(LOG_TAG, Log.VERBOSE)) {
+                            Log.v(LOG_TAG, "Multiprocess but didn't find process with package: "
                                     + "starting server anyway");
                         }
                     }
@@ -315,8 +359,8 @@ public class BootstrapApplication extends Application {
                     Server.create(AppInfo.applicationId, BootstrapApplication.this);
                 }
             } catch (Throwable t) {
-                if (Log.isLoggable(LOG_TAG, Log.INFO)) {
-                    Log.i(LOG_TAG, "Failed during multi process check", t);
+                if (Log.isLoggable(LOG_TAG, Log.VERBOSE)) {
+                    Log.v(LOG_TAG, "Failed during multi process check", t);
                 }
                 Server.create(AppInfo.applicationId, BootstrapApplication.this);
             }

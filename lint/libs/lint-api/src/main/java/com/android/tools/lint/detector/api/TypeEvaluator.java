@@ -34,6 +34,20 @@ import com.android.tools.lint.client.api.JavaParser.ResolvedMethod;
 import com.android.tools.lint.client.api.JavaParser.ResolvedNode;
 import com.android.tools.lint.client.api.JavaParser.ResolvedVariable;
 import com.android.tools.lint.client.api.JavaParser.TypeDescriptor;
+import com.intellij.psi.PsiAssignmentExpression;
+import com.intellij.psi.PsiClass;
+import com.intellij.psi.PsiDeclarationStatement;
+import com.intellij.psi.PsiElement;
+import com.intellij.psi.PsiExpression;
+import com.intellij.psi.PsiExpressionStatement;
+import com.intellij.psi.PsiField;
+import com.intellij.psi.PsiLocalVariable;
+import com.intellij.psi.PsiMethod;
+import com.intellij.psi.PsiReference;
+import com.intellij.psi.PsiReferenceExpression;
+import com.intellij.psi.PsiStatement;
+import com.intellij.psi.PsiType;
+import com.intellij.psi.util.PsiTreeUtil;
 
 import java.util.List;
 import java.util.ListIterator;
@@ -90,8 +104,10 @@ public class TypeEvaluator {
 
 
     /**
-     * Returns true if the node evaluates to an instance of type SecureRandom
+     * Returns the inferred type of the given node
+     * @deprecated Use {@link #evaluate(PsiElement)} instead
      */
+    @Deprecated
     @Nullable
     public TypeDescriptor evaluate(@NonNull Node node) {
         ResolvedNode resolved = null;
@@ -248,6 +264,102 @@ public class TypeEvaluator {
     }
 
     /**
+     * Returns the inferred type of the given node
+     */
+    @Nullable
+    public PsiType evaluate(@Nullable PsiElement node) {
+        if (node == null) {
+            return null;
+        }
+
+        PsiElement resolved = null;
+        if (node instanceof PsiReference) {
+            resolved = ((PsiReference) node).resolve();
+        }
+        if (resolved instanceof PsiMethod) {
+            PsiMethod method = (PsiMethod) resolved;
+            if (method.isConstructor()) {
+                PsiClass containingClass = method.getContainingClass();
+                if (containingClass != null && mContext != null) {
+                    return mContext.getEvaluator().getClassType(containingClass);
+                }
+            } else {
+                return method.getReturnType();
+            }
+        }
+
+        if (resolved instanceof PsiField) {
+            PsiField field = (PsiField) resolved;
+            if (field.getInitializer() != null) {
+                PsiType type = evaluate(field.getInitializer());
+                if (type != null) {
+                    return type;
+                }
+            }
+            return field.getType();
+        } else if (resolved instanceof PsiLocalVariable) {
+            PsiLocalVariable variable = (PsiLocalVariable) resolved;
+            PsiStatement statement = PsiTreeUtil.getParentOfType(node, PsiStatement.class,
+                    false);
+            if (statement != null) {
+                PsiStatement prev = PsiTreeUtil.getPrevSiblingOfType(statement,
+                        PsiStatement.class);
+                String targetName = variable.getName();
+                if (targetName == null) {
+                    return null;
+                }
+                while (prev != null) {
+                    if (prev instanceof PsiDeclarationStatement) {
+                        for (PsiElement element : ((PsiDeclarationStatement)prev).getDeclaredElements()) {
+                            if (variable.equals(element)) {
+                                return evaluate(variable.getInitializer());
+                            }
+                        }
+                    } else if (prev instanceof PsiExpressionStatement) {
+                        PsiExpression expression = ((PsiExpressionStatement)prev).getExpression();
+                        if (expression instanceof PsiAssignmentExpression) {
+                            PsiAssignmentExpression assign = (PsiAssignmentExpression) expression;
+                            PsiExpression lhs = assign.getLExpression();
+                            if (lhs instanceof PsiReferenceExpression) {
+                                PsiReferenceExpression reference = (PsiReferenceExpression) lhs;
+                                if (targetName.equals(reference.getReferenceName()) &&
+                                        reference.getQualifier() == null) {
+                                    return evaluate(assign.getRExpression());
+                                }
+                            }
+                        }
+                    }
+                    prev = PsiTreeUtil.getPrevSiblingOfType(prev,
+                            PsiStatement.class);
+                }
+            }
+
+            return variable.getType();
+        } else if (node instanceof PsiExpression) {
+            PsiExpression expression = (PsiExpression) node;
+            return expression.getType();
+        }
+
+        return null;
+    }
+
+    /**
+     * Evaluates the given node and returns the likely type of the instance. Convenience
+     * wrapper which creates a new {@linkplain TypeEvaluator}, evaluates the node and returns
+     * the result.
+     *
+     * @param context the context to use to resolve field references, if any
+     * @param node    the node to compute the type for
+     * @return the corresponding type descriptor, if found
+     * @deprecated Use {@link #evaluate(JavaContext, PsiElement)} instead
+     */
+    @Deprecated
+    @Nullable
+    public static TypeDescriptor evaluate(@NonNull JavaContext context, @NonNull Node node) {
+        return new TypeEvaluator(context).evaluate(node);
+    }
+
+    /**
      * Evaluates the given node and returns the likely type of the instance. Convenience
      * wrapper which creates a new {@linkplain TypeEvaluator}, evaluates the node and returns
      * the result.
@@ -257,7 +369,7 @@ public class TypeEvaluator {
      * @return the corresponding type descriptor, if found
      */
     @Nullable
-    public static TypeDescriptor evaluate(@NonNull JavaContext context, @NonNull Node node) {
+    public static PsiType evaluate(@NonNull JavaContext context, @NonNull PsiElement node) {
         return new TypeEvaluator(context).evaluate(node);
     }
 }

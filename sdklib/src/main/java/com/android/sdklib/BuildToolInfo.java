@@ -18,22 +18,28 @@ package com.android.sdklib;
 
 import static com.android.SdkConstants.FD_LIB;
 import static com.android.SdkConstants.FN_AAPT;
+import static com.android.SdkConstants.FN_AAPT2;
 import static com.android.SdkConstants.FN_AIDL;
 import static com.android.SdkConstants.FN_BCC_COMPAT;
 import static com.android.SdkConstants.FN_DEXDUMP;
 import static com.android.SdkConstants.FN_DX;
 import static com.android.SdkConstants.FN_DX_JAR;
 import static com.android.SdkConstants.FN_JACK;
+import static com.android.SdkConstants.FN_JACK_COVERAGE_PLUGIN;
+import static com.android.SdkConstants.FN_JACK_JACOCO_REPORTER;
 import static com.android.SdkConstants.FN_JILL;
 import static com.android.SdkConstants.FN_LD_ARM;
+import static com.android.SdkConstants.FN_LD_ARM64;
 import static com.android.SdkConstants.FN_LD_MIPS;
 import static com.android.SdkConstants.FN_LD_X86;
+import static com.android.SdkConstants.FN_LD_X86_64;
 import static com.android.SdkConstants.FN_RENDERSCRIPT;
 import static com.android.SdkConstants.FN_SPLIT_SELECT;
 import static com.android.SdkConstants.FN_ZIPALIGN;
 import static com.android.SdkConstants.OS_FRAMEWORK_RS;
 import static com.android.SdkConstants.OS_FRAMEWORK_RS_CLANG;
 import static com.android.sdklib.BuildToolInfo.PathId.AAPT;
+import static com.android.sdklib.BuildToolInfo.PathId.AAPT2;
 import static com.android.sdklib.BuildToolInfo.PathId.AIDL;
 import static com.android.sdklib.BuildToolInfo.PathId.ANDROID_RS;
 import static com.android.sdklib.BuildToolInfo.PathId.ANDROID_RS_CLANG;
@@ -42,10 +48,14 @@ import static com.android.sdklib.BuildToolInfo.PathId.DEXDUMP;
 import static com.android.sdklib.BuildToolInfo.PathId.DX;
 import static com.android.sdklib.BuildToolInfo.PathId.DX_JAR;
 import static com.android.sdklib.BuildToolInfo.PathId.JACK;
+import static com.android.sdklib.BuildToolInfo.PathId.JACK_COVERAGE_PLUGIN;
+import static com.android.sdklib.BuildToolInfo.PathId.JACK_JACOCO_REPORTER;
 import static com.android.sdklib.BuildToolInfo.PathId.JILL;
 import static com.android.sdklib.BuildToolInfo.PathId.LD_ARM;
+import static com.android.sdklib.BuildToolInfo.PathId.LD_ARM64;
 import static com.android.sdklib.BuildToolInfo.PathId.LD_MIPS;
 import static com.android.sdklib.BuildToolInfo.PathId.LD_X86;
+import static com.android.sdklib.BuildToolInfo.PathId.LD_X86_64;
 import static com.android.sdklib.BuildToolInfo.PathId.LLVM_RS_CC;
 import static com.android.sdklib.BuildToolInfo.PathId.SPLIT_SELECT;
 import static com.android.sdklib.BuildToolInfo.PathId.ZIP_ALIGN;
@@ -54,36 +64,25 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
 import com.android.annotations.VisibleForTesting.Visibility;
-import com.android.repository.io.FileOp;
 import com.android.repository.Revision;
-import com.android.repository.io.FileOpUtils;
 import com.android.utils.ILogger;
+import com.google.common.base.Objects;
 import com.google.common.collect.Maps;
 
 import java.io.File;
 import java.util.Map;
-import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
  * Information on a specific build-tool folder.
- * <p/>
+ * <p>
  * For unit tests, see:
  * - sdklib/src/test/.../LocalSdkTest
  * - sdklib/src/test/.../SdkManagerTest
  * - sdklib/src/test/.../BuildToolInfoTest
  */
 public class BuildToolInfo {
-
-    /** Name of the file read by {@link #getRuntimeProps()} */
-    private static final String FN_RUNTIME_PROPS = "runtime.properties";
-
-    /**
-     * Property in {@link #FN_RUNTIME_PROPS} indicating the desired runtime JVM.
-     * Type: {@link Revision#toShortString()}, e.g. "1.7.0"
-     */
-    private static final String PROP_RUNTIME_JVM = "Runtime.Jvm";
 
     /**
      * First version with native multi-dex support.
@@ -126,7 +125,21 @@ public class BuildToolInfo {
         JACK("21.1.0"),
         JILL("21.1.0"),
 
-        SPLIT_SELECT("22.0.0");
+        SPLIT_SELECT("22.0.0"),
+
+        // --- NEW IN 23.0.3 ---
+        /** OS Path to the ARM64 linker. */
+        LD_ARM64("23.0.3"),
+
+        // --- NEW IN 24.0.0 ---
+        JACK_JACOCO_REPORTER("24.0.0"),
+        JACK_COVERAGE_PLUGIN("24.0.0"),
+
+        /** OS Path to the ARM64 linker. */
+        LD_X86_64("24.0.0"),
+
+        /** OS Path to aapt2. */
+        AAPT2("24.0.0 rc2");
 
         /**
          * min revision this element was introduced.
@@ -150,9 +163,116 @@ public class BuildToolInfo {
          * @param revision the build tools revision.
          * @return true if the tool is present.
          */
-        boolean isPresentIn(@NonNull Revision revision) {
+        public boolean isPresentIn(@NonNull Revision revision) {
             return revision.compareTo(mMinRevision) >= 0;
         }
+    }
+
+    /**
+     * Creates a {@link BuildToolInfo} from a directory which follows the standard layout
+     * convention.
+     */
+    @NonNull
+    public static BuildToolInfo fromStandardDirectoryLayout(
+            @NonNull Revision revision,
+            @NonNull File path) {
+        return new BuildToolInfo(revision, path);
+    }
+
+    /**
+     * Creates a full {@link BuildToolInfo} from the specified paths.
+     *
+     * <p>The {@link Nullable} paths can only be null if corresponding tools were not present
+     * in the specified version of build tools.
+     */
+    @NonNull
+    public static BuildToolInfo modifiedLayout(
+            @NonNull Revision revision,
+            @NonNull File mainPath,
+            @NonNull File aapt,
+            @NonNull File aidl,
+            @NonNull File dx,
+            @NonNull File dxJar,
+            @NonNull File llmvRsCc,
+            @NonNull File androidRs,
+            @NonNull File androidRsClang,
+            @Nullable File bccCompat,
+            @Nullable File ldArm,
+            @Nullable File ldArm64,
+            @Nullable File ldX86,
+            @Nullable File ldX86_64,
+            @Nullable File ldMips,
+            @NonNull File zipAlign,
+            @Nullable File aapt2) {
+        BuildToolInfo result = new BuildToolInfo(revision, mainPath);
+
+        result.add(AAPT, aapt);
+        result.add(AIDL, aidl);
+        result.add(DX, dx);
+        result.add(DX_JAR, dxJar);
+        result.add(LLVM_RS_CC, llmvRsCc);
+        result.add(ANDROID_RS, androidRs);
+        result.add(ANDROID_RS_CLANG, androidRsClang);
+        result.add(ZIP_ALIGN, zipAlign);
+
+        if (bccCompat != null) {
+            result.add(BCC_COMPAT, bccCompat);
+        } else if (BCC_COMPAT.isPresentIn(revision)) {
+            throw new IllegalArgumentException("BCC_COMPAT required in " + revision.toString());
+        }
+        if (ldArm != null) {
+            result.add(LD_ARM, ldArm);
+        } else if (LD_ARM.isPresentIn(revision)) {
+            throw new IllegalArgumentException("LD_ARM required in " + revision.toString());
+        }
+        if (ldArm64 != null) {
+            result.add(LD_ARM64, ldArm64);
+        } else if (LD_ARM64.isPresentIn(revision)) {
+            throw new IllegalArgumentException("LD_ARM64 required in " + revision.toString());
+        }
+
+        if (ldX86 != null) {
+            result.add(LD_X86, ldX86);
+        } else if (LD_X86.isPresentIn(revision)) {
+            throw new IllegalArgumentException("LD_X86 required in " + revision.toString());
+        }
+
+        if (ldX86_64 != null) {
+            result.add(LD_X86_64, ldX86_64);
+        } else if (LD_X86_64.isPresentIn(revision)) {
+            throw new IllegalArgumentException("LD_X86_64 required in " + revision.toString());
+        }
+
+        if (ldMips != null) {
+            result.add(LD_MIPS, ldMips);
+        } else if (LD_MIPS.isPresentIn(revision)) {
+            throw new IllegalArgumentException("LD_MIPS required in " + revision.toString());
+        }
+
+        if (aapt2 != null) {
+            result.add(AAPT2, aapt2);
+        } else if (AAPT2.isPresentIn(revision)) {
+            throw new IllegalArgumentException("AAPT2 required in " + revision.toString());
+        }
+
+        return result;
+    }
+
+    /**
+     * Creates a new {@link BuildToolInfo} where only some tools are present.
+     *
+     * <p>This may be the case when paths are managed by an external build system.
+     */
+    @NonNull
+    public static BuildToolInfo partial(
+            @NonNull Revision revision,
+            @NonNull File location,
+            @NonNull Map<PathId, File> paths) {
+        BuildToolInfo result = new BuildToolInfo(revision, location);
+
+        paths.forEach(result::add);
+
+        return result;
     }
 
     /** The build-tool revision. */
@@ -165,11 +285,12 @@ public class BuildToolInfo {
 
     private final Map<PathId, String> mPaths = Maps.newEnumMap(PathId.class);
 
-    public BuildToolInfo(@NonNull Revision revision, @NonNull File path) {
+    private BuildToolInfo(@NonNull Revision revision, @NonNull File path) {
         mRevision = revision;
         mPath = path;
 
         add(AAPT, FN_AAPT);
+        add(AAPT2, FN_AAPT2);
         add(AIDL, FN_AIDL);
         add(DX, FN_DX);
         add(DX_JAR, FD_LIB + File.separator + FN_DX_JAR);
@@ -179,62 +300,16 @@ public class BuildToolInfo {
         add(DEXDUMP, FN_DEXDUMP);
         add(BCC_COMPAT, FN_BCC_COMPAT);
         add(LD_ARM, FN_LD_ARM);
+        add(LD_ARM64, FN_LD_ARM64);
         add(LD_X86, FN_LD_X86);
+        add(LD_X86_64, FN_LD_X86_64);
         add(LD_MIPS, FN_LD_MIPS);
         add(ZIP_ALIGN, FN_ZIPALIGN);
         add(JACK, FN_JACK);
         add(JILL, FN_JILL);
+        add(JACK_JACOCO_REPORTER, FN_JACK_JACOCO_REPORTER);
+        add(JACK_COVERAGE_PLUGIN, FN_JACK_COVERAGE_PLUGIN);
         add(SPLIT_SELECT, FN_SPLIT_SELECT);
-    }
-
-    public BuildToolInfo(
-            @NonNull Revision revision,
-            @NonNull File mainPath,
-            @NonNull File aapt,
-            @NonNull File aidl,
-            @NonNull File dx,
-            @NonNull File dxJar,
-            @NonNull File llmvRsCc,
-            @NonNull File androidRs,
-            @NonNull File androidRsClang,
-            @Nullable File bccCompat,
-            @Nullable File ldArm,
-            @Nullable File ldX86,
-            @Nullable File ldMips,
-            @NonNull File zipAlign) {
-        mRevision = revision;
-        mPath = mainPath;
-        add(AAPT, aapt);
-        add(AIDL, aidl);
-        add(DX, dx);
-        add(DX_JAR, dxJar);
-        add(LLVM_RS_CC, llmvRsCc);
-        add(ANDROID_RS, androidRs);
-        add(ANDROID_RS_CLANG, androidRsClang);
-        add(ZIP_ALIGN, zipAlign);
-
-        if (bccCompat != null) {
-            add(BCC_COMPAT, bccCompat);
-        } else if (BCC_COMPAT.isPresentIn(revision)) {
-            throw new IllegalArgumentException("BCC_COMPAT required in " + revision.toString());
-        }
-        if (ldArm != null) {
-            add(LD_ARM, ldArm);
-        } else if (LD_ARM.isPresentIn(revision)) {
-            throw new IllegalArgumentException("LD_ARM required in " + revision.toString());
-        }
-
-        if (ldX86 != null) {
-            add(LD_X86, ldX86);
-        } else if (LD_X86.isPresentIn(revision)) {
-            throw new IllegalArgumentException("LD_X86 required in " + revision.toString());
-        }
-
-        if (ldMips != null) {
-            add(LD_MIPS, ldMips);
-        } else if (LD_MIPS.isPresentIn(revision)) {
-            throw new IllegalArgumentException("LD_MIPS required in " + revision.toString());
-        }
     }
 
     private void add(PathId id, String leaf) {
@@ -259,7 +334,7 @@ public class BuildToolInfo {
 
     /**
      * Returns the build-tool revision-specific folder.
-     * <p/>
+     * <p>
      * For compatibility reasons, use {@link #getPath(PathId)} if you need the path to a
      * specific tool.
      */
@@ -306,47 +381,9 @@ public class BuildToolInfo {
         return true;
     }
 
-    /**
-     * Parses the build-tools runtime.props file, if present.
-     *
-     * @return The properties from runtime.props if present, otherwise an empty properties set.
-     */
-    @NonNull
-    public Properties getRuntimeProps() {
-        FileOp fop = FileOpUtils.create();
-        return fop.loadProperties(new File(mPath, FN_RUNTIME_PROPS));
-    }
-
-    /**
-     * Checks whether this build-tools package can run on the current JVM.
-     *
-     * @return True if the build-tools package has a Runtime.Jvm property and it is lesser or
-     *  equal to the current JVM version.
-     *         False if the property is present and the requirement is not met.
-     *         True if there's an error parsing either versions and the comparison cannot be made.
-     */
-    public boolean canRunOnJvm() {
-        Properties props = getRuntimeProps();
-        String required = props.getProperty(PROP_RUNTIME_JVM);
-        if (required == null) {
-            // No requirement ==> accepts.
-            return true;
-        }
-        try {
-            Revision requiredVersion = Revision.parseRevision(required);
-            Revision currentVersion = getCurrentJvmVersion();
-            return currentVersion.compareTo(requiredVersion) >= 0;
-
-        } catch (NumberFormatException ignore) {
-            // Either we failed to parse the property version or the running JVM version.
-            // Right now take the relaxed policy of accepting it if we can't compare.
-            return true;
-        }
-    }
-
     @VisibleForTesting(visibility=Visibility.PRIVATE)
     @Nullable
-    protected Revision getCurrentJvmVersion() throws NumberFormatException {
+    static Revision getCurrentJvmVersion() throws NumberFormatException {
         String javav = System.getProperty("java.version");              //$NON-NLS-1$
         // java Version is typically in the form "1.2.3_45" and we just need to keep up to "1.2.3"
         // since our revision numbers are in 3-parts form (1.2.3).
@@ -364,12 +401,11 @@ public class BuildToolInfo {
      */
     @Override
     public String toString() {
-        StringBuilder builder = new StringBuilder();
-        builder.append("<BuildToolInfo rev=").append(mRevision);    //$NON-NLS-1$
-        builder.append(", mPath=").append(mPath);                   //$NON-NLS-1$
-        builder.append(", mPaths=").append(getPathString());        //$NON-NLS-1$
-        builder.append(">");                                        //$NON-NLS-1$
-        return builder.toString();
+        return Objects.toStringHelper(this)
+                .add("rev", mRevision)
+                .add("mPath", mPath)
+                .add("mPaths", getPathString())
+                .toString();
     }
 
     private String getPathString() {

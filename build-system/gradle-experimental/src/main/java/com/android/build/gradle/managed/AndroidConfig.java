@@ -16,7 +16,7 @@
 
 package com.android.build.gradle.managed;
 
-import com.android.build.gradle.api.VariantFilter;
+import com.android.build.api.variant.VariantFilter;
 import com.android.build.gradle.internal.CompileOptions;
 import com.android.build.gradle.internal.coverage.JacocoOptions;
 import com.android.build.gradle.internal.dsl.AaptOptions;
@@ -26,6 +26,7 @@ import com.android.build.gradle.internal.dsl.LintOptions;
 import com.android.build.gradle.internal.dsl.PackagingOptions;
 import com.android.build.gradle.internal.dsl.Splits;
 import com.android.build.gradle.internal.dsl.TestOptions;
+import com.android.build.gradle.internal.model.CoreExternalNativeBuild;
 import com.android.builder.core.LibraryRequest;
 import com.android.builder.testing.api.DeviceProvider;
 import com.android.builder.testing.api.TestServer;
@@ -110,7 +111,7 @@ public interface AndroidConfig {
 
     NdkConfig getNdk();
 
-    /** Adb options */
+    /** Adb options. */
     @Unmanaged
     AdbOptions getAdbOptions();
     void setAdbOptions(AdbOptions adbOptions);
@@ -120,7 +121,7 @@ public interface AndroidConfig {
     AaptOptions getAaptOptions();
     void setAaptOptions(AaptOptions aaptOptions);
 
-    /** Compile options */
+    /** Compile options. */
     @Unmanaged
     CompileOptions getCompileOptions();
     void setCompileOptions(CompileOptions compileOptions);
@@ -140,6 +141,9 @@ public interface AndroidConfig {
     LintOptions getLintOptions();
     void setLintOptions(LintOptions lintOptions);
 
+    /** ExternalNativeBuild options. */
+    CoreExternalNativeBuild getExternalNativeBuild();
+
     /** Packaging options. */
     @Unmanaged
     PackagingOptions getPackagingOptions();
@@ -150,7 +154,7 @@ public interface AndroidConfig {
     TestOptions getTestOptions();
     void setTestOptions(TestOptions testOptions);
 
-    /** APK splits */
+    /** APK splits. */
     @Unmanaged
     Splits getSplits();
     void setSplits(Splits splits);

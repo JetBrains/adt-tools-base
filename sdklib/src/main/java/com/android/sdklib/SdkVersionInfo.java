@@ -18,7 +18,6 @@ package com.android.sdklib;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.google.common.base.Strings;
-
 import java.util.Locale;
 
 /** Information about available SDK Versions */
@@ -30,18 +29,50 @@ public class SdkVersionInfo {
      * release. This number is used as a baseline and any more recent platforms
      * found can be used to increase the highest known number.
      */
-    public static final int HIGHEST_KNOWN_API = 23;
+    public static final int HIGHEST_KNOWN_API = 24;
 
     /**
      * Like {@link #HIGHEST_KNOWN_API} but does not include preview platforms
      */
-    public static final int HIGHEST_KNOWN_STABLE_API = 23;
+    public static final int HIGHEST_KNOWN_STABLE_API = 24;
 
-   /**
-    * The lowest active API level in the ecosystem. This number will change over time
-    * as the distribution of older platforms decreases.
-    */
-    public static final int LOWEST_ACTIVE_API = 8;
+    /**
+     * The lowest active API level in the ecosystem. This number will change over time
+     * as the distribution of older platforms decreases.
+     */
+    public static final int LOWEST_ACTIVE_API = 9;
+
+    /**
+     * The highest known API level for Wearables. Note the tools at the
+     * downloadable system images for wearables to see if there are more recent
+     * versions.
+     */
+    public static final int HIGHEST_KNOWN_API_WEAR = 23;
+
+    /**
+     * The lowest active api for wearables. This number will change over time
+     * as the distribution of older platforms decreases.
+     */
+    public static final int LOWEST_ACTIVE_API_WEAR = 20;
+
+    /**
+     * The highest known API level for Android TV. Note the tools at the
+     * downloadable system images for TV to see if there are more recent
+     * versions.
+     */
+    public static final int HIGHEST_KNOWN_API_TV = 24;
+
+    /**
+     * The lowest active api for TV. This number will change over time
+     * as the distribution of older platforms decreases.
+     */
+    public static final int LOWEST_ACTIVE_API_TV = 21;
+
+    /**
+     * The lowest api level we can accept for compileSdkVersion for
+     * for a new project. Make sure design and appcompat is supported.
+     */
+    public static final int LOWEST_COMPILE_SDK_VERSION = 22;
 
     /**
 
@@ -95,10 +126,11 @@ public class SdkVersionInfo {
             case 17: return "4.2";
             case 18: return "4.3";
             case 19: return "4.4";
-            case 20: return "4.4";
+            case 20: return "4.4W";
             case 21: return "5.0";
             case 22: return "5.1";
             case 23: return "6.0";
+            case 24: return "7.0";
             // If you add more versions here, also update #getBuildCodes and
             // #HIGHEST_KNOWN_API
 
@@ -145,6 +177,8 @@ public class SdkVersionInfo {
                 return "Lollipop";
             case 23:
                 return "Marshmallow";
+            case 24:
+                return "Nougat";
 
             // If you add more versions here, also update #getBuildCodes and
             // #HIGHEST_KNOWN_API
@@ -189,6 +223,7 @@ public class SdkVersionInfo {
             case 21: return "LOLLIPOP"; //$NON-NLS-1$
             case 22: return "LOLLIPOP_MR1"; //$NON-NLS-1$
             case 23: return "M"; //$NON-NLS-1$
+            case 24: return "N"; //$NON-NLS-1$
             // If you add more versions here, also update #getAndroidName and
             // #HIGHEST_KNOWN_API
         }
@@ -197,7 +232,7 @@ public class SdkVersionInfo {
     }
 
     /**
-     * Returns the API level of the given build code (e.g. JELLY_BEAN_MR1 => 17), or -1 if not
+     * Returns the API level of the given build code (e.g. JELLY_BEAN_MR1 ⇒ 17), or -1 if not
      * recognized
      *
      * @param buildCode         the build code name (not case sensitive)
@@ -218,12 +253,11 @@ public class SdkVersionInfo {
         if (buildCode.equalsIgnoreCase("L")) {
             return 21; // For now the Build class also provides this as an alias to Lollipop
         }
-
         return recognizeUnknowns ? HIGHEST_KNOWN_API + 1 : -1;
     }
 
     /**
-     * Returns the API level of the given preview code name (e.g. JellyBeanMR2 => 17), or -1 if not
+     * Returns the API level of the given preview code name (e.g. JellyBeanMR2 ⇒ 17), or -1 if not
      * recognized
      *
      * @param previewName       the preview name (not case sensitive)
@@ -355,5 +389,43 @@ public class SdkVersionInfo {
 
         // Must be a future SDK platform
         return new AndroidVersion(HIGHEST_KNOWN_API, apiOrPreviewName);
+    }
+
+    /**
+     * Returns the codename for a given {@link AndroidVersion}'s API level.
+     */
+    @Nullable
+    public static String getAndroidVersionCodeName(@NonNull AndroidVersion version) {
+        String codeName = version.getCodename();
+        if (codeName == null) {
+            codeName = getCodeName(version.getApiLevel());
+        }
+        return codeName;
+    }
+
+    /**
+     * Returns a user-friendly description of this version, like "Android 5.1 (Lollipop)",
+     * or "Android 6.X (N) Preview".
+     */
+    public static String getVersionWithCodename(AndroidVersion version) {
+        StringBuilder result = new StringBuilder();
+        result.append("Android ");
+        if (version.isPreview()) {
+            result.append(version.getCodename());
+            result.append(" Preview");
+        } else {
+            String versionString = getVersionString(version.getFeatureLevel());
+            result.append(versionString == null ? "API " + version.getApiString() : versionString);
+            String codeName = version.getCodename();
+            if (codeName == null) {
+                codeName = getCodeName(version.getFeatureLevel());
+            }
+            if (codeName != null) {
+                result.append(" (");
+                result.append(codeName);
+                result.append(")");
+            }
+        }
+        return result.toString();
     }
 }

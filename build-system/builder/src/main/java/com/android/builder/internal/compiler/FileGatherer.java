@@ -34,6 +34,11 @@ public class FileGatherer implements SourceSearcher.SourceFileProcessor {
         mFiles.add(sourceFile);
     }
 
+    @Override
+    public void initOnFirstFile() {
+        // do nothing.
+    }
+
     @NonNull
     public List<File> getFiles() {
         return mFiles;

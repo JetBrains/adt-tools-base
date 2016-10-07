@@ -40,12 +40,13 @@ class FileUseMapEntry<T> {
      * Comparator that compares entries by their start date.
      */
     public static final Comparator<FileUseMapEntry<?>> COMPARE_BY_START =
-            new Comparator<FileUseMapEntry<?>>() {
-        @Override
-        public int compare(@NonNull FileUseMapEntry<?> o1, @NonNull FileUseMapEntry<?> o2) {
-            return Ints.checkedCast(o1.getStart() - o2.getStart());
-        }
-    };
+            (o1, o2) -> Ints.saturatedCast(o1.getStart() - o2.getStart());
+
+    /**
+     * Comparator that compares entries by their size.
+     */
+    public static final Comparator<FileUseMapEntry<?>> COMPARE_BY_SIZE =
+            (o1, o2) -> Ints.saturatedCast(o1.getSize() - o2.getSize());
 
     /**
      * The first byte in the entry.
@@ -87,7 +88,7 @@ class FileUseMapEntry<T> {
      * @return the entry
      */
     public static FileUseMapEntry<Object> makeFree(long start, long end) {
-        return new FileUseMapEntry<Object>(start, end, null);
+        return new FileUseMapEntry<>(start, end, null);
     }
 
     /**
@@ -101,7 +102,7 @@ class FileUseMapEntry<T> {
      */
     public static <T> FileUseMapEntry<T> makeUsed(long start, long end, @NonNull T store) {
         Preconditions.checkNotNull(store, "store == null");
-        return new FileUseMapEntry<T>(start, end, store);
+        return new FileUseMapEntry<>(start, end, store);
     }
 
     /**

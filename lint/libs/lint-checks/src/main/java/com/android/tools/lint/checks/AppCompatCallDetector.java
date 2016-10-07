@@ -21,9 +21,7 @@ import static com.android.tools.lint.detector.api.TextFormat.RAW;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.tools.lint.client.api.JavaParser.ResolvedClass;
-import com.android.tools.lint.client.api.JavaParser.ResolvedMethod;
-import com.android.tools.lint.client.api.JavaParser.ResolvedNode;
+import com.android.tools.lint.client.api.JavaEvaluator;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Context;
 import com.android.tools.lint.detector.api.Detector;
@@ -33,17 +31,17 @@ import com.android.tools.lint.detector.api.JavaContext;
 import com.android.tools.lint.detector.api.LintUtils;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
-import com.android.tools.lint.detector.api.Speed;
 import com.android.tools.lint.detector.api.TextFormat;
+import com.intellij.psi.JavaElementVisitor;
+import com.intellij.psi.PsiClass;
+import com.intellij.psi.PsiMethod;
+import com.intellij.psi.PsiMethodCallExpression;
+import com.intellij.psi.util.PsiTreeUtil;
 
 import java.util.Arrays;
 import java.util.List;
 
-import lombok.ast.AstVisitor;
-import lombok.ast.ClassDeclaration;
-import lombok.ast.MethodInvocation;
-
-public class AppCompatCallDetector extends Detector implements Detector.JavaScanner {
+public class AppCompatCallDetector extends Detector implements Detector.JavaPsiScanner {
     public static final Issue ISSUE = Issue.create(
             "AppCompatMethod",
             "Using Wrong AppCompat Method",
@@ -70,12 +68,6 @@ public class AppCompatCallDetector extends Detector implements Detector.JavaScan
     public AppCompatCallDetector() {
     }
 
-    @NonNull
-    @Override
-    public Speed getSpeed() {
-        return Speed.NORMAL;
-    }
-
     @Override
     public void beforeCheckProject(@NonNull Context context) {
         Boolean dependsOnAppCompat = context.getProject().dependsOn(APPCOMPAT_LIB_ARTIFACT);
@@ -95,10 +87,10 @@ public class AppCompatCallDetector extends Detector implements Detector.JavaScan
     }
 
     @Override
-    public void visitMethod(@NonNull JavaContext context, @Nullable AstVisitor visitor,
-            @NonNull MethodInvocation node) {
-        if (mDependsOnAppCompat && isAppBarActivityCall(context, node)) {
-            String name = node.astName().astValue();
+    public void visitMethod(@NonNull JavaContext context, @Nullable JavaElementVisitor visitor,
+            @NonNull PsiMethodCallExpression node, @NonNull PsiMethod method) {
+        if (mDependsOnAppCompat && isAppBarActivityCall(context, node, method)) {
+            String name = method.getName();
             String replace = null;
             if (GET_ACTION_BAR.equals(name)) {
                 replace = "getSupportActionBar";
@@ -122,24 +114,15 @@ public class AppCompatCallDetector extends Detector implements Detector.JavaScan
     }
 
     private static boolean isAppBarActivityCall(@NonNull JavaContext context,
-            @NonNull MethodInvocation node) {
-        ResolvedNode resolved = context.resolve(node);
-        if (resolved instanceof ResolvedMethod) {
-            ResolvedMethod method = (ResolvedMethod) resolved;
-            ResolvedClass containingClass = method.getContainingClass();
-            if (containingClass.isSubclassOf(CLASS_ACTIVITY, false)) {
-                // Make sure that the calling context is a subclass of ActionBarActivity;
-                // we don't want to flag these calls if they are in non-appcompat activities
-                // such as PreferenceActivity (see b.android.com/58512)
-                ClassDeclaration surroundingClass = JavaContext.findSurroundingClass(node);
-                if (surroundingClass != null) {
-                    ResolvedNode clz = context.resolve(surroundingClass);
-                    return clz instanceof ResolvedClass &&
-                            ((ResolvedClass)clz).isSubclassOf(
-                                    "android.support.v7.app.ActionBarActivity",
-                                    false);
-                }
-            }
+            @NonNull PsiMethodCallExpression node, @NonNull PsiMethod method) {
+        JavaEvaluator evaluator = context.getEvaluator();
+        if (evaluator.isMemberInSubClassOf(method, CLASS_ACTIVITY, false)) {
+            // Make sure that the calling context is a subclass of ActionBarActivity;
+            // we don't want to flag these calls if they are in non-appcompat activities
+            // such as PreferenceActivity (see b.android.com/58512)
+            PsiClass cls = PsiTreeUtil.getParentOfType(node, PsiClass.class, true);
+            return cls != null && evaluator.extendsClass(cls,
+                    "android.support.v7.app.ActionBarActivity", false);
         }
         return false;
     }

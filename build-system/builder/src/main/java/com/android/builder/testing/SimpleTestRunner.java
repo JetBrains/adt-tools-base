@@ -20,6 +20,7 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.builder.internal.InstallUtils;
 import com.android.builder.internal.testing.CustomTestRunListener;
+import com.android.builder.internal.testing.ShardedTestCallable;
 import com.android.builder.internal.testing.SimpleTestCallable;
 import com.android.builder.testing.api.DeviceConfigProviderImpl;
 import com.android.builder.testing.api.DeviceConnector;
@@ -37,8 +38,10 @@ import com.google.common.collect.ImmutableList;
 import java.io.File;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Basic {@link TestRunner} running tests on all devices.
@@ -50,11 +53,18 @@ public class SimpleTestRunner implements TestRunner {
     @NonNull
     private final ProcessExecutor mProcessExecutor;
 
-    public SimpleTestRunner(
-            @Nullable File splitSelectExec,
-            @NonNull ProcessExecutor processExecutor) {
+    private final boolean mEnableSharding;
+
+    @Nullable
+    private final Integer mNumShards;
+
+    public SimpleTestRunner(@Nullable File splitSelectExec,
+            @NonNull ProcessExecutor processExecutor,
+            boolean enableSharding, @Nullable Integer numShards) {
         mSplitSelectExec = splitSelectExec;
         mProcessExecutor = processExecutor;
+        mEnableSharding = enableSharding;
+        mNumShards = numShards;
     }
 
     @Override
@@ -70,13 +80,15 @@ public class SimpleTestRunner implements TestRunner {
             @NonNull File resultsDir,
             @NonNull File coverageDir,
             @NonNull ILogger logger) throws TestException, NoAuthorizedDeviceFoundException, InterruptedException {
-
-        WaitableExecutor<Boolean> executor = new WaitableExecutor<Boolean>(maxThreads);
+        int threadPoolSize = maxThreads;
+        if (mEnableSharding) {
+            threadPoolSize = deviceList.size();
+        }
+        WaitableExecutor<Boolean> executor = WaitableExecutor.useNewFixedSizeThreadPool(threadPoolSize);
 
         int totalDevices = deviceList.size();
         int unauthorizedDevices = 0;
-        int compatibleDevices = 0;
-
+        final Map<DeviceConnector, ImmutableList<File>> availableDevices = new HashMap<DeviceConnector, ImmutableList<File>>();
         for (final DeviceConnector device : deviceList) {
             if (device.getState() != IDevice.DeviceState.UNAUTHORIZED) {
                 if (InstallUtils.checkDeviceApiLevel(
@@ -108,19 +120,14 @@ public class SimpleTestRunner implements TestRunner {
                             continue;
                         }
                     }
-
-                    compatibleDevices++;
-                    executor.execute(
-                            new SimpleTestCallable(
-                                    device, projectName, variantName, testApk, testedApks, testData,
-                                    resultsDir, coverageDir, timeoutInMs, logger));
+                    availableDevices.put(device, testedApks);
                 }
             } else {
                 unauthorizedDevices++;
             }
         }
 
-        if (totalDevices == 0 || compatibleDevices == 0) {
+        if (totalDevices == 0 || availableDevices.isEmpty()) {
             CustomTestRunListener fakeRunListener = new CustomTestRunListener(
                     "TestRunner", projectName, variantName, logger);
             fakeRunListener.setReportDir(resultsDir);
@@ -132,7 +139,8 @@ public class SimpleTestRunner implements TestRunner {
             fakeRunListener.testStarted(fakeTest);
             fakeRunListener.testFailed(
                     fakeTest,
-                    String.format("Found %d connected device(s), %d of which were compatible.", totalDevices, compatibleDevices));
+                    String.format("Found %d connected device(s), %d of which were compatible.",
+                            totalDevices, availableDevices.size()));
             fakeRunListener.testEnded(fakeTest, emptyMetrics);
 
             // end the run to generate the XML file.
@@ -140,7 +148,6 @@ public class SimpleTestRunner implements TestRunner {
 
             return false;
         } else {
-
             if (unauthorizedDevices > 0) {
                 CustomTestRunListener fakeRunListener = new CustomTestRunListener(
                         "TestRunner", projectName, variantName, logger);
@@ -156,6 +163,51 @@ public class SimpleTestRunner implements TestRunner {
                 // end the run to generate the XML file.
                 fakeRunListener.testRunEnded(0, emptyMetrics);
             }
+
+            if (mEnableSharding) {
+                final int numShards;
+                if (mNumShards == null) {
+                    numShards = availableDevices.size();
+                } else {
+                    numShards = mNumShards;
+                }
+                final AtomicInteger currentShard = new AtomicInteger(-1);
+                final ShardedTestCallable.ProgressListener progressListener
+                        = new ShardedTestCallable.ProgressListener(numShards, logger);
+                final ShardedTestCallable.ShardProvider shardProvider
+                        = new ShardedTestCallable.ShardProvider() {
+                    @Nullable
+                    @Override
+                    public Integer getNextShard() {
+                        int shard = currentShard.incrementAndGet();
+                        return shard < numShards ? shard : null;
+                    }
+
+                    @Override
+                    public int getTotalShards() {
+                        return numShards;
+                    }
+                };
+                logger.info("will shard tests into %d shards", numShards);
+                for (Map.Entry<DeviceConnector, ImmutableList<File>> runners : availableDevices
+                        .entrySet()) {
+                    ShardedTestCallable shardedTestCallable = new ShardedTestCallable(
+                            runners.getKey(), projectName, variantName, testApk, runners.getValue(),
+                            testData, resultsDir, coverageDir, timeoutInMs, logger, shardProvider);
+                    shardedTestCallable.setProgressListener(progressListener);
+                    executor.execute(shardedTestCallable);
+                }
+            } else {
+                for (Map.Entry<DeviceConnector, ImmutableList<File>> runners : availableDevices
+                        .entrySet()) {
+                    SimpleTestCallable testCallable = new SimpleTestCallable(
+                            runners.getKey(), projectName, variantName, testApk, runners.getValue(),
+                            testData,
+                            resultsDir, coverageDir, timeoutInMs, installOptions, logger);
+                    executor.execute(testCallable);
+                }
+            }
+
 
             List<WaitableExecutor.TaskResult<Boolean>> results = executor.waitForAllTasks();
 

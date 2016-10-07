@@ -18,7 +18,7 @@ package com.android.resources;
 
 /**
  * Screen Ratio enum.
- * <p/>This is used in the manifest in the uses-configuration node and in the resource folder names.
+ * <p>This is used in the manifest in the uses-configuration node and in the resource folder names.
  */
 public enum ScreenRatio implements ResourceEnum {
     NOTLONG("notlong", "Not Long", "Short screen aspect ratio"), //$NON-NLS-1$
@@ -64,17 +64,8 @@ public enum ScreenRatio implements ResourceEnum {
         return mLongDisplayValue;
     }
 
-    public static int getIndex(ScreenRatio orientation) {
-        int i = 0;
-        for (ScreenRatio orient : values()) {
-            if (orient == orientation) {
-                return i;
-            }
-
-            i++;
-        }
-
-        return -1;
+    public static int getIndex(ScreenRatio value) {
+        return value == null ? -1 : value.ordinal();
     }
 
     public static ScreenRatio getByIndex(int index) {

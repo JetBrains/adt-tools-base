@@ -18,7 +18,7 @@ package com.android.resources;
 
 /**
  * Screen Orientation enum.
- * <p/>This is used in the manifest in the uses-configuration node and in the resource folder names.
+ * <p>This is used in the manifest in the uses-configuration node and in the resource folder names.
  */
 public enum ScreenOrientation implements ResourceEnum {
     PORTRAIT("port", "Portrait", "Portrait Orientation"), //$NON-NLS-1$
@@ -66,16 +66,7 @@ public enum ScreenOrientation implements ResourceEnum {
     }
 
     public static int getIndex(ScreenOrientation orientation) {
-        int i = 0;
-        for (ScreenOrientation orient : values()) {
-            if (orient == orientation) {
-                return i;
-            }
-
-            i++;
-        }
-
-        return -1;
+        return orientation == null ? -1 : orientation.ordinal();
     }
 
     public static ScreenOrientation getByIndex(int index) {
@@ -88,7 +79,7 @@ public enum ScreenOrientation implements ResourceEnum {
 
     public static ScreenOrientation getByShortDisplayName(String name) {
         for (ScreenOrientation orientation : values()) {
-            if (orientation.getShortDisplayValue().equals(name)) {
+            if (orientation.getShortDisplayValue().equalsIgnoreCase(name)) {
                 return orientation;
             }
         }

@@ -18,7 +18,7 @@ package com.android.tools.lint.checks;
 
 import com.android.tools.lint.detector.api.Detector;
 
-@SuppressWarnings("javadoc")
+@SuppressWarnings({"javadoc", "ClassNameDiffersFromFileName"})
 public class CleanupDetectorTest extends AbstractCheckTest {
     @Override
     protected Detector getDetector() {
@@ -272,5 +272,323 @@ public class CleanupDetectorTest extends AbstractCheckTest {
                         + "        cursor.close();\n"
                         + "    }\n"
                         + "}\n")));
+    }
+
+    // Shared preference tests
+
+    public void test() throws Exception {
+        assertEquals(
+                "src/test/pkg/SharedPrefsTest.java:54: Warning: SharedPreferences.edit() without a corresponding commit() or apply() call [CommitPrefEdits]\n" +
+                        "        SharedPreferences.Editor editor = preferences.edit();\n" +
+                        "                                          ~~~~~~~~~~~~~~~~~~\n" +
+                        "src/test/pkg/SharedPrefsTest.java:62: Warning: SharedPreferences.edit() without a corresponding commit() or apply() call [CommitPrefEdits]\n" +
+                        "        SharedPreferences.Editor editor = preferences.edit();\n" +
+                        "                                          ~~~~~~~~~~~~~~~~~~\n" +
+                        "0 errors, 2 warnings\n" +
+                        "",
+
+                lintProject("src/test/pkg/SharedPrefsTest.java.txt=>" +
+                        "src/test/pkg/SharedPrefsTest.java"));
+    }
+
+    public void test2() throws Exception {
+        // Regression test 1 for http://code.google.com/p/android/issues/detail?id=34322
+        assertEquals(
+                "src/test/pkg/SharedPrefsTest2.java:13: Warning: SharedPreferences.edit() without a corresponding commit() or apply() call [CommitPrefEdits]\n" +
+                        "        SharedPreferences.Editor editor = preferences.edit();\n" +
+                        "                                          ~~~~~~~~~~~~~~~~~~\n" +
+                        "src/test/pkg/SharedPrefsTest2.java:17: Warning: SharedPreferences.edit() without a corresponding commit() or apply() call [CommitPrefEdits]\n" +
+                        "        Editor editor = preferences.edit();\n" +
+                        "                        ~~~~~~~~~~~~~~~~~~\n" +
+                        "0 errors, 2 warnings\n",
+
+                lintProject("src/test/pkg/SharedPrefsTest2.java.txt=>" +
+                        "src/test/pkg/SharedPrefsTest2.java"));
+    }
+
+    public void test3() throws Exception {
+        // Regression test 2 for http://code.google.com/p/android/issues/detail?id=34322
+        assertEquals(
+                "src/test/pkg/SharedPrefsTest3.java:13: Warning: SharedPreferences.edit() without a corresponding commit() or apply() call [CommitPrefEdits]\n" +
+                        "        Editor editor = preferences.edit();\n" +
+                        "                        ~~~~~~~~~~~~~~~~~~\n" +
+                        "0 errors, 1 warnings\n",
+
+                lintProject("src/test/pkg/SharedPrefsTest3.java.txt=>" +
+                        "src/test/pkg/SharedPrefsTest3.java"));
+    }
+
+    public void test4() throws Exception {
+        // Regression test 3 for http://code.google.com/p/android/issues/detail?id=34322
+        assertEquals(""
+                        + "src/test/pkg/SharedPrefsTest4.java:13: Warning: SharedPreferences.edit() without a corresponding commit() or apply() call [CommitPrefEdits]\n"
+                        + "        Editor editor = preferences.edit();\n"
+                        + "                        ~~~~~~~~~~~~~~~~~~\n"
+                        + "0 errors, 1 warnings\n",
+
+                lintProject("src/test/pkg/SharedPrefsTest4.java.txt=>" +
+                        "src/test/pkg/SharedPrefsTest4.java"));
+    }
+
+    public void test5() throws Exception {
+        // Check fields too: http://code.google.com/p/android/issues/detail?id=39134
+        assertEquals(
+                "src/test/pkg/SharedPrefsTest5.java:16: Warning: SharedPreferences.edit() without a corresponding commit() or apply() call [CommitPrefEdits]\n" +
+                        "        mPreferences.edit().putString(PREF_FOO, \"bar\");\n" +
+                        "        ~~~~~~~~~~~~~~~~~~~\n" +
+                        "src/test/pkg/SharedPrefsTest5.java:17: Warning: SharedPreferences.edit() without a corresponding commit() or apply() call [CommitPrefEdits]\n" +
+                        "        mPreferences.edit().remove(PREF_BAZ).remove(PREF_FOO);\n" +
+                        "        ~~~~~~~~~~~~~~~~~~~\n" +
+                        "src/test/pkg/SharedPrefsTest5.java:26: Warning: SharedPreferences.edit() without a corresponding commit() or apply() call [CommitPrefEdits]\n" +
+                        "        preferences.edit().putString(PREF_FOO, \"bar\");\n" +
+                        "        ~~~~~~~~~~~~~~~~~~\n" +
+                        "src/test/pkg/SharedPrefsTest5.java:27: Warning: SharedPreferences.edit() without a corresponding commit() or apply() call [CommitPrefEdits]\n" +
+                        "        preferences.edit().remove(PREF_BAZ).remove(PREF_FOO);\n" +
+                        "        ~~~~~~~~~~~~~~~~~~\n" +
+                        "src/test/pkg/SharedPrefsTest5.java:32: Warning: SharedPreferences.edit() without a corresponding commit() or apply() call [CommitPrefEdits]\n" +
+                        "        preferences.edit().putString(PREF_FOO, \"bar\");\n" +
+                        "        ~~~~~~~~~~~~~~~~~~\n" +
+                        "src/test/pkg/SharedPrefsTest5.java:33: Warning: SharedPreferences.edit() without a corresponding commit() or apply() call [CommitPrefEdits]\n" +
+                        "        preferences.edit().remove(PREF_BAZ).remove(PREF_FOO);\n" +
+                        "        ~~~~~~~~~~~~~~~~~~\n" +
+                        "src/test/pkg/SharedPrefsTest5.java:38: Warning: SharedPreferences.edit() without a corresponding commit() or apply() call [CommitPrefEdits]\n" +
+                        "        Editor editor = preferences.edit().putString(PREF_FOO, \"bar\");\n" +
+                        "                        ~~~~~~~~~~~~~~~~~~\n" +
+                        "0 errors, 7 warnings\n",
+
+                lintProject("src/test/pkg/SharedPrefsTest5.java.txt=>" +
+                        "src/test/pkg/SharedPrefsTest5.java"));
+    }
+
+    public void test6() throws Exception {
+        // Regression test for https://code.google.com/p/android/issues/detail?id=68692
+        assertEquals(""
+                        + "src/test/pkg/SharedPrefsTest7.java:13: Warning: SharedPreferences.edit() without a corresponding commit() or apply() call [CommitPrefEdits]\n"
+                        + "        settings.edit().putString(MY_PREF_KEY, myPrefValue);\n"
+                        + "        ~~~~~~~~~~~~~~~\n"
+                        + "0 errors, 1 warnings\n",
+
+                lintProject("src/test/pkg/SharedPrefsTest7.java.txt=>" +
+                        "src/test/pkg/SharedPrefsTest7.java"));
+    }
+
+    public void test7() throws Exception {
+        assertEquals("No warnings.", // minSdk < 9: no warnings
+
+                lintProject("src/test/pkg/SharedPrefsTest8.java.txt=>" +
+                        "src/test/pkg/SharedPrefsTest8.java"));
+    }
+
+    public void test8() throws Exception {
+        assertEquals(""
+                        + "src/test/pkg/SharedPrefsTest8.java:11: Warning: Consider using apply() instead; commit writes its data to persistent storage immediately, whereas apply will handle it in the background [CommitPrefEdits]\n"
+                        + "        editor.commit();\n"
+                        + "        ~~~~~~~~~~~~~~~\n"
+                        + "0 errors, 1 warnings\n",
+
+                lintProject(
+                        "apicheck/minsdk11.xml=>AndroidManifest.xml",
+                        "src/test/pkg/SharedPrefsTest8.java.txt=>src/test/pkg/SharedPrefsTest8.java"));
+    }
+
+    public void testChainedCalls() throws Exception {
+        assertEquals(""
+                        + "src/test/pkg/Chained.java:24: Warning: SharedPreferences.edit() without a corresponding commit() or apply() call [CommitPrefEdits]\n"
+                        + "        PreferenceManager\n"
+                        + "        ^\n"
+                        + "0 errors, 1 warnings\n",
+                lintProject(java("src/test/pkg/Chained.java", ""
+                        + "package test.pkg;\n"
+                        + "\n"
+                        + "import android.content.Context;\n"
+                        + "import android.preference.PreferenceManager;\n"
+                        + "\n"
+                        + "public class Chained {\n"
+                        + "    private static void falsePositive(Context context) {\n"
+                        + "        PreferenceManager\n"
+                        + "                .getDefaultSharedPreferences(context)\n"
+                        + "                .edit()\n"
+                        + "                .putString(\"wat\", \"wat\")\n"
+                        + "                .commit();\n"
+                        + "    }\n"
+                        + "\n"
+                        + "    private static void falsePositive2(Context context) {\n"
+                        + "        boolean var = PreferenceManager\n"
+                        + "                .getDefaultSharedPreferences(context)\n"
+                        + "                .edit()\n"
+                        + "                .putString(\"wat\", \"wat\")\n"
+                        + "                .commit();\n"
+                        + "    }\n"
+                        + "\n"
+                        + "    private static void truePositive(Context context) {\n"
+                        + "        PreferenceManager\n"
+                        + "                .getDefaultSharedPreferences(context)\n"
+                        + "                .edit()\n"
+                        + "                .putString(\"wat\", \"wat\");\n"
+                        + "    }\n"
+                        + "}\n")));
+    }
+
+    @SuppressWarnings("ALL") // sample code with warnings
+    public void testCommitDetector() throws Exception {
+        assertEquals("No warnings.",
+                lintProject(
+                        java("src/test/pkg/CommitTest.java", ""
+                                + "package test.pkg;\n"
+                                + "\n"
+                                + "import android.app.Activity;\n"
+                                + "import android.app.FragmentManager;\n"
+                                + "import android.app.FragmentTransaction;\n"
+                                + "import android.content.Context;\n"
+                                + "\n"
+                                + "public class CommitTest {\n"
+                                + "    private Context mActivity;\n"
+                                + "    public void selectTab1() {\n"
+                                + "        FragmentTransaction trans = null;\n"
+                                + "        if (mActivity instanceof Activity) {\n"
+                                + "            trans = ((Activity)mActivity).getFragmentManager().beginTransaction()\n"
+                                + "                    .disallowAddToBackStack();\n"
+                                + "        }\n"
+                                + "\n"
+                                + "        if (trans != null && !trans.isEmpty()) {\n"
+                                + "            trans.commit();\n"
+                                + "        }\n"
+                                + "    }\n"
+                                + "\n"
+                                + "    public void select(FragmentManager fragmentManager) {\n"
+                                + "        FragmentTransaction trans = fragmentManager.beginTransaction().disallowAddToBackStack();\n"
+                                + "        trans.commit();\n"
+                                + "    }"
+                                + "}")));
+    }
+
+    @SuppressWarnings("ALL") // sample code with warnings
+    public void testCommitDetectorOnParameters() throws Exception {
+        // Handle transactions assigned to parameters (this used to not work)
+        assertEquals("No warnings.",
+                lintProject(
+                        java("src/test/pkg/CommitTest2.java", ""
+                                + "package test.pkg;\n"
+                                + "\n"
+                                + "import android.app.FragmentManager;\n"
+                                + "import android.app.FragmentTransaction;\n"
+                                + "\n"
+                                + "@SuppressWarnings(\"unused\")\n"
+                                + "public class CommitTest2 {\n"
+                                + "    private void navigateToFragment(FragmentTransaction transaction,\n"
+                                + "                                    FragmentManager supportFragmentManager) {\n"
+                                + "        if (transaction == null) {\n"
+                                + "            transaction = supportFragmentManager.beginTransaction();\n"
+                                + "        }\n"
+                                + "\n"
+                                + "        transaction.commit();\n"
+                                + "    }\n"
+                                + "}")));
+    }
+
+    @SuppressWarnings("ALL") // sample code with warnings
+    public void testReturn() throws Exception {
+        // If you return the object to be cleaned up, it doesn'st have to be cleaned up (caller
+        // may do that)
+        assertEquals("No warnings.",
+                lintProject(
+                        java("src/test/pkg/SharedPrefsTest.java", ""
+                                + "package test.pkg;\n"
+                                + "\n"
+                                + "import android.content.Context;\n"
+                                + "import android.content.SharedPreferences;\n"
+                                + "import android.preference.PreferenceManager;\n"
+                                + "\n"
+                                + "@SuppressWarnings(\"unused\")\n"
+                                + "public abstract class SharedPrefsTest extends Context {\n"
+                                + "    private SharedPreferences.Editor getEditor() {\n"
+                                + "        return getPreferences().edit();\n"
+                                + "    }\n"
+                                + "\n"
+                                + "    private boolean editAndCommit() {\n"
+                                + "        return getPreferences().edit().commit();\n"
+                                + "    }\n"
+                                + "\n"
+                                + "    private SharedPreferences getPreferences() {\n"
+                                + "        return PreferenceManager.getDefaultSharedPreferences(this);\n"
+                                + "    }\n"
+                                + "}")));
+    }
+
+    @SuppressWarnings("ALL") // sample code with warnings
+    public void testCommitNow() throws Exception {
+        assertEquals("No warnings.",
+                lintProject(
+                        java("src/test/pkg/CommitTest.java", ""
+                                + "package test.pkg;\n"
+                                + "\n"
+                                + "import android.app.FragmentManager;\n"
+                                + "import android.app.FragmentTransaction;\n"
+                                + "\n"
+                                + "public class CommitTest {\n"
+                                + "    public void select(FragmentManager fragmentManager) {\n"
+                                + "        FragmentTransaction trans = fragmentManager.beginTransaction().disallowAddToBackStack();\n"
+                                + "        trans.commitNow();\n"
+                                + "    }"
+                                + "}")));
+    }
+
+    @SuppressWarnings("MethodMayBeStatic")
+    public void testAutoCloseable() throws Exception {
+        // Regression test for
+        //   https://code.google.com/p/android/issues/detail?id=214086
+        //
+        // Queries assigned to try/catch resource variables are automatically
+        // closed.
+        assertEquals("No warnings.",
+                lintProject(
+                        java("src/test/pkg/TryWithResources.java", ""
+                                + "package test.pkg;\n"
+                                + "\n"
+                                + "import android.content.ContentResolver;\n"
+                                + "import android.database.Cursor;\n"
+                                + "import android.net.Uri;\n"
+                                + "import android.os.Build;\n"
+                                + "\n"
+                                + "public class TryWithResources {\n"
+                                + "    public void test(ContentResolver resolver, Uri uri, String[] projection) {\n"
+                                + "        try (Cursor cursor = resolver.query(uri, projection, null, null, null)) {\n"
+                                + "            if (cursor != null) {\n"
+                                + "                //noinspection StatementWithEmptyBody\n"
+                                + "                while (cursor.moveToNext()) {\n"
+                                + "                    // ..\n"
+                                + "                }\n"
+                                + "            }\n"
+                                + "        }\n"
+                                + "    }\n"
+                                + "}\n"
+                        )
+                ));
+    }
+
+    public void testApplyOnPutMethod() throws Exception {
+        // Regression test for
+        //    https://code.google.com/p/android/issues/detail?id=214196
+        //
+        // Ensure that if you call commit/apply on a put* call
+        // (not the edit field itself, but put passes it through)
+        // we correctly consider the editor operation finished.
+        assertEquals("No warnings.",
+                lintProject(
+                        java("src/test/pkg/CommitPrefTest.java", ""
+                                + "package test.pkg;\n"
+                                + "\n"
+                                + "import android.content.Context;\n"
+                                + "import android.content.SharedPreferences;\n"
+                                + "import android.preference.PreferenceManager;\n"
+                                + "\n"
+                                + "@SuppressWarnings(\"unused\")\n"
+                                + "public abstract class CommitPrefTest extends Context {\n"
+                                + "    public void test() {\n"
+                                + "        SharedPreferences.Editor edit = PreferenceManager.getDefaultSharedPreferences(this).edit();\n"
+                                + "        edit.putInt(\"foo\", 1).apply();\n"
+                                + "    }\n"
+                                + "}\n")
+                ));
     }
 }

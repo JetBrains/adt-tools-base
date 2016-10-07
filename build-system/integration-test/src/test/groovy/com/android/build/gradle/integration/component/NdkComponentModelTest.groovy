@@ -21,10 +21,15 @@ import com.android.build.gradle.integration.common.category.SmokeTests
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldJniApp
 import com.android.build.gradle.integration.common.utils.ModelHelper
+import com.android.build.gradle.integration.common.utils.NativeModelHelper
+import com.android.build.gradle.internal.core.Abi
 import com.android.builder.model.AndroidArtifact
 import com.android.builder.model.AndroidProject
+import com.android.builder.model.NativeAndroidProject
+import com.android.builder.model.NativeArtifact
 import com.android.builder.model.NativeLibrary
 import com.android.builder.model.Variant
+import groovy.transform.CompileStatic
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -35,12 +40,13 @@ import static com.android.build.gradle.integration.common.truth.TruthHelper.asse
 /**
  * Test the return model of the NDK.
  */
+@CompileStatic
 @Category(SmokeTests.class)
 class NdkComponentModelTest {
     @Rule
     public GradleTestProject project = GradleTestProject.builder()
             .fromTestApp(new HelloWorldJniApp())
-            .forExperimentalPlugin(true)
+            .useExperimentalGradleVersion(true)
             .create()
 
     @Before
@@ -240,22 +246,50 @@ model {
                 .getNativeLibraries().first()
         for (String flag : lib.getCCompilerFlags()) {
             if (flag.contains("sysroot")) {
-                assertThat(flag).contains("android-${GradleTestProject.LATEST_NDK_VERSION}")
+                assertThat(flag).contains("android-${GradleTestProject.LATEST_NDK_PLATFORM_VERSION}")
             }
         }
     }
 
-    /**
-     * Verify resulting model is as expected.
-     *
-     * @param variantToolchains map of variant name to array of expected toolchains.
-     */
-    private AndroidProject checkModel(Map variantToolchains) {
-
+    @Test
+    void "check that compiler flags are transformed as in options.txt" () {
+        project.buildFile <<
+                """
+model {
+    android {
+        ndk {
+            CFlags.add("-Ipath with spaces")
+            CFlags.add("-Ipath\twith\ttabs")
+            CFlags.add("-Ipath\\\\with\\\\backslashes")
+        }
+    }
+}
+"""
         AndroidProject model = project.executeAndReturnModel("assembleDebug")
+        NativeLibrary lib = ModelHelper.getVariant(model.getVariants(), "debug").getMainArtifact()
+                .getNativeLibraries().first()
+        assertThat(lib.getCCompilerFlags()).containsAllOf(
+                "\"-Ipath with spaces\"",
+                "\"-Ipath\twith\ttabs\"",
+                "-Ipath\\\\with\\\\backslashes");
+    }
 
-        Collection<Variant> variants = model.getVariants()
-        for (Map.Entry entry : variantToolchains) {
+    /**
+     * Verify resulting AndroidProject and NativeAndroidProject is as expected.
+     *
+     * @param variantAbi map of variant name to array of expected abi.
+     */
+    private AndroidProject checkModel(Map variantAbi) {
+        project.execute("assembleDebug")
+        checkNativeAndroidProject(variantAbi)
+        return checkAndroidProject(variantAbi)
+    }
+
+    private AndroidProject checkAndroidProject(Map variantAbi) {
+        AndroidProject androidProject = project.model().getSingle();
+        Collection<Variant> variants = androidProject.getVariants()
+
+        for (Map.Entry entry : variantAbi) {
             Variant variant = ModelHelper.getVariant(variants, (String) entry.getKey())
             AndroidArtifact mainArtifact = variant.getMainArtifact()
 
@@ -270,16 +304,40 @@ model {
                 assertThat(nativeLibrary.getCppSystemIncludeDirs()).isNotEmpty();
                 File solibSearchPath = nativeLibrary.getDebuggableLibraryFolders().first()
                 assertThat(new File(solibSearchPath, "libhello-jni.so")).exists()
+                assertThat(nativeLibrary.getCCompilerFlags()).doesNotContain("null");
+                assertThat(nativeLibrary.getCppCompilerFlags()).doesNotContain("null");
             }
 
             Collection<String> expectedToolchainNames = entry.getValue().collect { "clang-" + it }
-            Collection<String> toolchainNames = model.getNativeToolchains().collect { it.getName() }
+            Collection<String> toolchainNames = androidProject.getNativeToolchains().collect { it.getName() }
             assertThat(toolchainNames).containsAllIn(expectedToolchainNames)
             Collection<String> nativeLibToolchains = mainArtifact.getNativeLibraries().
                     collect { it.getToolchainName() }
             assertThat(nativeLibToolchains).containsExactlyElementsIn(expectedToolchainNames)
         }
-        return model
+        return androidProject
+    }
 
+    private void checkNativeAndroidProject(Map variantAbi) {
+        NativeAndroidProject model = project.model().getSingle(NativeAndroidProject.class);
+        for (Map.Entry entry : variantAbi) {
+            String variantName = (String) entry.getKey();
+            Collection<NativeArtifact> artifacts = model.getArtifacts().findAll{
+                artifact -> artifact.getName().contains(variantName) }
+
+            for (NativeArtifact artifact : artifacts) {
+                List<String> cFlags =
+                        NativeModelHelper.getCFlags(model, artifact).get(project.file("src/main/jni"));
+                assertThat(cFlags).contains("-DTEST_C_FLAG");
+                assertThat(cFlags).contains("-gcc-toolchain");
+                // There is no C++ flags as there is no C++ source files.
+                assertThat(NativeModelHelper.getFlatCppFlags(model, artifact)).isEmpty()
+                assertThat(artifact.getOutputFile()).exists();
+            }
+
+            Collection<String> toolchainNames = model.getToolChains().collect { it.getName() }
+            assertThat(toolchainNames).containsAllIn(
+                    Abi.values().collect { Abi it -> "ndk-" + it.getName() } )
+        }
     }
 }

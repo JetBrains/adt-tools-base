@@ -21,7 +21,6 @@ import static com.android.tools.lint.checks.AnnotationDetector.getMissingCases;
 import static com.android.tools.lint.detector.api.TextFormat.TEXT;
 
 import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
 import com.android.tools.lint.detector.api.Context;
 import com.android.tools.lint.detector.api.Detector;
 import com.android.tools.lint.detector.api.Issue;
@@ -35,26 +34,29 @@ import java.util.List;
 
 @SuppressWarnings({"javadoc", "ClassNameDiffersFromFileName", "UnnecessaryLocalVariable",
         "ConstantConditionalExpression", "StatementWithEmptyBody", "RedundantCast",
-        "MethodMayBeStatic"})
+        "MethodMayBeStatic", "OnDemandImport"})
 public class AnnotationDetectorTest extends AbstractCheckTest {
     public void test() throws Exception {
-        assertEquals(
-            "src/test/pkg/WrongAnnotation.java:9: Error: The @SuppressLint annotation cannot be used on a local variable with the lint check 'NewApi': move out to the surrounding method [LocalSuppress]\n" +
-            "    public static void foobar(View view, @SuppressLint(\"NewApi\") int foo) { // Invalid: class-file check\n" +
-            "                                         ~~~~~~~~~~~~~~~~~~~~~~~\n" +
-            "src/test/pkg/WrongAnnotation.java:10: Error: The @SuppressLint annotation cannot be used on a local variable with the lint check 'NewApi': move out to the surrounding method [LocalSuppress]\n" +
-            "        @SuppressLint(\"NewApi\") // Invalid\n" +
-            "        ~~~~~~~~~~~~~~~~~~~~~~~\n" +
-            "src/test/pkg/WrongAnnotation.java:12: Error: The @SuppressLint annotation cannot be used on a local variable with the lint check 'NewApi': move out to the surrounding method [LocalSuppress]\n" +
-            "        @SuppressLint({\"SdCardPath\", \"NewApi\"}) // Invalid: class-file based check on local variable\n" +
-            "        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
-            "src/test/pkg/WrongAnnotation.java:14: Error: The @SuppressLint annotation cannot be used on a local variable with the lint check 'NewApi': move out to the surrounding method [LocalSuppress]\n" +
-            "        @android.annotation.SuppressLint({\"SdCardPath\", \"NewApi\"}) // Invalid (FQN)\n" +
-            "        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
-            "src/test/pkg/WrongAnnotation.java:28: Error: The @SuppressLint annotation cannot be used on a local variable with the lint check 'NewApi': move out to the surrounding method [LocalSuppress]\n" +
-            "        @SuppressLint(\"NewApi\")\n" +
-            "        ~~~~~~~~~~~~~~~~~~~~~~~\n" +
-            "5 errors, 0 warnings\n",
+        assertEquals(""
+                + "src/test/pkg/WrongAnnotation.java:9: Error: The @SuppressLint annotation cannot be used on a local variable with the lint check 'NewApi': move out to the surrounding method [LocalSuppress]\n"
+                + "    public static void foobar(View view, @SuppressLint(\"NewApi\") int foo) { // Invalid: class-file check\n"
+                + "                                         ~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "src/test/pkg/WrongAnnotation.java:10: Error: The @SuppressLint annotation cannot be used on a local variable with the lint check 'NewApi': move out to the surrounding method [LocalSuppress]\n"
+                + "        @SuppressLint(\"NewApi\") // Invalid\n"
+                + "        ~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "src/test/pkg/WrongAnnotation.java:12: Error: The @SuppressLint annotation cannot be used on a local variable with the lint check 'NewApi': move out to the surrounding method [LocalSuppress]\n"
+                + "        @SuppressLint({\"SdCardPath\", \"NewApi\"}) // Invalid: class-file based check on local variable\n"
+                + "        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "src/test/pkg/WrongAnnotation.java:14: Error: The @SuppressLint annotation cannot be used on a local variable with the lint check 'NewApi': move out to the surrounding method [LocalSuppress]\n"
+                + "        @android.annotation.SuppressLint({\"SdCardPath\", \"NewApi\"}) // Invalid (FQN)\n"
+                + "        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "src/test/pkg/WrongAnnotation.java:28: Error: The @SuppressLint annotation cannot be used on a local variable with the lint check 'NewApi': move out to the surrounding method [LocalSuppress]\n"
+                + "        @SuppressLint(\"NewApi\")\n"
+                + "        ~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "src/test/pkg/WrongAnnotation.java:33: Error: The @SuppressLint annotation cannot be used on a local variable with the lint check 'NewApi': move out to the surrounding method [LocalSuppress]\n"
+                + "        @SuppressLint(\"NewApi\") // Invalid\n"
+                + "        ~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "6 errors, 0 warnings\n",
 
             lintProject(
                 "src/test/pkg/WrongAnnotation.java.txt=>src/test/pkg/WrongAnnotation.java"
@@ -173,6 +175,11 @@ public class AnnotationDetectorTest extends AbstractCheckTest {
                                 + "    @IntDef(flag = true, value={FLAG5, FLAG6, FLAG7, FLAG8})\n"
                                 + "    @Retention(RetentionPolicy.SOURCE)\n"
                                 + "    private @interface Flags5 {}\n"
+                                + "\n"
+                                // Repeated: make sure we don't flag initializers twice!
+                                + "    @IntDef(flag = true, value={FLAG5, FLAG6, FLAG7, FLAG8})\n"
+                                + "    @Retention(RetentionPolicy.SOURCE)\n"
+                                + "    private @interface Flags6 {}\n"
                                 + "}"),
                         copy("src/android/support/annotation/IntDef.java.txt",
                                 "src/android/support/annotation/IntDef.java")));
@@ -342,10 +349,9 @@ public class AnnotationDetectorTest extends AbstractCheckTest {
         ));
     }
 
-
     public void testMissingSwitchFailingIntDef() throws Exception {
         assertEquals(""
-                + "src/test/pkg/X.java:8: Warning: Switch statement on an int with known associated constant missing case EXACTLY, UNSPECIFIED [SwitchIntDef]\n"
+                + "src/test/pkg/X.java:8: Warning: Switch statement on an int with known associated constant missing case MeasureSpec.EXACTLY, MeasureSpec.UNSPECIFIED [SwitchIntDef]\n"
                 + "        switch (val) {\n"
                 + "        ~~~~~~\n"
                 + "0 errors, 1 warnings\n",
@@ -379,6 +385,39 @@ public class AnnotationDetectorTest extends AbstractCheckTest {
                                 TextFormat.TEXT));
     }
 
+    public void testUnexpectedSwitchConstant() throws Exception {
+        // Regression test for https://code.google.com/p/android/issues/detail?id=204326
+        // 	The switch check should look for unexpected constants in case statements
+        assertEquals(""
+                + "src/test/pkg/X.java:9: Warning: Switch statement on an int with known associated constant missing case MeasureSpec.EXACTLY [SwitchIntDef]\n"
+                + "        switch (val) {\n"
+                + "        ~~~~~~\n"
+                + "src/test/pkg/X.java:10: Warning: Unexpected constant; expected one of: MeasureSpec.AT_MOST, MeasureSpec.EXACTLY, MeasureSpec.UNSPECIFIED [SwitchIntDef]\n"
+                + "            case MY_CONSTANT: // ERROR\n"
+                + "                 ~~~~~~~~~~~\n"
+                + "0 errors, 2 warnings\n",
+                lintProject(
+                        java("src/test/pkg/X.java", ""
+                                + "package test.pkg;\n"
+                                + "\n"
+                                + "import android.view.View;"
+                                + "\n"
+                                + "public class X {\n"
+                                + "    private static final int MY_CONSTANT = 5;\n"
+                                + "    private static final int MY_CONSTANT_2 = View.MeasureSpec.AT_MOST;\n"
+                                + "    public void measure(int mode) {\n"
+                                + "        int val = View.MeasureSpec.getMode(mode);\n"
+                                + "        switch (val) {\n"
+                                + "            case MY_CONSTANT: // ERROR\n"
+                                + "            case MY_CONSTANT_2: // OK (alias)\n"
+                                + "            case View.MeasureSpec.UNSPECIFIED: // OK\n"
+                                + "                break;\n"
+                                + "        }\n"
+                                + "    }\n"
+                                + "}\n"),
+                        copy("bytecode/.classpath", ".classpath")));
+    }
+
     public void testMatchEcjAndExternalFieldNames() throws Exception {
         assertEquals("No warnings.",
                 lintProject(java("src/test/pkg/MissingEnum.java", ""
@@ -407,9 +446,218 @@ public class AnnotationDetectorTest extends AbstractCheckTest {
                         + "}\n")));
     }
 
+    @SuppressWarnings("ClassNameDiffersFromFileName")
+    public void testWrongUsages() throws Exception {
+        assertEquals(""
+                + "src/test/pkg/WrongUsages.java:33: Error: This annotation does not apply for type String; expected int or long [SupportAnnotationUsage]\n"
+                + "    @DialogStyle\n"
+                + "    ~~~~~~~~~~~~\n"
+                + "src/test/pkg/WrongUsages.java:38: Error: Invalid range: the from attribute must be less than the to attribute [SupportAnnotationUsage]\n"
+                + "    @IntRange(from = 1, to = 0)\n"
+                + "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "src/test/pkg/WrongUsages.java:38: Error: This annotation does not apply for type String; expected int or long [SupportAnnotationUsage]\n"
+                + "    @IntRange(from = 1, to = 0)\n"
+                + "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "src/test/pkg/WrongUsages.java:39: Error: Invalid size range: the min attribute must be less than the max attribute [SupportAnnotationUsage]\n"
+                + "    @Size(min=10, max = 8)\n"
+                + "    ~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "src/test/pkg/WrongUsages.java:44: Error: Invalid range: the from attribute must be less than the to attribute [SupportAnnotationUsage]\n"
+                + "    @FloatRange(from = 1.0, to = 0.0)\n"
+                + "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "src/test/pkg/WrongUsages.java:44: Error: This annotation does not apply for type String; expected float or double [SupportAnnotationUsage]\n"
+                + "    @FloatRange(from = 1.0, to = 0.0)\n"
+                + "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "src/test/pkg/WrongUsages.java:45: Error: This annotation does not apply for type String; expected int or long [SupportAnnotationUsage]\n"
+                + "    @ColorInt\n"
+                + "    ~~~~~~~~~\n"
+                + "src/test/pkg/WrongUsages.java:46: Error: The size multiple must be at least 1 [SupportAnnotationUsage]\n"
+                + "    @Size(multiple=0)\n"
+                + "    ~~~~~~~~~~~~~~~~~\n"
+                + "src/test/pkg/WrongUsages.java:47: Error: This annotation does not apply for type String; expected int or long [SupportAnnotationUsage]\n"
+                + "    @DrawableRes\n"
+                + "    ~~~~~~~~~~~~\n"
+                + "src/test/pkg/WrongUsages.java:52: Error: The size can't be negative [SupportAnnotationUsage]\n"
+                + "    @Size(-5)\n"
+                + "    ~~~~~~~~~\n"
+                + "src/test/pkg/WrongUsages.java:57: Error: For methods, permission annotation should specify one of value, anyOf or allOf [SupportAnnotationUsage]\n"
+                + "    @RequiresPermission\n"
+                + "    ~~~~~~~~~~~~~~~~~~~\n"
+                + "src/test/pkg/WrongUsages.java:62: Error: Only specify one of value, anyOf or allOf [SupportAnnotationUsage]\n"
+                + "    @RequiresPermission(allOf = {\"my.permission.PERM1\",\"my.permission.PERM2\"},anyOf = {\"my.permission.PERM1\",\"my.permission.PERM2\"})\n"
+                + "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "src/test/pkg/WrongUsages.java:63: Error: @CheckResult should not be specified on void methods [SupportAnnotationUsage]\n"
+                + "    @CheckResult // Error on void methods\n"
+                + "    ~~~~~~~~~~~~\n"
+                + "13 errors, 0 warnings\n",
+
+                lintProject(
+                        java("src/test/pkg/WrongUsages.java", ""
+                                + "package test.pkg;\n"
+                                + "import android.support.annotation.IntDef;\n"
+                                + "import android.support.annotation.IntRange;\n"
+                                + "import android.support.annotation.FloatRange;\n"
+                                + "import android.support.annotation.CheckResult;\n"
+                                + "import android.support.annotation.ColorInt;\n"
+                                + "import android.support.annotation.DrawableRes;\n"
+                                + "import android.support.annotation.Size;\n"
+                                + "import android.support.annotation.RequiresPermission;\n"
+                                + "import android.annotation.SuppressLint;\n"
+                                + "import java.lang.annotation.*;\n"
+                                + "import java.util.List;\n"
+                                + "@SuppressLint(\"UnusedDeclaration\")\n"
+                                + "public class WrongUsages {\n"
+                                + "    @IntDef({STYLE_NORMAL, STYLE_NO_TITLE, STYLE_NO_FRAME, STYLE_NO_INPUT})\n"
+                                + "    @Retention(RetentionPolicy.SOURCE)\n"
+                                + "    private @interface DialogStyle {}\n"
+                                + "    public static final int STYLE_NORMAL = 0;\n"
+                                + "    public static final int STYLE_NO_TITLE = 1;\n"
+                                + "    public static final int STYLE_NO_FRAME = 2;\n"
+                                + "    public static final int STYLE_NO_INPUT = 3;\n"
+                                + "\n"
+                                + "    @DialogStyle\n"
+                                + "    public int okay1() {\n"
+                                + "        return 0;\n"
+                                + "    }\n"
+                                + "\n"
+                                + "    @DialogStyle\n"
+                                + "    public long okay2() {\n"
+                                + "        return 0;\n"
+                                + "    }\n"
+                                + "\n"
+                                + "    @DialogStyle\n"
+                                + "    public String wrong() {\n"
+                                + "        return null;\n"
+                                + "    }\n"
+                                + "\n"
+                                + "    @IntRange(from = 1, to = 0)\n" // wrong range, and wrong type
+                                + "    @Size(min=10, max = 8)\n" // non-positive multiplier
+                                + "    public String wrongIntRange() {\n"
+                                + "        return null;\n"
+                                + "    }\n"
+                                + "\n"
+                                + "    @FloatRange(from = 1.0, to = 0.0)\n" // wrong range, and wrong type
+                                + "    @ColorInt\n" // wrong type
+                                + "    @Size(multiple=0)\n" // non-positive multiplier
+                                + "    @DrawableRes\n" // wrong type
+                                + "    public String wrongFloatRange() {\n"
+                                + "        return null;\n"
+                                + "    }\n"
+                                + "\n"
+                                + "    @Size(-5)\n" // negative size
+                                + "    public int[] wrongSize() {\n"
+                                + "        return null;\n"
+                                + "    }\n"
+                                + "\n"
+                                + "    @RequiresPermission\n" // Must specify value
+                                + "    public void wrongPermission(\n"
+                                + "        @RequiresPermission int allowed) { // OK\n"
+                                + "    }\n"
+                                + "\n"
+                                // Too many values
+                                + "    @RequiresPermission(allOf = {\"my.permission.PERM1\",\"my.permission.PERM2\"},anyOf = {\"my.permission.PERM1\",\"my.permission.PERM2\"})\n"
+                                + "    @CheckResult // Error on void methods\n"
+                                + "    public void wrongPermission2() {\n"
+                                + "    }\n"
+                                + "\n"
+                                + "    public void autoBoxing(@DrawableRes Integer param1) { }\n"
+                                + "    public void array(@DrawableRes int[] param1) { }\n"
+                                + "    public void varargs(@DrawableRes int... param1) { }\n"
+                                + "    public void varargs(@DrawableRes List<Integer> param1) { }\n"
+                                + "\n"
+                                + "\n"
+                                + "    @Size(min=1)\n"
+                                + "    public int[] okSize() {\n"
+                                + "        return null;\n"
+                                + "    }\n"
+                                // TODO: Warn when using on collections that aren't supported
+                                // TODO: Warn about inapplicable nullness stuff (outside of IDE)
+                                + "}"),
+                        copy("src/android/support/annotation/CheckResult.java.txt",
+                                "src/android/support/annotation/CheckResult.java"),
+                        copy("src/android/support/annotation/IntDef.java.txt",
+                                "src/android/support/annotation/IntDef.java"),
+                        copy("src/android/support/annotation/StringDef.java.txt",
+                                "src/android/support/annotation/StringDef.java"),
+                        copy("src/android/support/annotation/ColorInt.java.txt",
+                                "src/android/support/annotation/ColorInt.java"),
+                        copy("src/android/support/annotation/DrawableRes.java.txt",
+                                "src/android/support/annotation/DrawableRes.java"),
+                        copy("src/android/support/annotation/Size.java.txt",
+                                "src/android/support/annotation/Size.java"),
+                        copy("src/android/support/annotation/IntRange.java.txt",
+                                "src/android/support/annotation/IntRange.java"),
+                        copy("src/android/support/annotation/FloatRange.java.txt",
+                                "src/android/support/annotation/FloatRange.java"),
+                        mRequirePermissionAnnotation
+                ));
+    }
+
+    public void testOverlappingConstants() throws Exception {
+        // Regression test for https://code.google.com/p/android/issues/detail?id=214161
+        // Ensure that we don't flag a missing constant if there is an existing constant
+        // with the same value already present.
+        assertEquals("No warnings.",
+                lintProject(
+                        java("src/test/pkg/IntDefSwitchTest.java", ""
+                                + "package test.pkg;\n"
+                                + "\n"
+                                + "import android.annotation.SuppressLint;\n"
+                                + "import android.support.annotation.IntDef;\n"
+                                + "\n"
+                                + "import java.lang.annotation.Retention;\n"
+                                + "import java.lang.annotation.RetentionPolicy;\n"
+                                + "\n"
+                                + "public class IntDefSwitchTest {\n"
+                                + "    @SuppressLint(\"UniqueConstants\")\n"
+                                + "    @IntDef(value = {CONST1, CONST2})\n"
+                                + "    @Retention(RetentionPolicy.SOURCE)\n"
+                                + "    public @interface Const {\n"
+                                + "    }\n"
+                                + "\n"
+                                + "    private static final int CONST1 = 0;\n"
+                                + "    private static final int CONST2 = CONST1;\n"
+                                + "\n"
+                                + "    void f(@Const int constant) {\n"
+                                + "        switch (constant) {\n"
+                                + "            case CONST1:\n"
+                                + "                break;\n"
+                                + "        }\n"
+                                + "    }\n"
+                                + "}\n"),
+                        copy("src/android/support/annotation/IntDef.java.txt",
+                                "src/android/support/annotation/IntDef.java")
+                ));
+    }
+
+    private final TestFile mRequirePermissionAnnotation = java("src/android/support/annotation/RequiresPermission.java", ""
+            + "package android.support.annotation;\n"
+            + "\n"
+            + "import java.lang.annotation.Retention;\n"
+            + "import java.lang.annotation.Target;\n"
+            + "\n"
+            + "import static java.lang.annotation.ElementType.*;\n"
+            + "import static java.lang.annotation.RetentionPolicy.CLASS;\n"
+            + "@Retention(CLASS)\n"
+            + "@Target({METHOD,CONSTRUCTOR,FIELD,PARAMETER,ANNOTATION_TYPE})\n"
+            + "public @interface RequiresPermission {\n"
+            + "    String value() default \"\";\n"
+            + "    String[] allOf() default {};\n"
+            + "    String[] anyOf() default {};\n"
+            + "    boolean conditional() default false;\n"
+            + "    String notes() default \"\";\n"
+            + "    @Target({FIELD,METHOD,PARAMETER})\n"
+            + "    @interface Read {\n"
+            + "        RequiresPermission value();\n"
+            + "    }\n"
+            + "    @Target({FIELD,METHOD,PARAMETER})\n"
+            + "    @interface Write {\n"
+            + "        RequiresPermission value();\n"
+            + "    }\n"
+            + "}");
+
     @Override
     protected void checkReportedError(@NonNull Context context, @NonNull Issue issue,
-            @NonNull Severity severity, @Nullable Location location, @NonNull String message) {
+            @NonNull Severity severity, @NonNull Location location, @NonNull String message) {
         if (issue == SWITCH_TYPE_DEF) {
             assertNotNull("Could not extract message tokens from " + message,
                     getMissingCases(message, TEXT));

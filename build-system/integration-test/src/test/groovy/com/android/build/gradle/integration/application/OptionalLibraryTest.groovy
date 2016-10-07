@@ -21,8 +21,8 @@ import com.android.builder.model.AndroidProject
 import com.android.builder.model.SyncIssue
 import com.android.repository.testframework.FakeProgressIndicator
 import com.android.sdklib.IAndroidTarget
-import com.android.sdklib.repositoryv2.AndroidSdkHandler
-import com.android.sdklib.repositoryv2.targets.AndroidTargetManager
+import com.android.sdklib.repository.AndroidSdkHandler
+import com.android.sdklib.repository.targets.AndroidTargetManager
 import groovy.transform.CompileStatic
 import org.junit.After
 import org.junit.Rule
@@ -59,7 +59,7 @@ class OptionalLibraryTest {
             }
             """.stripIndent()
 
-        AndroidProject project = project.getSingleModelIgnoringSyncIssues()
+        AndroidProject project = project.model().ignoreSyncIssues().getSingle()
 
         assertThat(project).hasSingleIssue(
                 SyncIssue.SEVERITY_ERROR,
@@ -81,7 +81,7 @@ class OptionalLibraryTest {
             }
             """.stripIndent()
 
-        AndroidProject project = project.getSingleModel()
+        AndroidProject project = project.model().getSingle()
 
         // get the SDK folder
         File sdkLocation = new File(System.getenv("ANDROID_HOME"))
@@ -115,7 +115,7 @@ class OptionalLibraryTest {
             }
             """.stripIndent()
 
-        AndroidProject project = project.getSingleModel()
+        AndroidProject project = project.model().getSingle()
 
         // get the SDK folder
         File sdkLocation = new File(System.getenv("ANDROID_HOME"))

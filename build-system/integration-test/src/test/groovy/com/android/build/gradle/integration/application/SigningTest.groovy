@@ -17,19 +17,30 @@
 package com.android.build.gradle.integration.application
 
 import com.android.build.gradle.integration.common.category.DeviceTests
+import com.android.build.gradle.integration.common.fixture.Adb
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
+import com.android.build.gradle.integration.common.fixture.Packaging
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
 import com.android.build.gradle.integration.common.runner.FilterableParameterized
-import com.android.build.gradle.integration.common.utils.TestFileUtils
+import com.android.build.gradle.integration.common.utils.AndroidVersionMatcher
 import com.android.build.gradle.integration.common.utils.ModelHelper
 import com.android.build.gradle.integration.common.utils.SigningConfigHelper
+import com.android.build.gradle.integration.common.utils.TestFileUtils
+import com.android.builder.internal.packaging.sign.DigestAlgorithm
+import com.android.builder.internal.packaging.sign.SignatureAlgorithm
 import com.android.builder.model.AndroidArtifact
 import com.android.builder.model.AndroidProject
 import com.android.builder.model.SigningConfig
 import com.android.builder.model.Variant
+import com.android.ddmlib.IDevice
+import com.android.sdklib.AndroidVersion
+import com.android.testutils.TestUtils
 import com.google.common.collect.ImmutableList
+import com.google.common.collect.Range
 import com.google.common.io.Resources
 import groovy.transform.CompileStatic
+import org.hamcrest.Matcher
+import org.junit.Assume
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -59,17 +70,26 @@ class SigningTest {
 
     public static final String KEY_PASSWORD = "key_password"
 
-    @Parameterized.Parameters(name = "{0}")
+    @Parameterized.Parameters(name = "{0}, {3}")
     public static Collection<Object[]> data() {
-        def parameters = [
-                ["rsa_keystore.jks", "CERT.RSA", 1] as Object[],
-        ]
+        List<Object[]> parameters = []
 
-        // These are not available on 1.6. To test, run the following (with proper JAVA_HOME):
-        // JAVA_FOR_TESTS=1.8 ./gradlew :b:i:testPrebuilts --tests=*.SigningTest
-        if (!System.getProperty("java.version").startsWith("1.6")) {
-            parameters.add(["dsa_keystore.jks", "CERT.DSA", 1] as Object[])
-            parameters.add(["ec_keystore.jks", "CERT.EC", 18] as Object[])
+        for (packaging in Packaging.values()) {
+            parameters.add([
+                    "rsa_keystore.jks",
+                    "CERT.RSA",
+                    SignatureAlgorithm.RSA.minSdkVersion,
+                    packaging] as Object[])
+            parameters.add([
+                    "dsa_keystore.jks",
+                    "CERT.DSA",
+                    SignatureAlgorithm.DSA.minSdkVersion,
+                    packaging] as Object[])
+            parameters.add([
+                    "ec_keystore.jks",
+                    "CERT.EC",
+                    SignatureAlgorithm.ECDSA.minSdkVersion,
+                    packaging] as Object[])
         }
 
         return parameters
@@ -84,10 +104,16 @@ class SigningTest {
     @Parameterized.Parameter(2)
     public int minSdkVersion
 
+    @Parameterized.Parameter(3)
+    public Packaging packaging
+
     @Rule
     public GradleTestProject project = GradleTestProject.builder()
             .fromTestApp(HelloWorldApp.noBuildFile())
             .create()
+
+    @Rule
+    public Adb adb = new Adb();
 
     private File keystore
 
@@ -140,16 +166,20 @@ class SigningTest {
 
     }
 
-    private void createKeystoreFile(String resourceName, File keystore) {
+    private static void createKeystoreFile(String resourceName, File keystore) {
         def keystoreBytes =
                 Resources.toByteArray(
                         Resources.getResource(SigningTest, "SigningTest/" + resourceName))
         keystore << keystoreBytes
     }
 
+    private void execute(String... tasks) {
+        project.executor().withPackaging(packaging).run(tasks)
+    }
+
     @Test
     void "signing DSL"() throws Exception {
-        project.execute("assembleDebug")
+        execute("assembleDebug")
         assertThatZip(project.getApk("debug")).contains("META-INF/$certEntryName")
     }
 
@@ -162,7 +192,7 @@ class SigningTest {
                 "-P" + PROPERTY_SIGNING_KEY_ALIAS + "=" + ALIAS_NAME,
                 "-P" + PROPERTY_SIGNING_KEY_PASSWORD + "=" + KEY_PASSWORD)
 
-        project.execute(args, "assembleRelease")
+        project.executor().withArguments(args).withPackaging(packaging).run("assembleRelease")
 
         // Check for signing file inside the archive.
         assertThatZip(project.getApk("release")).contains("META-INF/$certEntryName")
@@ -170,7 +200,7 @@ class SigningTest {
 
     @Test
     void "check custom signing"() throws Exception {
-        Collection<Variant> variants = project.singleModel.variants
+        Collection<Variant> variants = project.model().getSingle().getVariants();
 
         for (Variant variant : variants) {
             // Release variant doesn't specify the signing config, so it should not be considered
@@ -188,7 +218,7 @@ class SigningTest {
 
     @Test
     public void "signing configs model"() {
-        def model = project.getSingleModel()
+        def model = project.model().getSingle()
 
         Collection<SigningConfig> signingConfigs = model.signingConfigs
         assertThat(signingConfigs.collect {it.name}).containsExactly("debug", "customDebug")
@@ -219,40 +249,172 @@ class SigningTest {
 
     @Test
     public void 'signingReport task'() throws Exception {
-        project.execute("signingReport")
+        execute("signingReport")
     }
 
     @Test
     public void 'SHA algorithm change'() throws Exception {
         File apk = project.getApk("debug")
 
-        if (minSdkVersion < 18) {
-            project.execute("assembleDebug")
+        if (minSdkVersion < DigestAlgorithm.API_SHA_256_RSA) {
+            execute("assembleDebug")
 
             assertThatApk(apk).containsFileWithMatch("META-INF/CERT.SF", "SHA1-Digest");
+            assertThatApk(apk).containsFileWithoutContent("META-INF/CERT.SF", "SHA-1-Digest");
             assertThatApk(apk).containsFileWithoutContent("META-INF/CERT.SF", "SHA-256-Digest");
             assertThatApk(apk).containsFileWithMatch("META-INF/MANIFEST.MF", "SHA1-Digest");
+            assertThatApk(apk).containsFileWithoutContent("META-INF/MANIFEST.MF", "SHA-1-Digest");
             assertThatApk(apk).containsFileWithoutContent("META-INF/MANIFEST.MF", "SHA-256-Digest");
 
-            TestFileUtils.searchAndReplace(project.buildFile, "minSdkVersion \\d+", "minSdkVersion 18")
+            TestFileUtils.searchAndReplace(
+                    project.buildFile,
+                    "minSdkVersion \\d+",
+                    "minSdkVersion $DigestAlgorithm.API_SHA_256_RSA")
         }
 
-        project.execute("assembleDebug")
+        TestUtils.waitFilesystemTime()
+        execute("assembleDebug")
+
+        if (certEntryName.endsWith(SignatureAlgorithm.RSA.name())) {
+            assertThatApk(apk).containsFileWithMatch("META-INF/CERT.SF", "SHA-256-Digest");
+            assertThatApk(apk).containsFileWithoutContent("META-INF/CERT.SF", "SHA1-Digest");
+            assertThatApk(apk).containsFileWithoutContent("META-INF/CERT.SF", "SHA-1-Digest");
+            assertThatApk(apk).containsFileWithMatch("META-INF/MANIFEST.MF", "SHA-256-Digest");
+            assertThatApk(apk).containsFileWithoutContent("META-INF/MANIFEST.MF", "SHA-1-Digest");
+        } else {
+            assertThatApk(apk).containsFileWithMatch("META-INF/CERT.SF", "SHA1-Digest");
+            assertThatApk(apk).containsFileWithoutContent("META-INF/CERT.SF", "SHA-1-Digest");
+            assertThatApk(apk).containsFileWithoutContent("META-INF/CERT.SF", "SHA-256-Digest");
+            assertThatApk(apk).containsFileWithMatch("META-INF/MANIFEST.MF", "SHA1-Digest");
+            assertThatApk(apk).containsFileWithoutContent("META-INF/MANIFEST.MF", "SHA-1-Digest");
+            assertThatApk(apk).containsFileWithoutContent("META-INF/MANIFEST.MF", "SHA-256-Digest");
+        }
+
+        TestFileUtils.searchAndReplace(
+                project.buildFile,
+                "minSdkVersion \\d+",
+                "minSdkVersion $DigestAlgorithm.API_SHA_256_ALL_ALGORITHMS")
+
+        TestUtils.waitFilesystemTime()
+        execute("assembleDebug")
 
         assertThatApk(apk).containsFileWithMatch("META-INF/CERT.SF", "SHA-256-Digest");
         assertThatApk(apk).containsFileWithoutContent("META-INF/CERT.SF", "SHA1-Digest");
+        assertThatApk(apk).containsFileWithoutContent("META-INF/CERT.SF", "SHA-1-Digest");
         assertThatApk(apk).containsFileWithMatch("META-INF/MANIFEST.MF", "SHA-256-Digest");
-        assertThatApk(apk).containsFileWithoutContent("META-INF/MANIFEST.MF", "SHA1-Digest");
+        assertThatApk(apk).containsFileWithoutContent("META-INF/MANIFEST.MF", "SHA-1-Digest");
     }
 
+    /**
+     * Runs the connected tests to make sure the APK can be successfully installed. To cover
+     * different scenarios, for every signature algorithm we need to build APKs with three different
+     * minimum SDK versions and run each one against three different phones (for ECDSA there are
+     * only two APKs and two phones).
+     */
     @Test
     @Category(DeviceTests)
     public void 'SHA algorithm change - on device'() throws Exception {
-        project.executeConnectedCheck()
+        List<Matcher<AndroidVersion>> matchers = [
+                AndroidVersionMatcher.forRange(
+                        Range.lessThan(DigestAlgorithm.API_SHA_256_RSA)),
+                AndroidVersionMatcher.forRange(
+                        Range.closedOpen(
+                                DigestAlgorithm.API_SHA_256_RSA,
+                                DigestAlgorithm.API_SHA_256_ALL_ALGORITHMS)),
+                AndroidVersionMatcher.forRange(
+                        Range.atLeast(DigestAlgorithm.API_SHA_256_ALL_ALGORITHMS))
+        ]
 
-        if (minSdkVersion < 18) {
-            TestFileUtils.searchAndReplace(project.buildFile, "minSdkVersion \\d+", "minSdkVersion 18")
-            project.executeConnectedCheck()
+        List<IDevice> devices = matchers.collect{ m -> adb.getDevice(m)}
+
+        // Check APK with minimum SDK 1. Skip this for ECDSA.
+        if (minSdkVersion < DigestAlgorithm.API_SHA_256_RSA) {
+            for (IDevice device : devices) {
+                checkOnDevice(device)
+            }
+
+            TestFileUtils.searchAndReplace(
+                    project.buildFile,
+                    "minSdkVersion \\d+",
+                    "minSdkVersion $DigestAlgorithm.API_SHA_256_RSA")
         }
+
+        // Check APK with minimum SDK 18. Build script was set to 18 from the start or was just
+        // changed above. Don't run on the oldest device, it's not compatible with the APK.
+        for (IDevice device : devices.drop(1)) {
+            checkOnDevice(device)
+        }
+
+        // Check APK with minimum SDK 21.
+        TestFileUtils.searchAndReplace(
+                project.buildFile,
+                "minSdkVersion \\d+",
+                "minSdkVersion $DigestAlgorithm.API_SHA_256_ALL_ALGORITHMS")
+
+        checkOnDevice(devices.last())
+    }
+
+    private void checkOnDevice(IDevice device) {
+        project.executor()
+                .withPackaging(packaging)
+                .withArgument(Adb.getInjectToDeviceProviderProperty(device))
+                .run("uninstallAll", GradleTestProject.DEVICE_TEST_TASK)
+    }
+
+    @Test
+    public void 'signing scheme toggle'() throws Exception {
+        // Old packaging doesn't support the v2 signing scheme.
+        Assume.assumeTrue(packaging == Packaging.NEW_PACKAGING)
+
+        File apk = project.getApk("debug")
+
+        // Toggles not specified -- testing their default values
+        execute("clean", "assembleDebug")
+        assertThatApk(apk).contains("META-INF/CERT.SF")
+        assertThatApk(apk).containsApkSigningBlock()
+
+        // Specified: v1SigningEnabled false, v2SigningEnabled false
+        TestFileUtils.searchAndReplace(
+                project.buildFile,
+                "customDebug \\{",
+                "customDebug {\nv1SigningEnabled false\nv2SigningEnabled false")
+        TestUtils.waitFilesystemTime()
+        execute("clean", "assembleDebug")
+        assertThatApk(apk).doesNotContain("META-INF/CERT.SF")
+        assertThatApk(apk).doesNotContainApkSigningBlock()
+
+        // Specified: v1SigningEnabled true, v2SigningEnabled false
+        TestFileUtils.searchAndReplace(
+                project.buildFile,
+                "v1SigningEnabled false",
+                "v1SigningEnabled true")
+        TestUtils.waitFilesystemTime()
+        execute("clean", "assembleDebug")
+        assertThatApk(apk).contains("META-INF/CERT.SF")
+        assertThatApk(apk).doesNotContainApkSigningBlock()
+
+        // Specified: v1SigningEnabled false, v2SigningEnabled true
+        TestFileUtils.searchAndReplace(
+                project.buildFile,
+                "v1SigningEnabled true",
+                "v1SigningEnabled false")
+        TestFileUtils.searchAndReplace(
+                project.buildFile,
+                "v2SigningEnabled false",
+                "v2SigningEnabled true")
+        TestUtils.waitFilesystemTime()
+        execute("clean", "assembleDebug")
+        assertThatApk(apk).doesNotContain("META-INF/CERT.SF")
+        assertThatApk(apk).containsApkSigningBlock()
+
+        // Specified: v1SigningEnabled true, v2SigningEnabled true
+        TestFileUtils.searchAndReplace(
+                project.buildFile,
+                "v1SigningEnabled false",
+                "v1SigningEnabled true")
+        TestUtils.waitFilesystemTime()
+        execute("clean", "assembleDebug")
+        assertThatApk(apk).contains("META-INF/CERT.SF")
+        assertThatApk(apk).containsApkSigningBlock()
     }
 }

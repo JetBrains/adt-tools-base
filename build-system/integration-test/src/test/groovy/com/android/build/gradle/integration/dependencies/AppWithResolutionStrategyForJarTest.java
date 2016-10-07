@@ -24,16 +24,20 @@ import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.common.utils.ModelHelper;
 import com.android.build.gradle.integration.common.utils.TestFileUtils;
 import com.android.builder.model.AndroidArtifact;
+import com.android.builder.model.AndroidLibrary;
 import com.android.builder.model.AndroidProject;
 import com.android.builder.model.Dependencies;
 import com.android.builder.model.JavaLibrary;
 import com.android.builder.model.Variant;
+import com.google.common.base.Charsets;
 import com.google.common.collect.Iterables;
+import com.google.common.io.Files;
 import com.google.common.truth.Truth;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -53,6 +57,8 @@ public class AppWithResolutionStrategyForJarTest {
 
     @BeforeClass
     public static void setUp() throws IOException {
+        Files.write("include 'app', 'library'", project.getSettingsFile(), Charsets.UTF_8);
+
         appendToFile(project.getBuildFile(),
                 "\n" +
                 "subprojects {\n" +
@@ -62,8 +68,7 @@ public class AppWithResolutionStrategyForJarTest {
                 "\n" +
                 "\n" +
                 "dependencies {\n" +
-                "    debugCompile project(\":library\")\n" +
-                "    releaseCompile project(\":library\")\n" +
+                "    compile project(\":library\")\n" +
                 "}\n" +
                 "\n" +
                 "configurations { _debugCompile }\n" +
@@ -85,7 +90,7 @@ public class AppWithResolutionStrategyForJarTest {
                 "    compile \"com.google.guava:guava:17.0\"\n" +
                 "}\n");
 
-        models = project.getAllModels();
+        models = project.model().getMulti();
     }
 
     @AfterClass
@@ -95,32 +100,39 @@ public class AppWithResolutionStrategyForJarTest {
     }
 
     @Test
+    @Ignore
     public void checkModelContainsCorrectDependencies() {
         AndroidProject appProject = models.get(":app");
         Collection<Variant> appVariants = appProject.getVariants();
 
-        checkJarDependency(appVariants, "debug", "com.google.guava:guava:jar:15.0");
-        checkJarDependency(appVariants, "release", "com.google.guava:guava:jar:17.0");
+        Variant debugVariant = ModelHelper.getVariant(appVariants, "debug");
+
+        AndroidArtifact mainArtifact = debugVariant.getMainArtifact();
+        checkJarDependency(mainArtifact.getCompileDependencies(), "15.0", "debug");
+        checkJarDependency(mainArtifact.getPackageDependencies(), "17.0", "debug");
+
+        Variant releaseVariant = ModelHelper.getVariant(appVariants, "release");
+        Truth.assertThat(releaseVariant).isNotNull();
+
+        mainArtifact = releaseVariant.getMainArtifact();
+        checkJarDependency(mainArtifact.getCompileDependencies(), "17.0", "release");
+        checkJarDependency(mainArtifact.getPackageDependencies(), "17.0", "release");
     }
 
-    private static void checkJarDependency(
-            @NonNull Collection<Variant> appVariants,
-            @NonNull String variantName,
-            @NonNull String jarCoodinate) {
-        Variant appVariant = ModelHelper.getVariant(appVariants, variantName);
-        Truth.assertThat(appVariant).isNotNull();
+    private static void checkJarDependency(Dependencies dependencies,
+            @NonNull String jarVersion, @NonNull String variantName) {
+        Collection<AndroidLibrary> androidLibraries = dependencies.getLibraries();
+        assertThat(androidLibraries).hasSize(1);
 
-        AndroidArtifact appArtifact = appVariant.getMainArtifact();
-        Dependencies artifactDependencies = appArtifact.getDependencies();
+        AndroidLibrary androidLibrary = Iterables.getOnlyElement(androidLibraries);
+        assertThat(androidLibrary.getProject()).isEqualTo(":library");
 
-        Collection<JavaLibrary> javaLibraries = artifactDependencies.getJavaLibraries();
-        assertThat(javaLibraries)
-                .named("java libs of " + variantName)
-                .hasSize(1);
+        Collection<? extends JavaLibrary> javaLibraries = androidLibrary.getJavaDependencies();
+        assertThat(javaLibraries).named("java libs of " + variantName).hasSize(1);
 
         JavaLibrary javaLibrary = Iterables.getOnlyElement(javaLibraries);
-        assertThat(javaLibrary.getResolvedCoordinates().toString())
+        assertThat(javaLibrary.getResolvedCoordinates())
                 .named("single java lib deps of " + variantName)
-                .isEqualTo(jarCoodinate);
+                .hasVersion(jarVersion);
     }
 }

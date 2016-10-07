@@ -33,7 +33,6 @@ public class DefaultBuildType extends BaseConfigImpl implements BuildType {
     private boolean mJniDebuggable = false;
     private boolean mRenderscriptDebuggable = false;
     private int mRenderscriptOptimLevel = 3;
-    private String mVersionNameSuffix = null;
     private boolean mMinifyEnabled = false;
     private SigningConfig mSigningConfig = null;
     private boolean mEmbedMicroApp = true;
@@ -44,7 +43,20 @@ public class DefaultBuildType extends BaseConfigImpl implements BuildType {
         mName = name;
     }
 
-    public DefaultBuildType initWith(DefaultBuildType that) {
+    /**
+     * Copies all properties from the given build type.
+     *
+     * <p>It can be used like this:
+     * <pre>
+     * android.buildTypes {
+     *     customBuildType {
+     *         initWith debug
+     *             // customize...
+     *         }
+     * }
+     * </pre>
+     */
+    public DefaultBuildType initWith(BuildType that) {
         _initWith(that);
 
         setDebuggable(that.isDebuggable());
@@ -172,20 +184,6 @@ public class DefaultBuildType extends BaseConfigImpl implements BuildType {
         mRenderscriptOptimLevel = renderscriptOptimLevel;
     }
 
-    /** Version name suffix. */
-    @NonNull
-    public BuildType setVersionNameSuffix(@Nullable String versionNameSuffix) {
-        mVersionNameSuffix = versionNameSuffix;
-        return this;
-    }
-
-    /** Version name suffix. */
-    @Override
-    @Nullable
-    public String getVersionNameSuffix() {
-        return mVersionNameSuffix;
-    }
-
     /** Whether Minify is enabled for this build type. */
     @NonNull
     public BuildType setMinifyEnabled(boolean enabled) {
@@ -266,7 +264,6 @@ public class DefaultBuildType extends BaseConfigImpl implements BuildType {
                 mMinifyEnabled == buildType.mMinifyEnabled &&
                 mZipAlignEnabled == buildType.mZipAlignEnabled &&
                 mEmbedMicroApp == buildType.mEmbedMicroApp &&
-                Objects.equal(mVersionNameSuffix, buildType.mVersionNameSuffix) &&
                 Objects.equal(mSigningConfig, buildType.mSigningConfig);
     }
 
@@ -281,7 +278,6 @@ public class DefaultBuildType extends BaseConfigImpl implements BuildType {
                 mPseudoLocalesEnabled,
                 mRenderscriptDebuggable,
                 mRenderscriptOptimLevel,
-                mVersionNameSuffix,
                 mMinifyEnabled,
                 mZipAlignEnabled,
                 mSigningConfig,
@@ -299,7 +295,6 @@ public class DefaultBuildType extends BaseConfigImpl implements BuildType {
                 .add("pseudoLocalesEnabled", mPseudoLocalesEnabled)
                 .add("renderscriptDebuggable", mRenderscriptDebuggable)
                 .add("renderscriptOptimLevel", mRenderscriptOptimLevel)
-                .add("versionNameSuffix", mVersionNameSuffix)
                 .add("minifyEnabled", mMinifyEnabled)
                 .add("zipAlignEnabled", mZipAlignEnabled)
                 .add("signingConfig", mSigningConfig)

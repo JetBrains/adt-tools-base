@@ -15,49 +15,42 @@
  */
 
 package com.android.build.gradle.integration.application
-import com.android.annotations.NonNull
+
 import com.android.build.gradle.integration.common.category.DeviceTests
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
+import com.android.build.gradle.integration.common.truth.AbstractAndroidSubject.ClassFileScope
 import com.android.build.gradle.integration.common.truth.TruthHelper
 import com.android.build.gradle.integration.common.truth.ZipFileSubject
+import com.android.build.gradle.integration.common.utils.ZipHelper
+import com.android.builder.Version
 import com.android.builder.model.AndroidProject
-import com.google.common.collect.Sets
-import groovy.transform.CompileDynamic
 import groovy.transform.CompileStatic
-import org.junit.AfterClass
-import org.junit.BeforeClass
-import org.junit.ClassRule
+import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
 import org.junit.experimental.categories.Category
-import org.objectweb.asm.ClassReader
-import org.objectweb.asm.Opcodes
 import org.objectweb.asm.Type
-import org.objectweb.asm.tree.ClassNode
 import org.objectweb.asm.tree.FieldNode
 
-import java.util.zip.ZipEntry
-import java.util.zip.ZipFile
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk
+import static com.google.common.truth.TruthJUnit.assume
 
-import static com.google.common.truth.Truth.assertThat
 /**
  * Assemble tests for minify.
  */
 @CompileStatic
 class MinifyTest {
-    @ClassRule
-    static public GradleTestProject project = GradleTestProject.builder()
+    @Rule
+    public GradleTestProject project = GradleTestProject.builder()
             .fromTestProject("minify")
             .create()
 
-    @BeforeClass
-    static void setUp() {
+    @Before
+    void setUp() {
+        assume().that(GradleTestProject.USE_JACK).isFalse()
         project.execute("clean", "assembleMinified",
                 "assembleMinifiedAndroidTest", "jarDebugClasses")
-    }
-
-    @AfterClass
-    static void cleanUp() {
-        project = null
     }
 
     @Test
@@ -76,7 +69,7 @@ class MinifyTest {
                         "minified/" +
                         "jars/3/1f/main.jar")
 
-        Set<String> minifiedList = getZipEntries(jarFile);
+        Set<String> minifiedList = ZipHelper.getZipEntries(jarFile);
 
         // Ignore JaCoCo stuff.
         minifiedList.removeAll { it =~ /org.jacoco/ }
@@ -88,6 +81,12 @@ class MinifyTest {
                 "com/android/tests/basic/IndirectlyReferencedClass.class", // Kept by ProGuard rules.
                 // No entry for UnusedClass, it gets removed.
         )
+
+        assertThatApk(project.getApk("minified"))
+                .hasClass("Lcom/android/tests/basic/Main;", ClassFileScope.MAIN)
+                .that()
+                // Make sure default ProGuard rules were applied.
+                .hasMethod("handleOnClick");
     }
 
     @Test
@@ -100,7 +99,7 @@ class MinifyTest {
                         "androidTest/" +
                         "minified/" +
                         "jars/3/1f/main.jar")
-        Set<String> minifiedList = getZipEntries(jarFile)
+        Set<String> minifiedList = ZipHelper.getZipEntries(jarFile)
 
         def testClassFiles = minifiedList.findAll { !it.startsWith("org/hamcrest") }
 
@@ -111,23 +110,9 @@ class MinifyTest {
                 "com/android/tests/basic/test/BuildConfig.class",
         )
 
-        checkClassFile(jarFile)
-    }
-
-    @NonNull
-    private static Set<String> getZipEntries(@NonNull File file) {
-        Set<String> entries = Sets.newHashSet();
-        ZipFile zipFile = new ZipFile(file);
-        try {
-            Enumeration<? extends ZipEntry> zipFileEntries = zipFile.entries();
-            while (zipFileEntries.hasMoreElements()) {
-                entries.add(zipFileEntries.nextElement().getName());
-            }
-        } finally {
-            zipFile.close();
-        }
-
-        return entries;
+        FieldNode stringProviderField = ZipHelper.checkClassFile(
+                jarFile, "com/android/tests/basic/MainTest.class", "stringProvider");
+        assert Type.getType(stringProviderField.desc).className == "com.android.tests.basic.a"
     }
 
     @Test
@@ -139,22 +124,16 @@ class MinifyTest {
         classes.doesNotContain("com/android/tests/basic/MainTest.class")
     }
 
-    @CompileDynamic
-    static def checkClassFile(@NonNull File jarFile) {
-        ZipFile zipFile = new ZipFile(jarFile);
-        try {
-            ZipEntry entry = zipFile.getEntry("com/android/tests/basic/MainTest.class")
-            assertThat(entry).named("MainTest.class entry").isNotNull()
-            def classReader = new ClassReader(zipFile.getInputStream(entry))
-            def mainTestClassNode = new ClassNode(Opcodes.ASM5)
-            classReader.accept(mainTestClassNode, 0)
-
-            // Make sure bytecode got rewritten to point to renamed classes.
-            FieldNode stringProviderField = mainTestClassNode.fields.find { it.name == "stringProvider" }
-            assert Type.getType(stringProviderField.desc).className == "com.android.tests.basic.a"
-
-        } finally {
-            zipFile.close();
-        }
+    @Test
+    void 'Default ProGuard file created'() {
+        File defaultProguardFile = project.file(
+                "build/" +
+                        AndroidProject.FD_INTERMEDIATES +
+                        "/proguard-files" +
+                        "/proguard-android.txt" +
+                        "-" +
+                        Version.ANDROID_GRADLE_PLUGIN_VERSION)
+        assertThat(defaultProguardFile).exists();
     }
+
 }

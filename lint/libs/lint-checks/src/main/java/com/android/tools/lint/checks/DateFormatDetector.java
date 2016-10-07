@@ -18,29 +18,28 @@ package com.android.tools.lint.checks;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.tools.lint.client.api.JavaParser.ResolvedMethod;
-import com.android.tools.lint.client.api.JavaParser.TypeDescriptor;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Detector;
-import com.android.tools.lint.detector.api.Detector.JavaScanner;
 import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.JavaContext;
 import com.android.tools.lint.detector.api.Location;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
-import com.android.tools.lint.detector.api.Speed;
+import com.intellij.psi.JavaElementVisitor;
+import com.intellij.psi.PsiMethod;
+import com.intellij.psi.PsiNewExpression;
+import com.intellij.psi.PsiParameter;
+import com.intellij.psi.PsiParameterList;
+import com.intellij.psi.PsiType;
 
 import java.util.Collections;
 import java.util.List;
 
-import lombok.ast.AstVisitor;
-import lombok.ast.ConstructorInvocation;
-
 /**
  * Checks for errors related to Date Formats
  */
-public class DateFormatDetector extends Detector implements JavaScanner {
+public class DateFormatDetector extends Detector implements Detector.JavaPsiScanner {
 
     private static final Implementation IMPLEMENTATION = new Implementation(
             DateFormatDetector.class,
@@ -76,12 +75,6 @@ public class DateFormatDetector extends Detector implements JavaScanner {
     public DateFormatDetector() {
     }
 
-    @NonNull
-    @Override
-    public Speed getSpeed() {
-        return Speed.FAST;
-    }
-
     // ---- Implements JavaScanner ----
 
     @Nullable
@@ -91,8 +84,8 @@ public class DateFormatDetector extends Detector implements JavaScanner {
     }
 
     @Override
-    public void visitConstructor(@NonNull JavaContext context, @Nullable AstVisitor visitor,
-            @NonNull ConstructorInvocation node, @NonNull ResolvedMethod constructor) {
+    public void visitConstructor(@NonNull JavaContext context, @Nullable JavaElementVisitor visitor,
+            @NonNull PsiNewExpression node, @NonNull PsiMethod constructor) {
         if (!specifiesLocale(constructor)) {
             Location location = context.getLocation(node);
             String message =
@@ -103,13 +96,16 @@ public class DateFormatDetector extends Detector implements JavaScanner {
         }
     }
 
-    private static boolean specifiesLocale(@NonNull ResolvedMethod method) {
-        for (int i = 0, n = method.getArgumentCount(); i < n; i++) {
-            TypeDescriptor argumentType = method.getArgumentType(i);
-            if (argumentType.matchesSignature(LOCALE_CLS)) {
-                return true;
+    private static boolean specifiesLocale(@NonNull PsiMethod method) {
+        PsiParameterList parameterList = method.getParameterList();
+        PsiParameter[] parameters = parameterList.getParameters();
+        for (PsiParameter parameter : parameters) {
+            PsiType type = parameter.getType();
+            if (type.getCanonicalText().equals(LOCALE_CLS)) {
+                    return true;
             }
         }
+
         return false;
     }
 }

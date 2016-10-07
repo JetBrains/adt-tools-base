@@ -16,23 +16,46 @@
 
 package com.android.build.api.transform;
 
+import com.android.annotations.NonNull;
+
 import java.io.File;
-import java.util.Collection;
 
 /**
  * A secondary input file for a {@link Transform}.
  *
  * A secondary input is part of the transform inputs and can be decorated to indicate if a change
- * to the input would trigger a non incremental
- * {@link Transform#transform(Context, Collection, Collection, Collection, TransformOutputProvider, boolean)}
+ * to the input would trigger a non incremental {@link Transform#transform(TransformInvocation)}.
  * call
  */
 public class SecondaryFile {
 
+    /**
+     * Creates a {@link SecondaryFile} instance that, when modified, will not trigger a full,
+     * non-incremental build.
+     */
+    public static SecondaryFile incremental(@NonNull File file) {
+        return new SecondaryFile(file, true);
+    }
+
+    /**
+     * Creates a {@link SecondaryFile} instance that, when modified, will always trigger a full,
+     * non-incremental build.
+     */
+    public static SecondaryFile nonIncremental(@NonNull File file) {
+        return new SecondaryFile(file, false);
+    }
+
     private final boolean supportsIncrementalBuild;
     private final File secondaryInputFile;
 
-    public SecondaryFile(File secondaryInputFile, boolean supportsIncrementalBuild) {
+    /**
+     * @param secondaryInputFile the {@link File} this {@link SecondaryFile} will point to
+     * @param supportsIncrementalBuild if true, changes to the file can be handled incrementally
+     *                                 by the transform
+     * @see #incremental(File)
+     * @see #nonIncremental(File)
+     */
+    public SecondaryFile(@NonNull File secondaryInputFile, boolean supportsIncrementalBuild) {
         this.supportsIncrementalBuild = supportsIncrementalBuild;
         this.secondaryInputFile = secondaryInputFile;
     }
@@ -51,6 +74,7 @@ public class SecondaryFile {
      * Returns the file handle for this secondary input to a Transform.
      * @return a file handle.
      */
+    @NonNull
     public File getFile() {
         return secondaryInputFile;
     }

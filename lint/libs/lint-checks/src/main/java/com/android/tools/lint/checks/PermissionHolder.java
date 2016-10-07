@@ -33,7 +33,7 @@ public interface PermissionHolder {
     /** Returns true if the permission holder has been granted the given permission */
     boolean hasPermission(@NonNull String permission);
 
-    /** Returns true if the given permission is known to be revocable for targetSdkVersion >= M */
+    /** Returns true if the given permission is known to be revocable for targetSdkVersion &ge; M */
     boolean isRevocable(@NonNull String permission);
 
     @NonNull
@@ -46,10 +46,10 @@ public interface PermissionHolder {
      * A convenience implementation of {@link PermissionHolder} backed by a set
      */
     class SetPermissionLookup implements PermissionHolder {
-        private Set<String> mGrantedPermissions;
-        private Set<String> mRevocablePermissions;
-        private AndroidVersion mMinSdkVersion;
-        private AndroidVersion mTargetSdkVersion;
+        private final Set<String> mGrantedPermissions;
+        private final Set<String> mRevocablePermissions;
+        private final AndroidVersion mMinSdkVersion;
+        private final AndroidVersion mTargetSdkVersion;
 
         public SetPermissionLookup(
                 @NonNull Set<String> grantedPermissions,

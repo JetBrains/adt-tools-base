@@ -99,7 +99,7 @@ public class MergingExceptionTest {
         assertEquals("message.getKind()", Message.Kind.ERROR, message.getKind());
         assertEquals("message.getText()", "message", message.getText());
         assertTrue("message.getRawMessage()",
-                message.getRawMessage().startsWith("org.xml.sax.SAXParseException: message\n"));
+                message.getRawMessage().startsWith("org.xml.sax.SAXParseException"));
         assertEquals("message.getSourceFilePositions()",
                 new SourceFilePosition(file, new SourcePosition(4, 6, -1)),
                 Iterables.getOnlyElement(message.getSourceFilePositions()));
@@ -115,7 +115,7 @@ public class MergingExceptionTest {
         assertEquals("message.getKind()", Message.Kind.ERROR, message.getKind());
         assertEquals("message.getText()", "message2", message.getText());
         assertTrue("message.getRawMessage()",
-                message.getRawMessage().startsWith("org.xml.sax.SAXParseException: message2\n"));
+                message.getRawMessage().startsWith("org.xml.sax.SAXParseException"));
         assertEquals("message.getSourceFilePositions()",
                 new SourceFilePosition(file, SourcePosition.UNKNOWN),
                 Iterables.getOnlyElement(message.getSourceFilePositions()));

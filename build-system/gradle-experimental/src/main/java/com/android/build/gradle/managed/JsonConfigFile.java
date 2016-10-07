@@ -28,10 +28,9 @@ import java.util.List;
 public interface JsonConfigFile {
 
     /**
-     * A JSON data file for configuring the ExternalNativeComponentPlugin.
+     * JSON data files for configuring the ExternalNativeComponentPlugin.
      */
-    File getConfig();
-    void setConfig(File file);
+    List<File> getConfigs();
 
     /**
      * Command for generating a JSON data file.
@@ -40,13 +39,6 @@ public interface JsonConfigFile {
      * another program, the command to generate the data file can be specified such that it will be
      * invoke by the generateBuildData task.
      */
-    List<String> getCommand();
-
-    /**
-     * Command string for generating a JSON data file.
-     *
-     * Same as getCommand, but allows command to be specified as a single String.
-     */
-    String getCommandString();
-    void setCommandString(String command);
+    String getCommand();
+    void setCommand(String command);
 }

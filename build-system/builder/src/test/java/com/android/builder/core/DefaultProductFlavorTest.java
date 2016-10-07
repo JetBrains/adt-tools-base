@@ -19,6 +19,7 @@ package com.android.builder.core;
 import com.android.builder.internal.ClassFieldImpl;
 import com.android.builder.model.ClassField;
 import com.android.builder.model.ProductFlavor;
+import com.android.testutils.internal.CopyOfTester;
 import com.google.common.collect.ImmutableMap;
 
 import junit.framework.TestCase;
@@ -72,6 +73,9 @@ public class DefaultProductFlavorTest extends TestCase {
     public void testClone() {
         ProductFlavor flavor = DefaultProductFlavor.clone(mCustom);
         assertEquals(mCustom, flavor);
+
+        CopyOfTester.assertAllGettersCalled(
+                ProductFlavor.class, mCustom, DefaultProductFlavor::clone);
     }
 
     public void testMergeOnDefault() {

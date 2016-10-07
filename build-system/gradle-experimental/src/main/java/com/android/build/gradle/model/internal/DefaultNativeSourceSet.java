@@ -21,6 +21,8 @@ import com.android.build.gradle.model.NativeSourceSet;
 
 import org.gradle.api.file.SourceDirectorySet;
 import org.gradle.api.internal.file.DefaultSourceDirectorySet;
+import org.gradle.api.tasks.util.PatternFilterable;
+import org.gradle.api.tasks.util.PatternSet;
 
 /**
  * Implementation of {@link NativeSourceSet}
@@ -30,10 +32,14 @@ public class DefaultNativeSourceSet extends AbstractNativeDependentSourceSet
 
     private final DefaultSourceDirectorySet exportedHeaders;
     private final DefaultSourceDirectorySet implicitHeaders;
+    private final PatternFilterable cFilter;
+    private final PatternFilterable cppFilter;
 
     public DefaultNativeSourceSet() {
-        this.exportedHeaders = new DefaultSourceDirectorySet("exported headers", fileResolver);
-        this.implicitHeaders = new DefaultSourceDirectorySet("implicit headers", fileResolver);
+        this.exportedHeaders = sourceDirectorySetFactory.create("exported headers");
+        this.implicitHeaders = sourceDirectorySetFactory.create("implicit headers");
+        cFilter = new PatternSet();
+        cppFilter = new PatternSet();
     }
 
     @Override
@@ -44,5 +50,15 @@ public class DefaultNativeSourceSet extends AbstractNativeDependentSourceSet
     @Override
     public SourceDirectorySet getImplicitHeaders() {
         return implicitHeaders;
+    }
+
+    @Override
+    public PatternFilterable getcFilter() {
+        return cFilter;
+    }
+
+    @Override
+    public PatternFilterable getCppFilter() {
+        return cppFilter;
     }
 }

@@ -16,65 +16,54 @@
 
 package com.android.ide.common.rendering;
 
-import static com.android.ide.common.rendering.api.Result.Status.ERROR_REFLECTION;
-
 import com.android.annotations.VisibleForTesting;
-import com.android.ide.common.rendering.api.Bridge;
-import com.android.ide.common.rendering.api.Capability;
-import com.android.ide.common.rendering.api.DrawableParams;
-import com.android.ide.common.rendering.api.Features;
-import com.android.ide.common.rendering.api.ILayoutPullParser;
-import com.android.ide.common.rendering.api.LayoutLog;
-import com.android.ide.common.rendering.api.LayoutlibCallback;
-import com.android.ide.common.rendering.api.RenderSession;
-import com.android.ide.common.rendering.api.ResourceValue;
-import com.android.ide.common.rendering.api.Result;
+import com.android.ide.common.rendering.api.*;
 import com.android.ide.common.rendering.api.Result.Status;
-import com.android.ide.common.rendering.api.SessionParams;
 import com.android.ide.common.rendering.api.SessionParams.RenderingMode;
-import com.android.ide.common.rendering.api.ViewInfo;
 import com.android.ide.common.rendering.legacy.ILegacyPullParser;
 import com.android.ide.common.resources.ResourceResolver;
 import com.android.ide.common.sdk.LoadStatus;
-import com.android.layoutlib.api.ILayoutBridge;
-import com.android.layoutlib.api.ILayoutLog;
-import com.android.layoutlib.api.ILayoutResult;
+import com.android.layoutlib.api.*;
 import com.android.layoutlib.api.ILayoutResult.ILayoutViewInfo;
 import com.android.layoutlib.api.IProjectCallback;
-import com.android.layoutlib.api.IResourceValue;
-import com.android.layoutlib.api.IXmlPullParser;
 import com.android.resources.ResourceType;
 import com.android.utils.ILogger;
 import com.android.utils.SdkUtils;
+import com.google.common.base.Predicate;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Sets;
 
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
+
+import static com.android.SdkConstants.DOT_CLASS;
+import static com.android.ide.common.rendering.api.Result.Status.ERROR_REFLECTION;
 
 /**
  * Class to use the Layout library.
- * <p/>
+ * <p>
  * Use {@link #load(String, ILogger, String)} to load the jar file.
- * <p/>
+ * <p>
  * Use the layout library with:
  * {@link #init}, {@link #supports(int)}, {@link #createSession(SessionParams)},
  * {@link #dispose()}, {@link #clearCaches(Object)}.
- * <p/>
+ * <p>
  * Layout libraries before API level 5 used {@link IProjectCallback}. Layout libraries from
  * API level 5 to 14 used {@link com.android.ide.common.rendering.api.IProjectCallback}.
  * Layout libraries since API 15 use {@link LayoutlibCallback}. To target all Layout libraries,
  * use {@code LayoutlibCallback}, which implements the other interfaces. Also, use
  * {@link ILegacyPullParser} instead of {@link ILayoutPullParser}.
- * <p/>
+ * <p>
  * These interfaces will ensure that both new and older Layout libraries can be accessed.
  */
 @SuppressWarnings("deprecation")
@@ -128,9 +117,50 @@ public class LayoutLibrary {
     }
 
     /**
+     * Returns a {@link LayoutLibrary} instance using the given {@link Bridge} and {@link ClassLoader}
+     */
+    public static LayoutLibrary load(Bridge bridge, ClassLoader classLoader) {
+        return new LayoutLibrary(bridge, null, classLoader, LoadStatus.LOADED, null);
+    }
+
+    /**
+     * Returns a list of the classes contained in the given list of jar files
+     */
+    private static ImmutableSet<String> getJarClasses(URL[] urls) {
+        ImmutableSet.Builder<String> builder = ImmutableSet.builder();
+        for (URL url : urls) {
+            ZipInputStream zipStream = null;
+            try {
+                zipStream = new ZipInputStream(url.openStream());
+                for (ZipEntry entry = zipStream.getNextEntry(); entry != null; entry = zipStream.getNextEntry()) {
+                    String name = entry.getName();
+                    if (name != null && name.endsWith(DOT_CLASS)) {
+                        // Transform the class file path to the class name
+                        builder.add(name.substring(0, name.length() - DOT_CLASS.length()).replace("/", "."));
+                    }
+                }
+            }
+            catch (IOException e) {
+                // Ignored
+            }
+            finally {
+                if (zipStream != null) {
+                    try {
+                        zipStream.close();
+                    }
+                    catch (IOException e) {
+                        // Ignored
+                    }
+                }
+            }
+        }
+        return builder.build();
+    }
+
+    /**
      * Loads the layoutlib.jar file located at the given path and returns a {@link LayoutLibrary}
      * object representing the result.
-     * <p/>
+     * <p>
      * If loading failed {@link #getStatus()} will reflect this, and {@link #mBridge} will
      * be null.
      *
@@ -166,11 +196,20 @@ public class LayoutLibrary {
                 }
                 urls[0] = SdkUtils.fileToUrl(f);
 
+                final Set<String> jarClasses = Sets.filter(getJarClasses(urls), new Predicate<String>() {
+                    @Override
+                    public boolean apply(String input) {
+                        // Filter kxml classes (so we use the ones in studio) and the inner classes. The inner classes will be filtered by
+                        // using the parent class name.
+                        return !input.startsWith("org.xmlpull.v1") && !input.contains("$");
+                    }
+                });
+                classLoader = new FilteredClassLoader(LayoutLibrary.class.getClassLoader(), jarClasses);
+
                 // create a class loader. Because this jar reference interfaces
                 // that are in the editors plugin, it's important to provide
                 // a parent class loader.
-                classLoader = new URLClassLoader(urls,
-                        LayoutLibrary.class.getClassLoader());
+                classLoader = new URLClassLoader(urls, classLoader);
 
                 // load the class
                 Class<?> clazz = classLoader.loadClass(CLASS_BRIDGE);
@@ -302,7 +341,7 @@ public class LayoutLibrary {
      *
      * @param platformProperties The build properties for the platform.
      * @param fontLocation the location of the fonts in the SDK target.
-     * @param enumValueMap map attrName => { map enumFlagName => Integer value }. This is typically
+     * @param enumValueMap map attrName ⇒ { map enumFlagName ⇒ Integer value }. This is typically
      *          read from attrs.xml in the SDK target.
      * @param log a {@link LayoutLog} object. Can be null.
      * @return true if success.
@@ -336,7 +375,7 @@ public class LayoutLibrary {
     /**
      * Starts a layout session by inflating and rendering it. The method returns a
      * {@link RenderSession} on which further actions can be taken.
-     * <p/>
+     * <p>
      * Before taking further actions on the scene, it is recommended to use
      * {@link #supports(int)} to check what the scene can do.
      *
@@ -383,9 +422,9 @@ public class LayoutLibrary {
 
     /**
      * Clears the resource cache for a specific project.
-     * <p/>This cache contains bitmaps and nine patches that are loaded from the disk and reused
+     * <p>This cache contains bitmaps and nine patches that are loaded from the disk and reused
      * until this method is called.
-     * <p/>The cache is not configuration dependent and should only be cleared when a
+     * <p>The cache is not configuration dependent and should only be cleared when a
      * resource changes (at this time only bitmaps and 9 patches go into the cache).
      *
      * @param projectKey the key for the project.
@@ -459,10 +498,10 @@ public class LayoutLibrary {
 
     /**
      * Returns the API level of the legacy bridge.
-     * <p/>
+     * <p>
      * This handles the case where ILayoutBridge does not have a {@link ILayoutBridge#getApiLevel()}
      * (at API level 1).
-     * <p/>
+     * <p>
      * {@link ILayoutBridge#getApiLevel()} should never called directly.
      *
      * @return the api level of {@link #mLegacyBridge}.

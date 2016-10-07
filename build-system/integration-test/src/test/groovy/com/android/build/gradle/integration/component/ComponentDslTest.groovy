@@ -37,7 +37,7 @@ public class ComponentDslTest {
     @Rule
     public GradleTestProject project = GradleTestProject.builder()
             .fromTestApp(new HelloWorldJniApp())
-            .forExperimentalPlugin(true)
+            .useExperimentalGradleVersion(true)
             .create();
 
     @Before
@@ -55,6 +55,18 @@ model {
         }
         ndk {
             moduleName "hello-jni"
+        }
+        buildTypes {
+            release {
+                minifyEnabled false
+                proguardFiles.add(file("proguard-rules.pro"))
+                externalNativeBuild {
+                    ndkBuild {
+                        cFlags.addAll("-DCOLOR=RED")
+                        abiFilters.addAll("x86", "x86_64")
+                    }
+                }
+            }
         }
         productFlavors {
             create("f1") {
@@ -89,7 +101,7 @@ dependencies {
 
     @Test
     @Category(DeviceTests.class)
-    public void connnectedAndroidTest() {
+    public void connectedAndroidTest() {
         project.executeConnectedCheck();
     }
 }

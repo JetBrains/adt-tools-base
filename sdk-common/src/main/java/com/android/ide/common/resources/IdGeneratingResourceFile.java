@@ -20,6 +20,7 @@ import com.android.ide.common.rendering.api.DensityBasedResourceValue;
 import com.android.ide.common.rendering.api.ResourceValue;
 import com.android.ide.common.resources.ValueResourceParser.IValueResourceRepository;
 import com.android.ide.common.resources.configuration.DensityQualifier;
+import com.android.ide.common.resources.configuration.ResourceQualifier;
 import com.android.io.IAbstractFile;
 import com.android.io.StreamException;
 import com.android.resources.ResourceType;
@@ -34,7 +35,7 @@ import java.util.Set;
 
 /**
  * Represents a resource file that also generates ID resources.
- * <p/>
+ * <p>
  * This is typically an XML file in res/layout or res/menu
  */
 public final class IdGeneratingResourceFile extends ResourceFile
@@ -192,7 +193,7 @@ public final class IdGeneratingResourceFile extends ResourceFile
         DensityQualifier qualifier = folder.getConfiguration().getDensityQualifier();
 
         ResourceValue value;
-        if (qualifier == null) {
+        if (!ResourceQualifier.isValid(qualifier)) {
             value = new ResourceValue(mFileType, mFileName,
                     file.getOsLocation(), isFramework());
         } else {

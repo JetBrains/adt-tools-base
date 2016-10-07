@@ -114,4 +114,12 @@ public interface SourceProvider {
      */
     @NonNull
     Collection<File> getJniLibsDirectories();
+
+    /**
+     * Returns the shader folders.
+     *
+     * @return a list of folders. They may not all exist.
+     */
+    @NonNull
+    Collection<File> getShadersDirectories();
 }

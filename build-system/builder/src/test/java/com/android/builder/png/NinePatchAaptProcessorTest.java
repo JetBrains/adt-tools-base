@@ -28,9 +28,11 @@ import com.android.repository.Revision;
 import com.android.utils.ILogger;
 import com.android.utils.StdLogger;
 import com.google.common.collect.Maps;
+import com.google.common.truth.Expect;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -45,6 +47,9 @@ import java.util.zip.DataFormatException;
 
 @RunWith(Parameterized.class)
 public class NinePatchAaptProcessorTest {
+
+    @ClassRule
+    public static Expect expect = Expect.createAndEnableStackTrace();
 
     private static Map<File, File> mSourceAndCrunchedFiles;
 
@@ -66,6 +71,7 @@ public class NinePatchAaptProcessorTest {
 
     @Test
     public void run() throws PngException, IOException {
+        NinePatchAaptProcessorTestUtils.skipOnJenkins();
         File outFile = NinePatchAaptProcessorTestUtils.crunchFile(
                 sCruncherKey.get(), mFile, sCruncher);
         mSourceAndCrunchedFiles.put(mFile, outFile);
@@ -75,7 +81,7 @@ public class NinePatchAaptProcessorTest {
     @AfterClass
     public static void tearDownAndCheck() throws IOException, DataFormatException {
         NinePatchAaptProcessorTestUtils.tearDownAndCheck(
-                sCruncherKey.get(), mSourceAndCrunchedFiles, sCruncher, sClassStartTime);
+                sCruncherKey.get(), mSourceAndCrunchedFiles, sCruncher, sClassStartTime, expect);
         mSourceAndCrunchedFiles = null;
     }
 

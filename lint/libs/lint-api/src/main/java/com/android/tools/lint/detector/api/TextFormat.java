@@ -27,7 +27,6 @@ import com.android.utils.XmlUtils;
  * also be converted to plain text and to HTML markup, using the
  * {@link #convertTo(String, TextFormat)} method.
  *
- * @see Issue#getDescription(TextFormat)
  * @see Issue#getExplanation(TextFormat)
  * @see Issue#getBriefDescription(TextFormat)
  */
@@ -162,51 +161,103 @@ public enum TextFormat {
         // Drop all tags; replace all entities, insert newlines
         // (this won't do wrapping)
         StringBuilder sb = new StringBuilder(html.length());
+        boolean inPre = false;
         for (int i = 0, n = html.length(); i < n; i++) {
             char c = html.charAt(i);
             if (c == '<') {
-                // Scan forward to the end
-                if (html.startsWith("<br>", i) ||
-                        html.startsWith("<br />", i) ||
-                        html.startsWith("<BR>", i) ||
-                        html.startsWith("<BR />", i)) {
-                    sb.append('\n');
-                } else if (html.startsWith("<!--")) {
-                    i = Math.max(i, html.indexOf("-->", i));
+                // Strip comments
+                if (html.startsWith("<!--", i)) {
+                    int end = html.indexOf("-->", i);
+                    if (end == -1) {
+                        break; // Unclosed comment
+                    } else {
+                        i = end + 2;
+                    }
+                    continue;
+                }
+                // Tags: scan forward to the end
+                int begin;
+                boolean isEndTag = false;
+                if (html.startsWith("</", i)) {
+                    begin = i + 2;
+                    isEndTag = true;
+                } else {
+                    begin = i + 1;
                 }
                 i = html.indexOf('>', i);
+                if (i == -1) {
+                    // Unclosed tag
+                    break;
+                }
+                int end = i;
+                if (html.charAt(i - 1) == '/') {
+                    end--;
+                    isEndTag = true;
+                }
+                // TODO: Handle <pre> such that we don't collapse spaces and reformat there!
+                // (We do need to strip out tags and expand entities)
+                String tag = html.substring(begin, end).trim();
+                if (tag.equalsIgnoreCase("br")) {
+                    sb.append('\n');
+                } else if (tag.equalsIgnoreCase("p") // Most common block tags
+                           || tag.equalsIgnoreCase("div")
+                           || tag.equalsIgnoreCase("pre")
+                           || tag.equalsIgnoreCase("blockquote")
+                           || tag.equalsIgnoreCase("dl")
+                           || tag.equalsIgnoreCase("dd")
+                           || tag.equalsIgnoreCase("dt")
+                           || tag.equalsIgnoreCase("ol")
+                           || tag.equalsIgnoreCase("ul")
+                           || tag.equalsIgnoreCase("li")
+                            || tag.length() == 2 && tag.startsWith("h")
+                                    && Character.isDigit(tag.charAt(1))) {
+                    // Block tag: ensure new line
+                    if (sb.length() > 0 && sb.charAt(sb.length() - 1) != '\n') {
+                        sb.append('\n');
+                    }
+                    if (tag.equals("li") && !isEndTag) {
+                        sb.append("* ");
+                    }
+                    if (tag.equalsIgnoreCase("pre")) {
+                        inPre = !isEndTag;
+                    }
+                }
             } else if (c == '&') {
                 int end = html.indexOf(';', i);
                 if (end > i) {
                     String entity = html.substring(i, end + 1);
-                    sb.append(XmlUtils.fromXmlAttributeValue(entity));
+                    String s = XmlUtils.fromXmlAttributeValue(entity);
+                    if (s.startsWith("&")) {
+                        // Not an XML entity; for example, &nbsp;
+                        // Sadly Guava's HtmlEscapes don't handle this either.
+                        if (entity.equalsIgnoreCase("&nbsp;")) {
+                            s = " ";
+                        } else if (entity.startsWith("&#")) {
+                            try {
+                                int value = Integer.parseInt(entity.substring(2));
+                                s = Character.toString((char)value);
+                            } catch (NumberFormatException ignore) {
+                            }
+                        }
+                    }
+                    sb.append(s);
                     i = end;
                 } else {
                     sb.append(c);
                 }
-            } else if (c == '\n') {
-                sb.append(' ');
+            } else if (Character.isWhitespace(c)) {
+                if (inPre) {
+                    sb.append(c);
+                } else if (sb.length() == 0
+                                || !Character.isWhitespace(sb.charAt(sb.length() - 1))) {
+                    sb.append(' ');
+                }
             } else {
                 sb.append(c);
             }
         }
 
-        // Collapse repeated spaces
         String s = sb.toString();
-        sb.setLength(0);
-        boolean wasSpace = false;
-        for (int i = 0, n = s.length(); i < n; i++) {
-            char c = s.charAt(i);
-            if (c == '\t') { // we keep newlines; came from <br>'s
-                c = ' ';
-            }
-            boolean isSpace = c == ' ';
-            if (!isSpace || !wasSpace) {
-                wasSpace = isSpace;
-                sb.append(c);
-            }
-        }
-        s = sb.toString();
 
         // Line-wrap
         s = SdkUtils.wrap(s, 60, null);

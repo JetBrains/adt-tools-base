@@ -43,6 +43,7 @@ import com.android.builder.model.AndroidLibrary;
 import com.android.builder.model.Dependencies;
 import com.android.builder.model.MavenCoordinates;
 import com.android.builder.model.Variant;
+import com.android.testutils.TestUtils;
 import com.android.tools.lint.client.api.LintClient;
 import com.android.tools.lint.detector.api.Context;
 import com.android.tools.lint.detector.api.DefaultPosition;
@@ -57,7 +58,6 @@ import com.android.utils.Pair;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import com.google.common.io.Files;
 
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.CodeVisitorSupport;
@@ -113,7 +113,7 @@ public class GradleDetectorTest extends AbstractCheckTest {
         if (mSdkDir == null) {
             // Make fake SDK "installation" such that we can predict the set
             // of Maven repositories discovered by this test
-            mSdkDir = Files.createTempDir();
+            mSdkDir = TestUtils.createTempDirDeletedOnExit();
 
             String[] paths = new String[]{
                     // Android repository
@@ -132,6 +132,8 @@ public class GradleDetectorTest extends AbstractCheckTest {
                     "extras/android/m2repository/com/android/support/support-v4/20.0.0/support-v4-20.0.0.aar",
                     "extras/android/m2repository/com/android/support/support-v4/21.0.0/support-v4-21.0.0.aar",
                     "extras/android/m2repository/com/android/support/support-v4/21.0.2/support-v4-21.0.2.aar",
+                    "extras/android/m2repository/com/android/support/test/runner/0.5/runner-0.5.aar",
+                    "extras/android/m2repository/com/android/support/multidex/1.0.1/multidex-1.0.1.aar",
 
                     // Google repository
                     "extras/google/m2repository/com/google/android/gms/play-services/3.1.36/play-services-3.1.36.aar",
@@ -149,26 +151,33 @@ public class GradleDetectorTest extends AbstractCheckTest {
                     "extras/google/m2repository/com/google/android/gms/play-services-wearable/5.0.77/play-services-wearable-5.0.77.aar",
                     "extras/google/m2repository/com/google/android/gms/play-services-wearable/6.1.11/play-services-wearable-6.1.11.aar",
                     "extras/google/m2repository/com/google/android/gms/play-services-wearable/6.1.71/play-services-wearable-6.1.71.aar",
-                    "extras/google/m2repository/com/google/android/support/wearable/1.0.0/wearable-1.0.0.aar"
+                    "extras/google/m2repository/com/google/android/support/wearable/1.0.0/wearable-1.0.0.aar",
+                    "extras/google/m2repository/com/google/android/wearable/wearable/1.0.0/wearable-1.0.0.aar",
+                    "extras/google//m2repository/com/google/android/support/wearable/1.2.0/wearable-1.2.0.aar",
+                    "extras/google//m2repository/com/google/android/support/wearable/1.3.0/wearable-1.3.0.aar"
             };
 
-            for (String path : paths) {
-                File file = new File(mSdkDir, path.replace('/', File.separatorChar));
-                File parent = file.getParentFile();
-                if (!parent.exists()) {
-                    boolean ok = parent.mkdirs();
-                    assertTrue(ok);
-                }
-                try {
-                    boolean created = file.createNewFile();
-                    assertTrue(created);
-                } catch (IOException e) {
-                    fail(e.toString());
-                }
-            }
+            createSdkPaths(mSdkDir, paths);
         }
 
         return mSdkDir;
+    }
+
+    public static void createSdkPaths(File sdkDir, String[] paths) {
+        for (String path : paths) {
+            File file = new File(sdkDir, path.replace('/', File.separatorChar));
+            File parent = file.getParentFile();
+            if (!parent.exists()) {
+                boolean ok = parent.mkdirs();
+                assertTrue(ok);
+            }
+            try {
+                boolean created = file.createNewFile();
+                assertTrue(created);
+            } catch (IOException e) {
+                fail(e.toString());
+            }
+        }
     }
 
     public void testGetOldValue() {
@@ -238,10 +247,19 @@ public class GradleDetectorTest extends AbstractCheckTest {
             + "build.gradle:25: Warning: A newer version of com.android.support:appcompat-v7 than 13.0.0 is available: 21.0.2 [GradleDependency]\n"
             + "    compile 'com.android.support:appcompat-v7:13.0.0'\n"
             + "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+            + "build.gradle:26: Warning: A newer version of com.google.android.support:wearable than 1.2.0 is available: 1.3.0 [GradleDependency]\n"
+            + "    compile 'com.google.android.support:wearable:1.2.0'\n"
+            + "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+            + "build.gradle:27: Warning: A newer version of com.android.support:multidex than 1.0.0 is available: 1.0.1 [GradleDependency]\n"
+            + "    compile 'com.android.support:multidex:1.0.0'\n"
+            + "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+            + "build.gradle:29: Warning: A newer version of com.android.support.test:runner than 0.3 is available: 0.5 [GradleDependency]\n"
+            + "    androidTestCompile 'com.android.support.test:runner:0.3'\n"
+            + "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
             + "build.gradle:23: Warning: Avoid using + in version numbers; can lead to unpredictable and unrepeatable builds (com.android.support:appcompat-v7:+) [GradleDynamicVersion]\n"
             + "    compile 'com.android.support:appcompat-v7:+'\n"
             + "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
-            + "1 errors, 5 warnings\n",
+            + "1 errors, 8 warnings\n",
 
             lintProject("gradle/Dependencies.gradle=>build.gradle"));
     }
@@ -294,7 +312,16 @@ public class GradleDetectorTest extends AbstractCheckTest {
                 + "build.gradle:25: Warning: A newer version of com.android.support:appcompat-v7 than 13.0.0 is available: 21.0.2 [GradleDependency]\n"
                 + "    compile 'com.android.support:appcompat-v7:13.0.0'\n"
                 + "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
-                + "0 errors, 3 warnings\n",
+                + "build.gradle:26: Warning: A newer version of com.google.android.support:wearable than 1.2.0 is available: 1.3.0 [GradleDependency]\n"
+                + "    compile 'com.google.android.support:wearable:1.2.0'\n"
+                + "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "build.gradle:27: Warning: A newer version of com.android.support:multidex than 1.0.0 is available: 1.0.1 [GradleDependency]\n"
+                + "    compile 'com.android.support:multidex:1.0.0'\n"
+                + "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "build.gradle:29: Warning: A newer version of com.android.support.test:runner than 0.3 is available: 0.5 [GradleDependency]\n"
+                + "    androidTestCompile 'com.android.support.test:runner:0.3'\n"
+                + "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "0 errors, 6 warnings\n",
 
                 lintProject("gradle/Dependencies.gradle=>build.gradle"));
     }
@@ -356,7 +383,7 @@ public class GradleDetectorTest extends AbstractCheckTest {
     public void testIdSuffix() throws Exception {
         mEnabled = Collections.singleton(PATH);
         assertEquals(""
-                        + "build.gradle:6: Warning: Package suffix should probably start with a \".\" [GradlePath]\n"
+                        + "build.gradle:6: Warning: Application ID suffix should probably start with a \".\" [GradlePath]\n"
                         + "            applicationIdSuffix \"debug\"\n"
                         + "            ~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
                         + "0 errors, 1 warnings\n",
@@ -595,7 +622,7 @@ public class GradleDetectorTest extends AbstractCheckTest {
 
     @Override
     protected void checkReportedError(@NonNull Context context, @NonNull Issue issue,
-            @NonNull Severity severity, @Nullable Location location, @NonNull String message) {
+            @NonNull Severity severity, @NonNull Location location, @NonNull String message) {
         if (issue == DEPENDENCY && message.startsWith("Using the appcompat library when ")) {
             // No data embedded in this specific message
             return;
@@ -648,6 +675,25 @@ public class GradleDetectorTest extends AbstractCheckTest {
                 "group: 'org.robolectric', name: 'robolectric', version: '2.3-SNAPSHOT'"
         ));
     }
+
+    public void testSupportAnnotations() throws Exception {
+        mEnabled = Sets.newHashSet(COMPATIBILITY);
+        assertEquals(""
+                + "No warnings.",
+
+                lintProject(source("build.gradle", ""
+                        + "apply plugin: 'com.android.application'\n"
+                        + "\n"
+                        + "android {\n"
+                        + "    compileSdkVersion 19\n"
+                        + "}\n"
+                        + "\n"
+                        + "dependencies {\n"
+                        + "    testCompile 'com.android.support:support-annotations:24.0.0'\n"
+                        + "    compile 'com.android.support:appcompat-v7:+'\n"
+                        + "}\n")));
+    }
+
 
     // -------------------------------------------------------------------------------------------
     // Test infrastructure below here
@@ -723,6 +769,7 @@ public class GradleDetectorTest extends AbstractCheckTest {
 
                         AndroidArtifact artifact = mock(AndroidArtifact.class);
                         when(artifact.getDependencies()).thenReturn(dependencies);
+                        when(artifact.getCompileDependencies()).thenReturn(dependencies);
 
                         Variant variant = mock(Variant.class);
                         when(variant.getMainArtifact()).thenReturn(artifact);
@@ -777,6 +824,7 @@ public class GradleDetectorTest extends AbstractCheckTest {
 
                             AndroidArtifact artifact = mock(AndroidArtifact.class);
                             when(artifact.getDependencies()).thenReturn(dependencies);
+                            when(artifact.getCompileDependencies()).thenReturn(dependencies);
 
                             Variant variant = mock(Variant.class);
                             when(variant.getMainArtifact()).thenReturn(artifact);

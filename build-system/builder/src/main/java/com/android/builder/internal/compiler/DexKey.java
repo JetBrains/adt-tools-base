@@ -17,8 +17,12 @@
 package com.android.builder.internal.compiler;
 
 import com.android.annotations.NonNull;
-import com.android.annotations.concurrency.Immutable;
 import com.android.repository.Revision;
+import com.google.common.base.Objects;
+
+import org.w3c.dom.Attr;
+import org.w3c.dom.Document;
+import org.w3c.dom.Node;
 
 import java.io.File;
 
@@ -28,24 +32,38 @@ import java.io.File;
  * - source file
  * - build tools revision
  * - jumbo mode
+ * - optimization on/off
  */
-@Immutable
 class DexKey extends PreProcessCache.Key {
+
+    protected static final String ATTR_JUMBO_MODE = "jumboMode";
+
+    protected static final String ATTR_OPTIMIZE = "optimize";
+
     private final boolean mJumboMode;
 
-    static DexKey of(@NonNull File sourceFile, @NonNull Revision buildToolsRevision,
-            boolean jumboMode) {
-        return new DexKey(sourceFile, buildToolsRevision, jumboMode);
-    }
+    private final boolean mOptimize;
 
-    private DexKey(@NonNull File sourceFile, @NonNull Revision buildToolsRevision,
-            boolean jumboMode) {
+    protected DexKey(
+            @NonNull File sourceFile,
+            @NonNull Revision buildToolsRevision,
+            boolean jumboMode,
+            boolean optimize) {
         super(sourceFile, buildToolsRevision);
         mJumboMode = jumboMode;
+        mOptimize = optimize;
     }
 
-    boolean isJumboMode() {
-        return mJumboMode;
+    protected void writeFieldsToXml(@NonNull Node itemNode) {
+        Document document = itemNode.getOwnerDocument();
+
+        Attr jumboMode = document.createAttribute(ATTR_JUMBO_MODE);
+        jumboMode.setValue(Boolean.toString(this.mJumboMode));
+        itemNode.getAttributes().setNamedItem(jumboMode);
+
+        Attr optimize = document.createAttribute(ATTR_OPTIMIZE);
+        optimize.setValue(Boolean.toString(this.mOptimize));
+        itemNode.getAttributes().setNamedItem(optimize);
     }
 
     @Override
@@ -53,7 +71,7 @@ class DexKey extends PreProcessCache.Key {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof DexKey)) {
+        if (o == null || getClass() != o.getClass()) {
             return false;
         }
         if (!super.equals(o)) {
@@ -61,18 +79,21 @@ class DexKey extends PreProcessCache.Key {
         }
 
         DexKey dexKey = (DexKey) o;
-
-        if (mJumboMode != dexKey.mJumboMode) {
-            return false;
-        }
-
-        return true;
+        return mJumboMode == dexKey.mJumboMode && mOptimize == dexKey.mOptimize;
     }
 
     @Override
     public int hashCode() {
-        int result = super.hashCode();
-        result = 31 * result + (mJumboMode ? 1 : 0);
-        return result;
+        return Objects.hashCode(super.hashCode(), mJumboMode, mOptimize);
+    }
+
+    @Override
+    public String toString() {
+        return Objects.toStringHelper(this)
+                .add("buildTools", getBuildToolsRevision())
+                .add("sourceFile", getSourceFile())
+                .add("mJumboMode", mJumboMode)
+                .add("mOptimize", mOptimize)
+                .toString();
     }
 }

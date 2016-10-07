@@ -24,6 +24,9 @@ import com.android.build.gradle.integration.common.fixture.Logcat;
 import com.android.builder.model.AndroidArtifact;
 import com.android.builder.model.AndroidProject;
 import com.android.builder.model.Dependencies;
+import com.android.builder.model.MavenCoordinates;
+import com.android.builder.model.NativeAndroidProject;
+import com.android.builder.model.NativeSettings;
 import com.android.builder.model.SyncIssue;
 import com.android.builder.model.Variant;
 import com.google.common.annotations.GwtIncompatible;
@@ -39,6 +42,7 @@ import com.google.common.truth.ClassSubject;
 import com.google.common.truth.ComparableSubject;
 import com.google.common.truth.DefaultSubject;
 import com.google.common.truth.DoubleSubject;
+import com.google.common.truth.GuavaOptionalSubject;
 import com.google.common.truth.IntegerSubject;
 import com.google.common.truth.IterableSubject;
 import com.google.common.truth.ListMultimapSubject;
@@ -47,7 +51,6 @@ import com.google.common.truth.MapSubject;
 import com.google.common.truth.MultimapSubject;
 import com.google.common.truth.MultisetSubject;
 import com.google.common.truth.ObjectArraySubject;
-import com.google.common.truth.GuavaOptionalSubject;
 import com.google.common.truth.PrimitiveBooleanArraySubject;
 import com.google.common.truth.PrimitiveByteArraySubject;
 import com.google.common.truth.PrimitiveCharArraySubject;
@@ -75,6 +78,11 @@ public class TruthHelper {
     @NonNull
     public static FileSubject assertThat(@Nullable File file) {
         return assert_().about(FileSubjectFactory.factory()).that(file);
+    }
+
+    @NonNull
+    public static NativeLibrarySubject assertThatNativeLib(@Nullable File file) {
+        return assert_().about(NativeLibrarySubject.FACTORY).that(file);
     }
 
     @NonNull
@@ -123,8 +131,28 @@ public class TruthHelper {
                 dependencies);
     }
 
+    @NonNull
+    public static Java8OptionalSubject assertThat(@NonNull java.util.Optional<?> optional) {
+        return assert_().about(Java8OptionalSubject.FACTORY).that(optional);
+    }
+
     public static LogCatMessagesSubject assertThat(Logcat logcat) {
         return assert_().about(LogCatMessagesSubject.FACTORY).that(logcat);
+    }
+
+    @NonNull
+    public static MavenCoordinatesSubject assertThat(@Nullable MavenCoordinates coordinates) {
+        return assert_().about(MavenCoordinatesSubject.Factory.get()).that(coordinates);
+    }
+
+    @NonNull
+    public static NativeSettingsSubject assertThat(@Nullable NativeSettings settings) {
+        return assert_().about(NativeSettingsSubject.Factory.get()).that(settings);
+    }
+
+    @NonNull
+    public static NativeAndroidProjectSubject assertThat(@Nullable NativeAndroidProject project) {
+        return assert_().about(NativeAndroidProjectSubject.Factory.get()).that(project);
     }
 
     // ---- helper method from com.google.common.truth.Truth
@@ -181,7 +209,7 @@ public class TruthHelper {
 
     public static <T, C extends Iterable<T>> IterableSubject<? extends IterableSubject<?, T, C>, T, C>
     assertThat(@Nullable Iterable<T> target) {
-        return assert_().that(target);
+        return assert_().<T,C>that(target);
     }
 
     public static <T> ObjectArraySubject<T> assertThat(@Nullable T[] target) {
@@ -227,25 +255,25 @@ public class TruthHelper {
     public static <K, V, M extends Multimap<K, V>>
     MultimapSubject<? extends MultimapSubject<?, K, V, M>, K, V, M> assertThat(
             @Nullable Multimap<K, V> target) {
-        return assert_().that(target);
+        return assert_().<K,V,M>that(target);
     }
 
     public static <K, V, M extends ListMultimap<K, V>>
     ListMultimapSubject<? extends ListMultimapSubject<?, K, V, M>, K, V, M> assertThat(
             @Nullable ListMultimap<K, V> target) {
-        return assert_().that(target);
+        return assert_().<K,V,M>that(target);
     }
 
     public static <K, V, M extends SetMultimap<K, V>>
     SetMultimapSubject<? extends SetMultimapSubject<?, K, V, M>, K, V, M> assertThat(
             @Nullable SetMultimap<K, V> target) {
-        return assert_().that(target);
+        return assert_().<K,V,M>that(target);
     }
 
     public static <E, M extends Multiset<E>>
     MultisetSubject<? extends MultisetSubject<?, E, M>, E, M> assertThat(
             @Nullable Multiset<E> target) {
-        return assert_().that(target);
+        return assert_().<E,M>that(target);
     }
 
     public static TableSubject assertThat(@Nullable Table<?, ?, ?> target) {

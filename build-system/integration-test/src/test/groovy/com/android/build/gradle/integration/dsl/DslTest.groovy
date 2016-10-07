@@ -78,8 +78,6 @@ android {
         assertEquals("foo-suffix", versionName)
     }
 
-
-
     @Test
     public void extraPropTest() {
         project.getBuildFile() << """

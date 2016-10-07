@@ -32,7 +32,9 @@ public class RandomAccessFileUtils {
     }
 
     /**
-     * Reads from an random access file until the provided array is filled.
+     * Reads from an random access file until the provided array is filled. Data is read from the
+     * current position in the file.
+     *
      * @param raf the file to read data from
      * @param data the array that will receive the data
      * @throws IOException

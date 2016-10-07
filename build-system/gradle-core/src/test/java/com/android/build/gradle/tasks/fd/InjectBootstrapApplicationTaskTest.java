@@ -37,11 +37,8 @@ public class InjectBootstrapApplicationTaskTest {
     private static String disassemble(File expected) throws IOException {
         ClassReader reader = new ClassReader(new FileInputStream(expected));
         StringWriter writer = new StringWriter();
-        PrintWriter printWriter = new PrintWriter(writer);
-        try {
+        try (PrintWriter printWriter = new PrintWriter(writer)) {
             reader.accept(new TraceClassVisitor(printWriter), 0);
-        } finally {
-            printWriter.close();
         }
         return writer.toString();
     }
@@ -49,13 +46,9 @@ public class InjectBootstrapApplicationTaskTest {
     private static String asmify(File expected) throws IOException {
         ClassReader reader = new ClassReader(new FileInputStream(expected));
         StringWriter writer = new StringWriter();
-        PrintWriter printWriter = new PrintWriter(writer);
-        try {
+        try (PrintWriter printWriter = new PrintWriter(writer)) {
             reader.accept(new TraceClassVisitor(null, new ASMifier(), printWriter), 0);
-        } finally {
-            printWriter.close();
         }
-        printWriter.close();
         return writer.toString();
     }
 

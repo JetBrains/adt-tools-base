@@ -17,16 +17,15 @@
 package com.android.build.gradle.ndk.internal;
 
 import com.android.SdkConstants;
-import com.android.build.gradle.internal.NdkHandler;
 import com.android.build.gradle.internal.core.Abi;
-import com.android.builder.core.BuilderConstants;
+import com.android.build.gradle.internal.ndk.NativeToolSpecification;
+import com.android.build.gradle.internal.ndk.NdkHandler;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.ListMultimap;
 
-import org.gradle.nativeplatform.BuildType;
 import org.gradle.nativeplatform.platform.NativePlatform;
 
 import java.util.Map;
@@ -34,7 +33,7 @@ import java.util.Map;
 /**
  * Flag configuration for Clang toolchain.
  */
-public class ClangNativeToolSpecification extends AbstractNativeToolSpecification {
+public class ClangNativeToolSpecification implements NativeToolSpecification {
 
     private NdkHandler ndkHandler;
 

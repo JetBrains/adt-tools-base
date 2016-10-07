@@ -36,11 +36,17 @@ import com.android.tools.lint.detector.api.JavaContext;
 import com.android.tools.lint.detector.api.LintUtilsTest;
 import com.android.tools.lint.detector.api.Project;
 import com.google.common.collect.Lists;
+import com.intellij.psi.JavaRecursiveElementVisitor;
+import com.intellij.psi.PsiClass;
+import com.intellij.psi.PsiElement;
+import com.intellij.psi.PsiElementVisitor;
+import com.intellij.psi.PsiJavaFile;
 
 import org.intellij.lang.annotations.Language;
 import org.junit.Assert;
 
 import java.io.File;
+import java.lang.reflect.Modifier;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -143,8 +149,11 @@ public class EcjParserTest extends AbstractCheckTest {
                 "    }\n" +
                 "}\n";
 
-        Node unit = LintUtilsTest.getCompilationUnit(testClass);
-        assertNotNull(unit);
+        // Make sure PSI parsing works here too
+        assertNotNull(LintUtilsTest.parsePsi(testClass).getJavaFile());
+        JavaContext context = LintUtilsTest.parse(testClass);
+        assertNotNull(context);
+        Node unit = context.getCompilationUnit();
 
         // Now print the AST back and make sure that it contains at least the essence of the AST
         TextFormatter formatter = new TextFormatter();
@@ -1163,5 +1172,62 @@ public class EcjParserTest extends AbstractCheckTest {
         public void nameNextElement(String name) {
             mName = name;
         }
+    }
+
+    public void testPrivateSuperMethod() {
+        @Language("JAVA")
+        String source = ""
+                + "package test.pkg;\n"
+                + "\n"
+                + "public class Parent {\n"
+                + "    public int mPublicField = 1;\n"
+                + "    private int mPrivateField = 2;\n"
+                + "    @SuppressWarnings(\"all\")\n"
+                + "    private void foo(int x, float y) {\n"
+                + "    }\n"
+                + "    private void foo2(int x, float y) {\n"
+                + "    }\n"
+                + "\n"
+                + "    public static class Child extends Parent {\n"
+                + "        public void foo(int x, float y) {\n"
+                + "        }\n"
+                + "    }\n"
+                + "}\n";
+
+        final JavaContext context = LintUtilsTest.parse(source,
+                new File("src/test/pkg/Parent.java"));
+        assertNotNull(context);
+
+        Node compilationUnit = context.getCompilationUnit();
+        assertNotNull(compilationUnit);
+        final AtomicBoolean found = new AtomicBoolean();
+        compilationUnit.accept(new ForwardingAstVisitor() {
+            @Override
+            public boolean visitClassDeclaration(ClassDeclaration node) {
+                if (node.astName().astValue().equals("Child")) {
+                    found.set(true);
+                    ResolvedNode resolved = context.resolve(node);
+                    assertNotNull(resolved);
+                    ResolvedClass cls = (ResolvedClass) resolved;
+                    List<ResolvedField> declaredFields = Lists.newArrayList(cls.getFields(true));
+                    assertEquals(1, declaredFields.size());
+                    assertEquals("mPublicField", declaredFields.get(0).getName());
+
+                    List<ResolvedMethod> methods = Lists.newArrayList(cls.getMethods(true));
+                    ResolvedMethod resolvedMethod = methods.get(0);
+                    assertEquals("foo", resolvedMethod.getName());
+                    assertEquals(cls, resolvedMethod.getContainingClass());
+                    ResolvedMethod superMethod = resolvedMethod.getSuperMethod();
+                    assertNotNull(superMethod); // compiler inserts trampoline to private method
+                    assertTrue((superMethod.getModifiers() & Modifier.PRIVATE) != 0);
+                    // However, it doesn't inherit annotations; it's not an actual override
+                    assertNotNull(superMethod.getAnnotation("java.lang.SuppressWarnings"));
+                    assertNull(resolvedMethod.getAnnotation("java.lang.SuppressWarnings"));
+                }
+
+                return super.visitClassDeclaration(node);
+            }
+        });
+        assertTrue(found.get());
     }
 }

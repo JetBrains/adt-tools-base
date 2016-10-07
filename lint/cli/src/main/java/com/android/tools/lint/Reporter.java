@@ -35,6 +35,7 @@ import com.android.tools.lint.checks.ApiDetector;
 import com.android.tools.lint.checks.AppCompatCallDetector;
 import com.android.tools.lint.checks.AppIndexingApiDetector;
 import com.android.tools.lint.checks.ByteOrderMarkDetector;
+import com.android.tools.lint.checks.CleanupDetector;
 import com.android.tools.lint.checks.CommentDetector;
 import com.android.tools.lint.checks.DetectMissingPrefix;
 import com.android.tools.lint.checks.DosLineEndingDetector;
@@ -57,7 +58,6 @@ import com.android.tools.lint.checks.ReadParcelableDetector;
 import com.android.tools.lint.checks.RtlDetector;
 import com.android.tools.lint.checks.ScrollViewChildDetector;
 import com.android.tools.lint.checks.SecurityDetector;
-import com.android.tools.lint.checks.SharedPrefsDetector;
 import com.android.tools.lint.checks.SignatureOrSystemDetector;
 import com.android.tools.lint.checks.SupportAnnotationDetector;
 import com.android.tools.lint.checks.TextFieldDetector;
@@ -314,6 +314,7 @@ public abstract class Reporter {
                 InputStream input = closer.register(url.openStream());
                 ByteStreams.copy(input, output);
             } catch (Throwable e) {
+                //noinspection ThrowableResultOfMethodCallIgnored
                 closer.rethrow(e);
             } finally {
                 closer.close();
@@ -477,6 +478,7 @@ public abstract class Reporter {
                         AppIndexingApiDetector.ISSUE_APP_INDEXING_API,
                         AppIndexingApiDetector.ISSUE_URL_ERROR,
                         ByteOrderMarkDetector.BOM,
+                        CleanupDetector.SHARED_PREF,
                         CommentDetector.STOP_SHIP,
                         DetectMissingPrefix.MISSING_NAMESPACE,
                         DuplicateResourceDetector.TYPE_MISMATCH,
@@ -511,7 +513,6 @@ public abstract class Reporter {
                         RtlDetector.COMPAT,
                         ScrollViewChildDetector.ISSUE,
                         SecurityDetector.EXPORTED_SERVICE,
-                        SharedPrefsDetector.ISSUE,
                         SignatureOrSystemDetector.ISSUE,
                         SupportAnnotationDetector.CHECK_PERMISSION,
                         SupportAnnotationDetector.CHECK_RESULT,

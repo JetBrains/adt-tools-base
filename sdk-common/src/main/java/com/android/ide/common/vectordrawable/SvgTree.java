@@ -171,7 +171,8 @@ class SvgTree {
             String value = n.getNodeValue().trim();
             int subStringSize = value.length();
             SizeType currentType = SizeType.PIXEL;
-            if (value.endsWith("px")) {
+            String unit = value.substring(Math.max(value.length() - 2, 0));
+            if (unit.matches("em|ex|px|in|cm|mm|pt|pc")) {
                 subStringSize = subStringSize - 2;
             } else if (value.endsWith("%")) {
                 subStringSize = subStringSize - 1;

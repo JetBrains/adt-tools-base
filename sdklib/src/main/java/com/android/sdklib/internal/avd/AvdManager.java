@@ -39,9 +39,9 @@ import com.android.sdklib.devices.DeviceManager;
 import com.android.sdklib.devices.DeviceManager.DeviceStatus;
 import com.android.sdklib.internal.avd.AvdInfo.AvdStatus;
 import com.android.sdklib.internal.project.ProjectProperties;
-import com.android.sdklib.repositoryv2.AndroidSdkHandler;
-import com.android.sdklib.repositoryv2.IdDisplay;
-import com.android.sdklib.repositoryv2.LoggerProgressIndicatorWrapper;
+import com.android.sdklib.repository.AndroidSdkHandler;
+import com.android.sdklib.repository.IdDisplay;
+import com.android.sdklib.repository.LoggerProgressIndicatorWrapper;
 import com.android.utils.GrabProcessOutput;
 import com.android.utils.GrabProcessOutput.IProcessOutput;
 import com.android.utils.GrabProcessOutput.Wait;
@@ -203,7 +203,7 @@ public class AvdManager {
      * AVD/config.ini key name representing the first path where the emulator looks
      * for system images. Typically this is the path to the add-on system image or
      * the path to the platform system image if there's no add-on.
-     * <p/>
+     * <p>
      * The emulator looks at {@link #AVD_INI_IMAGES_1} before {@link #AVD_INI_IMAGES_2}.
      */
     public static final String AVD_INI_IMAGES_1 = "image.sysdir.1"; //$NON-NLS-1$
@@ -258,7 +258,7 @@ public class AvdManager {
     public static final String AVD_INI_DATA_PARTITION_SIZE = "disk.dataPartition.size";
 
     /**
-     * AVD/config.ini key name representing the hash of the device this AVD is based on. <br/>
+     * AVD/config.ini key name representing the hash of the device this AVD is based on. <br>
      * This old hash is deprecated and shouldn't be used anymore.
      * It represents the Device.hashCode() and is not stable accross implementations.
      * @see #AVD_INI_DEVICE_HASH_V2
@@ -268,7 +268,7 @@ public class AvdManager {
     /**
      * AVD/config.ini key name representing the hash of the device hardware properties
      * actually present in the config.ini. This replaces {@link #AVD_INI_DEVICE_HASH_V1}.
-     * <p/>
+     * <p>
      * To find this hash, use
      * {@code DeviceManager.getHardwareProperties(device).get(AVD_INI_DEVICE_HASH_V2)}.
      */
@@ -430,8 +430,7 @@ public class AvdManager {
      */
     @NonNull
     public String getBaseAvdFolder() throws AndroidLocationException {
-        assert AndroidLocation.getFolder().endsWith(File.separator);
-        return AndroidLocation.getFolder() + AndroidLocation.FOLDER_AVD;
+        return AndroidLocation.getAvdFolder();
     }
 
     /**
@@ -553,7 +552,7 @@ public class AvdManager {
 
     /**
      * Returns the {@link AvdInfo} matching the given <var>name</var>.
-     * <p/>
+     * <p>
      * The search is case-insensitive.
      *
      * @param name the name of the AVD to return
@@ -882,7 +881,7 @@ public class AvdManager {
                 values.put(AVD_INI_SNAPSHOT_PRESENT, "true");
             }
 
-            // Now the tag & abi type
+            // Now the tag &amp; abi type
             IdDisplay tag = systemImage.getTag();
             values.put(AVD_INI_TAG_ID,      tag.getId());
             values.put(AVD_INI_TAG_DISPLAY, tag.getDisplay());
@@ -921,7 +920,7 @@ public class AvdManager {
             if (skinFolder != null) {
                 // skin does not exist!
                 if (!mFop.exists(skinFolder)) {
-                    log.error(null, "Skin '%1$s' does not exist.", skinName);
+                    log.error(null, "Skin '%1$s' does not exist at %2$s.", skinName, skinFolder.getPath());
                     return null;
                 }
 
@@ -1171,7 +1170,7 @@ public class AvdManager {
         String imageFullPath = folder.getAbsolutePath();
 
         // make this path relative to the SDK location
-        String sdkLocation = mSdkHandler.getLocation().getPath();
+        String sdkLocation = mSdkHandler.getLocation().getAbsolutePath();
         if (!imageFullPath.startsWith(sdkLocation)) {
             // this really really should not happen.
             assert false;
@@ -1187,7 +1186,7 @@ public class AvdManager {
             });
 
             if (list.length > 0) {
-                // Remove the SDK root path, e.g. /sdk/dir1/dir2 => /dir1/dir2
+                // Remove the SDK root path, e.g. /sdk/dir1/dir2 ⇒ /dir1/dir2
                 imageFullPath = imageFullPath.substring(sdkLocation.length());
                 // The path is relative, so it must not start with a file separator
                 if (imageFullPath.charAt(0) == File.separatorChar) {
@@ -1267,10 +1266,10 @@ public class AvdManager {
 
     /**
      * Actually deletes the files of an existing AVD.
-     * <p/>
+     * <p>
      * This also remove it from the manager's list, The caller does not need to
      * call {@link #removeAvd(AvdInfo)} afterwards.
-     * <p/>
+     * <p>
      * This method is designed to somehow work with an unavailable AVD, that is an AVD that
      * could not be loaded due to some error. That means this method still tries to remove
      * the AVD ini file or its folder if it can be found. An error will be output if any of
@@ -1326,7 +1325,7 @@ public class AvdManager {
     /**
      * Moves and/or rename an existing AVD and its files.
      * This also change it in the manager's list.
-     * <p/>
+     * <p>
      * The caller should make sure the name or path given are valid, do not exist and are
      * actually different than current values.
      *
@@ -1426,10 +1425,10 @@ public class AvdManager {
 
     /**
      * Returns a list of files that are potential AVD ini files.
-     * <p/>
+     * <p>
      * This lists the $HOME/.android/avd/<name>.ini files.
      * Such files are properties file than then indicate where the AVD folder is located.
-     * <p/>
+     * <p>
      * Note: the method is to be considered private. It is made protected so that
      * unit tests can easily override the AVD root.
      *
@@ -1698,9 +1697,9 @@ public class AvdManager {
 
     /**
      * Parses a property file and returns a map of the content.
-     * <p/>
+     * <p>
      * If the file is not present, null is returned with no error messages sent to the log.
-     * <p/>
+     * <p>
      * Charset encoding will be either the system's default or the one specified by the
      * {@link #AVD_INI_ENCODING} key if present.
      *

@@ -244,13 +244,13 @@
             <d:gl-extensions/>
             <d:status-bar>false</d:status-bar>
         </d:software>
-        <d:state name="Portrait">
+        <d:state name="Portrait" default="true">
             <d:description>The device in portrait orientation</d:description>
             <d:screen-orientation>port</d:screen-orientation>
             <d:keyboard-state>keyshidden</d:keyboard-state>
             <d:nav-state>navexposed</d:nav-state>
         </d:state>
-        <d:state name="Landscape" default="true">
+        <d:state name="Landscape">
             <d:description>The device in landscape orientation</d:description>
             <d:screen-orientation>land</d:screen-orientation>
             <d:keyboard-state>keyshidden</d:keyboard-state>

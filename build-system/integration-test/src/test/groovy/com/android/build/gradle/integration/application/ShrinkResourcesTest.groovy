@@ -15,24 +15,24 @@
  */
 
 package com.android.build.gradle.integration.application
-
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.tasks.ResourceUsageAnalyzer
 import com.android.builder.model.AndroidProject
 import com.google.common.base.Joiner
 import com.google.common.collect.Lists
 import com.google.common.io.ByteStreams
+import com.google.common.io.Closer
 import groovy.transform.CompileStatic
-import org.junit.AfterClass
-import org.junit.BeforeClass
-import org.junit.ClassRule
+import org.junit.Assume
+import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
 
 import java.util.jar.JarInputStream
 import java.util.regex.Matcher
 import java.util.regex.Pattern
 import java.util.zip.ZipEntry
-import java.util.zip.ZipInputStream
+import java.util.zip.ZipFile
 
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatZip
 import static com.android.build.gradle.tasks.ResourceUsageAnalyzer.REPLACE_DELETED_WITH_EMPTY
@@ -40,30 +40,26 @@ import static java.io.File.separator
 import static org.junit.Assert.assertEquals
 import static org.junit.Assert.assertFalse
 import static org.junit.Assert.assertTrue
-
 /**
  * Assemble tests for shrink.
  */
 @CompileStatic
 class ShrinkResourcesTest {
 
-    @ClassRule
-    static public GradleTestProject project = GradleTestProject.builder()
+    @Rule
+    public GradleTestProject project = GradleTestProject.builder()
             .fromTestProject("shrink")
             .create()
 
-    @BeforeClass
-    static void setUp() {
-        project.execute("clean", "assembleRelease", "assembleDebug", "assembleProguardNoShrink")
-    }
-
-    @AfterClass
-    static void cleanUp() {
-        project = null
+    @Before
+    public void skipOnJack() throws Exception {
+        Assume.assumeFalse(GradleTestProject.USE_JACK);
     }
 
     @Test
     void "check shrink resources"() {
+        project.execute("clean", "assembleRelease", "assembleDebug", "assembleProguardNoShrink")
+
         File intermediates = project.file("build/" + AndroidProject.FD_INTERMEDIATES)
 
         // The release target has shrinking enabled.
@@ -456,30 +452,30 @@ res/layout/used21.xml"""
     private static List<String> getZipPaths(File zipFile, boolean includeMethod)
             throws IOException {
         List<String> lines = Lists.newArrayList()
-        FileInputStream fis = new FileInputStream(zipFile)
+
+        Closer closer = Closer.create();
+
         try {
-            ZipInputStream zis = new ZipInputStream(fis)
-            try {
-                ZipEntry entry = zis.getNextEntry()
-                while (entry != null) {
-                    String path = entry.getName()
-                    if (includeMethod) {
-                        String method
-                        switch (entry.getMethod()) {
-                            case ZipEntry.STORED: method = "  stored"; break
-                            case ZipEntry.DEFLATED: method = "deflated"; break
-                            default: method = " unknown"; break
-                        }
-                        path = method + "  " + path
+            ZipFile zf = new ZipFile(zipFile);
+            Enumeration<? extends ZipEntry> entries = zf.entries();
+            while (entries.hasMoreElements()) {
+                ZipEntry entry = entries.nextElement();
+                String path = entry.getName()
+                if (includeMethod) {
+                    String method
+                    switch (entry.getMethod()) {
+                        case ZipEntry.STORED: method = "  stored"; break
+                        case ZipEntry.DEFLATED: method = "deflated"; break
+                        default: method = " unknown"; break
                     }
-                    lines.add(path)
-                    entry = zis.getNextEntry()
+                    path = method + "  " + path
                 }
-            } finally {
-                zis.close()
+                lines.add(path)
             }
+        } catch (Throwable t) {
+            throw closer.rethrow(t);
         } finally {
-            fis.close()
+            closer.close();
         }
 
         return lines

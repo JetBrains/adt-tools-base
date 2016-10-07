@@ -33,7 +33,7 @@ class Error6Parser extends AbstractAaptOutputParser {
      * <pre>
      * ERROR: 9-path image &lt;path&gt; malformed
      * </pre>
-     * <p/> Line 2 and 3 are taken as-is while line 4 is ignored. It repeats with
+     * <p> Line 2 and 3 are taken as-is while line 4 is ignored. It repeats with
      * <pre>
      * ERROR: failure processing &lt;path&gt;
      * </pre>

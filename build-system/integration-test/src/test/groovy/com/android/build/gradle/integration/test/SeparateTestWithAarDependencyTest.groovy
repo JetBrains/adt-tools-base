@@ -18,15 +18,20 @@ package com.android.build.gradle.integration.test
 
 import com.android.build.gradle.integration.common.category.DeviceTests
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
+import com.android.build.gradle.integration.common.utils.AssumeUtil
 import com.android.build.gradle.integration.common.utils.ModelHelper
 import com.android.builder.model.AndroidArtifact
+import com.android.builder.model.AndroidLibrary
 import com.android.builder.model.AndroidProject
 import com.android.builder.model.Dependencies
+import com.android.builder.model.JavaLibrary
 import com.android.builder.model.Variant
+import com.google.common.collect.Iterables
 import groovy.transform.CompileStatic
 import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.ClassRule
+import org.junit.Ignore
 import org.junit.Test
 import org.junit.experimental.categories.Category
 
@@ -99,30 +104,63 @@ dependencies {
     }
 
     @Test
-    void "check test model includes the tested app"() {
+    @Ignore
+    void "check test model's compile deps includes the tested app"() {
         Collection<Variant> variants = models.get(":test").getVariants()
 
         // get the main artifact of the debug artifact and its dependencies
         Variant variant = ModelHelper.getVariant(variants, "debug")
-        AndroidArtifact artifact = variant.getMainArtifact()
-        Dependencies dependencies = artifact.getDependencies()
+        AndroidArtifact artifact = variant.getMainArtifact();
+
+        Dependencies compileDependencies = artifact.getCompileDependencies()
 
         // check the app project shows up as a project dependency
-        Collection<String> projects = dependencies.getProjects()
-        assertThat(projects).containsExactly(":app")
+        Collection<JavaLibrary> javaLibraries = compileDependencies.getJavaLibraries();
+        assertThat(javaLibraries).hasSize(1);
+        JavaLibrary javaLibrary = Iterables.getOnlyElement(javaLibraries);
+        assertThat(javaLibrary.getProject()).isEqualTo(":app");
 
-        // and that nothing else shows up.
-        // TODO: fix this.
-//        Collection<JavaLibrary> javaLibs = dependencies.getJavaLibraries();
-//        assertThat(javaLibs).hasSize(0);
-//        Collection<AndroidLibrary> libs = dependencies.getLibraries();
-//        assertThat(libs).hasSize(0);
+        // check that the app dependencies show up too. In this case as direct dependencies, since
+        // we can't do better for now.
+        Collection<AndroidLibrary> androidLibraries = compileDependencies.getLibraries();
+        assertThat(androidLibraries).hasSize(1);
+        AndroidLibrary androidLibrary = Iterables.getOnlyElement(androidLibraries);
+        assertThat(androidLibrary.getResolvedCoordinates()).isEqualTo(
+                "com.android.support", "appcompat-v7", "22.1.0");
+    }
+
+    @Test
+    @Ignore
+    void "check test model's package deps includes the tested app"() {
+        Collection<Variant> variants = models.get(":test").getVariants()
+
+        // get the main artifact of the debug artifact and its dependencies
+        Variant variant = ModelHelper.getVariant(variants, "debug")
+        AndroidArtifact artifact = variant.getMainArtifact();
+
+        // verify the same dependencies in package are skipped.
+        Dependencies packageDependencies = artifact.getPackageDependencies()
+
+        // check the app project shows up as a project dependency
+        Collection<JavaLibrary> javaLibraries = packageDependencies.getJavaLibraries();
+        assertThat(javaLibraries).hasSize(1);
+        JavaLibrary javaLibrary = Iterables.getOnlyElement(javaLibraries);
+        assertThat(javaLibrary.getProject()).isEqualTo(":app");
+        assertThat(javaLibrary.isSkipped()).isTrue()
+
+        // check that the app dependencies show up too. In this case as direct dependencies, since
+        // we can't do better for now.
+        Collection<AndroidLibrary> androidLibraries = packageDependencies.getLibraries();
+        assertThat(androidLibraries).hasSize(1);
+        AndroidLibrary androidLibrary = Iterables.getOnlyElement(androidLibraries);
+        assertThat(androidLibrary.getResolvedCoordinates()).isEqualTo(
+                "com.android.support", "appcompat-v7", "22.1.0");
+        assertThat(androidLibrary.isSkipped()).isTrue()
     }
 
     @Test
     @Category(DeviceTests)
     void "connected check"() {
-        GradleTestProject.assumeLocalDevice()
-        project.execute("clean",":test:connectedCheck");
+        project.execute("clean",":test:deviceCheck");
     }
 }

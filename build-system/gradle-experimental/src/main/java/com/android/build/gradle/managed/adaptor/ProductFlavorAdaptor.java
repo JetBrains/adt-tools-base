@@ -18,8 +18,12 @@ package com.android.build.gradle.managed.adaptor;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.build.gradle.internal.dsl.CoreExternalNativeBuildOptions;
+import com.android.build.gradle.internal.dsl.CoreJackOptions;
+import com.android.build.gradle.internal.dsl.CoreJavaCompileOptions;
 import com.android.build.gradle.internal.dsl.CoreNdkOptions;
 import com.android.build.gradle.internal.dsl.CoreProductFlavor;
+import com.android.build.gradle.internal.dsl.CoreShaderOptions;
 import com.android.build.gradle.managed.ProductFlavor;
 import com.android.builder.core.BuilderConstants;
 import com.android.builder.model.ApiVersion;
@@ -37,7 +41,7 @@ import java.util.Map;
 public class ProductFlavorAdaptor extends BaseConfigAdaptor implements CoreProductFlavor {
 
     @NonNull
-    protected final ProductFlavor productFlavor;
+    private final ProductFlavor productFlavor;
 
     public ProductFlavorAdaptor(@NonNull ProductFlavor productFlavor) {
         super(productFlavor);
@@ -110,6 +114,13 @@ public class ProductFlavorAdaptor extends BaseConfigAdaptor implements CoreProdu
 
     @Nullable
     @Override
+    public Boolean getRenderscriptSupportModeBlasEnabled() {
+        return productFlavor.getRenderscriptSupportModeBlasEnabled();
+    }
+
+
+    @Nullable
+    @Override
     public Boolean getRenderscriptNdkModeEnabled() {
         return productFlavor.getRenderscriptNdkModeEnabled();
     }
@@ -165,13 +176,38 @@ public class ProductFlavorAdaptor extends BaseConfigAdaptor implements CoreProdu
         return productFlavor.getVectorDrawables();
     }
 
+    @Nullable
+    @Override
+    public Boolean getWearAppUnbundled() {
+        return productFlavor.getWearAppUnbundled();
+    }
+
     @Override
     public CoreNdkOptions getNdkConfig() {
         return new NdkOptionsAdaptor(productFlavor.getNdk());
     }
 
+    @Nullable
     @Override
-    public Boolean getUseJack() {
-        return productFlavor.getUseJack();
+    public CoreExternalNativeBuildOptions getExternalNativeBuildOptions() {
+        return new ExternalNativeBuildOptionsAdaptor(productFlavor.getExternalNativeBuild());
+    }
+
+    @NonNull
+    @Override
+    public CoreJackOptions getJackOptions() {
+        return new JackOptionsAdaptor(productFlavor.getJackOptions());
+    }
+
+    @Override
+    @NonNull
+    public CoreJavaCompileOptions getJavaCompileOptions() {
+        return new JavaCompileOptionsAdaptor(productFlavor.getJavaCompileOptions());
+    }
+
+    @NonNull
+    @Override
+    public CoreShaderOptions getShaders() {
+        return new ShaderOptionsAdaptor(productFlavor.getShaders());
     }
 }

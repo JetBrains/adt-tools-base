@@ -57,7 +57,7 @@ public class AppWithCompileLocalAarTest {
                 "    compile files(\"libs/baseLib-1.0.aar\")\n" +
                 "}\n");
 
-        model = project.getSingleModelIgnoringSyncIssues();
+        model = project.model().ignoreSyncIssues().getSingle();
     }
 
     @AfterClass

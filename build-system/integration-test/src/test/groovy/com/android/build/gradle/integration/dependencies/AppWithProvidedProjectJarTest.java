@@ -24,16 +24,22 @@ import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.common.utils.ModelHelper;
 import com.android.builder.model.AndroidProject;
 import com.android.builder.model.Dependencies;
+import com.android.builder.model.JavaLibrary;
 import com.android.builder.model.Variant;
 import com.android.ide.common.process.ProcessException;
+import com.google.common.base.Charsets;
+import com.google.common.collect.Iterables;
+import com.google.common.io.Files;
 import com.google.common.truth.Truth;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.util.Collection;
 import java.util.Map;
 
 /**
@@ -49,6 +55,8 @@ public class AppWithProvidedProjectJarTest {
 
     @BeforeClass
     public static void setUp() throws IOException {
+        Files.write("include 'app', 'jar'", project.getSettingsFile(), Charsets.UTF_8);
+
         appendToFile(project.getSubproject("app").getBuildFile(),
                 "\n" +
                 "dependencies {\n" +
@@ -71,21 +79,21 @@ public class AppWithProvidedProjectJarTest {
     }
 
     @Test
+    @Ignore
     public void checkProvidedJarIsInTheMainArtifactDependency() {
         Variant variant = ModelHelper.getVariant(models.get(":app").getVariants(), "debug");
-        Truth.assertThat(variant).isNotNull();
 
-        Dependencies deps = variant.getMainArtifact().getDependencies();
-        assertThat(deps.getProjects()).named("project deps").containsExactly(":jar");
-    }
+        Dependencies compileDeps = variant.getMainArtifact().getCompileDependencies();
 
-    @Test
-    public void checkProvidedJarIsInTheAndroidTestDeps() {
-        // TODO
-    }
+        Collection<JavaLibrary> javaLibs = compileDeps.getJavaLibraries();
+        assertThat(javaLibs).named("Java libs").hasSize(1);
+        JavaLibrary javaLibrary = Iterables.getOnlyElement(javaLibs);
+        assertThat(javaLibrary.isProvided())
+                .named("single java lib provided property")
+                .isTrue();
+        assertThat(javaLibrary.getProject()).named("single java lib path").isEqualTo(":jar");
 
-    @Test
-    public void checkProvidedJarIsIntheUnitTestDeps() {
-        // TODO
+        Dependencies packageDeps = variant.getMainArtifact().getPackageDependencies();
+        assertThat(packageDeps.getJavaLibraries()).isEmpty();
     }
 }

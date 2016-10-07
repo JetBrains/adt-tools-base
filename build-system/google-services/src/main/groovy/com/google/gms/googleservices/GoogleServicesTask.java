@@ -69,13 +69,19 @@ public class GoogleServicesTask extends DefaultTask {
     @Input
     public String moduleVersion;
 
+    @Input
+    public String searchedLocation;
+
     @TaskAction
     public void action() throws IOException {
         checkVersionConflict();
         if (!quickstartFile.isFile()) {
-            throw new GradleException("File " + quickstartFile.getName() + " is missing from module root folder." +
-                    " The Google Services Plugin cannot function without it.");
+            throw new GradleException(String.format("File %s is missing. " +
+                 "The Google Services Plugin cannot function without it. %n Searched Location: %s",
+                 quickstartFile.getName(), searchedLocation));
         }
+
+        getProject().getLogger().warn("Parsing json file: " + quickstartFile.getPath());
 
         // delete content of outputdir.
         deleteFolder(intermediateDir);
@@ -91,8 +97,8 @@ public class GoogleServicesTask extends DefaultTask {
 
         JsonObject rootObject = root.getAsJsonObject();
 
-        Map<String, String> resValues = new TreeMap<String, String>();
-        Map<String, Map<String, String>> resAttributes = new TreeMap<String, Map<String, String>>();
+        Map<String, String> resValues = new TreeMap<>();
+        Map<String, Map<String, String>> resAttributes = new TreeMap<>();
 
         handleProjectNumber(rootObject, resValues, resAttributes);
 

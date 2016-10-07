@@ -21,7 +21,6 @@ import static com.android.build.gradle.integration.common.utils.AndroidVersionMa
 import static com.android.build.gradle.integration.common.utils.AndroidVersionMatcher.thatUsesDalvik;
 
 import com.android.annotations.NonNull;
-import com.android.build.gradle.OptionalCompilationStep;
 import com.android.build.gradle.integration.common.category.DeviceTests;
 import com.android.build.gradle.integration.common.fixture.Adb;
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
@@ -30,13 +29,13 @@ import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp;
 import com.android.build.gradle.internal.incremental.ColdswapMode;
 import com.android.builder.model.AndroidProject;
 import com.android.builder.model.InstantRun;
+import com.android.builder.model.OptionalCompilationStep;
 import com.android.ddmlib.IDevice;
-import com.android.ide.common.packaging.PackagingUtils;
+import com.android.builder.packaging.PackagingUtils;
 import com.android.tools.fd.client.AppState;
 import com.android.tools.fd.client.InstantRunBuildInfo;
 import com.android.tools.fd.client.InstantRunClient;
 import com.android.tools.fd.client.UpdateMode;
-import com.android.tools.fd.client.UserFeedback;
 import com.android.utils.ILogger;
 import com.google.common.base.Charsets;
 import com.google.common.io.Files;
@@ -50,7 +49,6 @@ import org.junit.rules.TestWatcher;
 import org.junit.runner.Description;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.runners.MockitoJUnitRunner;
 
 import java.io.IOException;
@@ -67,7 +65,7 @@ public class ConnectedColdSwapTest {
             .fromTestApp(HelloWorldApp.forPlugin("com.android.application")).create();
 
     @Rule
-    public Adb adb = Adb.create();
+    public Adb adb = new Adb();
 
     @Rule
     public Expect expect = Expect.create();
@@ -82,9 +80,6 @@ public class ConnectedColdSwapTest {
             InstantRunTestUtils.printBuildInfoFile(instantRunModel);
         }
     };
-
-    @Mock
-    UserFeedback userFeedback;
 
     @Mock
     ILogger iLogger;
@@ -115,14 +110,14 @@ public class ConnectedColdSwapTest {
             throws Exception {
         // Set up
         logcat.start(device, "coldswaptest");
-        AndroidProject model = project.getSingleModel();
+        AndroidProject model = project.model().getSingle();
         instantRunModel = InstantRunTestUtils.getInstantRunModel(model);
         long token = PackagingUtils.computeApplicationHash(model.getBuildFolder());
 
         // Initial build
-        project.execute(InstantRunTestUtils
-                        .getInstantRunArgs(device, coldswapMode, OptionalCompilationStep.RESTART_ONLY),
-                "clean", "assembleDebug");
+        project.executor()
+                .withInstantRun(device, coldswapMode, OptionalCompilationStep.RESTART_ONLY)
+                .run("clean", "assembleDebug");
 
         InstantRunBuildInfo info = InstantRunTestUtils.loadContext(instantRunModel);
         InstantRunTestUtils.doInstall(device, info.getArtifacts());
@@ -132,7 +127,7 @@ public class ConnectedColdSwapTest {
 
         //Connect to device
         InstantRunClient client =
-                new InstantRunClient("com.example.helloworld", userFeedback, iLogger, token, 8125);
+                new InstantRunClient("com.example.helloworld", iLogger, token, 8125);
 
         // Give the app a chance to start
         messageListener.await();
@@ -142,21 +137,13 @@ public class ConnectedColdSwapTest {
 
         // Cold swap
         makeColdSwapChange();
-        project.execute(InstantRunTestUtils.getInstantRunArgs(device, coldswapMode),
-                instantRunModel.getIncrementalAssembleTaskName());
+        project.executor()
+                .withInstantRun(device, coldswapMode)
+                .run("assembleDebug");
 
         InstantRunBuildInfo coldSwapContext = InstantRunTestUtils.loadContext(instantRunModel);
 
-        if (thatUsesDalvik().matches(device.getVersion())) {
-            // No artifact should have been produced, and the verifier is marked as failed,
-            // so studio knows to then call assembleDebug.
-            assertThat(coldSwapContext.canHotswap()).named("verifier passed").isFalse();
-            assertThat(coldSwapContext.getArtifacts()).isEmpty();
-            device.uninstallPackage("com.example.helloworld");
-            return;
-        }
-
-        if (coldswapMode == ColdswapMode.MULTIAPK) {
+        if (coldswapMode == ColdswapMode.MULTIAPK || thatUsesDalvik().matches(device.getVersion())) {
             InstantRunTestUtils.doInstall(device, info.getArtifacts());
         } else {
             UpdateMode updateMode = client
@@ -168,9 +155,7 @@ public class ConnectedColdSwapTest {
                             true /*showToast*/);
 
             assertThat(updateMode).named("updateMode").isEqualTo(UpdateMode.COLD_SWAP);
-            Mockito.verify(userFeedback).notifyEnd(UpdateMode.COLD_SWAP);
         }
-        Mockito.verifyNoMoreInteractions(userFeedback);
 
         Logcat.MessageListener afterMessageListener = logcat.listenForMessage("coldswaptest_after");
 
@@ -178,7 +163,7 @@ public class ConnectedColdSwapTest {
 
         // Check the app is running
         afterMessageListener.await();
-        assertThat(client.getAppState(device)).isEqualTo(AppState.FOREGROUND);
+        InstantRunTestUtils.waitForAppStart(client, device);
 
         device.uninstallPackage("com.example.helloworld");
     }

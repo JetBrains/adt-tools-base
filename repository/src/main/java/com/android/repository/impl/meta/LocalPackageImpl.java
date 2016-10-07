@@ -21,6 +21,7 @@ import com.android.repository.api.Dependency;
 import com.android.repository.api.LocalPackage;
 import com.android.repository.api.RepoManager;
 import com.android.repository.api.RepoPackage;
+import com.android.repository.api.Repository;
 
 import java.io.File;
 
@@ -50,11 +51,11 @@ public abstract class LocalPackageImpl extends RepoPackageImpl implements LocalP
      * have a {@link RepoPackage} of unknown concrete type and want to marshal it using JAXB.
      */
     @NonNull
-    public static LocalPackageImpl create(@NonNull RepoPackage p, @NonNull RepoManager repoManager) {
+    public static LocalPackageImpl create(@NonNull RepoPackage p) {
         if (p instanceof LocalPackageImpl) {
             return (LocalPackageImpl)p;
         }
-        CommonFactory f = (CommonFactory)repoManager.getCommonModule().createLatestFactory();
+        CommonFactory f = (CommonFactory)RepoManager.getCommonModule().createLatestFactory();
         LocalPackageImpl result = f.createLocalPackage();
         result.setVersion(p.getVersion());
         result.setLicense(p.getLicense());
@@ -66,5 +67,16 @@ public abstract class LocalPackageImpl extends RepoPackageImpl implements LocalP
         result.setTypeDetails(p.getTypeDetails());
         result.setDisplayName(p.getDisplayName());
         return result;
+    }
+
+    @NonNull
+    @Override
+    public RepoPackageImpl asMarshallable() {
+        return this;
+    }
+
+    @Override
+    public void addTo(@NonNull Repository repo) {
+        repo.setLocalPackage(this);
     }
 }

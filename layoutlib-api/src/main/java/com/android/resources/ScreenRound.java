@@ -18,7 +18,7 @@ package com.android.resources;
 
 /**
  * Screen Round enum.
- * <p/>This is used in the resource folder names.
+ * <p>This is used in the resource folder names.
  */
 public enum ScreenRound implements ResourceEnum {
     NOTROUND("notround", "Not Round", "Not Round screen"), //$NON-NLS-1$
@@ -64,17 +64,8 @@ public enum ScreenRound implements ResourceEnum {
         return mLongDisplayValue;
     }
 
-    public static int getIndex(ScreenRound orientation) {
-        int i = 0;
-        for (ScreenRound orient : values()) {
-            if (orient == orientation) {
-                return i;
-            }
-
-            i++;
-        }
-
-        return -1;
+    public static int getIndex(ScreenRound value) {
+        return value == null ? -1 : value.ordinal();
     }
 
     public static ScreenRound getByIndex(int index) {

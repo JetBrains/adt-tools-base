@@ -68,7 +68,7 @@ public abstract class AbstractAaptOutputParser implements PatternAwareOutputPars
 
     /**
      * Portion of error message which points to the second occurrence of a repeated resource
-     * definition. <p/> Example: error: Resource entry repeatedStyle1 already has bag item
+     * definition. <p> Example: error: Resource entry repeatedStyle1 already has bag item
      * android:gravity.
      */
     private static final Pattern REPEATED_RESOURCE = Pattern
@@ -85,7 +85,7 @@ public abstract class AbstractAaptOutputParser implements PatternAwareOutputPars
 
     /**
      * Portion of error message which points to a missing required attribute in a resource
-     * definition. <p/> Example: error: error: A 'name' attribute is required for <style>
+     * definition. <p> Example: error: error: A 'name' attribute is required for <style>
      */
     private static final Pattern REQUIRED_ATTRIBUTE = Pattern
             .compile("A '(.+)' attribute is required for <(.+)>");

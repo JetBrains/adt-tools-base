@@ -20,5 +20,12 @@ package com.android.jack.api.v01;
  * Available reporters.
  */
 public enum ReporterKind {
-  DEFAULT, SDK
+  /**
+   * The default human-readable reporter.
+   */
+  DEFAULT,
+  /**
+   * A reporter formatting in a JSON-like structure.
+   */
+  SDK
 }

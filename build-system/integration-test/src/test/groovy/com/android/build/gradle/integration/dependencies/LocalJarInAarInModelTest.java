@@ -78,9 +78,8 @@ public class LocalJarInAarInModelTest {
         AndroidProject model = project.executeAndReturnModel("clean");
 
         Variant variant = ModelHelper.getVariant(model.getVariants(), "debug");
-        Truth.assertThat(variant).isNotNull();
 
-        Dependencies dependencies = variant.getMainArtifact().getDependencies();
+        Dependencies dependencies = variant.getMainArtifact().getCompileDependencies();
         Collection<AndroidLibrary> libraries = dependencies.getLibraries();
 
         assertThat(libraries).hasSize(1);
@@ -102,9 +101,8 @@ public class LocalJarInAarInModelTest {
         AndroidProject model = project.executeAndReturnModel("clean", "prepareDebugDependencies");
 
         Variant variant = ModelHelper.getVariant(model.getVariants(), "debug");
-        Truth.assertThat(variant).isNotNull();
 
-        Dependencies dependencies = variant.getMainArtifact().getDependencies();
+        Dependencies dependencies = variant.getMainArtifact().getCompileDependencies();
         Collection<AndroidLibrary> libraries = dependencies.getLibraries();
 
         assertThat(libraries).hasSize(1);

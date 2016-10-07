@@ -19,7 +19,9 @@
 package com.android.build.gradle.integration.application
 
 import com.android.build.gradle.integration.common.category.DeviceTests
+import com.android.build.gradle.integration.common.fixture.Adb
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
+import com.android.build.gradle.integration.common.utils.AssumeUtil
 import com.android.build.gradle.integration.common.utils.ModelHelper
 import com.android.build.gradle.integration.common.utils.ProductFlavorHelper
 import com.android.builder.model.AndroidArtifact
@@ -39,6 +41,7 @@ import groovy.transform.CompileStatic
 import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.ClassRule
+import org.junit.Rule
 import org.junit.Test
 import org.junit.experimental.categories.Category
 
@@ -60,6 +63,9 @@ class BasicTest2 {
             .fromTestProject("basic")
             .create()
 
+    @Rule
+    public Adb adb = new Adb();
+
     static public AndroidProject model
 
     @BeforeClass
@@ -80,7 +86,6 @@ class BasicTest2 {
 
         // debug variant
         Variant debugVariant = ModelHelper.getVariant(variants, DEBUG)
-        assertNotNull("debug Variant null-check", debugVariant)
         new ProductFlavorHelper(debugVariant.getMergedFlavor(), "Debug Merged Flavor")
                 .setVersionCode(12)
                 .setVersionName("2.0")
@@ -111,12 +116,11 @@ class BasicTest2 {
         assertEquals(12, debugMainOutput.getVersionCode())
 
         // check debug dependencies
-        Dependencies debugDependencies = debugMainInfo.getDependencies()
+        Dependencies debugDependencies = debugMainInfo.getCompileDependencies()
         assertNotNull(debugDependencies)
         Collection<AndroidLibrary> debugLibraries = debugDependencies.getLibraries()
         assertNotNull(debugLibraries)
         assertEquals(1, debugLibraries.size())
-        assertTrue(debugDependencies.getProjects().isEmpty())
 
         AndroidLibrary androidLibrary = debugLibraries.iterator().next()
         assertNotNull(androidLibrary)
@@ -222,7 +226,6 @@ class BasicTest2 {
 
         // release variant, not tested.
         Variant releaseVariant = ModelHelper.getVariant(variants, "release")
-        assertNotNull("release Variant null-check", releaseVariant)
 
         AndroidArtifact relMainInfo = releaseVariant.getMainArtifact()
         assertNotNull("Release main info null-check", relMainInfo)
@@ -248,7 +251,7 @@ class BasicTest2 {
         assertNull("Release test info null-check", relTestInfo)
 
         // check release dependencies
-        Dependencies releaseDependencies = relMainInfo.getDependencies()
+        Dependencies releaseDependencies = relMainInfo.getCompileDependencies()
         assertNotNull(releaseDependencies)
         Collection<AndroidLibrary> releaseLibraries = releaseDependencies.getLibraries()
         assertNotNull(releaseLibraries)
@@ -281,7 +284,8 @@ class BasicTest2 {
     @Test
     @Category(DeviceTests.class)
     void install() {
-        GradleTestProject.assumeLocalDevice();
+        project.execute("assembleDebug")
+        adb.exclusiveAccess()
         project.execute("installDebug", "uninstallAll")
     }
 

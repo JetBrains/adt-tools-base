@@ -40,6 +40,8 @@ import java.util.Map;
  */
 public class RenderScriptProcessor {
 
+    private static final String LIBCLCORE_BC = "libclcore.bc";
+
     // ABI list, as pairs of (android-ABI, toolchain-ABI)
     private static final class Abi {
 
@@ -64,11 +66,15 @@ public class RenderScriptProcessor {
         }
     }
 
-    private static final Abi[] ABIS = {
+    private static final Abi[] ABIS_32 = {
             new Abi("armeabi-v7a", "armv7-none-linux-gnueabi", BuildToolInfo.PathId.LD_ARM,
                     "-dynamic-linker", "/system/bin/linker", "-X", "-m", "armelf_linux_eabi"),
             new Abi("mips", "mipsel-unknown-linux", BuildToolInfo.PathId.LD_MIPS, "-EL"),
             new Abi("x86", "i686-unknown-linux", BuildToolInfo.PathId.LD_X86, "-m", "elf_i386") };
+
+    private static final Abi[] ABIS_64 = {
+            new Abi("arm64-v8a", "aarch64-linux-android", BuildToolInfo.PathId.LD_ARM64, "-X"),
+            new Abi("x86_64", "x86_64-unknown-linux", BuildToolInfo.PathId.LD_X86_64, "-m", "elf_x86_64") };
 
     public static final String RS_DEPS = "rsDeps";
 
@@ -145,9 +151,17 @@ public class RenderScriptProcessor {
             File rs = new File(mBuildToolInfo.getLocation(), "renderscript");
             mRsLib = new File(rs, "lib");
             File bcFolder = new File(mRsLib, "bc");
-            for (Abi abi : ABIS) {
-                mLibClCore.put(abi.mDevice,
-                        new File(bcFolder, abi.mDevice + File.separatorChar + "libclcore.bc"));
+            for (Abi abi : ABIS_32) {
+                File rsClCoreFile = new File(bcFolder, abi.mDevice + File.separatorChar + LIBCLCORE_BC);
+                if (rsClCoreFile.exists()) {
+                    mLibClCore.put(abi.mDevice, rsClCoreFile);
+                }
+            }
+            for (Abi abi : ABIS_64) {
+                File rsClCoreFile = new File(bcFolder, abi.mDevice + File.separatorChar + LIBCLCORE_BC);
+                if (rsClCoreFile.exists()) {
+                    mLibClCore.put(abi.mDevice, rsClCoreFile);
+                }
             }
         } else {
             mRsLib = null;
@@ -274,8 +288,24 @@ public class RenderScriptProcessor {
     private void createSupportFiles(@NonNull CommandLineLauncher launcher,
             @NonNull Map<String, String> env) throws IOException, InterruptedException {
         // get the generated BC files.
-        File rawFolder = new File(mResOutputDir, SdkConstants.FD_RES_RAW);
+        int targetApi = mTargetApi < 11 ? 11 : mTargetApi;
+        targetApi = (mSupportMode && targetApi < 18) ? 18 : targetApi;
+        if (targetApi > 21) {
+            File rawFolder =  new File(mResOutputDir, SdkConstants.FD_RES_RAW);
+            createSupportFilesHelper(rawFolder, ABIS_32, launcher, env);
+        } else {
+            File rawFolder32 =  new File(mResOutputDir, SdkConstants.FD_RES_RAW + "/bc32");
+            createSupportFilesHelper(rawFolder32, ABIS_32, launcher, env);
+            File rawFolder64 =  new File(mResOutputDir, SdkConstants.FD_RES_RAW + "/bc64");
+            createSupportFilesHelper(rawFolder64, ABIS_64, launcher, env);
+        }
+    }
 
+    private void createSupportFilesHelper(@NonNull File rawFolder,
+                                          @NonNull Abi[] abis,
+                                          @NonNull CommandLineLauncher launcher,
+                                          @NonNull Map<String, String> env
+                                          ) throws IOException, InterruptedException{
         SourceSearcher searcher = new SourceSearcher(Collections.singletonList(rawFolder), EXT_BC);
         FileGatherer fileGatherer = new FileGatherer();
         searcher.search(fileGatherer);
@@ -285,7 +315,11 @@ public class RenderScriptProcessor {
             String objName = name.replaceAll("\\.bc", ".o");
             String soName = "librs." + name.replaceAll("\\.bc", ".so");
 
-            for (Abi abi : ABIS) {
+            for (Abi abi : abis) {
+                // only build for the ABIs bundled in Build-Tools.
+                if (mLibClCore.get(abi.mDevice) == null) {
+                    continue;
+                }
                 File objFile = createSupportObjFile(bcFile, abi, objName, launcher, env);
                 createSupportLibFile(objFile, abi, soName, launcher, env);
             }

@@ -19,7 +19,7 @@ package com.android.sdklib;
 import com.android.repository.Revision;
 import com.android.repository.testframework.FakeProgressIndicator;
 import com.android.repository.testframework.MockFileOp;
-import com.android.sdklib.repositoryv2.AndroidSdkHandler;
+import com.android.sdklib.repository.AndroidSdkHandler;
 
 import junit.framework.TestCase;
 
@@ -37,7 +37,7 @@ public class BuildToolInfoTest extends TestCase {
         assertNotNull(bt);
 
         // Check the actual JVM running this test.
-        Revision curr = bt.getCurrentJvmVersion();
+        Revision curr = BuildToolInfo.getCurrentJvmVersion();
         // We can reasonably expect this to at least run with JVM 1.5 or more
         assertTrue(curr.compareTo(new Revision(1, 5, 0)) > 0);
         // and we can reasonably expect to not be running with JVM 42.0.0

@@ -20,10 +20,8 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 
 import org.gradle.model.Managed;
-import org.gradle.model.Unmanaged;
 
 import java.io.File;
-import java.util.List;
 
 /**
  * A source file for a native library.
@@ -34,14 +32,16 @@ public interface NativeSourceFile {
     /**
      * The source file.
      */
+    @Nullable
     File getSrc();
     void setSrc(File src);
 
     /**
-     * List of compiler flags for this file.
+     * Compiler flags for this file.
      */
-    @NonNull
-    List<String> getFlags();
+    @Nullable
+    String getFlags();
+    void setFlags(String flags);
 
     /**
      * The working directory for the compiler.

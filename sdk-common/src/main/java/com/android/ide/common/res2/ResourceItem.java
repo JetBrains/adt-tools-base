@@ -21,6 +21,7 @@ import static com.android.SdkConstants.ANDROID_NS_NAME_PREFIX;
 import static com.android.SdkConstants.ANDROID_NS_NAME_PREFIX_LEN;
 import static com.android.SdkConstants.ANDROID_PREFIX;
 import static com.android.SdkConstants.ATTR_ID;
+import static com.android.SdkConstants.ATTR_INDEX;
 import static com.android.SdkConstants.ATTR_NAME;
 import static com.android.SdkConstants.ATTR_PARENT;
 import static com.android.SdkConstants.ATTR_QUANTITY;
@@ -28,6 +29,8 @@ import static com.android.SdkConstants.ATTR_TYPE;
 import static com.android.SdkConstants.ATTR_VALUE;
 import static com.android.SdkConstants.NEW_ID_PREFIX;
 import static com.android.SdkConstants.PREFIX_RESOURCE_REF;
+import static com.android.SdkConstants.PREFIX_THEME_REF;
+import static com.android.SdkConstants.TOOLS_URI;
 import static com.android.ide.common.resources.ResourceResolver.ATTR_EXAMPLE;
 import static com.android.ide.common.resources.ResourceResolver.XLIFF_G_TAG;
 import static com.android.ide.common.resources.ResourceResolver.XLIFF_NAMESPACE_PREFIX;
@@ -59,6 +62,8 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
+import java.nio.file.Paths;
+
 /**
  * A resource.
  *
@@ -75,6 +80,9 @@ public class ResourceItem extends DataItem<ResourceFile>
     private Node mValue;
 
     @Nullable
+    private String mLibraryName;
+
+    @Nullable
     protected ResourceValue mResourceValue;
 
     /**
@@ -86,10 +94,11 @@ public class ResourceItem extends DataItem<ResourceFile>
      * @param type  the type of the resource
      * @param value an optional Node that represents the resource value.
      */
-    public ResourceItem(@NonNull String name, @NonNull ResourceType type, @Nullable Node value) {
+    public ResourceItem(@NonNull String name, @NonNull ResourceType type, @Nullable Node value, @Nullable String libraryName) {
         super(name);
         mType = type;
         mValue = value;
+        mLibraryName = libraryName;
     }
 
     /**
@@ -120,6 +129,16 @@ public class ResourceItem extends DataItem<ResourceFile>
     @Nullable
     public String getValueText() {
         return mValue != null ? mValue.getTextContent() : null;
+    }
+
+    /**
+     * Returns the library that the resource was found. This will be null for application resources.
+     *
+     * @return the library name or null.
+     */
+    @Nullable
+    public String getLibraryName() {
+        return mLibraryName;
     }
 
     /**
@@ -158,12 +177,11 @@ public class ResourceItem extends DataItem<ResourceFile>
 
     @Override
     public FolderConfiguration getConfiguration() {
-        String qualifier = getQualifiers();
-        if (qualifier.isEmpty()) {
-            return new FolderConfiguration();
+        ResourceFile resourceFile = getSource();
+        if (resourceFile == null) {
+            throw new RuntimeException("Cannot call getConfiguration on " + toString());
         }
-
-        return FolderConfiguration.getConfigForQualifierString(qualifier);
+        return resourceFile.getFolderConfiguration();
     }
 
     /**
@@ -214,10 +232,10 @@ public class ResourceItem extends DataItem<ResourceFile>
                         ? getFolderDensity() : null;
                 if (density != null) {
                     mResourceValue = new DensityBasedResourceValue(mType, getName(),
-                            getSource().getFile().getAbsolutePath(), density, isFrameworks);
+                            getSource().getFile().getAbsolutePath(), density, isFrameworks, mLibraryName);
                 } else {
                     mResourceValue = new ResourceValue(mType, getName(),
-                            getSource().getFile().getAbsolutePath(), isFrameworks);
+                            getSource().getFile().getAbsolutePath(), isFrameworks, mLibraryName);
                 }
             } else {
                 mResourceValue = parseXmlToResourceValue(isFrameworks);
@@ -312,7 +330,7 @@ public class ResourceItem extends DataItem<ResourceFile>
     private ResourceValue parseXmlToResourceValue(boolean isFrameworks) {
         assert mValue != null;
 
-        NamedNodeMap attributes = mValue.getAttributes();
+        final NamedNodeMap attributes = mValue.getAttributes();
         ResourceType type = getType(mValue.getLocalName(), attributes);
         if (type == null) {
             return null;
@@ -326,7 +344,7 @@ public class ResourceItem extends DataItem<ResourceFile>
                 String parent = getAttributeValue(attributes, ATTR_PARENT);
                 try {
                     value = parseStyleValue(
-                            new StyleResourceValue(type, name, parent, isFrameworks));
+                            new StyleResourceValue(type, name, parent, isFrameworks, mLibraryName));
                 } catch (Throwable t) {
                     //noinspection UseOfSystemOutOrSystemErr
                     System.err.println("Problem parsing attribute " + name + " of type " + type
@@ -336,22 +354,59 @@ public class ResourceItem extends DataItem<ResourceFile>
                 break;
             case DECLARE_STYLEABLE:
                 value = parseDeclareStyleable(new DeclareStyleableResourceValue(type, name,
-                        isFrameworks));
+                        isFrameworks, mLibraryName));
                 break;
             case ARRAY:
-                value = parseArrayValue(new ArrayResourceValue(name, isFrameworks));
+                value = parseArrayValue(new ArrayResourceValue(name, isFrameworks, mLibraryName) {
+                    @Override
+                    protected int getDefaultIndex() {
+                        // Allow the user to specify a specific element to use via tools:index
+                        String toolsDefaultIndex = getAttributeValueNS(attributes, TOOLS_URI, ATTR_INDEX);
+                        if (toolsDefaultIndex != null) {
+                            try {
+                                return Integer.parseInt(toolsDefaultIndex);
+                            }
+                            catch (NumberFormatException e) {
+                                return super.getDefaultIndex();
+                            }
+                        }
+                        return super.getDefaultIndex();
+                    }
+                });
                 break;
             case PLURALS:
-                value = parsePluralsValue(new PluralsResourceValue(name, isFrameworks));
+                value = parsePluralsValue(new PluralsResourceValue(name, isFrameworks, mLibraryName) {
+                    @Override
+                    public String getValue() {
+                        // Allow the user to specify tools:quantity.
+                        String quantity = getAttributeValueNS(attributes, TOOLS_URI, ATTR_QUANTITY);
+                        if (quantity != null) {
+                            String value = getValue(quantity);
+                            if (value != null) {
+                                return value;
+                            }
+                        }
+                        return super.getValue();
+                    }
+                });
                 break;
             case ATTR:
-                value = parseAttrValue(new AttrResourceValue(type, name, isFrameworks));
+                value = parseAttrValue(new AttrResourceValue(type, name, isFrameworks, mLibraryName));
                 break;
             case STRING:
-                value = parseTextValue(new TextResourceValue(type, name, isFrameworks));
+                value = parseTextValue(new TextResourceValue(type, name, isFrameworks, mLibraryName));
+                break;
+            case ANIMATOR:
+            case DRAWABLE:
+            case INTERPOLATOR:
+            case LAYOUT:
+            case MENU:
+            case MIPMAP:
+            case TRANSITION:
+                value = parseFileName(new ResourceValue(type, name, isFrameworks, mLibraryName));
                 break;
             default:
-                value = parseValue(new ResourceValue(type, name, isFrameworks));
+                value = parseValue(new ResourceValue(type, name, isFrameworks, mLibraryName));
                 break;
         }
 
@@ -383,6 +438,16 @@ public class ResourceItem extends DataItem<ResourceFile>
         return null;
     }
 
+    @Nullable
+    private static String getAttributeValueNS(NamedNodeMap attributes, String namespaceURI, String attributeName) {
+        Attr attribute = (Attr)attributes.getNamedItemNS(namespaceURI, attributeName);
+        if (attribute != null) {
+            return attribute.getValue();
+        }
+
+        return null;
+    }
+
     @NonNull
     private ResourceValue parseStyleValue(@NonNull StyleResourceValue styleValue) {
         NodeList children = mValue.getChildNodes();
@@ -402,7 +467,7 @@ public class ResourceItem extends DataItem<ResourceFile>
                     }
 
                     ItemResourceValue resValue = new ItemResourceValue(name, isFrameworkAttr,
-                            styleValue.isFramework());
+                            styleValue.isFramework(), styleValue.getLibraryName());
                     String text = getTextNode(child.getChildNodes());
                     resValue.setValue(ValueXmlHelper.unescapeResourceString(text, false, true));
                     styleValue.addItem(resValue);
@@ -499,7 +564,7 @@ public class ResourceItem extends DataItem<ResourceFile>
                     }
 
                     AttrResourceValue attr = parseAttrValue(child,
-                            new AttrResourceValue(ResourceType.ATTR, name, isFrameworkAttr));
+                            new AttrResourceValue(ResourceType.ATTR, name, isFrameworkAttr, mLibraryName));
                     declareStyleable.addValue(attr);
                 }
             }
@@ -513,6 +578,19 @@ public class ResourceItem extends DataItem<ResourceFile>
         String text = getTextNode(mValue.getChildNodes());
         value.setValue(ValueXmlHelper.unescapeResourceString(text, false, true));
 
+        return value;
+    }
+
+    @NonNull
+    private ResourceValue parseFileName(@NonNull ResourceValue value) {
+        String text = getTextNode(mValue.getChildNodes()).trim();
+        if (!text.isEmpty() &&
+                !text.startsWith(PREFIX_RESOURCE_REF) &&
+                !text.startsWith(PREFIX_THEME_REF)) {
+            text = Paths.get(text).toString();
+        }
+
+        value.setValue(text);
         return value;
     }
 
@@ -673,6 +751,6 @@ public class ResourceItem extends DataItem<ResourceFile>
 
     @Override
     Node getDetailsXml(Document document) {
-        return NodeUtils.adoptNode(document, mValue);
+        return NodeUtils.duplicateAndAdoptNode(document, mValue);
     }
 }

@@ -16,6 +16,9 @@
 
 package com.android.tools.lint;
 
+import static com.android.tools.lint.HtmlReporter.INLINE_RESOURCES;
+
+import com.android.annotations.NonNull;
 import com.android.tools.lint.detector.api.Project;
 import com.android.tools.lint.detector.api.Severity;
 import com.android.utils.SdkUtils;
@@ -185,7 +188,7 @@ public class MultiProjectHtmlReporter extends HtmlReporter {
 
         String errorUrl = null;
         String warningUrl = null;
-        if (!mSimpleFormat) {
+        if (!INLINE_RESOURCES && !mSimpleFormat) {
             errorUrl = addLocalResources(HtmlReporter.getErrorIconUrl());
             warningUrl = addLocalResources(HtmlReporter.getWarningIconUrl());
         }
@@ -195,18 +198,30 @@ public class MultiProjectHtmlReporter extends HtmlReporter {
         mWriter.write("Project");
         mWriter.write("</th><th class=\"countColumn\">");                   //$NON-NLS-1$
 
-        if (errorUrl != null) {
-            mWriter.write("<img border=\"0\" align=\"top\" src=\"");      //$NON-NLS-1$
-            mWriter.write(errorUrl);
-            mWriter.write("\" alt=\"Error\" />\n");                          //$NON-NLS-1$
+        if (INLINE_RESOURCES) {
+            String markup = getErrorIcon();
+            mWriter.write(markup);
+            mWriter.write('\n');
+        } else {
+            if (errorUrl != null) {
+                mWriter.write("<img border=\"0\" align=\"top\" src=\"");      //$NON-NLS-1$
+                mWriter.write(errorUrl);
+                mWriter.write("\" alt=\"Error\" />\n");                          //$NON-NLS-1$
+            }
         }
         mWriter.write("Errors");
         mWriter.write("</th><th class=\"countColumn\">");                   //$NON-NLS-1$
 
-        if (warningUrl != null) {
-            mWriter.write("<img border=\"0\" align=\"top\" src=\"");      //$NON-NLS-1$
-            mWriter.write(warningUrl);
-            mWriter.write("\" alt=\"Warning\" />\n");                          //$NON-NLS-1$
+        if (INLINE_RESOURCES) {
+            String markup = getWarningIcon();
+            mWriter.write(markup);
+            mWriter.write('\n');
+        } else {
+            if (warningUrl != null) {
+                mWriter.write("<img border=\"0\" align=\"top\" src=\"");      //$NON-NLS-1$
+                mWriter.write(warningUrl);
+                mWriter.write("\" alt=\"Warning\" />\n");                          //$NON-NLS-1$
+            }
         }
         mWriter.write("Warnings");
         mWriter.write("</th></tr>\n");                                   //$NON-NLS-1$
@@ -243,7 +258,7 @@ public class MultiProjectHtmlReporter extends HtmlReporter {
         }
 
         @Override
-        public int compareTo(ProjectEntry other) {
+        public int compareTo(@NonNull ProjectEntry other) {
             int delta = other.errorCount - errorCount;
             if (delta != 0) {
                 return delta;

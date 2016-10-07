@@ -4,8 +4,7 @@ import android.app.Activity;
 import android.os.Bundle;
 import android.widget.TextView;
 
-public class Main extends Activity
-{
+public class Main extends Activity {
     /** Called when the activity is first created. */
     @Override
     public void onCreate(Bundle savedInstanceState)
@@ -13,8 +12,6 @@ public class Main extends Activity
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main);
 
-        // use reflection since the jar project is in the packaging scope but not
-        // the compile scope.
         try {
             for (int i = 1 ; i <= 70 ; i++) {
                 Class<?> clazz = getClassLoader().loadClass(String.format("com.android.tests.basic.manymethods.Big%03d", i));
@@ -25,5 +22,14 @@ public class Main extends Activity
 
         TextView tv = (TextView) findViewById(R.id.text);
         tv.setText("Found all classes");
+    }
+
+    void notUsed() {
+        DeadCode.method();
+    }
+
+    /** This method is kept by -keep rules. */
+    public void onClick(android.view.View view) {
+        Used.method();
     }
 }

@@ -9,6 +9,9 @@ dependencies {
     compile project(':base:common')
     compile 'junit:junit:4.12'
     compile 'org.easymock:easymock:3.3'
+    compile 'org.mockito:mockito-core:1.9.5'
+    compile 'org.mockito:mockito-core:1.9.5'
+    compile 'com.google.truth:truth:0.28'
 }
 
 sourceSets {

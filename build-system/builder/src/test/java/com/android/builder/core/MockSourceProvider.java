@@ -100,4 +100,10 @@ class MockSourceProvider implements SourceProvider {
     public Collection<File> getJniLibsDirectories() {
         return Collections.singleton(new File(mRoot, "jniLibs"));
     }
+
+    @NonNull
+    @Override
+    public Collection<File> getShadersDirectories() {
+        return Collections.singleton(new File(mRoot, "shaders"));
+    }
 }

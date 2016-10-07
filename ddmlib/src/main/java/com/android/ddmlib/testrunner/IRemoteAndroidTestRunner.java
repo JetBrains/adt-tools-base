@@ -131,7 +131,7 @@ public interface IRemoteAndroidTestRunner {
 
     /**
      * Adds a argument to include in instrumentation command.
-     * <p/>
+     * <p>
      * Must be called before 'run'. If an argument with given name has already been provided, it's
      * value will be overridden.
      *
@@ -149,7 +149,7 @@ public interface IRemoteAndroidTestRunner {
 
     /**
      * Adds a boolean argument to include in instrumentation command.
-     * <p/>
+     * <p>
      * @see RemoteAndroidTestRunner#addInstrumentationArg
      *
      * @param name the name of the instrumentation bundle argument
@@ -188,10 +188,10 @@ public interface IRemoteAndroidTestRunner {
     /**
      * Sets the maximum time allowed between output of the shell command running the tests on
      * the devices.
-     * <p/>
+     * <p>
      * This allows setting a timeout in case the tests can become stuck and never finish. This is
      * different from the normal timeout on the connection.
-     * <p/>
+     * <p>
      * By default no timeout will be specified.
      *
      * @param maxTimeToOutputResponse the maximum amount of time during which the command is allowed
@@ -206,7 +206,7 @@ public interface IRemoteAndroidTestRunner {
 
     /**
      * Set a custom run name to be reported to the {@link ITestRunListener} on {@link #run}
-     * <p/>
+     * <p>
      * If unspecified, will use package name
      *
      * @param runName
@@ -215,7 +215,7 @@ public interface IRemoteAndroidTestRunner {
 
     /**
      * Execute this test run.
-     * <p/>
+     * <p>
      * Convenience method for {@link #run(Collection)}.
      *
      * @param listeners listens for test results

@@ -77,7 +77,7 @@ public class Revision implements Comparable<Revision> {
      * Parses a string of format "major.minor.micro rcPreview" and returns a new {@link Revision}
      * for it.
      *
-     * All the fields except major are optional. <p/>
+     * All the fields except major are optional. <p>
      *
      * @param revisionString   A non-null revisionString to parse.
      * @param minimumPrecision Create a {@code Revision} with at least the given precision,
@@ -143,7 +143,7 @@ public class Revision implements Comparable<Revision> {
      * Parses a string of format "major.minor.micro rcPreview" and returns a new {@code Revision}
      * for it.
      *
-     * All the fields except major are optional. <p/>
+     * All the fields except major are optional. <p>
      *
      * @param revisionString A non-null revisionString to parse.
      * @return A new non-null {@link Revision}, with precision depending on the precision of {@code
@@ -154,6 +154,19 @@ public class Revision implements Comparable<Revision> {
     public static Revision parseRevision(@NonNull String revisionString)
             throws NumberFormatException {
         return parseRevision(revisionString, Precision.MAJOR);
+    }
+
+  /**
+   * A safe version of {@link #parseRevision} that does not throw, but instead returns an
+   * unspecified revision if it fails to parse.
+   */
+    @NonNull
+    public static Revision safeParseRevision(@NonNull String revisionString) {
+        try {
+            return parseRevision(revisionString);
+        } catch (NumberFormatException ignored) {
+            return NOT_SPECIFIED;
+        }
     }
 
     /**
@@ -221,10 +234,10 @@ public class Revision implements Comparable<Revision> {
 
     /**
      * Returns the version in a fixed format major.minor.micro with an optional "rc preview#". For
-     * example it would return "18.0.0", "18.1.0" or "18.1.2 rc5".
+     * example it would return "18.0.0", "18.1.0" or "18.1.2 rc5", with the separator between the
+     * main version number and the preview component being specified by {@code previewSeparator}.
      */
-    @Override
-    public String toString() {
+    public String toString(@NonNull String previewSeparator) {
         StringBuilder sb = new StringBuilder();
         sb.append(getMajor());
 
@@ -233,12 +246,22 @@ public class Revision implements Comparable<Revision> {
             if (mPrecision.compareTo(Precision.MICRO) >= 0) {
                 sb.append('.').append(getMicro());
                 if (mPrecision.compareTo(Precision.PREVIEW) >= 0 && isPreview()) {
-                    sb.append(getSeparator()).append("rc").append(getPreview());
+                    sb.append(previewSeparator).append("rc").append(getPreview());
                 }
             }
         }
 
         return sb.toString();
+    }
+
+    /**
+     * Returns the version in a fixed format major.minor.micro with an optional "rc preview#". For
+     * example it would return "18.0.0", "18.1.0" or "18.1.2 rc5". The character before "rc" is
+     * specified at construction time, and defaults to space.
+     */
+    @Override
+    public String toString() {
+        return toString(getSeparator());
     }
 
     /**
@@ -370,7 +393,7 @@ public class Revision implements Comparable<Revision> {
      *
      * Note that preview/release candidate are released before their final version, so "18.0.0 rc1"
      * comes below "18.0.0". The best way to think of it as if the lack of preview number was
-     * "+inf": "18.1.2 rc5" => "18.1.2.5" so its less than "18.1.2.+INF" but more than "18.1.1.0"
+     * "+inf": "18.1.2 rc5" ⇒ "18.1.2.5" so its less than "18.1.2.+INF" but more than "18.1.1.0"
      * and more than "18.1.2.4"
      *
      * @param rhs The right-hand side {@link Revision} to compare with.
@@ -386,7 +409,7 @@ public class Revision implements Comparable<Revision> {
      *
      * Note that preview/release candidate are released before their final version, so "18.0.0 rc1"
      * comes below "18.0.0". The best way to think of it as if the lack of preview number was
-     * "+inf": "18.1.2 rc5" => "18.1.2.5" so its less than "18.1.2.+INF" but more than "18.1.1.0"
+     * "+inf": "18.1.2 rc5" ⇒ "18.1.2.5" so its less than "18.1.2.+INF" but more than "18.1.1.0"
      * and more than "18.1.2.4"
      *
      * @param rhs            The right-hand side {@link Revision} to compare with.

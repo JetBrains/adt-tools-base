@@ -19,6 +19,7 @@ import static com.android.SdkConstants.DOT_CLASS;
 
 import com.android.annotations.NonNull;
 import com.android.tools.lint.detector.api.Issue;
+import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
 import com.android.utils.SdkUtils;
 import com.google.common.collect.Lists;
@@ -31,6 +32,7 @@ import java.lang.ref.SoftReference;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -53,15 +55,24 @@ class JarFileIssueRegistry extends IssueRegistry {
      * Manifest constant for declaring an issue provider. Example: Lint-Registry:
      * foo.bar.CustomIssueRegistry
      */
-    private static final String MF_LINT_REGISTRY = "Lint-Registry"; //$NON-NLS-1$
+    private static final String MF_LINT_REGISTRY_OLD = "Lint-Registry"; //$NON-NLS-1$
+    private static final String MF_LINT_REGISTRY = "Lint-Registry-v2"; //$NON-NLS-1$
 
     private static Map<File, SoftReference<JarFileIssueRegistry>> sCache;
 
     private final List<Issue> myIssues;
 
+    private boolean mHasLegacyDetectors;
+
+    /** True if one or more java detectors were found that use the old Lombok-based API */
+    public boolean hasLegacyDetectors() {
+        return mHasLegacyDetectors;
+    }
+
     @NonNull
-    static IssueRegistry get(@NonNull LintClient client, @NonNull File jarFile) throws IOException,
-            ClassNotFoundException, IllegalAccessException, InstantiationException {
+    static JarFileIssueRegistry get(@NonNull LintClient client, @NonNull File jarFile)
+            throws IOException, ClassNotFoundException, IllegalAccessException,
+            InstantiationException {
         if (sCache == null) {
            sCache = new HashMap<File, SoftReference<JarFileIssueRegistry>>();
         } else {
@@ -93,6 +104,17 @@ class JarFileIssueRegistry extends IssueRegistry {
             Manifest manifest = jarFile.getManifest();
             Attributes attrs = manifest.getMainAttributes();
             Object object = attrs.get(new Attributes.Name(MF_LINT_REGISTRY));
+            boolean isLegacy = false;
+            if (object == null) {
+                object = attrs.get(new Attributes.Name(MF_LINT_REGISTRY_OLD));
+                //noinspection VariableNotUsedInsideIf
+                if (object != null) {
+                    // It's an old rule. We don't yet conclude that
+                    //   mHasLegacyDetectors=true
+                    // because the lint checks may not be Java related.
+                    isLegacy = true;
+                }
+            }
             if (object instanceof String) {
                 String className = (String) object;
                 // Make a class loader for this jar
@@ -102,6 +124,19 @@ class JarFileIssueRegistry extends IssueRegistry {
                 Class<?> registryClass = Class.forName(className, true, loader);
                 IssueRegistry registry = (IssueRegistry) registryClass.newInstance();
                 myIssues.addAll(registry.getIssues());
+
+                if (isLegacy) {
+                    // If it's an old registry, look through the issues to see if it
+                    // provides Java scanning and if so create the old style visitors
+                    for (Issue issue : myIssues) {
+                        EnumSet<Scope> scope = issue.getImplementation().getScope();
+                        if (scope.contains(Scope.JAVA_FILE) || scope.contains(Scope.JAVA_LIBRARIES)
+                                || scope.contains(Scope.ALL_JAVA_FILES)) {
+                            mHasLegacyDetectors = true;
+                            break;
+                        }
+                    }
+                }
 
                 if (loader instanceof URLClassLoader) {
                     loadAndCloseURLClassLoader(client, file, (URLClassLoader)loader);
@@ -158,7 +193,7 @@ class JarFileIssueRegistry extends IssueRegistry {
                         while (entry != null) {
                             String name = entry.getName();
                             // Load non-inner-classes
-                            if (name.endsWith(DOT_CLASS) && name.indexOf('$') == -1) {
+                            if (name.endsWith(DOT_CLASS)) {
                                 // Strip .class suffix and change .jar file path (/)
                                 // to class name (.'s).
                                 name = name.substring(0,

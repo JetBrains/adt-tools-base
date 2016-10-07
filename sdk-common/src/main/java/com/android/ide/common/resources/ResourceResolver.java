@@ -23,11 +23,7 @@ import static com.android.SdkConstants.REFERENCE_STYLE;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.ide.common.rendering.api.ArrayResourceValue;
-import com.android.ide.common.rendering.api.LayoutLog;
-import com.android.ide.common.rendering.api.RenderResources;
-import com.android.ide.common.rendering.api.ResourceValue;
-import com.android.ide.common.rendering.api.StyleResourceValue;
+import com.android.ide.common.rendering.api.*;
 import com.android.resources.ResourceType;
 import com.google.common.base.Joiner;
 import com.google.common.base.Strings;
@@ -161,7 +157,7 @@ public class ResourceResolver extends RenderResources {
 
             if (from != null && to != null) {
                 StyleResourceValue newStyle = new StyleResourceValue(ResourceType.STYLE,
-                        from.getName(), parentName, from.isFramework());
+                        from.getName(), parentName, from.isFramework(), from.getLibraryName());
                 newStyle.replaceWith(from);
                 mStyleInheritanceMap.put(newStyle, to);
             }
@@ -271,11 +267,11 @@ public class ResourceResolver extends RenderResources {
     @SuppressWarnings("deprecation") // Required to support older layoutlib clients
     @Override
     @Deprecated
-    public ResourceValue findItemInStyle(StyleResourceValue style, String attrName) {
+    public ItemResourceValue findItemInStyle(StyleResourceValue style, String attrName) {
         // this method is deprecated because it doesn't know about the namespace of the
         // attribute so we search for the project namespace first and then in the
         // android namespace if needed.
-        ResourceValue item = findItemInStyle(style, attrName, false);
+        ItemResourceValue item = findItemInStyle(style, attrName, false);
         if (item == null) {
             item = findItemInStyle(style, attrName, true);
         }
@@ -284,14 +280,14 @@ public class ResourceResolver extends RenderResources {
     }
 
     @Override
-    public ResourceValue findItemInStyle(StyleResourceValue style, String itemName,
+    public ItemResourceValue findItemInStyle(StyleResourceValue style, String itemName,
             boolean isFrameworkAttr) {
         return findItemInStyle(style, itemName, isFrameworkAttr, 0);
     }
 
-    private ResourceValue findItemInStyle(StyleResourceValue style, String itemName,
-                                          boolean isFrameworkAttr, int depth) {
-        ResourceValue item = style.getItem(itemName, isFrameworkAttr);
+    private ItemResourceValue findItemInStyle(StyleResourceValue style, String itemName,
+                                              boolean isFrameworkAttr, int depth) {
+        ItemResourceValue item = style.getItem(itemName, isFrameworkAttr);
 
         // if we didn't find it, we look in the parent style (if applicable)
         //noinspection VariableNotUsedInsideIf
@@ -584,6 +580,8 @@ public class ResourceResolver extends RenderResources {
 
     /**
      * Computes the name of the parent style, or <code>null</code> if the style is a root style.
+     * You probably want to use {@code ResolutionUtils,getParentQualifiedName(StyleResourceValue)}
+     * instead
      */
     @Nullable
     public static String getParentName(StyleResourceValue style) {
@@ -714,7 +712,7 @@ public class ResourceResolver extends RenderResources {
 
     /**
      * Searches for and returns the {@link StyleResourceValue} from a given name.
-     * <p/>The format of the name can be:
+     * <p>The format of the name can be:
      * <ul>
      * <li>[android:]&lt;name&gt;</li>
      * <li>[android:]style/&lt;name&gt;</li>
@@ -899,7 +897,7 @@ public class ResourceResolver extends RenderResources {
                 ResourceValue prev = mLookupChain.get(mLookupChain.size() - 1);
                 if (!reference.equals(prev.getValue())) {
                     ResourceValue next = new ResourceValue(prev.getResourceType(), prev.getName(),
-                            prev.isFramework());
+                            prev.isFramework(), prev.getLibraryName());
                     next.setValue(reference);
                     mLookupChain.add(next);
                 }
@@ -915,9 +913,9 @@ public class ResourceResolver extends RenderResources {
         }
 
         @Override
-        public ResourceValue findItemInStyle(StyleResourceValue style, String itemName,
+        public ItemResourceValue findItemInStyle(StyleResourceValue style, String itemName,
                 boolean isFrameworkAttr) {
-            ResourceValue value = super.findItemInStyle(style, itemName, isFrameworkAttr);
+            ItemResourceValue value = super.findItemInStyle(style, itemName, isFrameworkAttr);
             if (value != null) {
                 mLookupChain.add(value);
             }

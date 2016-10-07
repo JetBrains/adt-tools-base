@@ -21,6 +21,8 @@ package com.android.build.gradle.model;
  */
 public class ModelConstants {
 
+    public static final String ABI_OPTIONS = "android.abis";
+
     public static final String ANDROID_BUILDER = "androidBuilder";
 
     public static final String ANDROID_CONFIG_ADAPTOR = "androidConfigAdaptor";
@@ -29,11 +31,13 @@ public class ModelConstants {
 
     public static final String BINARIES = "binaries";
 
+    public static final String NATIVE_BUILD_SYSTEMS = "nativeBuildSystems";
+
     public static final String COMPONENTS = "components";
 
-    public static final String EXTERNAL_CONFIG_FILES = "nativeBuild";
-
     public static final String EXTERNAL_BUILD_CONFIG = "nativeBuildConfig";
+
+    public static final String EXTERNAL_CONFIG_FILES = "nativeBuild";
 
     public static final String EXTRA_MODEL_INFO = "extraModelInfo";
 
@@ -47,5 +51,5 @@ public class ModelConstants {
 
     public static final String TASK_MANAGER = "taskManager";
 
-    public static final String ABI_OPTIONS = "android.abis";
+    public static final String NATIVE_BUILD_CONFIG_VALUES = "nativeBuildConfigValues";
 }

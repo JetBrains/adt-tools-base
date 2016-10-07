@@ -18,6 +18,7 @@ package com.android.testutils;
 
 import static org.junit.Assert.assertTrue;
 
+import com.android.annotations.NonNull;
 import com.google.common.io.Files;
 
 import junit.framework.TestCase;
@@ -33,25 +34,23 @@ public class TestUtils {
     /**
      * returns a File for the subfolder of the test resource data.
      *
-     * This is basically "src/test/resources/testData/$name".
+     * <p>This is basically {@code src/test/resources/testData/$name"}.
      *
-     * Note that this folder is relative to the root project which is where gradle
+     * <p>Note that this folder is relative to the root project which is where gradle
      * sets the current working dir when running the tests.
      *
-     * If you need a full folder path, use {@link #getCanonicalRoot(String...)}.
+     * <p>If you need a full folder path, use {@link #getCanonicalRoot(String...)}.
      *
      * @param names the names of the subfolders.
      *
      * @return a File
      */
+    @NonNull
     public static File getRoot(String... names) {
-        File root = null;
+        File root = new File("src/test/resources/testData/");
+
         for (String name : names) {
-            if (root == null) {
-                root = new File("src/test/resources/testData/" + name);
-            } else {
-                root = new File(root, name);
-            }
+            root = new File(root, name);
 
             // Hack: The sdk-common tests are not configured properly; running tests
             // works correctly from Gradle but not from within the IDE. The following
@@ -111,4 +110,129 @@ public class TestUtils {
 
         return tempDir;
     }
+
+    /**
+     * Returns the SDK directory as built from the Android source tree.
+     *
+     * @return the SDK directory
+     */
+    @NonNull
+    public static File getSdkDir() {
+        String androidHome = System.getenv("ANDROID_HOME");
+        if (androidHome != null) {
+            File f = new File(androidHome);
+            if (f.isDirectory()) {
+                return f;
+            }
+        }
+
+        throw new IllegalStateException("SDK directory not defined with ANDROID_HOME");
+    }
+
+    /**
+     * Sleeps the current thread for enough time to ensure that we exceed filesystem timestamp
+     * resolution. This method is usually called in tests when it is necessary to ensure filesystem
+     * writes are detected through timestamp modification.
+     *
+     * @throws InterruptedException waiting interrupted
+     */
+    public static void waitFilesystemTime() throws InterruptedException {
+        /*
+         * How much time to wait until we are sure that the file system will update the last
+         * modified timestamp of a file. This is usually related to the accuracy of last timestamps.
+         * In modern windows systems 100ms be more than enough (NTFS has 100us accuracy --
+         * see https://msdn.microsoft.com/en-us/library/windows/desktop/ms724290(v=vs.85).aspx).
+         * In linux it will depend on the filesystem. ext4 has 1ns accuracy (if inodes are 256 byte
+         * or larger), but ext3 has 1 second.
+         */
+        Thread.sleep(2000);
+    }
+
+    @NonNull
+    public static String getDiff(@NonNull String before, @NonNull  String after) {
+        return getDiff(before.split("\n"), after.split("\n"));
+    }
+
+    @NonNull
+    public static String getDiff(@NonNull String[] before, @NonNull String[] after) {
+        // Based on the LCS section in http://introcs.cs.princeton.edu/java/96optimization/
+        StringBuilder sb = new StringBuilder();
+
+        int n = before.length;
+        int m = after.length;
+
+        // Compute longest common subsequence of x[i..m] and y[j..n] bottom up
+        int[][] lcs = new int[n + 1][m + 1];
+        for (int i = n - 1; i >= 0; i--) {
+            for (int j = m - 1; j >= 0; j--) {
+                if (before[i].equals(after[j])) {
+                    lcs[i][j] = lcs[i + 1][j + 1] + 1;
+                } else {
+                    lcs[i][j] = Math.max(lcs[i + 1][j], lcs[i][j + 1]);
+                }
+            }
+        }
+
+        int i = 0;
+        int j = 0;
+        while ((i < n) && (j < m)) {
+            if (before[i].equals(after[j])) {
+                i++;
+                j++;
+            } else {
+                sb.append("@@ -");
+                sb.append(Integer.toString(i + 1));
+                sb.append(" +");
+                sb.append(Integer.toString(j + 1));
+                sb.append('\n');
+                while (i < n && j < m && !before[i].equals(after[j])) {
+                    if (lcs[i + 1][j] >= lcs[i][j + 1]) {
+                        sb.append('-');
+                        if (!before[i].trim().isEmpty()) {
+                            sb.append(' ');
+                        }
+                        sb.append(before[i]);
+                        sb.append('\n');
+                        i++;
+                    } else {
+                        sb.append('+');
+                        if (!after[j].trim().isEmpty()) {
+                            sb.append(' ');
+                        }
+                        sb.append(after[j]);
+                        sb.append('\n');
+                        j++;
+                    }
+                }
+            }
+        }
+
+        if (i < n || j < m) {
+            assert i == n || j == m;
+            sb.append("@@ -");
+            sb.append(Integer.toString(i + 1));
+            sb.append(" +");
+            sb.append(Integer.toString(j + 1));
+            sb.append('\n');
+            for (; i < n; i++) {
+                sb.append('-');
+                if (!before[i].trim().isEmpty()) {
+                    sb.append(' ');
+                }
+                sb.append(before[i]);
+                sb.append('\n');
+            }
+            for (; j < m; j++) {
+                sb.append('+');
+                if (!after[j].trim().isEmpty()) {
+                    sb.append(' ');
+                }
+                sb.append(after[j]);
+                sb.append('\n');
+            }
+        }
+
+        return sb.toString();
+    }
+
 }

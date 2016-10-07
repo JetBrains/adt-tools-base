@@ -108,7 +108,7 @@ public class LegacyNdkOutputParser implements PatternAwareOutputParser {
                             line.substring(colonIndex1 + 1, colonIndex2).trim()); // 1-based.
 
                     int colonIndex3 = line.indexOf(COLON, colonIndex2 + 1);
-                    if (colonIndex1 >= 0) {
+                    if (colonIndex3 >= 0) {
                         int column = Integer.parseInt(
                                 line.substring(colonIndex2 + 1, colonIndex3).trim());
 

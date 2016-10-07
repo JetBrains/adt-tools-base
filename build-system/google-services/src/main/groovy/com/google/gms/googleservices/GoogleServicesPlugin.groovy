@@ -145,19 +145,39 @@ class GoogleServicesPlugin implements Plugin<Project> {
     }
 
     private static void handleVariant(Project project, def variant) {
-        File quickstartFile = project.file(JSON_FILE_NAME)
+        File quickstartFile = null
 
         String variantName = "$variant.dirName";
         String[] variantTokens = variantName.split('/')
-        // If flavor is found.
+
+        List<String> fileLocation = new ArrayList<>()
+
         if (variantTokens.length == 2) {
+            // If flavor and buildType are found.
             String flavorName = variantTokens[0]
-            // check google-services.json at flavor source folder.
-            // If file exists, it will be used instead of the one at root.
-            File flavorFile = project.file('src/' + flavorName + '/' + JSON_FILE_NAME)
-            if (flavorFile.isFile()) {
-                quickstartFile = flavorFile
+            String buildType = variantTokens[1]
+            fileLocation.add('src/' + flavorName + '/' + buildType)
+            fileLocation.add('src/' + buildType + '/' + flavorName)
+            fileLocation.add('src/' + flavorName)
+            fileLocation.add('src/' + buildType)
+        } else if (variantTokens.length == 1) {
+            // If only buildType is found.
+            fileLocation.add('src/' + variantTokens[0])
+        }
+
+        String searchedLocation = System.lineSeparator();
+        for (String location : fileLocation) {
+            File jsonFile = project.file(location + '/' + JSON_FILE_NAME)
+            searchedLocation = searchedLocation + jsonFile.getPath() + System.lineSeparator()
+            if (jsonFile.isFile()) {
+                quickstartFile = jsonFile
+                break
             }
+        }
+
+        if (quickstartFile == null) {
+            quickstartFile = project.file(JSON_FILE_NAME)
+            searchedLocation = searchedLocation + quickstartFile.getPath()
         }
 
         File outputDir = project.file("$project.buildDir/generated/res/google-services/$variant.dirName")
@@ -170,6 +190,7 @@ class GoogleServicesPlugin implements Plugin<Project> {
         task.moduleGroup = MODULE_GROUP;
         // Use the target version for the task.
         task.moduleVersion = targetVersion;
+        task.searchedLocation = searchedLocation;
 
         variant.registerResGeneratingTask(task, outputDir)
     }

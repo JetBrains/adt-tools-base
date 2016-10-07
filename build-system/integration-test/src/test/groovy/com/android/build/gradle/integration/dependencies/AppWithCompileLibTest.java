@@ -27,7 +27,9 @@ import com.android.builder.model.AndroidProject;
 import com.android.builder.model.Dependencies;
 import com.android.builder.model.Variant;
 import com.android.ide.common.process.ProcessException;
+import com.google.common.base.Charsets;
 import com.google.common.collect.Iterables;
+import com.google.common.io.Files;
 import com.google.common.truth.Truth;
 
 import org.junit.AfterClass;
@@ -53,6 +55,8 @@ public class AppWithCompileLibTest {
 
     @BeforeClass
     public static void setUp() throws IOException {
+        Files.write("include 'app', 'library'", project.getSettingsFile(), Charsets.UTF_8);
+
         appendToFile(project.getSubproject("app").getBuildFile(),
                 "\n" +
                 "dependencies {\n" +
@@ -77,21 +81,10 @@ public class AppWithCompileLibTest {
     @Test
     public void checkCompiledLibraryIsInTheModel() {
         Variant variant = ModelHelper.getVariant(models.get(":app").getVariants(), "debug");
-        Truth.assertThat(variant).isNotNull();
 
-        Dependencies deps = variant.getMainArtifact().getDependencies();
+        Dependencies deps = variant.getMainArtifact().getCompileDependencies();
         Collection<AndroidLibrary> libraries = deps.getLibraries();
         assertThat(libraries).hasSize(1);
         assertThat(Iterables.getOnlyElement(libraries).getProject()).isEqualTo(":library");
-    }
-
-    @Test
-    public void checkCompiledLibraryIsInTheAndroidTestDependency() {
-        // TODO
-    }
-
-    @Test
-    public void checkCompiledLibraryIsInTheUnitTestDependency() {
-        // TODO
     }
 }

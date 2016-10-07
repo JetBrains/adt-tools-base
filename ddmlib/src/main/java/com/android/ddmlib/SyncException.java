@@ -20,7 +20,7 @@ import java.io.IOException;
 
 /**
  * Exception thrown when a transfer using {@link SyncService} doesn't complete.
- * <p/>This is different from an {@link IOException} because it's not the underlying connection
+ * <p>This is different from an {@link IOException} because it's not the underlying connection
  * that triggered the error, but the adb transfer protocol that didn't work somehow, or that the
  * targets (local and/or remote) were wrong.
  */

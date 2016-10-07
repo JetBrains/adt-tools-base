@@ -23,13 +23,9 @@ import java.util.Collection;
 
 /**
  * The input to a Transform.
- * <p/>
+ * <p>
  * It is mostly composed of a list of {@link JarInput} and a list of {@link DirectoryInput}.
- * <p/>
- * <strong>This API is non final and is subject to change. We are looking for feedback, and will
- * attempt to stabilize it in the 1.6 time frame.</strong>
  */
-@Beta
 public interface TransformInput {
 
     /**

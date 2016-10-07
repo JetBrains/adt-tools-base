@@ -89,4 +89,43 @@ public class DexParserTest {
     }
 
 
+    @Test
+    public void checkNewerByteCodeVersionException() {
+        String stderr = "UNEXPECTED TOP-LEVEL EXCEPTION:\n"
+                + "java.lang.RuntimeException: Exception parsing classes\n"
+                + "\tat com.android.dx.command.dexer.Main.processClass(Main.java:752)\n"
+                + "\tat com.android.dx.command.dexer.Main.processFileBytes(Main.java:718)\n"
+                + "\tat com.android.dx.command.dexer.Main.access$1200(Main.java:85)\n"
+                + "\tat com.android.dx.command.dexer.Main$FileBytesConsumer.processFileBytes(Main.java:1645)\n"
+                + "\tat com.android.dx.cf.direct.ClassPathOpener.processArchive(ClassPathOpener.java:284)\n"
+                + "\tat com.android.dx.cf.direct.ClassPathOpener.processOne(ClassPathOpener.java:166)\n"
+                + "\tat com.android.dx.cf.direct.ClassPathOpener.process(ClassPathOpener.java:144)\n"
+                + "\tat com.android.dx.command.dexer.Main.processOne(Main.java:672)\n"
+                + "\tat com.android.dx.command.dexer.Main.processAllFiles(Main.java:574)\n"
+                + "\tat com.android.dx.command.dexer.Main.runMultiDex(Main.java:366)\n"
+                + "\tat com.android.dx.command.dexer.Main.run(Main.java:275)\n"
+                + "\tat com.android.dx.command.dexer.Main.main(Main.java:245)\n"
+                + "\tat com.android.dx.command.Main.main(Main.java:106)\n"
+                + "Caused by: com.android.dx.cf.iface.ParseException: bad class file magic (cafebabe) or version (0034.0000)\n"
+                + "\tat com.android.dx.cf.direct.DirectClassFile.parse0(DirectClassFile.java:472)\n"
+                + "\tat com.android.dx.cf.direct.DirectClassFile.parse(DirectClassFile.java:406)\n"
+                + "\tat com.android.dx.cf.direct.DirectClassFile.parseToInterfacesIfNecessary(DirectClassFile.java:388)\n"
+                + "\tat com.android.dx.cf.direct.DirectClassFile.getMagic(DirectClassFile.java:251)\n"
+                + "\tat com.android.dx.command.dexer.Main.parseClass(Main.java:764)\n"
+                + "\tat com.android.dx.command.dexer.Main.access$1500(Main.java:85)\n"
+                + "\tat com.android.dx.command.dexer.Main$ClassParserTask.call(Main.java:1684)\n"
+                + "\tat com.android.dx.command.dexer.Main.processClass(Main.java:749)\n"
+                + "\t... 12 more\n";
+
+        Message message = Iterables.getOnlyElement(PARSER.parseToolOutput(stderr));
+
+        assertEquals(Message.Kind.ERROR, message.getKind());
+        assertTrue(message.getText().equals(String.format(
+                DexParser.COULD_NOT_CONVERT_BYTECODE_TO_DEX,
+                String.format(DexParser.INVALID_BYTE_CODE_VERSION, 52))));
+        assertEquals(stderr.trim(), message.getRawMessage().trim());
+        assertEquals(ImmutableList.of(SourceFilePosition.UNKNOWN),
+                message.getSourceFilePositions());
+        assertEquals(Optional.of(DexParser.DEX_TOOL_NAME), message.getToolName());
+    }
 }

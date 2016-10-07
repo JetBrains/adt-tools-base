@@ -3,16 +3,24 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/adt.iml" filepath="$PROJECT_DIR$/adt.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../analytics-library/inspector/analytics-inspector.iml" filepath="$PROJECT_DIR$/../analytics-library/inspector/analytics-inspector.iml" group="analytics-library" />
+      <module fileurl="file://$PROJECT_DIR$/../analytics-library/protos/analytics-protos.iml" filepath="$PROJECT_DIR$/../analytics-library/protos/analytics-protos.iml" group="analytics-library" />
+      <module fileurl="file://$PROJECT_DIR$/../analytics-library/publisher/analytics-publisher.iml" filepath="$PROJECT_DIR$/../analytics-library/publisher/analytics-publisher.iml" group="analytics-library" />
+      <module fileurl="file://$PROJECT_DIR$/../analytics-library/shared/analytics-shared.iml" filepath="$PROJECT_DIR$/../analytics-library/shared/analytics-shared.iml" group="analytics-library" />
+      <module fileurl="file://$PROJECT_DIR$/../analytics-library/tracker/analytics-tracker.iml" filepath="$PROJECT_DIR$/../analytics-library/tracker/analytics-tracker.iml" group="analytics-library" />
       <module fileurl="file://$PROJECT_DIR$/annotations/android-annotations.iml" filepath="$PROJECT_DIR$/annotations/android-annotations.iml" />
       <module fileurl="file://$PROJECT_DIR$/asset-studio/assetstudio-base.iml" filepath="$PROJECT_DIR$/asset-studio/assetstudio-base.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../buildSrc/buildSrc.iml" filepath="$PROJECT_DIR$/../buildSrc/buildSrc.iml" />
       <module fileurl="file://$PROJECT_DIR$/build-system/builder/builder.iml" filepath="$PROJECT_DIR$/build-system/builder/builder.iml" />
       <module fileurl="file://$PROJECT_DIR$/build-system/builder-model/builder-model.iml" filepath="$PROJECT_DIR$/build-system/builder-model/builder-model.iml" />
       <module fileurl="file://$PROJECT_DIR$/build-system/builder-test-api/builder-test-api.iml" filepath="$PROJECT_DIR$/build-system/builder-test-api/builder-test-api.iml" />
-      <module fileurl="file://$PROJECT_DIR$/chartlib/chartlib.iml" filepath="$PROJECT_DIR$/chartlib/chartlib.iml" />
+      <module fileurl="file://$PROJECT_DIR$/chunkio/chunkio.iml" filepath="$PROJECT_DIR$/chunkio/chunkio.iml" />
+      <module fileurl="file://$PROJECT_DIR$/chunkio-processor/chunkio-processor.iml" filepath="$PROJECT_DIR$/chunkio-processor/chunkio-processor.iml" />
       <module fileurl="file://$PROJECT_DIR$/common/common.iml" filepath="$PROJECT_DIR$/common/common.iml" />
       <module fileurl="file://$PROJECT_DIR$/../data-binding/baseLibrary/db-baseLibrary.iml" filepath="$PROJECT_DIR$/../data-binding/baseLibrary/db-baseLibrary.iml" />
       <module fileurl="file://$PROJECT_DIR$/../data-binding/compilerCommon/db-compilerCommon-base.iml" filepath="$PROJECT_DIR$/../data-binding/compilerCommon/db-compilerCommon-base.iml" />
       <module fileurl="file://$PROJECT_DIR$/ddmlib/ddmlib.iml" filepath="$PROJECT_DIR$/ddmlib/ddmlib.iml" />
+      <module fileurl="file://$PROJECT_DIR$/testing-infrastructure/device-pool/device-provider/device-provider.iml" filepath="$PROJECT_DIR$/testing-infrastructure/device-pool/device-provider/device-provider.iml" />
       <module fileurl="file://$PROJECT_DIR$/draw9patch/draw9patch.iml" filepath="$PROJECT_DIR$/draw9patch/draw9patch.iml" />
       <module fileurl="file://$PROJECT_DIR$/device_validator/dvlib/dvlib.iml" filepath="$PROJECT_DIR$/device_validator/dvlib/dvlib.iml" />
       <module fileurl="file://$PROJECT_DIR$/sdk-common/generate-locale-data/generate-locale-data.iml" filepath="$PROJECT_DIR$/sdk-common/generate-locale-data/generate-locale-data.iml" />
@@ -38,7 +46,10 @@
       <module fileurl="file://$PROJECT_DIR$/build-system/manifest-merger/manifest-merger-base.iml" filepath="$PROJECT_DIR$/build-system/manifest-merger/manifest-merger-base.iml" />
       <module fileurl="file://$PROJECT_DIR$/ninepatch/ninepatch.iml" filepath="$PROJECT_DIR$/ninepatch/ninepatch.iml" />
       <module fileurl="file://$PROJECT_DIR$/perflib/perflib.iml" filepath="$PROJECT_DIR$/perflib/perflib.iml" />
+      <module fileurl="file://$PROJECT_DIR$/pixelprobe/pixelprobe.iml" filepath="$PROJECT_DIR$/pixelprobe/pixelprobe.iml" />
       <module fileurl="file://$PROJECT_DIR$/build-system/profile/profile.iml" filepath="$PROJECT_DIR$/build-system/profile/profile.iml" />
+      <module fileurl="file://$PROJECT_DIR$/profiler/plugin/profiler-plugin.iml" filepath="$PROJECT_DIR$/profiler/plugin/profiler-plugin.iml" />
+      <module fileurl="file://$PROJECT_DIR$/profiler/supportlib/profiler-supportlib.iml" filepath="$PROJECT_DIR$/profiler/supportlib/profiler-supportlib.iml" />
       <module fileurl="file://$PROJECT_DIR$/build-system/project-test/project-test.iml" filepath="$PROJECT_DIR$/build-system/project-test/project-test.iml" />
       <module fileurl="file://$PROJECT_DIR$/build-system/project-test-lib/project-test-lib.iml" filepath="$PROJECT_DIR$/build-system/project-test-lib/project-test-lib.iml" />
       <module fileurl="file://$PROJECT_DIR$/repository/repository.iml" filepath="$PROJECT_DIR$/repository/repository.iml" />

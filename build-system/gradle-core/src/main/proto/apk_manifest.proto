@@ -1,0 +1,67 @@
+// Copyright 2016 The Bazel Authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//    http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+
+// Contract between external build systems and Gradle Android plugin. Do not change without
+// changing all producers.
+syntax = "proto2";
+package externalBuild.apk_manifest;
+
+//option java_api_version = 2;
+option java_package = "com.google.devtools.build.lib.rules.android.apkmanifest";
+option java_outer_classname = "ExternalBuildApkManifest";
+
+message Artifact {
+  // This path is relative to "bazel info execution_root"
+  optional string exec_root_path = 1;
+  optional bytes hash = 2;
+}
+
+message NativeLib {
+  repeated Artifact native_libs = 1;
+  optional string arch = 2;
+}
+
+message AndroidSdk {
+  optional string aapt = 1;
+  optional string adb = 2;
+  optional string aidl = 3;
+  optional string android_jar = 4;
+  optional string annotations_jar = 5;
+  optional string apkbuilder = 6;
+  optional string dx = 7;
+  optional string framework_aidl = 8;
+  optional string jack = 9;
+  optional string jill = 10;
+  optional string main_dex_classes = 11;
+  optional string main_dex_list_creator = 12;
+  optional string proguard = 13;
+  optional string resource_extractor = 14;
+  optional string shrinked_android_jar = 15;
+  optional string zipalign = 16;
+  optional string build_tools_version = 17; // assume latest if not set
+}
+
+message ApkManifest {
+  // Information about the AndroidSdk
+  optional AndroidSdk android_sdk = 1;
+  // All the jars containing the classes that would be dex and go into the APK
+  repeated Artifact jars = 2;
+  // The .ap_ that contains the resources that go into the APK
+  optional Artifact resource_apk = 3;
+  // The native library files that go into the APK
+  repeated NativeLib native_lib = 4;
+  // The final merged AndroidManifest.xml file (in text, i.e. non-binary, XML)
+  optional Artifact android_manifest = 5;
+}

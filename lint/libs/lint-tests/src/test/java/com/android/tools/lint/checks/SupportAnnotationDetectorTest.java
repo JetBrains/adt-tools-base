@@ -27,7 +27,7 @@ import com.android.tools.lint.client.api.JavaParser.ResolvedAnnotation;
 import com.android.tools.lint.client.api.JavaParser.ResolvedMethod;
 import com.android.tools.lint.detector.api.Detector;
 
-@SuppressWarnings("ClassNameDiffersFromFileName") // For embedded unit tests
+@SuppressWarnings("all") // Lots of test sample projects with faulty code
 public class SupportAnnotationDetectorTest extends AbstractCheckTest {
     private static final boolean SDK_ANNOTATIONS_AVAILABLE =
             new SupportAnnotationDetectorTest().createClient().findResource(
@@ -232,7 +232,7 @@ public class SupportAnnotationDetectorTest extends AbstractCheckTest {
                 + "src/test/pkg/IntDefTest.java:101: Error: Flag not allowed here [WrongConstant]\n"
                 + "        view.setLayoutDirection(View.LAYOUT_DIRECTION_LTR|View.LAYOUT_DIRECTION_RTL); // ERROR\n"
                 + "                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
-                + "src/test/pkg/IntDefTest.java:102: Error: Must be one of: Context.POWER_SERVICE, Context.WINDOW_SERVICE, Context.LAYOUT_INFLATER_SERVICE, Context.ACCOUNT_SERVICE, Context.ACTIVITY_SERVICE, Context.ALARM_SERVICE, Context.NOTIFICATION_SERVICE, Context.ACCESSIBILITY_SERVICE, Context.CAPTIONING_SERVICE, Context.KEYGUARD_SERVICE, Context.LOCATION_SERVICE, Context.SEARCH_SERVICE, Context.SENSOR_SERVICE, Context.STORAGE_SERVICE, Context.WALLPAPER_SERVICE, Context.VIBRATOR_SERVICE, Context.CONNECTIVITY_SERVICE, Context.NETWORK_STATS_SERVICE, Context.WIFI_SERVICE, Context.WIFI_P2P_SERVICE, Context.NSD_SERVICE, Context.AUDIO_SERVICE, Context.FINGERPRINT_SERVICE, Context.MEDIA_ROUTER_SERVICE, Context.TELEPHONY_SERVICE, Context.TELEPHONY_SUBSCRIPTION_SERVICE, Context.CARRIER_CONFIG_SERVICE, Context.TELECOM_SERVICE, Context.CLIPBOARD_SERVICE, Context.INPUT_METHOD_SERVICE, Context.TEXT_SERVICES_MANAGER_SERVICE, Context.APPWIDGET_SERVICE, Context.DROPBOX_SERVICE, Context.DEVICE_POLICY_SERVICE, Context.UI_MODE_SERVICE, Context.DOWNLOAD_SERVICE, Context.NFC_SERVICE, Context.BLUETOOTH_SERVICE, Context.USB_SERVICE, Context.LAUNCHER_APPS_SERVICE, Context.INPUT_SERVICE, Context.DISPLAY_SERVICE, Context.USER_SERVICE, Context.RESTRICTIONS_SERVICE, Context.APP_OPS_SERVICE, Context.CAMERA_SERVICE, Context.PRINT_SERVICE, Context.CONSUMER_IR_SERVICE, Context.TV_INPUT_SERVICE, Context.USAGE_STATS_SERVICE, Context.MEDIA_SESSION_SERVICE, Context.BATTERY_SERVICE, Context.JOB_SCHEDULER_SERVICE, Context.MEDIA_PROJECTION_SERVICE, Context.MIDI_SERVICE [WrongConstant]\n"
+                + "src/test/pkg/IntDefTest.java:102: Error: Must be one of: Context.POWER_SERVICE, Context.WINDOW_SERVICE, Context.LAYOUT_INFLATER_SERVICE, Context.ACCOUNT_SERVICE, Context.ACTIVITY_SERVICE, Context.ALARM_SERVICE, Context.NOTIFICATION_SERVICE, Context.ACCESSIBILITY_SERVICE, Context.CAPTIONING_SERVICE, Context.KEYGUARD_SERVICE, Context.LOCATION_SERVICE, Context.SEARCH_SERVICE, Context.SENSOR_SERVICE, Context.STORAGE_SERVICE, Context.WALLPAPER_SERVICE, Context.VIBRATOR_SERVICE, Context.CONNECTIVITY_SERVICE, Context.NETWORK_STATS_SERVICE, Context.WIFI_SERVICE, Context.WIFI_P2P_SERVICE, Context.NSD_SERVICE, Context.AUDIO_SERVICE, Context.FINGERPRINT_SERVICE, Context.MEDIA_ROUTER_SERVICE, Context.TELEPHONY_SERVICE, Context.TELEPHONY_SUBSCRIPTION_SERVICE, Context.CARRIER_CONFIG_SERVICE, Context.TELECOM_SERVICE, Context.CLIPBOARD_SERVICE, Context.INPUT_METHOD_SERVICE, Context.TEXT_SERVICES_MANAGER_SERVICE, Context.APPWIDGET_SERVICE, Context.DROPBOX_SERVICE, Context.DEVICE_POLICY_SERVICE, Context.UI_MODE_SERVICE, Context.DOWNLOAD_SERVICE, Context.NFC_SERVICE, Context.BLUETOOTH_SERVICE, Context.USB_SERVICE, Context.LAUNCHER_APPS_SERVICE, Context.INPUT_SERVICE, Context.DISPLAY_SERVICE, Context.USER_SERVICE, Context.RESTRICTIONS_SERVICE, Context.APP_OPS_SERVICE, Context.CAMERA_SERVICE, Context.PRINT_SERVICE, Context.CONSUMER_IR_SERVICE, Context.TV_INPUT_SERVICE, Context.USAGE_STATS_SERVICE, Context.MEDIA_SESSION_SERVICE, Context.BATTERY_SERVICE, Context.JOB_SCHEDULER_SERVICE, Context.MEDIA_PROJECTION_SERVICE, Context.MIDI_SERVICE, Context.HARDWARE_PROPERTIES_SERVICE [WrongConstant]\n"
                 + "        context.getSystemService(TYPE_1); // ERROR\n"
                 + "                                 ~~~~~~\n"
                 + "20 errors, 0 warnings\n" :
@@ -279,47 +279,46 @@ public class SupportAnnotationDetectorTest extends AbstractCheckTest {
 
     public void testColorInt2() throws Exception {
         assertEquals(""
-                + "src/test/pkg/ColorTest.java:23: Error: Should pass resolved color instead of resource id here: getResources().getColor(actualColor) [ResourceAsColor]\n"
+                + "src/test/pkg/ColorTest.java:22: Error: Should pass resolved color instead of resource id here: getResources().getColor(actualColor) [ResourceAsColor]\n"
                 + "        setColor2(actualColor); // ERROR\n"
                 + "                  ~~~~~~~~~~~\n"
-                + "src/test/pkg/ColorTest.java:24: Error: Should pass resolved color instead of resource id here: getResources().getColor(getColor2()) [ResourceAsColor]\n"
-                + "        setColor2(getColor2()); // ERROR\n"
+                + "src/test/pkg/ColorTest.java:23: Error: Should pass resolved color instead of resource id here: getResources().getColor(getColor1()) [ResourceAsColor]\n"
+                + "        setColor2(getColor1()); // ERROR\n"
                 + "                  ~~~~~~~~~~~\n"
-                + "src/test/pkg/ColorTest.java:17: Error: Expected a color resource id (R.color.) but received an RGB integer [ResourceType]\n"
+                + "src/test/pkg/ColorTest.java:16: Error: Expected a color resource id (R.color.) but received an RGB integer [ResourceType]\n"
                 + "        setColor1(actualColor); // ERROR\n"
                 + "                  ~~~~~~~~~~~\n"
-                + "src/test/pkg/ColorTest.java:18: Error: Expected a color resource id (R.color.) but received an RGB integer [ResourceType]\n"
-                + "        setColor1(getColor1()); // ERROR\n"
+                + "src/test/pkg/ColorTest.java:17: Error: Expected a color resource id (R.color.) but received an RGB integer [ResourceType]\n"
+                + "        setColor1(getColor2()); // ERROR\n"
                 + "                  ~~~~~~~~~~~\n"
                 + "4 errors, 0 warnings\n",
 
                 lintProject(
                         java("src/test/pkg/ColorTest.java", ""
                                 + "package test.pkg;\n"
-                                + "import android.content.Context;\n"
-                                + "import android.content.res.Resources;\n"
+                                + "\n"
                                 + "import android.support.annotation.ColorInt;\n"
                                 + "import android.support.annotation.ColorRes;\n"
                                 + "\n"
                                 + "public abstract class ColorTest {\n"
-                                + "    @ColorInt\n"
+                                + "    @ColorRes\n"
                                 + "    public abstract int getColor1();\n"
                                 + "    public abstract void setColor1(@ColorRes int color);\n"
-                                + "    @ColorRes\n"
+                                + "    @ColorInt\n"
                                 + "    public abstract int getColor2();\n"
                                 + "    public abstract void setColor2(@ColorInt int color);\n"
                                 + "\n"
-                                + "    public void test1(Context context) {\n"
-                                + "        int actualColor = getColor1();\n"
-                                + "        setColor1(actualColor); // ERROR\n"
-                                + "        setColor1(getColor1()); // ERROR\n"
-                                + "        setColor1(getColor2()); // OK\n"
-                                + "    }\n"
-                                + "    public void test2(Context context) {\n"
+                                + "    public void test1() {\n"
                                 + "        int actualColor = getColor2();\n"
+                                + "        setColor1(actualColor); // ERROR\n"
+                                + "        setColor1(getColor2()); // ERROR\n"
+                                + "        setColor1(getColor1()); // OK\n"
+                                + "    }\n"
+                                + "    public void test2() {\n"
+                                + "        int actualColor = getColor1();\n"
                                 + "        setColor2(actualColor); // ERROR\n"
-                                + "        setColor2(getColor2()); // ERROR\n"
-                                + "        setColor2(getColor1()); // OK\n"
+                                + "        setColor2(getColor1()); // ERROR\n"
+                                + "        setColor2(getColor2()); // OK\n"
                                 + "    }\n"
                                 + "}\n"),
                         mColorResAnnotation,
@@ -357,6 +356,56 @@ public class SupportAnnotationDetectorTest extends AbstractCheckTest {
                         mColorResAnnotation
                 ));
     }
+
+    public void testPx() throws Exception {
+        assertEquals(""
+                + "src/test/pkg/PxTest.java:22: Error: Should pass resolved pixel dimension instead of resource id here: getResources().getDimension*(actualSize) [ResourceAsColor]\n"
+                + "        setDimension2(actualSize); // ERROR\n"
+                + "                      ~~~~~~~~~~\n"
+                + "src/test/pkg/PxTest.java:23: Error: Should pass resolved pixel dimension instead of resource id here: getResources().getDimension*(getDimension1()) [ResourceAsColor]\n"
+                + "        setDimension2(getDimension1()); // ERROR\n"
+                + "                      ~~~~~~~~~~~~~~~\n"
+                + "src/test/pkg/PxTest.java:16: Error: Expected a dimension resource id (R.color.) but received a pixel integer [ResourceType]\n"
+                + "        setDimension1(actualSize); // ERROR\n"
+                + "                      ~~~~~~~~~~\n"
+                + "src/test/pkg/PxTest.java:17: Error: Expected a dimension resource id (R.color.) but received a pixel integer [ResourceType]\n"
+                + "        setDimension1(getDimension2()); // ERROR\n"
+                + "                      ~~~~~~~~~~~~~~~\n"
+                + "4 errors, 0 warnings\n",
+
+                lintProject(
+                        java("src/test/pkg/PxTest.java", ""
+                                + "package test.pkg;\n"
+                                + "\n"
+                                + "import android.support.annotation.Px;\n"
+                                + "import android.support.annotation.DimenRes;\n"
+                                + "\n"
+                                + "public abstract class PxTest {\n"
+                                + "    @DimenRes\n"
+                                + "    public abstract int getDimension1();\n"
+                                + "    public abstract void setDimension1(@DimenRes int dimension);\n"
+                                + "    @Px\n"
+                                + "    public abstract int getDimension2();\n"
+                                + "    public abstract void setDimension2(@Px int dimension);\n"
+                                + "\n"
+                                + "    public void test1() {\n"
+                                + "        int actualSize = getDimension2();\n"
+                                + "        setDimension1(actualSize); // ERROR\n"
+                                + "        setDimension1(getDimension2()); // ERROR\n"
+                                + "        setDimension1(getDimension1()); // OK\n"
+                                + "    }\n"
+                                + "    public void test2() {\n"
+                                + "        int actualSize = getDimension1();\n"
+                                + "        setDimension2(actualSize); // ERROR\n"
+                                + "        setDimension2(getDimension1()); // ERROR\n"
+                                + "        setDimension2(getDimension2()); // OK\n"
+                                + "    }\n"
+                                + "}\n"),
+                        mPxAnnotation,
+                        mDimenResAnnotation
+                ));
+    }
+
     public void testResourceType() throws Exception {
         assertEquals((SDK_ANNOTATIONS_AVAILABLE ? ""
                 + "src/p1/p2/Flow.java:13: Error: Expected resource of type drawable [ResourceType]\n"
@@ -380,11 +429,14 @@ public class SupportAnnotationDetectorTest extends AbstractCheckTest {
                 + "src/p1/p2/Flow.java:68: Error: Expected resource of type drawable [ResourceType]\n"
                 + "        myMethod(z, null); // ERROR\n"
                 + "                 ~\n"
-                + (SDK_ANNOTATIONS_AVAILABLE ? "7 errors, 0 warnings\n" : "4 errors, 0 warnings\n"),
+                + "src/p1/p2/Flow.java:71: Error: Expected resource of type drawable [ResourceType]\n"
+                + "        myMethod(w, null); // ERROR\n"
+                + "                 ~\n"
+                + (SDK_ANNOTATIONS_AVAILABLE ? "8 errors, 0 warnings\n" : "5 errors, 0 warnings\n"),
 
                 lintProject(
                         copy("src/p1/p2/Flow.java.txt", "src/p1/p2/Flow.java"),
-                        copy("src/android/support/annotation/DrawableRes.java.txt", "src/android/support/annotation/DrawableRes.java"),
+                        mDrawableResAnnotation,
                         mStringResAnnotation,
                         mStyleResAnnotation,
                         mAnyResAnnotation
@@ -416,8 +468,7 @@ public class SupportAnnotationDetectorTest extends AbstractCheckTest {
                                 + "        mIconResId = iconResId;\n"
                                 + "    }\n"
                                 + "}"),
-                        copy("src/android/support/annotation/DrawableRes.java.txt",
-                                "src/android/support/annotation/DrawableRes.java")));
+                        mDrawableResAnnotation));
     }
 
     // Temporarily disabled; TypedArray.getResourceId has now been annotated with @StyleRes
@@ -449,7 +500,7 @@ public class SupportAnnotationDetectorTest extends AbstractCheckTest {
                 + "src/test/pkg/ConstructorTest.java:14: Error: Value must be ≥ 5 (was 3) [Range]\n"
                 + "        new ConstructorTest(1, 3);\n"
                 + "                               ~\n"
-                + "src/test/pkg/ConstructorTest.java:19: Error: Method test.pkg.ConstructorTest must be called from the UI thread, currently inferred thread is worker thread [WrongThread]\n"
+                + "src/test/pkg/ConstructorTest.java:19: Error: Constructor ConstructorTest must be called from the UI thread, currently inferred thread is worker thread [WrongThread]\n"
                 + "        new ConstructorTest(res, range);\n"
                 + "        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
                 + "3 errors, 0 warnings\n",
@@ -477,10 +528,9 @@ public class SupportAnnotationDetectorTest extends AbstractCheckTest {
                                 + "        new ConstructorTest(res, range);\n"
                                 + "    }\n"
                                 + "}\n"),
-                        mWorkerThreadPermission,
-                        mUiThreadPermission,
-                        copy("src/android/support/annotation/DrawableRes.java.txt",
-                                "src/android/support/annotation/DrawableRes.java"),
+                        mWorkerThread,
+                        mUiThread,
+                        mDrawableResAnnotation,
                         copy("src/android/support/annotation/IntRange.java.txt",
                                 "src/android/support/annotation/IntRange.java")
                 ));
@@ -502,15 +552,75 @@ public class SupportAnnotationDetectorTest extends AbstractCheckTest {
                 + "src/test/pkg/CheckPermissions.java:22: Warning: The result of extractAlpha is not used [CheckResult]\n"
                 + "        bitmap.extractAlpha(); // WARNING\n"
                 + "        ~~~~~~~~~~~~~~~~~~~~~\n"
+                + "src/test/pkg/Intersect.java:7: Warning: The result of intersect is not used. If the rectangles do not intersect, no change is made and the original rectangle is not modified. These methods return false to indicate that this has happened. [CheckResult]\n"
+                + "    rect.intersect(aLeft, aTop, aRight, aBottom);\n"
+                + "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
                 + "src/test/pkg/CheckPermissions.java:10: Warning: The result of checkCallingOrSelfPermission is not used; did you mean to call #enforceCallingOrSelfPermission(String,String)? [UseCheckPermission]\n"
                 + "        context.checkCallingOrSelfPermission(Manifest.permission.INTERNET); // WRONG\n"
                 + "        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
                 + "src/test/pkg/CheckPermissions.java:11: Warning: The result of checkPermission is not used; did you mean to call #enforcePermission(String,int,int,String)? [UseCheckPermission]\n"
                 + "        context.checkPermission(Manifest.permission.INTERNET, 1, 1);\n"
                 + "        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
-                + "0 errors, 3 warnings\n",
+                + "0 errors, 4 warnings\n",
 
-                lintProject("src/test/pkg/CheckPermissions.java.txt=>src/test/pkg/CheckPermissions.java"));
+                lintProject(copy("src/test/pkg/CheckPermissions.java.txt", "src/test/pkg/CheckPermissions.java"),
+                        java("src/test/pkg/Intersect.java", ""
+                                + "package test.pkg;\n"
+                                + "\n"
+                                + "import android.graphics.Rect;\n"
+                                + "\n"
+                                + "public class Intersect {\n"
+                                + "  void check(Rect rect, int aLeft, int aTop, int aRight, int aBottom) {\n"
+                                + "    rect.intersect(aLeft, aTop, aRight, aBottom);\n"
+                                + "  }\n"
+                                + "}")
+                        ));
+    }
+
+    public void testIdResource() throws Exception {
+        // Regression test for https://code.google.com/p/android/issues/detail?id=220612
+        assertEquals("No warnings.",
+
+                lintProject(
+                        java("src/com./example/myapplication/Test1.java", ""
+                                + "package com.example.myapplication;\n"
+                                + "\n"
+                                + "import android.support.annotation.IdRes;\n"
+                                + "import android.support.annotation.LayoutRes;\n"
+                                + "\n"
+                                + "public class Test1 {\n"
+                                + "\n"
+                                + "    private final int layout;\n"
+                                + "    private final int id;\n"
+                                + "    private boolean visible;\n"
+                                + "\n"
+                                + "    public Test1(@LayoutRes int layout, @IdRes int id) {\n"
+                                + "        this.layout = layout;\n"
+                                + "        this.id = id;\n"
+                                + "        this.visible = true;\n"
+                                + "    }\n"
+                                + "}"),
+                        java("src/com/example/myapplication/Test2.java", ""
+                                + "package com.example.myapplication;\n"
+                                + "\n"
+                                + "import android.support.annotation.IdRes;\n"
+                                + "import android.support.annotation.StringRes;\n"
+                                + "\n"
+                                + "public class Test2 extends Test1 {\n"
+                                + "\n"
+                                + "    public Test2(@IdRes int id, @StringRes int titleResId) {\n"
+                                + "        super(R.layout.somelayout, id);\n"
+                                + "    }\n"
+                                + "    public static final class R {\n"
+                                + "        public static final class layout {\n"
+                                + "            public static final int somelayout = 0x7f0a0000;\n"
+                                + "        }\n"
+                                + "    }\n"
+                                + "}"),
+                        mDrawableResAnnotation,
+                        mLayoutResAnnotation,
+                        mIdResAnnotation,
+                        mStringResAnnotation));
     }
 
     private final TestFile mPermissionTest = java("src/test/pkg/PermissionTest.java", ""
@@ -535,24 +645,6 @@ public class SupportAnnotationDetectorTest extends AbstractCheckTest {
                 + "@SuppressWarnings(\"UnusedDeclaration\")\n"
                 + "public abstract class LocationManager {\n"
                 + "    @RequiresPermission(anyOf = {ACCESS_FINE_LOCATION, ACCESS_COARSE_LOCATION})\n"
-                + "    public abstract Location myMethod(String provider);\n"
-                + "    public static class Location {\n"
-                + "    }\n"
-                + "}\n");
-
-        private final TestFile mComplexLocationManagerStub = java("src/android/location/LocationManager.java", ""
-                + "package android.location;\n"
-                + "\n"
-                + "import android.support.annotation.RequiresPermission;\n"
-                + "\n"
-                + "import static android.Manifest.permission.ACCESS_COARSE_LOCATION;\n"
-                + "import static android.Manifest.permission.ACCESS_FINE_LOCATION;\n"
-                + "import static android.Manifest.permission.BLUETOOTH;\n"
-                + "import static android.Manifest.permission.READ_SMS;\n"
-                + "\n"
-                + "@SuppressWarnings(\"UnusedDeclaration\")\n"
-                + "public abstract class LocationManager {\n"
-                + "    @RequiresPermission(\"(\" + ACCESS_FINE_LOCATION + \"|| \" + ACCESS_COARSE_LOCATION + \") && (\" + BLUETOOTH + \" ^ \" + READ_SMS + \")\")\n"
                 + "    public abstract Location myMethod(String provider);\n"
                 + "    public static class Location {\n"
                 + "    }\n"
@@ -599,7 +691,7 @@ public class SupportAnnotationDetectorTest extends AbstractCheckTest {
                 + "    }\n"
                 + "}");
 
-    private final TestFile mUiThreadPermission = java("src/android/support/annotation/UiThread.java", ""
+    private final TestFile mUiThread = java("src/android/support/annotation/UiThread.java", ""
             + "package android.support.annotation;\n"
             + "\n"
             + "import java.lang.annotation.Retention;\n"
@@ -615,7 +707,7 @@ public class SupportAnnotationDetectorTest extends AbstractCheckTest {
             + "public @interface UiThread {\n"
             + "}\n");
 
-    private final TestFile mMainThreadPermission = java("src/android/support/annotation/MainThread.java", ""
+    private final TestFile mMainThread = java("src/android/support/annotation/MainThread.java", ""
             + "package android.support.annotation;\n"
             + "\n"
             + "import java.lang.annotation.Retention;\n"
@@ -631,7 +723,7 @@ public class SupportAnnotationDetectorTest extends AbstractCheckTest {
             + "public @interface MainThread {\n"
             + "}\n");
 
-    private final TestFile mWorkerThreadPermission = java("src/android/support/annotation/WorkerThread.java", ""
+    private final TestFile mWorkerThread = java("src/android/support/annotation/WorkerThread.java", ""
             + "package android.support.annotation;\n"
             + "\n"
             + "import java.lang.annotation.Retention;\n"
@@ -645,6 +737,38 @@ public class SupportAnnotationDetectorTest extends AbstractCheckTest {
             + "@Retention(CLASS)\n"
             + "@Target({METHOD,CONSTRUCTOR,TYPE})\n"
             + "public @interface WorkerThread {\n"
+            + "}\n");
+
+    private final TestFile mBinderThread = java("src/android/support/annotation/BinderThread.java", ""
+            + "package android.support.annotation;\n"
+            + "\n"
+            + "import java.lang.annotation.Retention;\n"
+            + "import java.lang.annotation.Target;\n"
+            + "\n"
+            + "import static java.lang.annotation.ElementType.CONSTRUCTOR;\n"
+            + "import static java.lang.annotation.ElementType.METHOD;\n"
+            + "import static java.lang.annotation.ElementType.TYPE;\n"
+            + "import static java.lang.annotation.RetentionPolicy.CLASS;\n"
+            + "\n"
+            + "@Retention(CLASS)\n"
+            + "@Target({METHOD,CONSTRUCTOR,TYPE})\n"
+            + "public @interface BinderThread {\n"
+            + "}\n");
+
+    private final TestFile mAnyThread = java("src/android/support/annotation/AnyThread.java", ""
+            + "package android.support.annotation;\n"
+            + "\n"
+            + "import java.lang.annotation.Retention;\n"
+            + "import java.lang.annotation.Target;\n"
+            + "\n"
+            + "import static java.lang.annotation.ElementType.CONSTRUCTOR;\n"
+            + "import static java.lang.annotation.ElementType.METHOD;\n"
+            + "import static java.lang.annotation.ElementType.TYPE;\n"
+            + "import static java.lang.annotation.RetentionPolicy.CLASS;\n"
+            + "\n"
+            + "@Retention(CLASS)\n"
+            + "@Target({METHOD,CONSTRUCTOR,TYPE})\n"
+            + "public @interface AnyThread {\n"
             + "}\n");
 
     private TestFile createResAnnotation(String prefix) {
@@ -666,6 +790,10 @@ public class SupportAnnotationDetectorTest extends AbstractCheckTest {
     private final TestFile mColorResAnnotation = createResAnnotation("Color");
     private final TestFile mStringResAnnotation = createResAnnotation("String");
     private final TestFile mStyleResAnnotation = createResAnnotation("Style");
+    private final TestFile mDimenResAnnotation = createResAnnotation("Dimen");
+    private final TestFile mIdResAnnotation = createResAnnotation("Id");
+    private final TestFile mLayoutResAnnotation = createResAnnotation("Layout");
+    private final TestFile mDrawableResAnnotation = createResAnnotation("Drawable");
     private final TestFile mAnyResAnnotation = createResAnnotation("Any");
 
     private final TestFile mColorIntAnnotation = java("src/android/support/annotation/ColorInt.java", ""
@@ -680,6 +808,20 @@ public class SupportAnnotationDetectorTest extends AbstractCheckTest {
             + "@Retention(CLASS)\n"
             + "@Target({METHOD, PARAMETER, FIELD, LOCAL_VARIABLE})\n"
             + "public @interface ColorInt {\n"
+            + "}\n");
+
+    private final TestFile mPxAnnotation = java("src/android/support/annotation/Px.java", ""
+            + "package android.support.annotation;\n"
+            + "\n"
+            + "import java.lang.annotation.Retention;\n"
+            + "import java.lang.annotation.Target;\n"
+            + "\n"
+            + "import static java.lang.annotation.ElementType.*;\n"
+            + "import static java.lang.annotation.RetentionPolicy.CLASS;\n"
+            + "\n"
+            + "@Retention(CLASS)\n"
+            + "@Target({METHOD, PARAMETER, FIELD, LOCAL_VARIABLE})\n"
+            + "public @interface Px {\n"
             + "}\n");
 
     private TestFile getManifestWithPermissions(int targetSdk, String... permissions) {
@@ -913,47 +1055,6 @@ public class SupportAnnotationDetectorTest extends AbstractCheckTest {
                 ));
     }
 
-    public void testComplexPermission1() throws Exception {
-        assertEquals(""
-                + "src/test/pkg/PermissionTest.java:7: Error: Missing permissions required by LocationManager.myMethod: android.permission.BLUETOOTH xor android.permission.READ_SMS [MissingPermission]\n"
-                + "        LocationManager.Location location = locationManager.myMethod(provider);\n"
-                + "                                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
-                + "1 errors, 0 warnings\n",
-                lintProject(
-                        getManifestWithPermissions(14,
-                                "android.permission.ACCESS_FINE_LOCATION"),
-                        mPermissionTest,
-                        mComplexLocationManagerStub,
-                        mRequirePermissionAnnotation));
-    }
-
-    public void testComplexPermission2() throws Exception {
-        assertEquals("No warnings.",
-                lintProject(
-                        getManifestWithPermissions(14,
-                                "android.permission.ACCESS_FINE_LOCATION",
-                                "android.permission.BLUETOOTH"),
-                        mPermissionTest,
-                        mComplexLocationManagerStub,
-                        mRequirePermissionAnnotation));
-    }
-
-    public void testComplexPermission3() throws Exception {
-        assertEquals(""
-                + "src/test/pkg/PermissionTest.java:7: Error: Missing permissions required by LocationManager.myMethod: android.permission.BLUETOOTH xor android.permission.READ_SMS [MissingPermission]\n"
-                + "        LocationManager.Location location = locationManager.myMethod(provider);\n"
-                + "                                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
-                + "1 errors, 0 warnings\n",
-                lintProject(
-                        getManifestWithPermissions(14,
-                                "android.permission.ACCESS_FINE_LOCATION",
-                                "android.permission.BLUETOOTH",
-                                "android.permission.READ_SMS"),
-                        mPermissionTest,
-                        mComplexLocationManagerStub,
-                        mRequirePermissionAnnotation));
-    }
-
     public void testUsesPermissionSdk23() throws Exception {
         TestFile manifest = getManifestWithPermissions(14,
                 "android.permission.ACCESS_FINE_LOCATION",
@@ -966,7 +1067,7 @@ public class SupportAnnotationDetectorTest extends AbstractCheckTest {
                 lintProject(
                         manifest,
                         mPermissionTest,
-                        mComplexLocationManagerStub,
+                        mLocationManagerStub,
                         mRequirePermissionAnnotation));
     }
 
@@ -982,7 +1083,7 @@ public class SupportAnnotationDetectorTest extends AbstractCheckTest {
                 lintProject(
                         manifest,
                         mPermissionTest,
-                        mComplexLocationManagerStub,
+                        mLocationManagerStub,
                         mRequirePermissionAnnotation));
     }
 
@@ -1102,9 +1203,222 @@ public class SupportAnnotationDetectorTest extends AbstractCheckTest {
                         + "        }\n"
                         + "    }\n"
                         + "}\n"),
-                        mUiThreadPermission,
-                        mMainThreadPermission,
-                        mWorkerThreadPermission));
+                    mUiThread,
+                    mMainThread,
+                    mWorkerThread));
+    }
+
+    @SuppressWarnings("all") // Sample code, warts and all
+    public void testThreadingIssue207313() throws Exception {
+        // Regression test for scenario in
+        //  https://code.google.com/p/android/issues/detail?id=207313
+        assertEquals(""
+                + "src/test/pkg/BigClassClient.java:10: Error: Constructor BigClass must be called from the UI thread, currently inferred thread is worker thread [WrongThread]\n"
+                + "        BigClass o = new BigClass();\n"
+                + "                     ~~~~~~~~~~~~~~\n"
+                + "src/test/pkg/BigClassClient.java:11: Error: Method f1 must be called from the UI thread, currently inferred thread is worker thread [WrongThread]\n"
+                + "        o.f1();   // correct WrongThread: must be called from the UI thread currently inferred thread is worker\n"
+                + "        ~~~~~~\n"
+                + "src/test/pkg/BigClassClient.java:12: Error: Method f2 must be called from the UI thread, currently inferred thread is worker thread [WrongThread]\n"
+                + "        o.f2();   // correct WrongThread: must be called from the UI thread currently inferred thread is worker\n"
+                + "        ~~~~~~\n"
+                + "src/test/pkg/BigClassClient.java:13: Error: Method f100 must be called from the UI thread, currently inferred thread is worker thread [WrongThread]\n"
+                + "        o.f100(); // correct WrongThread: must be called from the UI thread currently inferred thread is worker\n"
+                + "        ~~~~~~~~\n"
+                + "src/test/pkg/BigClassClient.java:22: Error: Method g must be called from the worker thread, currently inferred thread is UI thread [WrongThread]\n"
+                + "        o.g();    // correct WrongThread: must be called from the worker thread currently inferred thread is UI\n"
+                + "        ~~~~~\n"
+                + "5 errors, 0 warnings\n",
+
+                lintProject(
+                        java("src/test/pkg/ThreadTest.java", ""
+                                + "package test.pkg;\n"
+                                + "\n"
+                                + "import android.support.annotation.UiThread;\n"
+                                + "import android.support.annotation.WorkerThread;\n"
+                                + "\n"
+                                + "@UiThread // it's here to prevent putting it on all 100 methods\n"
+                                + "class BigClass {\n"
+                                + "    void f1() { }\n"
+                                + "    void f2() { }\n"
+                                + "    //...\n"
+                                + "    void f100() { }\n"
+                                + "    @WorkerThread // this single method is not UI, it's something else\n"
+                                + "    void g() { }\n"
+                                + "}\n"),
+                        java("src/test/pkg/BigClassClient.java", ""
+                                + "package test.pkg;\n"
+                                + "\n"
+                                + "import android.support.annotation.UiThread;\n"
+                                + "import android.support.annotation.WorkerThread;\n"
+                                + "\n"
+                                + "@SuppressWarnings(\"unused\")\n"
+                                + "public class BigClassClient {\n"
+                                + "    @WorkerThread\n"
+                                + "    void worker() {\n"
+                                + "        BigClass o = new BigClass();\n"
+                                + "        o.f1();   // correct WrongThread: must be called from the UI thread currently inferred thread is worker\n"
+                                + "        o.f2();   // correct WrongThread: must be called from the UI thread currently inferred thread is worker\n"
+                                + "        o.f100(); // correct WrongThread: must be called from the UI thread currently inferred thread is worker\n"
+                                + "        o.g();    // unexpected WrongThread: must be called from the UI thread currently inferred thread is worker\n"
+                                + "    }\n"
+                                + "    @UiThread\n"
+                                + "    void ui() {\n"
+                                + "        BigClass o = new BigClass();\n"
+                                + "        o.f1();   // no problem\n"
+                                + "        o.f2();   // no problem\n"
+                                + "        o.f100(); // no problem\n"
+                                + "        o.g();    // correct WrongThread: must be called from the worker thread currently inferred thread is UI\n"
+                                + "    }\n"
+                                + "}\n"),
+                        mUiThread,
+                        mWorkerThread));
+    }
+
+    @SuppressWarnings("all") // Sample code
+    public void testThreadingIssue207302() throws Exception {
+        // Regression test for
+        //    https://code.google.com/p/android/issues/detail?id=207302
+        assertEquals("No warnings.",
+
+                lintProject(
+                        java("src/test/pkg/TestPostRunnable.java", ""
+                                + "package test.pkg;\n"
+                                + "\n"
+                                + "import android.support.annotation.WorkerThread;\n"
+                                + "import android.view.View;\n"
+                                + "\n"
+                                + "public class TestPostRunnable {\n"
+                                + "    View view;\n"
+                                + "    @WorkerThread\n"
+                                + "    void f() {\n"
+                                + "        view.post(new Runnable() {\n"
+                                + "            @Override public void run() {\n"
+                                + "                // stuff on UI thread\n"
+                                + "            }\n"
+                                + "        });\n"
+                                + "    }\n"
+                                + "}"),
+                        mWorkerThread));
+    }
+
+    @SuppressWarnings("all") // Sample code
+    public void testAnyThread() throws Exception {
+        assertEquals(""
+                + "src/test/pkg/AnyThreadTest.java:11: Error: Method worker must be called from the worker thread, currently inferred thread is any thread [WrongThread]\n"
+                + "        worker(); // ERROR\n"
+                + "        ~~~~~~~~\n"
+                + "1 errors, 0 warnings\n",
+                lintProject(
+                        java("src/test/pkg/AnyThreadTest.java", ""
+                                + "package test.pkg;\n"
+                                + "\n"
+                                + "import android.support.annotation.AnyThread;\n"
+                                + "import android.support.annotation.UiThread;\n"
+                                + "import android.support.annotation.WorkerThread;\n"
+                                + "\n"
+                                + "@UiThread\n"
+                                + "class AnyThreadTest {\n"
+                                + "    @AnyThread\n"
+                                + "    static void threadSafe() {\n"
+                                + "        worker(); // ERROR\n"
+                                + "    }\n"
+                                + "    @WorkerThread\n"
+                                + "    static void worker() {\n"
+                                + "        threadSafe(); // OK\n"
+                                + "    }\n"
+                                + "}\n"),
+                        mAnyThread,
+                        mUiThread,
+                        mWorkerThread));
+    }
+
+    @SuppressWarnings("all") // Sample code
+    public void testMultipleThreads() throws Exception {
+        // Ensure that when multiple threading annotations are specified
+        // on methods, this is handled properly: calls can satisfy any one
+        // threading annotation on the target, but if multiple threads are
+        // found in the context, all of them must be valid for all targets
+        assertEquals(""
+                + "src/test/pkg/MultiThreadTest.java:21: Error: Method calleee must be called from the UI or worker thread, currently inferred thread is binder and worker thread [WrongThread]\n"
+                + "        calleee(); // Not ok: thread could be binder thread, not supported by target\n"
+                + "        ~~~~~~~~~\n"
+                + "src/test/pkg/MultiThreadTest.java:28: Error: Method calleee must be called from the UI or worker thread, currently inferred thread is worker and binder thread [WrongThread]\n"
+                + "        calleee(); // Not ok: thread could be binder thread, not supported by target\n"
+                + "        ~~~~~~~~~\n"
+                + "2 errors, 0 warnings\n",
+
+                lintProject(
+                        java("src/test/pkg/MultiThreadTest.java", ""
+                                + "package test.pkg;\n"
+                                + "\n"
+                                + "import android.support.annotation.BinderThread;\n"
+                                + "import android.support.annotation.UiThread;\n"
+                                + "import android.support.annotation.WorkerThread;\n"
+                                + "\n"
+                                + "class MultiThreadTest {\n"
+                                + "    @UiThread\n"
+                                + "    @WorkerThread\n"
+                                + "    private static void calleee() {\n"
+                                + "    }\n"
+                                + "\n"
+                                + "    @WorkerThread\n"
+                                + "    private static void call1() {\n"
+                                + "        calleee(); // OK - context is included in target\n"
+                                + "    }\n"
+                                + "\n"
+                                + "    @BinderThread\n"
+                                + "    @WorkerThread\n"
+                                + "    private static void call2() {\n"
+                                + "        calleee(); // Not ok: thread could be binder thread, not supported by target\n"
+                                + "    }\n"
+                                + "\n"
+                                + "    // Same case as call2 but different order to make sure we don't just test the first one:\n"
+                                + "    @WorkerThread\n"
+                                + "    @BinderThread\n"
+                                + "    private static void call3() {\n"
+                                + "        calleee(); // Not ok: thread could be binder thread, not supported by target\n"
+                                + "    }\n"
+                                + "}\n"),
+                        mUiThread,
+                        mBinderThread,
+                        mWorkerThread));
+    }
+
+    public void testStaticMethod() throws Exception {
+        // Regression test for
+        //  https://code.google.com/p/android/issues/detail?id=175397
+        assertEquals("No warnings.",
+                lintProject(
+                        java("src/test/pkg/StaticMethods.java", ""
+                                + "package test.pkg;\n"
+                                + "\n"
+                                + "import android.content.Context;\n"
+                                + "import android.os.AsyncTask;\n"
+                                + "import android.support.annotation.WorkerThread;\n"
+                                + "import android.view.View;\n"
+                                + "\n"
+                                + "public class StaticMethods extends View {\n"
+                                + "    public StaticMethods(Context context) {\n"
+                                + "        super(context);\n"
+                                + "    }\n"
+                                + "\n"
+                                + "    class MyAsyncTask extends AsyncTask<Long, Void, Boolean> {\n"
+                                + "        @Override\n"
+                                + "        protected Boolean doInBackground(Long... sizes) {\n"
+                                + "            return workedThreadMethod();\n"
+                                + "        }\n"
+                                + "\n"
+                                + "        @Override\n"
+                                + "        protected void onPostExecute(Boolean isEnoughFree) {\n"
+                                + "        }\n"
+                                + "    }\n"
+                                + "\n"
+                                + "    public static boolean workedThreadMethod() {\n"
+                                + "        return true;\n"
+                                + "    }\n"
+                                + "}"),
+                        mWorkerThread));
     }
 
     public void testIntentPermission() throws Exception {
@@ -1298,16 +1612,13 @@ public class SupportAnnotationDetectorTest extends AbstractCheckTest {
 
     public void testCombinedIntDefAndIntRange() throws Exception {
         assertEquals(""
-                        + "src/test/pkg/X.java:27: Error: Must be one of: X.LENGTH_INDEFINITE, X.LENGTH_SHORT, X.LENGTH_LONG [WrongConstant]\n"
-                        + "        setDuration(UNRELATED); /// ERROR: Not right intdef, even if it's in the right number range\n"
-                        + "                    ~~~~~~~~~\n"
-                        + "src/test/pkg/X.java:28: Error: Must be one of: X.LENGTH_INDEFINITE, X.LENGTH_SHORT, X.LENGTH_LONG or value must be ≥ 10 (was -5) [WrongConstant]\n"
-                        + "        setDuration(-5); // ERROR (not right int def or value\n"
-                        + "                    ~~\n"
-                        + "src/test/pkg/X.java:29: Error: Must be one of: X.LENGTH_INDEFINITE, X.LENGTH_SHORT, X.LENGTH_LONG or value must be ≥ 10 (was 8) [WrongConstant]\n"
-                        + "        setDuration(8); // ERROR (not matching number range)\n"
-                        + "                    ~\n"
-                        + "3 errors, 0 warnings\n",
+                + "src/test/pkg/X.java:28: Error: Must be one of: X.LENGTH_INDEFINITE, X.LENGTH_SHORT, X.LENGTH_LONG or value must be ≥ 10 (was -5) [WrongConstant]\n"
+                + "        setDuration(-5); // ERROR (not right int def or value\n"
+                + "                    ~~\n"
+                + "src/test/pkg/X.java:29: Error: Must be one of: X.LENGTH_INDEFINITE, X.LENGTH_SHORT, X.LENGTH_LONG or value must be ≥ 10 (was 8) [WrongConstant]\n"
+                + "        setDuration(8); // ERROR (not matching number range)\n"
+                + "                    ~\n"
+                + "2 errors, 0 warnings\n",
                 lintProject(
                         getManifestWithPermissions(14, 23),
                         java("src/test/pkg/X.java", ""
@@ -1337,7 +1648,7 @@ public class SupportAnnotationDetectorTest extends AbstractCheckTest {
                                 + "    }\n"
                                 + "\n"
                                 + "    public void test() {\n"
-                                + "        setDuration(UNRELATED); /// ERROR: Not right intdef, even if it's in the right number range\n"
+                                + "        setDuration(UNRELATED); /// OK within range\n"
                                 + "        setDuration(-5); // ERROR (not right int def or value\n"
                                 + "        setDuration(8); // ERROR (not matching number range)\n"
                                 + "        setDuration(8000); // OK (@IntRange applies)\n"
@@ -1455,7 +1766,7 @@ public class SupportAnnotationDetectorTest extends AbstractCheckTest {
                                 + "        }\n"
                                 + "    }"
                                 + "}"),
-                        copy("src/android/support/annotation/DrawableRes.java.txt", "src/android/support/annotation/DrawableRes.java"),
+                        mDrawableResAnnotation,
                         mStringResAnnotation
                 ));
     }
@@ -1500,7 +1811,7 @@ public class SupportAnnotationDetectorTest extends AbstractCheckTest {
                                 + "        }\n"
                                 + "    }"
                                 + "}"),
-                        copy("src/android/support/annotation/AnyRes.java.txt", "src/android/support/annotation/AnyRes.java")
+                        mAnyResAnnotation
                 ));
     }
 
@@ -1674,6 +1985,7 @@ public class SupportAnnotationDetectorTest extends AbstractCheckTest {
                                 + "        @Status\n"
                                 + "        private int mStatus;\n"
                                 + "        private final int mStatus2 = STATUS_AVAILABLE;\n"
+                                + "        @Status static final int DEFAULT_STATUS = Product.STATUS_UNAVAILABLE;\n"
                                 + "        private String mName;\n"
                                 + "\n"
                                 + "        public Builder(String name, @Status int status) {\n"
@@ -1693,9 +2005,153 @@ public class SupportAnnotationDetectorTest extends AbstractCheckTest {
                                 + "        public Product build2() {\n"
                                 + "            return new Product(mName, mStatus2);\n"
                                 + "        }\n"
+                                + "\n"
+                                + "        public static Product build3() {\n"
+                                + "            return new Product(\"\", DEFAULT_STATUS);\n"
+                                + "        }\n"
                                 + "    }\n"
                                 + "}\n"),
                         copy("src/android/support/annotation/IntDef.java.txt", "src/android/support/annotation/IntDef.java"))
         );
+    }
+
+    public void testObtainStyledAttributes() throws Exception {
+        // Regression test for https://code.google.com/p/android/issues/detail?id=201882
+        // obtainStyledAttributes normally expects a styleable but you can also supply a
+        // custom int array
+        assertEquals("No warnings.",
+                lintProject(
+                        java("src/test/pkg/ObtainTest.java", ""
+                                + "package test.pkg;\n"
+                                + "\n"
+                                + "import android.app.Activity;\n"
+                                + "import android.content.Context;\n"
+                                + "import android.content.res.TypedArray;\n"
+                                + "import android.graphics.Color;\n"
+                                + "import android.util.AttributeSet;\n"
+                                + "\n"
+                                + "public class ObtainTest {\n"
+                                + "    public static void test1(Activity activity, float[] foregroundHsv, float[] backgroundHsv) {\n"
+                                + "        TypedArray attributes = activity.obtainStyledAttributes(\n"
+                                + "                new int[] {\n"
+                                + "                        R.attr.setup_wizard_navbar_theme,\n"
+                                + "                        android.R.attr.colorForeground,\n"
+                                + "                        android.R.attr.colorBackground });\n"
+                                + "        Color.colorToHSV(attributes.getColor(1, 0), foregroundHsv);\n"
+                                + "        Color.colorToHSV(attributes.getColor(2, 0), backgroundHsv);\n"
+                                + "        attributes.recycle();\n"
+                                + "    }\n"
+                                + "\n"
+                                + "    public static void test2(Context context, AttributeSet attrs, int defStyle) {\n"
+                                + "        final TypedArray a = context.obtainStyledAttributes(attrs, R.styleable.BezelImageView,\n"
+                                + "                defStyle, 0);\n"
+                                + "        a.getDrawable(R.styleable.BezelImageView_maskDrawable);\n"
+                                + "        a.recycle();\n"
+                                + "    }\n"
+                                + "\n"
+                                + "    public void test(Context context, AttributeSet attrs) {\n"
+                                + "        int[] attrsArray = new int[] {\n"
+                                + "                android.R.attr.entries, // 0\n"
+                                + "                android.R.attr.labelFor\n"
+                                + "        };\n"
+                                + "        TypedArray ta = context.obtainStyledAttributes(attrs, attrsArray);\n"
+                                + "        if(null == ta) {\n"
+                                + "            return;\n"
+                                + "        }\n"
+                                + "        CharSequence[] entries = ta.getTextArray(0);\n"
+                                + "        CharSequence label = ta.getText(1);\n"
+                                + "    }\n"
+                                + "\n"
+                                + "    public static class R {\n"
+                                + "        public static class attr {\n"
+                                + "            public static final int setup_wizard_navbar_theme = 0x7f01003b;\n"
+                                + "        }\n"
+                                + "        public static class styleable {\n"
+                                + "            public static final int[] BezelImageView = {\n"
+                                + "                    0x7f01005d, 0x7f01005e, 0x7f01005f\n"
+                                + "            };\n"
+                                + "            public static final int BezelImageView_maskDrawable = 0;\n"
+                                + "        }\n"
+                                + "    }\n"
+                                + "}\n")));
+    }
+
+    public void testAlias() throws Exception {
+        assertEquals("No warnings.",
+                lintProject(
+                        java("src/test/pkg/FlagAlias.java", ""
+                                + "package test.pkg;\n"
+                                + "\n"
+                                + "import android.graphics.Canvas;\n"
+                                + "import android.graphics.RectF;\n"
+                                + "\n"
+                                + "@SuppressWarnings(\"unused\")\n"
+                                + "public class FlagAlias {\n"
+                                + "    private static final int CANVAS_SAVE_FLAGS =\n"
+                                + "            Canvas.CLIP_SAVE_FLAG |\n"
+                                + "                    Canvas.HAS_ALPHA_LAYER_SAVE_FLAG |\n"
+                                + "                    Canvas.FULL_COLOR_LAYER_SAVE_FLAG;\n"
+                                + "    private RectF mBounds;\n"
+                                + "    private int mAlpha;\n"
+                                + "\n"
+                                + "\n"
+                                + "    public void draw(Canvas canvas) {\n"
+                                + "        canvas.saveLayerAlpha(mBounds, mAlpha, CANVAS_SAVE_FLAGS);\n"
+                                + "    }\n"
+                                + "}\n")
+                ));
+    }
+
+    public void testSnackbarDuration() throws Exception {
+        assertEquals(""
+                + "src/test/pkg/SnackbarTest.java:13: Error: Must be one of: Snackbar.LENGTH_INDEFINITE, Snackbar.LENGTH_SHORT, Snackbar.LENGTH_LONG or value must be ≥ 1 (was -100) [WrongConstant]\n"
+                + "        makeSnackbar(-100); // ERROR\n"
+                + "                     ~~~~\n"
+                + "1 errors, 0 warnings\n",
+                lintProject(
+                        java("src/test/pkg/SnackbarTest.java", ""
+                                + "package test.pkg;\n"
+                                + "\n"
+                                + "import android.support.design.widget.Snackbar;\n"
+                                + "\n"
+                                + "public class SnackbarTest {\n"
+                                + "    public Snackbar makeSnackbar(@Snackbar.Duration int duration) {\n"
+                                + "        return null;\n"
+                                + "    }\n"
+                                + "\n"
+                                + "    public void test() {\n"
+                                + "        makeSnackbar(Snackbar.LENGTH_LONG); // OK\n"
+                                + "        makeSnackbar(100); // OK\n"
+                                + "        makeSnackbar(-100); // ERROR\n"
+                                + "    }\n"
+                                + "}\n"),
+                        java("src/android/support/design/widget/Snackbar.java", ""
+                                + "package android.support.design.widget;\n"
+                                + "\n"
+                                + "import android.support.annotation.IntDef;\n"
+                                + "import android.support.annotation.IntRange;\n"
+                                + "\n"
+                                + "import java.lang.annotation.Retention;\n"
+                                + "import java.lang.annotation.RetentionPolicy;\n"
+                                + "\n"
+                                + "public class Snackbar {\n"
+                                // In the real class definition, this annotation is there,
+                                // but in the compiled design library, since it has source
+                                // retention, the @IntDef is missing and only the @IntRange
+                                // remains. Therefore, it's been extracted into the external
+                                // database. We don't want to count it twice so don't repeat
+                                // it here:
+                                //+ "    @IntDef({LENGTH_INDEFINITE, LENGTH_SHORT, LENGTH_LONG})\n"
+                                + "    @IntRange(from = 1)\n"
+                                + "    @Retention(RetentionPolicy.SOURCE)\n"
+                                + "    public @interface Duration {}\n"
+                                + "\n"
+                                + "    public static final int LENGTH_INDEFINITE = -2;\n"
+                                + "    public static final int LENGTH_SHORT = -1;\n"
+                                + "    public static final int LENGTH_LONG = 0;\n"
+                                + "}\n"),
+                        copy("src/android/support/annotation/IntDef.java.txt", "src/android/support/annotation/IntDef.java"),
+                        copy("src/android/support/annotation/IntRange.java.txt", "src/android/support/annotation/IntRange.java")
+                ));
     }
 }

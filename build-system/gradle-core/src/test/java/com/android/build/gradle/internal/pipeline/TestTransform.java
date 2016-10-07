@@ -113,7 +113,7 @@ public class TestTransform extends Transform {
     }
 
     @Override
-    public void transform(TransformInvocation invocation)
+    public void transform(@NonNull TransformInvocation invocation)
             throws IOException, TransformException, InterruptedException {
         this.invocation = invocation;
     }
@@ -166,7 +166,7 @@ public class TestTransform extends Transform {
     static final class Builder {
 
         private String name;
-        private final Set<ContentType> inputTypes = new HashSet<ContentType>();
+        private final Set<ContentType> inputTypes = new HashSet<>();
         private Set<ContentType> outputTypes;
         private final Set<Scope> scopes = EnumSet.noneOf(Scope.class);
         private final Set<Scope> referencedScopes = EnumSet.noneOf(Scope.class);
@@ -186,7 +186,7 @@ public class TestTransform extends Transform {
 
         Builder setOutputTypes(@NonNull ContentType... types) {
             if (outputTypes == null) {
-                outputTypes = new HashSet<ContentType>();
+                outputTypes = new HashSet<>();
             }
             outputTypes.addAll(Arrays.asList(types));
             return this;

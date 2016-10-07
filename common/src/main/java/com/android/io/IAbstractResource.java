@@ -17,7 +17,8 @@
 package com.android.io;
 
 /**
- * Base representation of a file system resource.<p/>
+ * Base representation of a file system resource.
+ * <p>
  * This somewhat limited interface is designed to let classes use file-system resources, without
  * having the manually handle either the standard Java file or the Eclipse file API..
  */
@@ -29,9 +30,14 @@ public interface IAbstractResource {
     String getName();
 
     /**
-     * Returns the OS path of the folder location.
+     * Returns the OS path of the folder location (may be absolute).
      */
     String getOsLocation();
+
+    /**
+     * Returns the path of the resource.
+     */
+    String getPath();
 
     /**
      * Returns whether the resource actually exists.

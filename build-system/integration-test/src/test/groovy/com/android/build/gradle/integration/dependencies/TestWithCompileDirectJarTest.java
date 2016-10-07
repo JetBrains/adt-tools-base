@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.integration.dependencies;
 
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat;
 import static com.android.build.gradle.integration.common.utils.TestFileUtils.appendToFile;
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk;
 import static com.android.build.gradle.integration.common.utils.ModelHelper.getAndroidArtifact;
@@ -28,13 +29,18 @@ import com.android.build.gradle.integration.common.utils.ModelHelper;
 import com.android.builder.model.AndroidArtifact;
 import com.android.builder.model.AndroidProject;
 import com.android.builder.model.Dependencies;
+import com.android.builder.model.JavaLibrary;
 import com.android.builder.model.Variant;
 import com.android.ide.common.process.ProcessException;
+import com.google.common.base.Charsets;
+import com.google.common.collect.Iterables;
+import com.google.common.io.Files;
 import com.google.common.truth.Truth;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -55,11 +61,13 @@ public class TestWithCompileDirectJarTest {
 
     @BeforeClass
     public static void setUp() throws IOException {
+        Files.write("include 'app', 'jar'", project.getSettingsFile(), Charsets.UTF_8);
+
         appendToFile(project.getSubproject("app").getBuildFile(),
                 "\n" +
-                "dependencies {\n" +
-                "    androidTestCompile project(\":jar\")\n" +
-                "}\n");
+                        "dependencies {\n" +
+                        "    androidTestCompile project(\":jar\")\n" +
+                        "}\n");
         models = project.executeAndReturnMultiModel("clean", ":app:assembleDebugAndroidTest");
     }
 
@@ -71,20 +79,23 @@ public class TestWithCompileDirectJarTest {
 
     @Test
     public void checkCompiledJarIsPackaged() throws IOException, ProcessException {
-        assertThatApk(project.getSubproject("app").getApk("debug", "androidTest", "unaligned"))
+        assertThatApk(project.getSubproject("app").getTestApk("debug"))
                 .containsClass("Lcom/example/android/multiproject/person/People;");
     }
 
     @Test
+    @Ignore
     public void checkCompiledJarIsInTheTestArtifactModel() {
         Variant variant = ModelHelper.getVariant(models.get(":app").getVariants(), "debug");
-        Truth.assertThat(variant).isNotNull();
 
         Collection<AndroidArtifact> androidArtifacts = variant.getExtraAndroidArtifacts();
         AndroidArtifact testArtifact = getAndroidArtifact(androidArtifacts, ARTIFACT_ANDROID_TEST);
         assertNotNull(testArtifact);
 
-        Dependencies deps = testArtifact.getDependencies();
-        TruthHelper.assertThat(deps.getProjects()).hasSize(1);
+        Dependencies deps = testArtifact.getCompileDependencies();
+        assertThat(deps.getJavaLibraries()).hasSize(1);
+
+        JavaLibrary javaLibrary = Iterables.getOnlyElement(deps.getJavaLibraries());
+        assertThat(javaLibrary.getProject()).isEqualTo(":jar");
     }
 }

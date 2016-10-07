@@ -27,7 +27,6 @@ import com.android.build.gradle.model.internal.AndroidBinaryInternal;
 import com.android.build.gradle.ndk.internal.NdkNamingScheme;
 import com.android.utils.StringHelper;
 
-import org.gradle.api.Action;
 import org.gradle.api.Named;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
@@ -67,7 +66,7 @@ public class StandaloneNdkComponentModelPlugin implements Plugin<Project> {
         @Mutate
         public static void copyOutputs(
                 final ModelMap<Task> tasks,
-                ModelMap<AndroidBinaryInternal> androidSpecs,
+                @Path("binaries") ModelMap<AndroidBinaryInternal> androidSpecs,
                 @Path("buildDir") final File buildDir) {
             for (AndroidBinaryInternal androidBinary : androidSpecs.values()) {
                 for (final NativeBinarySpec nativeBinary : androidBinary.getNativeBinaries()) {
@@ -75,16 +74,13 @@ public class StandaloneNdkComponentModelPlugin implements Plugin<Project> {
                     tasks.create(
                             copyTaskName,
                             Copy.class,
-                            new Action<Copy>() {
-                                @Override
-                                public void execute(Copy copy) {
-                                    copy.from(new File(buildDir,
-                                            NdkNamingScheme.getOutputDirectoryName(nativeBinary)));
-                                    copy.into(new File(buildDir,
-                                            NdkNamingScheme
-                                                    .getStandaloneOutputDirectoryName(nativeBinary)));
-                                    copy.dependsOn(NdkNamingScheme.getNdkBuildTaskName(nativeBinary));
-                                }
+                            copy -> {
+                                copy.from(new File(buildDir,
+                                        NdkNamingScheme.getOutputDirectoryName(nativeBinary)));
+                                copy.into(new File(buildDir,
+                                        NdkNamingScheme
+                                                .getStandaloneOutputDirectoryName(nativeBinary)));
+                                copy.dependsOn(NdkNamingScheme.getNdkBuildTaskName(nativeBinary));
                             });
                     dependsOn(tasks, getAssembleTaskName(androidBinary), copyTaskName);
                 }
@@ -124,7 +120,7 @@ public class StandaloneNdkComponentModelPlugin implements Plugin<Project> {
         @Mutate
         public static void createAssembleTasksForBinaries(
                 ModelMap<Task> tasks,
-                ModelMap<AndroidBinary> binaries) {
+                @Path("binaries") ModelMap<AndroidBinary> binaries) {
             for(final AndroidBinary binary : binaries.values()) {
                 String binaryAssembleTaskName = getAssembleTaskName(binary);
                 if (!binary.getProductFlavors().isEmpty()) {
@@ -141,11 +137,8 @@ public class StandaloneNdkComponentModelPlugin implements Plugin<Project> {
                     }
                 }
 
-                tasks.named(binaryAssembleTaskName, new Action<Task>() {
-                    @Override
-                    public void execute(Task task) {
-                        task.dependsOn(binary);
-                    }
+                tasks.named(binaryAssembleTaskName, task -> {
+                    task.dependsOn(binary);
                 });
             }
         }
@@ -154,11 +147,8 @@ public class StandaloneNdkComponentModelPlugin implements Plugin<Project> {
                 @NonNull final ModelMap<Task> tasks,
                 @NonNull final String dependee,
                 @NonNull final String dependent) {
-            tasks.named(dependee, new Action<Task>() {
-                @Override
-                public void execute(Task task) {
-                    task.dependsOn(dependent);
-                }
+            tasks.named(dependee, task -> {
+                task.dependsOn(dependent);
             });
         }
 
@@ -180,13 +170,10 @@ public class StandaloneNdkComponentModelPlugin implements Plugin<Project> {
             String taskName = getAssembleTaskName(dimensions);
             tasks.create(
                     taskName,
-                    new Action<Task>() {
-                        @Override
-                        public void execute(Task task) {
-                            task.setDescription(
-                                    "Assembles all builds for flavor combination: " + flavorCombo);
-                            task.setGroup(BasePlugin.BUILD_GROUP);
-                        }
+                    task -> {
+                        task.setDescription(
+                                "Assembles all builds for flavor combination: " + flavorCombo);
+                        task.setGroup(BasePlugin.BUILD_GROUP);
                     });
         }
 
@@ -196,13 +183,10 @@ public class StandaloneNdkComponentModelPlugin implements Plugin<Project> {
             String taskName = getAssembleTaskName(dimension);
             tasks.create(
                     taskName,
-                    new Action<Task>() {
-                        @Override
-                        public void execute(Task task) {
-                            task.setDescription(
-                                    "Assembles all " + dimension.getName() + " builds.");
-                            task.setGroup(BasePlugin.BUILD_GROUP);
-                        }
+                    task -> {
+                        task.setDescription(
+                                "Assembles all " + dimension.getName() + " builds.");
+                        task.setGroup(BasePlugin.BUILD_GROUP);
                     });
         }
     }

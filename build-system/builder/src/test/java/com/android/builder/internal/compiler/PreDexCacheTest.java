@@ -17,21 +17,23 @@
 package com.android.builder.internal.compiler;
 
 import static com.android.SdkConstants.FN_AAPT;
+import static com.android.SdkConstants.FN_AAPT2;
 import static com.android.SdkConstants.FN_AIDL;
 import static com.android.SdkConstants.FN_BCC_COMPAT;
 import static com.android.SdkConstants.FN_DX;
 import static com.android.SdkConstants.FN_DX_JAR;
 import static com.android.SdkConstants.FN_RENDERSCRIPT;
 import static com.android.SdkConstants.FN_ZIPALIGN;
+import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.builder.core.AndroidBuilder;
+import com.android.builder.core.DefaultDexOptions;
 import com.android.builder.core.DexOptions;
 import com.android.builder.core.ErrorReporter;
-import com.android.builder.core.LibraryRequest;
 import com.android.builder.model.SyncIssue;
 import com.android.builder.sdk.SdkInfo;
 import com.android.builder.sdk.TargetInfo;
@@ -46,14 +48,19 @@ import com.android.ide.common.process.ProcessOutputHandler;
 import com.android.ide.common.process.ProcessResult;
 import com.android.repository.Revision;
 import com.android.sdklib.BuildToolInfo;
-import com.android.utils.FileUtils;
 import com.android.utils.NullLogger;
 import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableList;
 import com.google.common.io.Files;
+import com.google.common.util.concurrent.ListenableFuture;
 
-import junit.framework.TestCase;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 
+import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -66,11 +73,15 @@ import java.util.jar.JarFile;
 import java.util.jar.JarOutputStream;
 import java.util.zip.ZipEntry;
 
-public class PreDexCacheTest extends TestCase {
+public class PreDexCacheTest {
+
+    @Rule
+    public TemporaryFolder mTemporaryFolder = new TemporaryFolder();
 
     private static final String DEX_DATA = "**";
 
     private AndroidBuilder mAndroidBuilder;
+    private File mCacheFile;
 
     /**
      * implement a fake java process executor to intercept the call to dex and replace it
@@ -112,19 +123,18 @@ public class PreDexCacheTest extends TestCase {
                 }
 
                 // read the source content
-                JarFile jarFile = new JarFile(input);
-                JarEntry jarEntry = jarFile.getJarEntry("content.class");
-                assert jarEntry != null;
-                InputStream contentStream = jarFile.getInputStream(jarEntry);
-                byte[] content  = new byte[256];
-                int read = contentStream.read(content);
-                contentStream.close();
-                jarFile.close();
+                try (JarFile jarFile = new JarFile(input)) {
+                    JarEntry jarEntry = jarFile.getJarEntry("content.class");
+                    assert jarEntry != null;
+                    InputStream contentStream = jarFile.getInputStream(jarEntry);
+                    byte[] content = new byte[256];
+                    int read = contentStream.read(content);
+                    contentStream.close();
+                    String line = new String(content, 0, read, Charsets.UTF_8);
+                    // write it
+                    Files.write(DEX_DATA + line + DEX_DATA, new File(output), Charsets.UTF_8);
+                }
 
-                String line = new String(content, 0, read, Charsets.UTF_8);
-
-                // write it
-                Files.write(DEX_DATA + line + DEX_DATA, new File(output), Charsets.UTF_8);
             } catch (Exception e) {
                 //noinspection ThrowableInstanceNeverThrown
                 processException = new ProcessException(null, e);
@@ -195,48 +205,13 @@ public class PreDexCacheTest extends TestCase {
         @NonNull
         @Override
         public ProcessOutput createOutput() {
+            //noinspection ConstantConditions Should only be used with fake executors.
             return null;
         }
 
         @Override
         public void handleOutput(@NonNull ProcessOutput processOutput) throws ProcessException {
 
-        }
-    }
-
-    private static class FakeDexOptions implements DexOptions {
-
-        @Override
-        public boolean getIncremental() {
-            return false;
-        }
-
-        @Override
-        public boolean getPreDexLibraries() {
-            return false;
-        }
-
-        @Override
-        public boolean getJumboMode() {
-            return false;
-        }
-
-        @Override
-        @Nullable
-        public String getJavaMaxHeapSize() {
-            return null;
-        }
-
-        @Override
-        @Nullable
-        public Integer getThreadCount() {
-            return null;
-        }
-
-        @Nullable
-        @Override
-        public Integer getMaxProcessCount() {
-            return null;
         }
     }
 
@@ -247,16 +222,23 @@ public class PreDexCacheTest extends TestCase {
                 @NonNull ProcessOutputHandler processOutputHandler) {
             throw new RuntimeException("fake");
         }
+
+        @NonNull
+        @Override
+        public ListenableFuture<ProcessResult> submit(@NonNull ProcessInfo processInfo,
+                @NonNull ProcessOutputHandler processOutputHandler) {
+            throw new RuntimeException("fake");
+        }
     }
 
     private static class FakeErrorReporter extends ErrorReporter {
-        protected FakeErrorReporter(@NonNull EvaluationMode mode) {
+        FakeErrorReporter(@NonNull EvaluationMode mode) {
             super(mode);
         }
 
         @NonNull
         @Override
-        public SyncIssue handleSyncIssue(
+        public SyncIssue handleIssue(
                 @Nullable String data, int type, int severity, @NonNull String msg) {
             throw new RuntimeException("fake");
         }
@@ -267,9 +249,8 @@ public class PreDexCacheTest extends TestCase {
         }
     }
 
-    @Override
-    protected void setUp() throws Exception {
-        super.setUp();
+    @Before
+    public void setUp() throws Exception {
 
         mAndroidBuilder = new AndroidBuilder(
                 "testProject",
@@ -283,50 +264,46 @@ public class PreDexCacheTest extends TestCase {
         TargetInfo targetInfo = mock(TargetInfo.class);
         when(targetInfo.getBuildTools()).thenReturn(getBuildToolInfo());
 
-        mAndroidBuilder.setTargetInfo(
-                mock(SdkInfo.class),
-                targetInfo,
-                ImmutableList.<LibraryRequest>of());
+        mAndroidBuilder.setSdkInfo(mock(SdkInfo.class));
+        mAndroidBuilder.setTargetInfo(targetInfo);
+        mAndroidBuilder.setLibraryRequests(ImmutableList.of());
+
+        mCacheFile = mTemporaryFolder.newFile("cache.xml");
     }
 
-    @Override
-    protected void tearDown() throws Exception {
-        File toolFolder = mAndroidBuilder.getTargetInfo().getBuildTools().getLocation();
-        FileUtils.deleteFolder(toolFolder);
-
+    @After
+    public void tearDown() throws Exception {
         PreDexCache.getCache().clear(null, null);
-
-        super.tearDown();
     }
 
+    @Test
     public void testSinglePreDexLibrary() throws IOException, ProcessException, InterruptedException {
         String content = "Some Content";
         File input = createInputFile(content);
 
-        File output = File.createTempFile("predex", ".jar");
-        output.deleteOnExit();
+        File output = mTemporaryFolder.newFile();
 
         PreDexCache.getCache().preDexLibrary(
                 mAndroidBuilder,
                 input,
                 output,
                 false /*multidex*/,
-                new FakeDexOptions(),
+                new DefaultDexOptions(),
+                false,
                 new FakeProcessOutputHandler());
 
         checkOutputFile(content, output);
     }
 
+    @Test
     public void testThreadedPreDexLibrary() throws IOException, InterruptedException {
         String content = "Some Content";
         final File input = createInputFile(content);
-        input.deleteOnExit();
 
         Thread[] threads = new Thread[3];
         final File[] outputFiles = new File[threads.length];
 
-        final JavaProcessExecutor javaProcessExecutor = new FakeJavaProcessExecutor();
-        final DexOptions dexOptions = new FakeDexOptions();
+        final DexOptions dexOptions = new DefaultDexOptions();
 
         for (int i = 0 ; i < threads.length ; i++) {
             final int ii = i;
@@ -334,8 +311,7 @@ public class PreDexCacheTest extends TestCase {
                 @Override
                 public void run() {
                     try {
-                        File output = File.createTempFile("predex", ".jar");
-                        output.deleteOnExit();
+                        File output = mTemporaryFolder.newFile();
                         outputFiles[ii] = output;
 
                         PreDexCache.getCache().preDexLibrary(
@@ -344,6 +320,7 @@ public class PreDexCacheTest extends TestCase {
                                 output,
                                 false /*multidex*/,
                                 dexOptions,
+                                false,
                                 new FakeProcessOutputHandler());
                     } catch (Exception ignored) {
 
@@ -370,17 +347,16 @@ public class PreDexCacheTest extends TestCase {
         assertEquals(threads.length - 1, cache.getHits());
     }
 
+    @Test
     public void testThreadedPreDexLibraryWithError() throws IOException, InterruptedException {
         String content = "Some Content";
         final File input = createInputFile(content);
-        input.deleteOnExit();
 
         Thread[] threads = new Thread[3];
-        final File[] outputFiles = new File[threads.length];
 
         final JavaProcessExecutor javaProcessExecutor = new FakeJavaProcessExecutor();
         final JavaProcessExecutor javaProcessExecutorWithError = new FailingExecutor();
-        final DexOptions dexOptions = new FakeDexOptions();
+        final DexOptions dexOptions = new DefaultDexOptions();
 
         final AtomicInteger threadDoneCount = new AtomicInteger();
 
@@ -390,9 +366,7 @@ public class PreDexCacheTest extends TestCase {
                 @Override
                 public void run() {
                     try {
-                        File output = File.createTempFile("predex", ".jar");
-                        output.deleteOnExit();
-                        outputFiles[ii] = output;
+                        File output = mTemporaryFolder.newFile();
 
                         AndroidBuilder builder = new AndroidBuilder(
                                 "testProject",
@@ -409,6 +383,7 @@ public class PreDexCacheTest extends TestCase {
                                 output,
                                 false /*multidex*/,
                                 dexOptions,
+                                false,
                                 new FakeProcessOutputHandler());
                     } catch (Exception ignored) {
 
@@ -425,72 +400,144 @@ public class PreDexCacheTest extends TestCase {
             thread.join(5000);
         }
 
-        // if the test fail, we'll have two threads still blocked on the countdownlatch.
+        // if the test fail, we'll have two threads still blocked on the countdown latch.
         assertEquals(3, threadDoneCount.get());
     }
 
+    @Test
+    public void testReload_defaultDexOptions() throws IOException, ProcessException, InterruptedException {
+        doTestReload(new DefaultDexOptions());
+    }
 
-    public void testReload() throws IOException, ProcessException, InterruptedException {
-        final JavaProcessExecutor javaProcessExecutor = new FakeJavaProcessExecutor();
-        final DexOptions dexOptions = new FakeDexOptions();
+    @Test
+    public void testReload_customDexOptions() throws IOException, ProcessException, InterruptedException {
+        System.err.println("TEST START");
+        DefaultDexOptions dexOptions = new DefaultDexOptions();
+        dexOptions.setJumboMode(true);
+        dexOptions.setAdditionalParameters(ImmutableList.of("--minimal-main-dex"));
 
+        doTestReload(dexOptions);
+    }
+
+    private void doTestReload(DexOptions dexOptions)
+            throws IOException, ProcessException, InterruptedException {
+        runTwoBuilds(dexOptions, dexOptions, false, false);
+
+        // check the hit/miss
+        assertEquals(0, PreDexCache.getCache().getMisses());
+        assertEquals(1, PreDexCache.getCache().getHits());
+
+        File anotherInput = createInputFile("different content");
+        File anotherOutput1 = mTemporaryFolder.newFile();
+
+        PreDexCache.getCache().preDexLibrary(
+                mAndroidBuilder,
+                anotherInput,
+                anotherOutput1,
+                false /*multidex*/,
+                dexOptions,
+                false,
+                new FakeProcessOutputHandler());
+
+        reloadCache();
+
+        File anotherOutput2 = mTemporaryFolder.newFile();
+
+        PreDexCache.getCache().preDexLibrary(
+                mAndroidBuilder,
+                anotherInput,
+                anotherOutput2,
+                false /*multidex*/,
+                dexOptions,
+                false,
+                new FakeProcessOutputHandler());
+
+        assertEquals(0, PreDexCache.getCache().getMisses());
+        assertEquals(1, PreDexCache.getCache().getHits());
+    }
+
+    @Test
+    public void testReload_differentOptimize() throws IOException, ProcessException, InterruptedException {
+        DexOptions dexOptions = new DefaultDexOptions();
+        runTwoBuilds(dexOptions, dexOptions, false, true);
+
+        // check the hit/miss
+        PreDexCache cache = PreDexCache.getCache();
+        // We expect a cache hit because optimize do not have any effect due to b.android.com/82031.
+        assertEquals(0, cache.getMisses());
+        assertEquals(1, cache.getHits());
+    }
+
+    @Test
+    public void testReload_differentDexOptions() throws IOException, ProcessException, InterruptedException {
+        DexOptions dexOptions = new DefaultDexOptions();
+        DefaultDexOptions differentDexOptions = new DefaultDexOptions();
+        differentDexOptions.setAdditionalParameters(ImmutableList.of("--minimal-main-dex"));
+
+        runTwoBuilds(dexOptions, differentDexOptions, false, false);
+
+        // check the hit/miss
+        PreDexCache cache = PreDexCache.getCache();
+        assertEquals(1, cache.getMisses());
+        assertEquals(0, cache.getHits());
+    }
+
+    private void runTwoBuilds(
+            DexOptions firstRunOptions,
+            DexOptions secondRunOptions,
+            boolean firstOptimize,
+            boolean secondOptimize) throws IOException, ProcessException, InterruptedException {
         // convert one file.
         String content = "Some Content";
         File input = createInputFile(content);
 
-        File output = File.createTempFile("predex", ".jar");
-        output.deleteOnExit();
+        File output = mTemporaryFolder.newFile();
 
         PreDexCache.getCache().preDexLibrary(
                 mAndroidBuilder,
                 input,
                 output,
                 false /*multidex*/,
-                dexOptions,
+                firstRunOptions,
+                firstOptimize,
                 new FakeProcessOutputHandler());
 
         checkOutputFile(content, output);
 
-        // store the cache
-        File cacheXml = File.createTempFile("predex", ".xml");
-        cacheXml.deleteOnExit();
-        PreDexCache.getCache().clear(cacheXml, null);
+        assertEquals(1, PreDexCache.getCache().getMisses());
+        assertEquals(0, PreDexCache.getCache().getHits());
 
-        // reload.
-        PreDexCache.getCache().load(cacheXml);
+        reloadCache();
 
         // re-pre-dex into another file.
-        File output2 = File.createTempFile("predex", ".jar");
-        output2.deleteOnExit();
+        File output2 = mTemporaryFolder.newFile();
 
         PreDexCache.getCache().preDexLibrary(
                 mAndroidBuilder,
                 input,
                 output2,
                 false /*multidex*/,
-                dexOptions,
+                secondRunOptions,
+                secondOptimize,
                 new FakeProcessOutputHandler());
 
         // check the output
         checkOutputFile(content, output2);
-
-        // check the hit/miss
-        PreDexCache cache = PreDexCache.getCache();
-        assertEquals(0, cache.getMisses());
-        assertEquals(1, cache.getHits());
     }
 
-    private static File createInputFile(String content) throws IOException {
-        File input = File.createTempFile("predex", ".jar");
-        input.deleteOnExit();
+    private void reloadCache() throws IOException {
+        PreDexCache.getCache().clear(mCacheFile, null);
+        PreDexCache.getCache().load(mCacheFile);
+    }
 
-        JarOutputStream jarOutputStream = new JarOutputStream(new FileOutputStream(input));
-        try {
+    private File createInputFile(String content) throws IOException {
+        File input = mTemporaryFolder.newFile();
+
+        try (JarOutputStream jarOutputStream = new JarOutputStream(
+                new BufferedOutputStream(new FileOutputStream(input)))) {
             jarOutputStream.putNextEntry(new ZipEntry("content.class"));
             jarOutputStream.write(content.getBytes(Charsets.UTF_8));
             jarOutputStream.closeEntry();
-        } finally {
-            jarOutputStream.close();
         }
 
         return input;
@@ -506,14 +553,14 @@ public class PreDexCacheTest extends TestCase {
     /**
      * Create a fake build tool info where the dx tool actually exists (even if it's not used).
      */
-    private static BuildToolInfo getBuildToolInfo() throws IOException {
-        File toolDir = Files.createTempDir();
+    private BuildToolInfo getBuildToolInfo() throws IOException {
+        File toolDir = mTemporaryFolder.newFolder();
 
         // create a dx.jar file.
         File dx = new File(toolDir, FN_DX_JAR);
         Files.write("dx!", dx, Charsets.UTF_8);
 
-        return new BuildToolInfo(
+        return BuildToolInfo.modifiedLayout(
                 new Revision(21, 0, 1),
                 toolDir,
                 new File(toolDir, FN_AAPT),
@@ -525,8 +572,11 @@ public class PreDexCacheTest extends TestCase {
                 new File(toolDir, "clang-include"),
                 new File(toolDir, FN_BCC_COMPAT),
                 new File(toolDir, "arm-linux-androideabi-ld"),
+                new File(toolDir, "aarch64-linux-android-ld"),
                 new File(toolDir, "i686-linux-android-ld"),
+                new File(toolDir, "x86_64-linux-android-ld"),
                 new File(toolDir, "mipsel-linux-android-ld"),
-                new File(toolDir, FN_ZIPALIGN));
+                new File(toolDir, FN_ZIPALIGN),
+                new File(toolDir, FN_AAPT2));
     }
 }

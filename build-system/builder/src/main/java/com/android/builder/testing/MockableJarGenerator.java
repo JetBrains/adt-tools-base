@@ -35,6 +35,7 @@ import org.objectweb.asm.tree.MethodInsnNode;
 import org.objectweb.asm.tree.MethodNode;
 import org.objectweb.asm.tree.TypeInsnNode;
 
+import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -85,7 +86,7 @@ public class MockableJarGenerator {
         JarOutputStream outputStream = null;
         try {
             androidJar = new JarFile(input);
-            outputStream = new JarOutputStream(new FileOutputStream(output));
+            outputStream = new JarOutputStream(new BufferedOutputStream(new FileOutputStream(output)));
 
             for (JarEntry entry : Collections.list(androidJar.entries())) {
                 InputStream inputStream = androidJar.getInputStream(entry);

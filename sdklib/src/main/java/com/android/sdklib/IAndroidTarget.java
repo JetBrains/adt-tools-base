@@ -16,7 +16,7 @@
 
 package com.android.sdklib;
 
-import static com.android.sdklib.repositoryv2.meta.DetailsTypes.AddonDetailsType;
+import static com.android.sdklib.repository.meta.DetailsTypes.AddonDetailsType;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
@@ -43,7 +43,7 @@ public interface IAndroidTarget extends Comparable<IAndroidTarget> {
     int SKINS               = 5;
     /** OS Path to the "templates" folder which contains the templates for new projects. */
     int TEMPLATES           = 6;
-    /** OS Path to the "data" folder which contains data & libraries for the SDK tools. */
+    /** OS Path to the "data" folder which contains data and libraries for the SDK tools. */
     int DATA                = 7;
     /** OS Path to the "attrs.xml" file. */
     int ATTRIBUTES          = 8;
@@ -171,7 +171,7 @@ public interface IAndroidTarget extends Comparable<IAndroidTarget> {
 
     /**
      * Returns the path of a platform component.
-     * <p/>
+     * <p>
      * This is like the legacy {@link #getPath(int)} method except it returns a {@link File}.
      *
      * @param pathId the id representing the path to return.
@@ -200,8 +200,10 @@ public interface IAndroidTarget extends Comparable<IAndroidTarget> {
     /**
      * Returns a list of optional libraries for this target.
      *
-     * These libraries are not automatically added to the classpath.
-     * Using them requires adding a <code>uses-library</code> entry in the manifest.
+     * <p>These libraries are not automatically added to the classpath. Using them requires adding a
+     * <code>uses-library</code> entry in the manifest and calling {@code useLibrary} in the Gradle
+     * build script. Example of such library is {@code org.apache.http.legacy} which is not on the
+     * classpath by default since 6.0.
      *
      * @return a list of libraries.
      *
@@ -213,8 +215,9 @@ public interface IAndroidTarget extends Comparable<IAndroidTarget> {
     /**
      * Returns the additional libraries for this target.
      *
-     * These libraries are automatically added to the classpath, but using them requires
-     * adding a <code>uses-library</code> entry in the manifest.
+     * <p>These libraries are automatically added to the classpath, but using them requires
+     * adding a <code>uses-library</code> entry in the manifest. Example of such library is
+     * {@code com.google.android.maps}, which is part of the Google APIs add-on.
      *
      * @return a list of libraries.
      *
@@ -230,8 +233,8 @@ public interface IAndroidTarget extends Comparable<IAndroidTarget> {
 
     /**
      * Returns the available skin folders for this target.
-     * <p/>
-     * To get the skin names, use {@link File#getName()}. <br/>
+     * <p>
+     * To get the skin names, use {@link File#getName()}. <br>
      * Skins come either from:
      * <ul>
      * <li>a platform ({@code sdk/platforms/N/skins/name})</li>
@@ -245,7 +248,7 @@ public interface IAndroidTarget extends Comparable<IAndroidTarget> {
 
     /**
      * Returns the default skin folder for this target.
-     * <p/>
+     * <p>
      * To get the skin name, use {@link File#getName()}.
      */
     @Nullable
@@ -272,9 +275,9 @@ public interface IAndroidTarget extends Comparable<IAndroidTarget> {
 
     /**
      * Returns whether the given target is compatible with the receiver.
-     * <p/>
+     * <p>
      * This means that a project using the receiver's target can run on the given target.
-     * <br/>
+     * <br>
      * Example:
      * <pre>
      * CupcakeTarget.canRunOn(DonutTarget) == true
@@ -288,7 +291,7 @@ public interface IAndroidTarget extends Comparable<IAndroidTarget> {
      * Returns a string able to uniquely identify a target.
      * Typically the target will encode information such as api level, whether it's a platform
      * or add-on, and if it's an add-on vendor and add-on name.
-     * <p/>
+     * <p>
      * See {@link AndroidTargetHash} for helper methods to manipulate hash strings.
      */
     String hashString();

@@ -86,7 +86,7 @@ public class MockFileOpTest extends TestCase {
         assertTrue(m.isDirectory(createFile("/dir1", "dir2", "dir6")));
 
         assertEquals(
-                "[/dir1, /dir1/dir2, /dir1/dir2/dir3, /dir1/dir2/dir3/dir4, /dir1/dir2/dir6]",
+                "[/, /dir1, /dir1/dir2, /dir1/dir2/dir3, /dir1/dir2/dir3/dir4, /dir1/dir2/dir6]",
                 Arrays.toString(m.getExistingFolders()));
     }
 
@@ -134,7 +134,7 @@ public class MockFileOpTest extends TestCase {
     }
 
     public void testMkDirs() {
-        assertEquals("[]", Arrays.toString(m.getExistingFolders()));
+        assertEquals("[/]", Arrays.toString(m.getExistingFolders()));
 
         assertTrue(m.mkdirs(createFile("/dir1")));
         assertEquals("[/, /dir1]", Arrays.toString(m.getExistingFolders()));
@@ -153,12 +153,12 @@ public class MockFileOpTest extends TestCase {
         m.recordExistingFolder("/dir1/dir2/dir3/dir4");
 
         assertEquals("[/dir1/dir2/dir6/file7]", Arrays.toString(m.getExistingFiles()));
-        assertEquals("[/dir1, /dir1/dir2, /dir1/dir2/dir3, /dir1/dir2/dir3/dir4, /dir1/dir2/dir6]",
+        assertEquals("[/, /dir1, /dir1/dir2, /dir1/dir2/dir3, /dir1/dir2/dir3/dir4, /dir1/dir2/dir6]",
                 Arrays.toString(m.getExistingFolders()));
 
         assertTrue(m.renameTo(createFile("/dir1", "dir2"), createFile("/dir1", "newDir2")));
         assertEquals("[/dir1/newDir2/dir6/file7]", Arrays.toString(m.getExistingFiles()));
-        assertEquals("[/dir1, /dir1/newDir2, /dir1/newDir2/dir3, /dir1/newDir2/dir3/dir4, /dir1/newDir2/dir6]",
+        assertEquals("[/, /dir1, /dir1/newDir2, /dir1/newDir2/dir3, /dir1/newDir2/dir3/dir4, /dir1/newDir2/dir6]",
                 Arrays.toString(m.getExistingFolders()));
 
         assertTrue(m.renameTo(
@@ -168,39 +168,16 @@ public class MockFileOpTest extends TestCase {
                 createFile("/dir1", "newDir2", "dir3", "dir4"),
                 createFile("/dir1", "newDir2", "dir3", "newDir4")));
         assertEquals("[/dir1/newDir2/dir6/newFile7]", Arrays.toString(m.getExistingFiles()));
-        assertEquals("[/dir1, /dir1/newDir2, /dir1/newDir2/dir3, /dir1/newDir2/dir3/newDir4, /dir1/newDir2/dir6]", Arrays.toString(m.getExistingFolders()));
-    }
-
-    public void testNewFileOutputStream() throws Exception {
-        assertEquals("[]", Arrays.toString(m.getOutputStreams()));
-
-        File f = createFile("/dir1", "dir2", "simple ascii");
-        OutputStream os = m.newFileOutputStream(f);
-        assertNotNull(os);
-        os.write("regular ascii".getBytes("UTF-8"));
-        os.close();
-
-        f = createFile("/dir1", "dir2", "utf-8 test");
-        os = m.newFileOutputStream(f);
-        assertNotNull(os);
-        os.write("nihongo in UTF-8: 日本語".getBytes("UTF-8"));
-        os.close();
-
-        f = createFile("/dir1", "dir2", "forgot to close");
-        os = m.newFileOutputStream(f);
-        assertNotNull(os);
-        os.write("wrote stuff but not closing the stream".getBytes("UTF-8"));
-
-        assertEquals(
-                "[</dir1/dir2/simple ascii: 'regular ascii'>, " +
-                 "</dir1/dir2/utf-8 test: 'nihongo in UTF-8: 日本語'>, " +
-                 "</dir1/dir2/forgot to close: (stream not closed properly)>]",
-                Arrays.toString(m.getOutputStreams()));
+        assertEquals("[/, /dir1, /dir1/newDir2, /dir1/newDir2/dir3, /dir1/newDir2/dir3/newDir4, /dir1/newDir2/dir6]",
+                Arrays.toString(m.getExistingFolders()));
     }
 
     public void testReadOnlyFile() throws Exception {
         File f1 = createFile("/root", "writable.txt");
         File f2 = createFile("/root", "readonly.txt");
+        m.mkdirs(f1.getParentFile());
+        m.createNewFile(f1);
+        m.createNewFile(f2);
         m.setReadOnly(f2);
 
         assertTrue(m.canWrite(f1));

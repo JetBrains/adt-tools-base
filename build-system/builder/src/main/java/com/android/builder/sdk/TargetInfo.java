@@ -30,10 +30,9 @@ public class TargetInfo {
     @NonNull
     private final BuildToolInfo mBuildToolInfo;
 
-    TargetInfo(
+    public TargetInfo(
             @NonNull IAndroidTarget target,
             @NonNull BuildToolInfo buildToolInfo) {
-
         mTarget = target;
         mBuildToolInfo = buildToolInfo;
     }

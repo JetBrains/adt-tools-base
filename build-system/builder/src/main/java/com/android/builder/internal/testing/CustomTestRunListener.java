@@ -75,6 +75,7 @@ public class CustomTestRunListener extends XmlTestRunListener {
         return testEntry.getKey().getClassName();
     }
 
+    @NonNull
     @Override
     protected Map<String, String> getPropertiesAttributes() {
         Map<String, String> propertiesAttributes = Maps.newLinkedHashMap(super.getPropertiesAttributes());

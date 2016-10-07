@@ -24,7 +24,7 @@ import org.gradle.api.Task;
 import org.gradle.model.ModelMap;
 
 /**
- * Adaptor to transform ModelMap<Task> into TaskFactory.
+ * Adaptor to transform {@code ModelMap<Task>} into TaskFactory.
  */
 public class TaskModelMapAdaptor implements TaskFactory {
 

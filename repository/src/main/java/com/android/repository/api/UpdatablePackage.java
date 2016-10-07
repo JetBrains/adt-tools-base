@@ -96,9 +96,19 @@ public class UpdatablePackage implements Comparable<UpdatablePackage> {
         return getRemote();
     }
 
+    /**
+     * @return {@code true} if this package is installed and a newer version is available.
+     */
     public boolean isUpdate() {
         RemotePackage remote = getRemote();
         return mLocalPackage != null && remote != null
                 && mLocalPackage.getVersion().compareTo(remote.getVersion()) < 0;
+    }
+
+    /**
+     * @return The {@link RepoPackage#getPath() path} of the local and/or remote package.
+     */
+    public String getPath() {
+        return getRepresentative().getPath();
     }
 }

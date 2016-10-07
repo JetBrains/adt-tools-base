@@ -85,9 +85,8 @@ class FlavorlibTest {
         assertNotNull(flavor1)
 
         Variant flavor1Debug = ModelHelper.getVariant(variants, "flavor1Debug")
-        assertNotNull(flavor1Debug)
 
-        Dependencies dependencies = flavor1Debug.getMainArtifact().getDependencies()
+        Dependencies dependencies = flavor1Debug.getMainArtifact().getCompileDependencies()
         assertNotNull(dependencies)
         Collection<AndroidLibrary> libs = dependencies.getLibraries()
         assertNotNull(libs)
@@ -104,9 +103,8 @@ class FlavorlibTest {
         assertNotNull(flavor2)
 
         Variant flavor2Debug = ModelHelper.getVariant(variants, "flavor2Debug")
-        assertNotNull(flavor2Debug)
 
-        dependencies = flavor2Debug.getMainArtifact().getDependencies()
+        dependencies = flavor2Debug.getMainArtifact().getCompileDependencies()
         assertNotNull(dependencies)
         libs = dependencies.getLibraries()
         assertNotNull(libs)

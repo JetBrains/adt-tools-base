@@ -110,33 +110,74 @@ public class RepositoryPackagesTest extends TestCase {
 
     public void testPrefixes() {
         Map<String, LocalPackage> locals = Maps.newHashMap();
+        Map<String, RemotePackage> remotes = Maps.newHashMap();
 
         FakePackage p1 = new FakePackage("a;b;c", new Revision(1), null);
         locals.put("a;b;c", p1);
+        remotes.put("a;b;c", p1);
         FakePackage p2 = new FakePackage("a;b;d", new Revision(1), null);
         locals.put("a;b;d", p2);
+        remotes.put("a;b;d", p2);
         FakePackage p3 = new FakePackage("a;c", new Revision(1), null);
         locals.put("a;c", p3);
+        remotes.put("a;c", p3);
         FakePackage p4 = new FakePackage("d", new Revision(1), null);
         locals.put("d", p4);
+        remotes.put("d", p4);
+        FakePackage localOnly = new FakePackage("l", new Revision(1), null);
+        locals.put("l", localOnly);
+        FakePackage remoteOnly = new FakePackage("r", new Revision(1), null);
+        remotes.put("r", remoteOnly);
 
         RepositoryPackages packages = new RepositoryPackages();
         packages.setLocalPkgInfos(locals);
+        packages.setRemotePkgInfos(remotes);
 
-        Collection<? extends LocalPackage> p = packages.getLocalPackagesForPrefix("a");
-        assertEquals(3, p.size());
-        assertTrue(p.containsAll(Sets.newHashSet(p1, p2, p3)));
+        Collection<LocalPackage> localPackages = packages.getLocalPackagesForPrefix("a");
+        assertEquals(3, localPackages.size());
+        assertTrue(localPackages.containsAll(Sets.newHashSet(p1, p2, p3)));
 
-        p = packages.getLocalPackagesForPrefix("a;b");
-        assertEquals(2, p.size());
-        assertTrue(p.containsAll(Sets.newHashSet(p1, p2)));
+        Collection<RemotePackage> remotePackages = packages.getRemotePackagesForPrefix("a");
+        assertEquals(3, remotePackages.size());
+        assertTrue(remotePackages.containsAll(Sets.newHashSet(p1, p2, p3)));
 
-        p = packages.getLocalPackagesForPrefix("a;b;c");
-        assertEquals(1, p.size());
-        assertTrue(p.contains(p1));
+        localPackages = packages.getLocalPackagesForPrefix("a;b");
+        assertEquals(2, localPackages.size());
+        assertTrue(localPackages.containsAll(Sets.newHashSet(p1, p2)));
 
-        p = packages.getLocalPackagesForPrefix("a;b;f");
-        assertEquals(0, p.size());
+        remotePackages = packages.getRemotePackagesForPrefix("a;b");
+        assertEquals(2, remotePackages.size());
+        assertTrue(remotePackages.containsAll(Sets.newHashSet(p1, p2)));
+
+        localPackages = packages.getLocalPackagesForPrefix("a;b;c");
+        assertEquals(1, localPackages.size());
+        assertTrue(localPackages.contains(p1));
+
+        remotePackages = packages.getRemotePackagesForPrefix("a;b;c");
+        assertEquals(1, remotePackages.size());
+        assertTrue(remotePackages.contains(p1));
+
+        localPackages = packages.getLocalPackagesForPrefix("a;b;f");
+        assertEquals(0, localPackages.size());
+
+        remotePackages = packages.getRemotePackagesForPrefix("a;b;f");
+        assertEquals(0, remotePackages.size());
+
+        localPackages = packages.getLocalPackagesForPrefix("l");
+        assertEquals(1, localPackages.size());
+        assertTrue(localPackages.contains(localOnly));
+
+        remotePackages = packages.getRemotePackagesForPrefix("l");
+        assertEquals(0, remotePackages.size());
+        assertFalse(remotePackages.contains(localOnly));
+
+        localPackages = packages.getLocalPackagesForPrefix("r");
+        assertEquals(0, localPackages.size());
+        assertFalse(localPackages.contains(remoteOnly));
+
+        remotePackages = packages.getRemotePackagesForPrefix("r");
+        assertEquals(1, remotePackages.size());
+        assertTrue(remotePackages.contains(remoteOnly));
     }
 
 }

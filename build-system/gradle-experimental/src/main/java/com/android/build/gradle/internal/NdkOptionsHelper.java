@@ -18,8 +18,6 @@ package com.android.build.gradle.internal;
 
 import com.android.build.gradle.managed.NdkBuildType;
 import com.android.build.gradle.managed.NdkOptions;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
 
 /**
  * Helper functions for configuring an NdkOptions.
