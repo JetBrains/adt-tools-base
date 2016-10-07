@@ -11,7 +11,7 @@
     <orderEntry type="library" name="Guava" level="project" />
     <orderEntry type="module" module-name="common" />
     <orderEntry type="library" name="kxml2" level="project" />
-    <orderEntry type="library" scope="TEST" name="JUnit3" level="project" />
     <orderEntry type="library" scope="TEST" name="Mocks" level="project" />
+    <orderEntry type="library" scope="TEST" name="JUnit4" level="project" />
   </component>
 </module>

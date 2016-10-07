@@ -16,10 +16,6 @@
 
 package com.android.ddmlib;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertTrue;
-
 import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -28,6 +24,8 @@ import org.junit.Test;
 import java.io.File;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
+
+import static org.junit.Assert.*;
 
 public class AndroidDebugBridgeTest {
     private String mAndroidHome;

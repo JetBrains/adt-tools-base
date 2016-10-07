@@ -23,8 +23,8 @@ import com.android.tools.lint.detector.api.Location.SearchDirection;
 import com.android.tools.lint.detector.api.Location.SearchHints;
 import com.google.common.annotations.Beta;
 import com.google.common.base.Splitter;
-import org.jetbrains.org.objectweb.asm.Type;
-import org.jetbrains.org.objectweb.asm.tree.*;
+import org.objectweb.asm.Type;
+import org.objectweb.asm.tree.*;
 
 import java.io.File;
 import java.util.List;

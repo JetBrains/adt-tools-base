@@ -21,9 +21,9 @@ import com.android.annotations.Nullable;
 import com.android.tools.lint.checks.ControlFlowGraph.Node;
 import com.android.tools.lint.detector.api.*;
 import com.android.tools.lint.detector.api.Detector.ClassScanner;
-import org.jetbrains.org.objectweb.asm.Opcodes;
-import org.jetbrains.org.objectweb.asm.tree.*;
-import org.jetbrains.org.objectweb.asm.tree.analysis.AnalyzerException;
+import org.objectweb.asm.tree.analysis.AnalyzerException;
+import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.tree.*;
 
 import java.util.Arrays;
 import java.util.List;
@@ -100,7 +100,7 @@ public class WakelockDetector extends Detector implements ClassScanner {
 
     @Override
     public void checkCall(@NonNull ClassContext context, @NonNull ClassNode classNode,
-            @NonNull MethodNode method, @NonNull MethodInsnNode call) {
+                          @NonNull MethodNode method, @NonNull MethodInsnNode call) {
         if (!context.getProject().getReportIssues()) {
             // If this is a library project not being analyzed, ignore it
             return;

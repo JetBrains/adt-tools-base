@@ -20,11 +20,9 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import org.jetbrains.org.objectweb.asm.Opcodes;
-import org.jetbrains.org.objectweb.asm.tree.*;
-import org.jetbrains.org.objectweb.asm.tree.analysis.Analyzer;
-import org.jetbrains.org.objectweb.asm.tree.analysis.AnalyzerException;
-import org.jetbrains.org.objectweb.asm.tree.analysis.BasicInterpreter;
+import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.tree.*;
+import org.objectweb.asm.tree.analysis.*;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;

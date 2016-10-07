@@ -18,11 +18,7 @@ package com.android.repository.impl.installer;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.repository.api.Downloader;
-import com.android.repository.api.Installer;
-import com.android.repository.api.ProgressIndicator;
-import com.android.repository.api.RemotePackage;
-import com.android.repository.api.RepoManager;
+import com.android.repository.api.*;
 import com.android.repository.impl.meta.Archive;
 import com.android.repository.io.FileOp;
 import com.android.repository.io.FileOpUtils;
@@ -31,7 +27,6 @@ import com.android.repository.util.InstallerUtil;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
-import java.nio.file.Paths;
 
 /**
  * A simple {@link Installer} that just unzips the {@code complete} version of an {@link

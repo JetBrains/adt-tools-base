@@ -21,8 +21,8 @@ import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
 import com.android.tools.lint.detector.api.*;
 import com.android.tools.lint.detector.api.Detector.ClassScanner;
-import org.jetbrains.org.objectweb.asm.Opcodes;
-import org.jetbrains.org.objectweb.asm.tree.*;
+import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.tree.*;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -114,7 +114,7 @@ public class SecureRandomGeneratorDetector extends Detector implements ClassScan
 
     @Override
     public void checkCall(@NonNull ClassContext context, @NonNull ClassNode classNode,
-            @NonNull MethodNode method, @NonNull MethodInsnNode call) {
+                          @NonNull MethodNode method, @NonNull MethodInsnNode call) {
         if (mIgnore) {
             return;
         }

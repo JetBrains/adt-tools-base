@@ -23,8 +23,8 @@ import com.android.tools.lint.detector.api.Detector.ClassScanner;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.common.collect.Sets.SetView;
-import org.jetbrains.org.objectweb.asm.tree.ClassNode;
-import org.jetbrains.org.objectweb.asm.tree.MethodNode;
+import org.objectweb.asm.tree.ClassNode;
+import org.objectweb.asm.tree.MethodNode;
 
 import java.util.EnumSet;
 import java.util.List;
@@ -33,7 +33,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 import static com.android.SdkConstants.CONSTRUCTOR_NAME;
-import static org.jetbrains.org.objectweb.asm.Opcodes.*;
+import static org.objectweb.asm.Opcodes.*;
 
 /**
  * Checks for accidental overrides

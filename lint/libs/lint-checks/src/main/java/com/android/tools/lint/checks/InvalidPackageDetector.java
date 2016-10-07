@@ -20,9 +20,9 @@ import com.android.annotations.NonNull;
 import com.android.tools.lint.detector.api.*;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
-import org.jetbrains.org.objectweb.asm.Opcodes;
-import org.jetbrains.org.objectweb.asm.Type;
-import org.jetbrains.org.objectweb.asm.tree.*;
+import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.Type;
+import org.objectweb.asm.tree.*;
 
 import java.io.File;
 import java.util.List;

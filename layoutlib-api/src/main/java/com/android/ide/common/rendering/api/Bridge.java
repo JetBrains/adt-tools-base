@@ -17,14 +17,14 @@
 package com.android.ide.common.rendering.api;
 
 
-import static com.android.ide.common.rendering.api.Result.Status.NOT_IMPLEMENTED;
-
 import com.android.ide.common.rendering.api.Result.Status;
 
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.util.EnumSet;
 import java.util.Map;
+
+import static com.android.ide.common.rendering.api.Result.Status.NOT_IMPLEMENTED;
 
 /**
  * Entry point of the Layout Library. Extensions of this class provide a method to compute

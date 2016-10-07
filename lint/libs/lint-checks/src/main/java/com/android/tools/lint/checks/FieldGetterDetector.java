@@ -19,8 +19,8 @@ package com.android.tools.lint.checks;
 import com.android.annotations.NonNull;
 import com.android.tools.lint.detector.api.*;
 import com.google.common.collect.Maps;
-import org.jetbrains.org.objectweb.asm.Opcodes;
-import org.jetbrains.org.objectweb.asm.tree.*;
+import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.tree.*;
 
 import java.util.*;
 
@@ -74,7 +74,7 @@ public class FieldGetterDetector extends Detector implements Detector.ClassScann
 
     @Override
     public void checkInstruction(@NonNull ClassContext context, @NonNull ClassNode classNode,
-            @NonNull MethodNode method, @NonNull AbstractInsnNode instruction) {
+                                 @NonNull MethodNode method, @NonNull AbstractInsnNode instruction) {
         // As of Gingerbread/API 9, Dalvik performs this optimization automatically
         if (context.getProject().getMinSdk() >= 9) {
             return;
