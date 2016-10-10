@@ -10,7 +10,7 @@
       <excludeFolder url="file://$MODULE_DIR$/sample" />
     </content>
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="jdk" jdkName="IDEA jdk" jdkType="JavaSDK" />
+    <orderEntry type="inheritedJdk" />
     <orderEntry type="library" exported="" name="kxml2" level="project" />
     <orderEntry type="library" exported="" scope="TEST" name="JUnit4" level="project" />
     <orderEntry type="module" module-name="android-annotations" exported="" />
