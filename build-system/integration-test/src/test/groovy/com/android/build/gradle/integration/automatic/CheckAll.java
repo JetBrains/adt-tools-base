@@ -96,6 +96,7 @@ public class CheckAll {
             "jarjarWithJack", // Temporarily disabled until we have buildtools 24.0.0
 
             // These are all right:
+            "renderscriptNdk",  // RenderScript.h was removed from NDK r11, b.android.com/224403
             "daggerTwo", // requires Java 7
             "duplicateNameImport", // Fails on purpose.
             "filteredOutBuildType", // assembleDebug does not exist as debug build type is removed.
