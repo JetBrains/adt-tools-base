@@ -28,6 +28,7 @@ import com.android.ide.common.process.ProcessExecutor;
 import com.android.resources.Density;
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
+import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 
@@ -179,7 +180,7 @@ public class SplitOutputMatcher {
             @NonNull List<? extends VariantOutput> outputs,
             @Nullable Collection<String> variantAbiFilters,
             int deviceDensity,
-            @NonNull Collection<String> deviceAbis) {
+            @NonNull List<String> deviceAbis) {
         Density densityEnum = Density.getEnum(deviceDensity);
 
         String densityValue;
@@ -190,7 +191,7 @@ public class SplitOutputMatcher {
         }
 
         // gather all compatible matches.
-        Set<VariantOutput> matches = new HashSet<VariantOutput>();
+        List<VariantOutput> matches = Lists.newArrayList();
 
         // find a matching output.
         for (VariantOutput variantOutput : outputs) {
@@ -205,8 +206,8 @@ public class SplitOutputMatcher {
                 if (abiFilter != null && !deviceAbis.contains(abiFilter)) {
                     continue;
                 }
-                // variantOutput can be added several times to matches.
                 matches.add(variantOutput);
+                break;
             }
         }
 
@@ -214,17 +215,47 @@ public class SplitOutputMatcher {
             return ImmutableList.of();
         }
 
-        VariantOutput match = Collections.max(matches, new Comparator<VariantOutput>() {
-            @Override
-            public int compare(VariantOutput splitOutput, VariantOutput splitOutput2) {
-                return splitOutput.getVersionCode() - splitOutput2.getVersionCode();
-            }
-        });
+        VariantOutput match = Collections.max(matches,
+                (splitOutput, splitOutput2) -> {
+                    int rc = splitOutput.getVersionCode() - splitOutput2.getVersionCode();
+                    if (rc != 0) {
+                        return rc;
+                    }
+                    int abiOrder1 = getAbiPreferenceOrder(splitOutput, deviceAbis);
+                    int abiOrder2 = getAbiPreferenceOrder(splitOutput2, deviceAbis);
+                    return abiOrder1 - abiOrder2;
+                });
 
         OutputFile mainOutputFile = match.getMainOutputFile();
         return isMainApkCompatibleWithDevice(mainOutputFile, variantAbiFilters, deviceAbis)
                 ? ImmutableList.of(mainOutputFile)
-                : ImmutableList.<OutputFile>of();
+                : ImmutableList.of();
+    }
+
+    /**
+     * Return the preference score of a VariantOutput for the deviceAbi list.
+     *
+     * Higher score means a better match.  Scores returned by different call are only comparable if
+     * the specified deviceAbi is the same.
+     */
+    private static int getAbiPreferenceOrder(VariantOutput variantOutput, List<String> deviceAbi) {
+        String abiFilter = getFilter(variantOutput.getMainOutputFile(), OutputFile.ABI);
+        if (Strings.isNullOrEmpty(abiFilter)) {
+            // Null or empty imply a universal APK, which would return the second highest score.
+            return deviceAbi.size() - 1;
+        }
+        int match = deviceAbi.indexOf(abiFilter);
+        if (match == 0) {
+            // We want to select the output that matches the first deviceAbi.  The filtered output
+            // is preferred over universal APK if it matches the first deviceAbi as they are likely
+            // to take a shorter time to build.
+            match = deviceAbi.size();  // highest possible score for the specified deviceAbi.
+        } else if (match > 0) {
+            // Universal APK may contain the best match even though it is not guaranteed, that's
+            // why it is preferred over a filtered output that does not match the best ABI.
+            match = deviceAbi.size() - match - 1;
+        }
+        return match;
     }
 
     private static boolean isMainApkCompatibleWithDevice(
