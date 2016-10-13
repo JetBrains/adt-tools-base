@@ -45,10 +45,6 @@ public class MavenCoordinatesImpl implements MavenCoordinates, Serializable {
     @Nullable
     private final String classifier;
 
-    private final int hashcode;
-    private final String toString;
-    private final String versionLessId;
-
     public MavenCoordinatesImpl(
             @NonNull String groupId,
             @NonNull String artifactId,
@@ -67,9 +63,6 @@ public class MavenCoordinatesImpl implements MavenCoordinates, Serializable {
         this.version = version.intern();
         this.packaging = packaging != null ? packaging.intern() : SdkConstants.EXT_JAR;
         this.classifier = classifier != null ? classifier.intern() : null;
-        this.toString = computeToString();
-        this.hashcode = computeHashcode();
-        this.versionLessId = computeVersionLessId();
     }
 
     @NonNull
@@ -128,40 +121,15 @@ public class MavenCoordinatesImpl implements MavenCoordinates, Serializable {
 
     @Override
     public int hashCode() {
-        return hashcode;
+        return Objects.hashCode(groupId, artifactId, version, packaging, classifier);
     }
-
     @Override
     public String toString() {
-        return toString;
-    }
-
-    /**
-     * Returns this coordinates Id without the version attribute.
-     */
-    public String getVersionLessId() {
-        return versionLessId;
-    }
-
-    private int computeHashcode() {
-        return HashCodeUtils.hashCode(groupId, artifactId, version, packaging, classifier);
-    }
-
-    private String computeToString() {
         List<String> segments = Lists.newArrayList(groupId, artifactId, packaging);
         if (!Strings.isNullOrEmpty(classifier)) {
             segments.add(classifier);
         }
         segments.add(version);
         return Joiner.on(':').join(segments);
-    }
-
-    private String computeVersionLessId() {
-        StringBuilder sb = new StringBuilder(groupId);
-        sb.append(':').append(artifactId);
-        if (classifier != null) {
-            sb.append(':').append(classifier);
-        }
-        return sb.toString();
     }
 }
