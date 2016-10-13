@@ -20,8 +20,7 @@ import com.android.annotations.Nullable;
 import com.android.builder.core.SyncIssueHandler;
 import com.android.builder.core.VariantType;
 import com.android.builder.dependency.DependencyContainer;
-import com.android.builder.dependency.JarDependency;
-import com.android.builder.dependency.LibraryDependency;
+import com.android.builder.dependency.MavenCoordinatesImpl;
 import com.android.builder.dependency.SkippableLibrary;
 import com.android.builder.model.AndroidLibrary;
 import com.android.builder.model.JavaLibrary;
@@ -31,7 +30,6 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
-import org.apache.tools.ant.taskdefs.Java;
 import org.gradle.api.artifacts.ModuleVersionIdentifier;
 
 import java.util.Collection;
@@ -515,6 +513,9 @@ public class DependencyChecker implements SyncIssueHandler {
      */
     @NonNull
     public static String computeVersionLessCoordinateKey(@NonNull MavenCoordinates coordinates) {
+        if (coordinates instanceof MavenCoordinatesImpl) {
+            return ((MavenCoordinatesImpl) coordinates).getVersionLessId();
+        }
         StringBuilder sb = new StringBuilder(coordinates.getGroupId());
         sb.append(':').append(coordinates.getArtifactId());
         if (coordinates.getClassifier() != null) {

@@ -58,6 +58,8 @@ public abstract class AbstractBundleDependency implements AndroidBundle {
     @NonNull
     private final MavenCoordinates mResolvedCoordinates;
 
+    private final File mManifestFile;
+
     /**
      * Creates the mBundle dependency with an optional mName.
      *
@@ -90,6 +92,7 @@ public abstract class AbstractBundleDependency implements AndroidBundle {
         this.mProjectPath = projectPath;
         this.mRequestedCoordinates = requestedCoordinates;
         this.mResolvedCoordinates = resolvedCoordinates;
+        this.mManifestFile = new File(mBundleFolder, FN_ANDROID_MANIFEST_XML);
     }
 
     // Library implementation
@@ -153,7 +156,7 @@ public abstract class AbstractBundleDependency implements AndroidBundle {
     @Override
     @NonNull
     public File getManifest() {
-        return new File(mBundleFolder, FN_ANDROID_MANIFEST_XML);
+        return mManifestFile;
     }
 
     @Override
@@ -178,7 +181,7 @@ public abstract class AbstractBundleDependency implements AndroidBundle {
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(
+        return HashCodeUtils.hashCode(
                 mBundle,
                 mBundleFolder,
                 mLibraryDependencies,
