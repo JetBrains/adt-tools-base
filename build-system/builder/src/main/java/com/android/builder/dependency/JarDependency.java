@@ -18,7 +18,6 @@ package com.android.builder.dependency;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.annotations.concurrency.Immutable;
 import com.android.builder.model.JavaLibrary;
 import com.android.builder.model.MavenCoordinates;
 import com.google.common.base.Objects;
@@ -154,7 +153,7 @@ public class JarDependency implements JavaLibrary, SkippableLibrary {
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(
+        return HashCodeUtils.hashCode(
                 mJarFile,
                 mIsProvided,
                 mProjectPath,
