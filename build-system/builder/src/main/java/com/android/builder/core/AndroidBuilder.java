@@ -96,7 +96,6 @@ import com.android.sdklib.IAndroidTarget;
 import com.android.utils.FileUtils;
 import com.android.utils.ILogger;
 import com.android.utils.LineCollector;
-import com.android.utils.Pair;
 import com.android.xml.AndroidManifest;
 import com.google.common.base.Charsets;
 import com.google.common.base.Functions;
@@ -530,7 +529,7 @@ public class AndroidBuilder {
                     .setPlaceHolderValues(placeHolders)
                     .addFlavorAndBuildTypeManifests(
                             manifestOverlays.toArray(new File[manifestOverlays.size()]))
-                    .addLibraryManifests(collectLibraries(libraries))
+                    .addLibraries(libraries)
                     .withFeatures(optionalFeatures.toArray(
                             new Invoker.Feature[optionalFeatures.size()]))
                     .setMergeReportFile(reportFile);
@@ -636,41 +635,6 @@ public class AndroidBuilder {
             Files.write(xmlDocument, out, Charsets.UTF_8);
         } catch(IOException e) {
             throw new RuntimeException(e);
-        }
-    }
-
-    /**
-     * Collect the list of libraries' manifest files.
-     * @param libraries declared dependencies
-     * @return a list of files and names for the libraries' manifest files.
-     */
-    private static ImmutableList<Pair<String, File>> collectLibraries(
-            List<? extends AndroidLibrary> libraries) {
-
-        ImmutableList.Builder<Pair<String, File>> manifestFiles = ImmutableList.builder();
-        if (libraries != null) {
-            collectLibraries(libraries, manifestFiles);
-        }
-        return manifestFiles.build();
-    }
-
-    /**
-     * recursively calculate the list of libraries to merge the manifests files from.
-     * @param libraries the dependencies
-     * @param manifestFiles list of files and names identifiers for the libraries' manifest files.
-     */
-    private static void collectLibraries(List<? extends AndroidLibrary> libraries,
-            ImmutableList.Builder<Pair<String, File>> manifestFiles) {
-
-        for (AndroidLibrary library : libraries) {
-            if (!library.isProvided()) {
-                manifestFiles.add(Pair.of(library.getName(), library.getManifest()));
-                List<? extends AndroidLibrary> manifestDependencies = library
-                        .getLibraryDependencies();
-                if (!manifestDependencies.isEmpty()) {
-                    collectLibraries(manifestDependencies, manifestFiles);
-                }
-            }
         }
     }
 
@@ -786,7 +750,7 @@ public class AndroidBuilder {
                         generatedTestManifest, mLogger, ManifestMerger2.MergeType.APPLICATION)
                         .withFeatures(Invoker.Feature.REMOVE_TOOLS_DECLARATIONS)
                         .setOverride(ManifestSystemProperty.PACKAGE, testApplicationId)
-                        .addLibraryManifests(collectLibraries(libraries))
+                        .addLibraries(libraries)
                         .setPlaceHolderValues(manifestPlaceholders)
                         .merge();
 
