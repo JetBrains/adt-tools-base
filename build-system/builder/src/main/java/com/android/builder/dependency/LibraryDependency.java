@@ -193,7 +193,7 @@ public class LibraryDependency extends AbstractBundleDependency implements Andro
 
     @Override
     public int hashCode() {
-        return HashCodeUtils.hashCode(
+        return Objects.hashCode(
                 super.hashCode(),
                 mIsProvided,
                 isSkipped()); // AtomicBoolean does not implements hashCode!
