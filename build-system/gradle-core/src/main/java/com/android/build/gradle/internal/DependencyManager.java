@@ -263,12 +263,6 @@ public class DependencyManager {
         Configuration compileClasspath = variantDeps.getCompileConfiguration();
         Configuration packageClasspath = variantDeps.getPackageConfiguration();
 
-        // TODO - shouldn't need to do this - fix this in Gradle
-        ensureConfigured(compileClasspath);
-        if (needPackageScope) {
-            ensureConfigured(packageClasspath);
-        }
-
         if (DEBUG_DEPENDENCY) {
             System.out.println(">>>>>>>>>>");
             System.out.println(
@@ -480,25 +474,6 @@ public class DependencyManager {
 
         return new DependencyContainerImpl(libraryDependencies, jarDependencies, localJars);
     }
-
-    private void ensureConfigured(Configuration config) {
-        for (Dependency dependency : config.getAllDependencies()) {
-            if (dependency instanceof ProjectDependency) {
-                ProjectDependency projectDependency = (ProjectDependency) dependency;
-                project.evaluationDependsOn(projectDependency.getDependencyProject().getPath());
-                try {
-                    ensureConfigured(projectDependency.getProjectConfiguration());
-                } catch (Throwable e) {
-                    throw new UnknownProjectException(String.format(
-                            "Cannot evaluate module %s : %s",
-                            projectDependency.getName(), e.getMessage()),
-                            e);
-                }
-            }
-        }
-    }
-
-
 
     /**
      * Collects the resolved artifacts and returns a configuration which contains them. If the
