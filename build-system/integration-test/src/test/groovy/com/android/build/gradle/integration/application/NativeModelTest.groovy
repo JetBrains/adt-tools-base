@@ -51,7 +51,7 @@ class NativeModelTest {
     private static enum Compiler {GCC, CLANG}
 
     private static enum Config {
-        ANDROID_MK_FILE_C("""
+        ANDROID_MK_FILE_C_CLANG("""
             apply plugin: 'com.android.application'
 
             android {
@@ -65,71 +65,15 @@ class NativeModelTest {
                 defaultConfig {
                     externalNativeBuild {
                         ndkBuild {
-                            arguments "NDK_TOOLCHAIN_VERSION:=4.9"
+                            arguments "NDK_TOOLCHAIN_VERSION:=clang"
                             cFlags "-DTEST_C_FLAG"
                             cppFlags "-DTEST_CPP_FLAG"
                         }
                     }
                 }
             }
-            """, [androidMkC("src/main/cpp")], false, 1, 2, 7, Compiler.GCC,
+            """, [androidMkC("src/main/cpp")], false, 1, 2, 7, Compiler.CLANG,
                 NativeBuildSystem.NDK_BUILD, 14),
-        ANDROID_MK_FILE_CPP("""
-            apply plugin: 'com.android.application'
-
-            android {
-                compileSdkVersion $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
-                buildToolsVersion "$GradleTestProject.DEFAULT_BUILD_TOOL_VERSION"
-                externalNativeBuild {
-                    ndkBuild {
-                        path file("src/main/cpp/Android.mk")
-                    }
-                }
-                defaultConfig {
-                    externalNativeBuild {
-                        ndkBuild {
-                            arguments "NDK_TOOLCHAIN_VERSION:=4.9"
-                            cFlags "-DTEST_C_FLAG"
-                            cppFlags "-DTEST_CPP_FLAG"
-                        }
-                    }
-                }
-            }
-            """,
-                [androidMkCpp("src/main/cpp")],
-                true, 1, 2, 7, Compiler.GCC, NativeBuildSystem.NDK_BUILD, 14),
-        ANDROID_MK_GOOGLE_TEST("""
-            apply plugin: 'com.android.application'
-
-            android {
-                compileSdkVersion $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
-                buildToolsVersion "$GradleTestProject.DEFAULT_BUILD_TOOL_VERSION"
-                externalNativeBuild {
-                    ndkBuild {
-                        path file("src/main/cpp/Android.mk")
-                    }
-                }
-                defaultConfig {
-                    externalNativeBuild {
-                        ndkBuild {
-                            arguments "NDK_TOOLCHAIN_VERSION:=4.9"
-                            cFlags "-DTEST_C_FLAG"
-                            cppFlags "-DTEST_CPP_FLAG"
-                        }
-                    }
-                }
-            }
-            """, [androidMkGoogleTest("src/main/cpp"),
-                  new TestSourceFile(
-                          "src/main/cpp", "hello-jni-unittest.cc",
-                          """#include <limits.h>
-                            #include "sample1.h"
-                            #include "gtest/gtest.h"
-                            TEST(EqualsTest, One) {
-                              EXPECT_EQ(1, 1);
-                            }
-                            """)],
-                true, 4, 2, 7, Compiler.GCC, NativeBuildSystem.NDK_BUILD, 0),
         ANDROID_MK_FILE_CPP_CLANG("""
             apply plugin: 'com.android.application'
 
@@ -151,9 +95,65 @@ class NativeModelTest {
                     }
                 }
             }
-            """, [androidMkCpp("src/main/cpp")], true, 1, 2, 7, Compiler.CLANG,
+            """,
+                [androidMkCpp("src/main/cpp")],
+                true, 1, 2, 7, Compiler.CLANG, NativeBuildSystem.NDK_BUILD, 14),
+        ANDROID_MK_GOOGLE_TEST("""
+            apply plugin: 'com.android.application'
+
+            android {
+                compileSdkVersion $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
+                buildToolsVersion "$GradleTestProject.DEFAULT_BUILD_TOOL_VERSION"
+                externalNativeBuild {
+                    ndkBuild {
+                        path file("src/main/cpp/Android.mk")
+                    }
+                }
+                defaultConfig {
+                    externalNativeBuild {
+                        ndkBuild {
+                            arguments "NDK_TOOLCHAIN_VERSION:=clang"
+                            cFlags "-DTEST_C_FLAG"
+                            cppFlags "-DTEST_CPP_FLAG"
+                        }
+                    }
+                }
+            }
+            """, [androidMkGoogleTest("src/main/cpp"),
+                  new TestSourceFile(
+                          "src/main/cpp", "hello-jni-unittest.cc",
+                          """#include <limits.h>
+                            #include "sample1.h"
+                            #include "gtest/gtest.h"
+                            TEST(EqualsTest, One) {
+                              EXPECT_EQ(1, 1);
+                            }
+                            """)],
+                true, 4, 2, 7, Compiler.CLANG, NativeBuildSystem.NDK_BUILD, 0),
+        ANDROID_MK_FILE_CPP_GCC("""
+            apply plugin: 'com.android.application'
+
+            android {
+                compileSdkVersion $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
+                buildToolsVersion "$GradleTestProject.DEFAULT_BUILD_TOOL_VERSION"
+                externalNativeBuild {
+                    ndkBuild {
+                        path file("src/main/cpp/Android.mk")
+                    }
+                }
+                defaultConfig {
+                    externalNativeBuild {
+                        ndkBuild {
+                            arguments "NDK_TOOLCHAIN_VERSION:=4.9"
+                            cFlags "-DTEST_C_FLAG"
+                            cppFlags "-DTEST_CPP_FLAG"
+                        }
+                    }
+                }
+            }
+            """, [androidMkCpp("src/main/cpp")], true, 1, 2, 7, Compiler.GCC,
                 NativeBuildSystem.NDK_BUILD, 14),
-        ANDROID_MK_FILE_CPP_CLANG_VIA_APPLICATION_MK("""
+        ANDROID_MK_FILE_CPP_GCC_VIA_APPLICATION_MK("""
             apply plugin: 'com.android.application'
 
             android {
@@ -174,7 +174,7 @@ class NativeModelTest {
                 }
             }
             """, [androidMkCpp("src/main/cpp"), applicationMk("src/main/cpp")],
-                true, 1, 2, 7, Compiler.CLANG, NativeBuildSystem.NDK_BUILD, 14),
+                true, 1, 2, 7, Compiler.GCC, NativeBuildSystem.NDK_BUILD, 14),
         ANDROID_MK_CUSTOM_BUILD_TYPE("""
             apply plugin: 'com.android.application'
 
@@ -189,7 +189,7 @@ class NativeModelTest {
                 defaultConfig {
                     externalNativeBuild {
                         ndkBuild {
-                            arguments "NDK_TOOLCHAIN_VERSION:=4.9"
+                            arguments "NDK_TOOLCHAIN_VERSION:=clang"
                             cFlags "-DTEST_C_FLAG"
                             cppFlags "-DTEST_CPP_FLAG"
                         }
@@ -205,7 +205,7 @@ class NativeModelTest {
                     }
                 }
             }
-            """, [androidMkCpp("src/main/cpp")], true, 1, 3, 7, Compiler.GCC,
+            """, [androidMkCpp("src/main/cpp")], true, 1, 3, 7, Compiler.CLANG,
                 NativeBuildSystem.NDK_BUILD, 21),
         CMAKELISTS_FILE_CPP("""
             apply plugin: 'com.android.application'
@@ -317,11 +317,11 @@ class NativeModelTest {
     @Parameterized.Parameters(name = "model = {0}")
     public static Collection<Object[]> data() {
         return [
-                [Config.ANDROID_MK_FILE_C].toArray(),
-                [Config.ANDROID_MK_FILE_CPP].toArray(),
-                [Config.ANDROID_MK_GOOGLE_TEST].toArray(),
+                [Config.ANDROID_MK_FILE_C_CLANG].toArray(),
                 [Config.ANDROID_MK_FILE_CPP_CLANG].toArray(),
-                [Config.ANDROID_MK_FILE_CPP_CLANG_VIA_APPLICATION_MK].toArray(),
+                [Config.ANDROID_MK_GOOGLE_TEST].toArray(),
+                [Config.ANDROID_MK_FILE_CPP_GCC].toArray(),
+                [Config.ANDROID_MK_FILE_CPP_GCC_VIA_APPLICATION_MK].toArray(),
                 [Config.ANDROID_MK_CUSTOM_BUILD_TYPE].toArray(),
                 [Config.CMAKELISTS_FILE_C].toArray(),
                 [Config.CMAKELISTS_FILE_CPP].toArray(),
