@@ -891,12 +891,18 @@ public class ManifestMerger2 {
          * @return itself.
          */
         @NonNull
-        public Invoker addLibraries(@NonNull List<? extends AndroidBundle> libraries) {
+        public Invoker addBundleManifests(@NonNull List<? extends AndroidBundle> libraries) {
             for (AndroidBundle library : libraries) {
                 if (!library.isProvided()) {
                     mLibraryFilesBuilder.add(Pair.of(library.getName(), library.getManifest()));
                 }
             }
+            return thisAsT();
+        }
+
+        @NonNull
+        public Invoker addLibraryManifests(@NonNull List<Pair<String, File>> libraries) {
+            mLibraryFilesBuilder.addAll(libraries);
             return thisAsT();
         }
 
