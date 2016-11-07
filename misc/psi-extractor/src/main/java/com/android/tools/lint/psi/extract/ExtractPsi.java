@@ -56,6 +56,7 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
+import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -530,6 +531,15 @@ public class ExtractPsi {
                 + "        <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>\n"
                 + "      </license>\n"
                 + "    </licenses>\n"
+                + "    <developers>\n"
+                + "      <developer>\n"
+                + "        <name>The Android Open Source Project</name>\n"
+                + "      </developer>\n"
+                + "    </developers>\n"
+                + "    <scm>\n"
+                + "      <connection>git://android.googlesource.com/platform/tools/base.git</connection>\n"
+                + "      <url>https://android.googlesource.com/platform/tools/base</url>\n"
+                + "    </scm>\n"
                 + "</project>";
         File pomFile = new File(artifactDir, baseName + ".pom");
         Files.write(pom, pomFile, UTF_8);
@@ -539,10 +549,29 @@ public class ExtractPsi {
         writeJar(jarFile);
         writeCheckSumFiles(jarFile);
 
+        createEmptyJars(new File(artifactDir, baseName + "-sources" + DOT_JAR));
+        createEmptyJars(new File(artifactDir, baseName + "-javadoc" + DOT_JAR));
+
         testJar(jarFile);
 
         System.out.println("Wrote artifact " + GROUP_ID + ":" + ARTIFACT_ID + ":" + mVersion + " to \n" +
                 artifactDir);
+    }
+
+    private static void createEmptyJars(File outputFile) throws IOException {
+        JarOutputStream jarOutputStream = new JarOutputStream(
+                new BufferedOutputStream(new FileOutputStream(outputFile)));
+        try {
+            jarOutputStream.putNextEntry(new JarEntry("readme.txt"));
+            try {
+                jarOutputStream.write("checkout source code from git".getBytes());
+            } finally {
+                jarOutputStream.closeEntry();
+            }
+        } finally {
+            jarOutputStream.close();
+        }
+        writeCheckSumFiles(outputFile);
     }
 
     private void readClasses(@NonNull List<File> jars) throws IOException {

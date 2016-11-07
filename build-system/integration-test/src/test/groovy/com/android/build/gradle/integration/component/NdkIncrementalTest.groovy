@@ -18,7 +18,7 @@ package com.android.build.gradle.integration.component
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldJniApp
-import com.android.build.gradle.integration.common.utils.IncrementalTaskOutputVerifier
+import com.android.build.gradle.integration.common.utils.GradleOutputVerifier
 import com.android.utils.FileUtils
 import groovy.transform.CompileStatic
 import org.junit.Before
@@ -77,8 +77,8 @@ model {
 
         project.execute("assembleDebug")
 
-        IncrementalTaskOutputVerifier verifier =
-                new IncrementalTaskOutputVerifier(project.getStdout());
+        GradleOutputVerifier verifier =
+                new GradleOutputVerifier(project.getStdout());
         verifier.assertThatFile(project.file("src/main/jni/new-file.c")).hasBeenAdded()
         verifier.assertThatFile(project.file("src/main/jni/hello-jni.c")).hasNotBeenChanged()
 
@@ -104,8 +104,8 @@ model {
 
         project.execute("assembleDebug")
 
-        IncrementalTaskOutputVerifier verifier =
-                new IncrementalTaskOutputVerifier(project.getStdout());
+        GradleOutputVerifier verifier =
+                new GradleOutputVerifier(project.getStdout());
         verifier.assertThatFile(project.file("src/main/jni/empty.c")).hasBeenRemoved()
         verifier.assertThatFile(project.file("src/main/jni/hello-jni.c")).hasNotBeenChanged()
 
@@ -132,8 +132,8 @@ model {
 
         project.execute("assembleDebug")
 
-        IncrementalTaskOutputVerifier verifier =
-                new IncrementalTaskOutputVerifier(project.getStdout());
+        GradleOutputVerifier verifier =
+                new GradleOutputVerifier(project.getStdout());
         verifier.assertThatFile(project.file("src/main/jni/empty.c")).hasChanged()
         verifier.assertThatFile(project.file("src/main/jni/hello-jni.c")).hasNotBeenChanged()
 

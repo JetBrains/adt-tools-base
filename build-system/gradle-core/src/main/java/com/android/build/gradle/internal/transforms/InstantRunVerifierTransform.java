@@ -28,6 +28,7 @@ import com.android.build.api.transform.Transform;
 import com.android.build.api.transform.TransformException;
 import com.android.build.api.transform.TransformInput;
 import com.android.build.api.transform.TransformInvocation;
+import com.android.build.gradle.internal.incremental.InstantRunBuildMode;
 import com.android.build.gradle.internal.scope.InstantRunVariantScope;
 import com.android.builder.model.OptionalCompilationStep;
 import com.android.build.gradle.internal.LoggerWrapper;
@@ -36,6 +37,7 @@ import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
 import com.android.build.gradle.internal.incremental.InstantRunVerifier;
 import com.android.build.gradle.internal.incremental.InstantRunVerifier.ClassBytesJarEntryProvider;
 import com.android.build.gradle.internal.pipeline.TransformManager;
+import com.google.wireless.android.sdk.stats.AndroidStudioStats;
 import com.google.wireless.android.sdk.stats.AndroidStudioStats.GradleBuildProfileSpan.ExecutionType;
 import com.android.builder.profile.Recorder;
 import com.android.builder.profile.ThreadRecorder;
@@ -54,6 +56,7 @@ import java.util.Collection;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
@@ -132,7 +135,11 @@ public class InstantRunVerifierTransform extends Transform {
             FileUtils.mkdirs(outputDir);
         }
 
-        InstantRunVerifierStatus resultSoFar = InstantRunVerifierStatus.COMPATIBLE;
+        Optional<InstantRunVerifierStatus> currentVerifierStatus =
+                variantScope.getInstantRunBuildContext().getVerifierResult();
+
+        InstantRunVerifierStatus resultSoFar =
+                currentVerifierStatus.orElse(InstantRunVerifierStatus.COMPATIBLE);
         for (TransformInput transformInput : inputs) {
             resultSoFar = processFolderInputs(resultSoFar, isIncremental, transformInput);
             resultSoFar = processJarInputs(resultSoFar, transformInput);

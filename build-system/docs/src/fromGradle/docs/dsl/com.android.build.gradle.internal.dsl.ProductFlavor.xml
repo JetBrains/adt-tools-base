@@ -8,11 +8,13 @@
             <tr><td>applicationId</td></tr>
             <tr><td>applicationIdSuffix</td></tr>
             <tr><td>dimension</td></tr>
+            <tr><td>externalNativeBuild</td></tr>
             <tr><td>flavorDimension</td></tr>
             <tr><td>generatedDensities</td></tr>
             <tr><td>jackOptions</td></tr>
             <tr><td>javaCompileOptions</td></tr>
             <tr><td>multiDexEnabled</td></tr>
+            <tr><td>ndk</td></tr>
             <tr><td>signingConfig</td></tr>
             <tr><td>testApplicationId</td></tr>
             <tr><td>testFunctionalTest</td></tr>
@@ -41,6 +43,7 @@
             <tr><td>maxSdkVersion</td></tr>
             <tr><td>maxSdkVersion</td></tr>
             <tr><td>minSdkVersion</td></tr>
+            <tr><td>ndk</td></tr>
             <tr><td>proguardFile</td></tr>
             <tr><td>proguardFiles</td></tr>
             <tr><td>resConfig</td></tr>

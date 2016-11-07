@@ -24,12 +24,16 @@ import com.android.build.gradle.integration.common.fixture.app.MultiModuleTestPr
 import com.android.build.gradle.integration.common.fixture.app.TestSourceFile
 import com.android.build.gradle.integration.common.utils.ModelHelper
 import com.android.build.gradle.integration.common.utils.ZipHelper
-import com.android.build.gradle.ndk.internal.NativeCompilerArgsUtil
+import com.android.build.gradle.internal.core.Abi
+import com.android.build.gradle.internal.ndk.NdkHandler
 import com.android.builder.model.AndroidArtifact
 import com.android.builder.model.AndroidProject
 import com.android.builder.model.NativeAndroidProject
 import com.android.builder.model.NativeLibrary
 import com.android.builder.model.NativeSettings
+import com.android.utils.FileUtils
+import com.google.common.base.Charsets
+import com.google.common.io.Files
 import groovy.transform.CompileStatic
 import org.junit.AfterClass
 import org.junit.BeforeClass
@@ -362,6 +366,82 @@ model {
         assertThat(lib1So).isNewerThan(lib1ModifiedTime)
         assertThat(appSo).isNewerThan(appModifiedTime)
     }
+
+    @Test
+    void checkDependencyOrder() {
+        GradleTestProject app = project.getSubproject("app")
+        int numPrebuilts = 10
+        // Create a bunch of prebuilt libraries
+        for(Abi abi : NdkHandler.getAbiList()) {
+            File dir = app.file("prebuilt/" + abi.getName())
+            FileUtils.mkdirs(dir)
+            for (int i = 0; i < numPrebuilts; i++) {
+                FileUtils.copyFile(
+                        prebuiltProject.file("build/outputs/native/debug/lib/${abi.getName()}/libprebuilt.so"),
+                        new File(dir, "libprebuilt" + i + ".so"));
+            }
+        }
+
+        app.getBuildFile().delete()
+        app.getBuildFile() << """
+apply plugin: "com.android.model.application"
+
+model {
+    repositories {
+        prebuilt(PrebuiltLibraries) {
+"""
+        for (int i = 0; i < numPrebuilts; i++) {
+            app.getBuildFile() << """
+            prebuilt$i {
+                binaries.withType(SharedLibraryBinary) {
+                    sharedLibraryFile = project.file("prebuilt/\${targetPlatform.getName()}/libprebuilt${i}.so")
+                }
+            }
+"""
+        }
+        app.getBuildFile() << """
+        }
+    }
+    android {
+        compileSdkVersion = $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
+        buildToolsVersion = "$GradleTestProject.DEFAULT_BUILD_TOOL_VERSION"
+    }
+    android.ndk {
+        moduleName = "hello-jni"
+    }
+    android.sources {
+        main {
+            jni {
+                dependencies {
+                    project ":lib1"
+"""
+        for (int i = 0; i < numPrebuilts; i++) {
+            app.getBuildFile() << """
+                    library "prebuilt$i"
+"""
+        }
+        app.getBuildFile() << """
+                }
+            }
+        }
+    }
+}
+"""
+        project.executor().run(":app:assembleDebug")
+
+        List<String> linkOptions = Files.readLines(
+                app.file("build/tmp/linkHello-jniArm64-v8aDebugSharedLibrary/options.txt"),
+                Charsets.UTF_8);
+
+        List<String> libs = linkOptions
+                .findAll { it.matches(".*libprebuilt\\d\\.so\$") }
+                .collect { it.substring(it.lastIndexOf("libprebuilt"))}
+        Collection<String> expected = (0..9).collect{("libprebuilt" + it + ".so").toString()}
+
+        // Check prebuilt libraries are in the right order in the link command.
+        assertThat(libs).containsAllIn(expected).inOrder()
+
+}
 
     private static NativeLibrary findNativeLibraryByAbi(
             AndroidProject model,

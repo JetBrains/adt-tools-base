@@ -523,6 +523,18 @@ public class AssetPackagingTest {
 
     // -----------------------
 
+    @Test
+    public void testPackageAssetsWithUnderscoreRegression() throws Exception {
+        execute("app:clean", "app:assembleDebug");
+
+        TemporaryProjectModification.doTest(appProject, it -> {
+            it.addFile("src/main/assets/_newfile.txt", "newfile content");
+            execute("app:assembleDebug");
+
+            checkApk(appProject, "_newfile.txt", "newfile content");
+        });
+    }
+
     /**
      * check an apk has (or not) the given asset file name.
      *

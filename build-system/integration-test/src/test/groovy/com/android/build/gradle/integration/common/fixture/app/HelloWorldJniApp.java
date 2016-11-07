@@ -225,7 +225,7 @@ public class HelloWorldJniApp extends AbstractAndroidTestApp implements AndroidT
     public static TestSourceFile applicationMk(String folder) {
         return new TestSourceFile(
                 folder, "Application.mk",
-                "NDK_TOOLCHAIN_VERSION:=clang\n");
+                "NDK_TOOLCHAIN_VERSION:=4.9\n");
     }
 
     public static TestSourceFile androidMkMultiModule(String folder) {

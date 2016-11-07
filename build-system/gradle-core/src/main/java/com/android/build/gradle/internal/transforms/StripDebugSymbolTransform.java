@@ -40,18 +40,21 @@ import com.android.build.gradle.internal.pipeline.TransformManager;
 import com.android.build.gradle.internal.process.GradleProcessExecutor;
 import com.android.ide.common.process.LoggedProcessOutputHandler;
 import com.android.ide.common.process.ProcessInfoBuilder;
-import com.android.utils.FileUtils;
 import com.android.ide.common.process.ProcessResult;
+import com.android.utils.FileUtils;
 import com.android.utils.ILogger;
-import com.google.common.collect.ImmutableList;
+import com.android.utils.ImmutableCollectors;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
 
 import org.gradle.api.Project;
-import org.gradle.api.tasks.Input;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
+import java.nio.file.PathMatcher;
+import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
@@ -64,9 +67,20 @@ public class StripDebugSymbolTransform extends Transform {
     @NonNull
     private final Project project;
 
+    @NonNull
     private final Map<Abi, File> stripExecutables = Maps.newHashMap();
 
-    public StripDebugSymbolTransform(@NonNull Project project, @NonNull NdkHandler ndkHandler) {
+    @NonNull
+    private final Set<PathMatcher> excludeMatchers;
+
+    public StripDebugSymbolTransform(
+            @NonNull Project project,
+            @NonNull NdkHandler ndkHandler,
+            @NonNull Set<String> excludePattern) {
+
+        this.excludeMatchers = excludePattern.stream()
+                .map(StripDebugSymbolTransform::compileGlob)
+                .collect(ImmutableCollectors.toImmutableSet());
         checkArgument(ndkHandler.isConfigured());
 
         for(Abi abi : ndkHandler.getSupportedAbis()) {
@@ -134,13 +148,20 @@ public class StripDebugSymbolTransform extends Transform {
                         }
                         String abiName = input.getParentFile().getName();
                         Abi abi = Abi.getByName(abiName);
+                        String path = FileUtils.relativePossiblyNonExistingPath(input, folder);
+
                         File strippedLib = new File(
                                 output,
                                 FileUtils.relativePossiblyNonExistingPath(input, folder));
                         switch(fileStatus.getValue()) {
                             case ADDED:
                             case CHANGED:
-                                stripFile(input, strippedLib, abi);
+                                if (excludeMatchers.stream().anyMatch(m -> m.matches(Paths.get(path)))) {
+                                    FileUtils.mkdirs(strippedLib.getParentFile());
+                                    FileUtils.copyFile(input, strippedLib);
+                                } else {
+                                    stripFile(input, strippedLib, abi);
+                                }
                                 break;
                             case REMOVED:
                                 FileUtils.deleteIfExists(strippedLib);
@@ -156,8 +177,15 @@ public class StripDebugSymbolTransform extends Transform {
                         }
                         String abiName = input.getParentFile().getName();
                         Abi abi = Abi.getByName(abiName);
-                        File strippedLib = new File(output, FileUtils.relativePath(input, folder));
-                        stripFile(input, strippedLib, abi);
+                        String path = FileUtils.relativePath(input, folder);
+                        File strippedLib = new File(output, path);
+
+                        if (excludeMatchers.stream().anyMatch(m -> m.matches(Paths.get(path)))) {
+                            FileUtils.mkdirs(strippedLib.getParentFile());
+                            FileUtils.copyFile(input, strippedLib);
+                        } else {
+                            stripFile(input, strippedLib, abi);
+                        }
                     }
                 }
             }
@@ -206,5 +234,17 @@ public class StripDebugSymbolTransform extends Transform {
                     input.getAbsolutePath());
             FileUtils.copyFile(input, output);
         }
+    }
+
+
+    @NonNull
+    private static PathMatcher compileGlob(@NonNull String pattern) {
+        FileSystem fs = FileSystems.getDefault();
+
+        if (!pattern.startsWith("/") && !pattern.startsWith("*")) {
+            pattern = "/" + pattern;
+        }
+
+        return fs.getPathMatcher("glob:" + pattern);
     }
 }

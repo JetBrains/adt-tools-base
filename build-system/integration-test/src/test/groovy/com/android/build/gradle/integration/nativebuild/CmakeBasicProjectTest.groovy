@@ -180,12 +180,14 @@ android {
         NativeAndroidProject model = project.model().getSingle(NativeAndroidProject.class);
         assertThat(model).hasBuildOutputCountEqualTo(6);
         assertThat(model).allBuildOutputsExist();
-        assertThat(model).hasExactObjectFiles("hello-jni.c.o");
-        assertThat(model).hasExactSharedObjectFiles("libhello-jni.so");
+        // CMake .o files are kept in -B folder which is under .externalNativeBuild/
+        assertThat(model).hasExactObjectFilesInExternalNativeBuildFolder("hello-jni.c.o");
+        // CMake .so files are kept in -DCMAKE_LIBRARY_OUTPUT_DIRECTORY folder which is under build/
+        assertThat(model).hasExactSharedObjectFilesInBuildFolder("libhello-jni.so");
         project.execute("clean");
         assertThat(model).noBuildOutputsExist();
-        assertThat(model).hasExactObjectFiles();
-        assertThat(model).hasExactSharedObjectFiles();
+        assertThat(model).hasExactObjectFilesInBuildFolder();
+        assertThat(model).hasExactSharedObjectFilesInBuildFolder();
     }
 
     @Test

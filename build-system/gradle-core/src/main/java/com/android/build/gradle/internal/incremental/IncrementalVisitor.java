@@ -328,8 +328,13 @@ public class IncrementalVisitor extends ClassVisitor {
                 try {
                     c = Class.forName(type1.replace('/', '.'), false, classLoader);
                     d = Class.forName(type2.replace('/', '.'), false, classLoader);
+                } catch (ClassNotFoundException e) {
+                    // This may happen if we're processing class files which reference APIs not
+                    // available on the target device. In this case return a dummy value, since this
+                    // is ignored during dx compilation.
+                    return "instant/run/NoCommonSuperClass";
                 } catch (Exception e) {
-                    throw new RuntimeException(e.toString());
+                    throw new RuntimeException(e);
                 }
                 if (c.isAssignableFrom(d)) {
                     return type1;
@@ -431,9 +436,9 @@ public class IncrementalVisitor extends ClassVisitor {
                     currentParentName = parentNode.superName;
                 } catch (IOException e) {
                     // Could not locate parent class. This is as far as we can go locating parents.
-                    LOG.warning("IncrementalVisitor parseParents could not locate %1$s "
-                            + "which is an ancestor of project class %2$s.\n"
-                            + "%2$s is not eligible for hot swap.",
+                    LOG.info(
+                            "IncrementalVisitor parseParents could not locate %1$s "
+                                    + "which is an ancestor of project class %2$s.\n",
                             currentParentName, classNode.name);
                     return ImmutableList.of();
                 }

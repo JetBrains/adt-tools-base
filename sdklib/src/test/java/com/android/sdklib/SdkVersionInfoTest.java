@@ -31,6 +31,7 @@ public class SdkVersionInfoTest extends TestCase {
     public void testGetAndroidName() {
         assertEquals("API 16: Android 4.1 (Jelly Bean)", SdkVersionInfo.getAndroidName(16));
         assertEquals("API 20: Android 4.4W (KitKat Wear)", SdkVersionInfo.getAndroidName(20));
+        assertEquals("API 25: Android 7.1.1 (Nougat)", SdkVersionInfo.getAndroidName(25));
         // Future: if we don't have a name, don't include "null" as a name
         assertEquals("API 500", SdkVersionInfo.getAndroidName(500));
     }

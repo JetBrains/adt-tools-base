@@ -27,6 +27,7 @@ import com.android.build.api.transform.JarInput;
 import com.android.build.api.transform.Status;
 import com.android.build.api.transform.TransformException;
 import com.android.build.api.transform.TransformInput;
+import com.android.build.api.transform.TransformInvocation;
 import com.android.build.api.transform.TransformOutputProvider;
 import com.android.builder.model.OptionalCompilationStep;
 import com.android.build.gradle.internal.incremental.InstantRunVerifierStatus;
@@ -47,6 +48,7 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.runners.MockitoJUnitRunner;
 
 import java.io.File;
@@ -54,6 +56,7 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -90,6 +93,7 @@ public class InstantRunVerifierTransformTest {
         when(variantScope.getIncrementalVerifierDir()).thenReturn(backupDir);
         when(variantScope.getInstantRunBuildContext()).thenReturn(instantRunBuildContext);
         when(variantScope.getGlobalScope()).thenReturn(globalScope);
+        when(instantRunBuildContext.getVerifierResult()).thenReturn(Optional.empty());
         when(globalScope.isActive(OptionalCompilationStep.RESTART_ONLY)).thenReturn(false);
     }
 
@@ -408,7 +412,57 @@ public class InstantRunVerifierTransformTest {
         assertThat(recordedCopies).hasSize(5);
         for (int i=0; i<5; i++) {
             assertThat(recordedCopies).containsEntry(files[i], lastIterationFiles[i]);
-        }    }
+        }
+    }
+
+    @Test
+    public void testStatusAlreadySet()
+            throws TransformException, InterruptedException, IOException {
+        when(instantRunBuildContext.getVerifierResult()).thenReturn(
+                Optional.of(InstantRunVerifierStatus.DEPENDENCY_CHANGED));
+
+        final File inputDir = temporaryFolder.newFolder();
+        final File inputFile = new File(inputDir, "com/foo/bar/InputFile.class");
+
+        ImmutableList<TransformInput> transformInputs =
+                ImmutableList.<TransformInput>of(new TransformInput() {
+                    @NonNull
+                    @Override
+                    public Collection<JarInput> getJarInputs() {
+                        return ImmutableList.of();
+                    }
+
+                    @NonNull
+                    @Override
+                    public Collection<DirectoryInput> getDirectoryInputs() {
+                        return ImmutableList.<DirectoryInput>of(new DirectoryInputForTests() {
+
+                            @NonNull
+                            @Override
+                            public Map<File, Status> getChangedFiles() {
+                                return ImmutableMap.of(inputFile, Status.ADDED);
+                            }
+
+                            @NonNull
+                            @Override
+                            public File getFile() {
+                                return inputDir;
+                            }
+                        });
+                    }
+                });
+
+        getTransform().transform(new TransformInvocationBuilder(context)
+                .addOutputProvider(transformOutputProvider)
+                .addReferencedInputs(transformInputs)
+                .setIncrementalMode(true)
+                .build());
+
+        // check the verifier status is not reset.
+        assertThat(instantRunBuildContext.getVerifierResult().isPresent()).isTrue();
+        assertThat(instantRunBuildContext.getVerifierResult().get()).isEqualTo(
+                InstantRunVerifierStatus.DEPENDENCY_CHANGED);
+    }
 
     private InstantRunVerifierTransform getTransform() {
 

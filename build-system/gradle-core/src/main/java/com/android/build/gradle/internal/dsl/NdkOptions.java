@@ -32,7 +32,7 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * DSL object for NDK-related settings.
+ * DSL object for per-variant NDK settings, such as the ABI filter.
  */
 public class NdkOptions implements CoreNdkOptions, Serializable {
     private static final long serialVersionUID = 1L;
@@ -113,12 +113,22 @@ public class NdkOptions implements CoreNdkOptions, Serializable {
         return this;
     }
 
-
+    /**
+     * ABI configurations of your native libraries Gradle should
+     * build and package with your APK. You can list any subset of the
+     * <a href="https://developer.android.com/ndk/guides/abis.html#sa">
+     * ABIs the NDK supports</a>.
+     * <p>For example:</p>
+     * <p><code>abiFilters 'x86', 'x86_64', 'armeabi'</code></p>
+     *
+     * <p>When this flag is not configured, Gradle builds and packages all available ABIs.</p>
+     */
     @Override
     @Input @Optional
     public Set<String> getAbiFilters() {
         return abiFilters;
     }
+
 
     @NonNull
     public NdkOptions abiFilter(String filter) {

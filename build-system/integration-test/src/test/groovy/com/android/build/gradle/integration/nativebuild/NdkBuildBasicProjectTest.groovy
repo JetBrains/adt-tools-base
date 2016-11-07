@@ -93,6 +93,12 @@ $modelBefore
         }
     }
 $modelAfter
+
+$modelBefore
+    android.packagingOptions {
+        doNotStrip "*/armeabi-v7a/libhello-jni.so"
+    }
+$modelAfter
 """;
        if (!isModel) {
            project.buildFile << """
@@ -118,7 +124,7 @@ android {
         assertThatApk(apk).contains("lib/x86/libhello-jni.so");
 
         File lib = ZipHelper.extractFile(apk, "lib/armeabi-v7a/libhello-jni.so");
-        assertThatNativeLib(lib).isStripped();
+        assertThatNativeLib(lib).isNotStripped();
 
         lib = ZipHelper.extractFile(apk, "lib/armeabi/libhello-jni.so");
         assertThatNativeLib(lib).isStripped();
@@ -180,12 +186,12 @@ android {
         NativeAndroidProject model = project.model().getSingle(NativeAndroidProject.class);
         assertThat(model).hasBuildOutputCountEqualTo(6);
         assertThat(model).allBuildOutputsExist();
-        assertThat(model).hasExactObjectFiles("hello-jni.o");
-        assertThat(model).hasExactSharedObjectFiles("libhello-jni.so");
+        assertThat(model).hasExactObjectFilesInBuildFolder("hello-jni.o");
+        assertThat(model).hasExactSharedObjectFilesInBuildFolder("libhello-jni.so");
         project.execute("clean");
         assertThat(model).noBuildOutputsExist();
-        assertThat(model).hasExactObjectFiles();
-        assertThat(model).hasExactSharedObjectFiles();
+        assertThat(model).hasExactObjectFilesInBuildFolder();
+        assertThat(model).hasExactSharedObjectFilesInBuildFolder();
     }
 
     @Test

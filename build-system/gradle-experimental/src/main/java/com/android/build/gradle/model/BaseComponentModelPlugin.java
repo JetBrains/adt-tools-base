@@ -54,8 +54,10 @@ import com.android.build.gradle.internal.ndk.NdkHandler;
 import com.android.build.gradle.internal.pipeline.TransformTask;
 import com.android.build.gradle.internal.process.GradleJavaProcessExecutor;
 import com.android.build.gradle.internal.process.GradleProcessExecutor;
+import com.android.build.gradle.internal.scope.AndroidTask;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.tasks.DependencyReportTask;
+import com.android.build.gradle.internal.tasks.PrepareDependenciesTask;
 import com.android.build.gradle.internal.tasks.SigningReportTask;
 import com.android.build.gradle.internal.transforms.DexTransform;
 import com.android.build.gradle.internal.variant.BaseVariantData;
@@ -124,6 +126,9 @@ import org.gradle.model.RuleSource;
 import org.gradle.model.internal.core.ModelReference;
 import org.gradle.model.internal.core.ModelRegistrations;
 import org.gradle.model.internal.registry.ModelRegistry;
+import org.gradle.nativeplatform.NativeLibraryBinarySpec;
+import org.gradle.nativeplatform.SharedLibraryBinarySpec;
+import org.gradle.nativeplatform.StaticLibraryBinarySpec;
 import org.gradle.platform.base.ComponentType;
 import org.gradle.platform.base.TypeBuilder;
 import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry;
@@ -620,6 +625,23 @@ public class BaseComponentModelPlugin implements Plugin<Project>, ToolingRegistr
                 variantManager.createTasksForVariantData(
                         new TaskModelMapAdaptor(tasks),
                         binary.getVariantData());
+
+                // Add dependency for each NativeLibraryBinarySpec on the prepareDependencies task
+                // to ensure it is executed after its dependent projects are built.
+                for (NativeLibraryBinarySpec nativeBinary : binary.getNativeBinaries()) {
+                    AndroidTask<PrepareDependenciesTask> prepareDependenciesTask =
+                            binary.getVariantData().getScope().getPrepareDependenciesTask();
+                    // Set dependencies using the tasks for the binaries because, unlike
+                    // Task.dependsOn, BuildableComponentSpec.builtBy does not support dependencies
+                    // on String.
+                    if (nativeBinary instanceof SharedLibraryBinarySpec) {
+                        ((SharedLibraryBinarySpec) nativeBinary).getTasks().all(
+                                task -> task.dependsOn(prepareDependenciesTask.getName()));
+                    } else if (nativeBinary instanceof StaticLibraryBinarySpec) {
+                        ((StaticLibraryBinarySpec) nativeBinary).getTasks().all(
+                                task -> task.dependsOn(prepareDependenciesTask.getName()));
+                    }
+                }
             }
         }
 

@@ -17,6 +17,7 @@
 package com.android.build.gradle.integration.test
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
+import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.builder.model.AndroidProject
 import org.junit.AfterClass
 import org.junit.BeforeClass
