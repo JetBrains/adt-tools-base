@@ -28,6 +28,8 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.Writer;
 import java.util.List;
 import java.util.ListIterator;
 
@@ -66,12 +68,16 @@ public class InstantRunBuildInfo {
     private static final String ATTR_TOKEN = "token";
 
     @NonNull
+    private final String myXml;
+
+    @NonNull
     private final Element mRoot;
 
     @Nullable
     private List<InstantRunArtifact> mArtifacts;
 
-    public InstantRunBuildInfo(@NonNull Element root) {
+    public InstantRunBuildInfo(@NonNull String xml, @NonNull Element root) {
+        myXml = xml;
         mRoot = root;
     }
 
@@ -252,7 +258,7 @@ public class InstantRunBuildInfo {
             return null;
         }
 
-        return new InstantRunBuildInfo(doc.getDocumentElement());
+        return new InstantRunBuildInfo(xml, doc.getDocumentElement());
     }
 
     // Keep roughly in sync with InstantRunBuildContext#CURRENT_FORMAT.
@@ -276,5 +282,9 @@ public class InstantRunBuildInfo {
         } catch (NumberFormatException nfe) {
             return -1;
         }
+    }
+
+    public void serializeTo(@NonNull Writer writer) throws IOException {
+        writer.write(myXml);
     }
 }

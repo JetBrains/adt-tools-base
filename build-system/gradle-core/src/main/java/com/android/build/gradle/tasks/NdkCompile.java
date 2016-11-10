@@ -60,6 +60,12 @@ import java.util.Set;
 @ParallelizableTask
 public class NdkCompile extends NdkTask {
 
+    final private static String ALTERNATIVES =
+            "Consider using CMake or ndk-build integration with the stable Android Gradle plugin:\n"
+            + " https://developer.android.com/studio/projects/add-native-code.html\n"
+            + "or use the experimental plugin:\n"
+            + " http://tools.android.com/tech-docs/new-build-system/gradle-experimental.\n";
+
     private List<File> sourceFolders;
     private File generatedMakefile;
 
@@ -176,11 +182,9 @@ public class NdkCompile extends NdkTask {
              // not need to be configured by default.  Throw this exception during task execution in
              // case we miss it.
              throw new RuntimeException(
-                     "Error: NDK integration is deprecated in the current plugin.  Consider trying " +
-                             "the new experimental plugin.  For details, see " +
-                             "http://tools.android.com/tech-docs/new-build-system/gradle-experimental.  " +
-                             "Set \"$USE_DEPRECATED_NDK=true\" in gradle.properties to " +
-                             "continue using the current NDK integration.");
+                     "Error: Your project contains C++ files but it is not using a supported "
+                     + "native build system.\n"
+                     + ALTERNATIVES);
          }
 
 
@@ -199,6 +203,11 @@ public class NdkCompile extends NdkTask {
                     "to build.gradle, manually compile the code with ndk-build, " +
                     "and then place the resulting shared object in src/main/jniLibs.");
         }
+
+        getLogger().warn("Warning: Deprecated NDK integration enabled by "
+                + "useDeprecatedNdk flag in gradle.properties will be removed from Android Gradle "
+                + "plugin soon.\n"
+                + ALTERNATIVES);
 
         FileTree sourceFileTree = getSource();
         Set<File> sourceFiles =

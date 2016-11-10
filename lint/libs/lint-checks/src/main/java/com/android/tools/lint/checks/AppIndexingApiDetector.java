@@ -58,7 +58,7 @@ public class AppIndexingApiDetector extends Detector implements XmlScanner, Java
 
     public static final Issue ISSUE_URL_ERROR = Issue.create(
             "GoogleAppIndexingUrlError", //$NON-NLS-1$
-            "URL not supported by app for Google App Indexing",
+            "URL not supported by app for Firebase App Indexing",
             "Ensure the URL is supported by your app, to get installs and traffic to your"
                     + " app from Google Search.",
             Category.USABILITY, 5, Severity.ERROR, URL_IMPLEMENTATION)
@@ -67,7 +67,7 @@ public class AppIndexingApiDetector extends Detector implements XmlScanner, Java
     public static final Issue ISSUE_APP_INDEXING =
       Issue.create(
         "GoogleAppIndexingWarning", //$NON-NLS-1$
-        "Missing support for Google App Indexing",
+        "Missing support for Firebase App Indexing",
         "Adds URLs to get your app into the Google index, to get installs"
           + " and traffic to your app from Google Search.",
         Category.USABILITY, 5, Severity.WARNING, URL_IMPLEMENTATION)
@@ -76,7 +76,7 @@ public class AppIndexingApiDetector extends Detector implements XmlScanner, Java
     public static final Issue ISSUE_APP_INDEXING_API =
             Issue.create(
                     "GoogleAppIndexingApiWarning", //$NON-NLS-1$
-                    "Missing support for Google App Indexing Api",
+                    "Missing support for Firebase App Indexing Api",
                     "Adds URLs to get your app into the Google index, to get installs"
                             + " and traffic to your app from Google Search.",
                     Category.USABILITY, 5, Severity.WARNING, APP_INDEXING_API_IMPLEMENTATION)
@@ -290,12 +290,12 @@ public class AppIndexingApiDetector extends Detector implements XmlScanner, Java
                 for (PsiMethodCallExpression call : mStartMethods) {
                     mContext.report(ISSUE_APP_INDEXING_API, call,
                             mContext.getNameLocation(call),
-                            "Missing support for Google App Indexing in the manifest");
+                            "Missing support for Firebase App Indexing in the manifest");
                 }
                 for (PsiMethodCallExpression call : mEndMethods) {
                     mContext.report(ISSUE_APP_INDEXING_API, call,
                             mContext.getNameLocation(call),
-                            "Missing support for Google App Indexing in the manifest");
+                            "Missing support for Firebase App Indexing in the manifest");
                 }
                 return;
             }
@@ -304,7 +304,7 @@ public class AppIndexingApiDetector extends Detector implements XmlScanner, Java
             if (mStartMethods.isEmpty() && mEndMethods.isEmpty()) {
                 mContext.report(ISSUE_APP_INDEXING_API, mCls,
                         mContext.getNameLocation(mCls),
-                        "Missing support for Google App Indexing API");
+                        "Missing support for Firebase App Indexing API");
                 return;
             }
 

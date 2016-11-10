@@ -72,7 +72,6 @@ public class InjectedAbiAndDensitySplitTest {
     @Test
     public void checkAbi() throws IOException {
         sProject.executor()
-                .withProperty(AndroidGradleOptions.PROPERTY_BUILD_ONLY_TARGET_ABI, "true")
                 .withProperty(AndroidProject.PROPERTY_BUILD_ABI, "armeabi-v7a")
                 .run("clean", "assembleDebug");
 
@@ -88,7 +87,6 @@ public class InjectedAbiAndDensitySplitTest {
     @Test
     public void checkAbiAndDensity() throws IOException {
         sProject.executor()
-                .withProperty(AndroidGradleOptions.PROPERTY_BUILD_ONLY_TARGET_ABI, "true")
                 .withProperty(AndroidProject.PROPERTY_BUILD_ABI, "armeabi-v7a")
                 .withProperty(AndroidProject.PROPERTY_BUILD_DENSITY, "ldpi")
                 .run("clean", "assembleDebug");
@@ -130,7 +128,6 @@ public class InjectedAbiAndDensitySplitTest {
     @Test
     public void checkError() throws IOException {
         sProject.executor()
-                .withProperty(AndroidGradleOptions.PROPERTY_BUILD_ONLY_TARGET_ABI, "true")
                 .withProperty(AndroidProject.PROPERTY_BUILD_ABI, "mips")
                 .expectFailure()
                 .run("assembleDebug");

@@ -71,11 +71,6 @@ import java.util.Set;
  * automatically prepended with a forward slash. So, {@code file} and {@code /file} are effectively
  * the same pattern.
  *
- * <p>To decide the action on a specific path, the following algorithm is used:
- * <ol>
- *     <li>If any first-pick pattern matches the
- * </ol>
- *
  * <p>Several paths are excluded by default:
  * <ul>
  *     <li>{@code /META-INF/LICENCE}
@@ -132,6 +127,7 @@ public class PackagingOptions implements com.android.builder.model.PackagingOpti
     private Set<String> excludes = Sets.newHashSet();
     private Set<String> pickFirsts = Sets.newHashSet();
     private Set<String> merges = Sets.newHashSet();
+    private Set<String> doNotStrip = Sets.newHashSet();
 
     /**
      * Cache with compiled patterns.
@@ -242,5 +238,28 @@ public class PackagingOptions implements com.android.builder.model.PackagingOpti
      */
     public void merge(String pattern) {
         merges.add(pattern);
+    }
+
+
+    /**
+     * Returns the list of patterns for native library that should not be stripped of debug symbols.
+     */
+    @Override
+    @NonNull
+    public Set<String> getDoNotStrip() {
+        return Sets.newHashSet(doNotStrip);
+    }
+
+    public void setDoNotStrip(Set<String> doNotStrip) {
+        this.doNotStrip = Sets.newHashSet(doNotStrip);
+    }
+
+    /**
+     * Adds a doNotStrip pattern.
+     *
+     * @param pattern the pattern, as packaged in the APK
+     */
+    public void doNotStrip(String pattern) {
+        doNotStrip.add(pattern);
     }
 }

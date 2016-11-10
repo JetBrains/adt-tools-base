@@ -291,6 +291,7 @@ public final class IncrementalRelativeFileSets {
 
         Map<RelativeFile, FileStatus> relativeUpdates = Maps.newHashMap();
         for (Map.Entry<File, FileStatus> fileUpdate : updates.entrySet()) {
+
             File file = fileUpdate.getKey();
             FileStatus status = fileUpdate.getValue();
 
@@ -312,6 +313,13 @@ public final class IncrementalRelativeFileSets {
                         break;
                 }
             } else {
+                /*
+                 * We ignore directories because there are no relative files for directories.
+                 */
+                if (file.isDirectory()) {
+                    continue;
+                }
+
                 /*
                  * If the file does not exist in the set of base files, assume it is a file in a
                  * directory. If we don't find the base directory, ignore it.

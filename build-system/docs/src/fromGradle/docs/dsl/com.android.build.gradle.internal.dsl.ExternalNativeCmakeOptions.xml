@@ -1,0 +1,23 @@
+<section>
+    <section>
+        <title>Properties</title>
+        <table>
+            <thead>
+                <tr><td>Name</td></tr>
+            </thead>
+            <tr><td>arguments</td></tr>
+            <tr><td>cFlags</td></tr>
+            <tr><td>cppFlags</td></tr>
+            <tr><td>abiFilters</td></tr>
+            <tr><td>targets</td></tr>
+        </table>
+    </section>
+    <section>
+        <title>Methods</title>
+        <table>
+            <thead>
+                <tr><td>Name</td></tr>
+            </thead>
+        </table>
+    </section>
+</section>

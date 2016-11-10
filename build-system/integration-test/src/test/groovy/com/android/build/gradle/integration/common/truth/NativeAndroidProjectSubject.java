@@ -16,9 +16,14 @@
 
 package com.android.build.gradle.integration.common.truth;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.checkState;
+
 import com.android.annotations.NonNull;
 import com.android.builder.model.NativeAndroidProject;
 import com.android.builder.model.NativeArtifact;
+import com.android.utils.FileUtils;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
@@ -26,6 +31,8 @@ import com.google.common.collect.Sets;
 import com.google.common.truth.FailureStrategy;
 import com.google.common.truth.Subject;
 import com.google.common.truth.SubjectFactory;
+
+import org.gradle.api.Nullable;
 
 import java.io.File;
 import java.io.IOException;
@@ -93,33 +100,67 @@ public class NativeAndroidProjectSubject
         return outputs;
     }
 
+    /**
+     * Given an artifact output file, find the root project directory.
+     * @param outputFile the output artifact file to trim down to project directory.
+     */
     @NonNull
-    private Set<Path> getIntermediates() throws IOException {
+    private File getProjectFolderOfOutputFile(@NonNull File outputFile) {
+        checkArgument(outputFile.getAbsolutePath().toString().contains("project"), outputFile);
+        File original = outputFile;
+        while(!outputFile.getName().equals("project")) {
+            outputFile = outputFile.getParentFile();
+            checkNotNull(outputFile, original);
+        }
+        return outputFile;
+    }
+
+    /**
+     * Find a folder like project/.externalNativeBuild or project/build.
+     * @param baseFolder is like .externalNativeBuild or build.
+     * @return null if there are no output files.
+     */
+    @Nullable
+    private File getIntermediatesFolder(@NonNull String baseFolder) {
         Set<File> intermediatesFolders = Sets.newHashSet();
         for (NativeArtifact artifact : getSubject().getArtifacts()) {
-            File intermediatesBaseFolder = artifact.getOutputFile();
-            File externalNativeBuildFolder;
-            do {
-                intermediatesBaseFolder = intermediatesBaseFolder.getParentFile();
-                externalNativeBuildFolder = new File(intermediatesBaseFolder,
-                        ".externalNativeBuild");
-            } while(!externalNativeBuildFolder.isDirectory());
-            intermediatesFolders.add(externalNativeBuildFolder);
+            intermediatesFolders.add(FileUtils.join(
+                getProjectFolderOfOutputFile(artifact.getOutputFile()),
+                baseFolder));
+        }
+        // Ensure there are no intermediates folder or they are all the same.
+        checkState(intermediatesFolders.size() <= 1, intermediatesFolders);
+        return intermediatesFolders.size() == 0 ? null : intermediatesFolders.iterator().next();
+    }
+
+    /**
+     * Get all files under project/.externalNativeBuild (or project/build).
+     * @param baseFolder is like .externalNativeBuild or build.
+     */
+    @NonNull
+    private Set<Path> getIntermediateFiles(String baseFolder) throws IOException {
+        File intermediatesFolder = getIntermediatesFolder(baseFolder);
+        Set<Path> intermediates = Sets.newHashSet();
+        if (intermediatesFolder == null || !intermediatesFolder.exists()) {
+            // No intermediate files, return empty;
+            return intermediates;
         }
 
-        Set<Path> intermediates = Sets.newHashSet();
-        for (File intermediatesFolder : intermediatesFolders) {
-            Path intermediatesPath = Paths.get(intermediatesFolder.getPath());
-            intermediates.addAll( Files.find(intermediatesPath,
-                    12, // Recursion depth
-                    (path, attributes) -> attributes.isRegularFile()).collect(Collectors.toSet()));
-        }
+        Path intermediatesPath = Paths.get(intermediatesFolder.getPath());
+        intermediates.addAll(Files.find(intermediatesPath,
+                12, // Recursion depth
+                (path, attributes) -> attributes.isRegularFile()).collect(Collectors.toSet()));
         return intermediates;
     }
 
+    /**
+     * Get the set of base file names of all files in project/.externalNativeBuild or project/build.
+     * @param baseFolder is like .externalNativeBuild or build.
+     */
     @NonNull
-    private Set<String> getIntermediatesNames(String extension) throws IOException {
-        Set<Path> intermediates = getIntermediates();
+    private Set<String> getIntermediatesNames(String extension,
+            String baseFolder) throws IOException {
+        Set<Path> intermediates = getIntermediateFiles(baseFolder);
         Set<String> names = Sets.newHashSet();
         for (Path intermediate : intermediates) {
             if (intermediate.getFileName().toString().endsWith(extension)) {
@@ -130,15 +171,18 @@ public class NativeAndroidProjectSubject
     }
 
     @SuppressWarnings("NonBooleanMethodNameMayNotStartWithQuestion")
-    private void hasExactOutputFiles(String extension, String... baseName) throws IOException {
-        Set<String> intermediateNames = getIntermediatesNames(extension);
+    private void hasExactOutputFiles(
+            String extension,
+            String baseFolder,
+            String... baseName) throws IOException {
+        Set<String> intermediateNames = getIntermediatesNames(extension, baseFolder);
         Set<String> expected = Sets.newHashSet(baseName);
         Set<String> expectedNotFound = Sets.newHashSet();
         expectedNotFound.addAll(expected);
         expectedNotFound.removeAll(intermediateNames);
         if (!expectedNotFound.isEmpty()) {
             failWithRawMessage("Not true that %s build intermediates was %s. Set %s was missing %s",
-                    getDisplaySubject(),
+                    getIntermediatesFolder(baseFolder),
                     expected,
                     intermediateNames,
                     expectedNotFound);
@@ -149,22 +193,27 @@ public class NativeAndroidProjectSubject
         foundNotExpected.removeAll(expected);
         if (!foundNotExpected.isEmpty()) {
             failWithRawMessage("Not true that %s build intermediates was %s. It had extras %s",
-                    getDisplaySubject(),
+                    getIntermediatesFolder(baseFolder),
                     expected,
                     foundNotExpected);
         }
     }
 
     @SuppressWarnings("NonBooleanMethodNameMayNotStartWithQuestion")
-    public void hasExactObjectFiles(String... baseName) throws IOException {
-        hasExactOutputFiles(".o", baseName);
+    public void hasExactObjectFilesInBuildFolder(String... baseName) throws IOException {
+        hasExactOutputFiles(".o", "build", baseName);
     }
 
     @SuppressWarnings("NonBooleanMethodNameMayNotStartWithQuestion")
-    public void hasExactSharedObjectFiles(String... baseName) throws IOException {
-        hasExactOutputFiles(".so", baseName);
+    public void hasExactObjectFilesInExternalNativeBuildFolder(
+            String... baseName) throws IOException {
+        hasExactOutputFiles(".o", ".externalNativeBuild", baseName);
     }
 
+    @SuppressWarnings("NonBooleanMethodNameMayNotStartWithQuestion")
+    public void hasExactSharedObjectFilesInBuildFolder(String... baseName) throws IOException {
+        hasExactOutputFiles(".so", "build", baseName);
+    }
 
     @SuppressWarnings("NonBooleanMethodNameMayNotStartWithQuestion")
     public void hasBuildOutputCountEqualTo(int expectedCount) {

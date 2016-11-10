@@ -592,10 +592,10 @@ public class AppIndexingApiDetectorTest extends AbstractCheckTest {
     }
 
     public void testNoManifest() throws Exception {
-        assertEquals("" + "src/com/example/helloworld/AppIndexingApiTest.java:28: Warning: Missing support for Google App Indexing in the manifest [GoogleAppIndexingApiWarning]\n"
+        assertEquals("" + "src/com/example/helloworld/AppIndexingApiTest.java:28: Warning: Missing support for Firebase App Indexing in the manifest [GoogleAppIndexingApiWarning]\n"
                         + "    AppIndex.AppIndexApi.start(mClient, action);\n"
                         + "                         ~~~~~\n"
-                        + "src/com/example/helloworld/AppIndexingApiTest.java:36: Warning: Missing support for Google App Indexing in the manifest [GoogleAppIndexingApiWarning]\n"
+                        + "src/com/example/helloworld/AppIndexingApiTest.java:36: Warning: Missing support for Firebase App Indexing in the manifest [GoogleAppIndexingApiWarning]\n"
                         + "    AppIndex.AppIndexApi.end(mClient, action);\n"
                         + "                         ~~~\n"
                         + "0 errors, 2 warnings\n",
@@ -610,7 +610,7 @@ public class AppIndexingApiDetectorTest extends AbstractCheckTest {
 
     public void testNoStartEnd() throws Exception {
         assertEquals(""
-                        + "src/com/example/helloworld/AppIndexingApiTest.java:11: Warning: Missing support for Google App Indexing API [GoogleAppIndexingApiWarning]\n"
+                        + "src/com/example/helloworld/AppIndexingApiTest.java:11: Warning: Missing support for Firebase App Indexing API [GoogleAppIndexingApiWarning]\n"
                         + "public class AppIndexingApiTest extends Activity {\n"
                         + "             ~~~~~~~~~~~~~~~~~~\n"
                         + "0 errors, 1 warnings\n",

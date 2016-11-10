@@ -404,6 +404,7 @@ public class InstantRunBuildContext {
     }
 
 
+    @NonNull
     public InstantRunBuildMode getBuildMode() {
         return buildMode;
     }

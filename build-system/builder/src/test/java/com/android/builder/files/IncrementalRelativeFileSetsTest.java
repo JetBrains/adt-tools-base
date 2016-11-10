@@ -33,6 +33,7 @@ import org.junit.rules.TemporaryFolder;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.util.Collections;
 
 /**
  * Tests for {@link IncrementalRelativeFileSets}.
@@ -259,5 +260,59 @@ public class IncrementalRelativeFileSetsTest {
         ImmutableMap<RelativeFile, FileStatus> set = IncrementalRelativeFileSets.union(
                 Sets.newHashSet(set1, set2, set3, set4));
         assertEquals(2, IncrementalRelativeFileSets.getBaseDirectoryCount(set));
+    }
+
+    @Test
+    public void makingFromBaseFilesIgnoresDirectories() throws Exception {
+        File foo = mTemporaryFolder.newFolder("foo");
+
+        File f0 = new File(foo, "f0");
+        assertTrue(f0.createNewFile());
+        File bar = new File(foo, "bar");
+        bar.mkdir();
+        File f1 = new File(bar, "f1");
+        assertTrue(f1.createNewFile());
+
+        RelativeFile expectedF0 = new RelativeFile(mTemporaryFolder.getRoot(), f0);
+        RelativeFile expectedF1 = new RelativeFile(mTemporaryFolder.getRoot(), f1);
+
+        FileCacheByPath cache = new FileCacheByPath(mTemporaryFolder.newFolder());
+        ImmutableMap<RelativeFile, FileStatus> set =
+                IncrementalRelativeFileSets.makeFromBaseFiles(
+                        Collections.singleton(mTemporaryFolder.getRoot()),
+                        ImmutableMap.of(
+                                f0, FileStatus.NEW,
+                                f1, FileStatus.NEW,
+                                bar, FileStatus.NEW),
+                        cache);
+
+        assertEquals(2, set.size());
+        assertTrue(set.containsKey(expectedF0));
+        assertTrue(set.containsKey(expectedF1));
+        assertEquals(FileStatus.NEW, set.get(expectedF0));
+        assertEquals(FileStatus.NEW, set.get(expectedF1));
+    }
+
+    @Test
+    public void makeFromDirectoryIgnoresDirectories() throws Exception {
+        File foo = mTemporaryFolder.newFolder("foo");
+        File f0 = new File(foo, "f0");
+        assertTrue(f0.createNewFile());
+        File bar = new File(foo, "bar");
+        bar.mkdir();
+        File f1 = new File(bar, "f1");
+        assertTrue(f1.createNewFile());
+
+        RelativeFile expectedF0 = new RelativeFile(mTemporaryFolder.getRoot(), f0);
+        RelativeFile expectedF1 = new RelativeFile(mTemporaryFolder.getRoot(), f1);
+
+        ImmutableMap<RelativeFile, FileStatus> set =
+                IncrementalRelativeFileSets.fromDirectory(mTemporaryFolder.getRoot());
+
+        assertEquals(2, set.size());
+        assertTrue(set.containsKey(expectedF0));
+        assertTrue(set.containsKey(expectedF1));
+        assertEquals(FileStatus.NEW, set.get(expectedF0));
+        assertEquals(FileStatus.NEW, set.get(expectedF1));
     }
 }
