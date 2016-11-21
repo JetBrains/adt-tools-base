@@ -42,6 +42,7 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Frameworks for concrete {@link Installer}s and {@link Uninstaller}s that manages creation of temp
@@ -306,8 +307,8 @@ public abstract class AbstractPackageOperation implements PackageOperation {
     private void deleteOrphanedTempDirs(@NonNull ProgressIndicator progress) {
         Path root = mFop.toPath(mRepoManager.getLocalPath());
         Path suffixPath = mFop.toPath(new File(InstallerUtil.INSTALLER_DIR_FN, INSTALL_DATA_FN));
-        try {
-            Set<File> tempDirs = Files.walk(root)
+        try (Stream<Path> listing = Files.walk(root)) {
+            Set<File> tempDirs = listing
                     .filter(path -> path.endsWith(suffixPath))
                     .map(this::getPathPropertiesOrNull)
                     .filter(Objects::nonNull)
