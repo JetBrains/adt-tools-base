@@ -28,6 +28,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @SuppressWarnings("UseOfSystemOutOrSystemErr")
 public class ExtractRasterLayers {
@@ -52,9 +53,9 @@ public class ExtractRasterLayers {
             }
         }
 
-        try {
+        try (Stream<Path> listing = Files.list(inputDir)) {
             PathMatcher matcher = FileSystems.getDefault().getPathMatcher("glob:**/*.psd");
-            Files.list(inputDir)
+            listing
                 .filter(matcher::matches)
                 .collect(Collectors.toList())
                 .parallelStream()
