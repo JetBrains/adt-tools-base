@@ -39,6 +39,7 @@ import java.nio.file.attribute.FileTime;
 import java.nio.file.attribute.PosixFilePermission;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Stream;
 
 
 /**
@@ -248,8 +249,8 @@ public class MockFileOp extends FileSystemFileOp {
     public String[] getExistingFiles() {
         List<String> result = new ArrayList<>();
         mFileSystem.getRootDirectories().forEach(path -> {
-            try {
-                Files.find(path, 100, (p, a) -> true).filter(p -> Files.isRegularFile(p))
+            try (Stream<Path> stream = Files.find(path, 100, (p, a) -> true)) {
+                stream.filter(p -> Files.isRegularFile(p))
                   .forEach(p -> result.add(p.toString()));
             } catch (IOException e) {
                 assert false : e.getMessage();
@@ -268,8 +269,8 @@ public class MockFileOp extends FileSystemFileOp {
     public String[] getExistingFolders() {
         List<String> result = new ArrayList<>();
         mFileSystem.getRootDirectories().forEach(path -> {
-            try {
-                Files.find(path, 100, (p, a) -> true).filter(p -> Files.isDirectory(p))
+            try (Stream<Path> stream = Files.find(path, 100, (p, a) -> true)) {
+                stream.filter(p -> Files.isDirectory(p))
                   .forEach(p -> result.add(p.toString()));
             } catch (IOException e) {
                 assert false : e.getMessage();
