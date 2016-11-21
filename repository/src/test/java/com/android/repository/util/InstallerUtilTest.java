@@ -44,6 +44,7 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Stream;
 
 /**
  * Tests for {@link InstallerUtil}.
@@ -545,8 +546,9 @@ public class InstallerUtilTest extends TestCase {
             Files.createSymbolicLink(root.resolve("link2"), file2);
 
             Path outZip = outRoot.resolve("out.zip");
-            try (ZipArchiveOutputStream out = new ZipArchiveOutputStream(outZip.toFile())) {
-                Files.walk(root).forEach(path -> {
+            try (ZipArchiveOutputStream out = new ZipArchiveOutputStream(outZip.toFile());
+                 Stream<Path> listing = Files.walk(root)) {
+                listing.forEach(path -> {
                     try {
                         ZipArchiveEntry archiveEntry = (ZipArchiveEntry) out
                                 .createArchiveEntry(path.toFile(),
