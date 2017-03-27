@@ -23,14 +23,7 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -119,9 +112,13 @@ public class VmTraceData {
 
         return Lists.newArrayList(Iterables.filter(allThreads, new Predicate<ThreadInfo>() {
             @Override
-            public boolean apply(
-                    com.android.tools.perflib.vmtrace.ThreadInfo input) {
+            public boolean test(ThreadInfo input) {
                 return input.getTopLevelCall() != null;
+            }
+
+            @Override
+            public boolean apply(ThreadInfo input) {
+                return test(input);
             }
         }));
     }

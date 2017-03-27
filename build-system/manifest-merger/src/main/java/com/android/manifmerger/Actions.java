@@ -24,35 +24,20 @@ import com.android.ide.common.blame.MessageJsonSerializer;
 import com.android.ide.common.blame.SourceFile;
 import com.android.ide.common.blame.SourceFilePosition;
 import com.android.utils.ILogger;
-import com.google.common.base.Objects;
+import com.google.common.base.MoreObjects;
 import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.io.LineReader;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonDeserializationContext;
-import com.google.gson.JsonDeserializer;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonParseException;
-
+import com.google.gson.*;
 import org.xml.sax.SAXException;
 
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.StringReader;
-import java.lang.reflect.Type;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
 import javax.xml.parsers.ParserConfigurationException;
+import java.io.*;
+import java.lang.reflect.Type;
+import java.util.*;
 
 /**
  * Contains all actions taken during a merging invocation.
@@ -291,7 +276,7 @@ public class Actions {
         @NonNull
         @Override
         public String toString() {
-            return Objects.toStringHelper(this).add("Id", mTargetId)
+            return MoreObjects.toStringHelper(this).add("Id", mTargetId)
                     .add("actionType=",getActionType())
                     .add("location", getActionLocation())
                     .add("opType", getOperationType()).toString();

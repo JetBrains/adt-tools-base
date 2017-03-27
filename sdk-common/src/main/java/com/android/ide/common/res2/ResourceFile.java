@@ -20,8 +20,7 @@ import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.VisibleForTesting;
 import com.android.ide.common.resources.configuration.FolderConfiguration;
-import com.google.common.base.Objects;
-
+import com.google.common.base.MoreObjects;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 
@@ -142,7 +141,7 @@ public class ResourceFile extends DataFile<ResourceItem> {
 
     @Override
     public String toString() {
-        return Objects.toStringHelper(getClass())
+        return MoreObjects.toStringHelper(getClass())
                 .add("mFile", mFile)
                 .add("mQualifiers", mQualifiers)
                 .toString();

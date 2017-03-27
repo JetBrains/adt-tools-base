@@ -16,13 +16,6 @@
 
 package com.android.ide.common.res2;
 
-import static com.android.SdkConstants.ATTR_NAME;
-import static com.android.SdkConstants.ATTR_TYPE;
-import static com.android.SdkConstants.DOT_XML;
-import static com.android.SdkConstants.RES_QUALIFIER_SEP;
-import static com.android.SdkConstants.TAG_RESOURCES;
-import static com.google.common.base.Preconditions.checkState;
-
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.ide.common.blame.MergingLog;
@@ -35,32 +28,28 @@ import com.android.resources.ResourceType;
 import com.android.utils.FileUtils;
 import com.android.utils.XmlUtils;
 import com.google.common.base.Charsets;
-import com.google.common.collect.ArrayListMultimap;
-import com.google.common.collect.ListMultimap;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
+import com.google.common.collect.*;
 import com.google.common.io.Files;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.SettableFuture;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
+
+import static com.android.SdkConstants.*;
+import static com.google.common.base.Preconditions.checkState;
 
 /**
  * A {@link MergeWriter} for assets, using {@link ResourceItem}.
@@ -280,7 +269,7 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
                                 failureSimulator.setException(e);
                                 mCompiling.add(failureSimulator);
                             }
-                        }, MoreExecutors.sameThreadExecutor());
+                        }, MoreExecutors.directExecutor());
                     } catch (PngException|IOException e) {
                         throw MergingException.wrapException(e).withFile(file).build();
                     }

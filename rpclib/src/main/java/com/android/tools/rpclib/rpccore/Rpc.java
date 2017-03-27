@@ -28,7 +28,7 @@ import java.util.concurrent.*;
  * created from RPC calls.
  */
 public class Rpc {
-    private static final Executor EXECUTOR = MoreExecutors.sameThreadExecutor();
+    private static final Executor EXECUTOR = MoreExecutors.directExecutor();
 
     /**
      * Blocks and waits for the result of the RPC call, or throws an exception if the RPC call was not
@@ -96,7 +96,7 @@ public class Rpc {
                     return;
                 }
                 try {
-                    callback.onFinish(new Result<V>(future));
+                    callback.onFinish(new Result<>(future));
                 }
                 catch (CancellationException e) {
                     // Not an error, don't log.
@@ -119,7 +119,7 @@ public class Rpc {
          *
          * <p>Call {@link Result#get()} to get the RPC result.
          */
-        public abstract void onFinish(Result<V> result) throws RpcException, ExecutionException;
+        void onFinish(Result<V> result) throws RpcException, ExecutionException;
     }
 
     /**
