@@ -16,10 +16,6 @@
 
 package com.android.tools.lint.detector.api;
 
-import static com.android.SdkConstants.CLASS_CONTEXT;
-import static com.android.tools.lint.client.api.JavaParser.ResolvedNode;
-import static com.android.tools.lint.client.api.JavaParser.TypeDescriptor;
-
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.tools.lint.client.api.JavaEvaluator;
@@ -27,43 +23,19 @@ import com.android.tools.lint.client.api.JavaParser;
 import com.android.tools.lint.client.api.JavaParser.ResolvedClass;
 import com.android.tools.lint.client.api.LintDriver;
 import com.android.tools.lint.detector.api.Detector.JavaPsiScanner;
-import com.google.common.collect.Iterators;
 import com.intellij.openapi.util.TextRange;
-import com.intellij.psi.PsiAnnotation;
-import com.intellij.psi.PsiAnonymousClass;
-import com.intellij.psi.PsiClass;
-import com.intellij.psi.PsiElement;
-import com.intellij.psi.PsiEnumConstant;
-import com.intellij.psi.PsiExpression;
-import com.intellij.psi.PsiField;
-import com.intellij.psi.PsiJavaCodeReferenceElement;
-import com.intellij.psi.PsiJavaFile;
-import com.intellij.psi.PsiLabeledStatement;
-import com.intellij.psi.PsiMember;
-import com.intellij.psi.PsiMethod;
-import com.intellij.psi.PsiMethodCallExpression;
-import com.intellij.psi.PsiNewExpression;
-import com.intellij.psi.PsiReferenceExpression;
-import com.intellij.psi.PsiSwitchStatement;
+import com.intellij.psi.*;
 import com.intellij.psi.util.PsiTreeUtil;
+import com.intellij.util.containers.ContainerUtil;
+import lombok.ast.*;
+import lombok.ast.Position;
 
 import java.io.File;
 import java.util.Iterator;
 
-import lombok.ast.AnnotationElement;
-import lombok.ast.AnnotationMethodDeclaration;
-import lombok.ast.ClassDeclaration;
-import lombok.ast.ConstructorDeclaration;
-import lombok.ast.ConstructorInvocation;
-import lombok.ast.EnumConstant;
-import lombok.ast.Expression;
-import lombok.ast.LabelledStatement;
-import lombok.ast.MethodDeclaration;
-import lombok.ast.MethodInvocation;
-import lombok.ast.Node;
-import lombok.ast.Position;
-import lombok.ast.TypeDeclaration;
-import lombok.ast.VariableReference;
+import static com.android.SdkConstants.CLASS_CONTEXT;
+import static com.android.tools.lint.client.api.JavaParser.ResolvedNode;
+import static com.android.tools.lint.client.api.JavaParser.TypeDescriptor;
 
 /**
  * A {@link Context} used when checking Java files.
@@ -529,7 +501,7 @@ public class JavaContext extends Context {
         } else if (call instanceof EnumConstant) {
             return ((EnumConstant) call).astArguments().iterator();
         } else {
-            return Iterators.emptyIterator();
+            return ContainerUtil.emptyIterator();
         }
     }
 
