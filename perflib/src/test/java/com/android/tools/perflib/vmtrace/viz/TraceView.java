@@ -17,8 +17,6 @@
 package com.android.tools.perflib.vmtrace.viz;
 
 import com.android.tools.perflib.vmtrace.*;
-import com.google.common.base.Predicate;
-import com.google.common.collect.Iterables;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
@@ -214,17 +212,12 @@ public class TraceView {
             mTraceData = traceData;
 
             List<ThreadInfo> threads = traceData.getThreads(true);
-            ThreadInfo defaultThread = Iterables.find(threads, new Predicate<ThreadInfo>() {
-                @Override
-                public boolean test(ThreadInfo input) {
-                    return DEFAULT_THREAD_NAME.equals(input.getName());
+            ThreadInfo defaultThread = threads.get(0);
+            for (ThreadInfo input : threads) {
+                if (DEFAULT_THREAD_NAME.equals(input.getName())) {
+                    defaultThread = input;
                 }
-
-                @Override
-                public boolean apply(ThreadInfo input) {
-                    return test(input);
-                }
-            }, threads.get(0));
+            }
 
             mThreadCombo.setModel(new DefaultComboBoxModel(threads.toArray()));
             mThreadCombo.setEnabled(true);
