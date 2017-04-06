@@ -5,6 +5,7 @@
       <name>com.sun</name>
       <name>java.awt.List</name>
       <name>junit.framework</name>
+      <name>kotlin.reflect.jvm.internal</name>
       <name>org.gradle.jarjar</name>
       <name>org.mockito.MockitoAnnotations.Mock</name>
       <name>org.testng</name>
